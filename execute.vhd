@@ -139,6 +139,8 @@ architecture behavioural of execute is
   alias ni_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(19 downto 15);
   alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
 
+
+  signal mxp_stall : std_logic;
   signal use_after_load_stall : std_logic;
 begin
   valid_instr <= valid_input and not use_after_load_stall;
@@ -202,7 +204,7 @@ begin
               alu_data_out when alu_data_en = '1' else
               br_data_out;
 
-  stall_pipeline <= (ls_unit_waiting or alu_stall or use_after_load_stall) and valid_input;
+  stall_pipeline <= (ls_unit_waiting or alu_stall or use_after_load_stall or mxp_stall) and valid_input;
 
 
   process(clk)
@@ -373,6 +375,27 @@ begin
       use_after_load_stall => '0',
       load_stall           => ls_unit_waiting,
       predict_corr         => predict_corr_en
+      );
+
+  mxp : component mxp_top
+    generic map (
+      REGISTER_SIZE    => REGISTER_SIZE,
+      INSTRUCTION_SIZE => INSTRUCTION_SIZE)
+    port map (
+      clk           => clk,
+      reset         => reset,
+      instruction   => instruction,
+      valid_instr   => valid_instr,
+      rs1_data      => rs1_data_fwd,
+      rs2_data      => rs2_data_fwd,
+      instr_running => mxp_stall,
+      slave_address => (others => '0'),
+      slave_read_en => '0',
+      slave_write_en => '0',
+      slave_byte_en => (others => '0'),
+      slave_data_in => (others => '0')
+--      slave_data_in =>  ,
+--      slave_wait => ,
       );
 
 

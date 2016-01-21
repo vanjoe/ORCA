@@ -417,5 +417,29 @@ package rv_components is
       predict_corr         : in std_logic;
       load_stall           : in std_logic);
   end component system_calls;
+  component mxp_top is
+  generic(
+    REGISTER_SIZE    : natural;
+    INSTRUCTION_SIZE : natural;
+    SLAVE_DATA_WIDTH : natural := 32);
+  port(
+    clk           : in  std_logic;
+    reset         : in  std_logic;
+    instruction   : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    valid_instr   : in     std_logic;
+    rs1_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    instr_running : buffer std_logic;
+
+    slave_address  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    slave_read_en  : in  std_logic;
+    slave_write_en : in  std_logic;
+    slave_byte_en  : in  std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
+    slave_data_in  : in  std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
+    slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
+    slave_wait     : out std_logic
+    );
+end component;
+
 
 end package rv_components;

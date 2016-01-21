@@ -28,7 +28,8 @@ begin
                             opcode7 = "0010011" or
                             opcode7 = "0110011" or
                             (opcode7 = "0001111" and instruction(31 downto 28)& instruction(19 downto 13) &instruction(11 downto 7) = x"0000") or
-                            opcode7 = "1110011") else '0';
+                            opcode7 = "1110011" or
+                            opcode7 = "0101011") else '0';
 
 end architecture;
 

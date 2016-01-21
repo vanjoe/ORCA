@@ -12,6 +12,8 @@ proc com {} {
 							../register_file.vhd   \
 							../riscv.vhd 			  \
 							../sys_call.vhd 		  \
+							../mxp-top.vhd 		  \
+							../4port_mem.vhd 		  \
 							../wishbone_wrapper.vhd \
 							hdl/top_util_pkg.vhd \
 							hdl/top_component_pkg.vhd\
