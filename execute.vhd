@@ -13,16 +13,16 @@ use STD.textio.all;                     -- basic I/O
 
 entity execute is
   generic(
-    REGISTER_SIZE        : positive;
-    REGISTER_NAME_SIZE   : positive;
-    INSTRUCTION_SIZE     : positive;
-    SIGN_EXTENSION_SIZE  : positive;
-    RESET_VECTOR         : natural;
-    MULTIPLY_ENABLE      : boolean;
-    DIVIDE_ENABLE        : boolean;
-    SHIFTER_MAX_CYCLES : natural ;
-    COUNTER_LENGTH       : natural;
-    FORWARD_ALU_ONLY     : boolean);
+    REGISTER_SIZE       : positive;
+    REGISTER_NAME_SIZE  : positive;
+    INSTRUCTION_SIZE    : positive;
+    SIGN_EXTENSION_SIZE : positive;
+    RESET_VECTOR        : natural;
+    MULTIPLY_ENABLE     : boolean;
+    DIVIDE_ENABLE       : boolean;
+    SHIFTER_MAX_CYCLES  : natural;
+    COUNTER_LENGTH      : natural;
+    FORWARD_ALU_ONLY    : boolean);
   port(
     clk         : in std_logic;
     reset       : in std_logic;
@@ -73,6 +73,16 @@ architecture behavioural of execute is
   signal predict_corr_en : std_logic;
 
   constant FORWARD_ONLY_FROM_ALU : boolean := FORWARD_ALU_ONLY;
+
+  signal ls_address     : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ls_byte_en     : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal ls_write_en    : std_logic;
+  signal ls_read_en     : std_logic;
+  signal ls_write_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ls_read_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ls_waitrequest : std_logic;
+  signal ls_datavalid   : std_logic;
+
 
   -- various writeback sources
   signal br_data_out  : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -139,8 +149,18 @@ architecture behavioural of execute is
   alias ni_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(19 downto 15);
   alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
 
+  constant SP_ADDRESS : integer := 16#80000000#;
+  constant SP_LENGTH  : integer := 4*1024;
 
-  signal mxp_stall : std_logic;
+  signal mxp_stall           : std_logic;
+  signal sp_read_en          : std_logic;
+  signal sp_write_en         : std_logic;
+  signal sp_read_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sp_wait             : std_logic;
+  signal sp_datavalid        : std_logic;
+  signal use_scratchpad      : std_logic;
+  signal last_use_scratchpad : std_logic;
+
   signal use_after_load_stall : std_logic;
 begin
   valid_instr <= valid_input and not use_after_load_stall;
@@ -274,12 +294,12 @@ begin
 
   alu : component arithmetic_unit
     generic map (
-      INSTRUCTION_SIZE     => INSTRUCTION_SIZE,
-      REGISTER_SIZE        => REGISTER_SIZE,
-      SIGN_EXTENSION_SIZE  => SIGN_EXTENSION_SIZE,
-      MULTIPLY_ENABLE      => MULTIPLY_ENABLE,
-      DIVIDE_ENABLE        => DIVIDE_ENABLE,
-      SHIFTER_MAX_CYCLES => SHIFTER_MAX_CYCLES)
+      INSTRUCTION_SIZE    => INSTRUCTION_SIZE,
+      REGISTER_SIZE       => REGISTER_SIZE,
+      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
+      MULTIPLY_ENABLE     => MULTIPLY_ENABLE,
+      DIVIDE_ENABLE       => DIVIDE_ENABLE,
+      SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES)
     port map (
       clk               => clk,
       stall_in          => stall_pipeline,
@@ -337,14 +357,14 @@ begin
       data_out       => ld_data_out,
       data_enable    => ld_data_en,
       --memory bus
-      address        => address,
-      byte_en        => byte_en,
-      write_en       => write_en,
-      read_en        => read_en,
-      write_data     => write_data,
-      read_data      => read_data,
-      waitrequest    => waitrequest,
-      readvalid      => datavalid);
+      address        => ls_address,
+      byte_en        => ls_byte_en,
+      write_en       => ls_write_en,
+      read_en        => ls_read_en,
+      write_data     => ls_write_data,
+      read_data      => ls_read_data,
+      waitrequest    => ls_waitrequest,
+      readvalid      => ls_datavalid);
   process(clk)
   begin
 --create delayed versions
@@ -382,21 +402,60 @@ begin
       REGISTER_SIZE    => REGISTER_SIZE,
       INSTRUCTION_SIZE => INSTRUCTION_SIZE)
     port map (
-      clk           => clk,
-      reset         => reset,
-      instruction   => instruction,
-      valid_instr   => valid_instr,
-      rs1_data      => rs1_data_fwd,
-      rs2_data      => rs2_data_fwd,
-      instr_running => mxp_stall,
-      slave_address => (others => '0'),
-      slave_read_en => '0',
-      slave_write_en => '0',
-      slave_byte_en => (others => '0'),
-      slave_data_in => (others => '0')
---      slave_data_in =>  ,
---      slave_wait => ,
+      clk            => clk,
+      reset          => reset,
+      instruction    => instruction,
+      valid_instr    => valid_instr,
+      rs1_data       => rs1_data_fwd,
+      rs2_data       => rs2_data_fwd,
+      instr_running  => mxp_stall,
+      slave_address  => ls_address,
+      slave_read_en  => sp_read_en,
+      slave_write_en => sp_write_en,
+      slave_byte_en  => ls_byte_en,
+      slave_data_in  => ls_write_data,
+      slave_data_out => sp_read_data,
+      slave_wait     => sp_wait
       );
+
+
+  ---------------------------------
+  ---------------------------------
+  ---------------------------------
+  --------data bus splitter--------
+  ---------------------------------
+  ---------------------------------
+  ---------------------------------
+
+  use_scratchpad <= '1' when (signed(ls_address) and not to_signed(SP_LENGTH-1, REGISTER_SIZE)) = to_signed(SP_ADDRESS, REGISTER_SIZE) else '0';
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      last_use_scratchpad <= use_scratchpad;
+      if (not sp_wait and ls_read_en) = '1'then
+        sp_datavalid <= '1';
+      else
+        sp_datavalid <= '0';
+      end if;
+    end if;
+  end process;
+  sp_read_en          <= use_scratchpad and ls_read_en;
+  sp_write_en         <= use_scratchpad and ls_write_en;
+  last_use_scratchpad <= use_scratchpad when rising_edge(clk);
+
+  ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else read_data;
+  ls_waitrequest <= sp_wait or waitrequest;
+  ls_datavalid   <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
+
+  byte_en  <= ls_byte_en;
+  address  <= ls_address;
+  write_en <= not use_scratchpad and ls_write_en;
+  read_en  <= not use_scratchpad and ls_read_en;
+  write_data <= ls_write_data;
+
+
+
+
 
 
   finished_instr <= valid_instr and not stall_pipeline;
@@ -416,12 +475,12 @@ begin
   begin
     if rising_edge(clk) then
       if valid_instr = '1' then
-        write(my_line, string'("executing pc = "));  -- formatting
+        write(my_line, string'("executing pc = "));   -- formatting
         hwrite(my_line, (pc_current));  -- format type std_logic_vector as hex
-        write(my_line, string'(" instr =  "));       -- formatting
+        write(my_line, string'(" instr =  "));        -- formatting
         hwrite(my_line, (instruction));  -- format type std_logic_vector as hex
         if stall_pipeline = '1' then
-          write(my_line, string'(" stalling"));      -- formatting
+          write(my_line, string'(" stalling"));       -- formatting
         end if;
         writeline(output, my_line);     -- write to "output"
       else
