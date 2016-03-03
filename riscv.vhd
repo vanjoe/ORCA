@@ -18,8 +18,9 @@ entity riscV is
     PIPELINE_STAGES    : natural range 4 to 5 := 5;
     FORWARD_ALU_ONLY   : natural range 0 to 1 := 1);
 
-  port(clk   : in std_logic;
-       reset : in std_logic;
+  port(clk            : in std_logic;
+       scratchpad_clk : in std_logic;
+       reset          : in std_logic;
 
        --conduit end point
        coe_to_host         : out std_logic_vector(REGISTER_SIZE -1 downto 0);
@@ -183,6 +184,7 @@ begin  -- architecture rtl
       FORWARD_ALU_ONLY    => FORWARD_ALU_ONLY = 1)
     port map (
       clk            => clk,
+      scratchpad_clk => scratchpad_clk,
       reset          => reset,
       valid_input    => e_valid,
       br_taken_in    => e_br_taken,

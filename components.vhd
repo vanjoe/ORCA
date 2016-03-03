@@ -8,18 +8,19 @@ use work.utils.all;
 package rv_components is
   component riscV is
     generic (
-      REGISTER_SIZE        : integer              := 32;
-      RESET_VECTOR         : natural              := 16#00000200#;
-      MULTIPLY_ENABLE      : natural range 0 to 1 := 0;
-      DIVIDE_ENABLE        : natural range 0 to 1 := 0;
-      SHIFTER_MAX_CYCLES : natural ;
-      COUNTER_LENGTH       : natural              := 64;
-      BRANCH_PREDICTORS    : natural              := 0;
-      PIPELINE_STAGES      : natural range 4 to 5 := 5;
-      FORWARD_ALU_ONLY     : natural range 0 to 1 := 1);
+      REGISTER_SIZE      : integer              := 32;
+      RESET_VECTOR       : natural              := 16#00000200#;
+      MULTIPLY_ENABLE    : natural range 0 to 1 := 0;
+      DIVIDE_ENABLE      : natural range 0 to 1 := 0;
+      SHIFTER_MAX_CYCLES : natural;
+      COUNTER_LENGTH     : natural              := 64;
+      BRANCH_PREDICTORS  : natural              := 0;
+      PIPELINE_STAGES    : natural range 4 to 5 := 5;
+      FORWARD_ALU_ONLY   : natural range 0 to 1 := 1);
     port(
-      clk   : in std_logic;
-      reset : in std_logic;
+      clk            : in std_logic;
+      scratchpad_clk : in std_logic;
+      reset          : in std_logic;
 
       --conduit end point
       coe_to_host         : out std_logic_vector(REGISTER_SIZE -1 downto 0);
@@ -88,20 +89,21 @@ package rv_components is
 
   component execute is
     generic(
-      REGISTER_SIZE        : positive;
-      REGISTER_NAME_SIZE   : positive;
-      INSTRUCTION_SIZE     : positive;
-      SIGN_EXTENSION_SIZE  : positive;
-      RESET_VECTOR         : natural;
-      MULTIPLY_ENABLE      : boolean;
-      DIVIDE_ENABLE        : boolean;
-      SHIFTER_MAX_CYCLES : natural ;
-      COUNTER_LENGTH       : natural;
-      FORWARD_ALU_ONLY     : boolean);
+      REGISTER_SIZE       : positive;
+      REGISTER_NAME_SIZE  : positive;
+      INSTRUCTION_SIZE    : positive;
+      SIGN_EXTENSION_SIZE : positive;
+      RESET_VECTOR        : natural;
+      MULTIPLY_ENABLE     : boolean;
+      DIVIDE_ENABLE       : boolean;
+      SHIFTER_MAX_CYCLES  : natural;
+      COUNTER_LENGTH      : natural;
+      FORWARD_ALU_ONLY    : boolean);
     port(
-      clk         : in std_logic;
-      reset       : in std_logic;
-      valid_input : in std_logic;
+      clk            : in std_logic;
+      scratchpad_clk : in std_logic;
+      reset          : in std_logic;
+      valid_input    : in std_logic;
 
       br_taken_in  : in std_logic;
       pc_current   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -160,12 +162,12 @@ package rv_components is
 
   component arithmetic_unit is
     generic (
-      INSTRUCTION_SIZE     : integer;
-      REGISTER_SIZE        : integer;
-      SIGN_EXTENSION_SIZE  : integer;
-      MULTIPLY_ENABLE      : boolean;
-      DIVIDE_ENABLE        : boolean;
-      SHIFTER_MAX_CYCLES : natural
+      INSTRUCTION_SIZE    : integer;
+      REGISTER_SIZE       : integer;
+      SIGN_EXTENSION_SIZE : integer;
+      MULTIPLY_ENABLE     : boolean;
+      DIVIDE_ENABLE       : boolean;
+      SHIFTER_MAX_CYCLES  : natural
       );
     port (
       clk               : in  std_logic;
@@ -418,28 +420,29 @@ package rv_components is
       load_stall           : in std_logic);
   end component system_calls;
   component mxp_top is
-  generic(
-    REGISTER_SIZE    : natural;
-    INSTRUCTION_SIZE : natural;
-    SLAVE_DATA_WIDTH : natural := 32);
-  port(
-    clk           : in  std_logic;
-    reset         : in  std_logic;
-    instruction   : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    valid_instr   : in     std_logic;
-    rs1_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instr_running : buffer std_logic;
+    generic(
+      REGISTER_SIZE    : natural;
+      INSTRUCTION_SIZE : natural;
+      SLAVE_DATA_WIDTH : natural := 32);
+    port(
+      clk            : in     std_logic;
+      scratchpad_clk : in     std_logic;
+      reset          : in     std_logic;
+      instruction    : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      valid_instr    : in     std_logic;
+      rs1_data       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs2_data       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instr_running  : buffer std_logic;
 
-    slave_address  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    slave_read_en  : in  std_logic;
-    slave_write_en : in  std_logic;
-    slave_byte_en  : in  std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
-    slave_data_in  : in  std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
-    slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
-    slave_wait     : out std_logic
-    );
-end component;
+      slave_address  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      slave_read_en  : in  std_logic;
+      slave_write_en : in  std_logic;
+      slave_byte_en  : in  std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
+      slave_data_in  : in  std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
+      slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
+      slave_wait     : out std_logic
+      );
+  end component;
 
 
 end package rv_components;

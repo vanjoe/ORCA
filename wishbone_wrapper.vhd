@@ -17,8 +17,9 @@ entity riscV_wishbone is
     PIPELINE_STAGES    : natural range 4 to 5 := 5;
     FORWARD_ALU_ONLY   : natural range 0 to 1 := 1);
 
-  port(clk   : in std_logic;
-       reset : in std_logic;
+  port(clk            : in std_logic;
+       scratchpad_clk : in std_logic;
+       reset          : in std_logic;
 
        --conduit end point
        coe_to_host         : out std_logic_vector(REGISTER_SIZE -1 downto 0);
@@ -119,6 +120,7 @@ begin  -- architecture rtl
       FORWARD_ALU_ONLY   => FORWARD_ALU_ONLY)
     port map(
       clk   => clk,
+      scratchpad_clk => scratchpad_clk,
       reset => reset,
 
       --conduit end point
@@ -224,7 +226,7 @@ begin  -- architecture rtl
     end if;
   end process;
 
-  data_suppress_valid        <= data_was_waiting and data_readdatavalid;
+  data_suppress_valid  <= data_was_waiting and data_readdatavalid;
   instr_suppress_valid <= instr_was_waiting and instr_readdatavalid;
 
 end architecture rtl;

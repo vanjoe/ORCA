@@ -24,9 +24,10 @@ entity execute is
     COUNTER_LENGTH      : natural;
     FORWARD_ALU_ONLY    : boolean);
   port(
-    clk         : in std_logic;
-    reset       : in std_logic;
-    valid_input : in std_logic;
+    clk            : in std_logic;
+    scratchpad_clk : in std_logic;
+    reset          : in std_logic;
+    valid_input    : in std_logic;
 
     br_taken_in  : in std_logic;
     pc_current   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -403,6 +404,7 @@ begin
       INSTRUCTION_SIZE => INSTRUCTION_SIZE)
     port map (
       clk            => clk,
+      scratchpad_clk => scratchpad_clk,
       reset          => reset,
       instruction    => instruction,
       valid_instr    => valid_instr,
@@ -447,10 +449,10 @@ begin
   ls_waitrequest <= sp_wait or waitrequest;
   ls_datavalid   <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
 
-  byte_en  <= ls_byte_en;
-  address  <= ls_address;
-  write_en <= not use_scratchpad and ls_write_en;
-  read_en  <= not use_scratchpad and ls_read_en;
+  byte_en    <= ls_byte_en;
+  address    <= ls_address;
+  write_en   <= not use_scratchpad and ls_write_en;
+  read_en    <= not use_scratchpad and ls_read_en;
   write_data <= ls_write_data;
 
 

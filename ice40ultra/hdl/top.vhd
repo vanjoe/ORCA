@@ -10,6 +10,7 @@ use work.top_util_pkg.all;
 entity top is
   port(
     clk       : in std_logic;
+    scratchpad_clk : in std_logic;
     reset_btn : in std_logic;
 
     --uart
@@ -364,12 +365,13 @@ begin
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
       MULTIPLY_ENABLE    => 0,
-      SHIFTER_MAX_CYCLES => 32,
+      SHIFTER_MAX_CYCLES => 1,
       COUNTER_LENGTH     => 32,
       PIPELINE_STAGES    => 4)
     port map(
 
       clk   => clk,
+      scratchpad_clk => scratchpad_clk,
       reset => reset,
 
       --conduit end point
