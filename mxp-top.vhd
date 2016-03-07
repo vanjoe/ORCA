@@ -97,7 +97,7 @@ architecture rtl of mxp_top is
   signal srca_ptr     : unsigned(REGISTER_SIZE-1 downto 0);
   signal srcb_ptr     : unsigned(REGISTER_SIZE-1 downto 0);
   signal dest_ptr     : unsigned(REGISTER_SIZE-1 downto 0);
-  signal waddr       : unsigned(REGISTER_SIZE-1 downto 0);
+  signal waddr        : unsigned(REGISTER_SIZE-1 downto 0);
   signal vlen         : unsigned(REGISTER_SIZE-1 downto 0);
   signal srca_ptr_reg : unsigned(REGISTER_SIZE-1 downto 0);
   signal srcb_ptr_reg : unsigned(REGISTER_SIZE-1 downto 0);
@@ -121,9 +121,22 @@ architecture rtl of mxp_top is
   signal first_cycle    : std_logic;
   signal write_enable   : std_logic;
 
+  signal func5          : std_logic_vector(4 downto 0);
+  constant FUNC_VADD    : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VSUB    : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VSLL    : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VSLT    : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VSLTU   : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VSXOR   : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VSRA    : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VSRL    : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VOR     : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VAND    : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VMUL    : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VCMV_NZ : std_logic_vector(4 downto 0) := "00000";
 
 begin
-
+  func5 <= func_bit4 & func_bit3 & func;
 
   --instruction parsing process
   address_gen : process(clk)
@@ -161,7 +174,7 @@ begin
   srca_data <= unsigned(srca_data_read) when srca_v = '1' else scalar_value;
   srcb_data <= unsigned(srcb_data_read) when srcb_v = '1' else enum_count;
 
-  rd_en <= '1' when is_prefix = '1' or vlen > 1  else '0';
+  rd_en <= '1' when is_prefix = '1' or vlen > 1 else '0';
 
   alu_proc : process(clk)
   begin

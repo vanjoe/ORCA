@@ -26,29 +26,53 @@ entity ram_1port is
 end entity ram_1port;
 architecture rt of ram_1port is
 
-  type mem_t is array (0 to MEM_DEPTH-1) of std_logic_vector(MEM_WIDTH-1 downto 0);
-  signal ram : mem_t;
 
 begin  -- architecture rt
 
-  assert MEM_WIDTH = (MEM_WIDTH/16)*16 report "BAD MEMORY WIDTH FOR ICE40ULTRAPLUS SPRAM" severity failure;
-
-  process(clk)
+  ALTERA_GEN : if True generate
+    type mem_t is array( 0 to MEM_DEPTH-1) of std_logic_vector(7 downto 0);
   begin
-    if rising_edge(clk) then
-      if chip_sel = '1' then
-        if wr_en = '1' then
-          for i in byte_en'range loop
-            if byte_en(i) = '1' then
-              ram(to_integer(unsigned(addr)))((i+1)*8 -1 downto i*8) <= data_in((i+1)*8 -1 downto i*8);
-            end if;
-          end loop;  -- i
-        else
-          data_out <= ram(to_integer(unsigned(addr)));
+    byte_gen : for i in byte_en'range generate
+      -- Declare the RAM signal.
+      signal ram : mem_t;
+    begin
+      process(clk)
+      begin
+        if(rising_edge(clk)) then
+          if(wr_en = '1') then
+            ram(to_integer(unsigned(addr))) <= data_in(8*(i+1) -1 downto 8*i);
+          end if;
+          data_out(8*(i+1) -1 downto 8*i) <= ram(to_integer(unsigned(addr)));
+        end if;
+      end process;
+    end generate byte_gen;
+  end generate ALTERA_GEN;
+
+  LATTICE_GEN : if False generate
+    type mem_t is array (0 to MEM_DEPTH-1) of std_logic_vector(MEM_WIDTH-1 downto 0);
+    signal ram : mem_t;
+  begin
+
+    assert MEM_WIDTH = (MEM_WIDTH/16)*16 report "BAD MEMORY WIDTH FOR ICE40ULTRAPLUS SPRAM" severity failure;
+
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        if chip_sel = '1' then
+          if wr_en = '1' then
+            for i in byte_en'range loop
+              if byte_en(i) = '1' then
+                ram(to_integer(unsigned(addr)))((i+1)*8 -1 downto i*8) <= data_in((i+1)*8 -1 downto i*8);
+              end if;
+            end loop;  -- i
+          else
+            data_out <= ram(to_integer(unsigned(addr)));
+          end if;
         end if;
       end if;
-    end if;
-  end process;
+    end process;
+
+  end generate LATTICE_GEN;
 
 end architecture rt;
 
@@ -73,20 +97,20 @@ entity ram_4port is
     reset          : in  std_logic;
     stall_012      : out std_logic;
     stall_3        : out std_logic;
-    --read source A
+                                        --read source A
     raddr0         : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
     ren0           : in  std_logic;
     data_out0      : out std_logic_vector(MEM_WIDTH-1 downto 0);
-    --read source B
+                                        --read source B
     raddr1         : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
     ren1           : in  std_logic;
     data_out1      : out std_logic_vector(MEM_WIDTH-1 downto 0);
-    --write dest
+                                        --write dest
     waddr2         : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
     byte_en2       : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
     wen2           : in  std_logic;
     data_in2       : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-    --external slave port
+                                        --external slave port
     rwaddr3        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
     wen3           : in  std_logic;
     ren3           : in  std_logic;     --cannot be asserted same cycle as wen3
@@ -136,7 +160,7 @@ begin  -- architecture rtl
   port_sel <= MXP_ACCESS when (ren0 or ren1 or wen2) = '1' else SLAVE_ACCESS;
 
   stall_012 <= '0';
-  stall_3   <= ren3 or wen3 when port_sel = MXP_ACCESS else '0';
+  stall_3   <= '0';
 
   process(clk)
   begin
@@ -201,6 +225,7 @@ begin  -- architecture rtl
     if rising_edge(clk) then
       data_out0 <= data_out0_tmp;
       data_out1 <= actual_data_out;
+      data_out3 <= data_out0_tmp;
     end if;
   end process;
 
@@ -208,7 +233,7 @@ begin  -- architecture rtl
 
 
 
-    actual_ram : component ram_1port
+  actual_ram : component ram_1port
     generic map (
       MEM_DEPTH => MEM_DEPTH,
       MEM_WIDTH => MEM_WIDTH)

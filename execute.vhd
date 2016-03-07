@@ -150,8 +150,8 @@ architecture behavioural of execute is
   alias ni_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(19 downto 15);
   alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
 
-  constant SP_ADDRESS : integer := 16#80000000#;
-  constant SP_LENGTH  : integer := 4*1024;
+  constant SP_ADDRESS : unsigned(REGISTER_SIZE-1 downto 0) := x"80000000";
+  constant SP_SIZE  : integer := 4*1024;
 
   signal mxp_stall           : std_logic;
   signal sp_read_en          : std_logic;
@@ -429,7 +429,7 @@ begin
   ---------------------------------
   ---------------------------------
 
-  use_scratchpad <= '1' when (signed(ls_address) and not to_signed(SP_LENGTH-1, REGISTER_SIZE)) = to_signed(SP_ADDRESS, REGISTER_SIZE) else '0';
+  use_scratchpad <= '1' when (unsigned(ls_address) and not to_unsigned(SP_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS else '0';
   process(clk)
   begin
     if rising_edge(clk) then
@@ -443,7 +443,6 @@ begin
   end process;
   sp_read_en          <= use_scratchpad and ls_read_en;
   sp_write_en         <= use_scratchpad and ls_write_en;
-  last_use_scratchpad <= use_scratchpad when rising_edge(clk);
 
   ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else read_data;
   ls_waitrequest <= sp_wait or waitrequest;

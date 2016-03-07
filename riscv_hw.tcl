@@ -50,6 +50,9 @@ add_fileset_file load_store_unit.vhd VHDL PATH ../load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH ../register_file.vhd
 add_fileset_file riscv.vhd VHDL PATH ../riscv.vhd TOP_LEVEL_FILE
 add_fileset_file sys_call.vhd VHDL PATH ../sys_call.vhd
+add_fileset_file sys_call.vhd VHDL PATH ../sys_call.vhd
+add_fileset_file 4port_mem.vhd VHDL PATH ../4port_mem.vhd
+add_fileset_file mxp-top.vhd VHDL PATH ../mxp-top.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL riscV
@@ -66,6 +69,9 @@ add_fileset_file load_store_unit.vhd VHDL PATH ../load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH ../register_file.vhd
 add_fileset_file riscv.vhd VHDL PATH ../riscv.vhd
 add_fileset_file sys_call.vhd VHDL PATH ../sys_call.vhd
+add_fileset_file 4port_mem.vhd VHDL PATH ../4port_mem.vhd
+add_fileset_file mxp-top.vhd VHDL PATH ../mxp-top.vhd
+
 
 
 
@@ -179,6 +185,17 @@ set_interface_property clock CMSIS_SVD_VARIABLES ""
 set_interface_property clock SVD_ADDRESS_GROUP ""
 
 add_interface_port clock clk clk Input 1
+
+add_interface scratchpad_clk clock end
+set_interface_property scratchpad_clk clockRate 0
+set_interface_property scratchpad_clk ENABLED true
+set_interface_property scratchpad_clk EXPORT_OF ""
+set_interface_property scratchpad_clk PORT_NAME_MAP ""
+set_interface_property scratchpad_clk CMSIS_SVD_VARIABLES ""
+set_interface_property scratchpad_clk SVD_ADDRESS_GROUP ""
+
+add_interface_port scratchpad_clk scratchpad_clk clk Input 1
+
 
 
 #
