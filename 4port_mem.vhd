@@ -29,7 +29,27 @@ architecture rt of ram_1port is
 
 begin  -- architecture rt
 
-  ALTERA_GEN : if True generate
+    SIM_GEN : if true generate
+    type mem_t is array(0 to MEM_DEPTH-1) of std_logic_vector(MEM_WIDTH-1 downto 0);
+    signal ram : mem_t;
+  begin
+    process(clk)
+    begin
+      if(rising_edge(clk)) then
+        for i in byte_en'range loop
+          if(wr_en = '1' and byte_en(i) = '1' ) then
+            ram(to_integer(unsigned(addr)))(8*(i+1) -1 downto 8*i) <= data_in(8*(i+1) -1 downto 8*i);
+          end if;
+
+          data_out(8*(i+1) -1 downto 8*i) <= ram(to_integer(unsigned(addr)))(8*(i+1) -1 downto 8*i);
+
+        end loop;  -- i
+
+      end if;
+    end process;
+  end generate;
+
+  ALTERA_GEN : if false generate
     type mem_t is array( 0 to MEM_DEPTH-1) of std_logic_vector(7 downto 0);
   begin
     byte_gen : for i in byte_en'range generate

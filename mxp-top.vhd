@@ -133,6 +133,7 @@ architecture rtl of mxp_top is
   constant FUNC_VOR     : std_logic_vector(4 downto 0) := "00000";
   constant FUNC_VAND    : std_logic_vector(4 downto 0) := "00000";
   constant FUNC_VMUL    : std_logic_vector(4 downto 0) := "00000";
+  constant FUNC_VMULH   : std_logic_vector(4 downto 0) := "00000";
   constant FUNC_VCMV_NZ : std_logic_vector(4 downto 0) := "00000";
 
 begin
@@ -150,9 +151,12 @@ begin
 
       if valid_instr = '1' and major_op = CUSTOM0 then
         if is_prefix = '1' then
-          first_cycle <= '1';
+          first_cycle  <= '1';
+          scalar_value <= unsigned(rs1_data);
+          enum_count   <= to_unsigned(0,enum_count'length);
         else
           first_cycle <= '0';
+          enum_count <= enum_count +1;
           if vlen /= 0 then
             vlen_reg <= vlen - 1;
           end if;
