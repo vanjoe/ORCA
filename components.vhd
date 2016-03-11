@@ -16,7 +16,8 @@ package rv_components is
       COUNTER_LENGTH     : natural              := 64;
       BRANCH_PREDICTORS  : natural              := 0;
       PIPELINE_STAGES    : natural range 4 to 5 := 5;
-      FORWARD_ALU_ONLY   : natural range 0 to 1 := 1);
+      FORWARD_ALU_ONLY   : natural range 0 to 1 := 1;
+      MXP_ENABLE         : natural range 0 to 1 := 0);
     port(
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
@@ -98,7 +99,8 @@ package rv_components is
       DIVIDE_ENABLE       : boolean;
       SHIFTER_MAX_CYCLES  : natural;
       COUNTER_LENGTH      : natural;
-      FORWARD_ALU_ONLY    : boolean);
+      FORWARD_ALU_ONLY    : boolean;
+      MXP_ENABLE          : boolean);
     port(
       clk            : in std_logic;
       scratchpad_clk : in std_logic;

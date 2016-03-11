@@ -22,7 +22,8 @@ entity execute is
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
     COUNTER_LENGTH      : natural;
-    FORWARD_ALU_ONLY    : boolean);
+    FORWARD_ALU_ONLY    : boolean;
+    MXP_ENABLE          : boolean);
   port(
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
@@ -151,18 +152,11 @@ architecture behavioural of execute is
   alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
 
   constant SP_ADDRESS : unsigned(REGISTER_SIZE-1 downto 0) := x"80000000";
-  constant SP_SIZE  : integer := 4*1024;
-
-  signal mxp_stall           : std_logic;
-  signal sp_read_en          : std_logic;
-  signal sp_write_en         : std_logic;
-  signal sp_read_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sp_wait             : std_logic;
-  signal sp_datavalid        : std_logic;
-  signal use_scratchpad      : std_logic;
-  signal last_use_scratchpad : std_logic;
+  constant SP_SIZE    : integer                            := 4*1024;
 
   signal use_after_load_stall : std_logic;
+
+  signal mxp_stall : std_logic;
 begin
   valid_instr <= valid_input and not use_after_load_stall;
   -----------------------------------------------------------------------------
@@ -398,63 +392,87 @@ begin
       predict_corr         => predict_corr_en
       );
 
-  mxp : component mxp_top
-    generic map (
-      REGISTER_SIZE    => REGISTER_SIZE,
-      INSTRUCTION_SIZE => INSTRUCTION_SIZE)
-    port map (
-      clk            => clk,
-      scratchpad_clk => scratchpad_clk,
-      reset          => reset,
-      instruction    => instruction,
-      valid_instr    => valid_instr,
-      rs1_data       => rs1_data_fwd,
-      rs2_data       => rs2_data_fwd,
-      instr_running  => mxp_stall,
-      slave_address  => ls_address,
-      slave_read_en  => sp_read_en,
-      slave_write_en => sp_write_en,
-      slave_byte_en  => ls_byte_en,
-      slave_data_in  => ls_write_data,
-      slave_data_out => sp_read_data,
-      slave_wait     => sp_wait
-      );
-
-
-  ---------------------------------
-  ---------------------------------
-  ---------------------------------
-  --------data bus splitter--------
-  ---------------------------------
-  ---------------------------------
-  ---------------------------------
-
-  use_scratchpad <= '1' when (unsigned(ls_address) and not to_unsigned(SP_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS else '0';
-  process(clk)
+  enable_mxp : if MXP_ENABLE generate
+    signal sp_read_en          : std_logic;
+    signal sp_write_en         : std_logic;
+    signal sp_read_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+    signal sp_wait             : std_logic;
+    signal sp_datavalid        : std_logic;
+    signal use_scratchpad      : std_logic;
+    signal last_use_scratchpad : std_logic;
   begin
-    if rising_edge(clk) then
-      last_use_scratchpad <= use_scratchpad;
-      if (not sp_wait and ls_read_en) = '1'then
-        sp_datavalid <= '1';
-      else
-        sp_datavalid <= '0';
+    mxp : component mxp_top
+      generic map (
+        REGISTER_SIZE    => REGISTER_SIZE,
+        INSTRUCTION_SIZE => INSTRUCTION_SIZE)
+      port map (
+        clk            => clk,
+        scratchpad_clk => scratchpad_clk,
+        reset          => reset,
+        instruction    => instruction,
+        valid_instr    => valid_instr,
+        rs1_data       => rs1_data_fwd,
+        rs2_data       => rs2_data_fwd,
+        instr_running  => mxp_stall,
+        slave_address  => ls_address,
+        slave_read_en  => sp_read_en,
+        slave_write_en => sp_write_en,
+        slave_byte_en  => ls_byte_en,
+        slave_data_in  => ls_write_data,
+        slave_data_out => sp_read_data,
+        slave_wait     => sp_wait
+        );
+
+    ---------------------------------
+    ---------------------------------
+    ---------------------------------
+    --------data bus splitter--------
+    ---------------------------------
+    ---------------------------------
+    ---------------------------------
+
+    use_scratchpad <= '1' when (unsigned(ls_address) and not to_unsigned(SP_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and MXP_ENABLE else '0';
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        last_use_scratchpad <= use_scratchpad;
+        if (not sp_wait and ls_read_en) = '1'then
+          sp_datavalid <= '1';
+        else
+          sp_datavalid <= '0';
+        end if;
       end if;
-    end if;
-  end process;
-  sp_read_en          <= use_scratchpad and ls_read_en;
-  sp_write_en         <= use_scratchpad and ls_write_en;
+    end process;
+    sp_read_en  <= use_scratchpad and ls_read_en;
+    sp_write_en <= use_scratchpad and ls_write_en;
 
-  ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else read_data;
-  ls_waitrequest <= sp_wait or waitrequest;
-  ls_datavalid   <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
+    ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else read_data;
+    ls_waitrequest <= sp_wait or waitrequest;
+    ls_datavalid   <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
 
-  byte_en    <= ls_byte_en;
-  address    <= ls_address;
-  write_en   <= not use_scratchpad and ls_write_en;
-  read_en    <= not use_scratchpad and ls_read_en;
-  write_data <= ls_write_data;
+    byte_en    <= ls_byte_en;
+    address    <= ls_address;
+    write_en   <= not use_scratchpad and ls_write_en;
+    read_en    <= not use_scratchpad and ls_read_en;
+    write_data <= ls_write_data;
 
 
+  end generate enable_mxp;
+
+  n_enable_mxp : if not MXP_ENABLE generate
+    mxp_stall <= '0';
+
+    ls_read_data   <= read_data;
+    ls_waitrequest <= waitrequest;
+    ls_datavalid   <= datavalid;
+
+    byte_en    <= ls_byte_en;
+    address    <= ls_address;
+    write_en   <= ls_write_en;
+    read_en    <= ls_read_en;
+    write_data <= ls_write_data;
+
+  end generate n_enable_mxp;
 
 
 

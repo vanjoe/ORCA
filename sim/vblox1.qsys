@@ -506,6 +506,7 @@
   <parameter name="DIVIDE_ENABLE" value="1" />
   <parameter name="FORWARD_ALU_ONLY" value="1" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
+  <parameter name="MXP_ENABLE" value="1" />
   <parameter name="PIPELINE_STAGES" value="4" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="512" />
