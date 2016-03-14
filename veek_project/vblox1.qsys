@@ -105,6 +105,22 @@
          type = "String";
       }
    }
+   element jtag_uart_0
+   {
+      datum _sortIndex
+      {
+         value = "11";
+         type = "int";
+      }
+   }
+   element jtag_uart_0.avalon_jtag_slave
+   {
+      datum baseAddress
+      {
+         value = "65648";
+         type = "String";
+      }
+   }
    element ledg
    {
       datum _sortIndex
@@ -495,6 +511,25 @@
   <parameter name="simDrivenValue" value="0" />
   <parameter name="width" value="32" />
  </module>
+ <module
+   name="jtag_uart_0"
+   kind="altera_avalon_jtag_uart"
+   version="15.0"
+   enabled="1">
+  <parameter name="allowMultipleConnections" value="false" />
+  <parameter name="avalonSpec" value="2.0" />
+  <parameter name="clkFreq" value="50000000" />
+  <parameter name="hubInstanceID" value="0" />
+  <parameter name="readBufferDepth" value="64" />
+  <parameter name="readIRQThreshold" value="8" />
+  <parameter name="simInputCharacterStream" value="" />
+  <parameter name="simInteractiveOptions">NO_INTERACTIVE_WINDOWS</parameter>
+  <parameter name="useRegistersForReadBuffer" value="false" />
+  <parameter name="useRegistersForWriteBuffer" value="false" />
+  <parameter name="useRelativePathForSimFile" value="false" />
+  <parameter name="writeBufferDepth" value="64" />
+  <parameter name="writeIRQThreshold" value="8" />
+ </module>
  <module name="ledg" kind="altera_avalon_pio" version="15.0" enabled="1">
   <parameter name="bitClearingEdgeCapReg" value="false" />
   <parameter name="bitModifyingOutReg" value="false" />
@@ -575,7 +610,7 @@
  <module name="riscv_0" kind="riscv" version="1.0" enabled="1">
   <parameter name="BRANCH_PREDICTION" value="false" />
   <parameter name="BTB_SIZE" value="256" />
-  <parameter name="COUNTER_LENGTH" value="0" />
+  <parameter name="COUNTER_LENGTH" value="32" />
   <parameter name="DIVIDE_ENABLE" value="0" />
   <parameter name="FORWARD_ALU_ONLY" value="1" />
   <parameter name="MULTIPLY_ENABLE" value="0" />
@@ -601,6 +636,15 @@
    end="onchip_memory2_0.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.0"
+   start="mm_bridge_0.m0"
+   end="jtag_uart_0.avalon_jtag_slave">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x00010070" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -658,6 +702,7 @@
  <connection kind="clock" version="15.0" start="altpll_0.c0" end="hex_0.clk" />
  <connection kind="clock" version="15.0" start="altpll_0.c0" end="ledr.clk" />
  <connection kind="clock" version="15.0" start="altpll_0.c0" end="ledg.clk" />
+ <connection kind="clock" version="15.0" start="altpll_0.c0" end="jtag_uart_0.clk" />
  <connection
    kind="clock"
    version="15.0"
@@ -700,6 +745,11 @@
    version="15.0"
    start="clk_0.clk_reset"
    end="riscv_0.reset" />
+ <connection
+   kind="reset"
+   version="15.0"
+   start="clk_0.clk_reset"
+   end="jtag_uart_0.reset" />
  <connection
    kind="reset"
    version="15.0"
