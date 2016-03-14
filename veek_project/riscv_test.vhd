@@ -27,10 +27,11 @@ architecture rtl of riscv_test is
   component vblox1 is
     port (
       clk_clk                : in  std_logic                     := 'X';  -- clk
+      pll_areset_export      : in  std_logic;
       from_host_export       : in  std_logic_vector(31 downto 0) := (others => 'X');  -- export
       program_counter_export : out std_logic_vector(31 downto 0);  -- export
       reset_reset_n          : in  std_logic                     := 'X';  -- reset_n
-      ledg_export            : out std_logic_vector(31 downto 0);   -- export
+      ledg_export            : out std_logic_vector(31 downto 0);  -- export
       ledr_export            : out std_logic_vector(31 downto 0);  -- export
       hex0_export            : out std_logic_vector(31 downto 0);  -- export
       hex1_export            : out std_logic_vector(31 downto 0);  -- export
@@ -66,11 +67,11 @@ architecture rtl of riscv_test is
     return std_logic_vector is
     variable to_ret : std_logic_vector(31 downto 0);
   begin  -- function le2be
-to_ret :=  (input(7 downto 0) &
-            input(15 downto 8) &
-            input(23 downto 16) &
-            input(31 downto 24));
-return to_ret;
+    to_ret := (input(7 downto 0) &
+               input(15 downto 8) &
+               input(23 downto 16) &
+               input(31 downto 24));
+    return to_ret;
   end function le2be;
 begin
   clk   <= clock_50;
@@ -81,6 +82,7 @@ begin
   rv : component vblox1
     port map (
       clk_clk                => clk,
+      pll_areset_export      => '0',
       reset_reset_n          => reset,
       from_host_export       => fh,
       program_counter_export => pc,

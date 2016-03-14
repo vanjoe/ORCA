@@ -24,6 +24,11 @@
          value = "8";
          type = "int";
       }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
+      }
    }
    element altpll_0.pll_slave
    {
@@ -40,6 +45,11 @@
          value = "1";
          type = "int";
       }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
+      }
    }
    element hex_0
    {
@@ -47,6 +57,11 @@
       {
          value = "4";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
       }
    }
    element hex_0.s1
@@ -64,6 +79,11 @@
          value = "5";
          type = "int";
       }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
+      }
    }
    element hex_1.s1
    {
@@ -79,6 +99,11 @@
       {
          value = "6";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
       }
    }
    element hex_2.s1
@@ -96,6 +121,11 @@
          value = "7";
          type = "int";
       }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
+      }
    }
    element hex_3.s1
    {
@@ -105,12 +135,25 @@
          type = "String";
       }
    }
+   element mm_master_bfm_0
+   {
+      datum _sortIndex
+      {
+         value = "10";
+         type = "int";
+      }
+   }
    element onchip_memory2_0
    {
       datum _sortIndex
       {
          value = "3";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
       }
    }
    element onchip_memory2_0.s1
@@ -137,20 +180,17 @@
          type = "int";
       }
    }
-   element pio_0.s1
-   {
-      datum baseAddress
-      {
-         value = "65552";
-         type = "String";
-      }
-   }
    element reset_source_0
    {
       datum _sortIndex
       {
          value = "2";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
       }
    }
    element riscv_0
@@ -159,6 +199,11 @@
       {
          value = "0";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
       }
    }
 }
@@ -449,6 +494,57 @@
   <parameter name="width" value="32" />
  </module>
  <module
+   name="mm_master_bfm_0"
+   kind="altera_avalon_mm_master_bfm"
+   version="15.0"
+   enabled="1">
+  <parameter name="ADDRESS_UNITS" value="SYMBOLS" />
+  <parameter name="ASSERT_HIGH_ARBITERLOCK" value="1" />
+  <parameter name="ASSERT_HIGH_BYTEENABLE" value="1" />
+  <parameter name="ASSERT_HIGH_LOCK" value="1" />
+  <parameter name="ASSERT_HIGH_READ" value="1" />
+  <parameter name="ASSERT_HIGH_READDATAVALID" value="1" />
+  <parameter name="ASSERT_HIGH_RESET" value="1" />
+  <parameter name="ASSERT_HIGH_WAITREQUEST" value="1" />
+  <parameter name="ASSERT_HIGH_WRITE" value="1" />
+  <parameter name="AV_ADDRESS_W" value="32" />
+  <parameter name="AV_ALWAYS_BURST_MAX_BURST" value="0" />
+  <parameter name="AV_BURSTCOUNT_W" value="3" />
+  <parameter name="AV_BURST_BNDR_ONLY" value="1" />
+  <parameter name="AV_BURST_LINEWRAP" value="1" />
+  <parameter name="AV_CONSTANT_BURST_BEHAVIOR" value="1" />
+  <parameter name="AV_FIX_READ_LATENCY" value="1" />
+  <parameter name="AV_MAX_PENDING_READS" value="0" />
+  <parameter name="AV_MAX_PENDING_WRITES" value="0" />
+  <parameter name="AV_NUMSYMBOLS" value="4" />
+  <parameter name="AV_READRESPONSE_W" value="8" />
+  <parameter name="AV_READ_WAIT_TIME" value="1" />
+  <parameter name="AV_REGISTERINCOMINGSIGNALS" value="0" />
+  <parameter name="AV_SYMBOL_W" value="8" />
+  <parameter name="AV_WRITERESPONSE_W" value="8" />
+  <parameter name="AV_WRITE_WAIT_TIME" value="0" />
+  <parameter name="REGISTER_WAITREQUEST" value="0" />
+  <parameter name="USE_ADDRESS" value="1" />
+  <parameter name="USE_ARBITERLOCK" value="0" />
+  <parameter name="USE_BEGIN_BURST_TRANSFER" value="0" />
+  <parameter name="USE_BEGIN_TRANSFER" value="0" />
+  <parameter name="USE_BURSTCOUNT" value="1" />
+  <parameter name="USE_BYTE_ENABLE" value="1" />
+  <parameter name="USE_CLKEN" value="0" />
+  <parameter name="USE_DEBUGACCESS" value="0" />
+  <parameter name="USE_LOCK" value="0" />
+  <parameter name="USE_READ" value="1" />
+  <parameter name="USE_READRESPONSE" value="0" />
+  <parameter name="USE_READ_DATA" value="1" />
+  <parameter name="USE_READ_DATA_VALID" value="1" />
+  <parameter name="USE_TRANSACTIONID" value="0" />
+  <parameter name="USE_WAIT_REQUEST" value="1" />
+  <parameter name="USE_WRITE" value="0" />
+  <parameter name="USE_WRITERESPONSE" value="0" />
+  <parameter name="USE_WRITE_DATA" value="0" />
+  <parameter name="VHDL_ID" value="0" />
+ </module>
+ <module
    name="onchip_memory2_0"
    kind="altera_avalon_onchip_memory2"
    version="15.0"
@@ -550,16 +646,20 @@
   <parameter name="baseAddress" value="0x00010020" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection kind="avalon" version="15.0" start="riscv_0.data" end="pio_0.s1">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00010010" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
  <connection
    kind="avalon"
    version="15.0"
    start="riscv_0.instruction"
    end="onchip_memory2_0.s2">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.0"
+   start="mm_master_bfm_0.m0"
+   end="pio_0.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
   <parameter name="defaultConnection" value="false" />
@@ -593,6 +693,11 @@
    kind="clock"
    version="15.0"
    start="clock_source_0.clk"
+   end="mm_master_bfm_0.clk" />
+ <connection
+   kind="clock"
+   version="15.0"
+   start="clock_source_0.clk"
    end="pio_0.clk" />
  <connection
    kind="clock"
@@ -614,12 +719,12 @@
    kind="reset"
    version="15.0"
    start="reset_source_0.reset"
-   end="altpll_0.inclk_interface_reset" />
+   end="mm_master_bfm_0.clk_reset" />
  <connection
    kind="reset"
    version="15.0"
    start="reset_source_0.reset"
-   end="riscv_0.reset" />
+   end="altpll_0.inclk_interface_reset" />
  <connection
    kind="reset"
    version="15.0"
@@ -640,6 +745,11 @@
    version="15.0"
    start="reset_source_0.reset"
    end="hex_3.reset" />
+ <connection
+   kind="reset"
+   version="15.0"
+   start="reset_source_0.reset"
+   end="riscv_0.reset" />
  <connection
    kind="reset"
    version="15.0"
