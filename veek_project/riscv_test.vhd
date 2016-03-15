@@ -8,16 +8,17 @@ entity riscv_test is
     SW       : in std_logic_vector(17 downto 0);
     clock_50 : in std_logic;
 
-    LEDR : out std_logic_vector(17 downto 0);
-    LEDG : out std_logic_vector(7 downto 0);
-    HEX7 : out std_logic_vector(6 downto 0);
-    HEX6 : out std_logic_vector(6 downto 0);
-    HEX5 : out std_logic_vector(6 downto 0);
-    HEX4 : out std_logic_vector(6 downto 0);
-    HEX3 : out std_logic_vector(6 downto 0);
-    HEX2 : out std_logic_vector(6 downto 0);
-    HEX1 : out std_logic_vector(6 downto 0);
-    HEX0 : out std_logic_vector(6 downto 0));
+    EX_IO : inout std_logic_vector(6 downto 0);
+    LEDR  : out   std_logic_vector(17 downto 0);
+    LEDG  : out   std_logic_vector(8 downto 0);
+    HEX7  : out   std_logic_vector(6 downto 0);
+    HEX6  : out   std_logic_vector(6 downto 0);
+    HEX5  : out   std_logic_vector(6 downto 0);
+    HEX4  : out   std_logic_vector(6 downto 0);
+    HEX3  : out   std_logic_vector(6 downto 0);
+    HEX2  : out   std_logic_vector(6 downto 0);
+    HEX1  : out   std_logic_vector(6 downto 0);
+    HEX0  : out   std_logic_vector(6 downto 0));
 
 
 end entity riscv_test;
@@ -26,17 +27,21 @@ architecture rtl of riscv_test is
 
   component vblox1 is
     port (
-      clk_clk                : in  std_logic                     := 'X';  -- clk
-      pll_areset_export      : in  std_logic;
-      from_host_export       : in  std_logic_vector(31 downto 0) := (others => 'X');  -- export
-      program_counter_export : out std_logic_vector(31 downto 0);  -- export
-      reset_reset_n          : in  std_logic                     := 'X';  -- reset_n
-      ledg_export            : out std_logic_vector(31 downto 0);  -- export
-      ledr_export            : out std_logic_vector(31 downto 0);  -- export
-      hex0_export            : out std_logic_vector(31 downto 0);  -- export
-      hex1_export            : out std_logic_vector(31 downto 0);  -- export
-      hex2_export            : out std_logic_vector(31 downto 0);  -- export
-      hex3_export            : out std_logic_vector(31 downto 0)   -- export
+      clk_clk                 : in  std_logic                     := '0';  --             clk.clk
+      from_host_export        : in  std_logic_vector(31 downto 0) := (others => '0');  --       from_host.export
+      hex0_export             : out std_logic_vector(31 downto 0);  --            hex0.export
+      hex1_export             : out std_logic_vector(31 downto 0);  --            hex1.export
+      hex2_export             : out std_logic_vector(31 downto 0);  --            hex2.export
+      hex3_export             : out std_logic_vector(31 downto 0);  --            hex3.export
+      ledg_export             : out std_logic_vector(31 downto 0);  --            ledg.export
+      ledr_export             : out std_logic_vector(31 downto 0);  --            ledr.export
+      pll_areset_export       : in  std_logic                     := '0';  --      pll_areset.export
+      pmod_mic_serial_data_in : in  std_logic                     := '0';  --        pmod_mic.serial_data_in
+      pmod_mic_device_clk     : out std_logic;  --                .device_clk
+      pmod_mic_chip_select    : out std_logic;  --                .chip_select
+      program_counter_export  : out std_logic_vector(31 downto 0);  -- program_counter.export
+      reset_reset_n           : in  std_logic                     := '0';  --           reset.reset_n
+      riscv_0_to_host_export  : out std_logic_vector(31 downto 0)  -- riscv_0_to_host.export
       );
   end component vblox1;
 
@@ -62,17 +67,37 @@ architecture rtl of riscv_test is
   signal hex1_export : std_logic_vector(31 downto 0);
   signal hex0_export : std_logic_vector(31 downto 0);
 
-  function le2be (
+  signal pmod_mic_serial_data_in : std_logic;
+  signal pmod_mic_device_clk     : std_logic;
+  signal pmod_mic_chip_select    : std_logic;
+
+
+  function seven_segment (
     signal input : std_logic_vector)
     return std_logic_vector is
-    variable to_ret : std_logic_vector(31 downto 0);
+    variable to_ret : std_logic_vector(6 downto 0);
   begin  -- function le2be
-    to_ret := (input(7 downto 0) &
-               input(15 downto 8) &
-               input(23 downto 16) &
-               input(31 downto 24));
+    case input is
+      when x"0"   => to_ret := "1000000";
+      when x"1"   => to_ret := "1111001";
+      when x"2"   => to_ret := "0100100";
+      when x"3"   => to_ret := "0110000";
+      when x"4"   => to_ret := "0011001";
+      when x"5"   => to_ret := "0010010";
+      when x"6"   => to_ret := "0000010";
+      when x"7"   => to_ret := "1111000";
+      when x"8"   => to_ret := "0000000";
+      when x"9"   => to_ret := "0011000";
+      when x"a"   => to_ret := "0001000";
+      when x"b"   => to_ret := "0000011";
+      when x"c"   => to_ret := "1000110";
+      when x"d"   => to_ret := "0100001";
+      when x"e"   => to_ret := "0000110";
+      when x"f"   => to_ret := "0001110";
+      when others => null;
+    end case;
     return to_ret;
-  end function le2be;
+  end function;
 begin
   clk   <= clock_50;
   reset <= key(1);
@@ -81,17 +106,31 @@ begin
 
   rv : component vblox1
     port map (
-      clk_clk                => clk,
-      pll_areset_export      => '0',
-      reset_reset_n          => reset,
-      from_host_export       => fh,
-      program_counter_export => pc,
-      ledg_export            => ledg_export,
-      ledr_export            => ledr_export,
-      hex3_export            => hex3_export,
-      hex2_export            => hex2_export,
-      hex1_export            => hex1_export,
-      hex0_export            => hex0_export);
+      clk_clk                 => clk,
+      pll_areset_export       => '0',
+      reset_reset_n           => reset,
+      from_host_export        => fh,
+      program_counter_export  => pc,
+      ledg_export             => ledg_export,
+      ledr_export             => ledr_export,
+      hex3_export             => hex3_export,
+      hex2_export             => hex2_export,
+      hex1_export             => hex1_export,
+      hex0_export             => hex0_export,
+      pmod_mic_serial_data_in => pmod_mic_serial_data_in,
+      pmod_mic_device_clk     => pmod_mic_device_clk,
+      pmod_mic_chip_select    => pmod_mic_chip_select);
+
+
+  EX_IO(6 downto 4) <= "010";  --unused
+  EX_IO(3)          <= pmod_mic_device_clk;
+  EX_IO(2)          <= 'Z';              --input
+  EX_IO(1)          <= 'Z';              --unused
+  EX_IO(0)          <= pmod_mic_chip_select;
+
+  pmod_mic_serial_data_in <= EX_IO(2);
+
+
 
 
 
@@ -102,40 +141,17 @@ begin
                hex1_export when sw(1) = '1' else
                hex0_export when sw(0) = '1' else
                pc;
-  ss0 : component sevseg_conv
-    port map (
-      input  => hex_input(3 downto 0),
-      output => HEX0);
-  ss1 : component sevseg_conv
-    port map (
-      input  => hex_input(7 downto 4),
-      output => HEX1);
-  ss2 : component sevseg_conv
-    port map (
-      input  => hex_input(11 downto 8),
-      output => HEX2);
-  ss3 : component sevseg_conv
-    port map (
-      input  => hex_input(15 downto 12),
-      output => HEX3);
-  ss4 : component sevseg_conv
-    port map (
-      input  => hex_input(19 downto 16),
-      output => HEX4);
-  ss5 : component sevseg_conv
-    port map (
-      input  => hex_input(23 downto 20),
-      output => HEX5);
-  ss6 : component sevseg_conv
-    port map (
-      input  => hex_input(27 downto 24),
-      output => HEX6);
-  ss7 : component sevseg_conv
-    port map (
-      input  => hex_input(31 downto 28),
-      output => HEX7);
+
+  HEX0 <= seven_segment(hex_input(3 downto 0));
+  HEX1 <= seven_segment(hex_input(7 downto 4));
+  HEX2 <= seven_segment(hex_input(11 downto 8));
+  HEX3 <= seven_segment(hex_input(15 downto 12));
+  HEX4 <= seven_segment(hex_input(19 downto 16));
+  HEX5 <= seven_segment(hex_input(23 downto 20));
+  HEX6 <= seven_segment(hex_input(27 downto 24));
+  HEX7 <= seven_segment(hex_input(31 downto 28));
 
   LEDR             <= ledr_export(17 downto 0);
-  LEDG(6 downto 0) <= ledg_export(6 downto 0);
-  LEDG(7)          <= reset;
+  LEDG(7 downto 0) <= ledg_export(7 downto 0);
+  LEDG(8)          <= reset;
 end;

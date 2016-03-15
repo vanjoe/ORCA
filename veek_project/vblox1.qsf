@@ -75,6 +75,7 @@ set_location_assignment PIN_H21 -to LEDG[4]
 set_location_assignment PIN_G20 -to LEDG[5]
 set_location_assignment PIN_G22 -to LEDG[6]
 set_location_assignment PIN_G21 -to LEDG[7]
+set_location_assignment PIN_F17 -to LEDG[8]
 
 #============================================================
 # Audio
@@ -570,6 +571,24 @@ set_location_assignment PIN_AH17 -to HEX7[3]
 set_location_assignment PIN_AF17 -to HEX7[4]
 set_location_assignment PIN_AG18 -to HEX7[5]
 set_location_assignment PIN_AA14 -to HEX7[6]
+
+set_location_assignment PIN_J10 -to EX_IO[0]
+set_location_assignment PIN_J14 -to EX_IO[1]
+set_location_assignment PIN_H13 -to EX_IO[2]
+set_location_assignment PIN_H14 -to EX_IO[3]
+set_location_assignment PIN_F14 -to EX_IO[4]
+set_location_assignment PIN_E10 -to EX_IO[5]
+set_location_assignment PIN_D9 -to EX_IO[6]
+
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[6]
+
+
 set_global_assignment -name USE_CONFIGURATION_DEVICE ON
 set_global_assignment -name CYCLONEIII_CONFIGURATION_DEVICE EPCS64
 set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION OFF
@@ -616,7 +635,7 @@ set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
 set_global_assignment -name QIP_FILE vblox1/synthesis/vblox1.qip
 set_global_assignment -name SDC_FILE vblox1.sdc
-set_global_assignment -name VHDL_FILE sevseg_conv.vhd
 set_global_assignment -name VHDL_FILE riscv_test.vhd
 set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
+set_global_assignment -name QIP_FILE mybram.qip
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

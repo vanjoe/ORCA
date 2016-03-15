@@ -27,72 +27,26 @@ end entity ram_1port;
 architecture rt of ram_1port is
 
 
+  signal ram : mem_t := (others => (others => '0'));
 begin  -- architecture rt
 
-    SIM_GEN : if true generate
-    type mem_t is array(0 to MEM_DEPTH-1) of std_logic_vector(MEM_WIDTH-1 downto 0);
-    signal ram : mem_t;
+
+  process(clk)
   begin
-    process(clk)
-    begin
-      if(rising_edge(clk)) then
-        for i in byte_en'range loop
-          if(wr_en = '1' and byte_en(i) = '1' ) then
-            ram(to_integer(unsigned(addr)))(8*(i+1) -1 downto 8*i) <= data_in(8*(i+1) -1 downto 8*i);
-          end if;
-
-          data_out(8*(i+1) -1 downto 8*i) <= ram(to_integer(unsigned(addr)))(8*(i+1) -1 downto 8*i);
-
-        end loop;  -- i
-
-      end if;
-    end process;
-  end generate;
-
-  ALTERA_GEN : if false generate
-    type mem_t is array( 0 to MEM_DEPTH-1) of std_logic_vector(7 downto 0);
-  begin
-    byte_gen : for i in byte_en'range generate
-      -- Declare the RAM signal.
-      signal ram : mem_t;
-    begin
-      process(clk)
-      begin
-        if(rising_edge(clk)) then
-          if(wr_en = '1') then
-            ram(to_integer(unsigned(addr))) <= data_in(8*(i+1) -1 downto 8*i);
-          end if;
-          data_out(8*(i+1) -1 downto 8*i) <= ram(to_integer(unsigned(addr)));
+    if(rising_edge(clk)) then
+      for i in byte_en'range loop
+        if(wr_en = '1' and byte_en(i) = '1') then
+          ram(to_integer(unsigned(addr)))(8*(i+1) -1 downto 8*i) <= data_in(8*(i+1) -1 downto 8*i);
         end if;
-      end process;
-    end generate byte_gen;
-  end generate ALTERA_GEN;
 
-  LATTICE_GEN : if False generate
-    type mem_t is array (0 to MEM_DEPTH-1) of std_logic_vector(MEM_WIDTH-1 downto 0);
-    signal ram : mem_t;
-  begin
+        data_out(8*(i+1) -1 downto 8*i) <= ram(to_integer(unsigned(addr)))(8*(i+1) -1 downto 8*i);
 
-    assert MEM_WIDTH = (MEM_WIDTH/16)*16 report "BAD MEMORY WIDTH FOR ICE40ULTRAPLUS SPRAM" severity failure;
+      end loop;  -- i
 
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        if chip_sel = '1' then
-          if wr_en = '1' then
-            for i in byte_en'range loop
-              if byte_en(i) = '1' then
-                ram(to_integer(unsigned(addr)))((i+1)*8 -1 downto i*8) <= data_in((i+1)*8 -1 downto i*8);
-              end if;
-            end loop;  -- i
-          else
-            data_out <= ram(to_integer(unsigned(addr)));
-          end if;
-        end if;
-      end if;
-    end process;
+    end if;
+  end process;
 
-  end generate LATTICE_GEN;
+
 
 end architecture rt;
 

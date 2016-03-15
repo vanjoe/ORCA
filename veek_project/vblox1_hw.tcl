@@ -238,6 +238,19 @@ proc compose { } {
     set_instance_parameter_value hex_3 {simDrivenValue} {0.0}
     set_instance_parameter_value hex_3 {width} {32}
 
+    add_instance jtag_uart_0 altera_avalon_jtag_uart 15.0
+    set_instance_parameter_value jtag_uart_0 {allowMultipleConnections} {0}
+    set_instance_parameter_value jtag_uart_0 {hubInstanceID} {0}
+    set_instance_parameter_value jtag_uart_0 {readBufferDepth} {64}
+    set_instance_parameter_value jtag_uart_0 {readIRQThreshold} {8}
+    set_instance_parameter_value jtag_uart_0 {simInputCharacterStream} {}
+    set_instance_parameter_value jtag_uart_0 {simInteractiveOptions} {NO_INTERACTIVE_WINDOWS}
+    set_instance_parameter_value jtag_uart_0 {useRegistersForReadBuffer} {0}
+    set_instance_parameter_value jtag_uart_0 {useRegistersForWriteBuffer} {0}
+    set_instance_parameter_value jtag_uart_0 {useRelativePathForSimFile} {0}
+    set_instance_parameter_value jtag_uart_0 {writeBufferDepth} {64}
+    set_instance_parameter_value jtag_uart_0 {writeIRQThreshold} {8}
+
     add_instance ledg altera_avalon_pio 15.0
     set_instance_parameter_value ledg {bitClearingEdgeCapReg} {0}
     set_instance_parameter_value ledg {bitModifyingOutReg} {0}
@@ -273,8 +286,8 @@ proc compose { } {
     set_instance_parameter_value mm_bridge_0 {MAX_BURST_SIZE} {1}
     set_instance_parameter_value mm_bridge_0 {MAX_PENDING_RESPONSES} {1}
     set_instance_parameter_value mm_bridge_0 {LINEWRAPBURSTS} {0}
-    set_instance_parameter_value mm_bridge_0 {PIPELINE_COMMAND} {1}
-    set_instance_parameter_value mm_bridge_0 {PIPELINE_RESPONSE} {1}
+    set_instance_parameter_value mm_bridge_0 {PIPELINE_COMMAND} {0}
+    set_instance_parameter_value mm_bridge_0 {PIPELINE_RESPONSE} {0}
     set_instance_parameter_value mm_bridge_0 {USE_RESPONSE} {0}
 
     add_instance onchip_memory2_0 altera_avalon_onchip_memory2 15.0
@@ -299,6 +312,11 @@ proc compose { } {
     set_instance_parameter_value onchip_memory2_0 {ecc_enabled} {0}
     set_instance_parameter_value onchip_memory2_0 {resetrequest_enabled} {1}
 
+    add_instance pmod_mic_0 pmod_mic 1.0
+    set_instance_parameter_value pmod_mic_0 {PORTS} {1}
+    set_instance_parameter_value pmod_mic_0 {CLK_FREQ_HZ} {50000000}
+    set_instance_parameter_value pmod_mic_0 {SAMPLE_RATE_HZ} {10000}
+
     add_instance riscv_0 riscv 1.0
     set_instance_parameter_value riscv_0 {REGISTER_SIZE} {32}
     set_instance_parameter_value riscv_0 {MXP_ENABLE} {1}
@@ -307,46 +325,71 @@ proc compose { } {
     set_instance_parameter_value riscv_0 {DIVIDE_ENABLE} {0}
     set_instance_parameter_value riscv_0 {SHIFTER_MAX_CYCLES} {1}
     set_instance_parameter_value riscv_0 {FORWARD_ALU_ONLY} {1}
-    set_instance_parameter_value riscv_0 {COUNTER_LENGTH} {0}
+    set_instance_parameter_value riscv_0 {COUNTER_LENGTH} {32}
     set_instance_parameter_value riscv_0 {BRANCH_PREDICTION} {0}
     set_instance_parameter_value riscv_0 {BTB_SIZE} {256}
     set_instance_parameter_value riscv_0 {PIPELINE_STAGES} {4}
 
     # connections and connection parameters
+    add_connection riscv_0.data mm_bridge_0.s0 avalon
+    set_connection_parameter_value riscv_0.data/mm_bridge_0.s0 arbitrationPriority {1}
+    set_connection_parameter_value riscv_0.data/mm_bridge_0.s0 baseAddress {0x0000}
+    set_connection_parameter_value riscv_0.data/mm_bridge_0.s0 defaultConnection {0}
+
     add_connection riscv_0.instruction onchip_memory2_0.s1 avalon
     set_connection_parameter_value riscv_0.instruction/onchip_memory2_0.s1 arbitrationPriority {1}
-    set_connection_parameter_value riscv_0.instruction/onchip_memory2_0.s1 baseAddress {0x00400000}
+    set_connection_parameter_value riscv_0.instruction/onchip_memory2_0.s1 baseAddress {0x0000}
     set_connection_parameter_value riscv_0.instruction/onchip_memory2_0.s1 defaultConnection {0}
+
+    add_connection mm_bridge_0.m0 jtag_uart_0.avalon_jtag_slave avalon
+    set_connection_parameter_value mm_bridge_0.m0/jtag_uart_0.avalon_jtag_slave arbitrationPriority {1}
+    set_connection_parameter_value mm_bridge_0.m0/jtag_uart_0.avalon_jtag_slave baseAddress {0x00010270}
+    set_connection_parameter_value mm_bridge_0.m0/jtag_uart_0.avalon_jtag_slave defaultConnection {0}
+
+    add_connection mm_bridge_0.m0 pmod_mic_0.avalon_slave avalon
+    set_connection_parameter_value mm_bridge_0.m0/pmod_mic_0.avalon_slave arbitrationPriority {1}
+    set_connection_parameter_value mm_bridge_0.m0/pmod_mic_0.avalon_slave baseAddress {0x00010000}
+    set_connection_parameter_value mm_bridge_0.m0/pmod_mic_0.avalon_slave defaultConnection {0}
+
+    add_connection mm_bridge_0.m0 altpll_0.pll_slave avalon
+    set_connection_parameter_value mm_bridge_0.m0/altpll_0.pll_slave arbitrationPriority {1}
+    set_connection_parameter_value mm_bridge_0.m0/altpll_0.pll_slave baseAddress {0x00010260}
+    set_connection_parameter_value mm_bridge_0.m0/altpll_0.pll_slave defaultConnection {0}
 
     add_connection mm_bridge_0.m0 hex_3.s1 avalon
     set_connection_parameter_value mm_bridge_0.m0/hex_3.s1 arbitrationPriority {1}
-    set_connection_parameter_value mm_bridge_0.m0/hex_3.s1 baseAddress {0x0060}
+    set_connection_parameter_value mm_bridge_0.m0/hex_3.s1 baseAddress {0x00010250}
     set_connection_parameter_value mm_bridge_0.m0/hex_3.s1 defaultConnection {0}
 
     add_connection mm_bridge_0.m0 hex_2.s1 avalon
     set_connection_parameter_value mm_bridge_0.m0/hex_2.s1 arbitrationPriority {1}
-    set_connection_parameter_value mm_bridge_0.m0/hex_2.s1 baseAddress {0x0050}
+    set_connection_parameter_value mm_bridge_0.m0/hex_2.s1 baseAddress {0x00010240}
     set_connection_parameter_value mm_bridge_0.m0/hex_2.s1 defaultConnection {0}
 
     add_connection mm_bridge_0.m0 hex_1.s1 avalon
     set_connection_parameter_value mm_bridge_0.m0/hex_1.s1 arbitrationPriority {1}
-    set_connection_parameter_value mm_bridge_0.m0/hex_1.s1 baseAddress {0x0040}
+    set_connection_parameter_value mm_bridge_0.m0/hex_1.s1 baseAddress {0x00010230}
     set_connection_parameter_value mm_bridge_0.m0/hex_1.s1 defaultConnection {0}
 
     add_connection mm_bridge_0.m0 hex_0.s1 avalon
     set_connection_parameter_value mm_bridge_0.m0/hex_0.s1 arbitrationPriority {1}
-    set_connection_parameter_value mm_bridge_0.m0/hex_0.s1 baseAddress {0x0030}
+    set_connection_parameter_value mm_bridge_0.m0/hex_0.s1 baseAddress {0x00010220}
     set_connection_parameter_value mm_bridge_0.m0/hex_0.s1 defaultConnection {0}
 
     add_connection mm_bridge_0.m0 ledr.s1 avalon
     set_connection_parameter_value mm_bridge_0.m0/ledr.s1 arbitrationPriority {1}
-    set_connection_parameter_value mm_bridge_0.m0/ledr.s1 baseAddress {0x0020}
+    set_connection_parameter_value mm_bridge_0.m0/ledr.s1 baseAddress {0x00010210}
     set_connection_parameter_value mm_bridge_0.m0/ledr.s1 defaultConnection {0}
 
     add_connection mm_bridge_0.m0 ledg.s1 avalon
     set_connection_parameter_value mm_bridge_0.m0/ledg.s1 arbitrationPriority {1}
-    set_connection_parameter_value mm_bridge_0.m0/ledg.s1 baseAddress {0x0010}
+    set_connection_parameter_value mm_bridge_0.m0/ledg.s1 baseAddress {0x00010200}
     set_connection_parameter_value mm_bridge_0.m0/ledg.s1 defaultConnection {0}
+
+    add_connection mm_bridge_0.m0 onchip_memory2_0.s2 avalon
+    set_connection_parameter_value mm_bridge_0.m0/onchip_memory2_0.s2 arbitrationPriority {1}
+    set_connection_parameter_value mm_bridge_0.m0/onchip_memory2_0.s2 baseAddress {0x0000}
+    set_connection_parameter_value mm_bridge_0.m0/onchip_memory2_0.s2 defaultConnection {0}
 
     add_connection altpll_0.c0 mm_bridge_0.clk clock
 
@@ -362,32 +405,21 @@ proc compose { } {
 
     add_connection altpll_0.c0 ledg.clk clock
 
+    add_connection altpll_0.c0 jtag_uart_0.clk clock
+
     add_connection altpll_0.c0 onchip_memory2_0.clk1 clock
 
     add_connection altpll_0.c0 onchip_memory2_0.clk2 clock
 
     add_connection altpll_0.c0 riscv_0.clock clock
 
+    add_connection altpll_0.c0 pmod_mic_0.clock clock
+
+    add_connection altpll_0.c1 riscv_0.scratchpad_clk clock
+
     add_connection clk_0.clk altpll_0.inclk_interface clock
 
-    add_connection mm_bridge_0.m0 altpll_0.pll_slave avalon
-    set_connection_parameter_value mm_bridge_0.m0/altpll_0.pll_slave arbitrationPriority {1}
-    set_connection_parameter_value mm_bridge_0.m0/altpll_0.pll_slave baseAddress {0x0000}
-    set_connection_parameter_value mm_bridge_0.m0/altpll_0.pll_slave defaultConnection {0}
-
-    add_connection riscv_0.data mm_bridge_0.s0 avalon
-    set_connection_parameter_value riscv_0.data/mm_bridge_0.s0 arbitrationPriority {1}
-    set_connection_parameter_value riscv_0.data/mm_bridge_0.s0 baseAddress {0x0000}
-    set_connection_parameter_value riscv_0.data/mm_bridge_0.s0 defaultConnection {0}
-
-    add_connection mm_bridge_0.m0 onchip_memory2_0.s2 avalon
-    set_connection_parameter_value mm_bridge_0.m0/onchip_memory2_0.s2 arbitrationPriority {1}
-    set_connection_parameter_value mm_bridge_0.m0/onchip_memory2_0.s2 baseAddress {0x00400000}
-    set_connection_parameter_value mm_bridge_0.m0/onchip_memory2_0.s2 defaultConnection {0}
-
-    add_connection clk_0.clk_reset onchip_memory2_0.reset2 reset
-
-    add_connection clk_0.clk_reset onchip_memory2_0.reset1 reset
+    add_connection clk_0.clk_reset altpll_0.inclk_interface_reset reset
 
     add_connection clk_0.clk_reset mm_bridge_0.reset reset
 
@@ -405,9 +437,13 @@ proc compose { } {
 
     add_connection clk_0.clk_reset riscv_0.reset reset
 
-    add_connection clk_0.clk_reset altpll_0.inclk_interface_reset reset
+    add_connection clk_0.clk_reset jtag_uart_0.reset reset
 
-    add_connection altpll_0.c1 riscv_0.scratchpad_clk clock
+    add_connection clk_0.clk_reset pmod_mic_0.reset reset
+
+    add_connection clk_0.clk_reset onchip_memory2_0.reset1 reset
+
+    add_connection clk_0.clk_reset onchip_memory2_0.reset2 reset
 
     # exported interfaces
     add_interface clk clock sink
@@ -426,12 +462,14 @@ proc compose { } {
     set_interface_property ledg EXPORT_OF ledg.external_connection
     add_interface ledr conduit end
     set_interface_property ledr EXPORT_OF ledr.external_connection
+    add_interface pll_areset conduit end
+    set_interface_property pll_areset EXPORT_OF altpll_0.areset_conduit
+    add_interface pmod_mic conduit end
+    set_interface_property pmod_mic EXPORT_OF pmod_mic_0.pmod_pins
     add_interface program_counter conduit end
     set_interface_property program_counter EXPORT_OF riscv_0.program_counter
     add_interface reset reset sink
     set_interface_property reset EXPORT_OF clk_0.clk_in_reset
-    add_interface pll_areset conduit end
-    set_interface_property pll_areset EXPORT_OF altpll_0.areset_conduit
     add_interface riscv_0_to_host conduit end
     set_interface_property riscv_0_to_host EXPORT_OF riscv_0.to_host
 

@@ -29,7 +29,7 @@
    {
       datum baseAddress
       {
-         value = "65632";
+         value = "66144";
          type = "String";
       }
    }
@@ -53,7 +53,7 @@
    {
       datum baseAddress
       {
-         value = "65568";
+         value = "66080";
          type = "String";
       }
    }
@@ -69,7 +69,7 @@
    {
       datum baseAddress
       {
-         value = "65584";
+         value = "66096";
          type = "String";
       }
    }
@@ -85,7 +85,7 @@
    {
       datum baseAddress
       {
-         value = "65600";
+         value = "66112";
          type = "String";
       }
    }
@@ -101,7 +101,7 @@
    {
       datum baseAddress
       {
-         value = "65616";
+         value = "66128";
          type = "String";
       }
    }
@@ -117,7 +117,7 @@
    {
       datum baseAddress
       {
-         value = "65648";
+         value = "66160";
          type = "String";
       }
    }
@@ -133,7 +133,7 @@
    {
       datum baseAddress
       {
-         value = "65536";
+         value = "66048";
          type = "String";
       }
    }
@@ -149,7 +149,7 @@
    {
       datum baseAddress
       {
-         value = "65552";
+         value = "66064";
          type = "String";
       }
    }
@@ -193,12 +193,36 @@
          type = "String";
       }
    }
+   element pmod_mic_0
+   {
+      datum _sortIndex
+      {
+         value = "12";
+         type = "int";
+      }
+   }
+   element pmod_mic_0.avalon_slave
+   {
+      datum baseAddress
+      {
+         value = "65536";
+         type = "String";
+      }
+   }
    element riscv_0
    {
       datum _sortIndex
       {
          value = "2";
          type = "int";
+      }
+   }
+   element vblox1
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
       }
    }
    element vblox1
@@ -269,6 +293,11 @@
  <interface
    name="pll_areset"
    internal="altpll_0.areset_conduit"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="pmod_mic"
+   internal="pmod_mic_0.pmod_pins"
    type="conduit"
    dir="end" />
  <interface
@@ -607,6 +636,11 @@
   <parameter name="useShallowMemBlocks" value="false" />
   <parameter name="writable" value="true" />
  </module>
+ <module name="pmod_mic_0" kind="pmod_mic" version="1.0" enabled="1">
+  <parameter name="CLK_FREQ_HZ" value="50000000" />
+  <parameter name="PORTS" value="1" />
+  <parameter name="SAMPLE_RATE_HZ" value="10000" />
+ </module>
  <module name="riscv_0" kind="riscv" version="1.0" enabled="1">
   <parameter name="BRANCH_PREDICTION" value="false" />
   <parameter name="BTB_SIZE" value="256" />
@@ -644,7 +678,16 @@
    start="mm_bridge_0.m0"
    end="jtag_uart_0.avalon_jtag_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00010070" />
+  <parameter name="baseAddress" value="0x00010270" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.0"
+   start="mm_bridge_0.m0"
+   end="pmod_mic_0.avalon_slave">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x00010000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -653,37 +696,37 @@
    start="mm_bridge_0.m0"
    end="altpll_0.pll_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00010060" />
+  <parameter name="baseAddress" value="0x00010260" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="avalon" version="15.0" start="mm_bridge_0.m0" end="hex_3.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00010050" />
+  <parameter name="baseAddress" value="0x00010250" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="avalon" version="15.0" start="mm_bridge_0.m0" end="hex_2.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00010040" />
+  <parameter name="baseAddress" value="0x00010240" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="avalon" version="15.0" start="mm_bridge_0.m0" end="hex_1.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00010030" />
+  <parameter name="baseAddress" value="0x00010230" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="avalon" version="15.0" start="mm_bridge_0.m0" end="hex_0.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00010020" />
+  <parameter name="baseAddress" value="0x00010220" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="avalon" version="15.0" start="mm_bridge_0.m0" end="ledr.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00010010" />
+  <parameter name="baseAddress" value="0x00010210" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="avalon" version="15.0" start="mm_bridge_0.m0" end="ledg.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00010000" />
+  <parameter name="baseAddress" value="0x00010200" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -714,6 +757,11 @@
    start="altpll_0.c0"
    end="onchip_memory2_0.clk2" />
  <connection kind="clock" version="15.0" start="altpll_0.c0" end="riscv_0.clock" />
+ <connection
+   kind="clock"
+   version="15.0"
+   start="altpll_0.c0"
+   end="pmod_mic_0.clock" />
  <connection
    kind="clock"
    version="15.0"
@@ -750,6 +798,11 @@
    version="15.0"
    start="clk_0.clk_reset"
    end="jtag_uart_0.reset" />
+ <connection
+   kind="reset"
+   version="15.0"
+   start="clk_0.clk_reset"
+   end="pmod_mic_0.reset" />
  <connection
    kind="reset"
    version="15.0"
