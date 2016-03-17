@@ -25,7 +25,7 @@ entity ram_1port is
 
 end entity ram_1port;
 architecture rt of ram_1port is
-
+  type mem_t is array (0 to MEM_DEPTH-1) of std_logic_vector(MEM_WIDTH-1 downto 0);
 
   signal ram : mem_t := (others => (others => '0'));
 begin  -- architecture rt
