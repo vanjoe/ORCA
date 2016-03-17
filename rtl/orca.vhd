@@ -5,7 +5,7 @@ library work;
 use work.rv_components.all;
 use work.utils.all;
 
-entity riscV is
+entity Orca is
 
   generic (
     REGISTER_SIZE      : integer              := 32;
@@ -53,9 +53,9 @@ entity riscV is
 
        );
 
-end entity riscV;
+end entity Orca;
 
-architecture rtl of riscV is
+architecture rtl of Orca is
   constant REGISTER_NAME_SIZE  : integer := 5;
   constant INSTRUCTION_SIZE    : integer := 32;
   constant SIGN_EXTENSION_SIZE : integer := 20;
@@ -111,7 +111,7 @@ architecture rtl of riscV is
   signal branch_pred : std_logic_vector(REGISTER_SIZE*2 + 3-1 downto 0);
 begin  -- architecture rtl
   pipeline_flush      <= branch_get_flush(branch_pred);
-  coe_program_counter <= d_pc;
+  coe_program_counter <= instr_address;
 
   if_stall_in <= execute_stalled;
   instr_fetch : component instruction_fetch
