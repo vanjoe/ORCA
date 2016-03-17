@@ -610,6 +610,24 @@ set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to TOUCH_I2C_SCL
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to TOUCH_I2C_SDA
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to TOUCH_INT_n
 
+
+set_location_assignment PIN_J10 -to EX_IO[0]
+set_location_assignment PIN_J14 -to EX_IO[1]
+set_location_assignment PIN_H13 -to EX_IO[2]
+set_location_assignment PIN_H14 -to EX_IO[3]
+set_location_assignment PIN_F14 -to EX_IO[4]
+set_location_assignment PIN_E10 -to EX_IO[5]
+set_location_assignment PIN_D9 -to EX_IO[6]
+
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to EX_IO[6]
+
+
 	# start LOGICLOCK_REGION(Root Region)
 	# -----------------------------------
 
