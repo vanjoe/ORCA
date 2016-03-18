@@ -55,8 +55,11 @@ $(QIP_FILE):$(QSYS_FILE)
 $(VHDL_SUBMODULE_FILES): system/synthesis/submodules/% : ../rtl/%
 	cp $^ $@
 
-HEX_FILE=$(wildcard test.hex)
-
+ifndef NO_SW
+HEX_FILE=test.hex
+else
+HEX_FILE=
+endif
 $(MAP_RPT_FILE) : $(QIP_FILE) $(VHDL_SUBMODULE_FILES) $(TOP_LEVEL_FILES)
 	quartus_map $(QPF_FILE)
 $(FIT_RPT_FILE) : $(MAP_RPT_FILE)
