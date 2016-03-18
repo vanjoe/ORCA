@@ -788,11 +788,11 @@
   <parameter name="DIVIDE_ENABLE" value="0" />
   <parameter name="FORWARD_ALU_ONLY" value="1" />
   <parameter name="MULTIPLY_ENABLE" value="0" />
-  <parameter name="MXP_ENABLE" value="0" />
+  <parameter name="MXP_ENABLE" value="1" />
   <parameter name="PIPELINE_STAGES" value="4" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="512" />
-  <parameter name="SHIFTER_MAX_CYCLES" value="32" />
+  <parameter name="SHIFTER_MAX_CYCLES" value="1" />
  </module>
  <connection
    kind="avalon"
@@ -934,6 +934,11 @@
    version="15.0"
    start="altpll_0.c0"
    end="vectorblox_orca_0.clock" />
+ <connection
+   kind="clock"
+   version="15.0"
+   start="altpll_0.c1"
+   end="vectorblox_orca_0.scratchpad_clk" />
  <connection
    kind="clock"
    version="15.0"

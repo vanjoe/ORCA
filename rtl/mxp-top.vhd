@@ -121,6 +121,8 @@ architecture rtl of mxp_top is
   signal first_cycle    : std_logic;
   signal write_enable   : std_logic;
 
+  signal valid_mxp_isntr : std_logic;
+
   signal func5          : std_logic_vector(4 downto 0);
   constant FUNC_VADD    : std_logic_vector(4 downto 0) := "00000";
   constant FUNC_VSUB    : std_logic_vector(4 downto 0) := "00000";
@@ -139,6 +141,7 @@ architecture rtl of mxp_top is
 begin
   func5 <= func_bit4 & func_bit3 & func;
 
+  valid_mxp_isntr <= '1' when valid_instr = '1' and major_op = CUSTOM0 else '0';
   --instruction parsing process
   address_gen : process(clk)
   begin
@@ -149,14 +152,14 @@ begin
       dest_ptr_reg <= dest_ptr + POINTER_INCREMENT;
 
 
-      if valid_instr = '1' and major_op = CUSTOM0 then
+      if valid_mxp_isntr = '1' then
         if is_prefix = '1' then
           first_cycle  <= '1';
           scalar_value <= unsigned(rs1_data);
-          enum_count   <= to_unsigned(0,enum_count'length);
+          enum_count   <= to_unsigned(0, enum_count'length);
         else
           first_cycle <= '0';
-          enum_count <= enum_count +1;
+          enum_count  <= enum_count +1;
           if vlen /= 0 then
             vlen_reg <= vlen - 1;
           end if;
@@ -178,7 +181,7 @@ begin
   srca_data <= unsigned(srca_data_read) when srca_v = '1' else scalar_value;
   srcb_data <= unsigned(srcb_data_read) when srcb_v = '1' else enum_count;
 
-  rd_en <= '1' when is_prefix = '1' or vlen > 1 else '0';
+  rd_en <= '1' when (is_prefix and valid_mxp_isntr) = '1' or vlen > 1 else '0';
 
   alu_proc : process(clk)
   begin
