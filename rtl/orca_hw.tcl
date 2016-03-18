@@ -46,6 +46,8 @@ add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file orca.vhd VHDL PATH orca.vhd TOP_LEVEL_FILE
 add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
+add_fileset_file 4port_mem.vhd VHDL PATH 4port_mem.vhd
+add_fileset_file mxp-top.vhd VHDL PATH mxp-top.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL Orca
@@ -62,7 +64,8 @@ add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file orca.vhd VHDL PATH orca.vhd
 add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
-
+add_fileset_file 4port_mem.vhd VHDL PATH 4port_mem.vhd
+add_fileset_file mxp-top.vhd VHDL PATH mxp-top.vhd
 
 
 #
@@ -75,6 +78,19 @@ set_parameter_property REGISTER_SIZE TYPE INTEGER
 set_parameter_property REGISTER_SIZE UNITS None
 set_parameter_property REGISTER_SIZE ALLOWED_RANGES {32}
 set_parameter_property REGISTER_SIZE HDL_PARAMETER true
+
+add_parameter MXP_ENABLE natural 0
+set_parameter_property MXP_ENABLE DEFAULT_VALUE 0
+set_parameter_property MXP_ENABLE DISPLAY_NAME "Vector Extensions"
+set_parameter_property MXP_ENABLE DESCRIPTION "Enable Vector Extensions"
+set_parameter_property MXP_ENABLE TYPE NATURAL
+set_parameter_property MXP_ENABLE UNITS None
+set_parameter_property MXP_ENABLE ALLOWED_RANGES 0:1
+set_parameter_property MXP_ENABLE HDL_PARAMETER true
+set_display_item_property MXP_ENABLE DISPLAY_HINT boolean
+
+
+
 add_parameter RESET_VECTOR NATURAL 512
 set_parameter_property RESET_VECTOR DEFAULT_VALUE 512
 set_parameter_property RESET_VECTOR DISPLAY_NAME RESET_VECTOR
@@ -176,6 +192,17 @@ set_interface_property clock CMSIS_SVD_VARIABLES ""
 set_interface_property clock SVD_ADDRESS_GROUP ""
 
 add_interface_port clock clk clk Input 1
+
+add_interface scratchpad_clk clock end
+set_interface_property scratchpad_clk clockRate 0
+#set_interface_property scratchpad_clk ENABLED true
+set_interface_property scratchpad_clk EXPORT_OF ""
+set_interface_property scratchpad_clk PORT_NAME_MAP ""
+set_interface_property scratchpad_clk CMSIS_SVD_VARIABLES ""
+set_interface_property scratchpad_clk SVD_ADDRESS_GROUP ""
+
+add_interface_port scratchpad_clk scratchpad_clk clk Input 1
+
 
 
 #
@@ -328,6 +355,14 @@ proc elaboration_callback {} {
 	 } else {
 		  set_display_item_property SHIFTER_MAX_CYCLES ENABLED true
 	 }
+
+	 if { [get_parameter_value MXP_ENABLE] } {
+
+		  set_interface_property scratchpad_clk ENABLED true
+	 } else {
+		  set_interface_property scratchpad_clk ENABLED false
+	 }
+
 	 set table_size 0
 	 if { [get_parameter_value BRANCH_PREDICTION] } {
 		  set_parameter_property BTB_SIZE visible true

@@ -21,15 +21,20 @@
    {
       datum _sortIndex
       {
-         value = "9";
+         value = "11";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "0";
+         type = "boolean";
       }
    }
    element altpll_0.pll_slave
    {
       datum baseAddress
       {
-         value = "352";
+         value = "512";
          type = "String";
       }
    }
@@ -37,23 +42,38 @@
    {
       datum _sortIndex
       {
-         value = "0";
+         value = "12";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "0";
+         type = "boolean";
       }
    }
    element hex_0
    {
       datum _sortIndex
       {
-         value = "4";
+         value = "5";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "0";
+         type = "boolean";
       }
    }
    element hex_0.s1
    {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
       datum baseAddress
       {
-         value = "288";
+         value = "48";
          type = "String";
       }
    }
@@ -61,15 +81,25 @@
    {
       datum _sortIndex
       {
-         value = "5";
+         value = "6";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "0";
+         type = "boolean";
       }
    }
    element hex_1.s1
    {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
       datum baseAddress
       {
-         value = "304";
+         value = "64";
          type = "String";
       }
    }
@@ -77,15 +107,25 @@
    {
       datum _sortIndex
       {
-         value = "6";
+         value = "7";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "0";
+         type = "boolean";
       }
    }
    element hex_2.s1
    {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
       datum baseAddress
       {
-         value = "320";
+         value = "80";
          type = "String";
       }
    }
@@ -93,15 +133,25 @@
    {
       datum _sortIndex
       {
-         value = "7";
+         value = "8";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "0";
+         type = "boolean";
       }
    }
    element hex_3.s1
    {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
       datum baseAddress
       {
-         value = "336";
+         value = "96";
          type = "String";
       }
    }
@@ -109,15 +159,25 @@
    {
       datum _sortIndex
       {
-         value = "10";
+         value = "9";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "0";
+         type = "boolean";
       }
    }
    element jtag_uart_0.avalon_jtag_slave
    {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
       datum baseAddress
       {
-         value = "368";
+         value = "112";
          type = "String";
       }
    }
@@ -125,15 +185,25 @@
    {
       datum _sortIndex
       {
-         value = "2";
+         value = "3";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "0";
+         type = "boolean";
       }
    }
    element ledg.s1
    {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
       datum baseAddress
       {
-         value = "256";
+         value = "0";
          type = "String";
       }
    }
@@ -141,15 +211,25 @@
    {
       datum _sortIndex
       {
-         value = "3";
+         value = "4";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "0";
+         type = "boolean";
       }
    }
    element ledr.s1
    {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
       datum baseAddress
       {
-         value = "272";
+         value = "16";
          type = "String";
       }
    }
@@ -157,8 +237,13 @@
    {
       datum _sortIndex
       {
-         value = "1";
+         value = "2";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
       }
    }
    element onchip_memory2_0.s1
@@ -191,12 +276,22 @@
    {
       datum _sortIndex
       {
-         value = "8";
+         value = "1";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
       }
    }
    element peripheral_bridge.s0
    {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
       datum baseAddress
       {
          value = "16777216";
@@ -207,15 +302,41 @@
    {
       datum _sortIndex
       {
-         value = "11";
+         value = "10";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "0";
+         type = "boolean";
       }
    }
    element pmod_mic_0.s1
    {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
       datum baseAddress
       {
-         value = "0";
+         value = "256";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
          type = "String";
       }
    }
@@ -239,8 +360,13 @@
    {
       datum _sortIndex
       {
-         value = "12";
+         value = "0";
          type = "int";
+      }
+      datum sopceditor_expanded
+      {
+         value = "1";
+         type = "boolean";
       }
    }
 }
@@ -642,7 +768,7 @@
   <parameter name="PIPELINE_COMMAND" value="0" />
   <parameter name="PIPELINE_RESPONSE" value="0" />
   <parameter name="SYMBOL_WIDTH" value="8" />
-  <parameter name="SYSINFO_ADDR_WIDTH" value="9" />
+  <parameter name="SYSINFO_ADDR_WIDTH" value="10" />
   <parameter name="USE_AUTO_ADDRESS_WIDTH" value="1" />
   <parameter name="USE_RESPONSE" value="0" />
  </module>
@@ -662,6 +788,7 @@
   <parameter name="DIVIDE_ENABLE" value="0" />
   <parameter name="FORWARD_ALU_ONLY" value="1" />
   <parameter name="MULTIPLY_ENABLE" value="0" />
+  <parameter name="MXP_ENABLE" value="0" />
   <parameter name="PIPELINE_STAGES" value="4" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="512" />
@@ -700,7 +827,7 @@
    start="peripheral_bridge.m0"
    end="jtag_uart_0.avalon_jtag_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0170" />
+  <parameter name="baseAddress" value="0x0070" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -709,7 +836,7 @@
    start="peripheral_bridge.m0"
    end="altpll_0.pll_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0160" />
+  <parameter name="baseAddress" value="0x0200" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -718,7 +845,7 @@
    start="peripheral_bridge.m0"
    end="hex_3.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0150" />
+  <parameter name="baseAddress" value="0x0060" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -727,7 +854,7 @@
    start="peripheral_bridge.m0"
    end="hex_2.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0140" />
+  <parameter name="baseAddress" value="0x0050" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -736,7 +863,7 @@
    start="peripheral_bridge.m0"
    end="hex_1.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0130" />
+  <parameter name="baseAddress" value="0x0040" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -745,7 +872,7 @@
    start="peripheral_bridge.m0"
    end="hex_0.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0120" />
+  <parameter name="baseAddress" value="0x0030" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -754,7 +881,7 @@
    start="peripheral_bridge.m0"
    end="ledr.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0110" />
+  <parameter name="baseAddress" value="0x0010" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -763,7 +890,7 @@
    start="peripheral_bridge.m0"
    end="ledg.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0100" />
+  <parameter name="baseAddress" value="0x0000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -772,7 +899,7 @@
    start="peripheral_bridge.m0"
    end="pmod_mic_0.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0000" />
+  <parameter name="baseAddress" value="0x0100" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
