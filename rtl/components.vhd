@@ -184,7 +184,14 @@ package rv_components is
       data_enable       : out std_logic;
       illegal_alu_instr : out std_logic;
       less_than         : out std_logic;
-      stall_out         : out std_logic);
+      stall_out         : out std_logic;
+
+      mxp_data1  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      mxp_data2  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      mxp_enable : in std_logic;
+      mxp_result : out std_logic_vector(REGISTER_SIZE-1 downto 0)
+
+      );
   end component arithmetic_unit;
 
   component branch_unit is
@@ -442,7 +449,14 @@ package rv_components is
       slave_byte_en  : in  std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
       slave_data_in  : in  std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
       slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
-      slave_wait     : out std_logic
+      slave_wait     : out std_logic;
+
+
+      mxp_data1  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      mxp_data2  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      mxp_enable : out std_logic;
+      mxp_result : in  std_logic_vector(REGISTER_SIZE-1 downto 0)
+
       );
   end component;
 

@@ -26,7 +26,7 @@ architecture rtl of top_tb is
       );
   end component;
 
-  signal reset          : std_logic;
+  signal reset_n          : std_logic;
   signal clk            : std_logic;
   signal scratchpad_clk : std_logic;
   signal clks           : std_logic_vector(1 downto 0);
@@ -38,15 +38,24 @@ architecture rtl of top_tb is
 
 
   ----12 MHz
-  --constant CLOCK_PERIOD : time := 83.33 ns;
-  constant CLOCK_PERIOD : time := 1 ns;
+  constant CLOCK_PERIOD : time := 83.33 ns;
+  --constant CLOCK_PERIOD : time := 1 ns;
 begin
+
+process
+  begin
+    reset_n <= '0';
+    wait for CLOCK_PERIOD*25*6/7;
+    reset_n <= not reset_n;
+    wait;
+  end process;
+
 
   dut : component top
     port map(
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
-      reset_btn      => reset,
+      reset_btn      => reset_n,
       rxd            => rxd,
       txd            => txd,
       cts            => cts,
@@ -75,12 +84,5 @@ begin
   scratchpad_clk <= clks(0);
 
 
-  process
-  begin
-    reset <= '0';
-    wait for CLOCK_PERIOD*25*6/7;
-    reset <= not reset;
-    wait;
-  end process;
 
 end architecture;

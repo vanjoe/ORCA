@@ -15,7 +15,8 @@ entity riscV_wishbone is
     COUNTER_LENGTH     : natural              := 64;
     BRANCH_PREDICTORS  : natural              := 0;
     PIPELINE_STAGES    : natural range 4 to 5 := 5;
-    FORWARD_ALU_ONLY   : natural range 0 to 1 := 1);
+    FORWARD_ALU_ONLY   : natural range 0 to 1 := 1;
+    MXP_ENABLE         : natural range 0 to 1 := 0);
 
   port(clk            : in std_logic;
        scratchpad_clk : in std_logic;
@@ -117,11 +118,12 @@ begin  -- architecture rtl
       COUNTER_LENGTH     => COUNTER_LENGTH,
       BRANCH_PREDICTORS  => BRANCH_PREDICTORS,
       PIPELINE_STAGES    => PIPELINE_STAGES,
-      FORWARD_ALU_ONLY   => FORWARD_ALU_ONLY)
+      FORWARD_ALU_ONLY   => FORWARD_ALU_ONLY,
+      MXP_ENABLE         => MXP_ENABLE)
     port map(
-      clk   => clk,
+      clk            => clk,
       scratchpad_clk => scratchpad_clk,
-      reset => reset,
+      reset          => reset,
 
       --conduit end point
       coe_to_host         => coe_to_host,

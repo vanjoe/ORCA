@@ -9,9 +9,9 @@ use work.top_util_pkg.all;
 
 entity top is
   port(
-    clk       : in std_logic;
+    clk            : in std_logic;
     scratchpad_clk : in std_logic;
-    reset_btn : in std_logic;
+    reset_btn      : in std_logic;
 
     --uart
     rxd : in  std_logic;
@@ -367,12 +367,13 @@ begin
       MULTIPLY_ENABLE    => 0,
       SHIFTER_MAX_CYCLES => 1,
       COUNTER_LENGTH     => 32,
-      PIPELINE_STAGES    => 4)
+      PIPELINE_STAGES    => 4,
+      MXP_ENABLE         => 1)
     port map(
 
-      clk   => clk,
+      clk            => clk,
       scratchpad_clk => scratchpad_clk,
-      reset => reset,
+      reset          => reset,
 
       --conduit end point
       coe_to_host   => coe_to_host,
@@ -507,44 +508,44 @@ begin
       CLK_I => clk,
       RST_I => reset,
 
-      ADR_I   => led_ADR_I,
-      DAT_I   => led_DAT_I,
-      WE_I    => led_WE_I,
-      CYC_I   => led_CYC_I,
-      STB_I   => led_STB_I,
-      SEL_I   => led_SEL_I,
-      CTI_I   => led_CTI_I,
-      BTE_I   => led_BTE_I,
-      LOCK_I  => led_LOCK_I,
-      ACK_O   => led_ACK_O,
-      STALL_O => led_STALL_O,
-      DATA_O  => led_DAT_O,
-      ERR_O   => led_ERR_O,
-      RTY_O   => led_RTY_O,
-      input_output  => led_pio_out);
+      ADR_I        => led_ADR_I,
+      DAT_I        => led_DAT_I,
+      WE_I         => led_WE_I,
+      CYC_I        => led_CYC_I,
+      STB_I        => led_STB_I,
+      SEL_I        => led_SEL_I,
+      CTI_I        => led_CTI_I,
+      BTE_I        => led_BTE_I,
+      LOCK_I       => led_LOCK_I,
+      ACK_O        => led_ACK_O,
+      STALL_O      => led_STALL_O,
+      DATA_O       => led_DAT_O,
+      ERR_O        => led_ERR_O,
+      RTY_O        => led_RTY_O,
+      input_output => led_pio_out);
 
-    gpio_pio : component wb_pio
+  gpio_pio : component wb_pio
     generic map (
-       DATA_WIDTH => gpio'length)
+      DATA_WIDTH => gpio'length)
     port map(
       CLK_I => clk,
       RST_I => reset,
 
-      ADR_I   => gpio_ADR_I,
-      DAT_I   => gpio_DAT_I(gpio'range),
-      WE_I    => gpio_WE_I,
-      CYC_I   => gpio_CYC_I,
-      STB_I   => gpio_STB_I,
-      SEL_I   => gpio_SEL_I(gpio'length/8-1 downto 0),
-      CTI_I   => gpio_CTI_I,
-      BTE_I   => gpio_BTE_I,
-      LOCK_I  => gpio_LOCK_I,
-      ACK_O   => gpio_ACK_O,
-      STALL_O => gpio_STALL_O,
-      DATA_O  => gpio_DAT_O(gpio'range),
-      ERR_O   => gpio_ERR_O,
-      RTY_O   => gpio_RTY_O,
-      input_output  => gpio);
+      ADR_I        => gpio_ADR_I,
+      DAT_I        => gpio_DAT_I(gpio'range),
+      WE_I         => gpio_WE_I,
+      CYC_I        => gpio_CYC_I,
+      STB_I        => gpio_STB_I,
+      SEL_I        => gpio_SEL_I(gpio'length/8-1 downto 0),
+      CTI_I        => gpio_CTI_I,
+      BTE_I        => gpio_BTE_I,
+      LOCK_I       => gpio_LOCK_I,
+      ACK_O        => gpio_ACK_O,
+      STALL_O      => gpio_STALL_O,
+      DATA_O       => gpio_DAT_O(gpio'range),
+      ERR_O        => gpio_ERR_O,
+      RTY_O        => gpio_RTY_O,
+      input_output => gpio);
 
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)

@@ -119,6 +119,11 @@ architecture behavioural of execute is
   signal fwd_en   : std_logic;
   signal fwd_mux  : std_logic;
 
+  signal mxp_data1  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mxp_data2  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mxp_result : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mxp_stall  : std_logic;
+  signal mxp_valid : std_logic;
 
   signal valid_instr  : std_logic;
   signal ld_latch_en  : std_logic;
@@ -156,7 +161,7 @@ architecture behavioural of execute is
 
   signal use_after_load_stall : std_logic;
 
-  signal mxp_stall : std_logic;
+
 begin
   valid_instr <= valid_input and not use_after_load_stall;
   -----------------------------------------------------------------------------
@@ -308,7 +313,15 @@ begin
       data_enable       => alu_data_en,
       illegal_alu_instr => illegal_alu_instr,
       less_than         => less_than,
-      stall_out         => alu_stall);
+      stall_out         => alu_stall,
+
+      mxp_data1  => mxp_data1,
+      mxp_data2  => mxp_data2,
+      mxp_enable => mxp_valid,
+      mxp_result => mxp_result
+
+
+      );
 
 
   branch : entity work.branch_unit(latch_middle)
@@ -420,7 +433,12 @@ begin
         slave_byte_en  => ls_byte_en,
         slave_data_in  => ls_write_data,
         slave_data_out => sp_read_data,
-        slave_wait     => sp_wait
+        slave_wait     => sp_wait,
+
+        mxp_data1  => mxp_data1,
+        mxp_data2  => mxp_data2,
+        mxp_enable => mxp_valid,
+        mxp_result => mxp_result
         );
 
     ---------------------------------

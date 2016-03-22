@@ -30,7 +30,13 @@ entity mxp_top is
     slave_byte_en  : in  std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
     slave_data_in  : in  std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
     slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
-    slave_wait     : out std_logic
+    slave_wait     : out std_logic;
+
+    mxp_data1  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    mxp_data2  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    mxp_enable : out std_logic;
+    mxp_result : in  std_logic_vector(REGISTER_SIZE-1 downto 0)
+
     );
 end entity;
 
@@ -181,13 +187,17 @@ begin
   srca_data <= unsigned(srca_data_read) when srca_v = '1' else scalar_value;
   srcb_data <= unsigned(srcb_data_read) when srcb_v = '1' else enum_count;
 
-  rd_en <= '1' when (is_prefix and valid_mxp_isntr) = '1' or vlen > 1 else '0';
+  rd_en      <= '1' when (is_prefix and valid_mxp_isntr) = '1' or vlen > 1 else '0';
+  mxp_data1  <= std_logic_vector(srca_data);
+  mxp_data2  <= std_logic_vector(srcb_data);
+  mxp_enable <= data_valid;
+  alu_result <= unsigned(mxp_result);
 
   alu_proc : process(clk)
   begin
     if rising_edge(clk) then
       data_valid   <= rd_en;
-      alu_result   <= srca_data + srcb_data;
+--      alu_result   <= srca_data + srcb_data;
       waddr        <= dest_ptr;
       write_enable <= data_valid;
     end if;
