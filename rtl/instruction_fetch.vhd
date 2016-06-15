@@ -123,9 +123,9 @@ begin  -- architecture rtl
       if rising_edge(clk) then
         br_taken <= '0';
 
-        if if_stall = '0' then
+        if if_stall = '0' or pc_corr_en = '1' then
           --this works because a correction can never happen while
-          --the pipeline is stalled
+          --the pipeline is stalled (FALSE)
           predicted_pc <= std_logic_vector(signed(next_pc) + 4);
         end if;
         if reset = '1' then

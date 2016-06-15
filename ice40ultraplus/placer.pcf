@@ -1,0 +1,29 @@
+# ##############################################################################
+
+# iCEcube PCF
+
+# Version:            2016.02.27810
+
+# File Generated:     Jun 14 2016 12:10:29
+
+# Family & Device:    iCE40UP5K
+
+# Package:            UWG30
+
+# ##############################################################################
+
+###MergeFF List 4
+set_io_ff gpio[0] -in ON
+set_io_ff gpio[1] -in ON
+set_io_ff gpio[2] -in ON
+set_io_ff gpio[3] -in ON
+
+###IOSet List 4
+set_io probe_A A4
+set_io probe_B F2
+set_io reset_btn B1 -pullup yes
+set_io txd A1
+
+###ProDemote List 1
+demote_signal_unbuffered rv.rv.X.alu.SH_GEN1_sh.un1_state_1_0_g
+

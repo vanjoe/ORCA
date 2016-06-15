@@ -34,8 +34,10 @@ architecture rtl of bram_lattice is
 
   function to_slv (tmp_hexnum : string) return std_logic_vector is
     variable temp  : std_logic_vector(31 downto 0);
+    variable n : integer;
     variable digit : natural;
   begin
+    n:=tmp_hexnum'length-1;
     for i in tmp_hexnum'range loop
       case tmp_hexnum(i) is
         when '0' to '9' =>
@@ -47,7 +49,8 @@ architecture rtl of bram_lattice is
         when others => digit := 0;
 
       end case;
-      temp(i*4+3 downto i*4) := std_logic_vector(to_unsigned(digit, 4));
+      temp(n*4+3 downto n*4) := std_logic_vector(to_unsigned(digit, 4));
+      n:= n-1;
     end loop;
     return temp;
   end function;
@@ -59,7 +62,7 @@ architecture rtl of bram_lattice is
     file ramfile           : text is in ram_file_name;
     variable line_read     : line;
     variable my_line       : line;
-    variable ss            : string(7 downto 0);
+    variable ss            : string(8 downto 1);
     -- pragma translate_on
     variable ram_to_return : ram_type;
     variable tmp : std_logic_vector(31 downto 0);
