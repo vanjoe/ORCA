@@ -10,14 +10,18 @@ use work.top_util_pkg.all;
 entity top is
   port(
     --clk       : in std_logic;
-    reset_btn : in std_logic;
-    probe_A : out std_logic;
-    probe_B : out std_logic;
+    reset_btn : in  std_logic := '1';
+    probe_A   : out std_logic;
+    probe_B   : out std_logic;
     --uart
-    rxd : in  std_logic;
-    txd : out std_logic;
-    cts : in  std_logic;
-    rts : out std_logic;
+    rxd       : in  std_logic;
+    txd       : out std_logic;
+    cts       : in  std_logic;
+    rts       : out std_logic;
+
+    i2s_sd_mic1_mic2 : in std_logic := '1';
+    i2s_ws_mic1_mic2 : out std_logic;
+    i2s_clk : out std_logic;
 
     gpio : inout std_logic_vector(3 downto 0)
     );
@@ -87,6 +91,22 @@ architecture rtl of top is
   signal gpio_err_o   : std_logic;
   signal gpio_rty_o   : std_logic;
 
+  constant MIC_BUFFER_SIZE : integer := 1024;
+  signal mic_1_2_adr_i     : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mic_1_2_dat_i     : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mic_1_2_dat_o     : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mic_1_2_stb_i     : std_logic;
+  signal mic_1_2_cyc_i     : std_logic;
+  signal mic_1_2_we_i      : std_logic;
+  signal mic_1_2_sel_i     : std_logic_vector(3 downto 0);
+  signal mic_1_2_cti_i     : std_logic_vector(2 downto 0);
+  signal mic_1_2_bte_i     : std_logic_vector(1 downto 0);
+  signal mic_1_2_ack_o     : std_logic;
+  signal mic_1_2_stall_o   : std_logic;
+  signal mic_1_2_lock_i    : std_logic;
+  signal mic_1_2_err_o     : std_logic;
+  signal mic_1_2_rty_o     : std_logic;
+
 
 
   signal data_uart_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -152,10 +172,10 @@ architecture rtl of top is
   component osc_48MHz is
     generic (
       DIVIDER : std_logic_vector(1 downto 0) := "00"
-    );
+      );
     port (
       clkout : out std_logic
-    );
+      );
   end component;
   signal clk : std_logic;
 
@@ -183,7 +203,7 @@ begin
     generic map (
       DIVIDER => "11")
     port map (
-      CLKOUT    => clk);
+      CLKOUT => clk);
 
   process(clk)
   begin
@@ -196,8 +216,9 @@ begin
       end if;
     end if;
   end process;
-  reset <= not reset_btn or auto_reset;
-  probe_A <=  coe_to_host(0);
+  reset   <= not reset_btn or auto_reset;
+
+
   COMBINED_RAM_GEN : if not SEPERATE_MEMS generate
     signal RAM_ADR_I  : std_logic_vector(31 downto 0);
     signal RAM_DAT_I  : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -396,12 +417,13 @@ begin
   data_LOCK_O  <= '0';
   instr_BTE_O  <= "00";
   instr_LOCK_O <= '0';
-  probe_B <=  instr_ACK_I;
+
   split_wb_data : component wb_splitter
     generic map(
       master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE)  --RAM
-      , master2_address     => (16#00020000#, 4*1024)            --uart
-      , master3_address     => (16#00030000#, 4*1024))
+, master2_address     => (16#00020000#, 4*1024)            --uart
+, master3_address     => (16#00030000#, 4*1024)
+, master4_address     => (16#00040000#, 4*MIC_BUFFER_SIZE*2))
 
     port map(
       clk_i => clk,
@@ -468,7 +490,23 @@ begin
       master3_DAT_I   => gpio_DAT_O,
       master3_ACK_I   => gpio_ACK_O,
       master3_ERR_I   => gpio_ERR_O,
-      master3_RTY_I   => gpio_RTY_O
+      master3_RTY_I   => gpio_RTY_O,
+
+
+      master4_ADR_O   => mic_1_2_ADR_I,
+      master4_DAT_O   => mic_1_2_DAT_I,
+      master4_WE_O    => mic_1_2_WE_I,
+      master4_CYC_O   => mic_1_2_CYC_I,
+      master4_STB_O   => mic_1_2_STB_I,
+      master4_SEL_O   => mic_1_2_SEL_I,
+      master4_CTI_O   => mic_1_2_CTI_I,
+      master4_BTE_O   => mic_1_2_BTE_I,
+      master4_LOCK_O  => mic_1_2_LOCK_I,
+      master4_STALL_I => mic_1_2_STALL_O,
+      master4_DAT_I   => mic_1_2_DAT_O,
+      master4_ACK_I   => mic_1_2_ACK_O,
+      master4_ERR_I   => mic_1_2_ERR_O,
+      master4_RTY_I   => mic_1_2_RTY_O
 
       );
 
@@ -477,28 +515,28 @@ begin
   instr_ack_i   <= not uart_stall and mem_instr_ack;
 
 
-    gpio_pio : component wb_pio
+  gpio_pio : component wb_pio
     generic map (
-       DATA_WIDTH => gpio'length)
+      DATA_WIDTH => gpio'length)
     port map(
       CLK_I => clk,
       RST_I => reset,
 
-      ADR_I   => gpio_ADR_I,
-      DAT_I   => gpio_DAT_I(gpio'range),
-      WE_I    => gpio_WE_I,
-      CYC_I   => gpio_CYC_I,
-      STB_I   => gpio_STB_I,
-      SEL_I   => gpio_SEL_I,
-      CTI_I   => gpio_CTI_I,
-      BTE_I   => gpio_BTE_I,
-      LOCK_I  => gpio_LOCK_I,
-      ACK_O   => gpio_ACK_O,
-      STALL_O => gpio_STALL_O,
-      DATA_O  => gpio_DAT_O(gpio'range),
-      ERR_O   => gpio_ERR_O,
-      RTY_O   => gpio_RTY_O,
-      input_output  => gpio);
+      ADR_I        => gpio_ADR_I,
+      DAT_I        => gpio_DAT_I(gpio'range),
+      WE_I         => gpio_WE_I,
+      CYC_I        => gpio_CYC_I,
+      STB_I        => gpio_STB_I,
+      SEL_I        => gpio_SEL_I,
+      CTI_I        => gpio_CTI_I,
+      BTE_I        => gpio_BTE_I,
+      LOCK_I       => gpio_LOCK_I,
+      ACK_O        => gpio_ACK_O,
+      STALL_O      => gpio_STALL_O,
+      DATA_O       => gpio_DAT_O(gpio'range),
+      ERR_O        => gpio_ERR_O,
+      RTY_O        => gpio_RTY_O,
+      input_output => gpio);
 
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
@@ -698,7 +736,28 @@ begin
     data_uart_stall_o <= not data_uart_ack_O;
   end generate uart_data_bus;
 
-
-
+  probe_B <= i2s_sd_mic1_mic2;
+  mics : component i2s_wb
+    generic map (
+      DATA_WIDTH => 32,
+      ADDR_WIDTH => log2(MIC_BUFFER_SIZE*2))
+    port map(
+      wb_clk_i  => clk,
+      wb_rst_i  => reset,
+      wb_sel_i  => '1',
+      wb_stb_i  => mic_1_2_stb_i,
+      wb_we_i   => mic_1_2_we_i ,
+      wb_cyc_i  => mic_1_2_cyc_i,
+      wb_bte_i  => mic_1_2_bte_i,
+      wb_cti_i  => mic_1_2_cti_i,
+      wb_adr_i  => mic_1_2_adr_i(log2(MIC_BUFFER_SIZE*2)-1 downto 0),
+      wb_dat_i  => mic_1_2_dat_i,
+      i2s_sd_i  => i2s_sd_mic1_mic2,
+      wb_ack_o  => mic_1_2_ack_o,
+      wb_dat_o  => mic_1_2_dat_o,
+      wb_stall_o => mic_1_2_stall_o,
+--      rx_int_o  => mic_1_2_rx_int_o,
+      i2s_sck_o => i2s_clk,
+      i2s_ws_o  => i2s_ws_mic1_mic2);
 
 end architecture rtl;

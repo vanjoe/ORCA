@@ -1,5 +1,5 @@
 #include "printf.h"
-
+#include "i2s.h"
 
 #define SYS_CLK 12000000
 volatile int *ledrgb= (volatile int*)0x10000;
@@ -27,8 +27,13 @@ void mputc ( void* p, char c)
 	while(UART_BUSY());
 	*UART_DATA = c;
 }
-#define debug(var) printf("%s:%d  %s = %d \r\n",__FILE__,__LINE__,#var,(signed)(var))
-#define debugx(var) printf("%s:%d  %s = %08X \r\n",__FILE__,__LINE__,#var,(unsigned)(var))
+#if 1
+# define debug(var) printf("%s:%d  %s = %d \r\n",__FILE__,__LINE__,#var,(signed)(var))
+# define debugx(var) printf("%s:%d  %s = %08X \r\n",__FILE__,__LINE__,#var,(unsigned)(var))
+#else
+# define debug(var) to_host(var);
+# define debugx(var) to_host(var);
+#endif
 
 ////////////
 //TIMER   //
@@ -45,19 +50,38 @@ void delayus(int us)
 }
 #define delayms(ms) delayus(ms*1000)
 
+#define abs(a) ((a)>0 ? (a):-(a))
+
+typedef union{
+  unsigned lr;
+  struct{
+	 short l,r;
+  };
+}mic_data;
 
 int main()
 {
-	int i=0;
-	int colour=0x01;
 	to_host(1);
 	UART_INIT();
 	init_printf(0,mputc);
-	int delay_length=500;
-	printf("1");
+	short maxl=0,maxr =0;
+	mic_data mdata;
 	for(;;){
-		printf("Hello World %d\r\n",i++);
-		delayms(delay_length);
+	  mdata.lr=i2s_base[I2S_BUFFER_OFFSET];
+	  if (abs(mdata.l) > maxl){
+		 maxl=abs(mdata.l);
+	  }
+	  if (abs(mdata.r) > maxr){
+		 maxr=abs(mdata.r);
+	  }
+
+	  debug(mdata.l);
+	  debug(mdata.r);
+	  debug(maxl);
+	  debug(maxr);
+	  printf("both %d , %d\r\n",mdata.l,mdata.r);
+	  printf("bmax %d , %d\r\n",maxl,maxr);
+	  //delayms(500);
 	}
 }
 

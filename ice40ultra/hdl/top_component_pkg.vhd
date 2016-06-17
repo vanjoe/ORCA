@@ -214,20 +214,20 @@ package top_component_pkg is
       CLK_I : in std_logic;
       RST_I : in std_logic;
 
-      ADR_I        : in  std_logic_vector(31 downto 0);
-      DAT_I        : in  std_logic_vector(DATA_WIDTH-1 downto 0);
-      WE_I         : in  std_logic;
-      CYC_I        : in  std_logic;
-      STB_I        : in  std_logic;
-      SEL_I        : in  std_logic_vector(3 downto 0);
-      CTI_I        : in  std_logic_vector(2 downto 0);
-      BTE_I        : in  std_logic_vector(1 downto 0);
-      LOCK_I       : in  std_logic;
-      ACK_O        : out std_logic;
-      STALL_O      : out std_logic;
-      DATA_O       : out std_logic_vector(DATA_WIDTH -1 downto 0);
-      ERR_O        : out std_logic;
-      RTY_O        : out std_logic;
+      ADR_I        : in    std_logic_vector(31 downto 0);
+      DAT_I        : in    std_logic_vector(DATA_WIDTH-1 downto 0);
+      WE_I         : in    std_logic;
+      CYC_I        : in    std_logic;
+      STB_I        : in    std_logic;
+      SEL_I        : in    std_logic_vector(3 downto 0);
+      CTI_I        : in    std_logic_vector(2 downto 0);
+      BTE_I        : in    std_logic_vector(1 downto 0);
+      LOCK_I       : in    std_logic;
+      ACK_O        : out   std_logic;
+      STALL_O      : out   std_logic;
+      DATA_O       : out   std_logic_vector(DATA_WIDTH -1 downto 0);
+      ERR_O        : out   std_logic;
+      RTY_O        : out   std_logic;
       input_output : inout std_logic_vector(DATA_WIDTH -1 downto 0)
       );
   end component;
@@ -369,6 +369,31 @@ package top_component_pkg is
       pmodmic_ack_o : buffer std_logic
       );
   end component pmod_mic_wb;
+
+
+  component i2s_wb is
+    generic (DATA_WIDTH : integer range 16 to 32;
+             ADDR_WIDTH : integer range 5 to 32);
+    port (
+      wb_clk_i   : in  std_logic;
+      wb_rst_i   : in  std_logic;
+      wb_sel_i   : in  std_logic;
+      wb_stb_i   : in  std_logic;
+      wb_we_i    : in  std_logic;
+      wb_cyc_i   : in  std_logic;
+      wb_bte_i   : in  std_logic_vector(1 downto 0);
+      wb_cti_i   : in  std_logic_vector(2 downto 0);
+      wb_adr_i   : in  std_logic_vector(ADDR_WIDTH - 1 downto 0);
+      wb_dat_i   : in  std_logic_vector(DATA_WIDTH -1 downto 0);
+      i2s_sd_i   : in  std_logic;       -- I2S data input
+      wb_ack_o   : out std_logic;
+      wb_stall_o : out std_logic;
+      wb_dat_o   : out std_logic_vector(DATA_WIDTH - 1 downto 0);
+      rx_int_o   : out std_logic;       -- Interrupt line
+      i2s_sck_o  : out std_logic;       -- I2S clock out
+      i2s_ws_o   : out std_logic);      -- I2S word select out
+
+  end component i2s_wb;
 
 
 end package;
