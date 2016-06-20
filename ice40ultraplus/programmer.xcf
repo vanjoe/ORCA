@@ -19,8 +19,8 @@
 				<BScanLen>1</BScanLen>
 				<BScanVal>0</BScanVal>
 			</Bypass>
-			<File>/nfs/home/joel/Documents/orca/ice40ultraplus/ultraplus_Implmnt/sbt/outputs/bitmap/top_bitmap.bin</File>
-			<FileTime>06/13/16 13:15:49</FileTime>
+			<File>/nfs/home/joel/Documents/orca-uart/ice40ultraplus/ultraplus_Implmnt/sbt/outputs/bitmap/top_bitmap.bin</File>
+			<FileTime>06/20/16 13:51:23</FileTime>
 			<Operation>Fast Program</Operation>
 			<Option>
 				<SVFVendor>JTAG STANDARD</SVFVendor>

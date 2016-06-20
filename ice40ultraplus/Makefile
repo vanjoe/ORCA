@@ -16,14 +16,14 @@ LSE_PRJ=$(PROJECT)_lse.prj
 OUTPUT_DIR=$(PROJECT)_Implmnt
 TOP_LEVEL_ENTITY=top
 COMPILER_LOG=$(OUTPUT_DIR)/synlog/$(PROJECT)_compiler.srr
-ROUTER_REPORT=$(OUTPUT_DIR)/sbt/outputs/router/top_router.rpt
+TIMING_REPORT=$(OUTPUT_DIR)/sbt/outputs/router/top_timing.rpt
 EDF=$(OUTPUT_DIR)/$(PROJECT).edf
 BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.hex
 
 IMEM_LIST=imem.list
 DMEM_LIST=dmem.list
 MEM_FILE=test.mem
-HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) $(wildcard ./*.vhd) $(wildcard .hdl/i2s_interface/*.vhd)
+HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) $(wildcard ./*.vhd)
 
 
 
@@ -39,10 +39,7 @@ imem.mem: $(MEM_FILE)
 	tail -n +$$(( $(IMEM_BASE)/4 +1)) test.mem | head -n $$(( $(IMEM_LEN)/4)) >$@
 dmem.mem: $(MEM_FILE)
 	tail -n +$$(($(DMEM_BASE)/4 +1)) test.mem | head -n $$(( $(DMEM_LEN)/4)) >$@
-
-$(MEM_FILE):
-	make -C software FORMAT=mem
-	ln -sf software/*.mem $(MEM_FILE)
+$(MEM_FILE):build-software
 
 define ice-tcl
 ICECUBE2=$(ICECUBE2) tclsh
@@ -51,8 +48,7 @@ endef
 define mem-init
 LD_LIBRARY_PATH=$(ICECUBE2)/sbt_backend/lib/linux/opt:$${LD_LIBRARY_PATH} $(ICECUBE2)/sbt_backend/bin/linux/opt/meminitializer --des-lib $(OUTPUT_DIR)/sbt/netlist/oadb-top --mem-list-file
 endef
-
-$(BITFILE): $(ROUTER_REPORT) dmem.mem imem.mem $(DMEM_LIST) $(IMEM_LIST)
+$(BITFILE): $(TIMING_REPORT) dmem.mem imem.mem $(DMEM_LIST) $(IMEM_LIST)
 	$(ice-tcl) iCEcube2_flow.tcl dmem.mem $(DMEM_LIST)
 	$(ice-tcl) iCEcube2_flow.tcl imem.mem $(IMEM_LIST)
 
@@ -63,7 +59,7 @@ $(BITFILE): $(ROUTER_REPORT) dmem.mem imem.mem $(DMEM_LIST) $(IMEM_LIST)
 	$(ice-tcl) iCEcube2_flow.tcl $(IMEM_LIST)
 
 
-$(ROUTER_REPORT): $(EDF)
+$(TIMING_REPORT): $(EDF)
 	ICECUBE2=$(ICECUBE2) tclsh iCEcube2_flow.tcl
 $(EDF): $(HDL_FILES)
 #run the compiler, output the log if compiler fails
@@ -80,13 +76,15 @@ syn: $(EDF)
 
 
 clean:
-	rm -rf $(OUTPUT_DIR) *.imem *.dmem *.mem
+	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem
 
 clean-all: clean
 	make -C software clean
 
 build-software:
 	make -C software FORMAT=mem
+	ln -sf software/*.mem $(MEM_FILE)
+
 PGM_CMD=$(ICECUBE2)/../../diamond/3.8_x64/bin/lin64/pgrcmd -infile
 pgm : $(BITFILE)
 	$(PGM_CMD) programmer.xcf

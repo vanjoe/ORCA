@@ -31,9 +31,10 @@ proc com {} {
 							hdl/pmod_mic/pmod_mic_wb.vhd \
 							hdl/pmod_mic/pmod_mic_ref_comp.vhd \
 							osc_hf_sim.vhd \
-							hdl/i2s_interface/i2s_wb.vhd \
 							hdl/i2s_interface/i2s_decode.vhd \
-							top.vhd	]
+							hdl/i2s_interface/i2s_wb.vhd \
+							top.vhd				  \
+							top_tb.vhd]
 
 
 
@@ -50,18 +51,18 @@ proc com {} {
 
 com
 
-vsim work.top
+vsim work.top_tb
 add log -r *
-add wave -noupdate /top/clk
-add wave -noupdate /top/reset
-add wave -noupdate /top/rv/coe_to_host
-add wave -noupdate -divider Decode
-add wave -noupdate /top/rv/rv/D/register_file_1/registers(28)
-add wave -noupdate -divider Execute
-add wave -noupdate /top/rv/rv/X/valid_instr
-add wave -noupdate /top/rv/rv/X/pc_current
-add wave -noupdate /top/rv/rv/X/instruction
 
+add wave -noupdate /top_tb/dut/rv/rv/clk
+add wave -noupdate /top_tb/dut/rv/rv/reset
+add wave -noupdate /top_tb/dut/rv/coe_to_host
+add wave -noupdate -divider Decode
+add wave -noupdate /top_tb/dut/rv/rv/D/register_file_1/registers(28)
+add wave -noupdate -divider Execute
+add wave -noupdate /top_tb/dut/rv/rv/X/valid_instr
+add wave -noupdate /top_tb/dut/rv/rv/X/pc_current
+add wave -noupdate /top_tb/dut/rv/rv/X/instruction
 
 proc rerun { t } {
 				restart -f;

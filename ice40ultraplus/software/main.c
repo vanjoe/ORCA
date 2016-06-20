@@ -1,7 +1,7 @@
 #include "printf.h"
 #include "i2s.h"
 
-#define SYS_CLK 12000000
+#define SYS_CLK 6000000
 volatile int *ledrgb= (volatile int*)0x10000;
 
 /********/
@@ -22,18 +22,8 @@ volatile int*  UART_LSR=UART_BASE+5;
 #define UART_INIT() do{*UART_LCR = UART_LCR_8BIT_DEFAULT;}while(0)
 #define UART_PUTC(c) do{*UART_DATA = (c);}while(0)
 #define UART_BUSY() (!((*UART_LSR) &0x20))
-void mputc ( void* p, char c)
-{
-	while(UART_BUSY());
-	*UART_DATA = c;
-}
-#if 1
-# define debug(var) printf("%s:%d  %s = %d \r\n",__FILE__,__LINE__,#var,(signed)(var))
-# define debugx(var) printf("%s:%d  %s = %08X \r\n",__FILE__,__LINE__,#var,(unsigned)(var))
-#else
-# define debug(var) to_host(var);
-# define debugx(var) to_host(var);
-#endif
+#define debug(var) printf("%s:%d  %s = %d \r\n",__FILE__,__LINE__,#var,(signed)(var))
+#define debugx(var) printf("%s:%d  %s = %08X \r\n",__FILE__,__LINE__,#var,(unsigned)(var))
 
 ////////////
 //TIMER   //
@@ -49,39 +39,35 @@ void delayus(int us)
 	while(get_time()-start < us);
 }
 #define delayms(ms) delayus(ms*1000)
+void mputc ( void* p, char c)
+{
+  //delayms(200);
+  //*UART_DATA= UART_BUSY()?'1':'0';
+  while(UART_BUSY());
+  *UART_DATA = c;
+}
 
-#define abs(a) ((a)>0 ? (a):-(a))
 
-typedef union{
-  unsigned lr;
-  struct{
-	 short l,r;
-  };
-}mic_data;
 
 int main()
 {
-	to_host(1);
+	int i='a';
+	int colour=0x01;
+	//initialize uart
 	UART_INIT();
 	init_printf(0,mputc);
-	short maxl=0,maxr =0;
-	mic_data mdata;
-	for(;;){
-	  mdata.lr=i2s_base[I2S_BUFFER_OFFSET];
-	  if (abs(mdata.l) > maxl){
-		 maxl=abs(mdata.l);
-	  }
-	  if (abs(mdata.r) > maxr){
-		 maxr=abs(mdata.r);
-	  }
+	printf("hello\n");
+	to_host(1);
+	UART_INIT();
 
-	  debug(mdata.l);
-	  debug(mdata.r);
-	  debug(maxl);
-	  debug(maxr);
-	  printf("both %d , %d\r\n",mdata.l,mdata.r);
-	  printf("bmax %d , %d\r\n",maxl,maxr);
-	  //delayms(500);
+	int delay_length=500;
+	printf("1");
+	i=0;
+	for(;;){
+	  	printf("hello\r\n");
+		printf("Hello World %d\r\n",i+=2);
+		delayms(delay_length);
+		debugx(i2s_base[I2S_BUFFER_OFFSET]);
 	}
 }
 
