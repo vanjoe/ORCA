@@ -705,8 +705,8 @@ begin  -- architecture rtl
       if rising_edge(clk) then
                                         --stall signal
         mul_almost_done0 <= mul_stall;
-        mul_almost_done1 <= mul_almost_done0;
-        mul_done        <= mul_almost_done1;
+        mul_almost_done1 <= mul_almost_done0 and not mul_done;
+        mul_done        <= mul_almost_done1 and not mul_done;
                                         --operand latches
         mul_a           <= mult_srca;
         mul_b           <= mult_srcb;

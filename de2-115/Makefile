@@ -15,6 +15,7 @@ all: system.sof  $(STA_RPT_FILE)
 
 DEVICE_FAMILY=$(shell grep deviceFamily $(QSYS_FILE) | head -1 | sed 's/.*value="\(.*\)".*/\1/')
 VHDL_FILES=$(wildcard ../rtl/*.vhd)
+VHDL_FILES+=$(wildcard test_components/*.vhd)
 $(info VHDL_FILES=$(VHDL_FILES))
 VHDL_SUBMODULE_FILES=$(addprefix system/synthesis/submodules/,$(notdir $(VHDL_FILES)))
 TOP_LEVEL_FILES=$(wildcard *.vhd)
@@ -25,28 +26,28 @@ TOP_LEVEL_FILES=$(wildcard *.vhd)
 
 $(QSYS_FILE):$(wildcard config.mk)
 ifdef BRANCH_PREDICTION
-	sed -i 's|parameter name="BRANCH_PREDICTION" value=".*" />|parameter name="BRANCH_PREDICTION" value=$(BRANCH_PREDICTION) />|' $(QSYS_FILE)
+	sed -i 's|parameter name="BRANCH_PREDICTION" value=".*" />|parameter name="BRANCH_PREDICTION" value="$(BRANCH_PREDICTION)" />|' $(QSYS_FILE)
 endif
 ifdef BTB_SIZE
-	sed -i 's|parameter name="BTB_SIZE" value=".*" />|parameter name="BTB_SIZE" value=$(BTB_SIZE) />|' $(QSYS_FILE)
+	sed -i 's|parameter name="BTB_SIZE" value=".*" />|parameter name="BTB_SIZE" value="$(BTB_SIZE)" />|' $(QSYS_FILE)
 endif
 ifdef DIVIDE_ENABLE
-	sed -i 's|parameter name="DIVIDE_ENABLE" value=".*" />|parameter name="DIVIDE_ENABLE" value=$(DIVIDE_ENABLE) />|' $(QSYS_FILE)
+	sed -i 's|parameter name="DIVIDE_ENABLE" value=".*" />|parameter name="DIVIDE_ENABLE" value="$(DIVIDE_ENABLE)" />|' $(QSYS_FILE)
 endif
 ifdef COUNTER_LENGTH
-	sed -i 's|parameter name="COUNTER_LENGTH" value=".*" />|parameter name="COUNTER_LENGTH" value=$(COUNTER_LENGTH) />|' $(QSYS_FILE)
+	sed -i 's|parameter name="COUNTER_LENGTH" value=".*" />|parameter name="COUNTER_LENGTH" value="$(COUNTER_LENGTH)" />|' $(QSYS_FILE)
 endif
 ifdef MULTIPLY_ENABLE
-	sed -i 's|parameter name="MULTIPLY_ENABLE" value=".*" />|parameter name="MULTIPLY_ENABLE" value=$(MULTIPLY_ENABLE) />|' $(QSYS_FILE)
+	sed -i 's|parameter name="MULTIPLY_ENABLE" value=".*" />|parameter name="MULTIPLY_ENABLE" value="$(MULTIPLY_ENABLE)" />|' $(QSYS_FILE)
 endif
 ifdef PIPELINE_STAGES
-	sed -i 's|parameter name="PIPELINE_STAGES" value=".*" />|parameter name="PIPELINE_STAGES" value=$(PIPELINE_STAGES) />|' $(QSYS_FILE)
+	sed -i 's|parameter name="PIPELINE_STAGES" value=".*" />|parameter name="PIPELINE_STAGES" value="$(PIPELINE_STAGES)" />|' $(QSYS_FILE)
 endif
 ifdef SHIFTER_MAX_CYCLES
-	sed -i 's|parameter name="SHIFTER_MAX_CYCLES" value=".*" />|parameter name="SHIFTER_MAX_CYCLES" value=$(SHIFTER__CYCLES) />|' $(QSYS_FILE)
+	sed -i 's|parameter name="SHIFTER_MAX_CYCLES" value=".*" />|parameter name="SHIFTER_MAX_CYCLES" value="$(SHIFTER__CYCLES)" />|' $(QSYS_FILE)
 endif
 ifdef FORWARD_ALU_ONLY
-	sed -i 's|parameter name="FORWARD_ALU_ONLY" value=".*" />|parameter name="FORWARD_ALU_ONLY" value=$(FORWARD_ALU_ONLY) />|' $(QSYS_FILE)
+	sed -i 's|parameter name="FORWARD_ALU_ONLY" value=".*" />|parameter name="FORWARD_ALU_ONLY" value="$(FORWARD_ALU_ONLY)" />|' $(QSYS_FILE)
 endif
 
 $(QIP_FILE):$(QSYS_FILE)

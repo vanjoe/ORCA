@@ -124,9 +124,10 @@ begin
   latched_inputs : process(clk)
   begin
     if rising_edge(clk) then
-
-      alignment    <= address_unaligned(1 downto 0);
-      latched_fun3 <= fun3;
+      if expecting_data_valid = '0' then
+        alignment    <= address_unaligned(1 downto 0);
+        latched_fun3 <= fun3;
+      end if; 
       if re ='1' and waitrequest='0' then
         expecting_data_valid <= '1';
       elsif expecting_data_valid = '1' and readvalid= '1' then

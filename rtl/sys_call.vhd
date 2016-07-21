@@ -362,53 +362,55 @@ begin  -- architecture rtl
   begin
     if rising_edge(clk) then
                                         --writeback to register file
-      wb_data    <= csr_read_val;
-      pc_corr_en <= '0';
-      wb_en      <= '0';
-      if valid = '1' then
-        if legal_instruction = '0' then
-          mcause_i      <= '0';
-          mcause_ex     <= ILLEGAL_I;
-          pc_corr_en    <= '1';
-          pc_correction <= MACHINE_MODE_TRAP;
-          mepc          <= current_pc;
+      if load_stall = '0' then
+        wb_data    <= csr_read_val;
+        pc_corr_en <= '0';
+        wb_en      <= '0';
+        if valid = '1' then
+          if legal_instruction = '0' then
+            mcause_i      <= '0';
+            mcause_ex     <= ILLEGAL_I;
+            pc_corr_en    <= '1';
+            pc_correction <= MACHINE_MODE_TRAP;
+            mepc          <= current_pc;
 
-        elsif opcode = "11100" then        --SYSTEM OP CODE
-          wb_en <= csr_read_en;
-          if zimm & func3 = "00000"&"000" then
-            if CSR = x"000" then           --ECALL
-              mcause_i      <= '0';
-              mcause_ex     <= UMODE_ECALL;
-              pc_corr_en    <= '1';
-              pc_correction <= MACHINE_MODE_TRAP;
-              mepc          <= current_pc;
-            elsif CSR = x"001" then        --EBREAK
-              mcause_i      <= '0';
-              mcause_ex     <= BREAKPOINT;
-              pc_corr_en    <= '1';
-              pc_correction <= MACHINE_MODE_TRAP;
-              mepc          <= current_pc;
-            elsif CSR = x"100" then        --ERET
-              pc_corr_en    <= '1';
-              pc_correction <= mepc;
+          elsif opcode = "11100" then        --SYSTEM OP CODE
+            wb_en <= csr_read_en;
+            if zimm & func3 = "00000"&"000" then
+              if CSR = x"000" then           --ECALL
+                mcause_i      <= '0';
+                mcause_ex     <= UMODE_ECALL;
+                pc_corr_en    <= '1';
+                pc_correction <= MACHINE_MODE_TRAP;
+                mepc          <= current_pc;
+              elsif CSR = x"001" then        --EBREAK
+                mcause_i      <= '0';
+                mcause_ex     <= BREAKPOINT;
+                pc_corr_en    <= '1';
+                pc_correction <= MACHINE_MODE_TRAP;
+                mepc          <= current_pc;
+              elsif CSR = x"100" then        --ERET
+                pc_corr_en    <= '1';
+                pc_correction <= mepc;
+              end if;
+            else
+                                             --writeback to CSR
+              case CSR is
+                when CSR_MTOHOST =>
+                  mtohost <= csr_write_val;  --write only register
+                when CSR_MEPC =>
+                  mepc <= csr_write_val;
+                when others =>
+                  null;
+              end case;
             end if;
-          else
-                                           --writeback to CSR
-            case CSR is
-              when CSR_MTOHOST =>
-                mtohost <= csr_write_val;  --write only register
-              when CSR_MEPC =>
-                mepc <= csr_write_val;
-              when others =>
-                null;
-            end case;
-          end if;
-        elsif instruction(31 downto 2) = FENCE_I(31 downto 2) then
-          pc_correction <= std_logic_vector(unsigned(current_pc) + 4);
-          pc_corr_en    <= '1';
-        end if;  --opcode
+          elsif instruction(31 downto 2) = FENCE_I(31 downto 2) then
+            pc_correction <= std_logic_vector(unsigned(current_pc) + 4);
+            pc_corr_en    <= '1';
+          end if;  --opcode
 
-      end if;  --valid
+        end if;  --valid
+      end if;  --stall
       if reset = '1' then
         mtohost    <= (others => '0');
         mstatus_ie <= '0';

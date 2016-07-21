@@ -188,6 +188,13 @@ begin
             "01" when ld_data_en = '1' else
             "10" when br_data_en = '1' else
             "11";                       --when alu_data_en = '1'
+
+--  assert (sys_data_en = '1' and ld_data_en = '0' and br_data_en = '0' and alu_data_out = '0') or
+--         (sys_data_en = '0' and ld_data_en = '1' and br_data_en = '0' and alu_data_out = '0') or
+--         (sys_data_en = '0' and ld_data_en = '0' and br_data_en = '1' and alu_data_out = '0') or
+--         (sys_data_en = '0' and ld_data_en = '0' and br_data_en = '0' and alu_data_out = '1') 
+--         report "MULTIPLE DATA ENABLES ASSERTED" severity failure;
+
   with wb_mux select
     wb_data <=
     sys_data_out when "00",
@@ -250,21 +257,21 @@ begin
 
       --save various flip flops for forwarding
       --and writeback
-      if ls_unit_waiting = '0' then
+      if stall_pipeline = '0' then
         rd_latch <= rd;
       end if;
-
-      use_after_load_stall <= '0';
-      if FORWARD_ONLY_FROM_ALU then
-        if (ni_rs2 = rd or ni_rs1 = rd) and not current_alu then
-          use_after_load_stall <= valid_instr and not stall_pipeline;
-        end if;
-      else
-        if (ni_rs2 = rd or ni_rs1 = rd) and opcode = LD_OP then
-          use_after_load_stall <= valid_instr and not stall_pipeline;
+      if ls_unit_waiting = '0' then
+        use_after_load_stall <= '0';
+        if FORWARD_ONLY_FROM_ALU then
+          if (ni_rs2 = rd or ni_rs1 = rd) and not current_alu then
+            use_after_load_stall <= valid_instr and not stall_pipeline;
+          end if;
+        else
+          if (ni_rs2 = rd or ni_rs1 = rd) and opcode = LD_OP then
+            use_after_load_stall <= valid_instr and not stall_pipeline;
+          end if;
         end if;
       end if;
-
     end if;
 
 
@@ -371,7 +378,7 @@ begin
       pc_corr_en           => syscall_en,
       illegal_alu_instr    => illegal_alu_instr,
       use_after_load_stall => '0',
-      load_stall           => ls_unit_waiting,
+      load_stall           => stall_pipeline,
       predict_corr         => predict_corr_en
       );
 

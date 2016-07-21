@@ -1,7 +1,7 @@
 all:
 AS_SRCS=crt.S
 
-TARGET=mul_test
+TARGET=test
 C_SRCS=
 C_SRCS+=$(TARGET).c
 
@@ -32,27 +32,6 @@ LIBC=
 $(TARGET).elf: $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
 	$(CC) -T $(LD_SCRIPT) $(S_OBJ_FILES) $(C_OBJ_FILES) -o $@ $(LD_FLAGS)
 	$(OBJDUMP) -D $(TARGET).elf > $(TARGET).dump
-
-#TARGET=load_test
-#C_SRCS=
-#C_SRCS+=$(TARGET).c
-#
-#C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
-#S_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(AS_SRCS)))
-#
-#$(C_OBJ_FILES) $(S_OBJ_FILES) : | obj/
-#obj/:
-#	mkdir -p obj/
-#
-#$(C_OBJ_FILES): obj/%.c.o : %.c
-#	$(CC) $(CFLAGS) -c $< -o $@
-#
-#$(S_OBJ_FILES): obj/%.S.o : %.S
-#	$(CC) $(CFLAGS) -c $< -o $@
-#
-#$(TARGET).elf: $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
-#	$(CC) -T $(LD_SCRIPT) $(S_OBJ_FILES) $(C_OBJ_FILES) -o $@ $(LD_FLAGS)
-#	$(OBJDUMP) -D $(TARGET).elf > $(TARGET).dump
 
 .phony:all clean
 ifndef FORMAT
