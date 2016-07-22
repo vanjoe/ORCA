@@ -47,8 +47,11 @@ entity Orca is
        avm_instruction_writedata     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
        avm_instruction_lock          : out std_logic;
        avm_instruction_waitrequest   : in  std_logic                                  := '0';
-       avm_instruction_readdatavalid : in  std_logic                                  := '0'
+       avm_instruction_readdatavalid : in  std_logic                                  := '0';
 
+       mtime_i                       : in std_logic_vector(63 downto 0);
+       mtimecmp_i                    : in std_logic_vector(63 downto 0);
+       mip_mtip_i                    : in std_logic);
        );
 
 end entity Orca;
@@ -208,7 +211,11 @@ begin  -- architecture rtl
       write_data     => data_write_data,
       read_data      => data_read_data,
       waitrequest    => data_wait,
-      datavalid      => e_readvalid);
+      datavalid      => e_readvalid,
+      
+      mtime_i        => mtime_i,
+      mtimecmp_i     => mtimecmp_i,
+      mip_mtip_i     => mip_mtip_i);
 
 
   avm_data_address    <= data_address;
