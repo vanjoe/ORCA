@@ -418,4 +418,26 @@ package rv_components is
       load_stall           : in std_logic);
   end component system_calls;
 
+  component reserved_registers is
+    generic (REGISTER_SIZE : integer := 32);
+    port (
+      mtime_o : out std_logic_vector(63 downto 0);
+      mtimecmp_o : out std_logic_vector(63 downto 0);
+      mip_mtip_o : out std_logic;
+      
+      -- Avalon bus
+      clk : in std_logic;
+      reset : in std_logic;
+      reserved_address : in std_logic_vector(7 downto 0);
+      reserved_byteenable : in std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      reserved_read : in std_logic;
+      reserved_readdata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      reserved_response : out std_logic_vector(1 downto 0);
+      reserved_write : in std_logic;
+      reserved_writedata : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      reserved_lock : in std_logic;
+      reserved_waitrequest : out std_logic;
+      reserved_readdatavalid : out std_logic);
+  end component reserved_registers;
+
 end package rv_components;

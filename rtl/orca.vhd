@@ -47,11 +47,7 @@ entity Orca is
        avm_instruction_writedata     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
        avm_instruction_lock          : out std_logic;
        avm_instruction_waitrequest   : in  std_logic                                  := '0';
-       avm_instruction_readdatavalid : in  std_logic                                  := '0';
-
-       mtime_i                       : in std_logic_vector(63 downto 0);
-       mtimecmp_i                    : in std_logic_vector(63 downto 0);
-       mip_mtip_i                    : in std_logic);
+       avm_instruction_readdatavalid : in  std_logic                                  := '0'
        );
 
 end entity Orca;
@@ -93,7 +89,6 @@ architecture rtl of Orca is
 
   signal pipeline_flush : std_logic;
 
-
   signal data_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_byte_en    : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
   signal data_write_en   : std_logic;
@@ -108,6 +103,27 @@ architecture rtl of Orca is
   signal instr_read_wait : std_logic;
   signal instr_read_en   : std_logic;
   signal instr_readvalid : std_logic;
+
+  -- Data splitter signals
+  signal data_sel : std_logic;
+  signal data_sel_prev : std_logic;
+
+  -- Reserved register bus lines
+  signal reserved_address : std_logic_vector(7 downto 0);
+  signal reserved_byteenable : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal reserved_read : std_logic;
+  signal reserved_readdata : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal reserved_response : std_logic_vector(1 downto 0);
+  signal reserved_write : std_logic;
+  signal reserved_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal reserved_lock : std_logic;
+  signal reserved_waitrequest : std_logic;
+  signal reserved_readdatavalid : std_logic;
+
+  -- Timer interrupt lines
+  signal mtime : std_logic_vector(63 downto 0);
+  signal mtimecmp : std_logic_vector(63 downto 0);
+  signal mip_mtip : std_logic;
 
   signal branch_pred : std_logic_vector(REGISTER_SIZE*2 + 3-1 downto 0);
 begin  -- architecture rtl
@@ -212,21 +228,66 @@ begin  -- architecture rtl
       read_data      => data_read_data,
       waitrequest    => data_wait,
       datavalid      => e_readvalid,
-      
-      mtime_i        => mtime_i,
-      mtimecmp_i     => mtimecmp_i,
-      mip_mtip_i     => mip_mtip_i);
+      mtime_i        => mtime,
+      mtimecmp_i     => mtimecmp,
+      mip_mtip_i     => mip_mtip);
 
+  -- Handle arbitration between the bus and the internal reseved registers
+  reserved_bank : component reserved_registers
+    generic map (
+      REGISTER_SIZE => REGISTER_SIZE)
+    port map (
+      clk                    => clk,
+      reset                  => reset,
 
-  avm_data_address    <= data_address;
-  avm_data_byteenable <= data_byte_en;
-  avm_data_read       <= data_read_en;
-  data_read_data      <= avm_data_readdata;
-  avm_data_write      <= data_write_en;
-  avm_data_writedata  <= data_write_data;
-  avm_data_lock       <= '0';
-  data_wait           <= avm_data_waitrequest;
-  e_readvalid         <= avm_data_readdatavalid;
+      mtime_o                => mtime,
+      mtimecmp_o             => mtimecmp,
+      mip_mtip_o             => mip_mtip,
+
+      reserved_address       => reserved_address,
+      reserved_byteenable    => reserved_byteenable,
+      reserved_read          => reserved_read,
+      reserved_readdata      => reserved_readdata,
+      reserved_response      => reserved_response,
+      reserved_write         => reserved_write,
+      reserved_writedata     => reserved_writedata,
+      reserved_lock          => reserved_lock,
+      reserved_waitrequest   => reserved_waitrequest,
+      reserved_readdatavalid => reserved_readdatavalid);
+    
+
+  data_sel <= '1' when unsigned(data_address) >= X"100"
+         else '0';
+
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if reset = '1' then
+        data_sel_prev <= '0';
+      else
+        data_sel_prev <= data_sel;
+      end if;
+    end if;
+  end process;
+
+  reserved_address <= data_address when data_sel = '0' else (others => '0');
+  reserved_byteenable <= data_byte_en when data_sel = '0' else (others => '0');
+  reserved_read <= data_read_en when data_sel = '0' else '0';
+  reserved_write <= data_write_en when data_sel = '0' else '0';
+  reserved_writedata <= data_write_data when data_sel = '0' else (others => '0');
+  reserved_lock <= '0';
+
+  avm_data_address <= data_address when data_sel = '1' else (others => '0');
+  avm_data_byteenable <= data_byte_en when data_sel = '1' else (others => '0');
+  avm_data_read <= data_read_en when data_sel = '1' else '0';
+  avm_data_write <= data_write_en when data_sel = '1' else '0';
+  avm_data_writedata <= data_write_data when data_sel = '1' else (others => '0');
+  avm_data_lock <= '0';
+  
+  data_wait <= reserved_waitrequest when data_sel = '0' else avm_data_waitrequest;
+
+  data_readdata <= reserved_readdata when data_sel_prev = '0' else avm_data_readdata;
+  e_readvalid <= reserved_readdatavalid when data_sel_prev = '0' else avm_data_readdatavalid;
 
   avm_instruction_address    <= instr_address;
   avm_instruction_byteenable <= "1111";

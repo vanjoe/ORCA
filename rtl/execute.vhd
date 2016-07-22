@@ -56,12 +56,11 @@ entity execute is
     read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     waitrequest    : in     std_logic;
     datavalid      : in     std_logic;
-    
-    mtime_i  : in std_logic_vector(63 downto 0);
-    mtimecmp_i : in std_logic_vector(63 downto 0);
-    mip_mtip_i : in std_logic
-    );
-end;
+
+    mtime_i        : in     std_logic_vector(63 downto 0);
+    mtimecmp_i     : in     std_logic_vector(63 downto 0);
+    mip_mtip_i     : in     std_logic);
+end entity execute;
 
 architecture behavioural of execute is
 
@@ -385,10 +384,10 @@ begin
       use_after_load_stall => '0',
       load_stall           => stall_pipeline,
       predict_corr         => predict_corr_en,
-      
-      mtime_i              => mtime_i,  
+
+      mtime_i              => mtime_i,
       mtimecmp_i           => mtimecmp_i,
-      mip_mtip_i           => mtime_mtip_i
+      mip_mtip_i           => mip_mtip_i
       );
 
 
