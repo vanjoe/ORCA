@@ -120,10 +120,10 @@ architecture rtl of Orca is
   signal reserved_waitrequest : std_logic;
   signal reserved_readdatavalid : std_logic;
 
-  -- Timer interrupt lines
+  -- Interrupt lines
   signal mtime : std_logic_vector(63 downto 0);
-  signal mtimecmp : std_logic_vector(63 downto 0);
   signal mip_mtip : std_logic;
+  signal mip_msip : std_logic;
 
   signal branch_pred : std_logic_vector(REGISTER_SIZE*2 + 3-1 downto 0);
 begin  -- architecture rtl
@@ -229,8 +229,8 @@ begin  -- architecture rtl
       waitrequest    => data_wait,
       datavalid      => e_readvalid,
       mtime_i        => mtime,
-      mtimecmp_i     => mtimecmp,
-      mip_mtip_i     => mip_mtip);
+      mip_mtip_i     => mip_mtip,
+      mip_msip_i     => mip_msip);
 
   -- Handle arbitration between the bus and the internal reseved registers
   reserved_bank : component reserved_registers
@@ -241,8 +241,8 @@ begin  -- architecture rtl
       reset                  => reset,
 
       mtime_o                => mtime,
-      mtimecmp_o             => mtimecmp,
       mip_mtip_o             => mip_mtip,
+      mip_msip_o             => mip_msip,
 
       reserved_address       => reserved_address,
       reserved_byteenable    => reserved_byteenable,
@@ -270,7 +270,7 @@ begin  -- architecture rtl
     end if;
   end process;
 
-  reserved_address <= data_address when data_sel = '0' else (others => '0');
+  reserved_address <= data_address(7 downto 0) when data_sel = '0' else (others => '0');
   reserved_byteenable <= data_byte_en when data_sel = '0' else (others => '0');
   reserved_read <= data_read_en when data_sel = '0' else '0';
   reserved_write <= data_write_en when data_sel = '0' else '0';
@@ -286,7 +286,7 @@ begin  -- architecture rtl
   
   data_wait <= reserved_waitrequest when data_sel = '0' else avm_data_waitrequest;
 
-  data_readdata <= reserved_readdata when data_sel_prev = '0' else avm_data_readdata;
+  data_read_data <= reserved_readdata when data_sel_prev = '0' else avm_data_readdata;
   e_readvalid <= reserved_readdatavalid when data_sel_prev = '0' else avm_data_readdatavalid;
 
   avm_instruction_address    <= instr_address;

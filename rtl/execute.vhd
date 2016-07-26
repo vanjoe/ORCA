@@ -58,8 +58,8 @@ entity execute is
     datavalid      : in     std_logic;
 
     mtime_i        : in     std_logic_vector(63 downto 0);
-    mtimecmp_i     : in     std_logic_vector(63 downto 0);
-    mip_mtip_i     : in     std_logic);
+    mip_mtip_i     : in     std_logic;
+    mip_msip_i     : in     std_logic);
 end entity execute;
 
 architecture behavioural of execute is
@@ -196,7 +196,8 @@ begin
 --  assert (sys_data_en = '1' and ld_data_en = '0' and br_data_en = '0' and alu_data_out = '0') or
 --         (sys_data_en = '0' and ld_data_en = '1' and br_data_en = '0' and alu_data_out = '0') or
 --         (sys_data_en = '0' and ld_data_en = '0' and br_data_en = '1' and alu_data_out = '0') or
---         (sys_data_en = '0' and ld_data_en = '0' and br_data_en = '0' and alu_data_out = '1') 
+--         (sys_data_en = '0' and ld_data_en = '0' and br_data_en = '0' and alu_data_out = '1') or
+--         (sys_data_en = '0' and ld_data_en = '0' and br_data_en = '0' and alu_data_out = '0') 
 --         report "MULTIPLE DATA ENABLES ASSERTED" severity failure;
 
   with wb_mux select
@@ -386,8 +387,8 @@ begin
       predict_corr         => predict_corr_en,
 
       mtime_i              => mtime_i,
-      mtimecmp_i           => mtimecmp_i,
-      mip_mtip_i           => mip_mtip_i
+      mip_mtip_i           => mip_mtip_i,
+      mip_msip_i           => mip_msip_i
       );
 
 

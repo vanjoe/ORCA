@@ -1,5 +1,5 @@
 #!/bin/sh
-TEST_DIR=/nfs/scratch/riscv-tools/riscv-tests/isa
+TEST_DIR=~/riscv-tools/riscv-tests/isa
 SOFTWARE_DIR=../software
 #all files that aren't dump or hex (the hex files are not correctly formatted)
 FILES=$(ls ${TEST_DIR}/rv32ui-p-* | grep -v dump | grep -v hex)
@@ -53,11 +53,10 @@ do
     riscv64-unknown-elf-objcopy -O binary $f $BIN_FILE
     riscv64-unknown-elf-objdump -D $f > test/$FILE.dump
 
-    python ../tools/bin2mif.py $BIN_FILE 0x100 > $MIF_FILE || exit -1
+    python ../tools/bin2mif.py $BIN_FILE 0x000 > $MIF_FILE || exit -1
     mif2hex $MIF_FILE $QEX_FILE >/dev/null 2>&1 || exit -1
     sed -e 's/://' -e 's/\(..\)/\1 /g'  $QEX_FILE >$SPLIT_FILE
     awk '{if (NF == 9) print $5$6$7$8}' $SPLIT_FILE > $MEM_FILE
-   # rm -f $MIF_FILE $SPLIT_FILE
   ) &
 done
 wait

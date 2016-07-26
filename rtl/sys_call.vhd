@@ -68,10 +68,10 @@ entity system_calls is
     predict_corr         : in std_logic;
     load_stall           : in std_logic;
    
-    -- From cycle counter 
+    -- From reserved registers 
     mtime_i  : in std_logic_vector(63 downto 0);
-    mtimecmp_i : in std_logic_vector(63 downto 0);
-    mip_mtip_i : in std_logic);
+    mip_mtip_i : in std_logic;
+    mip_msip_i : in std_logic);
 
 
 end entity system_calls;
@@ -125,11 +125,19 @@ architecture rtl of system_calls is
   signal instret      : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal instreth     : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
+  signal misa         : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mvendorid    : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal marchid      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mimpid       : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mhartid      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
   signal mepc         : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal mcause       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal mcause_i     : std_logic;
   signal mcause_ex    : std_logic_vector(3 downto 0);
   signal mtohost      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+  signal mbadaddr     : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   subtype csr_t is std_logic_vector(11 downto 0);
                                         --CSR constants
@@ -208,17 +216,26 @@ architecture rtl of system_calls is
   constant CSR_MFROMHOST : csr_t := X"781";
 
   constant FENCE_I     : std_logic_vector(31 downto 0) := x"0000100F";
+
   -- EXECPTION CODES
   constant ILLEGAL_I   : std_logic_vector(3 downto 0)  := x"2";
   constant MMODE_ECALL : std_logic_vector(3 downto 0)  := x"B";
   constant UMODE_ECALL : std_logic_vector(3 downto 0)  := x"8";
   constant BREAKPOINT  : std_logic_vector(3 downto 0)  := x"3";
 
-                                        --RESSET VECTORS
+  -- Interrupt Codes
+  constant M_SOFTWARE_INTERRUPT : std_logic_vector(3 downto 0) := x"3";
+  constant M_TIMER_INTERRUPT    : std_logic_vector(3 downto 0) := x"7";
+  constant M_EXTERNAL_INTERRUPT : std_logic_vector(3 downto 0) := x"B";
+
+
+                                        --RESET VECTORS
   constant SYSTEM_RESET :
     std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_unsigned(RESET_VECTOR - 16#00#, REGISTER_SIZE));
   constant MACHINE_MODE_TRAP :
     std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_unsigned(RESET_VECTOR - 16#40#, REGISTER_SIZE));
+    constant MACHINE_MODE_INTERRUPT :
+    std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_unsigned(RESET_VECTOR - 16#140#, REGISTER_SIZE));
 
                                         --func3 constants
   constant CSRRW  : std_logic_vector(2 downto 0) := "001";
@@ -251,8 +268,9 @@ architecture rtl of system_calls is
 
 
 begin  -- architecture rtl
-  -- interrupt input
-  mip_mtip <= mip_mtip_i when mie_mtie = '1' else '0';
+  -- interrupt input, only goes high if interrupts are enabled, otherwise ignored
+  mip_mtip <= mip_mtip_i when ((mstatus_mie = '1') and (mie_mtie = '1')) else '0';
+  mip_msip <= mip_msip_i when ((mstatus_mie = '1') and (mie_msie = '1')) else '0';
       
   counter_increment : process (clk, reset) is
   begin  -- process
@@ -304,14 +322,14 @@ begin  -- architecture rtl
     end process;
   end generate EXTRA_COUNTERS_GEN;
 
-  misa                           <= (31 downto 30 => "01", 8 => '1', 12 => '1', others => '0');
+  misa                           <= (31 => '0', 30 => '1',  8 => '1', 12 => '1', others => '0');
   mvendorid                      <= (others => '0'); -- not implemented
   marchid                        <= (others => '0'); -- not implemented
   mimpid                         <= (others => '0'); -- not implemented
   mhartid                        <= (others => '0'); -- not implemented
   mtime                          <= mtime_i(REGISTER_SIZE-1 downto 0);
   mtimeh                         <= mtime_i(63 downto 64-REGISTER_SIZE);
-  mstatus                        <= (12 downto 11 => mstatus_mpp,  7 => mstatus_mpie, 3 => mstatus_mie, others => '0');
+  mstatus                        <= (12 => mstatus_mpp(1), 11 => mstatus_mpp(0),  7 => mstatus_mpie, 3 => mstatus_mie, others => '0');
   mip                            <= (11 => mip_meip, 7 => mip_mtip, 3 => mip_msip, others => '0'); 
   mie                            <= (11 => mie_meie, 7 => mie_mtie, 3 => mie_msie, others => '0');
   mcause(mcause'left)            <= mcause_i;
@@ -332,6 +350,10 @@ begin  -- architecture rtl
       mtime                                   when CSR_TIME,
       mtimeh                                  when CSR_CYCLEH,
       mtimeh                                  when CSR_TIMEH,
+      mtime                                   when CSR_MCYCLE,
+      mtime                                   when CSR_MTIME,
+      mtimeh                                  when CSR_MCYCLEH,
+      mtimeh                                  when CSR_MTIMEH,
       mstatus                                 when CSR_MSTATUS,
       medeleg                                 when CSR_MEDELEG,
       mideleg                                 when CSR_MIDELEG,
@@ -364,6 +386,10 @@ begin  -- architecture rtl
         mtime           when CSR_CYCLE,
         mtimeh          when CSR_TIMEH,
         mtimeh          when CSR_CYCLEH,
+        mtime           when CSR_MCYCLE,
+        mtime           when CSR_MTIME,
+        mtimeh          when CSR_MCYCLEH,
+        mtimeh          when CSR_MTIMEH,
         mstatus         when CSR_MSTATUS,
         medeleg         when CSR_MEDELEG,
         mideleg         when CSR_MIDELEG,
@@ -383,6 +409,8 @@ begin  -- architecture rtl
         csr_read_val <=
         mtime   when CSR_TIME,
         mtime   when CSR_CYCLE,
+        mtime   when CSR_MTIME,
+        mtime   when CSR_MCYCLE,
         mstatus when CSR_MSTATUS,                        
         medeleg when CSR_MEDELEG,
         mideleg when CSR_MIDELEG,
@@ -447,6 +475,27 @@ begin  -- architecture rtl
             pc_correction <= MACHINE_MODE_TRAP;
             mepc          <= current_pc;
 
+          -- Timer Interrupt
+          elsif (mip_mtip = '1') then
+            -- Disable interrupts, in order to prevent taking the same
+            -- interrupt repeatedly. This should be reenabled by the
+            -- intterupt handler after servicing the interrupt.
+            mstatus_mie   <= '0';
+            mcause_i      <= '1';
+            mcause_ex     <= M_TIMER_INTERRUPT; 
+            pc_corr_en    <= '1';
+            pc_correction <= MACHINE_MODE_INTERRUPT;
+            mepc          <= current_pc;
+
+          -- Software Interrupt
+          elsif (mip_msip = '1') then
+            mstatus_mie   <= '0';
+            mcause_i      <= '1';
+            mcause_ex     <= M_SOFTWARE_INTERRUPT;
+            pc_corr_en    <= '1';
+            pc_correction <= MACHINE_MODE_INTERRUPT;
+            mepc          <= current_pc;
+
           elsif opcode = "11100" then        --SYSTEM OP CODE
             wb_en <= csr_read_en;
             if zimm & func3 = "00000"&"000" then
@@ -462,7 +511,7 @@ begin  -- architecture rtl
                 pc_corr_en    <= '1';
                 pc_correction <= MACHINE_MODE_TRAP;
                 mepc          <= current_pc;
-              elsif csr = x"100" then        --ERET
+              elsif csr = x"302" then        --MRET
                 pc_corr_en    <= '1';
                 pc_correction <= mepc;
               end if;
@@ -480,9 +529,9 @@ begin  -- architecture rtl
                   mie_mtie  <= csr_write_val(7);
                   mie_msie  <= csr_write_val(3);
                 when CSR_MIP =>
-                  mip_meip <= csr_write_val(11);
-                  --mip_mtip set and cleared by mtimecmp register
-                  mip_msip <= csr_write_val(3);
+                  mip_meip <= csr_write_val(11); --placeholder, this reg is not writeable.
+                  --mip_mtip set and cleared by memory mapped reserved registers.
+                  --mip_msip set and cleared by memory mapped reserved registers.
                 when others =>
                   null;
               end case;
@@ -500,8 +549,6 @@ begin  -- architecture rtl
         mstatus_mpie <= '0';
         mstatus_mie <= '0'; 
         mip_meip <= '0';
-        mip_mtip <= '0';
-        mip_msip <= '0';
         mie_meie <= '0';
         mie_mtie <= '0';
         mie_msie <= '0';
@@ -524,7 +571,7 @@ begin  -- architecture rtl
     end if;
   end process;
 
-  other_illegal <= illegal_alu_instr when opcode = "01100" or opcode = "00100"else bad_csr_num;
+  other_illegal <= illegal_alu_instr when opcode = "01100" or opcode = "00100" else bad_csr_num;
   li : component instruction_legal
     generic map(INSTRUCTION_SIZE         => INSTRUCTION_SIZE,
                 CHECK_LEGAL_INSTRUCTIONS => CHECK_LEGAL_INSTRUCTIONS)

@@ -6,8 +6,9 @@ entity reserved_registers is
   generic (REGISTER_SIZE : integer := 32);
   port (
     mtime_o : out std_logic_vector(63 downto 0);
-    mtimecmp_o : out std_logic_vector(63 downto 0);
     mip_mtip_o : out std_logic;
+
+    mip_msip_o : out std_logic;
     
     -- Avalon bus
     clk : in std_logic;
@@ -30,76 +31,92 @@ architecture rtl of reserved_registers is
   signal mtimecmp_h_reg : std_logic_vector(31 downto 0);
   signal mip_mtip_reg   : std_logic; 
 
-  signal byteen_3 : std_logic_vector(7 downto 0);
-  signal byteen_2 : std_logic_vector(7 downto 0);
-  signal byteen_1 : std_logic_vector(7 downto 0);
-  signal byteen_0 : std_logic_vector(7 downto 0);
+  signal mip_msip_reg   : std_logic;
+
+  signal byteen_3  : std_logic_vector(7 downto 0);
+  signal byteen_2  : std_logic_vector(7 downto 0);
+  signal byteen_1  : std_logic_vector(7 downto 0);
+  signal byteen_0  : std_logic_vector(7 downto 0);
+  signal writedata : std_logic_vector(31 downto 0);
 
 
-  constant MTIMECMP_L : std_logic_vector(7 downto 0) := X"00";
-  constant MTIMECMP_H : std_logic_vector(7 downto 0) := X"01"; 
+  constant MTIMECMP_L  : std_logic_vector(7 downto 0) := X"00";
+  constant MTIMECMP_H  : std_logic_vector(7 downto 0) := X"04"; 
+  constant MSOFTWARE_I : std_logic_vector(7 downto 0) := X"08";
 
 begin
   
   mtime_o <= mtime_reg;
-  mtimecmp_o <= mtimecmp_h_reg & mtimecmp_l_reg;
   mip_mtip_o <= mip_mtip_reg;
+  mip_msip_o <= mip_msip_reg;
 
-  mtimecmp_waitrequest <= '0';
-  mtimecmp_response <= "00";
+  reserved_waitrequest <= '0';
+  reserved_response <= "00";
 
-  byteen_3 <= (others => mtimecmp_byteenable(3)); 
-  byteen_2 <= (others => mtimecmp_byteenable(2)); 
-  byteen_1 <= (others => mtimecmp_byteenable(1)); 
-  byteen_0 <= (others => mtimecmp_byteenable(0)); 
+  byteen_3 <= (others => reserved_byteenable(3)); 
+  byteen_2 <= (others => reserved_byteenable(2)); 
+  byteen_1 <= (others => reserved_byteenable(1)); 
+  byteen_0 <= (others => reserved_byteenable(0)); 
+
+  writedata <= (reserved_writedata(31 downto 24) and byteen_3) &
+               (reserved_writedata(23 downto 16) and byteen_2) &
+               (reserved_writedata(15 downto  8) and byteen_1) &
+               (reserved_writedata( 7 downto  0) and byteen_0); 
+
 
   process (clk)
   begin
     if rising_edge(clk) then
+      -- Handle triggering the timer interrupt pending.
       mtime_reg <= std_logic_vector(unsigned(mtime_reg) + to_unsigned(1, 64));
-      if (std_logic_vector(unsigned(mtime_reg) + to_unsigned(1, 64)) 
-          = mtimecmp_h_reg & mtimecmp_l_reg) then
+      if (unsigned(mtime_reg) + to_unsigned(1, 64) >= unsigned(mtimecmp_h_reg & mtimecmp_l_reg)) then
         mip_mtip_reg <= '1';
       end if;
 
-      mtimecmp_readdatavalid <= '0';
-      mtimecmp_readdata <= (others => '0');
+      reserved_readdatavalid <= '0';
+      reserved_readdata <= (others => '0');
 
       if (reset = '1') then
         mtime_reg <= (others => '0');
-        mtimecmp_h_reg <= (others => '0');
-        mtimecmp_l_reg <= (others => '0');
+        -- mtimecmp_reg gets all '1's to prevent timer interrupts from happening right when 
+        -- they get enabled.
+        mtimecmp_h_reg <= (others => '1');
+        mtimecmp_l_reg <= (others => '1');
         mip_mtip_reg <= '0';
+        mip_msip_reg <= '0';
       else
+        if (reserved_write = '1') then
+          case (reserved_address) is
+            -- Writes to the MTIMECMP registers clear the pending interrupt.
+            when MTIMECMP_L =>
+              if (mip_mtip_reg = '1') then
+                mip_mtip_reg <= '0';
+              end if;
+              mtimecmp_l_reg <= writedata;
+            when MTIMECMP_H =>
+              if (mip_mtip_reg = '1') then
+                mip_mtip_reg <= '0';
+              end if;
+              mtimecmp_h_reg <=  writedata;
+            -- Writes to the MSOFTWARE_I register induce a pending software interrupt.
+            when MSOFTWARE_I =>
+              mip_msip_reg <= '1';                           
+            when others =>
+          end case;
 
-        if (mtimecmp_write = '1') then
-          if (mtimecmp_address = MTIMECMP_L) then
-            if (mip_mtip_reg = '1') then
-              mip_mtip_reg <= '0';
-            end if;
-            mtimecmp_l_reg <= 
-              mtimecmp_writedata(31 downto 24) and byteen_3 &
-              mtimecmp_writedata(23 downto 16) and byteen_2 &
-              mtimecmp_writedata(15 downto  8) and byteen_1 &
-              mtimecmp_writedata( 7 downto  0) and byteen_0; 
-          elsif (mtimecmp_address = MTIMECMP_H) then
-            if (mip_mtip_reg = '1') then
-              mip_mtip_reg <= '0';
-            end if;
-            mtimecmp_h_reg <= 
-              mtimecmp_writedata(31 downto 24) and byteen_3 &
-              mtimecmp_writedata(23 downto 16) and byteen_2 &
-              mtimecmp_writedata(15 downto  8) and byteen_1 &
-              mtimecmp_writedata( 7 downto  0) and byteen_0; 
-          end if;
-
-        elsif (mtimecmp_read = '1') then
-          mtimecmp_readdatavalid <= '1';
-          if (mtimecmp_address = MTIMECMP_L) then
-            mtimecmp_readdata <= mtimecmp_l_reg; 
-          elsif (mtimecmp_address = MTIMECMP_H) then
-           mtimecmp_readdata <= mtimecmp_h_reg;
-          end if;
+        elsif (reserved_read = '1') then
+          reserved_readdatavalid <= '1';
+          case (reserved_address) is
+            when MTIMECMP_L =>
+              reserved_readdata <= mtimecmp_l_reg;
+            when MTIMECMP_H =>
+              reserved_readdata <= mtimecmp_h_reg;
+            -- Reads from the MSOFTWARE_I register clear a pending software interrupt. 
+            when MSOFTWARE_I =>
+              mip_msip_reg <= '0';
+              reserved_readdata <= (others => '0');
+            when others =>
+          end case;
         end if;
 
       end if;

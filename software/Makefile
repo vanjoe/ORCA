@@ -1,7 +1,7 @@
 all:
 AS_SRCS=crt.S
 
-TARGET=test
+TARGET=interrupt_test
 C_SRCS=
 C_SRCS+=$(TARGET).c
 
@@ -13,7 +13,7 @@ CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
 ARCH=RV32IXmxp
-CFLAGS= -m32 -O2 -fno-delete-null-pointer-checks -g -march=$(ARCH)  -MD -Wall -std=gnu99
+CFLAGS= -m32 -O2 -fno-delete-null-pointer-checks -g -march=$(ARCH)  -MD -Wall -std=gnu99 -msoft-float -mmuldiv 
 LD_FLAGS= -m32 -march=$(ARCH) -static -nostartfiles
 
 $(C_OBJ_FILES) $(S_OBJ_FILES) : | obj/
@@ -40,6 +40,6 @@ endif
 all: $(TARGET).$(FORMAT) 
 
 clean:
-	rm -rf obj test.elf test.dump test.bin test.hex test.mif test.mem
+	rm -rf obj $(TARGET).elf $(TARGET).dump $(TARGET).bin $(TARGET).hex $(TARGET).mif $(TARGET).mem
 
 -include $(wildcard obj/*.d)

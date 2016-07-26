@@ -129,7 +129,10 @@ package rv_components is
       write_data     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       waitrequest    : in     std_logic;
-      datavalid      : in     std_logic);
+      datavalid      : in     std_logic;
+      mtime_i        : in     std_logic_vector(63 downto 0);
+      mip_mtip_i     : in     std_logic;
+      mip_msip_i     : in     std_logic);
   end component execute;
 
   component instruction_fetch is
@@ -415,15 +418,18 @@ package rv_components is
 
       use_after_load_stall : in std_logic;
       predict_corr         : in std_logic;
-      load_stall           : in std_logic);
+      load_stall           : in std_logic;
+      mtime_i              : in std_logic_vector(63 downto 0);
+      mip_mtip_i           : in std_logic;
+      mip_msip_i           : in std_logic);
   end component system_calls;
 
   component reserved_registers is
     generic (REGISTER_SIZE : integer := 32);
     port (
       mtime_o : out std_logic_vector(63 downto 0);
-      mtimecmp_o : out std_logic_vector(63 downto 0);
       mip_mtip_o : out std_logic;
+      mip_msip_o : out std_logic;
       
       -- Avalon bus
       clk : in std_logic;
