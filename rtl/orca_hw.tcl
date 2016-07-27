@@ -46,7 +46,8 @@ add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file orca.vhd VHDL PATH orca.vhd TOP_LEVEL_FILE
 add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file reserved_registers.vhd VHDL PATH reserved_registers.vhd
+add_fileset_file plic.vhd VHDL PATH plic.vhd
+add_fileset_file gateway.vhd VHDL PATH gateway.vhd  
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL Orca
@@ -63,7 +64,8 @@ add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file orca.vhd VHDL PATH orca.vhd
 add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file reserved_registers.vhd VHDL PATH reserved_registers.vhd
+add_fileset_file plic.vhd VHDL PATH plic.vhd
+add_fileset_file gateway.vhd VHDL PATH gateway.vhd
 
 
 
@@ -316,6 +318,21 @@ set_interface_property from_host CMSIS_SVD_VARIABLES ""
 set_interface_property from_host SVD_ADDRESS_GROUP ""
 
 add_interface_port from_host coe_from_host export Input register_size
+
+#
+# connection point global_interrupts
+#
+
+add_interface global_interrupts conduit end
+set_interface_property global_interrupts associatedClock ""
+set_interface_property global_interrupts associatedReset ""
+set_interface_property global_interrupts ENABLED true
+set_interface_property global_interrupts EXPORT_OF ""
+set_interface_property global_interrupts PORT_NAME_MAP ""
+set_interface_property global_interrupts CMSIS_SVD_VARIABLES ""
+set_interface_property global_interrupts SVD_ADDRESS_GROUP ""
+
+add_interface_port global_interrupts global_interrupts export Input register_size
 
 proc log_out {out_str} {
         set chan [open ~/log.txt a]

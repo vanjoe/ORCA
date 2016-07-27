@@ -47,7 +47,9 @@ entity Orca is
        avm_instruction_writedata     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
        avm_instruction_lock          : out std_logic;
        avm_instruction_waitrequest   : in  std_logic                                  := '0';
-       avm_instruction_readdatavalid : in  std_logic                                  := '0'
+       avm_instruction_readdatavalid : in  std_logic                                  := '0';
+
+       global_interrupts             : in  std_logic_vector(31 downto 0)
        );
 
 end entity Orca;
@@ -57,11 +59,9 @@ architecture rtl of Orca is
   constant INSTRUCTION_SIZE    : integer := 32;
   constant SIGN_EXTENSION_SIZE : integer := 20;
 
-  --signals going int fetch
-
+  --signals going into fetch
   signal if_stall_in  : std_logic;
   signal if_valid_out : std_logic;
-
 
   --signals going into decode
   signal d_instr     : std_logic_vector(INSTRUCTION_SIZE -1 downto 0);
@@ -109,21 +109,22 @@ architecture rtl of Orca is
   signal data_sel_prev : std_logic;
 
   -- Reserved register bus lines
-  signal reserved_address : std_logic_vector(7 downto 0);
-  signal reserved_byteenable : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-  signal reserved_read : std_logic;
-  signal reserved_readdata : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal reserved_response : std_logic_vector(1 downto 0);
-  signal reserved_write : std_logic;
-  signal reserved_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal reserved_lock : std_logic;
-  signal reserved_waitrequest : std_logic;
-  signal reserved_readdatavalid : std_logic;
+  signal plic_address : std_logic_vector(7 downto 0);
+  signal plic_byteenable : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal plic_read : std_logic;
+  signal plic_readdata : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal plic_response : std_logic_vector(1 downto 0);
+  signal plic_write : std_logic;
+  signal plic_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal plic_lock : std_logic;
+  signal plic_waitrequest : std_logic;
+  signal plic_readdatavalid : std_logic;
 
   -- Interrupt lines
   signal mtime : std_logic_vector(63 downto 0);
   signal mip_mtip : std_logic;
   signal mip_msip : std_logic;
+  signal mip_meip : std_logic;
 
   signal branch_pred : std_logic_vector(REGISTER_SIZE*2 + 3-1 downto 0);
 begin  -- architecture rtl
@@ -152,7 +153,6 @@ begin  -- architecture rtl
       read_data       => instr_data,
       read_wait       => instr_read_wait,
       read_datavalid  => instr_readvalid);
-
 
   d_valid <= if_valid_out and not pipeline_flush;
 
@@ -230,32 +230,36 @@ begin  -- architecture rtl
       datavalid      => e_readvalid,
       mtime_i        => mtime,
       mip_mtip_i     => mip_mtip,
-      mip_msip_i     => mip_msip);
+      mip_msip_i     => mip_msip,
+      mip_meip_i     => mip_meip);
 
-  -- Handle arbitration between the bus and the internal reseved registers
-  reserved_bank : component reserved_registers
+
+  interrupt_controller : component plic 
     generic map (
       REGISTER_SIZE => REGISTER_SIZE)
     port map (
-      clk                    => clk,
-      reset                  => reset,
+      clk                => clk,
+      reset              => reset,
 
-      mtime_o                => mtime,
-      mip_mtip_o             => mip_mtip,
-      mip_msip_o             => mip_msip,
+      global_interrupts  => global_interrupts,
 
-      reserved_address       => reserved_address,
-      reserved_byteenable    => reserved_byteenable,
-      reserved_read          => reserved_read,
-      reserved_readdata      => reserved_readdata,
-      reserved_response      => reserved_response,
-      reserved_write         => reserved_write,
-      reserved_writedata     => reserved_writedata,
-      reserved_lock          => reserved_lock,
-      reserved_waitrequest   => reserved_waitrequest,
-      reserved_readdatavalid => reserved_readdatavalid);
+      mtime_o            => mtime,
+      mip_mtip_o         => mip_mtip,
+      mip_msip_o         => mip_msip,
+      mip_meip_o         => mip_meip,
+
+      plic_address       => plic_address,
+      plic_byteenable    => plic_byteenable,
+      plic_read          => plic_read,
+      plic_readdata      => plic_readdata,
+      plic_response      => plic_response,
+      plic_write         => plic_write,
+      plic_writedata     => plic_writedata,
+      plic_lock          => plic_lock,
+      plic_waitrequest   => plic_waitrequest,
+      plic_readdatavalid => plic_readdatavalid);
     
-
+  -- Handle arbitration between the bus and the PLIC 
   data_sel <= '1' when unsigned(data_address) >= X"100"
          else '0';
 
@@ -270,12 +274,12 @@ begin  -- architecture rtl
     end if;
   end process;
 
-  reserved_address <= data_address(7 downto 0) when data_sel = '0' else (others => '0');
-  reserved_byteenable <= data_byte_en when data_sel = '0' else (others => '0');
-  reserved_read <= data_read_en when data_sel = '0' else '0';
-  reserved_write <= data_write_en when data_sel = '0' else '0';
-  reserved_writedata <= data_write_data when data_sel = '0' else (others => '0');
-  reserved_lock <= '0';
+  plic_address <= data_address(7 downto 0) when data_sel = '0' else (others => '0');
+  plic_byteenable <= data_byte_en when data_sel = '0' else (others => '0');
+  plic_read <= data_read_en when data_sel = '0' else '0';
+  plic_write <= data_write_en when data_sel = '0' else '0';
+  plic_writedata <= data_write_data when data_sel = '0' else (others => '0');
+  plic_lock <= '0';
 
   avm_data_address <= data_address when data_sel = '1' else (others => '0');
   avm_data_byteenable <= data_byte_en when data_sel = '1' else (others => '0');
@@ -284,10 +288,10 @@ begin  -- architecture rtl
   avm_data_writedata <= data_write_data when data_sel = '1' else (others => '0');
   avm_data_lock <= '0';
   
-  data_wait <= reserved_waitrequest when data_sel = '0' else avm_data_waitrequest;
+  data_wait <= plic_waitrequest when data_sel = '0' else avm_data_waitrequest;
 
-  data_read_data <= reserved_readdata when data_sel_prev = '0' else avm_data_readdata;
-  e_readvalid <= reserved_readdatavalid when data_sel_prev = '0' else avm_data_readdatavalid;
+  data_read_data <= plic_readdata when data_sel_prev = '0' else avm_data_readdata;
+  e_readvalid <= plic_readdatavalid when data_sel_prev = '0' else avm_data_readdatavalid;
 
   avm_instruction_address    <= instr_address;
   avm_instruction_byteenable <= "1111";

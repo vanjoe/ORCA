@@ -10,7 +10,6 @@ use work.utils.all;
 library STD;
 use STD.textio.all;                     -- basic I/O
 
-
 entity execute is
   generic(
     REGISTER_SIZE        : positive;
@@ -59,7 +58,8 @@ entity execute is
 
     mtime_i        : in     std_logic_vector(63 downto 0);
     mip_mtip_i     : in     std_logic;
-    mip_msip_i     : in     std_logic);
+    mip_msip_i     : in     std_logic;
+    mip_meip_i     : in     std_logic);
 end entity execute;
 
 architecture behavioural of execute is
@@ -388,7 +388,8 @@ begin
 
       mtime_i              => mtime_i,
       mip_mtip_i           => mip_mtip_i,
-      mip_msip_i           => mip_msip_i
+      mip_msip_i           => mip_msip_i,
+      mip_meip_i           => mip_meip_i
       );
 
 

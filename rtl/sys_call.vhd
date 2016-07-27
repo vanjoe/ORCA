@@ -68,10 +68,11 @@ entity system_calls is
     predict_corr         : in std_logic;
     load_stall           : in std_logic;
    
-    -- From reserved registers 
+    -- From the PLIC 
     mtime_i  : in std_logic_vector(63 downto 0);
     mip_mtip_i : in std_logic;
-    mip_msip_i : in std_logic);
+    mip_msip_i : in std_logic;
+    mip_meip_i : in std_logic);
 
 
 end entity system_calls;
@@ -229,7 +230,7 @@ architecture rtl of system_calls is
   constant M_EXTERNAL_INTERRUPT : std_logic_vector(3 downto 0) := x"B";
 
 
-                                        --RESET VECTORS
+  --RESET VECTORS
   constant SYSTEM_RESET :
     std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_unsigned(RESET_VECTOR - 16#00#, REGISTER_SIZE));
   constant MACHINE_MODE_TRAP :
@@ -237,15 +238,13 @@ architecture rtl of system_calls is
     constant MACHINE_MODE_INTERRUPT :
     std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_unsigned(RESET_VECTOR - 16#140#, REGISTER_SIZE));
 
-                                        --func3 constants
+  --func3 constants
   constant CSRRW  : std_logic_vector(2 downto 0) := "001";
   constant CSRRS  : std_logic_vector(2 downto 0) := "010";
   constant CSRRC  : std_logic_vector(2 downto 0) := "011";
   constant CSRRWI : std_logic_vector(2 downto 0) := "101";
   constant CSRRSI : std_logic_vector(2 downto 0) := "110";
   constant CSRRCI : std_logic_vector(2 downto 0) := "111";
-
-
 
 --internal signals
   signal csr_read_val  : std_logic_vector(REGISTER_SIZE -1 downto 0);
@@ -268,9 +267,10 @@ architecture rtl of system_calls is
 
 
 begin  -- architecture rtl
-  -- interrupt input, only goes high if interrupts are enabled, otherwise ignored
+  -- Interrupt input, only goes high if interrupts are enabled, otherwise ignored.
   mip_mtip <= mip_mtip_i when ((mstatus_mie = '1') and (mie_mtie = '1')) else '0';
   mip_msip <= mip_msip_i when ((mstatus_mie = '1') and (mie_msie = '1')) else '0';
+  mip_meip <= mip_meip_i when ((mstatus_mie = '1') and (mie_meie = '1')) else '0';
       
   counter_increment : process (clk, reset) is
   begin  -- process
@@ -475,14 +475,16 @@ begin  -- architecture rtl
             pc_correction <= MACHINE_MODE_TRAP;
             mepc          <= current_pc;
 
-          -- Timer Interrupt
-          elsif (mip_mtip = '1') then
+          -- Interrupt Priority is external > software > timer.
+
+          -- External Interrupt
+          elsif (mip_meip = '1') then
             -- Disable interrupts, in order to prevent taking the same
             -- interrupt repeatedly. This should be reenabled by the
             -- intterupt handler after servicing the interrupt.
-            mstatus_mie   <= '0';
+            mstatus_mie   <= '0'; 
             mcause_i      <= '1';
-            mcause_ex     <= M_TIMER_INTERRUPT; 
+            mcause_ex     <= M_EXTERNAL_INTERRUPT;
             pc_corr_en    <= '1';
             pc_correction <= MACHINE_MODE_INTERRUPT;
             mepc          <= current_pc;
@@ -495,6 +497,17 @@ begin  -- architecture rtl
             pc_corr_en    <= '1';
             pc_correction <= MACHINE_MODE_INTERRUPT;
             mepc          <= current_pc;
+
+          -- Timer Interrupt
+          elsif (mip_mtip = '1') then
+            mstatus_mie   <= '0';
+            mcause_i      <= '1';
+            mcause_ex     <= M_TIMER_INTERRUPT; 
+            pc_corr_en    <= '1';
+            pc_correction <= MACHINE_MODE_INTERRUPT;
+            mepc          <= current_pc;
+
+
 
           elsif opcode = "11100" then        --SYSTEM OP CODE
             wb_en <= csr_read_en;
@@ -529,9 +542,9 @@ begin  -- architecture rtl
                   mie_mtie  <= csr_write_val(7);
                   mie_msie  <= csr_write_val(3);
                 when CSR_MIP =>
-                  mip_meip <= csr_write_val(11); --placeholder, this reg is not writeable.
-                  --mip_mtip set and cleared by memory mapped reserved registers.
-                  --mip_msip set and cleared by memory mapped reserved registers.
+                  --mip_meip set abd ckeared by memory mapped PLIC operations. 
+                  --mip_mtip set and cleared by memory mapped timer operations.
+                  --mip_msip set and cleared by memory mapped reserved software registers.
                 when others =>
                   null;
               end case;
@@ -548,7 +561,6 @@ begin  -- architecture rtl
         mstatus_mpp <= (others => '1'); -- hardwired to "11"
         mstatus_mpie <= '0';
         mstatus_mie <= '0'; 
-        mip_meip <= '0';
         mie_meie <= '0';
         mie_mtie <= '0';
         mie_msie <= '0';

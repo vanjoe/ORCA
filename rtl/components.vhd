@@ -48,8 +48,9 @@ package rv_components is
       avm_instruction_writedata     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       avm_instruction_lock          : out std_logic;
       avm_instruction_waitrequest   : in  std_logic                                  := '0';
-      avm_instruction_readdatavalid : in  std_logic                                  := '0'
+      avm_instruction_readdatavalid : in  std_logic                                  := '0';
 
+      global_interrupts             : in std_logic_vector(31 downto 0)
       );
   end component orca;
 
@@ -132,7 +133,8 @@ package rv_components is
       datavalid      : in     std_logic;
       mtime_i        : in     std_logic_vector(63 downto 0);
       mip_mtip_i     : in     std_logic;
-      mip_msip_i     : in     std_logic);
+      mip_msip_i     : in     std_logic;
+      mip_meip_i     : in     std_logic);
   end component execute;
 
   component instruction_fetch is
@@ -421,29 +423,46 @@ package rv_components is
       load_stall           : in std_logic;
       mtime_i              : in std_logic_vector(63 downto 0);
       mip_mtip_i           : in std_logic;
-      mip_msip_i           : in std_logic);
+      mip_msip_i           : in std_logic;
+      mip_meip_i           : in std_logic);
   end component system_calls;
 
-  component reserved_registers is
+  component plic is
     generic (REGISTER_SIZE : integer := 32);
     port (
       mtime_o : out std_logic_vector(63 downto 0);
       mip_mtip_o : out std_logic;
       mip_msip_o : out std_logic;
+      mip_meip_o : out std_logic;
+
+      global_interrupts : in std_logic_vector(31 downto 0);
       
       -- Avalon bus
       clk : in std_logic;
       reset : in std_logic;
-      reserved_address : in std_logic_vector(7 downto 0);
-      reserved_byteenable : in std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      reserved_read : in std_logic;
-      reserved_readdata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      reserved_response : out std_logic_vector(1 downto 0);
-      reserved_write : in std_logic;
-      reserved_writedata : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      reserved_lock : in std_logic;
-      reserved_waitrequest : out std_logic;
-      reserved_readdatavalid : out std_logic);
-  end component reserved_registers;
+      plic_address : in std_logic_vector(7 downto 0);
+      plic_byteenable : in std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      plic_read : in std_logic;
+      plic_readdata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      plic_response : out std_logic_vector(1 downto 0);
+      plic_write : in std_logic;
+      plic_writedata : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      plic_lock : in std_logic;
+      plic_waitrequest : out std_logic;
+      plic_readdatavalid : out std_logic);
+  end component plic;
+
+  component gateway is
+    port (
+      clk                   : in std_logic;
+      reset                 : in std_logic;
+      
+      global_interrupts     : in std_logic_vector(31 downto 0);
+      edge_sensitive_vector : in std_logic_vector(31 downto 0);
+      interrupt_claimed     : in std_logic_vector(31 downto 0);
+      interrupt_complete    : in std_logic_vector(31 downto 0);
+      pending_interrupts    : out std_logic_vector(31 downto 0));
+  end component gateway;
 
 end package rv_components;
+
