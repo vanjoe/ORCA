@@ -101,6 +101,14 @@
          type = "String";
       }
    }
+   element interrupt_generator_0
+   {
+      datum _sortIndex
+      {
+         value = "15";
+         type = "int";
+      }
+   }
    element jtag_uart_0
    {
       datum _sortIndex
@@ -545,6 +553,11 @@
   <parameter name="width" value="32" />
  </module>
  <module
+   name="interrupt_generator_0"
+   kind="interrupt_generator"
+   version="1.0"
+   enabled="1" />
+ <module
    name="jtag_uart_0"
    kind="altera_avalon_jtag_uart"
    version="15.1"
@@ -813,10 +826,26 @@
    start="clk_0.clk"
    end="pipeline_counter_0.clock" />
  <connection
+   kind="clock"
+   version="15.1"
+   start="clk_0.clk"
+   end="interrupt_generator_0.clock" />
+ <connection
    kind="conduit"
    version="15.1"
    start="pipeline_counter_0.conduit_end_1"
    end="read_pipeline_0.conduit_end">
+  <parameter name="endPort" value="" />
+  <parameter name="endPortLSB" value="0" />
+  <parameter name="startPort" value="" />
+  <parameter name="startPortLSB" value="0" />
+  <parameter name="width" value="0" />
+ </connection>
+ <connection
+   kind="conduit"
+   version="15.1"
+   start="riscv_0.global_interrupts"
+   end="interrupt_generator_0.conduit_end">
   <parameter name="endPort" value="" />
   <parameter name="endPortLSB" value="0" />
   <parameter name="startPort" value="" />
@@ -864,6 +893,11 @@
    version="15.1"
    start="clk_0.clk_reset"
    end="pipeline_counter_0.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="clk_0.clk_reset"
+   end="interrupt_generator_0.reset" />
  <connection
    kind="reset"
    version="15.1"

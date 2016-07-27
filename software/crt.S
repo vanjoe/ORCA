@@ -14,22 +14,6 @@
 
   .section .init
   .align 6
-user_interrupt_entry:
-  j interrupt_entry
-
-  .align 6
-supervisor_interrupt_entry:
-  j interrupt_entry
-  
-  .align 6
-hypervisor_interrupt_entry:
-  j interrupt_entry
-
-  .align 6
-machine_interrupt_entry:
-  j interrupt_entry
-
-  .align 6
 user_trap_entry:
   j trap_entry
 
@@ -43,6 +27,17 @@ hypervisor_trap_entry:
 
   .align 6
 machine_trap_entry:
+  addi sp, sp, -4
+  sw t0, 0x0(sp)
+  csrr t0, mcause
+  srli t0, t0, 31
+  beqz t0, take_trap
+  lw t0, 0x0(sp)
+  addi sp, sp, 4
+  j interrupt_entry
+take_trap:
+  lw t0, 0x0(sp)
+  addi sp, sp, 4
   j trap_entry
 
   .align 6

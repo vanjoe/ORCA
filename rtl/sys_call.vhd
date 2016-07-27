@@ -235,8 +235,6 @@ architecture rtl of system_calls is
     std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_unsigned(RESET_VECTOR - 16#00#, REGISTER_SIZE));
   constant MACHINE_MODE_TRAP :
     std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_unsigned(RESET_VECTOR - 16#40#, REGISTER_SIZE));
-    constant MACHINE_MODE_INTERRUPT :
-    std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_unsigned(RESET_VECTOR - 16#140#, REGISTER_SIZE));
 
   --func3 constants
   constant CSRRW  : std_logic_vector(2 downto 0) := "001";
@@ -486,7 +484,7 @@ begin  -- architecture rtl
             mcause_i      <= '1';
             mcause_ex     <= M_EXTERNAL_INTERRUPT;
             pc_corr_en    <= '1';
-            pc_correction <= MACHINE_MODE_INTERRUPT;
+            pc_correction <= MACHINE_MODE_TRAP;
             mepc          <= current_pc;
 
           -- Software Interrupt
@@ -495,7 +493,7 @@ begin  -- architecture rtl
             mcause_i      <= '1';
             mcause_ex     <= M_SOFTWARE_INTERRUPT;
             pc_corr_en    <= '1';
-            pc_correction <= MACHINE_MODE_INTERRUPT;
+            pc_correction <= MACHINE_MODE_TRAP;
             mepc          <= current_pc;
 
           -- Timer Interrupt
@@ -504,7 +502,7 @@ begin  -- architecture rtl
             mcause_i      <= '1';
             mcause_ex     <= M_TIMER_INTERRUPT; 
             pc_corr_en    <= '1';
-            pc_correction <= MACHINE_MODE_INTERRUPT;
+            pc_correction <= MACHINE_MODE_TRAP;
             mepc          <= current_pc;
 
 

@@ -27,7 +27,7 @@ SECTIONS
 {
 
   /* text: test code section */
-  . = 0x000;
+  . = 0x100;
   .init . :
   {
 	  *(.init)
