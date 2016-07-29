@@ -32,11 +32,11 @@ entity mxp_top is
     slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
     slave_wait     : out std_logic;
 
-    mxp_data1  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    mxp_data2  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    mxp_enable : out std_logic;
-    mxp_result : in  std_logic_vector(REGISTER_SIZE-1 downto 0)
-
+    mxp_data1  : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    mxp_data2  : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    mxp_enable : buffer std_logic;
+    mxp_result : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    alu_stall  : in     std_logic
     );
 end entity;
 

@@ -10,8 +10,8 @@ use work.utils.all;
 entity ram_1port is
 
   generic (
-    MEM_DEPTH : natural;
-    MEM_WIDTH : natural);
+    MEM_DEPTH : natural := 1024;
+    MEM_WIDTH : natural := 32);
 
   port (
     clk      : in  std_logic;
@@ -24,31 +24,29 @@ entity ram_1port is
     );
 
 end entity ram_1port;
-architecture rt of ram_1port is
-  type mem_t is array (0 to MEM_DEPTH-1) of std_logic_vector(MEM_WIDTH-1 downto 0);
-
-  signal ram : mem_t := (others => (others => '0'));
-begin  -- architecture rt
 
 
-  process(clk)
+architecture behav of ram_1port is
+
+  type ram_type is array (0 to MEM_DEPTH-1) of std_logic_vector(MEM_WIDTH-1 downto 0);
+  signal ram : ram_type;
+  signal Q   : std_logic_vector(MEM_WIDTH-1 downto 0);
+begin
+
+
+  process (clk)
   begin
-    if(rising_edge(clk)) then
-      for i in byte_en'range loop
-        if(wr_en = '1' and byte_en(i) = '1') then
-          ram(to_integer(unsigned(addr)))(8*(i+1) -1 downto 8*i) <= data_in(8*(i+1) -1 downto 8*i);
+    if rising_edge(clk) then
+      Q <= ram(to_integer(unsigned(addr)));
+      for b in 0 to MEM_WIDTH/8 -1 loop
+        if wr_en = '1' and byte_en(b) = '1' then
+          ram(to_integer(unsigned(addr)))((b+1)*8 -1 downto b*8) <= data_in(8*(b+1)-1 downto 8*b);
         end if;
-
-        data_out(8*(i+1) -1 downto 8*i) <= ram(to_integer(unsigned(addr)))(8*(i+1) -1 downto 8*i);
-
-      end loop;  -- i
-
+      end loop;  -- b
     end if;
   end process;
-
-
-
-end architecture rt;
+  data_out <= Q;
+end architecture behav;
 
 
 
@@ -97,8 +95,8 @@ architecture rtl of ram_4port is
 
   component ram_1port is
     generic (
-      MEM_DEPTH : natural;
-      MEM_WIDTH : natural);
+      MEM_DEPTH : natural := 1024;
+      MEM_WIDTH : natural := 32);
     port (
       clk      : in  std_logic;
       byte_en  : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);

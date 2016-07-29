@@ -188,7 +188,7 @@ package rv_components is
 
       mxp_data1  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       mxp_data2  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      mxp_enable : in std_logic;
+      mxp_enable : in  std_logic;
       mxp_result : out std_logic_vector(REGISTER_SIZE-1 downto 0)
 
       );
@@ -455,6 +455,7 @@ package rv_components is
       mxp_data1  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       mxp_data2  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       mxp_enable : out std_logic;
+      alu_stall  : in  std_logic;
       mxp_result : in  std_logic_vector(REGISTER_SIZE-1 downto 0)
 
       );

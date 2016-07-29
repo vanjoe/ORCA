@@ -438,6 +438,7 @@ begin
         mxp_data1  => mxp_data1,
         mxp_data2  => mxp_data2,
         mxp_enable => mxp_valid,
+        alu_stall => alu_stall,
         mxp_result => mxp_result
         );
 
@@ -465,7 +466,7 @@ begin
     sp_write_en <= use_scratchpad and ls_write_en;
 
     ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else read_data;
-    ls_waitrequest <= sp_wait or waitrequest;
+    ls_waitrequest <= sp_wait when use_scratchpad = '1' else  waitrequest;
     ls_datavalid   <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
 
     byte_en    <= ls_byte_en;

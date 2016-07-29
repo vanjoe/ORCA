@@ -214,7 +214,7 @@ begin  -- architecture rtl
   data_in2   <= mxp_data2 when mxp_enable = '1' else rs2_data;
   mxp_result <= data_out;
 
-  sh_enable <= valid when (opcode = OP or opcode = OP_IMM) and (func3 = "001" or func3 = "101") else '0';
+  sh_enable <= valid when (opcode = OP or opcode = OP_IMM or (opcode = MXP_OP and mxp_enable = '1') ) and (func3 = "001" or func3 = "101") else '0';
 
   SH_GEN0 : if SHIFTER_USE_MULTIPLIER generate
     sh_stall <= mul_stall;
@@ -316,7 +316,6 @@ begin  -- architecture rtl
               data_out <= std_logic_vector(base_result);
             end if;
           when MXP_OP=>
-            data_enable <= valid;
             if func7 = mul_f7 and MULTIPLY_ENABLE then
               data_out <= std_logic_vector(mul_result);
             else
