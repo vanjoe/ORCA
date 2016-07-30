@@ -23,37 +23,65 @@ package rv_components is
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
 
-      --conduit end point
-      coe_to_host         : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      coe_from_host       : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
-      coe_program_counter : out std_logic_vector(REGISTER_SIZE -1 downto 0);
 
---avalon master bus
+      --avalon master bus
       avm_data_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       avm_data_byteenable    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
       avm_data_read          : out std_logic;
       avm_data_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
-      avm_data_response      : in  std_logic_vector(1 downto 0)               := (others => 'X');
       avm_data_write         : out std_logic;
       avm_data_writedata     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_data_lock          : out std_logic;
       avm_data_waitrequest   : in  std_logic                                  := '0';
       avm_data_readdatavalid : in  std_logic                                  := '0';
 
       --avalon master bus
       avm_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_instruction_byteenable    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
       avm_instruction_read          : out std_logic;
       avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
-      avm_instruction_response      : in  std_logic_vector(1 downto 0)               := (others => 'X');
-      avm_instruction_write         : out std_logic;
-      avm_instruction_writedata     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_instruction_lock          : out std_logic;
       avm_instruction_waitrequest   : in  std_logic                                  := '0';
       avm_instruction_readdatavalid : in  std_logic                                  := '0'
 
       );
   end component orca;
+
+  component orca_wishbone is
+    generic (
+      REGISTER_SIZE      : integer              := 32;
+      RESET_VECTOR       : natural              := 16#00000200#;
+      MULTIPLY_ENABLE    : natural range 0 to 1 := 0;
+      DIVIDE_ENABLE      : natural range 0 to 1 := 0;
+      SHIFTER_MAX_CYCLES : natural              := 8;
+      COUNTER_LENGTH     : natural              := 64;
+      BRANCH_PREDICTORS  : natural              := 0;
+      PIPELINE_STAGES    : natural range 4 to 5 := 5;
+      FORWARD_ALU_ONLY   : natural range 0 to 1 := 1;
+      MXP_ENABLE         : natural range 0 to 1 := 0);
+    port(
+      clk            : in std_logic;
+      scratchpad_clk : in std_logic;
+      reset          : in std_logic;
+
+      data_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_WE_O    : out std_logic;
+      data_SEL_O   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      data_STB_O   : out std_logic;
+      data_ACK_I   : in  std_logic;
+      data_CYC_O   : out std_logic;
+      data_CTI_O   : out std_logic_vector(2 downto 0);
+      data_STALL_I : in  std_logic;
+
+      instr_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instr_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instr_STB_O   : out std_logic;
+      instr_ACK_I   : in  std_logic;
+      instr_CYC_O   : out std_logic;
+      instr_CTI_O   : out std_logic_vector(2 downto 0);
+      instr_STALL_I : in  std_logic
+
+      );
+  end component orca_wishbone;
 
   component decode is
     generic(
@@ -120,20 +148,19 @@ package rv_components is
       wb_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
       wb_en   : buffer std_logic;
 
-      to_host   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      from_host : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       branch_pred    : out    std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
       stall_pipeline : buffer std_logic;
---memory-bus
-      address        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      write_en       : out    std_logic;
-      read_en        : out    std_logic;
-      write_data     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      waitrequest    : in     std_logic;
-      datavalid      : in     std_logic);
+
+      --memory-bus
+      address     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      byte_en     : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      write_en    : out std_logic;
+      read_en     : out std_logic;
+      writedata   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      readdata    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      waitrequest : in  std_logic;
+      datavalid   : in  std_logic);
   end component execute;
 
   component instruction_fetch is
@@ -414,9 +441,6 @@ package rv_components is
 
       wb_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       wb_en   : out std_logic;
-
-      to_host   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      from_host : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       current_pc    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       pc_correction : out std_logic_vector(REGISTER_SIZE -1 downto 0);

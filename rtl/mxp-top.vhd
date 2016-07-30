@@ -197,7 +197,6 @@ begin
   begin
     if rising_edge(clk) then
       data_valid   <= rd_en;
---      alu_result   <= srca_data + srcb_data;
       waddr        <= dest_ptr;
       write_enable <= data_valid;
     end if;

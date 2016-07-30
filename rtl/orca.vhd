@@ -23,31 +23,20 @@ entity Orca is
        scratchpad_clk : in std_logic;
        reset          : in std_logic;
 
-       --conduit end point
-       coe_to_host         : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-       coe_from_host       : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
-       coe_program_counter : out std_logic_vector(REGISTER_SIZE -1 downto 0);
 
---avalon master bus
+       --avalon master bus
        avm_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
        avm_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
        avm_data_read                 : out std_logic;
        avm_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
-       avm_data_response             : in  std_logic_vector(1 downto 0)               := (others => 'X');
        avm_data_write                : out std_logic;
        avm_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-       avm_data_lock                 : out std_logic;
        avm_data_waitrequest          : in  std_logic                                  := '0';
        avm_data_readdatavalid        : in  std_logic                                  := '0';
        --avalon master bus
        avm_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-       avm_instruction_byteenable    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
        avm_instruction_read          : out std_logic;
        avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
-       avm_instruction_response      : in  std_logic_vector(1 downto 0)               := (others => 'X');
-       avm_instruction_write         : out std_logic;
-       avm_instruction_writedata     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-       avm_instruction_lock          : out std_logic;
        avm_instruction_waitrequest   : in  std_logic                                  := '0';
        avm_instruction_readdatavalid : in  std_logic                                  := '0'
 
@@ -61,7 +50,6 @@ architecture rtl of Orca is
   constant SIGN_EXTENSION_SIZE : integer := 20;
 
   --signals going int fetch
-
   signal if_stall_in  : std_logic;
   signal if_valid_out : std_logic;
 
@@ -97,8 +85,8 @@ architecture rtl of Orca is
   signal data_byte_en    : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
   signal data_write_en   : std_logic;
   signal data_read_en    : std_logic;
-  signal data_write_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_read_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal data_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal data_readdata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_wait       : std_logic;
 
   signal instr_address : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -111,7 +99,6 @@ architecture rtl of Orca is
   signal branch_pred : std_logic_vector(REGISTER_SIZE*2 + 3-1 downto 0);
 begin  -- architecture rtl
   pipeline_flush      <= branch_get_flush(branch_pred);
-  coe_program_counter <= instr_address;
 
   if_stall_in <= execute_stalled;
   instr_fetch : component instruction_fetch
@@ -153,15 +140,15 @@ begin  -- architecture rtl
       flush          => pipeline_flush,
       instruction    => d_instr,
       valid_input    => d_valid,
-      --writeback ,signals
+      --writeback input signals
       wb_sel         => wb_sel,
       wb_data        => wb_data,
       wb_enable      => wb_en,
-      --output sig,nals
+      --output signals
       rs1_data       => rs1_data,
       rs2_data       => rs2_data,
       sign_extension => sign_extension,
-      --inputs jus,t for carrying to next pipeline stage
+      --inputs just for carrying to next pipeline stage
       br_taken_in    => d_br_taken,
       pc_curr_in     => d_pc,
       br_taken_out   => e_br_taken,
@@ -202,15 +189,13 @@ begin  -- architecture rtl
       branch_pred    => branch_pred,
 
       stall_pipeline => execute_stalled,
-      from_host      => coe_from_host,
-      to_host        => coe_to_host,
       --memory lines
       address        => data_address,
       byte_en        => data_byte_en,
       write_en       => data_write_en,
       read_en        => data_read_en,
-      write_data     => data_write_data,
-      read_data      => data_read_data,
+      writedata     => data_writedata,
+      readdata      => data_readdata,
       waitrequest    => data_wait,
       datavalid      => e_readvalid);
 
@@ -218,20 +203,15 @@ begin  -- architecture rtl
   avm_data_address    <= data_address;
   avm_data_byteenable <= data_byte_en;
   avm_data_read       <= data_read_en;
-  data_read_data      <= avm_data_readdata;
+  data_readdata      <= avm_data_readdata;
   avm_data_write      <= data_write_en;
-  avm_data_writedata  <= data_write_data;
-  avm_data_lock       <= '0';
+  avm_data_writedata  <= data_writedata;
   data_wait           <= avm_data_waitrequest;
   e_readvalid         <= avm_data_readdatavalid;
 
   avm_instruction_address    <= instr_address;
-  avm_instruction_byteenable <= "1111";
   avm_instruction_read       <= instr_read_en;
   instr_data                 <= avm_instruction_readdata;
-  avm_instruction_write      <= '0';
-  avm_instruction_writedata  <= (others => '0');
-  avm_instruction_lock       <= '0';
   instr_read_wait            <= avm_instruction_waitrequest;
   instr_readvalid            <= avm_instruction_readdatavalid;
 

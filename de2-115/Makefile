@@ -49,7 +49,7 @@ ifdef FORWARD_ALU_ONLY
 	sed -i 's|parameter name="FORWARD_ALU_ONLY" value=".*" />|parameter name="FORWARD_ALU_ONLY" value=$(FORWARD_ALU_ONLY) />|' $(QSYS_FILE)
 endif
 
-$(QIP_FILE):$(QSYS_FILE)
+$(QIP_FILE):$(QSYS_FILE) ../rtl/orca_hw.tcl
 	qsys-generate --synthesis=VHDL system.qsys 2>&1 | tee ./system.qsys.log
 
 $(VHDL_SUBMODULE_FILES): system/synthesis/submodules/% : ../rtl/%

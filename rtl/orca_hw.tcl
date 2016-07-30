@@ -251,10 +251,8 @@ add_interface_port data avm_data_address address Output register_size
 add_interface_port data avm_data_byteenable byteenable Output register_size/8
 add_interface_port data avm_data_read read Output 1
 add_interface_port data avm_data_readdata readdata Input register_size
-add_interface_port data avm_data_response response Input 2
 add_interface_port data avm_data_write write Output 1
 add_interface_port data avm_data_writedata writedata Output register_size
-add_interface_port data avm_data_lock lock Output 1
 add_interface_port data avm_data_waitrequest waitrequest Input 1
 add_interface_port data avm_data_readdatavalid readdatavalid Input 1
 
@@ -287,60 +285,11 @@ set_interface_property instruction CMSIS_SVD_VARIABLES ""
 set_interface_property instruction SVD_ADDRESS_GROUP ""
 
 add_interface_port instruction avm_instruction_address address Output register_size
-add_interface_port instruction avm_instruction_byteenable byteenable Output register_size/8
 add_interface_port instruction avm_instruction_read read Output 1
 add_interface_port instruction avm_instruction_readdata readdata Input register_size
-add_interface_port instruction avm_instruction_response response Input 2
-add_interface_port instruction avm_instruction_write write Output 1
-add_interface_port instruction avm_instruction_writedata writedata Output register_size
-add_interface_port instruction avm_instruction_lock lock Output 1
 add_interface_port instruction avm_instruction_waitrequest waitrequest Input 1
 add_interface_port instruction avm_instruction_readdatavalid readdatavalid Input 1
 
-
-#
-# connection point program_counter
-#
-add_interface program_counter conduit end
-set_interface_property program_counter associatedClock ""
-set_interface_property program_counter associatedReset ""
-set_interface_property program_counter ENABLED true
-set_interface_property program_counter EXPORT_OF ""
-set_interface_property program_counter PORT_NAME_MAP ""
-set_interface_property program_counter CMSIS_SVD_VARIABLES ""
-set_interface_property program_counter SVD_ADDRESS_GROUP ""
-
-add_interface_port program_counter coe_program_counter export Output register_size
-
-
-#
-# connection point to_host
-#
-add_interface to_host conduit end
-set_interface_property to_host associatedClock ""
-set_interface_property to_host associatedReset ""
-set_interface_property to_host ENABLED true
-set_interface_property to_host EXPORT_OF ""
-set_interface_property to_host PORT_NAME_MAP ""
-set_interface_property to_host CMSIS_SVD_VARIABLES ""
-set_interface_property to_host SVD_ADDRESS_GROUP ""
-
-add_interface_port to_host coe_to_host export Output register_size
-
-
-#
-# connection point from_host
-#
-add_interface from_host conduit end
-set_interface_property from_host associatedClock ""
-set_interface_property from_host associatedReset ""
-set_interface_property from_host ENABLED true
-set_interface_property from_host EXPORT_OF ""
-set_interface_property from_host PORT_NAME_MAP ""
-set_interface_property from_host CMSIS_SVD_VARIABLES ""
-set_interface_property from_host SVD_ADDRESS_GROUP ""
-
-add_interface_port from_host coe_from_host export Input register_size
 
 proc log_out {out_str} {
         set chan [open ~/log.txt a]

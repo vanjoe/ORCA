@@ -43,8 +43,6 @@ entity execute is
     wb_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     wb_en   : buffer std_logic;
 
-    to_host   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    from_host : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     branch_pred : out std_logic_vector(REGISTER_SIZE*2+3 -1 downto 0);
 
@@ -54,8 +52,8 @@ entity execute is
     byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
     write_en       : out    std_logic;
     read_en        : out    std_logic;
-    write_data     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    writedata     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    readdata      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     waitrequest    : in     std_logic;
     datavalid      : in     std_logic);
 end;
@@ -393,8 +391,6 @@ begin
       finished_instr => finished_instr,
       wb_data        => sys_data_out,
       wb_en          => sys_data_en,
-      to_host        => to_host,
-      from_host      => from_host,
 
       current_pc           => pc_current,
       pc_correction        => syscall_target,
@@ -465,7 +461,7 @@ begin
     sp_read_en  <= use_scratchpad and ls_read_en;
     sp_write_en <= use_scratchpad and ls_write_en;
 
-    ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else read_data;
+    ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else readdata;
     ls_waitrequest <= sp_wait when use_scratchpad = '1' else  waitrequest;
     ls_datavalid   <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
 
@@ -473,7 +469,7 @@ begin
     address    <= ls_address;
     write_en   <= not use_scratchpad and ls_write_en;
     read_en    <= not use_scratchpad and ls_read_en;
-    write_data <= ls_write_data;
+    writedata <= ls_write_data;
 
 
   end generate enable_mxp;
@@ -481,7 +477,7 @@ begin
   n_enable_mxp : if not MXP_ENABLE generate
     mxp_stall <= '0';
 
-    ls_read_data   <= read_data;
+    ls_read_data   <= readdata;
     ls_waitrequest <= waitrequest;
     ls_datavalid   <= datavalid;
 
@@ -489,7 +485,7 @@ begin
     address    <= ls_address;
     write_en   <= ls_write_en;
     read_en    <= ls_read_en;
-    write_data <= ls_write_data;
+    writedata <= ls_write_data;
 
   end generate n_enable_mxp;
 

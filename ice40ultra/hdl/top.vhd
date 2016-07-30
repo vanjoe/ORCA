@@ -4,6 +4,7 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
 library work;
+use work.rv_components.all;
 use work.top_component_pkg.all;
 use work.top_util_pkg.all;
 
@@ -62,10 +63,8 @@ architecture rtl of top is
 
   signal instr_ADR_O  : std_logic_vector(31 downto 0);
   signal instr_DAT_O  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal instr_WE_O   : std_logic;
   signal instr_CYC_O  : std_logic;
   signal instr_STB_O  : std_logic;
-  signal instr_SEL_O  : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
   signal instr_CTI_O  : std_logic_vector(2 downto 0);
   signal instr_BTE_O  : std_logic_vector(1 downto 0);
   signal instr_LOCK_O : std_logic;
@@ -267,15 +266,13 @@ begin
         slave1_STALL_O => data_ram_STALL_O,
         slave1_DAT_O   => data_ram_DAT_O,
         slave1_ACK_O   => data_ram_ack_O,
---      slave1_ERR_O   => data_ERR_I,
---      slave1_RTY_O   => data_RTY_I,
 
         slave2_ADR_I  => instr_ADR_O,
         slave2_DAT_I  => instr_DAT_O,
-        slave2_WE_I   => instr_WE_O,
+        slave2_WE_I   => '0',
         slave2_CYC_I  => instr_CYC_O,
         slave2_STB_I  => instr_STB_O,
-        slave2_SEL_I  => instr_SEL_O,
+        slave2_SEL_I  => (others => '1'),
         slave2_CTI_I  => instr_CTI_O,
         slave2_BTE_I  => instr_BTE_O,
         slave2_LOCK_I => instr_LOCK_O,
@@ -317,11 +314,11 @@ begin
         RST_I => reset,
 
         ADR_I  => instr_ADR_O,
-        DAT_I  => instr_DAT_O,
-        WE_I   => instr_WE_O,
+        DAT_I  => (others => '0'),
+        WE_I   => '0',
         CYC_I  => instr_CYC_O,
         STB_I  => instr_STB_O,
-        SEL_I  => instr_SEL_O,
+        SEL_I  => (others => '0'),
         CTI_I  => instr_CTI_O,
         BTE_I  => instr_BTE_O,
         LOCK_I => instr_LOCK_O,
@@ -361,7 +358,7 @@ begin
 
 
 
-  rv : component riscV_wishbone
+  rv : component orca_wishbone
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
       MULTIPLY_ENABLE    => 0,
@@ -374,10 +371,6 @@ begin
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
-
-      --conduit end point
-      coe_to_host   => coe_to_host,
-      coe_from_host => (others => '0'),
 
       data_ADR_O   => data_ADR_O,
       data_DAT_I   => data_DAT_I,
@@ -392,9 +385,6 @@ begin
 
       instr_ADR_O   => instr_ADR_O,
       instr_DAT_I   => instr_DAT_I,
-      instr_DAT_O   => instr_DAT_O,
-      instr_WE_O    => instr_WE_O,
-      instr_SEL_O   => instr_SEL_O,
       instr_STB_O   => instr_STB_O,
       instr_ACK_I   => instr_ACK_I,
       instr_CYC_O   => instr_CYC_O,
@@ -536,7 +526,7 @@ begin
       WE_I         => gpio_WE_I,
       CYC_I        => gpio_CYC_I,
       STB_I        => gpio_STB_I,
-      SEL_I        => gpio_SEL_I(gpio'length/8-1 downto 0),
+      SEL_I        => gpio_SEL_I,
       CTI_I        => gpio_CTI_I,
       BTE_I        => gpio_BTE_I,
       LOCK_I       => gpio_LOCK_I,

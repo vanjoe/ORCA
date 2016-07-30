@@ -58,7 +58,6 @@ entity system_calls is
     wb_en   : out std_logic;
 
     to_host       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    from_host     : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     current_pc    : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     pc_correction : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
     pc_corr_en    : buffer std_logic;

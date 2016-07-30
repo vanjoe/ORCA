@@ -55,7 +55,7 @@ add log -r *
 
 add wave -noupdate /top_tb/dut/rv/rv/clk
 add wave -noupdate /top_tb/dut/rv/rv/reset
-add wave -noupdate /top_tb/dut/rv/coe_to_host
+add wave -noupdate /top_tb/dut/rv/rv/X/syscall/mtohost
 add wave -noupdate -divider Decode
 add wave -noupdate /top_tb/dut/rv/rv/D/register_file_1/registers(28)
 add wave -noupdate -divider Execute

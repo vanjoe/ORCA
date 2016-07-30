@@ -29,7 +29,6 @@ architecture rtl of riscv_test is
   component system is
     port (
       clk_clk                : in  std_logic                     := '0';  --             clk.clk
-      from_host_export       : in  std_logic_vector(31 downto 0) := (others => '0');  --       from_host.export
       hex0_export            : out std_logic_vector(31 downto 0);  --            hex0.export
       hex1_export            : out std_logic_vector(31 downto 0);  --            hex1.export
       hex2_export            : out std_logic_vector(31 downto 0);  --            hex2.export
@@ -40,9 +39,7 @@ architecture rtl of riscv_test is
       pmod_mic_sdata         : in  std_logic_vector(0 downto 0)  := (others => '0');  --        pmod_mic.sdata
       pmod_mic_sclk          : out std_logic_vector(0 downto 0);  --                .sclk
       pmod_mic_cs_n          : out std_logic_vector(0 downto 0);  --                .cs_n
-      program_counter_export : out std_logic_vector(31 downto 0);  -- program_counter.export
-      reset_reset_n          : in  std_logic                     := '0';  --           reset.reset_n
-      to_host_export         : out std_logic_vector(31 downto 0)  --         to_host.export
+      reset_reset_n          : in  std_logic                     := '0'  --           reset.reset_n
 
       );
   end component;
@@ -103,8 +100,6 @@ begin
     port map (
       clk_clk                => clk,
       reset_reset_n          => reset,
-      from_host_export       => fh,
-      program_counter_export => pc,
 
       pmod_mic_sdata => pmod_mic_sdata,
       pmod_mic_sclk  => pmod_mic_sclk,
