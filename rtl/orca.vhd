@@ -75,34 +75,37 @@ architecture rtl of Orca is
   signal wb_en   : std_logic;
 
   --signals going into execute
-  signal e_instr        : std_logic_vector(INSTRUCTION_SIZE -1 downto 0);
-  signal e_subseq_instr : std_logic_vector(INSTRUCTION_SIZE -1 downto 0);
-  signal e_pc           : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal e_br_taken     : std_logic;
-  signal e_valid        : std_logic;
-  signal e_readvalid    : std_logic;
+  signal e_instr                   : std_logic_vector(INSTRUCTION_SIZE -1 downto 0);
+  signal e_subseq_instr            : std_logic_vector(INSTRUCTION_SIZE -1 downto 0);
+  signal e_pc                      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal e_br_taken                : std_logic;
+  signal e_valid                   : std_logic;
+  signal e_readvalid               : std_logic;
+  signal pipeline_empty            : std_logic;
 
-  signal execute_stalled : std_logic;
-  signal rs1_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal rs2_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sign_extension  : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
+  signal execute_stalled           : std_logic;
+  signal rs1_data                  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs2_data                  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sign_extension            : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
 
-  signal pipeline_flush : std_logic;
+  signal pipeline_flush            : std_logic;
 
-  signal data_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_byte_en    : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-  signal data_write_en   : std_logic;
-  signal data_read_en    : std_logic;
-  signal data_write_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_read_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_wait       : std_logic;
+  signal data_address              : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal data_byte_en              : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal data_write_en             : std_logic;
+  signal data_read_en              : std_logic;
+  signal data_write_data           : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal data_read_data            : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal data_wait                 : std_logic;
 
-  signal instr_address : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal instr_data    : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal instr_address             : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal instr_data                : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
-  signal instr_read_wait : std_logic;
-  signal instr_read_en   : std_logic;
-  signal instr_readvalid : std_logic;
+  signal instr_read_wait           : std_logic;
+  signal instr_read_en             : std_logic;
+  signal instr_readvalid           : std_logic;
+
+  signal instruction_fetch_pc      : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   -- Data splitter signals
   signal data_sel : std_logic;
@@ -125,6 +128,7 @@ architecture rtl of Orca is
   signal mip_mtip : std_logic;
   signal mip_msip : std_logic;
   signal mip_meip : std_logic;
+  signal interrupt_pending : std_logic;
 
   signal branch_pred : std_logic_vector(REGISTER_SIZE*2 + 3-1 downto 0);
 begin  -- architecture rtl
@@ -139,20 +143,22 @@ begin  -- architecture rtl
       RESET_VECTOR      => RESET_VECTOR,
       BRANCH_PREDICTORS => BRANCH_PREDICTORS)
     port map (
-      clk         => clk,
-      reset       => reset,
-      stall       => if_stall_in,
-      branch_pred => branch_pred,
+      clk                       => clk,
+      reset                     => reset,
+      stall                     => if_stall_in,
+      branch_pred               => branch_pred,
 
-      instr_out       => d_instr,
-      pc_out          => d_pc,
-      br_taken        => d_br_taken,
-      valid_instr_out => if_valid_out,
-      read_address    => instr_address,
-      read_en         => instr_read_en,
-      read_data       => instr_data,
-      read_wait       => instr_read_wait,
-      read_datavalid  => instr_readvalid);
+      instr_out                 => d_instr,
+      pc_out                    => d_pc,
+      br_taken                  => d_br_taken,
+      valid_instr_out           => if_valid_out,
+      read_address              => instr_address,
+      read_en                   => instr_read_en,
+      read_data                 => instr_data,
+      read_datavalid            => instr_readvalid,
+      read_wait                 => instr_read_wait,
+      instruction_fetch_pc      => instruction_fetch_pc,
+      interrupt_pending => interrupt_pending);
 
   d_valid <= if_valid_out and not pipeline_flush;
 
@@ -170,15 +176,15 @@ begin  -- architecture rtl
       flush          => pipeline_flush,
       instruction    => d_instr,
       valid_input    => d_valid,
-      --writeback ,signals
+      --writeback signals
       wb_sel         => wb_sel,
       wb_data        => wb_data,
       wb_enable      => wb_en,
-      --output sig,nals
+      --output signals
       rs1_data       => rs1_data,
       rs2_data       => rs2_data,
       sign_extension => sign_extension,
-      --inputs jus,t for carrying to next pipeline stage
+      --inputs just for carrying to next pipeline stage
       br_taken_in    => d_br_taken,
       pc_curr_in     => d_pc,
       br_taken_out   => e_br_taken,
@@ -188,6 +194,9 @@ begin  -- architecture rtl
       valid_output   => d_valid_out);
 
   e_valid <= d_valid_out and not pipeline_flush;
+  -- The pipeline_empty signal means that all stages of the pipeline are finished with
+  -- their current instruction, and bubbles have fully propagated through the pipeline.
+  pipeline_empty <= ((not if_valid_out) and (not d_valid_out) and (not execute_stalled)); 
   X : component execute
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
@@ -201,37 +210,43 @@ begin  -- architecture rtl
       COUNTER_LENGTH      => COUNTER_LENGTH,
       FORWARD_ALU_ONLY    => FORWARD_ALU_ONLY = 1)
     port map (
-      clk            => clk,
-      reset          => reset,
-      valid_input    => e_valid,
-      br_taken_in    => e_br_taken,
-      pc_current     => e_pc,
-      instruction    => e_instr,
-      subseq_instr   => e_subseq_instr,
-      rs1_data       => rs1_data,
-      rs2_data       => rs2_data,
-      sign_extension => sign_extension,
-      wb_sel         => wb_sel,
-      wb_data        => wb_data,
-      wb_en          => wb_en,
-      branch_pred    => branch_pred,
+      clk                      => clk,
+      reset                    => reset,
+      valid_input              => e_valid,
+      br_taken_in              => e_br_taken,
+      pc_current               => e_pc,
+      instruction              => e_instr,
+      subseq_instr             => e_subseq_instr,
+      rs1_data                 => rs1_data,
+      rs2_data                 => rs2_data,
+      sign_extension           => sign_extension,
+      wb_sel                   => wb_sel,
+      wb_data                  => wb_data,
+      wb_en                    => wb_en,
+      branch_pred              => branch_pred,
 
-      stall_pipeline => execute_stalled,
-      from_host      => coe_from_host,
-      to_host        => coe_to_host,
-      --memory lines
-      address        => data_address,
-      byte_en        => data_byte_en,
-      write_en       => data_write_en,
-      read_en        => data_read_en,
-      write_data     => data_write_data,
-      read_data      => data_read_data,
-      waitrequest    => data_wait,
-      datavalid      => e_readvalid,
-      mtime_i        => mtime,
-      mip_mtip_i     => mip_mtip,
-      mip_msip_i     => mip_msip,
-      mip_meip_i     => mip_meip);
+      stall_pipeline           => execute_stalled,
+      pipeline_empty           => pipeline_empty,
+      from_host                => coe_from_host,
+      to_host                  => coe_to_host,
+
+      --Memory bus
+      address                  => data_address,
+      byte_en                  => data_byte_en,
+      write_en                 => data_write_en,
+      read_en                  => data_read_en,
+      write_data               => data_write_data,
+      read_data                => data_read_data,
+      waitrequest              => data_wait,
+      datavalid                => e_readvalid,
+
+      -- Interrupt lines
+      mtime_i                  => mtime,
+      mip_mtip_i               => mip_mtip,
+      mip_msip_i               => mip_msip,
+      mip_meip_i               => mip_meip,      
+      interrupt_pending_o      => interrupt_pending,
+      instruction_fetch_pc     => instruction_fetch_pc);
 
 
   interrupt_controller : component plic 

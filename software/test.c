@@ -1,10 +1,13 @@
+#include "test_macros.h"
+#include "interrupt.h"
+
 int main(void)
 {
-  volatile register int source1 asm ("a1");
-  volatile register int result1 asm ("a2");
-  volatile register int source2 asm ("a3");
-  volatile register int result2 asm ("a4");
-  volatile register int* data asm ("a5");
+  volatile int source1;
+  volatile int result1;
+  volatile int source2;
+  volatile int result2;
+  volatile int* data;
   source1 = 2; 
   source2 = 4;
 
@@ -17,9 +20,7 @@ int main(void)
     : "r" (source2));
 
   if (result1 != 32 || result2 != 16) {
-    asm volatile("csrw mtohost,%0"
-      :
-      :"r" ((int) -1));
+    TEST_FAIL();
   }
 
   // Test consecutive delayed stores/loads
@@ -47,9 +48,7 @@ int main(void)
     : "=r" (result2)
     : "r" (data));
   if (result1 != 32 || result2 != 16) {
-    asm volatile("csrw mtohost,%0"
-      :
-      :"r" ((int) -1));
+    TEST_FAIL();
   }
 
   // Test read after write
@@ -61,17 +60,124 @@ int main(void)
     : "=r" (result1)
     : "r" (data));
   if (result1 != 0xDEADBEEF) {
-    asm volatile("csrw mtohost,%0"
-      :
-      :"r" ((int) -1));
+    TEST_FAIL();
   }
 
+  TEST_PASS();
   return 1;
 }
 
-
-int handle_trap(long cause,long epc, long regs[32])
+long handle_interrupt(long cause, long epc, long regs[32])
 {
-	//spin forever
-	for(;;);
+  switch(cause & 0xF) {
+    int plic_claim;
+
+    case M_SOFTWARE_INTERRUPT:
+      // Clear pending software interrupt.
+      asm volatile("lw t0,0(%0)"
+      :
+      : "r" (MSOFTWARE_I)); 
+      break;
+
+    case M_TIMER_INTERRUPT:
+      // Safe sequence of disabling timer interrupt without accidental interrupts.
+      asm volatile("li t0,-1"
+        :
+        : );
+      asm volatile("sw t0,0(%0)"
+        :
+        : "r" MTIMECMP_L);
+      asm volatile("sw t0,0(%0)"
+        :
+        : "r" MTIMECMP_H);
+      break;
+
+    case M_EXTERNAL_INTERRUPT:
+      // Read INTRPT_CLAIM to show the PLIC that the pending interrupt 
+      // is being handled.
+      plic_claim = *INTRPT_CLAIM;
+
+      // Each external interrupt can be handled differently.
+      /*
+      switch(plic_claim) {
+        case 0:
+          break;
+        case 1:
+          break;
+        case 2:
+          break;
+        case 3:
+          break;
+        case 4:
+          break;
+        case 5:
+          break;
+        case 6:
+          break;
+        case 7:
+          break;
+        case 8:
+          break;
+        case 9:
+          break;
+        case 10:
+          break;
+        case 11:
+          break;
+        case 12:
+          break;
+        case 13:
+          break;
+        case 14:
+          break;
+        case 15:
+          break;
+        case 16:
+          break;
+        case 17:
+          break;
+        case 18:
+          break;
+        case 19:
+          break;
+        case 20:
+          break;
+        case 21:
+          break;
+        case 22:
+          break;
+        case 23:
+          break;
+        case 24:
+          break;
+        case 25:
+          break;
+        case 26:
+          break;
+        case 27:
+          break;
+        case 28:
+          break;
+        case 29:
+          break;
+        case 30:
+          break;
+        case 31:
+          break;
+        default
+          break;
+      }
+      */
+
+      // Write to INTRPT_COMPLETE to signify that the PLIC can 
+      // receive another external interrupt from the source it
+      // just processed.
+      *INTRPT_COMPLETE = plic_claim;
+      break;
+
+    default:
+      break;
+  }
+
+  return epc;
 }

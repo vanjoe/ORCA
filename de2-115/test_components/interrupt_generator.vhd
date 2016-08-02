@@ -9,7 +9,15 @@ entity interrupt_generator is
 end entity interrupt_generator;
 
 architecture rtl of interrupt_generator is
-  signal count : unsigned(3 downto 0);
+  constant count_stop : unsigned := "11111111";
+  constant count_trigger : unsigned := "11111011";
+
+  signal count : unsigned(7 downto 0);
+  -- Trigger stage allows us to test all 4 stages of the pipeline
+  -- to trigger the interrupt on. Trigger stage should vary from
+  -- 0 to 3. After the trigger on '3', this module should stop
+  -- triggering interrupts.
+  signal trigger_stage : unsigned(7 downto 0);
 begin
   process (clk) 
   begin
@@ -17,14 +25,20 @@ begin
       if reset = '1' then
         global_interrupts <= (others => '0');
         count <= (others => '0');
+        trigger_stage <= (others => '0');
       else
-        if count /= "1111" then
+        if count /= (count_stop - trigger_stage) then
           count <= count + 1;
         end if;
-        if count = "1011" then
+        if count = (count_trigger - trigger_stage) then
           global_interrupts(14) <= '1';
-        elsif count = "1111" then
+        elsif count = (count_stop - trigger_stage) then
           global_interrupts(14) <= '0';
+          if trigger_stage /= 3 then
+            trigger_stage <= trigger_stage + 1;
+            count <= (others => '0');
+          end if;
+
         end if;
       end if;
     end if;

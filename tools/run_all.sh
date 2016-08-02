@@ -7,7 +7,7 @@ DATE=$(date +%x%T)
 
 #clear $! (pid of last background task)
 :&
-for i in test/*.gex
+for i in test/*.qex
 do
 
 	 cp $i test.hex

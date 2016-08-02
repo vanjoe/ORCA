@@ -1,34 +1,23 @@
-#include <stdint.h>
 #include "test_macros.h"
 #include "interrupt.h"
-
-volatile uint32_t timer_flag = 0;
-volatile uint32_t software_flag = 0;
-volatile uint32_t external_flag = 0; 
-
-#define SYS_CLK 125e5
+#include <stdint.h>
 
 int main(void) {
 
-  volatile uint32_t count;
-
-  set_timer_interrupt_cycles(15);
   enable_interrupts();
   enable_external_interrupts();
   enable_software_interrupts();
   enable_timer_interrupts();
 
-  trigger_software_interrupt();
+  // Should never leave this loop unless interrupt
+  // handles the branch wrong.
+  asm volatile("li t3, 1"
+    :
+    : );
 
-  for(count = 0; count < 25; count++);
+  while(1);
 
-#define EXT_INT_TO_TEST 14
-  // Interrupts failed...
-  if (!(software_flag & timer_flag) || (external_flag != EXT_INT_TO_TEST)) {
-    TEST_FAIL();
-  }
-
-  TEST_PASS();
+  TEST_FAIL();
   return 1;
 }
 
@@ -40,14 +29,10 @@ long handle_interrupt(long cause, long epc, long regs[32])
     case M_SOFTWARE_INTERRUPT:
       // Clear pending software interrupt.
       clear_software_interrupt();
-      software_flag = 1;
-      break;
 
     case M_TIMER_INTERRUPT:
       // Safe sequence of disabling timer interrupt without accidental interrupts.
       clear_timer_interrupt_cycles();
-      timer_flag = 1;
-      break;
 
     case M_EXTERNAL_INTERRUPT:
       // Read INTRPT_CLAIM to show the PLIC that the pending interrupt 
@@ -126,8 +111,6 @@ long handle_interrupt(long cause, long epc, long regs[32])
       }
       */
 
-      external_flag = plic_claim;
-      
       // Write to INTRPT_COMPLETE to signify that the PLIC can 
       // receive another external interrupt from the source it
       // just processed.

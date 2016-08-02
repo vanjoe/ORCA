@@ -1,9 +1,6 @@
-
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
-
 
 library work;
 use work.rv_components.all;
@@ -31,19 +28,21 @@ entity instruction_fetch is
     read_en        : out std_logic;
     read_data      : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     read_datavalid : in  std_logic;
-    read_wait      : in  std_logic
-    );
+    read_wait      : in  std_logic;
+
+    instruction_fetch_pc      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+    interrupt_pending : in std_logic);
 
 end entity instruction_fetch;
 
 architecture rtl of instruction_fetch is
 
-  signal correction       : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal correction_en    : std_logic;
+  signal pc_corr_en_latch : std_logic;
   signal program_counter  : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal next_pc          : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal predicted_pc     : std_logic_vector(REGISTER_SIZE -1 downto 0);
-  signal saved_address    : std_logic_vector(REGISTER_SIZE -1 downto 0);
+  signal predicted_pc     : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal saved_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal saved_address_en : std_logic;
 
   signal saved_instr    : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -61,68 +60,118 @@ architecture rtl of instruction_fetch is
   signal pc_corr_en : std_logic;
   signal if_stall   : std_logic;
 begin  -- architecture rtl
+
+  -- The instruction address should always be word aligned.
+  assert program_counter(1 downto 0) = "00" report "BAD INSTRUCTION ADDRESS" severity error;
+
+  -- pc_corr is the program counter correction from the execute stage, which results from either 
+  -- a branch or a system call (ex ECALL instruction, or a trap). pc_corr_en denotes whether 
+  -- the branch or system call should cause the program counter to be corrected on the 
+  -- next cycle. 
   pc_corr    <= branch_get_tgt(branch_pred);
   pc_corr_en <= branch_get_flush(branch_pred);
 
-  assert program_counter(1 downto 0) = "00" report "BAD INSTRUCTION ADDRESS" severity error;
-
   read_en <= not reset;
 
+  -- stall denotes whether the execute stage is stalled or not. read_wait is high if the
+  -- instruction slave has not responded with the readdata yet.
   if_stall <= stall or read_wait;
 
-  next_pc <= pc_corr when pc_corr_en = '1' else
---             program_counter when if_stall = '1' else
-             predicted_pc;
+  -- next_pc is the instruction to read from memory on the next cycle. 
+  next_pc <= pc_corr when pc_corr_en = '1' else predicted_pc;
 
+  -- Upon reading the next instruction after correcting the program counter, clear the latch.
   latch_corr : process(clk)
   begin
     if rising_edge(clk) then
       if pc_corr_en = '1' then
-        correction_en <= '1';
+        pc_corr_en_latch <= '1';
       elsif read_datavalid = '1' then
-        correction_en <= '0';
+        pc_corr_en_latch <= '0';
       end if;
       if reset = '1' then
-        correction_en <= '0';
+        pc_corr_en_latch <= '0';
       end if;
-    end if;  -- clock
+    end if; 
   end process;
 
+  -- If the instruction fetch is not stalled or there is a program counter correction, read the 
+  -- next instruction. The next instruction will either be the predicted program counter or the
+  -- corrected program counter (if there is a correction to be made). When branch prediction is
+  -- disabled, the predicted program counter is simply the next instruction.
+  -- If an interrupt is pending, the instruction fetch will also stall, allowing the interrupt
+  -- handler to get the correct program counter whether a program counter correction occured
+  -- or not.
   latch_pc : process(clk)
   begin
     if rising_edge(clk) then
-      if (pc_corr_en or not if_stall) = '1' then
+      if (pc_corr_en or not (if_stall or interrupt_pending)) = '1' then
         program_counter <= next_pc;
         pc_out          <= program_counter;
       end if;
-
-      saved_address_en <= '0';
+      -- saved_address is the previously read program counter, if there is a stall from the 
+      -- instruction slave, saved_address_en latches high and it keeps the same address on 
+      -- the instruction slave bus.
       saved_address    <= program_counter;
       if read_wait = '1' then
         saved_address_en <= '1';
+      else
+        saved_address_en <= '0';
       end if;
       if reset = '1' then
         program_counter <= std_logic_vector(to_signed(RESET_VECTOR, REGISTER_SIZE));
       end if;
-    end if;  -- clock
+    end if; 
   end process;
 
+  instr <= read_data;
+  
+  -- pc_corr_en_latch is cleared after a read transaction from the instruction slave has
+  -- completed. if pc_corr_en_latch is not low, but pc_corr_en is, that means that a
+  -- multi-cycle instruction read is in progress, and the instruction is not yet valid.
+  -- If the interrupt_pending signal is high, that means that the PLIC has forwarded an
+  -- interrupt to the execute stage, and now bubbles need to be injected into the pipeline
+  -- until all stages are done executing.
+  valid_instr <= read_datavalid and not pc_corr_en and not pc_corr_en_latch
+                    and not interrupt_pending;
 
---unpack instruction
-  instr       <= read_data;
-  valid_instr <= read_datavalid and not pc_corr_en and not correction_en;
+  -- The instruction to send to the decode stage. If the instruction fetch is stalled 
+  -- (either from the execute stage stalling, or from the instruction slave) then the previous
+  -- instruction will remain out on the bus. The valid_instr_out signal will not go high until
+  -- the instruction fetch is unstalled. 
+  instr_out <= instr when saved_instr_en = '0' else saved_instr;
+  valid_instr_out <= (valid_instr or saved_instr_en) and (not if_stall);
 
+  -- If the instruction slave is stalling, keep the same address on the instruction slave bus.
+  read_address <= saved_address when saved_address_en = '1' else program_counter;
 
+  -- Forward this register to execute in order to handle interrupts correctly.
+  instruction_fetch_pc <= program_counter;
 
+  -- When the instruction fetch stalls, latch in the saved instruction until you get a valid
+  -- a valid instruction.
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if if_stall = '1' and saved_instr_en = '0' then
+        saved_instr    <= instr;
+        saved_instr_en <= valid_instr;
+      elsif if_stall = '0' then
+        saved_instr_en <= '0';
+      end if;
+      if reset = '1' then
+        saved_instr_en <= '0';
+      end if;
+    end if;
+  end process;
 
+-- Branch Prediction
   nuse_BP : if BTB_SIZE = 0 generate
-
-    --No branch prediction
+    -- No branch prediction
     process(clk)
     begin
       if rising_edge(clk) then
         br_taken <= '0';
-
         if if_stall = '0' or pc_corr_en = '1' then
           predicted_pc <= std_logic_vector(signed(next_pc) + 4);
         end if;
@@ -131,13 +180,11 @@ begin  -- architecture rtl
         end if;
       end if;
     end process;
-
   end generate nuse_BP;
 
   use_BP : if BTB_SIZE > 0 generate
     constant INDEX_SIZE : integer := log2(BTB_SIZE);
     constant TAG_SIZE   : integer := REGISTER_SIZE-2-INDEX_SIZE;
-
     type btb_type is array(BTB_SIZE-1 downto 0) of std_logic_vector(REGISTER_SIZE+TAG_SIZE+1 -1 downto 0);
     signal branch_btb       : btb_type := (others => (others => '0'));
     signal prediction_match : std_logic;
@@ -175,7 +222,6 @@ begin  -- architecture rtl
                  to_integer(unsigned(branch_pc(INDEX_SIZE+2-1 downto 2)));
 
     process(clk)
-
     begin
       if rising_edge(clk) then
         --block ram read
@@ -206,33 +252,9 @@ begin  -- architecture rtl
       end if;
 
     end process;
-    btb_entry        <= btb_entry_rd when btb_entry_saved_en = '0'               else btb_entry_saved;
-    predicted_pc     <= btb_target   when btb_tag = addr_tag and btb_taken = '1' else add4;
-    prediction_match <= '1'          when btb_tag = addr_tag                     else '0';
+    btb_entry <= btb_entry_rd when btb_entry_saved_en = '0' else btb_entry_saved;
+    predicted_pc <= btb_target when btb_tag = addr_tag and btb_taken = '1' else add4;
+    prediction_match <= '1' when btb_tag = addr_tag else '0';
   end generate use_BP;
-
-
-
-  instr_out <= instr when saved_instr_en = '0' else saved_instr;
-
-  valid_instr_out <= (valid_instr or saved_instr_en) and not if_stall;
-
-  read_address <= saved_address when saved_address_en = '1' else program_counter;
-
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      if if_stall = '1' and saved_instr_en = '0' then
-        saved_instr    <= instr;
-        saved_instr_en <= valid_instr;
-      elsif if_stall = '0' then
-        saved_instr_en <= '0';
-      end if;
-      if reset = '1' then
-        saved_instr_en <= '0';
-      end if;
-    end if;
-
-  end process;
 
 end architecture rtl;

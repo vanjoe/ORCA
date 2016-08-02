@@ -122,6 +122,10 @@ package rv_components is
 
       branch_pred    : out    std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
       stall_pipeline : buffer std_logic;
+      pipeline_empty : in     std_logic;
+
+      instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+
 --memory-bus
       address        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
@@ -131,10 +135,12 @@ package rv_components is
       read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       waitrequest    : in     std_logic;
       datavalid      : in     std_logic;
+
       mtime_i        : in     std_logic_vector(63 downto 0);
       mip_mtip_i     : in     std_logic;
       mip_msip_i     : in     std_logic;
-      mip_meip_i     : in     std_logic);
+      mip_meip_i     : in     std_logic;
+      interrupt_pending_o : out std_logic);
   end component execute;
 
   component instruction_fetch is
@@ -159,8 +165,11 @@ package rv_components is
       read_en        : out std_logic;
       read_data      : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       read_datavalid : in  std_logic;
-      read_wait      : in  std_logic
-      );
+      read_wait      : in  std_logic;
+
+      instruction_fetch_pc      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+      interrupt_pending : in std_logic);
   end component instruction_fetch;
 
   component arithmetic_unit is
@@ -398,33 +407,41 @@ package rv_components is
       RESET_VECTOR     : natural;
       COUNTER_LENGTH   : natural);
     port (
-      clk         : in std_logic;
-      reset       : in std_logic;
-      valid       : in std_logic;
-      rs1_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      clk                  : in std_logic;
+      reset                : in std_logic;
+      valid                : in std_logic;
+      rs1_data             : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instruction          : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
-      finished_instr : in std_logic;
+      finished_instr       : in std_logic;
 
-      wb_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      wb_en   : out std_logic;
+      wb_data              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      wb_en                : out std_logic;
 
-      to_host   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      from_host : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      to_host              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      from_host            : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-      current_pc    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      pc_correction : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      pc_corr_en    : out std_logic;
+      current_pc           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      pc_correction        : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      pc_corr_en           : out std_logic;
 
-      illegal_alu_instr : in std_logic;
+      illegal_alu_instr    : in std_logic;
 
       use_after_load_stall : in std_logic;
       predict_corr         : in std_logic;
       load_stall           : in std_logic;
+
       mtime_i              : in std_logic_vector(63 downto 0);
       mip_mtip_i           : in std_logic;
       mip_msip_i           : in std_logic;
-      mip_meip_i           : in std_logic);
+      mip_meip_i           : in std_logic;
+      
+      interrupt_pending_o  : out std_logic;
+      pipeline_empty       : in std_logic;
+    
+      instruction_fetch_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      br_bad_predict            : in std_logic;
+      br_new_pc                 : in std_logic_vector(REGISTER_SIZE-1 downto 0));
   end component system_calls;
 
   component plic is

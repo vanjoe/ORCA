@@ -43,9 +43,10 @@ entity execute is
     to_host   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_host : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-    branch_pred : out std_logic_vector(REGISTER_SIZE*2+3 -1 downto 0);
-
+    branch_pred    : out    std_logic_vector(REGISTER_SIZE*2+3 -1 downto 0);
     stall_pipeline : buffer std_logic;
+    pipeline_empty : in     std_logic;
+
 --memory-bus
     address        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
@@ -59,7 +60,11 @@ entity execute is
     mtime_i        : in     std_logic_vector(63 downto 0);
     mip_mtip_i     : in     std_logic;
     mip_msip_i     : in     std_logic;
-    mip_meip_i     : in     std_logic);
+    mip_meip_i     : in     std_logic;
+
+    interrupt_pending_o : out std_logic;
+    
+    instruction_fetch_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0));
 end entity execute;
 
 architecture behavioural of execute is
@@ -95,8 +100,9 @@ architecture behavioural of execute is
 
   signal alu_stall : std_logic;
 
-  signal br_bad_predict : std_logic;
-  signal br_new_pc      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal br_bad_predict            : std_logic;
+  signal br_new_pc                 : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
   signal predict_pc     : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal syscall_en     : std_logic;
   signal syscall_target : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -130,7 +136,7 @@ architecture behavioural of execute is
 
   signal is_branch    : std_logic;
   signal br_taken_out : std_logic;
-
+  
   constant JAL_OP   : std_logic_vector(4 downto 0) := "11011";
   constant JALR_OP  : std_logic_vector(4 downto 0) := "11001";
   constant LUI_OP   : std_logic_vector(4 downto 0) := "01101";
@@ -151,7 +157,7 @@ begin
   -- Knowing the next instruction coming downt the pipeline, we can
   -- generate the mux select bits for the next cycle.
   -- there are several functional units that could generate a writeback. ALU,
-  -- JAL, Syscalls,load_stare. the syscall and alu forward directly to the next
+  -- JAL, Syscalls, load_store. the syscall and alu forward directly to the next
   -- instruction. on a load instruction, we don't have enogh time to forward it
   -- directly so we save it into a temporary register.  JAL and JALR always
   -- result in a pipeline flush so we don't have to worry about forwarding the
@@ -193,11 +199,13 @@ begin
             "10" when br_data_en = '1' else
             "11";                       --when alu_data_en = '1'
 
---  assert (sys_data_en = '1' and ld_data_en = '0' and br_data_en = '0' and alu_data_out = '0') or
---         (sys_data_en = '0' and ld_data_en = '1' and br_data_en = '0' and alu_data_out = '0') or
---         (sys_data_en = '0' and ld_data_en = '0' and br_data_en = '1' and alu_data_out = '0') or
---         (sys_data_en = '0' and ld_data_en = '0' and br_data_en = '0' and alu_data_out = '1') or
---         (sys_data_en = '0' and ld_data_en = '0' and br_data_en = '0' and alu_data_out = '0') 
+--  assert (((sys_data_en = '1') and (ld_data_en = '0') and (br_data_en = '0') and (alu_data_en = '0')) or
+--          ((sys_data_en = '0') and (ld_data_en = '1') and (br_data_en = '0') and (alu_data_en = '0')) or
+--          ((sys_data_en = '0') and (ld_data_en = '0') and (br_data_en = '1') and (alu_data_en = '0')) or
+--          ((sys_data_en = '0') and (ld_data_en = '0') and (br_data_en = '0') and (alu_data_en = '1')) or
+--          ((sys_data_en = '0') and (ld_data_en = '0') and (br_data_en = '0') and (alu_data_en = '0')))
+--          or sys_data_en = 'U' or sys_data_en = 'X' or ld_data_en = 'U' or ld_data_en = 'X'
+--          or br_data_en = 'U' or br_data_en = 'X' or alu_data_en = 'U' or alu_data_en = 'X'
 --         report "MULTIPLE DATA ENABLES ASSERTED" severity failure;
 
   with wb_mux select
@@ -355,7 +363,8 @@ begin
       read_data      => read_data,
       waitrequest    => waitrequest,
       readvalid      => datavalid);
-  process(clk)
+
+  process (clk)
   begin
 --create delayed versions
   end process;
@@ -389,8 +398,14 @@ begin
       mtime_i              => mtime_i,
       mip_mtip_i           => mip_mtip_i,
       mip_msip_i           => mip_msip_i,
-      mip_meip_i           => mip_meip_i
-      );
+      mip_meip_i           => mip_meip_i,
+
+      interrupt_pending_o  => interrupt_pending_o,
+      pipeline_empty       => pipeline_empty,
+      
+      instruction_fetch_pc      => instruction_fetch_pc,
+      br_bad_predict            => br_bad_predict,
+      br_new_pc                 => br_new_pc);      
 
 
   finished_instr <= valid_instr and not stall_pipeline;
