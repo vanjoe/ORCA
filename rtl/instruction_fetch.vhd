@@ -64,10 +64,10 @@ begin  -- architecture rtl
   -- The instruction address should always be word aligned.
   assert program_counter(1 downto 0) = "00" report "BAD INSTRUCTION ADDRESS" severity error;
 
-  -- pc_corr is the program counter correction from the execute stage, which results from either 
-  -- a branch or a system call (ex ECALL instruction, or a trap). pc_corr_en denotes whether 
-  -- the branch or system call should cause the program counter to be corrected on the 
-  -- next cycle. 
+  -- pc_corr is the program counter correction from the execute stage, which results from either
+  -- a branch or a system call (ex ECALL instruction, or a trap). pc_corr_en denotes whether
+  -- the branch or system call should cause the program counter to be corrected on the
+  -- next cycle.
   pc_corr    <= branch_get_tgt(branch_pred);
   pc_corr_en <= branch_get_flush(branch_pred);
 
@@ -77,7 +77,7 @@ begin  -- architecture rtl
   -- instruction slave has not responded with the readdata yet.
   if_stall <= stall or read_wait;
 
-  -- next_pc is the instruction to read from memory on the next cycle. 
+  -- next_pc is the instruction to read from memory on the next cycle.
   next_pc <= pc_corr when pc_corr_en = '1' else predicted_pc;
 
   -- Upon reading the next instruction after correcting the program counter, clear the latch.
@@ -92,10 +92,10 @@ begin  -- architecture rtl
       if reset = '1' then
         pc_corr_en_latch <= '0';
       end if;
-    end if; 
+    end if;
   end process;
 
-  -- If the instruction fetch is not stalled or there is a program counter correction, read the 
+  -- If the instruction fetch is not stalled or there is a program counter correction, read the
   -- next instruction. The next instruction will either be the predicted program counter or the
   -- corrected program counter (if there is a correction to be made). When branch prediction is
   -- disabled, the predicted program counter is simply the next instruction.
@@ -109,8 +109,8 @@ begin  -- architecture rtl
         program_counter <= next_pc;
         pc_out          <= program_counter;
       end if;
-      -- saved_address is the previously read program counter, if there is a stall from the 
-      -- instruction slave, saved_address_en latches high and it keeps the same address on 
+      -- saved_address is the previously read program counter, if there is a stall from the
+      -- instruction slave, saved_address_en latches high and it keeps the same address on
       -- the instruction slave bus.
       saved_address    <= program_counter;
       if read_wait = '1' then
@@ -121,11 +121,11 @@ begin  -- architecture rtl
       if reset = '1' then
         program_counter <= std_logic_vector(to_signed(RESET_VECTOR, REGISTER_SIZE));
       end if;
-    end if; 
+    end if;
   end process;
 
   instr <= read_data;
-  
+
   -- pc_corr_en_latch is cleared after a read transaction from the instruction slave has
   -- completed. if pc_corr_en_latch is not low, but pc_corr_en is, that means that a
   -- multi-cycle instruction read is in progress, and the instruction is not yet valid.
@@ -135,10 +135,10 @@ begin  -- architecture rtl
   valid_instr <= read_datavalid and not pc_corr_en and not pc_corr_en_latch
                     and not interrupt_pending;
 
-  -- The instruction to send to the decode stage. If the instruction fetch is stalled 
+  -- The instruction to send to the decode stage. If the instruction fetch is stalled
   -- (either from the execute stage stalling, or from the instruction slave) then the previous
   -- instruction will remain out on the bus. The valid_instr_out signal will not go high until
-  -- the instruction fetch is unstalled. 
+  -- the instruction fetch is unstalled.
   instr_out <= instr when saved_instr_en = '0' else saved_instr;
   valid_instr_out <= (valid_instr or saved_instr_en) and (not if_stall);
 

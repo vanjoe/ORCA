@@ -16,7 +16,7 @@ all: system.sof  $(STA_RPT_FILE)
 DEVICE_FAMILY=$(shell grep deviceFamily $(QSYS_FILE) | head -1 | sed 's/.*value="\(.*\)".*/\1/')
 VHDL_FILES=$(wildcard ../rtl/*.vhd)
 VHDL_FILES+=$(wildcard test_components/*.vhd)
-$(info VHDL_FILES=$(VHDL_FILES))
+
 VHDL_SUBMODULE_FILES=$(addprefix system/synthesis/submodules/,$(notdir $(VHDL_FILES)))
 TOP_LEVEL_FILES=$(wildcard *.vhd)
 
@@ -50,14 +50,17 @@ ifdef FORWARD_ALU_ONLY
 	sed -i 's|parameter name="FORWARD_ALU_ONLY" value=".*" />|parameter name="FORWARD_ALU_ONLY" value="$(FORWARD_ALU_ONLY)" />|' $(QSYS_FILE)
 endif
 
-$(QIP_FILE):$(QSYS_FILE)
+$(QIP_FILE):$(QSYS_FILE) ../rtl/orca_hw.tcl
 	qsys-generate --synthesis=VHDL system.qsys 2>&1 | tee ./system.qsys.log
 
 $(VHDL_SUBMODULE_FILES): system/synthesis/submodules/% : ../rtl/%
 	cp $^ $@
 
-HEX_FILE=$(wildcard test.hex)
-
+ifndef NO_SW
+HEX_FILE=test.hex
+else
+HEX_FILE=
+endif
 $(MAP_RPT_FILE) : $(QIP_FILE) $(VHDL_SUBMODULE_FILES) $(TOP_LEVEL_FILES)
 	quartus_map $(QPF_FILE)
 $(FIT_RPT_FILE) : $(MAP_RPT_FILE)

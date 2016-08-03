@@ -28,7 +28,8 @@ begin
                             opcode7 = "0010011" or
                             opcode7 = "0110011" or
                             (opcode7 = "0001111" and instruction(31 downto 28)& instruction(19 downto 13) &instruction(11 downto 7) = x"0000") or
-                            opcode7 = "1110011") else '0';
+                            opcode7 = "1110011" or
+                            opcode7 = "0101011") else '0';
 
 end architecture;
 
@@ -57,7 +58,6 @@ entity system_calls is
     wb_en                : out std_logic;
 
     to_host              : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    from_host            : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     current_pc           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     pc_correction        : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
     pc_corr_en           : buffer std_logic;
@@ -67,23 +67,23 @@ entity system_calls is
     use_after_load_stall : in std_logic;
     predict_corr         : in std_logic;
     load_stall           : in std_logic;
-   
-    -- From the PLIC 
+
+    -- From the PLIC
     mtime_i              : in std_logic_vector(63 downto 0);
     mip_mtip_i           : in std_logic;
     mip_msip_i           : in std_logic;
     mip_meip_i           : in std_logic;
-    
+
     -- To the Instruction Fetch Stage
     interrupt_pending_o  : out std_logic;
     -- Signals when an interrupt may proceed.
     pipeline_empty       : in std_logic;
-    
+
     -- These signals are used to tell the interrupt handler which instruction
     -- to return to upon exit. They are sourced from the instruction fetch
     -- stage of the processor.
     instruction_fetch_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    
+
     br_bad_predict            : in std_logic;
     br_new_pc                 : in std_logic_vector(REGISTER_SIZE-1 downto 0));
 
@@ -147,7 +147,7 @@ architecture rtl of system_calls is
   -- Machine interrupt enable register
   -- MEIE (11) = Machine External Interrupt Enable
   -- MTIE (7)  = Machine Timer Interrupt Enable
-  -- MSIE (3)  = Machine Software Interrupt Enable 
+  -- MSIE (3)  = Machine Software Interrupt Enable
   -- Priority: external interrupt > software interrupt > timer interrupt > synchronous trap
   constant CSR_MTVEC     : csr_t := X"305";
   constant CSR_MSCRATCH  : csr_t := X"340";
@@ -157,7 +157,7 @@ architecture rtl of system_calls is
   constant CSR_MIP       : csr_t := X"344";
   -- Machine interrupt pending register
   -- MEIP (11) = Machine External Interrupt Pending
-  -- MTIP (7)  = Machine Timer Interrupt Pending 
+  -- MTIP (7)  = Machine Timer Interrupt Pending
   -- MSIP (3)  = Machine Software Interrupt Pending
   constant CSR_MBASE     : csr_t := X"380";
   constant CSR_MBOUND    : csr_t := X"381";
@@ -219,7 +219,7 @@ architecture rtl of system_calls is
   signal mstatus_mpp       : std_logic_vector(1 downto 0);
   signal mstatus_mpie      : std_logic;
   signal mstatus_mie       : std_logic;
-  
+
   signal mip               : std_logic_vector(register_size-1 downto 0);
   signal mip_meip          : std_logic;
   signal mip_mtip          : std_logic;
@@ -275,7 +275,7 @@ begin  -- architecture rtl
   mip_meip <= mip_meip_i when ((mstatus_mie = '1') and (mie_meie = '1')) else '0';
 
   counter_increment : process (clk, reset) is
-  begin  
+  begin
     if reset = '1' then
       instr_retired <= (others => '0');
     elsif rising_edge(clk) then
@@ -331,7 +331,7 @@ begin  -- architecture rtl
   mtime                          <= mtime_i(register_size-1 downto 0);
   mtimeh                         <= mtime_i(63 downto 64-register_size);
   mstatus                        <= (12 => mstatus_mpp(1), 11 => mstatus_mpp(0),  7 => mstatus_mpie, 3 => mstatus_mie, others => '0');
-  mip                            <= (11 => mip_meip, 7 => mip_mtip, 3 => mip_msip, others => '0'); 
+  mip                            <= (11 => mip_meip, 7 => mip_mtip, 3 => mip_msip, others => '0');
   mie                            <= (11 => mie_meie, 7 => mie_mtie, 3 => mie_msie, others => '0');
   mcause(mcause'left)            <= mcause_i;
   mcause(mcause'left-1 downto 4) <= (others => '0');
@@ -412,10 +412,10 @@ begin  -- architecture rtl
         mtime   when csr_cycle,
         mtime   when csr_mtime,
         mtime   when csr_mcycle,
-        mstatus when csr_mstatus,                        
+        mstatus when csr_mstatus,
         medeleg when csr_medeleg,
         mideleg when csr_mideleg,
-        mtvec   when csr_mtvec,                          
+        mtvec   when csr_mtvec,
         mepc    when csr_mepc,
         mcause  when csr_mcause,
         (others => '0') when others;
@@ -464,7 +464,7 @@ begin  -- architecture rtl
       -- This section handles pending interrupts, and forwards the program counter
       -- to the machine interrupt entry. If an interrupt occurs during an illegal
       -- instruction, the illegal instruction will be handled first, and then
-      -- once interrupts are re-enabled, the interrupt will be serviced. 
+      -- once interrupts are re-enabled, the interrupt will be serviced.
       if ((mip_meip = '1') or (mip_msip = '1') or (mip_mtip = '1')) then
         -- Interrupt pending output to Instruction Fetch.
         -- This should invalidate subsequent instructions and should insert
@@ -481,8 +481,8 @@ begin  -- architecture rtl
           pc_corr_en    <= '1';
           pc_correction <= MACHINE_MODE_TRAP;
           mepc <= instruction_fetch_pc;
-        -- Once Instruction Fetch, Decode, and Execute are finished with their current 
-        -- instruction, we can now handle the interrupt. 
+        -- Once Instruction Fetch, Decode, and Execute are finished with their current
+        -- instruction, we can now handle the interrupt.
         elsif (pipeline_empty = '1') then
           -- Disable interrupts, in order to prevent taking the same
           -- interrupt repeatedly. This should be reenabled by the
@@ -503,10 +503,10 @@ begin  -- architecture rtl
           interrupt_pending <= '0';
           -- The program counter must be set to the correct pc after exiting the trap.
           -- If a branch is going to be taken, then the next instruction should be the
-          -- branch to take. If not, then the next instruction should just be the 
+          -- branch to take. If not, then the next instruction should just be the
           -- incremented instruction.
-          -- If the interrupt was latched on the exact cycle that a branch instruction 
-          -- was executed, then update mepc with the resulting branch target. If the 
+          -- If the interrupt was latched on the exact cycle that a branch instruction
+          -- was executed, then update mepc with the resulting branch target. If the
           -- interrupt was latched during a pipeline flush due to a branch, then the
           -- corrected program counter will have been handled by the instruction fetch
           -- module already.
@@ -516,7 +516,7 @@ begin  -- architecture rtl
             mepc <= instruction_fetch_pc;
           end if;
         end if;
-            
+
       -- No pending interrupts, proceed as normal.
       elsif load_stall = '0' then
         wb_data    <= csr_read_val;
@@ -568,7 +568,7 @@ begin  -- architecture rtl
                   mie_msie  <= csr_write_val(3);
                 when CSR_MIP =>
                   -- This is a read-only register.
-                  -- mip_meip set and cleared by memory mapped PLIC operations. 
+                  -- mip_meip set and cleared by memory mapped PLIC operations.
                   -- mip_mtip set and cleared by memory mapped timer operations.
                   -- mip_msip set and cleared by memory mapped reserved software registers.
                 when others =>
@@ -586,7 +586,7 @@ begin  -- architecture rtl
         mtohost    <= (others => '0');
         mstatus_mpp <= (others => '1'); -- hardwired to "11"
         mstatus_mpie <= '0';
-        mstatus_mie <= '0'; 
+        mstatus_mie <= '0';
         mie_meie <= '0';
         mie_mtie <= '0';
         mie_msie <= '0';
@@ -605,7 +605,7 @@ begin  -- architecture rtl
       if reset = '1' then
         mbadaddr <= (others => '0');
       elsif (legal_instruction = '0') then
-        mbadaddr <= current_pc;              
+        mbadaddr <= current_pc;
       end if;
     end if;
   end process;
