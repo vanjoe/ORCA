@@ -20,7 +20,11 @@ entity wb_splitter is
     master2_address : address_array := (0, 0);
     master3_address : address_array := (0, 0);
     master4_address : address_array := (0, 0);
-    DATA_WIDTH      : natural       := 32
+    master5_address : address_array := (0, 0);
+    master6_address : address_array := (0, 0);
+    master7_address : address_array := (0, 0);
+
+    DATA_WIDTH : natural := 32
     );
   port(
 
@@ -52,7 +56,7 @@ entity wb_splitter is
     master0_CTI_O   : out std_logic_vector(2 downto 0);
     master0_BTE_O   : out std_logic_vector(1 downto 0);
     master0_LOCK_O  : out std_logic;
-    master0_STALL_I : in  std_logic                               := '1';
+    master0_STALL_I : in  std_logic                               := '0';
     master0_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
     master0_ACK_I   : in  std_logic                               := '0';
     master0_ERR_I   : in  std_logic                               := '0';
@@ -67,7 +71,7 @@ entity wb_splitter is
     master1_CTI_O   : out std_logic_vector(2 downto 0);
     master1_BTE_O   : out std_logic_vector(1 downto 0);
     master1_LOCK_O  : out std_logic;
-    master1_STALL_I : in  std_logic                               := '1';
+    master1_STALL_I : in  std_logic                               := '0';
     master1_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
     master1_ACK_I   : in  std_logic                               := '0';
     master1_ERR_I   : in  std_logic                               := '0';
@@ -82,7 +86,7 @@ entity wb_splitter is
     master2_CTI_O   : out std_logic_vector(2 downto 0);
     master2_BTE_O   : out std_logic_vector(1 downto 0);
     master2_LOCK_O  : out std_logic;
-    master2_STALL_I : in  std_logic                               := '1';
+    master2_STALL_I : in  std_logic                               := '0';
     master2_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
     master2_ACK_I   : in  std_logic                               := '0';
     master2_ERR_I   : in  std_logic                               := '0';
@@ -97,7 +101,7 @@ entity wb_splitter is
     master3_CTI_O   : out std_logic_vector(2 downto 0);
     master3_BTE_O   : out std_logic_vector(1 downto 0);
     master3_LOCK_O  : out std_logic;
-    master3_STALL_I : in  std_logic                               := '1';
+    master3_STALL_I : in  std_logic                               := '0';
     master3_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
     master3_ACK_I   : in  std_logic                               := '0';
     master3_ERR_I   : in  std_logic                               := '0';
@@ -112,11 +116,58 @@ entity wb_splitter is
     master4_CTI_O   : out std_logic_vector(2 downto 0);
     master4_BTE_O   : out std_logic_vector(1 downto 0);
     master4_LOCK_O  : out std_logic;
-    master4_STALL_I : in  std_logic                               := '1';
+    master4_STALL_I : in  std_logic                               := '0';
     master4_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
     master4_ACK_I   : in  std_logic                               := '0';
     master4_ERR_I   : in  std_logic                               := '0';
-    master4_RTY_I   : in  std_logic                               := '0');
+    master4_RTY_I   : in  std_logic                               := '0';
+
+
+    master5_ADR_O   : out std_logic_vector(31 downto 0);
+    master5_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    master5_WE_O    : out std_logic;
+    master5_CYC_O   : out std_logic;
+    master5_STB_O   : out std_logic;
+    master5_SEL_O   : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
+    master5_CTI_O   : out std_logic_vector(2 downto 0);
+    master5_BTE_O   : out std_logic_vector(1 downto 0);
+    master5_LOCK_O  : out std_logic;
+    master5_STALL_I : in  std_logic                               := '0';
+    master5_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+    master5_ACK_I   : in  std_logic                               := '0';
+    master5_ERR_I   : in  std_logic                               := '0';
+    master5_RTY_I   : in  std_logic                               := '0';
+
+    master6_ADR_O   : out std_logic_vector(31 downto 0);
+    master6_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    master6_WE_O    : out std_logic;
+    master6_CYC_O   : out std_logic;
+    master6_STB_O   : out std_logic;
+    master6_SEL_O   : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
+    master6_CTI_O   : out std_logic_vector(2 downto 0);
+    master6_BTE_O   : out std_logic_vector(1 downto 0);
+    master6_LOCK_O  : out std_logic;
+    master6_STALL_I : in  std_logic                               := '0';
+    master6_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+    master6_ACK_I   : in  std_logic                               := '0';
+    master6_ERR_I   : in  std_logic                               := '0';
+    master6_RTY_I   : in  std_logic                               := '0';
+
+    master7_ADR_O   : out std_logic_vector(31 downto 0);
+    master7_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    master7_WE_O    : out std_logic;
+    master7_CYC_O   : out std_logic;
+    master7_STB_O   : out std_logic;
+    master7_SEL_O   : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
+    master7_CTI_O   : out std_logic_vector(2 downto 0);
+    master7_BTE_O   : out std_logic_vector(1 downto 0);
+    master7_LOCK_O  : out std_logic;
+    master7_STALL_I : in  std_logic                               := '0';
+    master7_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+    master7_ACK_I   : in  std_logic                               := '0';
+    master7_ERR_I   : in  std_logic                               := '0';
+    master7_RTY_I   : in  std_logic                               := '0');
+
 
 end entity wb_splitter;
 
@@ -129,8 +180,11 @@ architecture rtl of wb_splitter is
   signal master2_stb : std_logic;
   signal master3_stb : std_logic;
   signal master4_stb : std_logic;
+  signal master5_stb : std_logic;
+  signal master6_stb : std_logic;
+  signal master7_stb : std_logic;
 
-  type choice_t is (M0, M1, M2, M3, M4);
+  type choice_t is (M0, M1, M2, M3, M4, M5, M6, M7);
   signal choice      : choice_t;
   signal last_choice : choice_t;
   signal adr_i       : unsigned(31 downto 0);
@@ -191,6 +245,38 @@ begin  -- architecture rt
     master4_stb <= '0';
   end generate nmaster4_gen;
 
+  master5_gen : if master5_address(1) /= 0 generate
+    constant adr  : natural                            := master5_address(1);
+    constant size : natural                            := master5_address(0);
+    constant mask : unsigned(REGISTER_SIZE-1 downto 0) := not to_unsigned(size-1, REGISTER_SIZE);
+  begin
+    master5_stb <= slave_STB_I when (adr_i and mask) = to_unsigned(adr, REGISTER_SIZE) else '0';
+  end generate master5_gen;
+  nmaster5_gen : if master5_address(0) = 0 generate
+    master5_stb <= '0';
+  end generate nmaster5_gen;
+
+  master6_gen : if master6_address(1) /= 0 generate
+    constant adr  : natural                            := master6_address(1);
+    constant size : natural                            := master6_address(0);
+    constant mask : unsigned(REGISTER_SIZE-1 downto 0) := not to_unsigned(size-1, REGISTER_SIZE);
+  begin
+    master6_stb <= slave_STB_I when (adr_i and mask) = to_unsigned(adr, REGISTER_SIZE) else '0';
+  end generate master6_gen;
+  nmaster6_gen : if master6_address(0) = 0 generate
+    master6_stb <= '0';
+  end generate nmaster6_gen;
+
+  master7_gen : if master7_address(1) /= 0 generate
+    constant adr  : natural                            := master7_address(1);
+    constant size : natural                            := master7_address(0);
+    constant mask : unsigned(REGISTER_SIZE-1 downto 0) := not to_unsigned(size-1, REGISTER_SIZE);
+  begin
+    master7_stb <= slave_STB_I when (adr_i and mask) = to_unsigned(adr, REGISTER_SIZE) else '0';
+  end generate master7_gen;
+  nmaster7_gen : if master7_address(0) = 0 generate
+    master7_stb <= '0';
+  end generate nmaster7_gen;
 
   -----------------------------------------------------------------------------
   -- hook up the stb signals that are generated above,
@@ -247,6 +333,39 @@ begin  -- architecture rt
   master4_BTE_O  <= slave_BTE_I;
   master4_LOCK_O <= slave_LOCK_I;
 
+  master5_STB_O  <= master5_stb;
+  master5_ADR_O  <= slave_ADR_I;
+  master5_DAT_O  <= slave_DAT_I;
+  master5_WE_O   <= slave_WE_I;
+  master5_CYC_O  <= slave_CYC_I;
+  master5_SEL_O  <= slave_SEL_I;
+  master5_CTI_O  <= slave_CTI_I;
+  master5_BTE_O  <= slave_BTE_I;
+  master5_LOCK_O <= slave_LOCK_I;
+
+  master6_STB_O  <= master6_stb;
+  master6_ADR_O  <= slave_ADR_I;
+  master6_DAT_O  <= slave_DAT_I;
+  master6_WE_O   <= slave_WE_I;
+  master6_CYC_O  <= slave_CYC_I;
+  master6_SEL_O  <= slave_SEL_I;
+  master6_CTI_O  <= slave_CTI_I;
+  master6_BTE_O  <= slave_BTE_I;
+  master6_LOCK_O <= slave_LOCK_I;
+
+  master7_STB_O  <= master7_stb;
+  master7_ADR_O  <= slave_ADR_I;
+  master7_DAT_O  <= slave_DAT_I;
+  master7_WE_O   <= slave_WE_I;
+  master7_CYC_O  <= slave_CYC_I;
+  master7_SEL_O  <= slave_SEL_I;
+  master7_CTI_O  <= slave_CTI_I;
+  master7_BTE_O  <= slave_BTE_I;
+  master7_LOCK_O <= slave_LOCK_I;
+
+
+
+
 -------------------------------------------------------------------------------
   -- The output signals are multiplexed below
   -------------------------------------------------------------------------------
@@ -254,7 +373,10 @@ begin  -- architecture rt
             M1 when master1_stb = '1' else
             M2 when master2_stb = '1' else
             M3 when master3_stb = '1' else
-            M4;
+            M4 when master4_stb = '1' else
+            M5 when master5_stb = '1' else
+            M6 when master6_stb = '1' else
+            M7;
 
   process(clk_i)
   begin
@@ -270,7 +392,10 @@ begin  -- architecture rt
     master1_STALL_I when M1,
     master2_STALL_I when M2,
     master3_STALL_I when M3,
-    master4_STALL_I when M4;
+    master4_STALL_I when M4,
+    master5_STALL_I when M5,
+    master6_STALL_I when M6,
+    master7_STALL_I when M7;
 
   with last_choice select
     slave_ack_O <=
@@ -278,7 +403,10 @@ begin  -- architecture rt
     master1_ACK_I when M1,
     master2_ACK_I when M2,
     master3_ACK_I when M3,
-    master4_ACK_I when M4;
+    master4_ACK_I when M4,
+    master5_ACK_I when M5,
+    master6_ACK_I when M6,
+    master7_ACK_I when M7;
 
 
   with last_choice select
@@ -287,7 +415,10 @@ begin  -- architecture rt
     master1_DAT_I when M1,
     master2_DAT_I when M2,
     master3_DAT_I when M3,
-    master4_DAT_I when M4;
+    master4_DAT_I when M4,
+    master5_DAT_I when M5,
+    master6_DAT_I when M6,
+    master7_DAT_I when M7;
 
   slave_ERR_O <= '0';
   slave_RTY_O <= '0';

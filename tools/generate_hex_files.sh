@@ -1,5 +1,5 @@
 #!/bin/sh
-TEST_DIR=~/riscv-tools/riscv-tests/isa
+TEST_DIR=~ryan/riscv-tools/riscv-tests/isa
 SOFTWARE_DIR=../software
 #all files that aren't dump or hex (the hex files are not correctly formatted)
 FILES=$(ls ${TEST_DIR}/rv32ui-p-* | grep -v dump | grep -v hex)

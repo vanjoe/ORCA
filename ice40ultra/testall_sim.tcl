@@ -8,9 +8,9 @@ foreach f $files {
 	 exec make imem.mem dmem.mem
 	 restart -f
 	 onbreak {resume}
-	 when {sim:/top_tb/dut/rv/coe_to_host /= x"00000000" } {stop}
+	 when {(/top_tb/dut/rv/rv/X/instruction == x"00000073" && /top_tb/dut/rv/rv/X/valid_input == "1") || (/top_tb/dut/rv/rv/X/syscall/mtohost /= x"00000000")} {stop}
 	 run 2000 us
-	 set v [examine -decimal sim:/top_tb/dut/rv/coe_to_host]
+	 set v [examine -decimal /top_tb/dut/rv/rv/D/register_file_1/t3 ]
 	 puts "$f = $v"
 }
 
