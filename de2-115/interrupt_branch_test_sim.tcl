@@ -111,8 +111,6 @@ cd system/testbench/mentor/
 do msim_setup.tcl
 ld
 
-
-
 add wave -position insertpoint $reset
 add wave -position insertpoint $clk
 add wave -position insertpoint $ext_interrupt

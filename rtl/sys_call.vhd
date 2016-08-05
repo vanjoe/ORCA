@@ -15,7 +15,7 @@ architecture rtl of instruction_legal is
   alias opcode7 is instruction(6 downto 0);
   alias func3 is instruction(14 downto 12);
 begin
-
+                                
   legal <=
     not other_illegal when (CHECK_LEGAL_INSTRUCTIONS = false or
                             opcode7 = "0110111" or
@@ -72,7 +72,6 @@ entity system_calls is
     mtime_i              : in std_logic_vector(63 downto 0);
     mip_mtip_i           : in std_logic;
     mip_msip_i           : in std_logic;
-    mip_meip_i           : in std_logic;
 
     -- To the Instruction Fetch Stage
     interrupt_pending_o  : out std_logic;
@@ -230,29 +229,29 @@ architecture rtl of system_calls is
   signal mie_mtie          : std_logic;
   signal mie_msie          : std_logic;
 
-  signal mtime             : std_logic_vector(register_size-1 downto 0);
-  signal mtimeh            : std_logic_vector(register_size-1 downto 0);
-  signal instret           : std_logic_vector(register_size-1 downto 0);
-  signal instreth          : std_logic_vector(register_size-1 downto 0);
+  signal mtime             : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mtimeh            : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal instret           : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal instreth          : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal misa              : std_logic_vector(register_size-1 downto 0);
-  signal mvendorid         : std_logic_vector(register_size-1 downto 0);
-  signal marchid           : std_logic_vector(register_size-1 downto 0);
-  signal mimpid            : std_logic_vector(register_size-1 downto 0);
-  signal mhartid           : std_logic_vector(register_size-1 downto 0);
+  signal misa              : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mvendorid         : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal marchid           : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mimpid            : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mhartid           : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal mepc              : std_logic_vector(register_size-1 downto 0);
-  signal mcause            : std_logic_vector(register_size-1 downto 0);
+  signal mepc              : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mcause            : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal mcause_i          : std_logic;
   signal mcause_ex         : std_logic_vector(3 downto 0);
-  signal mtohost           : std_logic_vector(register_size-1 downto 0);
+  signal mtohost           : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal mbadaddr          : std_logic_vector(register_size-1 downto 0);
-  signal csr_read_val      : std_logic_vector(register_size -1 downto 0);
-  signal csr_write_val     : std_logic_vector(register_size -1 downto 0);
-  signal bit_sel           : std_logic_vector(register_size-1 downto 0);
-  signal ibit_sel          : std_logic_vector(register_size-1 downto 0);
-  signal resized_zimm      : std_logic_vector(register_size-1 downto 0);
+  signal mbadaddr          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal csr_read_val      : std_logic_vector(REGISTER_SIZE -1 downto 0);
+  signal csr_write_val     : std_logic_vector(REGISTER_SIZE -1 downto 0);
+  signal bit_sel           : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ibit_sel          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal resized_zimm      : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal bad_csr_num       : std_logic;
   signal csr_read_en       : std_logic;
   signal other_illegal     : std_logic;
@@ -272,7 +271,7 @@ begin  -- architecture rtl
   -- Interrupt input, only goes high if interrupts are enabled, otherwise ignored.
   mip_mtip <= mip_mtip_i when ((mstatus_mie = '1') and (mie_mtie = '1')) else '0';
   mip_msip <= mip_msip_i when ((mstatus_mie = '1') and (mie_msie = '1')) else '0';
-  mip_meip <= mip_meip_i when ((mstatus_mie = '1') and (mie_meie = '1')) else '0';
+  mip_meip <= '0';
 
   counter_increment : process (clk, reset) is
   begin
@@ -461,6 +460,7 @@ begin  -- architecture rtl
   output_proc : process(clk) is
   begin
     if rising_edge(clk) then
+      interrupt_pending <= '0';
       -- This section handles pending interrupts, and forwards the program counter
       -- to the machine interrupt entry. If an interrupt occurs during an illegal
       -- instruction, the illegal instruction will be handled first, and then
@@ -470,20 +470,10 @@ begin  -- architecture rtl
         -- This should invalidate subsequent instructions and should insert
         -- bubbles into the pipeline.
         interrupt_pending <= '1';
-        -- In this case, handle the illegal instruction with higher priority than the
-        -- interrupt. Interrupts will be disabled until the illegal instruction handler
-        -- re-enables them.
-        if (valid = '1') and (legal_instruction = '0') and (load_stall = '0') then
-          interrupt_pending <= '0';
-          mstatus_mie   <= '0';
-          mcause_i      <= '0';
-          mcause_ex     <= ILLEGAL_I;
-          pc_corr_en    <= '1';
-          pc_correction <= MACHINE_MODE_TRAP;
-          mepc <= instruction_fetch_pc;
+
         -- Once Instruction Fetch, Decode, and Execute are finished with their current
         -- instruction, we can now handle the interrupt.
-        elsif (pipeline_empty = '1') then
+        if (pipeline_empty = '1' and interrupt_pending = '1') then
           -- Disable interrupts, in order to prevent taking the same
           -- interrupt repeatedly. This should be reenabled by the
           -- interrupt handler after servicing the interrupt.
@@ -510,21 +500,39 @@ begin  -- architecture rtl
           -- interrupt was latched during a pipeline flush due to a branch, then the
           -- corrected program counter will have been handled by the instruction fetch
           -- module already.
+          -- Note that if there is a pending interrupt during an mret instruction (as
+          -- is the case when there are multiple interrupts to be serviced), the correct
+          -- value will be loaded into mepc because instruction_fetch_pc will be
+          -- corrected by the mret instruction for one cycle, and then invalidated
+          -- due to the pending interrupt and continued pipeline flush.
           if (br_bad_predict = '1') then
             mepc <= br_new_pc;
           else
             mepc <= instruction_fetch_pc;
           end if;
         end if;
+      end if;
 
-      -- No pending interrupts, proceed as normal.
-      elsif load_stall = '0' then
+      -- Handle CSR functionality. If required, prevent an interrupt from progressing
+      -- to ensure proper CSR functionality.
+      if load_stall = '0' then
         wb_data    <= csr_read_val;
-        pc_corr_en <= '0';
         wb_en      <= '0';
+        -- The default value of pc_corr_en should be zero. However, if the
+        -- pipeline is empty and an interrupt is pending, mepc has been adjusted to 
+        -- enter the trap. Unless one of the higher priority trap instructions (ECALL,
+        -- ILLEGAL_INSTR, etc.) is called below, then the interrupt will be serviced on
+        -- the next instruction.
+        if not (pipeline_empty = '1' and interrupt_pending = '1') then
+          pc_corr_en <= '0';
+        end if;
         -- Valid is high when the current instruction is valid.
         if (valid = '1') then
+          -- In this case, handle the illegal instruction with higher priority than the
+          -- interrupt. Interrupts will be disabled until the illegal instruction handler
+          -- re-enables them.
           if legal_instruction = '0' then
+            interrupt_pending <= '0';
             mstatus_mie   <= '0';
             mcause_i      <= '0';
             mcause_ex     <= ILLEGAL_I;
@@ -535,6 +543,7 @@ begin  -- architecture rtl
           elsif opcode = "11100" then        --SYSTEM OP CODE
             wb_en <= csr_read_en;
             if zimm & func3 = "00000" & "000" then
+              interrupt_pending <= '0';
               if csr = x"000" then           --ECALL
                 mstatus_mie   <= '0';
                 mcause_i      <= '0';
@@ -576,12 +585,14 @@ begin  -- architecture rtl
               end case;
             end if;
           elsif instruction(31 downto 2) = FENCE_I(31 downto 2) then
+            interrupt_pending <= '0';
             pc_correction <= std_logic_vector(unsigned(current_pc) + 4);
             pc_corr_en    <= '1';
           end if;  --opcode
 
         end if;  --valid
       end if;  --stall
+
       if reset = '1' then
         mtohost    <= (others => '0');
         mstatus_mpp <= (others => '1'); -- hardwired to "11"
@@ -593,6 +604,9 @@ begin  -- architecture rtl
         mcause_i   <= '0';
         mcause_ex  <= (others => '0');
         interrupt_pending <= '0';
+        pc_corr_en <= '0';
+        pc_correction <= (others => '0');
+        mepc <= (others => '0');
       end if;  --reset
     end if;  --clk
   end process;

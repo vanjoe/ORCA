@@ -4,7 +4,6 @@
 
 volatile uint32_t timer_flag = 0;
 volatile uint32_t software_flag = 0;
-volatile uint32_t external_flag = 0; 
 
 #define SYS_CLK 125e5
 #define HARDWARE_TEST 1
@@ -28,19 +27,24 @@ int main(void) {
 
   for(count = 0; count < 25; count++);
 
-#define EXT_INT_TO_TEST 14
-  // Interrupts failed...
-  if (!(software_flag & timer_flag & external_flag)) {
-#if HARDWARE_TEST
-    *LEDR = 0xFFFFFFFF;
-#endif 
-    TEST_FAIL();
-  }
 
 #if HARDWARE_TEST
-    *LEDR = interrupt_mask;
+  *LEDR = interrupt_mask;
 #endif 
-  TEST_PASS();
+
+  if (!(software_flag & timer_flag)) {
+    asm volatile("csrw 0x780,%0"
+      :
+      : "r" ((int) (-1)));
+    TEST_FAIL();
+  }
+  else {
+    asm volatile("csrw 0x780,%0"
+      :
+      : "r" ((int) (1)));
+    TEST_PASS();
+  }
+
   return 1;
 }
 
@@ -72,79 +76,6 @@ long handle_interrupt(long cause, long epc, long regs[32])
       // is being handled.
       claim_external_interrupt(&plic_claim);
 
-      // Each external interrupt can be handled differently.
-      /*
-      switch(plic_claim) {
-        case 0:
-          break;
-        case 1:
-          break;
-        case 2:
-          break;
-        case 3:
-          break;
-        case 4:
-          break;
-        case 5:
-          break;
-        case 6:
-          break;
-        case 7:
-          break;
-        case 8:
-          break;
-        case 9:
-          break;
-        case 10:
-          break;
-        case 11:
-          break;
-        case 12:
-          break;
-        case 13:
-          break;
-        case 14:
-          break;
-        case 15:
-          break;
-        case 16:
-          break;
-        case 17:
-          break;
-        case 18:
-          break;
-        case 19:
-          break;
-        case 20:
-          break;
-        case 21:
-          break;
-        case 22:
-          break;
-        case 23:
-          break;
-        case 24:
-          break;
-        case 25:
-          break;
-        case 26:
-          break;
-        case 27:
-          break;
-        case 28:
-          break;
-        case 29:
-          break;
-        case 30:
-          break;
-        case 31:
-          break;
-        default
-          break;
-      }
-      */
-
-      external_flag = plic_claim;
 #if HARDWARE_TEST
       interrupt_mask |= 0x4;
 #endif
@@ -158,6 +89,5 @@ long handle_interrupt(long cause, long epc, long regs[32])
     default:
       break;
   }
-
   return epc;
 }
