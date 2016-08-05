@@ -8,16 +8,17 @@ use work.utils.all;
 package rv_components is
   component orca is
     generic (
-      REGISTER_SIZE      : integer              := 32;
-      RESET_VECTOR       : natural              := 16#00000200#;
-      MULTIPLY_ENABLE    : natural range 0 to 1 := 0;
-      DIVIDE_ENABLE      : natural range 0 to 1 := 0;
+      REGISTER_SIZE      : integer               := 32;
+      RESET_VECTOR       : natural               := 16#00000200#;
+      MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
+      DIVIDE_ENABLE      : natural range 0 to 1  := 0;
       SHIFTER_MAX_CYCLES : natural;
-      COUNTER_LENGTH     : natural              := 64;
-      BRANCH_PREDICTORS  : natural              := 0;
-      PIPELINE_STAGES    : natural range 4 to 5 := 5;
-      FORWARD_ALU_ONLY   : natural range 0 to 1 := 1;
-      MXP_ENABLE         : natural range 0 to 1 := 0);
+      COUNTER_LENGTH     : natural               := 64;
+      BRANCH_PREDICTORS  : natural               := 0;
+      PIPELINE_STAGES    : natural range 4 to 5  := 5;
+      FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
+      MXP_ENABLE         : natural range 0 to 1  := 0;
+      NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2);
     port(
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
@@ -41,22 +42,23 @@ package rv_components is
       avm_instruction_waitrequest   : in  std_logic                                  := '0';
       avm_instruction_readdatavalid : in  std_logic                                  := '0';
 
-      global_interrupts : in std_logic_vector(31 downto 0)
+      global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0)
       );
   end component orca;
 
   component orca_wishbone is
     generic (
-      REGISTER_SIZE      : integer              := 32;
-      RESET_VECTOR       : natural              := 16#00000200#;
-      MULTIPLY_ENABLE    : natural range 0 to 1 := 0;
-      DIVIDE_ENABLE      : natural range 0 to 1 := 0;
-      SHIFTER_MAX_CYCLES : natural              := 8;
-      COUNTER_LENGTH     : natural              := 64;
-      BRANCH_PREDICTORS  : natural              := 0;
-      PIPELINE_STAGES    : natural range 4 to 5 := 5;
-      FORWARD_ALU_ONLY   : natural range 0 to 1 := 1;
-      MXP_ENABLE         : natural range 0 to 1 := 0);
+      REGISTER_SIZE      : integer               := 32;
+      RESET_VECTOR       : natural               := 16#00000200#;
+      MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
+      DIVIDE_ENABLE      : natural range 0 to 1  := 0;
+      SHIFTER_MAX_CYCLES : natural               := 8;
+      COUNTER_LENGTH     : natural               := 64;
+      BRANCH_PREDICTORS  : natural               := 0;
+      PIPELINE_STAGES    : natural range 4 to 5  := 5;
+      FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
+      MXP_ENABLE         : natural range 0 to 1  := 0;
+      NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2);
     port(
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
@@ -81,7 +83,7 @@ package rv_components is
       instr_CTI_O   : out std_logic_vector(2 downto 0);
       instr_STALL_I : in  std_logic;
 
-      global_interrupts : in std_logic_vector(31 downto 0) := (others => '0')
+      global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
 
 
       );
@@ -516,14 +518,16 @@ package rv_components is
 
 
   component plic is
-    generic (REGISTER_SIZE : integer := 32);
+    generic (
+      REGISTER_SIZE      : integer := 32;
+      NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2);
     port (
       mtime_o    : out std_logic_vector(63 downto 0);
       mip_mtip_o : out std_logic;
       mip_msip_o : out std_logic;
       mip_meip_o : out std_logic;
 
-      global_interrupts : in std_logic_vector(31 downto 0);
+      global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
 
       -- Avalon bus
       clk                : in  std_logic;
@@ -541,15 +545,17 @@ package rv_components is
   end component plic;
 
   component gateway is
+    generic (
+     NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2);
     port (
       clk   : in std_logic;
       reset : in std_logic;
 
-      global_interrupts     : in  std_logic_vector(31 downto 0);
-      edge_sensitive_vector : in  std_logic_vector(31 downto 0);
-      interrupt_claimed     : in  std_logic_vector(31 downto 0);
-      interrupt_complete    : in  std_logic_vector(31 downto 0);
-      pending_interrupts    : out std_logic_vector(31 downto 0));
+      global_interrupts     : in  std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+      edge_sensitive_vector : in  std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+      interrupt_claimed     : in  std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+      interrupt_complete    : in  std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+      pending_interrupts    : out std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0));
   end component gateway;
 
 end package rv_components;

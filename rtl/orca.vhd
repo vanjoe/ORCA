@@ -8,21 +8,24 @@ use work.utils.all;
 entity Orca is
 
   generic (
-    REGISTER_SIZE      : integer              := 32;
-    RESET_VECTOR       : natural              := 16#00000200#;
-    MULTIPLY_ENABLE    : natural range 0 to 1 := 0;
-    DIVIDE_ENABLE      : natural range 0 to 1 := 0;
-    SHIFTER_MAX_CYCLES : natural              := 1;
-    COUNTER_LENGTH     : natural              := 0;
-    BRANCH_PREDICTORS  : natural              := 0;
-    PIPELINE_STAGES    : natural range 4 to 5 := 5;
-    FORWARD_ALU_ONLY   : natural range 0 to 1 := 1;
-    MXP_ENABLE         : natural range 0 to 1 := 0);
+    REGISTER_SIZE      : integer               := 32;
+    RESET_VECTOR       : natural               := 16#00000200#;
+    MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
+    DIVIDE_ENABLE      : natural range 0 to 1  := 0;
+    SHIFTER_MAX_CYCLES : natural               := 1;
+    COUNTER_LENGTH     : natural               := 0;
+    BRANCH_PREDICTORS  : natural               := 0;
+    PIPELINE_STAGES    : natural range 4 to 5  := 5;
+    FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
+    MXP_ENABLE         : natural range 0 to 1  := 0;
+    NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2);
 
   port(clk            : in std_logic;
        scratchpad_clk : in std_logic;
        reset          : in std_logic;
 
+       -- For debugging
+       program_counter : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
        --avalon master bus
        avm_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -40,7 +43,7 @@ entity Orca is
        avm_instruction_waitrequest   : in  std_logic                                  := '0';
        avm_instruction_readdatavalid : in  std_logic                                  := '0';
 
-       global_interrupts : in std_logic_vector(31 downto 0)
+       global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0)
        );
 
 end entity Orca;
@@ -124,6 +127,7 @@ architecture rtl of Orca is
   signal branch_pred : std_logic_vector(REGISTER_SIZE*2 + 3-1 downto 0);
 begin  -- architecture rtl
   pipeline_flush <= branch_get_flush(branch_pred);
+  program_counter <= instruction_fetch_pc;
 
   if_stall_in <= execute_stalled;
   instr_fetch : component instruction_fetch
@@ -239,30 +243,31 @@ begin  -- architecture rtl
       instruction_fetch_pc => instruction_fetch_pc);
 
 
-  interrupt_controller : component plic
-    generic map (
-      REGISTER_SIZE => REGISTER_SIZE)
-    port map (
-      clk   => clk,
-      reset => reset,
-
-      global_interrupts => global_interrupts,
-
-      mtime_o    => mtime,
-      mip_mtip_o => mip_mtip,
-      mip_msip_o => mip_msip,
-      mip_meip_o => mip_meip,
-
-      plic_address       => plic_address,
-      plic_byteenable    => plic_byteenable,
-      plic_read          => plic_read,
-      plic_readdata      => plic_readdata,
-      plic_response      => plic_response,
-      plic_write         => plic_write,
-      plic_writedata     => plic_writedata,
-      plic_lock          => plic_lock,
-      plic_waitrequest   => plic_waitrequest,
-      plic_readdatavalid => plic_readdatavalid);
+--  interrupt_controller : component plic
+--    generic map (
+--      REGISTER_SIZE => REGISTER_SIZE,
+--      NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS)
+--    port map (
+--      clk   => clk,
+--      reset => reset,
+--
+--      global_interrupts => global_interrupts,
+--
+--      mtime_o    => mtime,
+--      mip_mtip_o => mip_mtip,
+--      mip_msip_o => mip_msip,
+--      mip_meip_o => mip_meip,
+--
+--      plic_address       => plic_address,
+--      plic_byteenable    => plic_byteenable,
+--      plic_read          => plic_read,
+--      plic_readdata      => plic_readdata,
+--      plic_response      => plic_response,
+--      plic_write         => plic_write,
+--      plic_writedata     => plic_writedata,
+--      plic_lock          => plic_lock,
+--      plic_waitrequest   => plic_waitrequest,
+--      plic_readdatavalid => plic_readdatavalid);
 
   -- Handle arbitration between the bus and the PLIC
   data_sel <= '1' when unsigned(data_address) >= X"100"
@@ -292,10 +297,14 @@ begin  -- architecture rtl
   avm_data_write      <= data_write_en   when data_sel = '1' else '0';
   avm_data_writedata  <= data_write_data when data_sel = '1' else (others => '0');
 
-  data_wait <= plic_waitrequest when data_sel = '0' else avm_data_waitrequest;
+--  data_wait <= plic_waitrequest when data_sel = '0' else avm_data_waitrequest;
 
-  data_read_data <= plic_readdata      when data_sel_prev = '0' else avm_data_readdata;
-  e_readvalid    <= plic_readdatavalid when data_sel_prev = '0' else avm_data_readdatavalid;
+--  data_read_data <= plic_readdata      when data_sel_prev = '0' else avm_data_readdata;
+--  e_readvalid    <= plic_readdatavalid when data_sel_prev = '0' else avm_data_readdatavalid;
+
+  data_wait      <= '0' when data_sel = '0' else avm_data_waitrequest;
+  data_read_data <= (others => '0') when data_sel_prev = '0' else avm_data_readdata;
+  e_readvalid    <= '1' when data_sel_prev = '0' else avm_data_readdatavalid;
 
   avm_instruction_address <= instr_address;
   avm_instruction_read    <= instr_read_en;

@@ -3,9 +3,10 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity interrupt_generator is
+  generic (NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2);
   port (clk : in std_logic;
         reset : in std_logic;
-        global_interrupts : out std_logic_vector(31 downto 0));
+        global_interrupts : out std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0));
 end entity interrupt_generator;
 
 architecture rtl of interrupt_generator is
@@ -31,9 +32,9 @@ begin
           count <= count + 1;
         end if;
         if count = (count_trigger - trigger_stage) then
-          global_interrupts(14) <= '1';
+--          global_interrupts(1) <= '1';
         elsif count = (count_stop - trigger_stage) then
-          global_interrupts(14) <= '0';
+--          global_interrupts(1) <= '0';
           if trigger_stage /= 3 then
             trigger_stage <= trigger_stage + 1;
             count <= (others => '0');

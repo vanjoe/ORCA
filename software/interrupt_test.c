@@ -30,7 +30,7 @@ int main(void) {
 
 #define EXT_INT_TO_TEST 14
   // Interrupts failed...
-  if (!(software_flag & timer_flag) || (external_flag != EXT_INT_TO_TEST)) {
+  if (!(software_flag & timer_flag & external_flag)) {
 #if HARDWARE_TEST
     *LEDR = 0xFFFFFFFF;
 #endif 

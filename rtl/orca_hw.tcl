@@ -178,6 +178,12 @@ set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipelin
 but 4 stages has a higher fmax"
 set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
 
+add_parameter          NUM_EXT_INTERRUPTS integer 2
+set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
+set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "NUM_EXT_INTERRUPTS"
+set_parameter_property NUM_EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
+set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES {2:32}
+
 
 
 #
@@ -295,6 +301,20 @@ add_interface_port instruction avm_instruction_waitrequest waitrequest Input 1
 add_interface_port instruction avm_instruction_readdatavalid readdatavalid Input 1
 
 #
+# connection point program_counter
+#
+add_interface program_counter conduit end
+set_interface_property program_counter associatedClock ""
+set_interface_property program_counter associatedReset ""
+set_interface_property program_counter ENABLED true
+set_interface_property program_counter EXPORT_OF ""
+set_interface_property program_counter PORT_NAME_MAP ""
+set_interface_property program_counter CMSIS_SVD_VARIABLES ""
+set_interface_property program_counter SVD_ADDRESS_GROUP ""
+
+add_interface_port program_counter program_counter export Output register_size
+
+#
 # connection point global_interrupts
 #
 
@@ -307,7 +327,7 @@ set_interface_property global_interrupts PORT_NAME_MAP ""
 set_interface_property global_interrupts CMSIS_SVD_VARIABLES ""
 set_interface_property global_interrupts SVD_ADDRESS_GROUP ""
 
-add_interface_port global_interrupts global_interrupts export Input register_size
+add_interface_port global_interrupts global_interrupts export Input NUM_EXT_INTERRUPTS 
 
 proc log_out {out_str} {
         set chan [open ~/orca_hw_log.txt a]
