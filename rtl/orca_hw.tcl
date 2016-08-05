@@ -46,7 +46,7 @@ add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file orca.vhd VHDL PATH orca.vhd TOP_LEVEL_FILE
 add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file reserved_registers.vhd VHDL PATH reserved_registers.vhd
+add_fileset_file plic.vhd VHDL PATH plic.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL Orca
@@ -63,7 +63,7 @@ add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file orca.vhd VHDL PATH orca.vhd
 add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file reserved_registers.vhd VHDL PATH reserved_registers.vhd
+add_fileset_file plic.vhd VHDL PATH plic.vhd
 
 
 

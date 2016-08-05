@@ -93,6 +93,7 @@ begin
       clk_clk                => clk,
       reset_reset_n          => reset,
       from_host_export       => fh,
+      to_host_export         => th,
       program_counter_export => pc,
       ledg_export            => ledg_export,
       ledr_export            => ledr_export,
@@ -105,7 +106,9 @@ begin
 
 --  hex_input(15 downto 0)  <= pc(15 downto 0);
 --  hex_input(31 downto 16) <= th(15 downto 0);
+  
   hex_input <=
+    th          when sw(4) = '1' else 
     hex3_export when sw(3) = '1' else
     hex2_export when sw(2) = '1' else
     hex1_export when sw(1) = '1' else

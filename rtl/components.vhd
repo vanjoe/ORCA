@@ -95,13 +95,13 @@ package rv_components is
       RESET_VECTOR         : natural;
       MULTIPLY_ENABLE      : boolean;
       DIVIDE_ENABLE        : boolean;
-      SHIFTER_MAX_CYCLES : natural ;
+      SHIFTER_MAX_CYCLES   : natural;
       COUNTER_LENGTH       : natural;
       FORWARD_ALU_ONLY     : boolean);
     port(
-      clk         : in std_logic;
-      reset       : in std_logic;
-      valid_input : in std_logic;
+      clk            : in std_logic;
+      reset          : in std_logic;
+      valid_input    : in std_logic;
 
       br_taken_in  : in std_logic;
       pc_current   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -117,10 +117,13 @@ package rv_components is
       wb_en   : buffer std_logic;
 
       to_host   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      from_host : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       branch_pred    : out    std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
       stall_pipeline : buffer std_logic;
+      pipeline_empty : in     std_logic;
+
+      instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+
 --memory-bus
       address        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
@@ -130,9 +133,12 @@ package rv_components is
       read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       waitrequest    : in     std_logic;
       datavalid      : in     std_logic;
-      mtime_i        : in     std_logic_vector(63 downto 0);
-      mip_mtip_i     : in     std_logic;
-      mip_msip_i     : in     std_logic);
+      
+      mtime_i             : in     std_logic_vector(63 downto 0);
+      mip_mtip_i          : in     std_logic;
+      mip_msip_i          : in     std_logic;
+      interrupt_pending_o : out     std_logic
+      );
   end component execute;
 
   component instruction_fetch is
@@ -157,7 +163,10 @@ package rv_components is
       read_en        : out std_logic;
       read_data      : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       read_datavalid : in  std_logic;
-      read_wait      : in  std_logic
+      read_wait      : in  std_logic;
+
+      instruction_fetch_pc : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      interrupt_pending    : in  std_logic
       );
   end component instruction_fetch;
 
@@ -183,7 +192,8 @@ package rv_components is
       data_enable       : out std_logic;
       illegal_alu_instr : out std_logic;
       less_than         : out std_logic;
-      stall_out         : out std_logic);
+      stall_out         : out std_logic
+      );
   end component arithmetic_unit;
 
   component branch_unit is
@@ -407,24 +417,31 @@ package rv_components is
       wb_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       wb_en   : out std_logic;
 
-      to_host   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      from_host : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-
+      to_host       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       current_pc    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       pc_correction : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      pc_corr_en    : out std_logic;
+      pc_corr_en    : buffer std_logic;
 
       illegal_alu_instr : in std_logic;
 
       use_after_load_stall : in std_logic;
       predict_corr         : in std_logic;
       load_stall           : in std_logic;
+
       mtime_i              : in std_logic_vector(63 downto 0);
       mip_mtip_i           : in std_logic;
-      mip_msip_i           : in std_logic);
+      mip_msip_i           : in std_logic;
+      
+      interrupt_pending_o  : out std_logic;
+      pipeline_empty       : in std_logic;
+
+      instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      br_bad_predict       : in std_logic;
+      br_new_pc            : in std_logic_vector(REGISTER_SIZE-1 downto 0)
+    );
   end component system_calls;
 
-  component reserved_registers is
+  component plic is
     generic (REGISTER_SIZE : integer := 32);
     port (
       mtime_o : out std_logic_vector(63 downto 0);
@@ -434,16 +451,16 @@ package rv_components is
       -- Avalon bus
       clk : in std_logic;
       reset : in std_logic;
-      reserved_address : in std_logic_vector(7 downto 0);
-      reserved_byteenable : in std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      reserved_read : in std_logic;
-      reserved_readdata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      reserved_response : out std_logic_vector(1 downto 0);
-      reserved_write : in std_logic;
-      reserved_writedata : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      reserved_lock : in std_logic;
-      reserved_waitrequest : out std_logic;
-      reserved_readdatavalid : out std_logic);
-  end component reserved_registers;
+      plic_address : in std_logic_vector(7 downto 0);
+      plic_byteenable : in std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      plic_read : in std_logic;
+      plic_readdata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      plic_response : out std_logic_vector(1 downto 0);
+      plic_write : in std_logic;
+      plic_writedata : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      plic_lock : in std_logic;
+      plic_waitrequest : out std_logic;
+      plic_readdatavalid : out std_logic);
+  end component plic;
 
 end package rv_components;

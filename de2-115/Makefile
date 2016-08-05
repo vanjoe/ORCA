@@ -1,5 +1,3 @@
-
-
 QSYS_FILE=system.qsys
 QPF_FILE=system.qpf
 QIP_FILE=system/synthesis/system.qip
@@ -14,13 +12,12 @@ STA_RPT_FILE=$(OUTPUT_DIR)system.sta.rpt
 all: system.sof  $(STA_RPT_FILE)
 
 DEVICE_FAMILY=$(shell grep deviceFamily $(QSYS_FILE) | head -1 | sed 's/.*value="\(.*\)".*/\1/')
-VHDL_FILES=$(wildcard ../rtl/*.vhd)
-VHDL_FILES+=$(wildcard test_components/*.vhd)
-$(info VHDL_FILES=$(VHDL_FILES))
-VHDL_SUBMODULE_FILES=$(addprefix system/synthesis/submodules/,$(notdir $(VHDL_FILES)))
+RTL_FILES=$(wildcard ../rtl/*.vhd)
+TEST_RTL_FILES=$(wildcard test_components/*.vhd)
+
+RTL_SUBMODULE_FILES=$(addprefix system/synthesis/submodules/,$(notdir $(RTL_FILES)))
+TEST_RTL_SUBMODULE_FILES=$(addprefix system/synthesis/submodules/,$(notdir $(TEST_RTL_FILES)))
 TOP_LEVEL_FILES=$(wildcard *.vhd)
-
-
 
 -include config.mk
 
@@ -50,15 +47,22 @@ ifdef FORWARD_ALU_ONLY
 	sed -i 's|parameter name="FORWARD_ALU_ONLY" value=".*" />|parameter name="FORWARD_ALU_ONLY" value="$(FORWARD_ALU_ONLY)" />|' $(QSYS_FILE)
 endif
 
-$(QIP_FILE):$(QSYS_FILE)
+$(QIP_FILE):$(QSYS_FILE) ../rtl/orca_hw.tcl
 	qsys-generate --synthesis=VHDL system.qsys 2>&1 | tee ./system.qsys.log
 
-$(VHDL_SUBMODULE_FILES): system/synthesis/submodules/% : ../rtl/%
+$(RTL_SUBMODULE_FILES): system/synthesis/submodules/% : ../rtl/% 
 	cp $^ $@
 
-HEX_FILE=$(wildcard test.hex)
+$(TEST_RTL_SUBMODULE_FILES): system/synthesis/submodules/% : test_components/%
+	cp $^ $@
 
-$(MAP_RPT_FILE) : $(QIP_FILE) $(VHDL_SUBMODULE_FILES) $(TOP_LEVEL_FILES)
+ifndef NO_SW
+HEX_FILE=test.hex
+else
+HEX_FILE=
+endif
+
+$(MAP_RPT_FILE) : $(QIP_FILE) $(RTL_SUBMODULE_FILES) $(TEST_RTL_SUBMODULE_FILES) $(TOP_LEVEL_FILES)
 	quartus_map $(QPF_FILE)
 $(FIT_RPT_FILE) : $(MAP_RPT_FILE)
 	quartus_fit $(QPF_FILE)
@@ -83,7 +87,7 @@ sta: $(STA_RPT_FILE)
 
 testbench: system/testbench/mentor/msim_setup.tcl
 
-system/testbench/mentor/msim_setup.tcl:$(QSYS_FILE) $(VHDL_FILES)
+system/testbench/mentor/msim_setup.tcl:$(QSYS_FILE) $(RTL_FILES) $(TEST_RTL_FILES)
 	qsys-generate --testbench --testbench-simulation=VHDL $(QSYS_FILE)
 
 sim:system/testbench/mentor/msim_setup.tcl test.hex

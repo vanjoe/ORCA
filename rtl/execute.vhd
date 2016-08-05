@@ -42,24 +42,26 @@ entity execute is
     wb_en   : buffer std_logic;
 
     to_host   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    from_host : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-    branch_pred : out std_logic_vector(REGISTER_SIZE*2+3 -1 downto 0);
-
+    branch_pred : out       std_logic_vector(REGISTER_SIZE*2+3 -1 downto 0);
     stall_pipeline : buffer std_logic;
---memory-bus
-    address        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-    write_en       : out    std_logic;
-    read_en        : out    std_logic;
-    write_data     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    waitrequest    : in     std_logic;
-    datavalid      : in     std_logic;
+    pipeline_empty : in     std_logic;
 
-    mtime_i        : in     std_logic_vector(63 downto 0);
-    mip_mtip_i     : in     std_logic;
-    mip_msip_i     : in     std_logic);
+--memory-bus
+    address              : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    byte_en              : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    write_en             : out    std_logic;
+    read_en              : out    std_logic;
+    write_data           : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    read_data            : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    waitrequest          : in     std_logic;
+    datavalid            : in     std_logic;
+
+    mtime_i              : in     std_logic_vector(63 downto 0);
+    mip_mtip_i           : in     std_logic;
+    mip_msip_i           : in     std_logic;
+    interrupt_pending_o  : out std_logic;
+    instruction_fetch_pc : in  std_logic_vector(REGISTER_SIZE-1 downto 0));
 end entity execute;
 
 architecture behavioural of execute is
@@ -376,7 +378,6 @@ begin
       wb_data        => sys_data_out,
       wb_en          => sys_data_en,
       to_host        => to_host,
-      from_host      => from_host,
 
       current_pc           => pc_current,
       pc_correction        => syscall_target,
@@ -388,9 +389,15 @@ begin
 
       mtime_i              => mtime_i,
       mip_mtip_i           => mip_mtip_i,
-      mip_msip_i           => mip_msip_i
-      );
+      mip_msip_i           => mip_msip_i,
 
+      interrupt_pending_o  => interrupt_pending_o,
+      pipeline_empty       => pipeline_empty,
+
+      instruction_fetch_pc => instruction_fetch_pc,
+      br_bad_predict       => br_bad_predict,
+      br_new_pc            => br_new_pc
+      );
 
   finished_instr <= valid_instr and not stall_pipeline;
 

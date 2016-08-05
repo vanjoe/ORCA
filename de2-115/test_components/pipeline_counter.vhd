@@ -39,7 +39,7 @@ begin
   begin
     if rising_edge(clk) then
       if (reset = '1') then
-        pipeline_count <= "000";
+        pipeline_count_reg <= "000";
       else
         if (counter_write = '1') then
           pipeline_count_reg <= counter_writedata(2 downto 0);

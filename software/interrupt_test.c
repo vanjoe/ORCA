@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "interrupt.h"
 
 volatile uint32_t timer_flag = 0;
 volatile uint32_t software_flag = 0;
@@ -20,7 +21,6 @@ int main(void)
   uint32_t timer_overflow_h;
   uint32_t timer_overflow_l;
   volatile uint32_t count;
-
 
   // Load from timer, add offset for overflow.
   asm volatile("csrr %0,mtimeh"
@@ -47,7 +47,6 @@ int main(void)
     :
     : "r" (timer_overflow_l), "r" (MTIMECMP_L));
 
-
   // Global enable for machine level interrupts.
   asm volatile("csrs mstatus,%0"
     :
@@ -70,15 +69,13 @@ int main(void)
       :
       : "r" ((int) (-1)));
   }
+  else {
+    asm volatile("csrw 0x780,%0"
+      :
+      : "r" ((int) (1)));
+  }
 
   return 1;
-}
-
-
-int handle_trap(long cause, long epc, long regs[32])
-{
-	//spin forever
-	for(;;);
 }
 
 
@@ -88,44 +85,26 @@ int handle_trap(long cause, long epc, long regs[32])
 long handle_interrupt(long cause, long epc, long regs[32])
 {
   switch(cause & 0xF) {
+    int plic_claim;
+
     case M_SOFTWARE_INTERRUPT:
       software_flag = 1;
-      // Clear pending software interrupt.
-      asm volatile("lw t0,0(%0)"
-      :
-      : "r" (MSOFTWARE_I)); 
+      clear_software_interrupt();
       break;
 
     case M_TIMER_INTERRUPT:
       timer_flag = 1;
-      // Safe sequence of disabling timer interrupt without accidental interrupts.
-      asm volatile("li t0,-1"
-        :
-        : );
-      asm volatile("sw t0,0(%0)"
-        :
-        : "r" MTIMECMP_L);
-      asm volatile("sw t0,0(%0)"
-        :
-        : "r" MTIMECMP_H);
+      clear_timer_interrupt_cycles();
       break;
 
     case M_EXTERNAL_INTERRUPT:
+      claim_external_interrupt(&plic_claim);
+      complete_external_interrupt(plic_claim);
       break;
 
     default:
       break;
   }
-
-  // Re-enable interrupts after service.
-  asm volatile("csrs mstatus,%0"
-    :
-    :"r" ((int) MSTATUS_IE_MASK)); 
-
   return epc;
 }
-
-
-
-
 

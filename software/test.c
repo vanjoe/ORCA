@@ -1,3 +1,5 @@
+#include "interrupt.h"
+
 int main(void)
 {
   volatile register int source1 asm ("a1");
@@ -17,7 +19,7 @@ int main(void)
     : "r" (source2));
 
   if (result1 != 32 || result2 != 16) {
-    asm volatile("csrw mtohost,%0"
+    asm volatile("csrw 0x780,%0"
       :
       :"r" ((int) -1));
   }
@@ -47,7 +49,7 @@ int main(void)
     : "=r" (result2)
     : "r" (data));
   if (result1 != 32 || result2 != 16) {
-    asm volatile("csrw mtohost,%0"
+    asm volatile("csrw 0x780,%0"
       :
       :"r" ((int) -1));
   }
@@ -61,7 +63,7 @@ int main(void)
     : "=r" (result1)
     : "r" (data));
   if (result1 != 0xDEADBEEF) {
-    asm volatile("csrw mtohost,%0"
+    asm volatile("csrw 0x780,%0"
       :
       :"r" ((int) -1));
   }
@@ -69,9 +71,30 @@ int main(void)
   return 1;
 }
 
-
-int handle_trap(long cause,long epc, long regs[32])
+#define M_SOFTWARE_INTERRUPT 0x3
+#define M_TIMER_INTERRUPT    0x7
+#define M_EXTERNAL_INTERRUPT 0xB
+long handle_interrupt(long cause, long epc, long regs[32])
 {
-	//spin forever
-	for(;;);
+  switch(cause & 0xF) {
+    int plic_claim;
+
+    case M_SOFTWARE_INTERRUPT:
+      clear_software_interrupt();
+      break;
+
+    case M_TIMER_INTERRUPT:
+      clear_timer_interrupt_cycles();
+      break;
+
+    case M_EXTERNAL_INTERRUPT:
+      claim_external_interrupt(&plic_claim);
+      complete_external_interrupt(plic_claim);
+      break;
+
+    default:
+      break;
+  }
+  return epc;
 }
+
