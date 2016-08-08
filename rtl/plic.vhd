@@ -3,12 +3,14 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity plic is
-  generic (REGISTER_SIZE : integer := 32);
+  generic (REGISTER_SIZE : integer := 32;
+           NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2);
   port (
     mtime_o : out std_logic_vector(63 downto 0);
     mip_mtip_o : out std_logic;
-
     mip_msip_o : out std_logic;
+
+    global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
     
     -- Avalon bus
     clk : in std_logic;

@@ -285,132 +285,132 @@
          type = "String";
       }
    }
-   element riscv_0
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element vectorblox_orca_riscv
    {
       datum _sortIndex
       {
          value = "2";
          type = "int";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
       }
    }
 }
@@ -435,11 +435,7 @@
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <interface name="clk" internal="clk_0.clk_in" type="clock" dir="end" />
- <interface
-   name="from_host"
-   internal="riscv_0.from_host"
-   type="conduit"
-   dir="end" />
+ <interface name="from_host" internal="vectorblox_orca_riscv.from_host" />
  <interface
    name="hex0"
    internal="hex_0.external_connection"
@@ -477,11 +473,11 @@
    dir="end" />
  <interface
    name="program_counter"
-   internal="riscv_0.program_counter"
+   internal="vectorblox_orca_riscv.program_counter"
    type="conduit"
    dir="end" />
  <interface name="reset" internal="clk_0.clk_in_reset" type="reset" dir="end" />
- <interface name="to_host" internal="riscv_0.to_host" type="conduit" dir="end" />
+ <interface name="to_host" internal="vectorblox_orca_riscv.to_host" />
  <module name="clk_0" kind="clock_source" version="15.1" enabled="1">
   <parameter name="clockFrequency" value="50000000" />
   <parameter name="clockFrequencyKnown" value="true" />
@@ -663,13 +659,19 @@
   <parameter name="MAX_PIPELINE" value="7" />
   <parameter name="REGISTER_SIZE" value="32" />
  </module>
- <module name="riscv_0" kind="vectorblox_orca" version="1.0" enabled="1">
+ <module
+   name="vectorblox_orca_riscv"
+   kind="vectorblox_orca"
+   version="1.0"
+   enabled="1">
   <parameter name="BRANCH_PREDICTION" value="false" />
   <parameter name="BTB_SIZE" value="0" />
   <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DIVIDE_ENABLE" value="1" />
   <parameter name="FORWARD_ALU_ONLY" value="1" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
+  <parameter name="MXP_ENABLE" value="0" />
+  <parameter name="NUM_EXT_INTERRUPTS" value="2" />
   <parameter name="PIPELINE_STAGES" value="4" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="512" />
@@ -678,7 +680,7 @@
  <connection
    kind="avalon"
    version="15.1"
-   start="riscv_0.data"
+   start="vectorblox_orca_riscv.data"
    end="mm_bridge_0.s0">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x01000000" />
@@ -687,7 +689,7 @@
  <connection
    kind="avalon"
    version="15.1"
-   start="riscv_0.data"
+   start="vectorblox_orca_riscv.data"
    end="onchip_memory2_0.s2">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
@@ -696,7 +698,7 @@
  <connection
    kind="avalon"
    version="15.1"
-   start="riscv_0.instruction"
+   start="vectorblox_orca_riscv.instruction"
    end="onchip_memory2_0.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
@@ -795,7 +797,11 @@
    version="15.1"
    start="clk_0.clk"
    end="onchip_memory2_0.clk2" />
- <connection kind="clock" version="15.1" start="clk_0.clk" end="riscv_0.clock" />
+ <connection
+   kind="clock"
+   version="15.1"
+   start="clk_0.clk"
+   end="vectorblox_orca_riscv.clock" />
  <connection kind="clock" version="15.1" start="clk_0.clk" end="pmod_mic_0.clock" />
  <connection
    kind="clock"
@@ -838,7 +844,7 @@
    kind="reset"
    version="15.1"
    start="clk_0.clk_reset"
-   end="riscv_0.reset" />
+   end="vectorblox_orca_riscv.reset" />
  <connection
    kind="reset"
    version="15.1"

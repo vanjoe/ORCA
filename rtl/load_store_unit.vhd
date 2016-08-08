@@ -21,7 +21,6 @@ entity load_store_unit is
     stalled        : buffer std_logic;
     data_out       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_enable    : out    std_logic;
-    wb_sel         : out    std_logic_vector(4 downto 0);
 --memory-bus
     address        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);

@@ -57,7 +57,6 @@ entity system_calls is
     wb_data              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     wb_en                : out std_logic;
 
-    to_host              : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     current_pc           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     pc_correction        : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
     pc_corr_en           : buffer std_logic;
@@ -170,8 +169,6 @@ architecture rtl of system_calls is
   constant CSR_MCYCLEH   : csr_t := X"F80";
   constant CSR_MTIMEH    : csr_t := X"F81";
   constant CSR_MINSTRETH : csr_t := X"F82";
-  constant CSR_MTOHOST   : csr_t := X"780";
-  constant CSR_MFROMHOST : csr_t := X"781";
 
   constant FENCE_I     : std_logic_vector(31 downto 0) := x"0000100F";
 
@@ -244,7 +241,6 @@ architecture rtl of system_calls is
   signal mcause            : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal mcause_i          : std_logic;
   signal mcause_ex         : std_logic_vector(3 downto 0);
-  signal mtohost           : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal mbadaddr          : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal csr_read_val      : std_logic_vector(REGISTER_SIZE -1 downto 0);
@@ -565,8 +561,6 @@ begin  -- architecture rtl
 
             else
               case csr is                    --writeback to CSR
-                when CSR_MTOHOST =>
-                  mtohost <= csr_write_val;  --write only register
                 when CSR_MEPC =>
                   mepc <= csr_write_val;
                 when CSR_MSTATUS =>
@@ -594,7 +588,6 @@ begin  -- architecture rtl
       end if;  --stall
 
       if reset = '1' then
-        mtohost    <= (others => '0');
         mstatus_mpp <= (others => '1'); -- hardwired to "11"
         mstatus_mpie <= '0';
         mstatus_mie <= '0';
@@ -610,8 +603,6 @@ begin  -- architecture rtl
       end if;  --reset
     end if;  --clk
   end process;
-
-  to_host <= mtohost;
 
   bad_address : process(clk)
   begin

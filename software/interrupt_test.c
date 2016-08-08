@@ -1,6 +1,9 @@
 #include <stdint.h>
-#include "test_macros.h"
+
+#include "gpio.h"
 #include "interrupt.h"
+#include "test_macros.h"
+
 
 volatile uint32_t timer_flag = 0;
 volatile uint32_t software_flag = 0;
@@ -8,6 +11,11 @@ volatile uint32_t software_flag = 0;
 #define SYS_CLK 125e5
 #define HARDWARE_TEST 1
 #define LEDR ((volatile int *) (0x01000010))
+#define HEX0 ((volatile int *) (0x01000030))
+#define HEX1 ((volatile int *) (0x01000040))
+#define HEX2 ((volatile int *) (0x01000050))
+#define HEX3 ((volatile int *) (0x01000060))
+
 
 #if HARDWARE_TEST
 volatile uint32_t interrupt_mask = 0x00000000;
@@ -33,15 +41,17 @@ int main(void) {
 #endif 
 
   if (!(software_flag & timer_flag)) {
-    asm volatile("csrw 0x780,%0"
-      :
-      : "r" ((int) (-1)));
+    *HEX0 = 0xF;    
+    *HEX1 = 0xF;    
+    *HEX2 = 0xF;    
+    *HEX3 = 0xF;    
     TEST_FAIL();
   }
   else {
-    asm volatile("csrw 0x780,%0"
-      :
-      : "r" ((int) (1)));
+    *HEX0 = 0x1;    
+    *HEX1 = 0x0;    
+    *HEX2 = 0x0;    
+    *HEX3 = 0x0;    
     TEST_PASS();
   }
 

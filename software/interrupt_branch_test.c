@@ -1,6 +1,8 @@
-#include "test_macros.h"
-#include "interrupt.h"
 #include <stdint.h>
+
+#include "gpio.h"
+#include "interrupt.h"
+#include "test_macros.h"
 
 int main(void) {
 
@@ -14,10 +16,19 @@ int main(void) {
   asm volatile("li t3, 1"
     :
     : );
+    *HEX0 = 0x1;    
+    *HEX1 = 0x0;    
+    *HEX2 = 0x0;    
+    *HEX3 = 0x0;    
 
   while(1);
 
+  *HEX0 = 0xF;    
+  *HEX1 = 0xF;    
+  *HEX2 = 0xF;    
+  *HEX3 = 0xF;    
   TEST_FAIL();
+
   return 1;
 }
 

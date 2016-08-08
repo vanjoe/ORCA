@@ -1,5 +1,6 @@
-#include "test_macros.h"
+#include "gpio.h"
 #include "interrupt.h"
+#include "test_macros.h"
 
 int main(void)
 {
@@ -20,10 +21,10 @@ int main(void)
     : "r" (source2));
 
   if (result1 != 32 || result2 != 16) {
-    asm volatile("csrw 0x780,%0"
-      :
-      :"r" ((int) -1));
-
+    *HEX0 = 0xF;    
+    *HEX1 = 0xF;    
+    *HEX2 = 0xF;    
+    *HEX3 = 0xF;    
     TEST_FAIL();
   }
 
@@ -52,9 +53,10 @@ int main(void)
     : "=r" (result2)
     : "r" (data));
   if (result1 != 32 || result2 != 16) {
-    asm volatile("csrw 0x780,%0"
-      :
-      :"r" ((int) -1));
+    *HEX0 = 0xF;    
+    *HEX1 = 0xF;    
+    *HEX2 = 0xF;    
+    *HEX3 = 0xF;    
     TEST_FAIL();
   }
 
@@ -67,12 +69,17 @@ int main(void)
     : "=r" (result1)
     : "r" (data));
   if (result1 != 0xDEADBEEF) {
-    asm volatile("csrw 0x780,%0"
-      :
-      :"r" ((int) -1));
+    *HEX0 = 0xF;    
+    *HEX1 = 0xF;    
+    *HEX2 = 0xF;    
+    *HEX3 = 0xF;    
     TEST_FAIL();
   }
 
+  *HEX0 = 0x1;    
+  *HEX1 = 0x0;    
+  *HEX2 = 0x0;    
+  *HEX3 = 0x0;    
   TEST_PASS();
   return 1;
 }
