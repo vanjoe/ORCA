@@ -1,9 +1,16 @@
-set inc_interrupt /system_tb/system_inst/riscv_0/X/syscall/mip_meip_i
-set ext_interrupt /system_tb/system_inst/riscv_0/interrupt_controller/mip_meip_o
-set instruction   /system_tb/system_inst/riscv_0/X/instruction
-set valid_instr   /system_tb/system_inst/riscv_0/X/valid_instr
-set clk           /system_tb/system_inst/riscv_0/clk
-set reset         /system_tb/system_inst/riscv_0/reset
+set inc_interrupt      /system_tb/system_inst/vectorblox_orca_0/X/syscall/mip_meip_i
+set ext_interrupt      /system_tb/system_inst/vectorblox_orca_0/interrupt_controller/mip_meip_o
+set instruction        /system_tb/system_inst/vectorblox_orca_0/X/instruction
+set valid_instr        /system_tb/system_inst/vectorblox_orca_0/X/valid_instr
+set clk                /system_tb/system_inst/vectorblox_orca_0/clk
+set reset              /system_tb/system_inst/vectorblox_orca_0/reset
+set pc                 /system_tb/system_inst/vectorblox_orca_0/X/pc_current
+set mepc               /system_tb/system_inst/vectorblox_orca_0/X/syscall/mepc
+set mip_meip           /system_tb/system_inst/vectorblox_orca_0/X/syscall/mip_meip
+set br_bad_predict     /system_tb/system_inst/vectorblox_orca_0/X/syscall/br_bad_predict
+set br_bad_predict_reg /system_tb/system_inst/vectorblox_orca_0/X/syscall/br_bad_predict_reg
+set br_new_pc_reg      /system_tb/system_inst/vectorblox_orca_0/X/syscall/br_new_pc_reg
+
 
 proc clock_cycle {} {
   global step
@@ -115,6 +122,7 @@ add wave -position insertpoint $reset
 add wave -position insertpoint $clk
 add wave -position insertpoint $ext_interrupt
 add wave -position insertpoint $inc_interrupt
+add wave -position insertpoint $pc
 add wave -position insertpoint $instruction
 add wave -position insertpoint $valid_instr
 

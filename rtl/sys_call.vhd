@@ -71,6 +71,7 @@ entity system_calls is
     mtime_i              : in std_logic_vector(63 downto 0);
     mip_mtip_i           : in std_logic;
     mip_msip_i           : in std_logic;
+    mip_meip_i           : in std_logic;
 
     -- To the Instruction Fetch Stage
     interrupt_pending_o  : out std_logic;
@@ -210,6 +211,11 @@ architecture rtl of system_calls is
   signal other_flush                : unsigned(31 downto 0);
   signal load_stalls                : unsigned(31 downto 0);
 
+  signal br_bad_predict_reg         : std_logic;
+  signal br_new_pc_reg              : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal pc_corr_en_reg             : std_logic;
+  signal pc_correction_reg          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
   -- Signals related to variable csrs
   signal mstatus           : std_logic_vector(register_size-1 downto 0);
   signal mstatus_mpp       : std_logic_vector(1 downto 0);
@@ -267,7 +273,7 @@ begin  -- architecture rtl
   -- Interrupt input, only goes high if interrupts are enabled, otherwise ignored.
   mip_mtip <= mip_mtip_i when ((mstatus_mie = '1') and (mie_mtie = '1')) else '0';
   mip_msip <= mip_msip_i when ((mstatus_mie = '1') and (mie_msie = '1')) else '0';
-  mip_meip <= '0';
+  mip_meip <= mip_meip_i when ((mstatus_mie = '1') and (mie_meie = '1')) else '0';
 
   counter_increment : process (clk, reset) is
   begin
@@ -456,6 +462,17 @@ begin  -- architecture rtl
   output_proc : process(clk) is
   begin
     if rising_edge(clk) then
+      -- This keeps track of a branch in between valid instructions. This is used
+      -- in case there is an interrupt while the pipeline is being flushed during a branch.
+      if br_bad_predict = '1' then
+        br_bad_predict_reg <= '1';
+        br_new_pc_reg <= br_new_pc;
+      end if;
+      if valid = '1' then
+        br_bad_predict_reg <= '0';
+        br_new_pc_reg <= (others => '0');
+      end if;
+
       interrupt_pending <= '0';
       -- This section handles pending interrupts, and forwards the program counter
       -- to the machine interrupt entry. If an interrupt occurs during an illegal
@@ -466,7 +483,6 @@ begin  -- architecture rtl
         -- This should invalidate subsequent instructions and should insert
         -- bubbles into the pipeline.
         interrupt_pending <= '1';
-
         -- Once Instruction Fetch, Decode, and Execute are finished with their current
         -- instruction, we can now handle the interrupt.
         if (pipeline_empty = '1' and interrupt_pending = '1') then
@@ -501,11 +517,20 @@ begin  -- architecture rtl
           -- value will be loaded into mepc because instruction_fetch_pc will be
           -- corrected by the mret instruction for one cycle, and then invalidated
           -- due to the pending interrupt and continued pipeline flush.
-          if (br_bad_predict = '1') then
+          if pc_corr_en_reg = '1' then
+            mepc <= pc_correction_reg;
+          elsif br_bad_predict = '1' then
             mepc <= br_new_pc;
+          elsif br_bad_predict_reg = '1' then
+            mepc <= br_new_pc_reg;
           else
             mepc <= instruction_fetch_pc;
           end if;
+          -- Clear the branch and pc correction registers.
+          br_bad_predict_reg <= '0';
+          br_new_pc_reg <= (others => '0');
+          pc_corr_en_reg <= '0';
+          pc_correction_reg <= (others => '0');
         end if;
       end if;
 
@@ -539,29 +564,38 @@ begin  -- architecture rtl
           elsif opcode = "11100" then        --SYSTEM OP CODE
             wb_en <= csr_read_en;
             if zimm & func3 = "00000" & "000" then
-              interrupt_pending <= '0';
               if csr = x"000" then           --ECALL
-                mstatus_mie   <= '0';
-                mcause_i      <= '0';
-                mcause_ex     <= UMODE_ECALL;
-                pc_corr_en    <= '1';
-                pc_correction <= MACHINE_MODE_TRAP;
+                interrupt_pending <= '0';
+                mstatus_mie       <= '0';
+                mcause_i          <= '0';
+                mcause_ex         <= UMODE_ECALL;
+                pc_corr_en        <= '1';
+                pc_correction     <= MACHINE_MODE_TRAP;
                 mepc <= std_logic_vector(unsigned(current_pc) + to_unsigned(4, 32));
               elsif csr = x"001" then        --EBREAK
-                mstatus_mie   <= '0';
-                mcause_i      <= '0';
-                mcause_ex     <= BREAKPOINT;
-                pc_corr_en    <= '1';
-                pc_correction <= MACHINE_MODE_TRAP;
+                interrupt_pending <= '0';
+                mstatus_mie       <= '0';
+                mcause_i          <= '0';
+                mcause_ex         <= BREAKPOINT;
+                pc_corr_en        <= '1';
+                pc_correction     <= MACHINE_MODE_TRAP;
                 mepc <= std_logic_vector(unsigned(current_pc) + to_unsigned(4, 32));
               elsif csr = x"302" then        --MRET
-                pc_corr_en    <= '1';
-                pc_correction <= mepc;
+                -- If a valid mret instruction occurs while an interrupt is pending,
+                -- mepc will need to be modified to the mret destination.
+                if interrupt_pending = '1' then
+                  pc_corr_en_reg    <= '1';
+                  pc_correction_reg <= mepc;
+                end if;
+                pc_corr_en        <= '1';
+                pc_correction     <= mepc;
               end if;
 
             else
               case csr is                    --writeback to CSR
                 when CSR_MEPC =>
+                  -- This may interfere with traps if written to during
+                  -- a trap handler.
                   mepc <= csr_write_val;
                 when CSR_MSTATUS =>
                   mstatus_mie <= csr_write_val(3);
@@ -575,11 +609,9 @@ begin  -- architecture rtl
                   -- mip_mtip set and cleared by memory mapped timer operations.
                   -- mip_msip set and cleared by memory mapped reserved software registers.
                 when others =>
-                  null;
               end case;
             end if;
           elsif instruction(31 downto 2) = FENCE_I(31 downto 2) then
-            interrupt_pending <= '0';
             pc_correction <= std_logic_vector(unsigned(current_pc) + 4);
             pc_corr_en    <= '1';
           end if;  --opcode
@@ -600,6 +632,10 @@ begin  -- architecture rtl
         pc_corr_en <= '0';
         pc_correction <= (others => '0');
         mepc <= (others => '0');
+        br_bad_predict_reg <= '0';
+        br_new_pc_reg <= (others => '0');
+        pc_corr_en_reg <= '0';
+        pc_correction_reg <= (others => '0');
       end if;  --reset
     end if;  --clk
   end process;

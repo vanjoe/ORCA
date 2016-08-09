@@ -147,7 +147,6 @@ begin  -- architecture rtl
       read_data            => instr_data,
       read_datavalid       => instr_readvalid,
       read_wait            => instr_read_wait,
-      instruction_fetch_pc => instruction_fetch_pc,
       interrupt_pending    => interrupt_pending);
 
   d_valid <= if_valid_out and not pipeline_flush;
@@ -234,8 +233,9 @@ begin  -- architecture rtl
       mtime_i              => mtime,
       mip_mtip_i           => mip_mtip,
       mip_msip_i           => mip_msip,
+      mip_meip_i           => mip_meip,
       interrupt_pending_o  => interrupt_pending,
-      instruction_fetch_pc => instruction_fetch_pc);
+      instruction_fetch_pc => d_pc);
 
 
   interrupt_controller : component plic
@@ -251,6 +251,7 @@ begin  -- architecture rtl
       mtime_o    => mtime,
       mip_mtip_o => mip_mtip,
       mip_msip_o => mip_msip,
+      mip_meip_o => mip_meip,
 
       plic_address       => plic_address,
       plic_byteenable    => plic_byteenable,

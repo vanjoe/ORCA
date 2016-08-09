@@ -7,6 +7,7 @@
 
 volatile uint32_t timer_flag = 0;
 volatile uint32_t software_flag = 0;
+volatile uint32_t external_flag = 0;
 
 #define SYS_CLK 125e5
 #define HARDWARE_TEST 1
@@ -40,7 +41,7 @@ int main(void) {
   *LEDR = interrupt_mask;
 #endif 
 
-  if (!(software_flag & timer_flag)) {
+  if (!(software_flag & timer_flag & external_flag)) {
     *HEX0 = 0xF;    
     *HEX1 = 0xF;    
     *HEX2 = 0xF;    
@@ -85,7 +86,8 @@ long handle_interrupt(long cause, long epc, long regs[32])
       // Read INTRPT_CLAIM to show the PLIC that the pending interrupt 
       // is being handled.
       claim_external_interrupt(&plic_claim);
-
+      
+      external_flag = 1;
 #if HARDWARE_TEST
       interrupt_mask |= 0x4;
 #endif

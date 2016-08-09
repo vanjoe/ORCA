@@ -61,6 +61,7 @@ entity execute is
     mtime_i        : in     std_logic_vector(63 downto 0);
     mip_mtip_i     : in     std_logic;
     mip_msip_i     : in     std_logic;
+    mip_meip_i     : in     std_logic;
 
     interrupt_pending_o : out std_logic);
 
@@ -419,6 +420,7 @@ begin
       mtime_i              => mtime_i,
       mip_mtip_i           => mip_mtip_i,
       mip_msip_i           => mip_msip_i,
+      mip_meip_i           => mip_meip_i,
 
       interrupt_pending_o  => interrupt_pending_o,
       pipeline_empty       => pipeline_empty,

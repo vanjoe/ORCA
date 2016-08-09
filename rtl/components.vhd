@@ -174,6 +174,7 @@ package rv_components is
       mtime_i             : in  std_logic_vector(63 downto 0);
       mip_mtip_i          : in  std_logic;
       mip_msip_i          : in  std_logic;
+      mip_meip_i          : in  std_logic;
       interrupt_pending_o : out std_logic);
   end component execute;
 
@@ -200,8 +201,6 @@ package rv_components is
       read_data      : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       read_datavalid : in  std_logic;
       read_wait      : in  std_logic;
-
-      instruction_fetch_pc : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       interrupt_pending : in std_logic);
   end component instruction_fetch;
@@ -473,6 +472,7 @@ package rv_components is
       mtime_i    : in std_logic_vector(63 downto 0);
       mip_mtip_i : in std_logic;
       mip_msip_i : in std_logic;
+      mip_meip_i : in std_logic;
 
       interrupt_pending_o : out std_logic;
       pipeline_empty      : in  std_logic;
@@ -524,6 +524,7 @@ package rv_components is
       mtime_o    : out std_logic_vector(63 downto 0);
       mip_mtip_o : out std_logic;
       mip_msip_o : out std_logic;
+      mip_meip_o : out std_logic;
 
       global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
 
@@ -541,5 +542,18 @@ package rv_components is
       plic_waitrequest   : out std_logic;
       plic_readdatavalid : out std_logic);
   end component plic;
+
+  component gateway is
+    generic (
+      NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2);
+    port (
+      clk                   : in std_logic;
+      reset                 : in std_logic;
+      global_interrupts     : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+      edge_sensitive_vector : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+      interrupt_claimed     : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+      interrupt_complete    : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+      pending_interrupts    : out std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0));
+  end component gateway;
 
 end package rv_components;

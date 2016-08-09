@@ -101,6 +101,14 @@
          type = "String";
       }
    }
+   element interrupt_generator_0
+   {
+      datum _sortIndex
+      {
+         value = "15";
+         type = "int";
+      }
+   }
    element jtag_uart_0
    {
       datum _sortIndex
@@ -405,7 +413,7 @@
          type = "String";
       }
    }
-   element vectorblox_orca_riscv
+   element vectorblox_orca_0
    {
       datum _sortIndex
       {
@@ -435,7 +443,7 @@
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <interface name="clk" internal="clk_0.clk_in" type="clock" dir="end" />
- <interface name="from_host" internal="vectorblox_orca_riscv.from_host" />
+ <interface name="from_host" internal="vectorblox_orca_0.from_host" />
  <interface
    name="hex0"
    internal="hex_0.external_connection"
@@ -471,13 +479,9 @@
    internal="pmod_mic_0.conduit_end"
    type="conduit"
    dir="end" />
- <interface
-   name="program_counter"
-   internal="vectorblox_orca_riscv.program_counter"
-   type="conduit"
-   dir="end" />
+ <interface name="program_counter" internal="vectorblox_orca_0.program_counter" />
  <interface name="reset" internal="clk_0.clk_in_reset" type="reset" dir="end" />
- <interface name="to_host" internal="vectorblox_orca_riscv.to_host" />
+ <interface name="to_host" internal="vectorblox_orca_0.to_host" />
  <module name="clk_0" kind="clock_source" version="15.1" enabled="1">
   <parameter name="clockFrequency" value="50000000" />
   <parameter name="clockFrequencyKnown" value="true" />
@@ -539,6 +543,13 @@
   <parameter name="simDoTestBenchWiring" value="false" />
   <parameter name="simDrivenValue" value="0" />
   <parameter name="width" value="32" />
+ </module>
+ <module
+   name="interrupt_generator_0"
+   kind="interrupt_generator"
+   version="1.0"
+   enabled="1">
+  <parameter name="NUM_EXT_INTERRUPTS" value="2" />
  </module>
  <module
    name="jtag_uart_0"
@@ -660,7 +671,7 @@
   <parameter name="REGISTER_SIZE" value="32" />
  </module>
  <module
-   name="vectorblox_orca_riscv"
+   name="vectorblox_orca_0"
    kind="vectorblox_orca"
    version="1.0"
    enabled="1">
@@ -680,7 +691,7 @@
  <connection
    kind="avalon"
    version="15.1"
-   start="vectorblox_orca_riscv.data"
+   start="vectorblox_orca_0.data"
    end="mm_bridge_0.s0">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x01000000" />
@@ -689,7 +700,7 @@
  <connection
    kind="avalon"
    version="15.1"
-   start="vectorblox_orca_riscv.data"
+   start="vectorblox_orca_0.data"
    end="onchip_memory2_0.s2">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
@@ -698,7 +709,7 @@
  <connection
    kind="avalon"
    version="15.1"
-   start="vectorblox_orca_riscv.instruction"
+   start="vectorblox_orca_0.instruction"
    end="onchip_memory2_0.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
@@ -801,7 +812,7 @@
    kind="clock"
    version="15.1"
    start="clk_0.clk"
-   end="vectorblox_orca_riscv.clock" />
+   end="vectorblox_orca_0.clock" />
  <connection kind="clock" version="15.1" start="clk_0.clk" end="pmod_mic_0.clock" />
  <connection
    kind="clock"
@@ -818,6 +829,22 @@
    version="15.1"
    start="clk_0.clk"
    end="pipeline_counter_0.clock" />
+ <connection
+   kind="clock"
+   version="15.1"
+   start="clk_0.clk"
+   end="interrupt_generator_0.clock" />
+ <connection
+   kind="conduit"
+   version="15.1"
+   start="interrupt_generator_0.conduit_end"
+   end="vectorblox_orca_0.global_interrupts">
+  <parameter name="endPort" value="" />
+  <parameter name="endPortLSB" value="0" />
+  <parameter name="startPort" value="" />
+  <parameter name="startPortLSB" value="0" />
+  <parameter name="width" value="0" />
+ </connection>
  <connection
    kind="conduit"
    version="15.1"
@@ -844,7 +871,7 @@
    kind="reset"
    version="15.1"
    start="clk_0.clk_reset"
-   end="vectorblox_orca_riscv.reset" />
+   end="vectorblox_orca_0.reset" />
  <connection
    kind="reset"
    version="15.1"
@@ -870,6 +897,11 @@
    version="15.1"
    start="clk_0.clk_reset"
    end="pipeline_counter_0.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="clk_0.clk_reset"
+   end="interrupt_generator_0.reset" />
  <connection
    kind="reset"
    version="15.1"
