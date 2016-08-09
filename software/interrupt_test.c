@@ -7,7 +7,10 @@
 
 volatile uint32_t timer_flag = 0;
 volatile uint32_t software_flag = 0;
-volatile uint32_t external_flag = 0;
+volatile uint32_t external_flag0 = 0;
+volatile uint32_t external_flag1 = 0;
+volatile uint32_t edge_count = 0;
+volatile uint32_t interrupt_mask = 0x0;
 
 #define SYS_CLK 125e5
 #define HARDWARE_TEST 1
@@ -17,14 +20,12 @@ volatile uint32_t external_flag = 0;
 #define HEX2 ((volatile int *) (0x01000050))
 #define HEX3 ((volatile int *) (0x01000060))
 
-
-#if HARDWARE_TEST
-volatile uint32_t interrupt_mask = 0x00000000;
-#endif
-
 int main(void) {
 
   volatile uint32_t count;
+
+  // Each set bit corresponds to an edge-sensitive interrupt.
+  *EDGE_SENSITIVE_VECTOR = 0x2;
 
   set_timer_interrupt_cycles(15);
   enable_interrupts();
@@ -37,11 +38,9 @@ int main(void) {
   for(count = 0; count < 25; count++);
 
 
-#if HARDWARE_TEST
   *LEDR = interrupt_mask;
-#endif 
 
-  if (!(software_flag & timer_flag & external_flag)) {
+  if (!(software_flag & timer_flag & external_flag0 & external_flag1)) {
     *HEX0 = 0xF;    
     *HEX1 = 0xF;    
     *HEX2 = 0xF;    
@@ -50,7 +49,7 @@ int main(void) {
   }
   else {
     *HEX0 = 0x1;    
-    *HEX1 = 0x0;    
+    *HEX1 = edge_count;    
     *HEX2 = 0x0;    
     *HEX3 = 0x0;    
     TEST_PASS();
@@ -68,18 +67,14 @@ long handle_interrupt(long cause, long epc, long regs[32])
       // Clear pending software interrupt.
       clear_software_interrupt();
       software_flag = 1;
-#if HARDWARE_TEST
       interrupt_mask |= 0x1;
-#endif
       break;
 
     case M_TIMER_INTERRUPT:
       // Safe sequence of disabling timer interrupt without accidental interrupts.
       clear_timer_interrupt_cycles();
       timer_flag = 1;
-#if HARDWARE_TEST
       interrupt_mask |= 0x2;
-#endif
       break;
 
     case M_EXTERNAL_INTERRUPT:
@@ -87,10 +82,15 @@ long handle_interrupt(long cause, long epc, long regs[32])
       // is being handled.
       claim_external_interrupt(&plic_claim);
       
-      external_flag = 1;
-#if HARDWARE_TEST
-      interrupt_mask |= 0x4;
-#endif
+      if (plic_claim == 0) {
+        external_flag0 = 1;
+        interrupt_mask |= 0x4;
+      }
+      else if (plic_claim == 1) {
+        external_flag1 = 1;
+        interrupt_mask |= 0x8;
+        edge_count++;
+      }
       
       // Write to INTRPT_COMPLETE to signify that the PLIC can 
       // receive another external interrupt from the source it
