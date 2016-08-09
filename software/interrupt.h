@@ -1,12 +1,12 @@
 #ifndef INTERRUPT_H
 #define INTERRUPT_H
 
-#define MTIMECMP_L       ((volatile int*) 0x00000000)
-#define MTIMECMP_H       ((volatile int*) 0x00000004)
-#define MSOFTWARE_I      ((volatile int*) 0x00000008)
-#define EDGE_SENS_VECTOR ((volatile int*) 0x0000000C)
-#define INTRPT_CLAIM     ((volatile int*) 0x00000010)
-#define INTRPT_COMPLETE  ((volatile int*) 0x00000014)
+#define MTIMECMP_L            ((volatile int*) 0x00000000)
+#define MTIMECMP_H            ((volatile int*) 0x00000004)
+#define MSOFTWARE_I           ((volatile int*) 0x00000008)
+#define EDGE_SENSITIVE_VECTOR ((volatile int*) 0x0000000C)
+#define INTRPT_CLAIM          ((volatile int*) 0x00000010)
+#define INTRPT_COMPLETE       ((volatile int*) 0x00000014)
 
 #define MSTATUS_IE_MASK 0x00000008
 #define MIE_MEIE_MASK   0x00000800

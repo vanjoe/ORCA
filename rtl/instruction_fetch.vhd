@@ -138,12 +138,12 @@ begin  -- architecture rtl
   -- instruction will remain out on the bus. The valid_instr_out signal will not go high until
   -- the instruction fetch is unstalled.
   instr_out <= instr when saved_instr_en = '0' else saved_instr;
-  valid_instr_out <= (valid_instr or saved_instr_en) and (not if_stall);
+  valid_instr_out <= (valid_instr or saved_instr_en) and (not (if_stall or interrupt_pending));
 
   -- If the instruction slave is stalling, keep the same address on the instruction slave bus.
   read_address <= saved_address when saved_address_en = '1' else program_counter;
 
-  -- When the instruction fetch stalls, latch in the saved instruction until you get a valid
+  -- When the instruction fetch stalls, latch in the saved instruction until you get
   -- a valid instruction.
   process(clk)
   begin
