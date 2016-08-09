@@ -92,7 +92,6 @@ begin
       hex0_export            => hex0_export);
 
 
-
 --  hex_input(15 downto 0)  <= pc(15 downto 0);
 --  hex_input(31 downto 16) <= th(15 downto 0);
   

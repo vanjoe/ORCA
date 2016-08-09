@@ -18,14 +18,14 @@ entity pipeline_counter is
         counter_lock : in std_logic;
         counter_waitrequest : out std_logic;
         counter_readdatavalid : out std_logic;
-        
+
         pipeline_count : out std_logic_vector(2 downto 0));
 
 end entity;
 
 architecture rtl of pipeline_counter is
   signal pipeline_count_reg : std_logic_vector(2 downto 0);
-  
+
 begin
 
   pipeline_count <= pipeline_count_reg;
@@ -43,7 +43,7 @@ begin
       else
         if (counter_write = '1') then
           pipeline_count_reg <= counter_writedata(2 downto 0);
-        end if;  
+        end if;
       end if;
     end if;
   end process;
