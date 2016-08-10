@@ -4,11 +4,11 @@
 
 int main(void)
 {
-  volatile int source1;
-  volatile int result1;
-  volatile int source2;
-  volatile int result2;
-  volatile int* data;
+  volatile register int source1 asm ("a0");
+  volatile register int result1 asm ("a1");
+  volatile register int source2 asm ("a2");
+  volatile register int result2 asm ("a3");
+  volatile register int*   data asm ("a4");
   source1 = 2; 
   source2 = 4;
 
@@ -38,14 +38,14 @@ int main(void)
   // Specifies the number of pipeline stages in the long read
   *COUNT_REG = 0x00000004;
 
-  // Test consecutive reads
+  // Test consecutive writes
   asm volatile("sw %0,4(%1)"
     :  
     : "r" (source1), "r" (data));
   asm volatile("sw %0,8(%1)"
     :
     : "r" (source2), "r" (data));
-  // Test consecutive writes
+  // Test consecutive reads
   asm volatile("lw %0,4(%1)"
     : "=r" (result1)
     : "r" (data));

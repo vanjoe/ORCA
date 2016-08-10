@@ -273,7 +273,7 @@ begin  -- architecture rtl
     if rising_edge(clk) then
       if reset = '1' then
         data_sel_prev <= '0';
-      else
+      elsif data_read_en = '1' and data_wait = '0' then
         data_sel_prev <= data_sel;
       end if;
     end if;
