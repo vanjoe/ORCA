@@ -46,6 +46,10 @@ add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file orca.vhd VHDL PATH orca.vhd TOP_LEVEL_FILE
 add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
+add_fileset_file plic.vhd VHDL PATH plic.vhd
+add_fileset_file gateway.vhd VHDL PATH gateway.vhd
+add_fileset_file 4port_mem.vhd VHDL PATH 4port_mem.vhd
+add_fileset_file mxp-top.vhd VHDL PATH mxp-top.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL Orca
@@ -62,7 +66,10 @@ add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file orca.vhd VHDL PATH orca.vhd
 add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
-
+add_fileset_file plic.vhd VHDL PATH plic.vhd
+add_fileset_file gateway.vhd VHDL PATH gateway.vhd
+add_fileset_file 4port_mem.vhd VHDL PATH 4port_mem.vhd
+add_fileset_file mxp-top.vhd VHDL PATH mxp-top.vhd
 
 
 #
@@ -75,6 +82,19 @@ set_parameter_property REGISTER_SIZE TYPE INTEGER
 set_parameter_property REGISTER_SIZE UNITS None
 set_parameter_property REGISTER_SIZE ALLOWED_RANGES {32}
 set_parameter_property REGISTER_SIZE HDL_PARAMETER true
+
+add_parameter MXP_ENABLE natural 0
+set_parameter_property MXP_ENABLE DEFAULT_VALUE 0
+set_parameter_property MXP_ENABLE DISPLAY_NAME "Vector Extensions"
+set_parameter_property MXP_ENABLE DESCRIPTION "Enable Vector Extensions"
+set_parameter_property MXP_ENABLE TYPE NATURAL
+set_parameter_property MXP_ENABLE UNITS None
+set_parameter_property MXP_ENABLE ALLOWED_RANGES 0:1
+set_parameter_property MXP_ENABLE HDL_PARAMETER true
+set_display_item_property MXP_ENABLE DISPLAY_HINT boolean
+
+
+
 add_parameter RESET_VECTOR NATURAL 512
 set_parameter_property RESET_VECTOR DEFAULT_VALUE 512
 set_parameter_property RESET_VECTOR DISPLAY_NAME RESET_VECTOR
@@ -158,6 +178,17 @@ set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipelin
 but 4 stages has a higher fmax"
 set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
 
+add_parameter          PLIC_ENABLE boolean false
+set_parameter_property PLIC_ENABLE HDL_PARAMETER true
+set_parameter_property PLIC_ENABLE DISPLAY_NAME "PLIC_ENABLE"       
+set_parameter_property PLIC_ENABLE DESCRIPTION "Whether or not the Platform Level Interrupt Controller (PLIC) is enabled."
+
+add_parameter          NUM_EXT_INTERRUPTS integer 2
+set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
+set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "NUM_EXT_INTERRUPTS"
+set_parameter_property NUM_EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
+set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES {2:32}
+
 
 
 #
@@ -176,6 +207,17 @@ set_interface_property clock CMSIS_SVD_VARIABLES ""
 set_interface_property clock SVD_ADDRESS_GROUP ""
 
 add_interface_port clock clk clk Input 1
+
+add_interface scratchpad_clk clock end
+set_interface_property scratchpad_clk clockRate 0
+#set_interface_property scratchpad_clk ENABLED true
+set_interface_property scratchpad_clk EXPORT_OF ""
+set_interface_property scratchpad_clk PORT_NAME_MAP ""
+set_interface_property scratchpad_clk CMSIS_SVD_VARIABLES ""
+set_interface_property scratchpad_clk SVD_ADDRESS_GROUP ""
+
+add_interface_port scratchpad_clk scratchpad_clk clk Input 1
+
 
 
 #
@@ -224,10 +266,8 @@ add_interface_port data avm_data_address address Output register_size
 add_interface_port data avm_data_byteenable byteenable Output register_size/8
 add_interface_port data avm_data_read read Output 1
 add_interface_port data avm_data_readdata readdata Input register_size
-add_interface_port data avm_data_response response Input 2
 add_interface_port data avm_data_write write Output 1
 add_interface_port data avm_data_writedata writedata Output register_size
-add_interface_port data avm_data_lock lock Output 1
 add_interface_port data avm_data_waitrequest waitrequest Input 1
 add_interface_port data avm_data_readdatavalid readdatavalid Input 1
 
@@ -260,63 +300,28 @@ set_interface_property instruction CMSIS_SVD_VARIABLES ""
 set_interface_property instruction SVD_ADDRESS_GROUP ""
 
 add_interface_port instruction avm_instruction_address address Output register_size
-add_interface_port instruction avm_instruction_byteenable byteenable Output register_size/8
 add_interface_port instruction avm_instruction_read read Output 1
 add_interface_port instruction avm_instruction_readdata readdata Input register_size
-add_interface_port instruction avm_instruction_response response Input 2
-add_interface_port instruction avm_instruction_write write Output 1
-add_interface_port instruction avm_instruction_writedata writedata Output register_size
-add_interface_port instruction avm_instruction_lock lock Output 1
 add_interface_port instruction avm_instruction_waitrequest waitrequest Input 1
 add_interface_port instruction avm_instruction_readdatavalid readdatavalid Input 1
 
-
 #
-# connection point program_counter
+# connection point global_interrupts
 #
-add_interface program_counter conduit end
-set_interface_property program_counter associatedClock ""
-set_interface_property program_counter associatedReset ""
-set_interface_property program_counter ENABLED true
-set_interface_property program_counter EXPORT_OF ""
-set_interface_property program_counter PORT_NAME_MAP ""
-set_interface_property program_counter CMSIS_SVD_VARIABLES ""
-set_interface_property program_counter SVD_ADDRESS_GROUP ""
 
-add_interface_port program_counter coe_program_counter export Output register_size
+add_interface global_interrupts conduit end
+set_interface_property global_interrupts associatedClock ""
+set_interface_property global_interrupts associatedReset ""
+set_interface_property global_interrupts ENABLED true
+set_interface_property global_interrupts EXPORT_OF ""
+set_interface_property global_interrupts PORT_NAME_MAP ""
+set_interface_property global_interrupts CMSIS_SVD_VARIABLES ""
+set_interface_property global_interrupts SVD_ADDRESS_GROUP ""
 
-
-#
-# connection point to_host
-#
-add_interface to_host conduit end
-set_interface_property to_host associatedClock ""
-set_interface_property to_host associatedReset ""
-set_interface_property to_host ENABLED true
-set_interface_property to_host EXPORT_OF ""
-set_interface_property to_host PORT_NAME_MAP ""
-set_interface_property to_host CMSIS_SVD_VARIABLES ""
-set_interface_property to_host SVD_ADDRESS_GROUP ""
-
-add_interface_port to_host coe_to_host export Output register_size
-
-
-#
-# connection point from_host
-#
-add_interface from_host conduit end
-set_interface_property from_host associatedClock ""
-set_interface_property from_host associatedReset ""
-set_interface_property from_host ENABLED true
-set_interface_property from_host EXPORT_OF ""
-set_interface_property from_host PORT_NAME_MAP ""
-set_interface_property from_host CMSIS_SVD_VARIABLES ""
-set_interface_property from_host SVD_ADDRESS_GROUP ""
-
-add_interface_port from_host coe_from_host export Input register_size
+add_interface_port global_interrupts global_interrupts export Input NUM_EXT_INTERRUPTS 
 
 proc log_out {out_str} {
-        set chan [open ~/log.txt a]
+        set chan [open ~/orca_hw_log.txt a]
         set timestamp [clock format [clock seconds]]
         puts $chan "$timestamp $out_str"
         close $chan
@@ -328,6 +333,14 @@ proc elaboration_callback {} {
 	 } else {
 		  set_display_item_property SHIFTER_MAX_CYCLES ENABLED true
 	 }
+
+	 if { [get_parameter_value MXP_ENABLE] } {
+
+		  set_interface_property scratchpad_clk ENABLED true
+	 } else {
+		  set_interface_property scratchpad_clk ENABLED false
+	 }
+
 	 set table_size 0
 	 if { [get_parameter_value BRANCH_PREDICTION] } {
 		  set_parameter_property BTB_SIZE visible true

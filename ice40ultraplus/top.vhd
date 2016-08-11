@@ -1,4 +1,3 @@
-
 library ieee;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
@@ -6,6 +5,7 @@ use IEEE.numeric_std.all;
 library work;
 use work.top_component_pkg.all;
 use work.top_util_pkg.all;
+use work.rv_components.all;
 
 entity top is
   port(
@@ -29,6 +29,23 @@ end entity;
 
 architecture rtl of top is
 
+  component osc_48MHz is
+    generic (
+      DIVIDER : std_logic_vector(1 downto 0) := "00"
+    );
+    port (
+      clkout : out std_logic
+    );
+  end component;
+  
+  component ice40ultra_pll is
+    port (
+      REFERENCECLK : in  std_logic;
+      PLLOUTCORE   : out std_logic;
+      PLLOUTGLOBAL : out std_logic;
+      RESET        : in  std_logic);
+  end component;
+
   constant REGISTER_SIZE : integer := 32;
 
   --for combined memory
@@ -42,7 +59,6 @@ architecture rtl of top is
 --  constant reset_btn: std_logic := '1';
 
   signal reset : std_logic;
-
 
   signal data_ADR_O  : std_logic_vector(31 downto 0);
   signal data_DAT_O  : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -61,14 +77,9 @@ architecture rtl of top is
   signal data_RTY_I   : std_logic;
 
   signal instr_ADR_O  : std_logic_vector(31 downto 0);
-  signal instr_DAT_O  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal instr_WE_O   : std_logic;
   signal instr_CYC_O  : std_logic;
   signal instr_STB_O  : std_logic;
-  signal instr_SEL_O  : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
   signal instr_CTI_O  : std_logic_vector(2 downto 0);
-  signal instr_BTE_O  : std_logic_vector(1 downto 0);
-  signal instr_LOCK_O : std_logic;
 
   signal instr_STALL_I : std_logic;
   signal instr_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -168,16 +179,10 @@ architecture rtl of top is
   signal uart_interrupt : std_logic;
   signal uart_debug_ack : std_logic;
 
-  component osc_48MHz is
-    generic (
-      DIVIDER : std_logic_vector(1 downto 0) := "00"
-    );
-    port (
-      clkout : out std_logic
-    );
-  end component;
-  signal clk : std_logic;
 
+  signal clk            : std_logic;
+  signal scratchpad_clk : std_logic;
+  signal pll_core     : std_logic;
 
   constant UART_ADDR_DAT         : std_logic_vector(7 downto 0) := "00000000";
   constant UART_ADDR_LSR         : std_logic_vector(7 downto 0) := "00000011";
@@ -186,7 +191,6 @@ architecture rtl of top is
   signal mem_instr_stall         : std_logic;
   signal mem_instr_ack           : std_logic;
 
-  signal coe_to_host : std_logic_vector(31 downto 0);
   signal hp_pwm      : std_logic;
 
   constant SYSCLK_FREQ_HZ         : natural                                     := 6000000;
@@ -200,9 +204,16 @@ begin
 
   hf_osc : component osc_48MHz
     generic map (
-      DIVIDER => "11")
+      DIVIDER => "10")
     port map (
       CLKOUT    => clk);
+
+  pll_3x : component ice40ultra_pll
+    port map (
+      REFERENCECLK => clk,
+      PLLOUTCORE => pll_core,
+      PLLOUTGLOBAL => scratchpad_clk,
+      RESET => not reset);
 
   process(clk)
   begin
@@ -215,8 +226,9 @@ begin
       end if;
     end if;
   end process;
+
   reset <= not reset_btn or auto_reset;
-  probe_A <=  coe_to_host(0);
+
   COMBINED_RAM_GEN : if not SEPERATE_MEMS generate
     signal RAM_ADR_I  : std_logic_vector(31 downto 0);
     signal RAM_DAT_I  : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -282,14 +294,14 @@ begin
 --      slave1_RTY_O   => data_RTY_I,
 
         slave2_ADR_I  => instr_ADR_O,
-        slave2_DAT_I  => instr_DAT_O,
-        slave2_WE_I   => instr_WE_O,
+        slave2_DAT_I  => (others => '0'),
+        slave2_WE_I   => '0',
         slave2_CYC_I  => instr_CYC_O,
         slave2_STB_I  => instr_STB_O,
-        slave2_SEL_I  => instr_SEL_O,
+        slave2_SEL_I  => '0',
         slave2_CTI_I  => instr_CTI_O,
-        slave2_BTE_I  => instr_BTE_O,
-        slave2_LOCK_I => instr_LOCK_O,
+        slave2_BTE_I  => (others => '0'),
+        slave2_LOCK_I => '0',
 
         slave2_STALL_O => mem_instr_stall,
         slave2_DAT_O   => instr_DAT_I,
@@ -328,14 +340,14 @@ begin
         RST_I => reset,
 
         ADR_I  => instr_ADR_O,
-        DAT_I  => instr_DAT_O,
-        WE_I   => instr_WE_O,
+        DAT_I  => (others => '0'),
+        WE_I   => '0',
         CYC_I  => instr_CYC_O,
         STB_I  => instr_STB_O,
-        SEL_I  => instr_SEL_O,
+        SEL_I  => (others => '0'),
         CTI_I  => instr_CTI_O,
-        BTE_I  => instr_BTE_O,
-        LOCK_I => instr_LOCK_O,
+        BTE_I  => (others => '0'),
+        LOCK_I => '0',
 
         STALL_O => mem_instr_stall,
         DAT_O   => instr_DAT_I,
@@ -373,21 +385,23 @@ begin
 
 
 
-  rv : component riscV_wishbone
+  rv : component orca_wishbone
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
       MULTIPLY_ENABLE    => 0,
       SHIFTER_MAX_CYCLES => 32,
       COUNTER_LENGTH     => 32,
-      PIPELINE_STAGES    => 4)
+      PIPELINE_STAGES    => 4,
+      MXP_ENABLE         => 1,
+      PLIC_ENABLE        => FALSE,
+      NUM_EXT_INTERRUPTS => 2,
+      SCRATCHPAD_SIZE    => 16384,
+      FAMILY             => "LATTICE")
     port map(
 
-      clk   => clk,
-      reset => reset,
-
-      --conduit end point
-      coe_to_host   => coe_to_host,
-      coe_from_host => (others => '0'),
+      clk            => clk,
+      scratchpad_clk => scratchpad_clk,
+      reset          => reset,
 
       data_ADR_O   => data_ADR_O,
       data_DAT_I   => data_DAT_I,
@@ -402,19 +416,16 @@ begin
 
       instr_ADR_O   => instr_ADR_O,
       instr_DAT_I   => instr_DAT_I,
-      instr_DAT_O   => instr_DAT_O,
-      instr_WE_O    => instr_WE_O,
-      instr_SEL_O   => instr_SEL_O,
       instr_STB_O   => instr_STB_O,
       instr_ACK_I   => instr_ACK_I,
       instr_CYC_O   => instr_CYC_O,
       instr_CTI_O   => instr_CTI_O,
-      instr_STALL_I => instr_STALL_I);
+      instr_STALL_I => instr_STALL_I,
+      
+      global_interrupts => (others => '0'));
 
   data_BTE_O   <= "00";
   data_LOCK_O  <= '0';
-  instr_BTE_O  <= "00";
-  instr_LOCK_O <= '0';
   probe_B <=  instr_ACK_I;
   split_wb_data : component wb_splitter
     generic map(
