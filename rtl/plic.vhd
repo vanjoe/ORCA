@@ -189,7 +189,8 @@ begin
               mip_msip_reg <= '0';
               plic_readdata <= (others => '0');
             when EDGE_SENS_VECTOR =>
-              plic_readdata <= std_logic_vector(to_unsigned(0, 32)) or edge_sensitive_vector;
+              plic_readdata <= (others => '0');
+              plic_readdata(edge_sensitive_vector'range) <= edge_sensitive_vector;
             when INTRPT_CLAIM =>
               -- Convert one-hot interrupt_claim to binary plic_readdata.
               for i in 0 to NUM_EXT_INTERRUPTS-1 loop

@@ -9,7 +9,7 @@ C_SRCS+=printf.c
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
 S_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(AS_SRCS)))
 
-CROSS_COMPILE=riscv64-unknown-elf-
+CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump

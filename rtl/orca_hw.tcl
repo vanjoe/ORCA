@@ -178,6 +178,11 @@ set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipelin
 but 4 stages has a higher fmax"
 set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
 
+add_parameter          PLIC_ENABLE boolean false
+set_parameter_property PLIC_ENABLE HDL_PARAMETER true
+set_parameter_property PLIC_ENABLE DISPLAY_NAME "PLIC_ENABLE"       
+set_parameter_property PLIC_ENABLE DESCRIPTION "Whether or not the Platform Level Interrupt Controller (PLIC) is enabled."
+
 add_parameter          NUM_EXT_INTERRUPTS integer 2
 set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
 set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "NUM_EXT_INTERRUPTS"

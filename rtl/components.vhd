@@ -18,6 +18,7 @@ package rv_components is
       PIPELINE_STAGES    : natural range 4 to 5  := 5;
       FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
       MXP_ENABLE         : natural range 0 to 1  := 0;
+      PLIC_ENABLE        : boolean               := FALSE;
       NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2);
     port(
       clk            : in std_logic;
@@ -57,6 +58,7 @@ package rv_components is
       PIPELINE_STAGES    : natural range 4 to 5  := 5;
       FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
       MXP_ENABLE         : natural range 0 to 1  := 0;
+      PLIC_ENABLE        : boolean               := FALSE;
       NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2);
     port(
       clk            : in std_logic;
@@ -84,7 +86,6 @@ package rv_components is
 
       global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
 
-
       );
   end component orca_wishbone;
 
@@ -109,17 +110,17 @@ package rv_components is
       wb_enable   : in std_logic;
 
       --output signals
-      rs1_data       : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      rs2_data       : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      sign_extension : out std_logic_vector(SIGN_EXTENSION_SIZE -1 downto 0);
+      rs1_data       : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
+      rs2_data       : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
+      sign_extension : out    std_logic_vector(SIGN_EXTENSION_SIZE -1 downto 0);
       --inputs just for carrying to next pipeline stage
-      br_taken_in    : in  std_logic;
-      pc_curr_in     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      br_taken_out   : out std_logic;
-      pc_curr_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instr_out      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      subseq_instr   : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      valid_output   : out std_logic);
+      br_taken_in    : in     std_logic;
+      pc_curr_in     : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      br_taken_out   : out    std_logic;
+      pc_curr_out    : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instr_out      : buffer std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      subseq_instr   : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      valid_output   : out    std_logic);
   end component decode;
 
   component execute is
@@ -191,10 +192,10 @@ package rv_components is
 
       branch_pred : in std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
 
-      instr_out       : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      pc_out          : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      br_taken        : out std_logic;
-      valid_instr_out : out std_logic;
+      instr_out       : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      pc_out          : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+      br_taken        : buffer std_logic;
+      valid_instr_out : out    std_logic;
 
       read_address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       read_en        : out std_logic;

@@ -151,7 +151,7 @@ _start:
 
   la t0, _init
   csrw mepc, t0
-  eret
+  mret
 
 trap_entry:
   addi sp, sp, -272
@@ -227,12 +227,11 @@ trap_entry:
   LREG x31, 31*REGBYTES(sp)
 
   addi sp, sp, 272
-  eret
+  mret
 _init:
 		  la sp, _end_of_memory
 		  jal main
 		  li t0, 1
-		  csrw mtohost,t0
 1:	  j 1b
 .section ".tdata.begin"
 .globl _tdata_begin
