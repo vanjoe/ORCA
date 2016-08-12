@@ -69,51 +69,6 @@ package top_component_pkg is
       hp      : out std_logic);
   end component;
 
---  component riscV_wishbone is
---    generic (
---      REGISTER_SIZE      : integer              := 32;
---      RESET_VECTOR       : natural              := 16#00000200#;
---      MULTIPLY_ENABLE    : natural range 0 to 1 := 0;
---      DIVIDE_ENABLE      : natural range 0 to 1 := 0;
---      SHIFTER_MAX_CYCLES : natural              := 8;
---      COUNTER_LENGTH     : natural              := 64;
---      BRANCH_PREDICTORS  : natural              := 0;
---      PIPELINE_STAGES    : natural range 4 to 5 := 5;
---      FORWARD_ALU_ONLY   : natural range 0 to 1 := 1);
---    port(
---      clk   : in std_logic;
---      reset : in std_logic;
---
---      --conduit end point
---      coe_to_host         : out std_logic_vector(REGISTER_SIZE -1 downto 0);
---      coe_from_host       : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
---      coe_program_counter : out std_logic_vector(REGISTER_SIZE -1 downto 0);
---
---      data_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
---      data_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
---      data_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
---      data_WE_O    : out std_logic;
---      data_SEL_O   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
---      data_STB_O   : out std_logic;
---      data_ACK_I   : in  std_logic;
---      data_CYC_O   : out std_logic;
---      data_CTI_O   : out std_logic_vector(2 downto 0);
---      data_STALL_I : in  std_logic;
---
---      instr_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
---      instr_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
---      instr_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
---      instr_WE_O    : out std_logic;
---      instr_SEL_O   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
---      instr_STB_O   : out std_logic;
---      instr_ACK_I   : in  std_logic;
---      instr_CYC_O   : out std_logic;
---      instr_CTI_O   : out std_logic_vector(2 downto 0);
---      instr_STALL_I : in  std_logic
---
---      );
---  end component riscV_wishbone;
-
   component wb_ram is
     generic (
       size             : integer := 4096;
@@ -242,6 +197,9 @@ package top_component_pkg is
       master2_address : address_array := (0, 0);
       master3_address : address_array := (0, 0);
       master4_address : address_array := (0, 0);
+      master5_address : address_array := (0, 0);
+      master6_address : address_array := (0, 0);
+      master7_address : address_array := (0, 0);
       DATA_WIDTH      : natural       := 32
       );
     port(
@@ -263,7 +221,6 @@ package top_component_pkg is
       slave_ACK_O   : out std_logic;
       slave_ERR_O   : out std_logic;
       slave_RTY_O   : out std_logic;
-
 
       master0_ADR_O   : out std_logic_vector(31 downto 0);
       master0_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -338,7 +295,52 @@ package top_component_pkg is
       master4_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
       master4_ACK_I   : in  std_logic                               := '0';
       master4_ERR_I   : in  std_logic                               := '0';
-      master4_RTY_I   : in  std_logic                               := '0');
+      master4_RTY_I   : in  std_logic                               := '0';
+      
+      master5_ADR_O   : out std_logic_vector(31 downto 0);
+      master5_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      master5_WE_O    : out std_logic;
+      master5_CYC_O   : out std_logic;
+      master5_STB_O   : out std_logic;
+      master5_SEL_O   : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
+      master5_CTI_O   : out std_logic_vector(2 downto 0);
+      master5_BTE_O   : out std_logic_vector(1 downto 0);
+      master5_LOCK_O  : out std_logic;
+      master5_STALL_I : in  std_logic                               := '0';
+      master5_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+      master5_ACK_I   : in  std_logic                               := '0';
+      master5_ERR_I   : in  std_logic                               := '0';
+      master5_RTY_I   : in  std_logic                               := '0';
+
+      master6_ADR_O   : out std_logic_vector(31 downto 0);
+      master6_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      master6_WE_O    : out std_logic;
+      master6_CYC_O   : out std_logic;
+      master6_STB_O   : out std_logic;
+      master6_SEL_O   : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
+      master6_CTI_O   : out std_logic_vector(2 downto 0);
+      master6_BTE_O   : out std_logic_vector(1 downto 0);
+      master6_LOCK_O  : out std_logic;
+      master6_STALL_I : in  std_logic                               := '0';
+      master6_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+      master6_ACK_I   : in  std_logic                               := '0';
+      master6_ERR_I   : in  std_logic                               := '0';
+      master6_RTY_I   : in  std_logic                               := '0';
+
+      master7_ADR_O   : out std_logic_vector(31 downto 0);
+      master7_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      master7_WE_O    : out std_logic;
+      master7_CYC_O   : out std_logic;
+      master7_STB_O   : out std_logic;
+      master7_SEL_O   : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
+      master7_CTI_O   : out std_logic_vector(2 downto 0);
+      master7_BTE_O   : out std_logic_vector(1 downto 0);
+      master7_LOCK_O  : out std_logic;
+      master7_STALL_I : in  std_logic                               := '0';
+      master7_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+      master7_ACK_I   : in  std_logic                               := '0';
+      master7_ERR_I   : in  std_logic                               := '0';
+      master7_RTY_I   : in  std_logic                               := '0');
   end component wb_splitter;
 
   component pmod_mic_wb is
@@ -473,8 +475,95 @@ package top_component_pkg is
       i2s_ws_o  : out std_logic);
   end component tx_i2s_topm;
 
-end package;
+  component tx_i2s_wbd is
+   generic (DATA_WIDTH : integer range 16 to 32;
+            ADDR_WIDTH : integer range 5 to 32);
+   port (
+     -- Wishbone interface
+     wb_clk_i  : in  std_logic;
+     wb_rst_i  : in  std_logic;
+     wb_sel_i  : in  std_logic;
+     wb_stb_i  : in  std_logic;
+     wb_we_i   : in  std_logic;
+     wb_cyc_i  : in  std_logic;
+     wb_bte_i  : in  std_logic_vector(1 downto 0);
+     wb_cti_i  : in  std_logic_vector(2 downto 0);
+     wb_adr_i  : in  std_logic_vector(ADDR_WIDTH - 1 downto 0);
+     wb_dat_i  : in  std_logic_vector(DATA_WIDTH -1 downto 0);
+     wb_ack_o  : out std_logic;
+     wb_dat_o  : out std_logic_vector(DATA_WIDTH - 1 downto 0);
+     -- Interrupt line
+     tx_int_o  : out std_logic;
+     -- I2S signals
+     i2s_sd_o  : out std_logic;
+     i2s_sck_o : out std_logic;
+     i2s_ws_o  : out std_logic);
+  end component tx_i2s_wbd;
 
+  component i2s_version is
+    generic (DATA_WIDTH : integer;
+             ADDR_WIDTH : integer;
+             IS_MASTER  : integer);
+    port (
+       ver_rd   : in  std_logic;         -- version register read
+       ver_dout : out std_logic_vector(DATA_WIDTH - 1 downto 0));  -- reg. contents
+  end component i2s_version;
+
+  component gen_event_reg is
+    generic (DATA_WIDTH : integer := 32);
+    port (
+       clk      : in  std_logic;         -- clock  
+       rst      : in  std_logic;         -- reset
+       evt_wr   : in  std_logic;         -- event register write     
+       evt_rd   : in  std_logic;         -- event register read
+       evt_din  : in  std_logic_vector(DATA_WIDTH - 1 downto 0);  -- write data
+       event    : in  std_logic_vector(DATA_WIDTH - 1 downto 0);  -- event vector
+       evt_mask : in  std_logic_vector(DATA_WIDTH - 1 downto 0);  -- irq mask
+       evt_en   : in  std_logic;         -- irq enable
+       evt_dout : out std_logic_vector(DATA_WIDTH - 1 downto 0);  -- read data
+       evt_irq  : out std_logic);        -- interrupt  request
+  end component gen_event_reg; 
+
+  component dpram is
+    generic (DATA_WIDTH : positive;
+             RAM_WIDTH  : positive);
+    port (
+       clk     : in  std_logic;
+       rst     : in  std_logic;          -- reset is optional, not used here
+       din     : in  std_logic_vector(DATA_WIDTH - 1 downto 0);
+       wr_en   : in  std_logic;
+       rd_en   : in  std_logic;
+       wr_addr : in  std_logic_vector(RAM_WIDTH - 1 downto 0);
+       rd_addr : in  std_logic_vector(RAM_WIDTH - 1 downto 0);
+       dout    : out std_logic_vector(DATA_WIDTH - 1 downto 0));
+  end component dpram;
+
+  component i2s_codec is
+    generic (DATA_WIDTH  : integer;
+             ADDR_WIDTH  : integer;
+             IS_MASTER   : integer range 0 to 1;
+             IS_RECEIVER : integer range 0 to 1);
+    port (
+       wb_clk_i     : in  std_logic;     -- wishbone clock
+       conf_res     : in  std_logic_vector(5 downto 0);  -- sample resolution
+       conf_ratio   : in  std_logic_vector(7 downto 0);  -- clock divider ratio
+       conf_swap    : in  std_logic;     -- left/right sample order
+       conf_en      : in  std_logic;     -- transmitter/recevier enable
+       i2s_sd_i     : in  std_logic;     -- I2S serial data input
+       i2s_sck_i    : in  std_logic;     -- I2S clock input
+       i2s_ws_i     : in  std_logic;     -- I2S word select input
+       sample_dat_i : in  std_logic_vector(DATA_WIDTH - 1 downto 0);  -- audio data
+       sample_dat_o : out std_logic_vector(DATA_WIDTH - 1 downto 0);  -- audio data
+       mem_rdwr     : out std_logic;     -- sample buffer read/write
+       sample_addr  : out std_logic_vector(ADDR_WIDTH - 2 downto 0);  -- address
+       evt_hsbf     : out std_logic;     -- higher sample buf empty event
+       evt_lsbf     : out std_logic;     -- lower sample buf empty event
+       i2s_sd_o     : out std_logic;     -- I2S serial data output
+       i2s_sck_o    : out std_logic;     -- I2S clock output
+       i2s_ws_o     : out std_logic);    -- I2S word select output
+  end component i2s_codec;
+
+end package;
 
 package body top_component_pkg is
 end top_component_pkg;

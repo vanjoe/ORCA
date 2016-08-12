@@ -13,8 +13,7 @@ entity top is
   port(
     --clk       : in std_logic;
     reset_btn : in std_logic;
-    probe_A : out std_logic;
-    probe_B : out std_logic;
+
     --uart
     rxd : in  std_logic;
     txd : out std_logic;
@@ -24,6 +23,11 @@ entity top is
     i2s_sd_mic1_mic2 : in  std_logic := '1';
     i2s_ws_mic1_mic2 : out std_logic;
     i2s_clk          : out std_logic;
+
+    i2s_mclk         : out std_logic;
+    i2s_sdin         : out std_logic;
+    i2s_sck          : out std_logic;
+    i2s_lrck         : out std_logic;
 
     gpio : inout std_logic_vector(1 downto 0)
     );
@@ -40,6 +44,29 @@ architecture rtl of top is
   constant DATA_RAM_SIZE : natural := 4*1024;
 
   constant SEPERATE_MEMS : boolean := true;
+
+  -- I2S Constants
+  constant I2S_BUFFER_SIZE_LOG2 : positive range 4 to 15 := 8;
+  constant I2S_ADDR_WIDTH       : positive               := I2S_BUFFER_SIZE_LOG2+1;
+  constant I2S_DATA_WIDTH       : positive               := 16;
+
+  -- I2S Signals
+  signal i2s_ADR_I     : std_logic_vector(I2S_ADDR_WIDTH-1 downto 0);
+  signal i2s_DAT_I     : std_logic_vector(I2S_DATA_WIDTH-1 downto 0);
+  signal i2s_WE_I      : std_logic;
+  signal i2s_CYC_I     : std_logic;
+  signal i2s_STB_I     : std_logic;
+  signal i2s_SEL_I     : std_logic_vector(REGISTER_SIZE/8-1 downto 0);  
+  signal i2s_CTI_I     : std_logic_vector(2 downto 0); 
+  signal i2s_BTE_I     : std_logic_vector(1 downto 0); 
+  signal i2s_LOCK_I    : std_logic;
+  signal i2s_STALL_O   : std_logic;
+  signal i2s_DAT_O     : std_logic_vector(I2S_DATA_WIDTH-1 downto 0); 
+  signal i2s_ACK_O     : std_logic; 
+  signal i2s_DAT_O_32  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal i2s_DAT_I_32  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal i2s_ADR_O_32  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal i2s_interrupt : std_logic;
 
 --  constant reset_btn: std_logic := '1';
 
@@ -172,6 +199,7 @@ architecture rtl of top is
   signal clk_3x_int      : std_logic;
   signal clk_3x          : std_logic;
   signal clk_reset_count : signed(3 downto 0) := (others => '0');
+  signal clk_12          : std_logic;
 
   constant UART_ADDR_DAT         : std_logic_vector(7 downto 0) := "00000000";
   constant UART_ADDR_LSR         : std_logic_vector(7 downto 0) := "00000011";
@@ -195,7 +223,7 @@ begin
   
     hf_osc : component osc_48MHz
       generic map (
-        DIVIDER => "01")
+        DIVIDER => "01") -- 24 MHz
       port map (
         CLKOUT    => osc_clk);
 
@@ -222,6 +250,16 @@ begin
       end if;
     end process;
 
+    process (clk_3x)
+    begin
+      if rising_edge(clk_3x) then
+        clk_12 <= not clk_12;
+        if reset = '1' then
+          clk_12 <= '0';
+        end if;
+      end if;
+    end process;
+    
     clk_gb : SB_GB
       port map (
         GLOBAL_BUFFER_OUTPUT         => clk,
@@ -238,7 +276,7 @@ begin
 
   hf_osc : component osc_48MHz
     generic map (
-      DIVIDER => "10")
+      DIVIDER => "10") -- 12 MHz
     port map (
       CLKOUT => clk);
 
@@ -271,6 +309,8 @@ begin
       SDI             => 'X',
       SCLK            => 'X',
       LATCHINPUTVALUE => 'X');
+
+    clk_12 <= clk;
 
   end generate;
 
@@ -442,9 +482,6 @@ begin
 
   end generate SEPERATE_MEM_GEN;
 
-
-
-
   rv : component orca_wishbone
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
@@ -486,13 +523,14 @@ begin
 
   data_BTE_O   <= "00";
   data_LOCK_O  <= '0';
-  probe_B <=  instr_ACK_I;
+
   split_wb_data : component wb_splitter
     generic map(
-      master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE)  --RAM
-	 , master1_address => (16#40000#,4*1024)
-      , master2_address     => (16#00020000#, 4*1024)            --uart
-      , master3_address     => (16#00030000#, 4*1024))
+      master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE), -- RAM
+      master1_address => (16#00010000#, 4*1024),           -- LED
+      master2_address => (16#00020000#, 4*1024),           -- UART
+      master3_address => (16#00030000#, 4*1024),           -- GPIO
+      master4_address => (16#00040000#, 4*1024))           -- I2S 
 
     port map(
       clk_i => clk,
@@ -558,7 +596,6 @@ begin
       master2_ERR_I   => data_uart_ERR_O,
       master2_RTY_I   => data_uart_RTY_O,
 
-
       master3_ADR_O   => gpio_ADR_I,
       master3_DAT_O   => gpio_DAT_I,
       master3_WE_O    => gpio_WE_I,
@@ -572,10 +609,72 @@ begin
       master3_DAT_I   => gpio_DAT_O,
       master3_ACK_I   => gpio_ACK_O,
       master3_ERR_I   => gpio_ERR_O,
-      master3_RTY_I   => gpio_RTY_O
+      master3_RTY_I   => gpio_RTY_O,
 
-      );
+      master4_ADR_O   => i2s_ADR_O_32,
+      master4_DAT_O   => i2s_DAT_I_32,
+      master4_WE_O    => i2s_WE_I,
+      master4_CYC_O   => i2s_CYC_I,
+      master4_STB_O   => i2s_STB_I,
+      master4_SEL_O   => i2s_SEL_I,
+      master4_CTI_O   => i2s_CTI_I,
+      master4_BTE_O   => i2s_BTE_I,
+      master4_LOCK_O  => i2s_LOCK_I,
+      master4_STALL_I => i2s_STALL_O,
+      master4_DAT_I   => i2s_DAT_O_32,
+      master4_ACK_I   => i2s_ACK_O,
+      master4_ERR_I   => OPEN,
+      master4_RTY_I   => OPEN,
 
+      master5_ADR_O   => OPEN, 
+      master5_DAT_O   => OPEN, 
+      master5_WE_O    => OPEN, 
+      master5_CYC_O   => OPEN, 
+      master5_STB_O   => OPEN, 
+      master5_SEL_O   => OPEN, 
+      master5_CTI_O   => OPEN, 
+      master5_BTE_O   => OPEN, 
+      master5_LOCK_O  => OPEN, 
+      master5_STALL_I => OPEN, 
+      master5_DAT_I   => OPEN, 
+      master5_ACK_I   => OPEN, 
+      master5_ERR_I   => OPEN, 
+      master5_RTY_I   => OPEN, 
+
+      master6_ADR_O   => OPEN, 
+      master6_DAT_O   => OPEN, 
+      master6_WE_O    => OPEN, 
+      master6_CYC_O   => OPEN, 
+      master6_STB_O   => OPEN, 
+      master6_SEL_O   => OPEN, 
+      master6_CTI_O   => OPEN, 
+      master6_BTE_O   => OPEN, 
+      master6_LOCK_O  => OPEN, 
+      master6_STALL_I => OPEN, 
+      master6_DAT_I   => OPEN, 
+      master6_ACK_I   => OPEN, 
+      master6_ERR_I   => OPEN, 
+      master6_RTY_I   => OPEN, 
+
+      master7_ADR_O   => OPEN, 
+      master7_DAT_O   => OPEN, 
+      master7_WE_O    => OPEN, 
+      master7_CYC_O   => OPEN, 
+      master7_STB_O   => OPEN, 
+      master7_SEL_O   => OPEN, 
+      master7_CTI_O   => OPEN, 
+      master7_BTE_O   => OPEN, 
+      master7_LOCK_O  => OPEN, 
+      master7_STALL_I => OPEN, 
+      master7_DAT_I   => OPEN, 
+      master7_ACK_I   => OPEN, 
+      master7_ERR_I   => OPEN, 
+      master7_RTY_I   => OPEN);
+
+  -- Resizing to fit the REGISTER_SIZE bit wishbone splitter.
+  i2s_DAT_O_32 <= i2s_DAT_O & i2s_DAT_O;
+  i2s_DAT_I <= i2s_DAT_I_32(I2S_DATA_WIDTH-1 downto 0);
+  i2s_ADR_I <= i2s_ADR_O_32(I2S_ADDR_WIDTH-1 downto 0);
 
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
@@ -603,6 +702,33 @@ begin
       ERR_O   => gpio_ERR_O,
       RTY_O   => gpio_RTY_O,
       input_output  => gpio);
+
+    i2s_tx : component tx_i2s_topm
+      generic map (
+        DATA_WIDTH => I2S_DATA_WIDTH,
+        ADDR_WIDTH => I2S_ADDR_WIDTH)
+      port map (
+        wb_clk_i  => clk,
+        wb_rst_i => reset,
+        wb_sel_i => i2s_SEL_I(0), 
+        wb_stb_i => i2s_STB_I,
+        wb_we_i => i2s_WE_I,
+        wb_cyc_i => i2s_CYC_I,
+        wb_bte_i => i2s_BTE_I,
+        wb_cti_i => i2s_CTI_I,
+        wb_adr_i => i2s_ADR_I,
+        wb_dat_i => i2s_DAT_I,
+        wb_ack_o => i2s_ACK_O,
+        wb_dat_o => i2s_DAT_O,
+
+        tx_int_o => i2s_interrupt,
+
+        i2s_sd_o => i2s_sdin,
+        i2s_sck_o => i2s_sck,
+        i2s_ws_o => i2s_lrck);
+
+    -- This is not used while operating in external serial mode.
+    i2s_mclk <= clk_12;
 
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
@@ -801,8 +927,6 @@ begin
     data_uart_ack_o   <= uart_ack_o;
     data_uart_stall_o <= not data_uart_ack_O;
   end generate uart_data_bus;
-
-
 
   mics : component i2s_wb
     generic map (

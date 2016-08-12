@@ -122,7 +122,6 @@ entity wb_splitter is
     master4_ERR_I   : in  std_logic                               := '0';
     master4_RTY_I   : in  std_logic                               := '0';
 
-
     master5_ADR_O   : out std_logic_vector(31 downto 0);
     master5_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
     master5_WE_O    : out std_logic;
