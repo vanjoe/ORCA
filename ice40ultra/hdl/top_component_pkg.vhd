@@ -447,6 +447,32 @@ package top_component_pkg is
     );
   end component osc_48MHz;
 
+  component tx_i2s_topm is
+    generic (
+      DATA_WIDTH : integer range 16 to 32 := 16;
+      ADDR_WIDTH : integer range 5 to 32  := 5);
+    port (
+      -- Wishbone interface
+      wb_clk_i  : in  std_logic;
+      wb_rst_i  : in  std_logic;
+      wb_sel_i  : in  std_logic;
+      wb_stb_i  : in  std_logic;
+      wb_we_i   : in  std_logic;
+      wb_cyc_i  : in  std_logic;
+      wb_bte_i  : in  std_logic_vector(1 downto 0);
+      wb_cti_i  : in  std_logic_vector(2 downto 0);
+      wb_adr_i  : in  std_logic_vector(ADDR_WIDTH - 1 downto 0);
+      wb_dat_i  : in  std_logic_vector(DATA_WIDTH -1 downto 0);
+      wb_ack_o  : out std_logic;
+      wb_dat_o  : out std_logic_vector(DATA_WIDTH - 1 downto 0);
+      -- Interrupt line
+      tx_int_o  : out std_logic;
+      -- I2S signals
+      i2s_sd_o  : out std_logic;
+      i2s_sck_o : out std_logic;
+      i2s_ws_o  : out std_logic);
+  end component tx_i2s_topm;
+
 end package;
 
 

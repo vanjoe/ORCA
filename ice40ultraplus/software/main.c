@@ -31,7 +31,6 @@ volatile int*  UART_LSR=UART_BASE+5;
 static inline unsigned get_time()
 {int tmp;       asm volatile(" csrr %0,time":"=r"(tmp));return tmp;}
 
-#define to_host(x) asm volatile(" csrw mtohost,%0"::"r"(x))
 void delayus(int us)
 {
 	unsigned start=get_time();
@@ -57,7 +56,6 @@ int main()
 	UART_INIT();
 	init_printf(0,mputc);
 	printf("hello\n");
-	to_host(1);
 	UART_INIT();
 
 	int delay_length=500;
