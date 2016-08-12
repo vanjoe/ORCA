@@ -13,6 +13,9 @@ proc com {} {
 							../rtl/orca.vhd 			  \
 							../rtl/sys_call.vhd 		  \
 							../rtl/wishbone_wrapper.vhd \
+              ../rtl/plic.vhd \
+              ../rtl/gateway.vhd \
+              ../rtl/mxp-top.vhd \
 							hdl/top_util_pkg.vhd \
 							hdl/top_component_pkg.vhd\
 							hdl/wb_ram.vhd 		  \
@@ -31,6 +34,7 @@ proc com {} {
 							hdl/pmod_mic/pmod_mic_wb.vhd \
 							hdl/pmod_mic/pmod_mic_ref_comp.vhd \
 							osc_hf_sim.vhd \
+              SB_GB_sim.vhd \
 							hdl/i2s_interface/i2s_decode.vhd \
 							hdl/i2s_interface/i2s_wb.vhd \
 							top.vhd				  \
@@ -56,7 +60,6 @@ add log -r *
 
 add wave -noupdate /top_tb/dut/rv/rv/clk
 add wave -noupdate /top_tb/dut/rv/rv/reset
-add wave -noupdate /top_tb/dut/rv/coe_to_host
 add wave -noupdate -divider Decode
 add wave -noupdate /top_tb/dut/rv/rv/D/register_file_1/registers(28)
 add wave -noupdate -divider Execute

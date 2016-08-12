@@ -11,7 +11,6 @@ entity top is
   generic (
     USE_PLL : boolean := FALSE);  
   port(
-    --clk       : in std_logic;
     reset_btn : in std_logic;
 
     --uart
@@ -398,7 +397,7 @@ begin
         slave2_WE_I   => '0',
         slave2_CYC_I  => instr_CYC_O,
         slave2_STB_I  => instr_STB_O,
-        slave2_SEL_I  => '0',
+        slave2_SEL_I  => (others => '0'),
         slave2_CTI_I  => instr_CTI_O,
         slave2_BTE_I  => (others => '0'),
         slave2_LOCK_I => '0',
@@ -485,7 +484,8 @@ begin
   rv : component orca_wishbone
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
-      MULTIPLY_ENABLE    => 0,
+      MULTIPLY_ENABLE    => 1,
+      DIVIDE_ENABLE      => 1,
       SHIFTER_MAX_CYCLES => 32,
       COUNTER_LENGTH     => 32,
       PIPELINE_STAGES    => 4,
