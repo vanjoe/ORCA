@@ -395,6 +395,57 @@ package top_component_pkg is
 
   end component i2s_wb;
 
+  component SB_PLL40_CORE is
+    generic (
+      --- VITAL input port delay
+      -- Entity Parameters
+      FEEDBACK_PATH                  : string                 := "SIMPLE";  -- SIMPLE/DELAY/PHASE_AND_DELAY/EXTERNAL
+      DELAY_ADJUSTMENT_MODE_FEEDBACK : string                 := "FIXED";  -- FIXED/DYNAMIC
+      DELAY_ADJUSTMENT_MODE_RELATIVE : string                 := "FIXED";  -- FIXED/DYNAMIC
+      SHIFTREG_DIV_MODE              : bit_vector(1 downto 0) := "00";  -- 00 (div by 4)/ 01 (div by 7)/11 (div by 5)
+      FDA_FEEDBACK                   : bit_vector(3 downto 0) := "0000";
+      FDA_RELATIVE                   : bit_vector(3 downto 0) := "0000";
+      PLLOUT_SELECT                  : string                 := "GENCLK";
+
+      DIVR         : bit_vector(3 downto 0) := "0000";
+      DIVF         : bit_vector(6 downto 0) := "0000000";
+      DIVQ         : bit_vector(2 downto 0) := "000";
+      FILTER_RANGE : bit_vector(2 downto 0) := "000";
+
+      ENABLE_ICEGATE         : bit     := '0';
+      TEST_MODE              : bit     := '0';
+      EXTERNAL_DIVIDE_FACTOR : integer := 1  -- Required for PLL Config Wizard.
+      );
+    port (
+      REFERENCECLK    : in  std_logic;  -- PLL ref clock, driven by core logic
+      PLLOUTCORE      : out std_logic;  -- PLL output to core logic through local routings.
+      PLLOUTGLOBAL    : out std_logic;  -- PLL output to dedicated global clock network
+      EXTFEEDBACK     : in  std_logic;  -- FB driven by core logic
+      DYNAMICDELAY    : in  std_logic_vector(7 downto 0);  -- driven by core logic
+      LOCK            : out std_logic;  -- PLL Lock signal output
+      BYPASS          : in  std_logic;  -- REFCLK passed to PLLOUT when bypass is '1'.Driven by core logic
+      RESETB          : in  std_logic;  -- Active low reset,Driven by core logic
+      SDI             : in  std_logic;  -- Test Input. Driven by core logic.
+      SDO             : out std_logic;  -- Test output to RB Logic Tile.
+      SCLK            : in  std_logic;  -- Test Clk input.Driven by core logic.
+      LATCHINPUTVALUE : in  std_logic   -- iCEGate signal
+      );
+  end component SB_PLL40_CORE;
+
+  component SB_GB is
+    port (
+      GLOBAL_BUFFER_OUTPUT         : out std_logic;
+      USER_SIGNAL_TO_GLOBAL_BUFFER : in std_logic);
+  end component SB_GB;
+
+  component osc_48MHz is
+    generic (
+      DIVIDER : std_logic_vector(1 downto 0) := "00"
+    );
+    port (
+      clkout : out std_logic
+    );
+  end component osc_48MHz;
 
 end package;
 

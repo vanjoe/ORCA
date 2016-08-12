@@ -8,6 +8,8 @@ use work.top_util_pkg.all;
 use work.rv_components.all;
 
 entity top is
+  generic (
+    USE_PLL : boolean := FALSE);  
   port(
     --clk       : in std_logic;
     reset_btn : in std_logic;
@@ -28,23 +30,6 @@ entity top is
 end entity;
 
 architecture rtl of top is
-
-  component osc_48MHz is
-    generic (
-      DIVIDER : std_logic_vector(1 downto 0) := "00"
-    );
-    port (
-      clkout : out std_logic
-    );
-  end component;
-  
-  component ice40ultra_pll is
-    port (
-      REFERENCECLK : in  std_logic;
-      PLLOUTCORE   : out std_logic;
-      PLLOUTGLOBAL : out std_logic;
-      RESET        : in  std_logic);
-  end component;
 
   constant REGISTER_SIZE : integer := 32;
 
@@ -180,9 +165,13 @@ architecture rtl of top is
   signal uart_debug_ack : std_logic;
 
 
-  signal clk            : std_logic;
-  signal scratchpad_clk : std_logic;
-  signal pll_core     : std_logic;
+  signal clk             : std_logic;
+  signal osc_clk         : std_logic;
+  signal clk_count       : unsigned(3 downto 0) := (others => '0');
+  signal clk_int         : std_logic;
+  signal clk_3x_int      : std_logic;
+  signal clk_3x          : std_logic;
+  signal clk_reset_count : signed(3 downto 0) := (others => '0');
 
   constant UART_ADDR_DAT         : std_logic_vector(7 downto 0) := "00000000";
   constant UART_ADDR_LSR         : std_logic_vector(7 downto 0) := "00000011";
@@ -197,23 +186,93 @@ architecture rtl of top is
   constant HEARTBEAT_COUNTER_BITS : positive                                    := log2(SYSCLK_FREQ_HZ);  -- ~1 second to roll over
   signal heartbeat_counter        : unsigned(HEARTBEAT_COUNTER_BITS-1 downto 0) := (others => '0');
 
-
+  signal nreset           : std_logic;
   signal auto_reset_count : unsigned(3 downto 0) := (others => '0');
   signal auto_reset       : std_logic;
 begin
+
+  CLK_LOGIC_DIVIDER : if not USE_PLL generate
+  
+    hf_osc : component osc_48MHz
+      generic map (
+        DIVIDER => "01")
+      port map (
+        CLKOUT    => osc_clk);
+
+    process (osc_clk)
+    begin
+      if rising_edge(osc_clk) then
+        clk_count <= clk_count + 1;
+        clk_3x_int <= not clk_3x_int;
+        if clk_count = 2 then
+          clk_count <= (others => '0');
+          clk_int   <= not clk_int;
+        end if;
+    
+        if clk_reset_count /= -1 then
+          clk_reset_count <= clk_reset_count + 1;
+          clk_3x_int <= '0';
+          clk_int <= '0';
+          clk_count <= (others => '0');
+        end if;
+
+        if reset_btn = '0' then
+          clk_reset_count <= (others => '0');
+        end if;
+      end if;
+    end process;
+
+    clk_gb : SB_GB
+      port map (
+        GLOBAL_BUFFER_OUTPUT         => clk,
+        USER_SIGNAL_TO_GLOBAL_BUFFER => clk_int);
+
+    clk3x_gb : SB_GB
+      port map (
+        GLOBAL_BUFFER_OUTPUT         => clk_3x,
+        USER_SIGNAL_TO_GLOBAL_BUFFER => clk_3x_int);
+
+  end generate;
+
+  CLK_PLL : if USE_PLL generate
 
   hf_osc : component osc_48MHz
     generic map (
       DIVIDER => "10")
     port map (
-      CLKOUT    => clk);
+      CLKOUT => clk);
 
-  pll_3x : component ice40ultra_pll
+  pll_3x : SB_PLL40_CORE
+    generic map(
+
+      -- Entity Parameters
+      FEEDBACK_PATH                  => "PHASE_AND_DELAY",
+      DELAY_ADJUSTMENT_MODE_FEEDBACK => "FIXED",  -- FIXED/DYNAMIC
+      DELAY_ADJUSTMENT_MODE_RELATIVE => "FIXED",  -- FIXED/DYNAMIC
+      SHIFTREG_DIV_MODE              => "00",  -- 00 (div by 4)/ 01 (div by 7)/11 (div by 5)
+      FDA_FEEDBACK                   => "0000",
+      FDA_RELATIVE                   => "0000",
+      PLLOUT_SELECT                  => "SHIFTREG_0deg",
+
+      DIVR         => "0000",
+      DIVF         => "0000010",
+      DIVQ         => "001",
+      FILTER_RANGE => "001",
+
+      ENABLE_ICEGATE => '0')
     port map (
       REFERENCECLK => clk,
-      PLLOUTCORE => pll_core,
-      PLLOUTGLOBAL => scratchpad_clk,
-      RESET => not reset);
+
+      PLLOUTGLOBAL    => clk_3x,
+      EXTFEEDBACK     => 'X',
+      DYNAMICDELAY    => (others => 'X'),
+      BYPASS          => '0',
+      RESETB          => nreset,
+      SDI             => 'X',
+      SCLK            => 'X',
+      LATCHINPUTVALUE => 'X');
+
+  end generate;
 
   process(clk)
   begin
@@ -228,6 +287,7 @@ begin
   end process;
 
   reset <= not reset_btn or auto_reset;
+  nreset <= not reset;
 
   COMBINED_RAM_GEN : if not SEPERATE_MEMS generate
     signal RAM_ADR_I  : std_logic_vector(31 downto 0);
@@ -400,7 +460,7 @@ begin
     port map(
 
       clk            => clk,
-      scratchpad_clk => scratchpad_clk,
+      scratchpad_clk => clk_3x,
       reset          => reset,
 
       data_ADR_O   => data_ADR_O,
