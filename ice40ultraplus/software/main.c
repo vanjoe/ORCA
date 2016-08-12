@@ -1,5 +1,6 @@
 #include "printf.h"
 #include "i2s.h"
+#include "interrupt.h"
 
 #define SYS_CLK 6000000
 volatile int *ledrgb= (volatile int*)0x10000;
@@ -46,8 +47,6 @@ void mputc ( void* p, char c)
   *UART_DATA = c;
 }
 
-
-
 int main()
 {
 	int i='a';
@@ -69,9 +68,26 @@ int main()
 	}
 }
 
+int handle_interrupt(long cause, long epc, long regs[32]) {
+  switch(cause & 0xF) {
 
-int handle_trap(long cause,long epc, long regs[32])
-{
-	//spin forever
-	for(;;);
+    case M_SOFTWARE_INTERRUPT:
+      clear_software_interrupt();
+
+    case M_TIMER_INTERRUPT:
+      clear_timer_interrupt_cycles();
+
+    case M_EXTERNAL_INTERRUPT:
+      {
+        int plic_claim;
+        claim_external_interrupt(&plic_claim);
+        complete_external_interrupt(plic_claim);
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  return epc;
 }

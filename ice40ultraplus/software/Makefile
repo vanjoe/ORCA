@@ -2,8 +2,8 @@ all:
 AS_SRCS=crt.S
 
 C_SRCS=
-C_SRCS+=main.c
-C_SRCS+=printf.c
+C_SRCS+=read_mul_div_test.c
+C_SRCS+=printf.c interrupt.c
 
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
@@ -13,7 +13,7 @@ CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
-ARCH=RV32IXmxp
+ARCH=RV32IMXmxp
 CFLAGS= -m32  -march=$(ARCH) -O2 -MD -Wall -std=gnu99
 LD_FLAGS= -m32 -march=$(ARCH) -static -nostartfiles
 
