@@ -2,7 +2,7 @@ all:
 AS_SRCS=crt.S
 
 C_SRCS=
-C_SRCS+=read_mul_div_test.c
+C_SRCS+=main.c
 C_SRCS+=printf.c interrupt.c
 
 
