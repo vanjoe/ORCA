@@ -16,7 +16,7 @@ entity orca_wishbone is
     BRANCH_PREDICTORS  : natural               := 0;
     PIPELINE_STAGES    : natural range 4 to 5  := 5;
     FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
-    MXP_ENABLE         : natural range 0 to 1  := 0;
+    LVE_ENABLE         : natural range 0 to 1  := 0;
     PLIC_ENABLE        : boolean               := FALSE;
     NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2;
     SCRATCHPAD_SIZE    : integer               := 1024;
@@ -109,7 +109,7 @@ begin  -- architecture rtl
       BRANCH_PREDICTORS  => BRANCH_PREDICTORS,
       PIPELINE_STAGES    => PIPELINE_STAGES,
       FORWARD_ALU_ONLY   => FORWARD_ALU_ONLY,
-      MXP_ENABLE         => MXP_ENABLE,
+      LVE_ENABLE         => LVE_ENABLE,
       NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS,
       FAMILY             => FAMILY)
     port map(

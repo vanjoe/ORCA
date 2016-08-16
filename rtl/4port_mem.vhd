@@ -160,7 +160,7 @@ architecture rtl of ram_4port is
       data_out : out std_logic_vector(MEM_WIDTH-1 downto 0));
   end component;
 
-  type port_sel_t is (SLAVE_ACCESS, MXP_ACCESS);
+  type port_sel_t is (SLAVE_ACCESS, LVE_ACCESS);
   signal port_sel : port_sel_t;
 
   signal actual_byte_en  : std_logic_vector(MEM_WIDTH/8-1 downto 0);
@@ -181,7 +181,7 @@ architecture rtl of ram_4port is
   signal delay2_toggle : std_logic;
   signal toggles       : std_logic_vector(2 downto 0);
 begin  -- architecture rtl
-  port_sel <= MXP_ACCESS when (ren0 or ren1 or wen2) = '1' else SLAVE_ACCESS;
+  port_sel <= LVE_ACCESS when (ren0 or ren1 or wen2) = '1' else SLAVE_ACCESS;
 
   stall_012 <= '0';
   stall_3   <= '0';
@@ -228,7 +228,7 @@ begin  -- architecture rtl
                  raddr1 when cycle_count = SECOND_READ else
                  waddr2;
 
-  actual_data_in <= data_in2 when port_sel = MXP_ACCESS else
+  actual_data_in <= data_in2 when port_sel = LVE_ACCESS else
                     data_in3;
 
   process(scratchpad_clk)

@@ -2,9 +2,8 @@ all:
 AS_SRCS=crt.S
 
 C_SRCS=
-C_SRCS+=main.c
-C_SRCS+=printf.c interrupt.c
-
+C_SRCS+=lattice_mul_test.c
+C_SRCS+=printf.c interrupt.c lve_test.c vbx_api.c
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
 S_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(AS_SRCS)))

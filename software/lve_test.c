@@ -10,7 +10,7 @@
 #define SIMULATION        0
 #define TEST_SCRATCHPAD   1
 #define TEST_DMA          1
-#define TEST_INSTRUCTIONS 1
+#define TEST_INSTRUCTIONS 0
 #define TEST_ACC          1
 #define TEST_ACC_WORD     1
 #define TEST_2D           1
@@ -32,8 +32,6 @@ int lve_test(){
 	int i;
 	unsigned int local_errors = 0;
 	unsigned int errors = 0;
-	unsigned int start_time;
-	unsigned int end_time;
 
 	vbx_uhalf_t *v_data = (vbx_uhalf_t *)MXP_SCRATCHPAD_BASE;
 

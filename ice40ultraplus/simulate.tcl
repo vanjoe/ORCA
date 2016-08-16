@@ -15,7 +15,7 @@ proc com {} {
 							../rtl/wishbone_wrapper.vhd \
               ../rtl/plic.vhd \
               ../rtl/gateway.vhd \
-              ../rtl/mxp-top.vhd \
+              ../rtl/lve-top.vhd \
 							hdl/top_util_pkg.vhd \
 							hdl/top_component_pkg.vhd\
 							hdl/wb_ram.vhd 		  \

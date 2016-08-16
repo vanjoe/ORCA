@@ -17,7 +17,7 @@ package rv_components is
       BRANCH_PREDICTORS  : natural               := 0;
       PIPELINE_STAGES    : natural range 4 to 5  := 5;
       FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
-      MXP_ENABLE         : natural range 0 to 1  := 0;
+      LVE_ENABLE         : natural range 0 to 1  := 0;
       PLIC_ENABLE        : boolean               := FALSE;
       NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
       SCRATCHPAD_SIZE    : integer               := 1024;
@@ -59,7 +59,7 @@ package rv_components is
       BRANCH_PREDICTORS  : natural               := 0;
       PIPELINE_STAGES    : natural range 4 to 5  := 5;
       FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
-      MXP_ENABLE         : natural range 0 to 1  := 0;
+      LVE_ENABLE         : natural range 0 to 1  := 0;
       PLIC_ENABLE        : boolean               := FALSE;
       NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2;
       SCRATCHPAD_SIZE    : integer               := 1024;
@@ -139,7 +139,7 @@ package rv_components is
       SHIFTER_MAX_CYCLES  : natural;
       COUNTER_LENGTH      : natural;
       FORWARD_ALU_ONLY    : boolean;
-      MXP_ENABLE          : boolean;
+      LVE_ENABLE          : boolean;
       SCRATCHPAD_SIZE     : integer := 1024;
       FAMILY              : string  := "ALTERA");
     port(
@@ -219,7 +219,8 @@ package rv_components is
       SIGN_EXTENSION_SIZE : integer;
       MULTIPLY_ENABLE     : boolean;
       DIVIDE_ENABLE       : boolean;
-      SHIFTER_MAX_CYCLES  : natural
+      SHIFTER_MAX_CYCLES  : natural;
+      FAMILY              : string := "ALTERA"
       );
     port (
       clk               : in  std_logic;
@@ -236,10 +237,10 @@ package rv_components is
       less_than         : out std_logic;
       stall_out         : out std_logic;
 
-      mxp_data1  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      mxp_data2  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      mxp_enable : in  std_logic;
-      mxp_result : out std_logic_vector(REGISTER_SIZE-1 downto 0)
+      lve_data1  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      lve_data2  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      lve_enable : in  std_logic;
+      lve_result : out std_logic_vector(REGISTER_SIZE-1 downto 0)
 
       );
   end component arithmetic_unit;
@@ -489,7 +490,7 @@ package rv_components is
       br_new_pc            : in std_logic_vector(REGISTER_SIZE-1 downto 0));
   end component system_calls;
 
-  component mxp_top is
+  component lve_top is
     generic(
       REGISTER_SIZE    : natural;
       INSTRUCTION_SIZE : natural;
@@ -515,11 +516,11 @@ package rv_components is
       slave_wait     : out std_logic;
 
 
-      mxp_data1  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      mxp_data2  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      mxp_enable : out std_logic;
+      lve_data1  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      lve_data2  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      lve_enable : out std_logic;
       alu_stall  : in  std_logic;
-      mxp_result : in  std_logic_vector(REGISTER_SIZE-1 downto 0)
+      lve_result : in  std_logic_vector(REGISTER_SIZE-1 downto 0)
 
       );
   end component;

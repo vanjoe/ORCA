@@ -34,7 +34,6 @@ add_file -vhdl -lib work "../ice40ultra/hdl/wb_arbiter.vhd"
 add_file -vhdl -lib work "../ice40ultra/hdl/wb_splitter.vhd" 
 add_file -vhdl -lib work "../rtl/plic.vhd" 
 add_file -vhdl -lib work "../rtl/gateway.vhd" 
-add_file -vhdl -lib work "../rtl/mxp-top.vhd" 
 add_file -vhdl -lib work "../rtl/4port_mem.vhd" 
 add_file -verilog -lib work "../rtl/spram.v" 
 add_file -vhdl -lib work "../ice40ultra/hdl/i2s_interface/trunk/rtl/vhdl/i2s_codec.vhd" 
@@ -45,6 +44,7 @@ add_file -vhdl -lib work "../ice40ultra/hdl/i2s_interface/trunk/rtl/vhdl/tx_i2s_
 add_file -vhdl -lib work "../ice40ultra/hdl/i2s_interface/trunk/rtl/vhdl/tx_i2s_topm.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/i2s_interface/trunk/rtl/vhdl/tx_i2s_pack.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/i2s_interface/trunk/rtl/vhdl/gen_control_reg.vhd" 
+add_file -vhdl -lib work "../rtl/lve-top.vhd" 
 #implementation: "ultraplus_Implmnt"
 impl -add ultraplus_Implmnt -type fpga
 

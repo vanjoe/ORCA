@@ -13,7 +13,8 @@ entity arithmetic_unit is
     SIGN_EXTENSION_SIZE : integer;
     MULTIPLY_ENABLE     : boolean;
     DIVIDE_ENABLE       : boolean;
-    SHIFTER_MAX_CYCLES  : natural);
+    SHIFTER_MAX_CYCLES  : natural;
+    FAMILY              : string := "ALTERA");
 
   port (
     clk               : in     std_logic;
@@ -30,10 +31,10 @@ entity arithmetic_unit is
     less_than         : out    std_logic;
     stall_out         : out    std_logic;
 
-    mxp_data1  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    mxp_data2  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    mxp_enable : in  std_logic;
-    mxp_result : out std_logic_vector(REGISTER_SIZE-1 downto 0)
+    lve_data1  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lve_data2  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lve_enable : in  std_logic;
+    lve_result : out std_logic_vector(REGISTER_SIZE-1 downto 0)
     );
 
 end entity arithmetic_unit;
@@ -46,7 +47,7 @@ architecture rtl of arithmetic_unit is
   --op codes
   constant OP     : std_logic_vector(6 downto 0) := "0110011";
 
-  constant MXP_OP : std_logic_vector(6 downto 0) := "0101011";
+  constant LVE_OP : std_logic_vector(6 downto 0) := "0101011";
 
   constant OP_IMM : std_logic_vector(6 downto 0) := "0010011";
   constant LUI    : std_logic_vector(6 downto 0) := "0110111";
@@ -179,8 +180,8 @@ architecture rtl of arithmetic_unit is
       rs2_data       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       instruction    : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       sign_extension : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-      data1          : out    unsigned(REGISTER_SIZE-1 downto 0);
-      data2          : out    unsigned(REGISTER_SIZE-1 downto 0);
+      data1          : buffer unsigned(REGISTER_SIZE-1 downto 0);
+      data2          : buffer unsigned(REGISTER_SIZE-1 downto 0);
       sub            : out    signed(REGISTER_SIZE downto 0);
       shift_amt      : buffer unsigned(log2(REGISTER_SIZE)-1 downto 0);
       shifted_value  : buffer signed(REGISTER_SIZE downto 0);
@@ -210,11 +211,11 @@ begin  -- architecture rtl
       mult_srca      => mult_srca,
       mult_srcb      => mult_srcb);
 
-  data_in1   <= mxp_data1 when mxp_enable = '1' else rs1_data;
-  data_in2   <= mxp_data2 when mxp_enable = '1' else rs2_data;
-  mxp_result <= data_out;
+  data_in1   <= lve_data1 when lve_enable = '1' else rs1_data;
+  data_in2   <= lve_data2 when lve_enable = '1' else rs2_data;
+  lve_result <= data_out;
 
-  sh_enable <= valid when (opcode = OP or opcode = OP_IMM or (opcode = MXP_OP and mxp_enable = '1') ) and (func3 = "001" or func3 = "101") else '0';
+  sh_enable <= valid when (opcode = OP or opcode = OP_IMM or (opcode = LVE_OP and lve_enable = '1') ) and (func3 = "001" or func3 = "101") else '0';
 
   SH_GEN0 : if SHIFTER_USE_MULTIPLIER generate
     sh_stall <= mul_stall;
@@ -250,14 +251,12 @@ begin  -- architecture rtl
   end generate SH_GEN1;
 
 
-
   less_than <= sub(sub'left);
 --combine slt
   slt_val   <= to_unsigned(1, REGISTER_SIZE) when sub(sub'left) = '1' else to_unsigned(0, REGISTER_SIZE);
 
   upper_immediate(31 downto 12) <= signed(instruction(31 downto 12));
   upper_immediate(11 downto 0)  <= (others => '0');
-
 
   alu_proc : process(clk) is
     variable func        : std_logic_vector(2 downto 0);
@@ -304,7 +303,7 @@ begin  -- architecture rtl
       end case;
 
       data_enable <= '0';
-      if stall_in = '0'or mxp_enable = '1' then
+      if stall_in = '0'or lve_enable = '1' then
         case OPCODE is
           when OP =>
             data_enable <= valid;
@@ -313,7 +312,7 @@ begin  -- architecture rtl
             else
               data_out <= std_logic_vector(base_result);
             end if;
-          when MXP_OP=>
+          when LVE_OP=>
             if func7 = mul_f7 and MULTIPLY_ENABLE then
               data_out <= std_logic_vector(mul_result);
             else
@@ -344,8 +343,51 @@ begin  -- architecture rtl
     signal mul_almost_done1 : std_logic;
   begin
     mul_en    <= '1' when func7 = mul_f7 and opcode = OP and instruction(14) = '0' else '0';
-    mul_stall <= valid and (mul_en or sh_enable)and not mul_done;
-    mul_d     <= mul_a * mul_b;
+    mul_stall <= valid and (mul_en or sh_enable) and not mul_done;
+
+    lattice_mul_gen : if FAMILY = "LATTICE" generate
+      signal mul_a_absval     : unsigned(mul_a'length - 2 downto 0);
+      signal mul_b_absval     : unsigned(mul_b'length - 2 downto 0);
+      signal mul_abs_product  : unsigned(mul_a_absval'length*2 - 1 downto 0);
+    begin
+      -- In this process, convert the incoming source operands to their absolute value.
+      -- As well, correct the sign of the absolute product if sign1 xor sign2 is true.
+      process (mul_a, mul_b, mul_abs_product)
+      begin
+        mul_d(65 downto 64) <= "--";
+        case std_logic_vector'(mul_a(REGISTER_SIZE) & mul_b(REGISTER_SIZE)) is
+          when "00" =>
+            mul_a_absval <= unsigned(mul_a(mul_a_absval'length-1 downto 0));
+            mul_b_absval <= unsigned(mul_b(mul_b_absval'length-1 downto 0));
+            mul_d(63 downto 0) <= signed(mul_abs_product);
+          when "10" =>
+            mul_a_absval <= unsigned(not mul_a(mul_a_absval'length-1 downto 0)) + to_unsigned(1, 32);
+            mul_b_absval <= unsigned(mul_b(mul_b_absval'length-1 downto 0));
+            mul_d(63 downto 0) <= signed(not mul_abs_product) + to_signed(1, 32);
+          when "01" =>
+            mul_a_absval <= unsigned(mul_a(mul_a_absval'length-1 downto 0));
+            mul_b_absval <= unsigned(not mul_b(mul_b_absval'length-1 downto 0)) + to_unsigned(1, 32);
+            mul_d(63 downto 0) <= signed(not mul_abs_product) + to_signed(1, 32);
+          when "11" =>
+            mul_a_absval <= unsigned(not mul_a(mul_a_absval'length-1 downto 0)) + to_unsigned(1, 32);
+            mul_b_absval <= unsigned(not mul_b(mul_b_absval'length-1 downto 0)) + to_unsigned(1, 32);
+            mul_d(63 downto 0) <= signed(mul_abs_product);
+          when others =>
+            mul_a_absval <= (others => '-');
+            mul_b_absval <= (others => '-'); 
+            mul_d(63 downto 0) <= (others => '-');
+        end case;
+      end process;
+      
+      -- The multiplication of the absolute value of the source operands.
+      mul_abs_product <= mul_a_absval * mul_b_absval;
+
+    end generate;
+
+    default_mul_gen : if FAMILY /= "LATTICE" generate
+    begin
+      mul_d     <= mul_a * mul_b;
+    end generate;
 
     process(clk)
     begin

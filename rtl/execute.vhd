@@ -22,7 +22,7 @@ entity execute is
     SHIFTER_MAX_CYCLES  : natural;
     COUNTER_LENGTH      : natural;
     FORWARD_ALU_ONLY    : boolean;
-    MXP_ENABLE          : boolean;
+    LVE_ENABLE          : boolean;
     SCRATCHPAD_SIZE     : integer := 1024;
     FAMILY              : string := "ALTERA");
   port(
@@ -130,11 +130,11 @@ architecture behavioural of execute is
   signal fwd_en   : std_logic;
   signal fwd_mux  : std_logic;
 
-  signal mxp_data1  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mxp_data2  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mxp_result : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mxp_stall  : std_logic;
-  signal mxp_valid : std_logic;
+  signal lve_data1  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lve_data2  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lve_result : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lve_stall  : std_logic;
+  signal lve_valid : std_logic;
 
   signal valid_instr  : std_logic;
   signal ld_latch_en  : std_logic;
@@ -245,7 +245,7 @@ begin
               alu_data_out when alu_data_en = '1' else
               br_data_out;
 
-  stall_pipeline <= (ls_unit_waiting or alu_stall or use_after_load_stall or mxp_stall) and valid_input;
+  stall_pipeline <= (ls_unit_waiting or alu_stall or use_after_load_stall or lve_stall) and valid_input;
 
 
   process(clk)
@@ -320,7 +320,8 @@ begin
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
       MULTIPLY_ENABLE     => MULTIPLY_ENABLE,
       DIVIDE_ENABLE       => DIVIDE_ENABLE,
-      SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES)
+      SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
+      FAMILY              => FAMILY)
     port map (
       clk               => clk,
       stall_in          => stall_pipeline,
@@ -336,11 +337,10 @@ begin
       less_than         => less_than,
       stall_out         => alu_stall,
 
-      mxp_data1  => mxp_data1,
-      mxp_data2  => mxp_data2,
-      mxp_enable => mxp_valid,
-      mxp_result => mxp_result
-
+      lve_data1  => lve_data1,
+      lve_data2  => lve_data2,
+      lve_enable => lve_valid,
+      lve_result => lve_result
 
       );
 
@@ -431,7 +431,7 @@ begin
       br_bad_predict            => br_bad_predict,
       br_new_pc                 => br_new_pc);
 
-  enable_mxp : if MXP_ENABLE generate
+  enable_lve : if LVE_ENABLE generate
     signal sp_read_en          : std_logic;
     signal sp_write_en         : std_logic;
     signal sp_read_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -440,7 +440,7 @@ begin
     signal use_scratchpad      : std_logic;
     signal last_use_scratchpad : std_logic;
   begin
-    mxp : component mxp_top
+    lve : component lve_top
       generic map (
         REGISTER_SIZE    => REGISTER_SIZE,
         INSTRUCTION_SIZE => INSTRUCTION_SIZE,
@@ -454,7 +454,7 @@ begin
         valid_instr    => valid_instr,
         rs1_data       => rs1_data_fwd,
         rs2_data       => rs2_data_fwd,
-        instr_running  => mxp_stall,
+        instr_running  => lve_stall,
         slave_address  => ls_address,
         slave_read_en  => sp_read_en,
         slave_write_en => sp_write_en,
@@ -463,11 +463,11 @@ begin
         slave_data_out => sp_read_data,
         slave_wait     => sp_wait,
 
-        mxp_data1  => mxp_data1,
-        mxp_data2  => mxp_data2,
-        mxp_enable => mxp_valid,
+        lve_data1  => lve_data1,
+        lve_data2  => lve_data2,
+        lve_enable => lve_valid,
         alu_stall => alu_stall,
-        mxp_result => mxp_result
+        lve_result => lve_result
         );
 
     ---------------------------------
@@ -478,7 +478,7 @@ begin
     ---------------------------------
     ---------------------------------
 
-    use_scratchpad <= '1' when (unsigned(ls_address) and not to_unsigned(SP_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and MXP_ENABLE else '0';
+    use_scratchpad <= '1' when (unsigned(ls_address) and not to_unsigned(SP_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and LVE_ENABLE else '0';
     process(clk)
     begin
       if rising_edge(clk) then
@@ -504,10 +504,10 @@ begin
     writedata <= ls_write_data;
 
 
-  end generate enable_mxp;
+  end generate enable_lve;
 
-  n_enable_mxp : if not MXP_ENABLE generate
-    mxp_stall <= '0';
+  n_enable_lve : if not LVE_ENABLE generate
+    lve_stall <= '0';
 
     ls_read_data   <= readdata;
     ls_waitrequest <= waitrequest;
@@ -519,11 +519,11 @@ begin
     read_en    <= ls_read_en;
     writedata <= ls_write_data;
 
-    mxp_valid <= '0';
-    mxp_data1 <= (others => '-');
-    mxp_data2 <= (others => '-');
+    lve_valid <= '0';
+    lve_data1 <= (others => '-');
+    lve_data2 <= (others => '-');
 
-  end generate n_enable_mxp;
+  end generate n_enable_lve;
 
 
 

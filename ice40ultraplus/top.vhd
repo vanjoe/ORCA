@@ -485,11 +485,11 @@ begin
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
       MULTIPLY_ENABLE    => 1,
-      DIVIDE_ENABLE      => 1,
+      DIVIDE_ENABLE      => 0,
       SHIFTER_MAX_CYCLES => 32,
       COUNTER_LENGTH     => 32,
       PIPELINE_STAGES    => 4,
-      MXP_ENABLE         => 1,
+      LVE_ENABLE         => 1,
       PLIC_ENABLE        => FALSE,
       NUM_EXT_INTERRUPTS => 2,
       SCRATCHPAD_SIZE    => 16384,
