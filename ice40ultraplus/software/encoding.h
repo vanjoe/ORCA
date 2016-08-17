@@ -1,1 +1,1 @@
-/home/ryan/orca/software/encoding.h
+../../software/encoding.h

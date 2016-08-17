@@ -1,1 +1,1 @@
-/home/ryan/orca/software/vbxx_cproto.hpp
+../../software/vbxx_cproto.hpp
