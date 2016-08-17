@@ -16,14 +16,14 @@ entity lve_top is
     SCRATCHPAD_SIZE  : integer := 1024;
     FAMILY           : string  := "ALTERA");
   port(
-    clk            : in std_logic;
-    scratchpad_clk : in std_logic;
-    reset         : in     std_logic;
-    instruction   : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    valid_instr   : in     std_logic;
-    rs1_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instr_running : buffer std_logic;
+    clk            : in     std_logic;
+    scratchpad_clk : in     std_logic;
+    reset          : in     std_logic;
+    instruction    : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    valid_instr    : in     std_logic;
+    rs1_data       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    instr_running  : buffer std_logic;
 
     slave_address  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     slave_read_en  : in  std_logic;
@@ -96,8 +96,8 @@ architecture rtl of lve_top is
   alias acc       : std_logic is instruction(26);
   alias func_bit3 : std_logic is instruction(25);
   alias func      : std_logic_vector(2 downto 0) is instruction(14 downto 12);
-  alias srca_v    : std_logic is instruction(11);
-  alias srcb_v    : std_logic is instruction(10);
+  alias srca_s    : std_logic is instruction(11);
+  alias srcb_e    : std_logic is instruction(10);
   alias dim       : std_logic_vector(1 downto 0) is instruction(9 downto 8);
   alias sign_d    : std_logic is instruction(7);
 
@@ -186,8 +186,8 @@ begin
   dest_ptr      <= unsigned(rs1_data) when first_cycle = '1' else dest_ptr_reg;
   vlen          <= unsigned(rs2_data) when first_cycle = '1' else vlen_reg;
 
-  srca_data <= unsigned(srca_data_read) when srca_v = '1' else scalar_value;
-  srcb_data <= unsigned(srcb_data_read) when srcb_v = '1' else enum_count;
+  srca_data <= scalar_value when srca_s = '1' else unsigned(srca_data_read);
+  srcb_data <= enum_count   when srcb_e = '1' else unsigned(srcb_data_read);
 
   rd_en      <= '1' when (is_prefix and valid_lve_instr) = '1' or vlen > 1 else '0';
   lve_data1  <= std_logic_vector(srca_data);

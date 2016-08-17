@@ -35,15 +35,15 @@ architecture behav of ram_1port is
 
   component SB_SPRAM256KA is
     port (
-      ADDRESS    : in std_logic_vector(13 downto 0);
-      DATAIN     : in std_logic_vector(15 downto 0);
-      MASKWREN   : in std_logic_vector(3 downto 0);
-      WREN       : in std_logic;
-      CHIPSELECT : in std_logic;
-      CLOCK      : in std_logic;
-      STANDBY    : in std_logic;
-      SLEEP      : in std_logic;
-      POWEROFF   : in std_logic;
+      ADDRESS    : in  std_logic_vector(13 downto 0);
+      DATAIN     : in  std_logic_vector(15 downto 0);
+      MASKWREN   : in  std_logic_vector(3 downto 0);
+      WREN       : in  std_logic;
+      CHIPSELECT : in  std_logic;
+      CLOCK      : in  std_logic;
+      STANDBY    : in  std_logic;
+      SLEEP      : in  std_logic;
+      POWEROFF   : in  std_logic;
       DATAOUT    : out std_logic_vector(15 downto 0));
   end component;
 
@@ -68,32 +68,39 @@ begin
   end generate;
 
   lattice_ram : if FAMILY = "LATTICE" generate
+    signal spram_address : std_logic_vector(13 downto 0);
+    signal mask_wren0    : std_logic_vector(3 downto 0);
+    signal mask_wren1    : std_logic_vector(3 downto 0);
+  begin
+    spram_address <= std_logic_vector(resize(unsigned(addr), 14));
 
-    SPRAM0 : component SB_SPRAM256KA 
+    mask_wren0 <= byte_en(1) & byte_en(1) & byte_en(0) & byte_en(0);
+    SPRAM0 : component SB_SPRAM256KA
       port map (
-        ADDRESS  => std_logic_vector(resize(unsigned(addr), 14)),
-        DATAIN   => data_in(15 downto 0),
-        MASKWREN => byte_en(1) & byte_en(1) & byte_en(0) & byte_en(0),
-        WREN     => wr_en,
+        ADDRESS    => spram_address,
+        DATAIN     => data_in(15 downto 0),
+        MASKWREN   => mask_wren0,
+        WREN       => wr_en,
         CHIPSELECT => chip_sel,
-        CLOCK => clk,
-        STANDBY => '0',
-        SLEEP => '0',
-        POWEROFF => '0',
-        DATAOUT => data_out(15 downto 0));
+        CLOCK      => clk,
+        STANDBY    => '0',
+        SLEEP      => '0',
+        POWEROFF   => '0',
+        DATAOUT    => data_out(15 downto 0));
 
+    mask_wren1 <= byte_en(3) & byte_en(3) & byte_en(2) & byte_en(2);
     SPRAM1 : component SB_SPRAM256KA
       port map (
-        ADDRESS => std_logic_vector(resize(unsigned(addr), 14)),
-        DATAIN  => data_in(31 downto 16),
-        MASKWREN => byte_en(3) & byte_en(3) & byte_en(2) & byte_en(2),
-        WREN => wr_en,
+        ADDRESS    => spram_address,
+        DATAIN     => data_in(31 downto 16),
+        MASKWREN   => mask_wren1,
+        WREN       => wr_en,
         CHIPSELECT => chip_sel,
-        CLOCK => clk,
-        STANDBY => '0',
-        SLEEP => '0',
-        POWEROFF => '0',
-        DATAOUT => data_out(31 downto 16));
+        CLOCK      => clk,
+        STANDBY    => '0',
+        SLEEP      => '0',
+        POWEROFF   => '0',
+        DATAOUT    => data_out(31 downto 16));
 
   end generate;
 

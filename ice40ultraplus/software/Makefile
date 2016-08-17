@@ -1,8 +1,12 @@
+#define C_MAIN as env or in config.mk to override test
+-include config.mk
+C_MAIN ?= main.c
+
 all:
 AS_SRCS=crt.S
 
 C_SRCS=
-C_SRCS+=lattice_mul_test.c
+C_SRCS+=$(C_MAIN)
 C_SRCS+=printf.c interrupt.c lve_test.c vbx_api.c
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
