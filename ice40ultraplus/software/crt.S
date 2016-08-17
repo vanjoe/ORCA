@@ -1,1 +1,1 @@
-/home/ryan/orca/software/crt.S
+../../software/crt.S

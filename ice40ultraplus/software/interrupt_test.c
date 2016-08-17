@@ -1,1 +1,1 @@
-/home/ryan/orca/software/interrupt_test.c
+../../software/interrupt_test.c

@@ -1,1 +1,1 @@
-/home/ryan/orca/software/interrupt.h
+../../software/interrupt.h
