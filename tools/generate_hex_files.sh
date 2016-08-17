@@ -25,8 +25,8 @@ do
 		  MIF_FILE=test/$(basename $f).mif
 		  SPLIT_FILE=test/$(basename $f).split2
 		  cp $f test/
-		  riscv64-unknown-elf-objcopy  -O binary $f $BIN_FILE
-		  riscv64-unknown-elf-objdump --disassemble-all -Mnumeric,no-aliases $f > test/$(basename $f).dump
+		  riscv32-unknown-elf-objcopy  -O binary $f $BIN_FILE
+		  riscv32-unknown-elf-objdump --disassemble-all -Mnumeric,no-aliases $f > test/$(basename $f).dump
 
 		  python ../tools/bin2mif.py $BIN_FILE 0x100 > $MIF_FILE || exit -1
 		  mif2hex $MIF_FILE $QEX_FILE >/dev/null 2>&1 || exit -1
