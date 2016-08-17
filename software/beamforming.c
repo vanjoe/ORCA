@@ -51,9 +51,6 @@ int main() {
       if (buffer_count == BUFFER_LENGTH) {
         buffer_count = 0; 
       }
-      if (buffer_r_count == BUFFER_LENGTH) {
-        buffer_count = 0;
-      }
     }
 
     // Copy over WINDOW_LENGTH + SAMPLE_DIFFERENCE samples to scratchpad.
@@ -100,10 +97,6 @@ int main() {
   }
 }
 
-
-int tohost_exit() {
-	for(;;);
-}
 
 int handle_interrupt(long cause, long epc, long regs[32]) {
   for(;;);
