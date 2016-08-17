@@ -7,16 +7,17 @@ use work.rv_components.all;
 entity orca_wishbone is
 
   generic (
-    REGISTER_SIZE      : integer              := 32;
-    RESET_VECTOR       : natural              := 16#00000200#;
-    MULTIPLY_ENABLE    : natural range 0 to 1 := 0;
-    DIVIDE_ENABLE      : natural range 0 to 1 := 0;
-    SHIFTER_MAX_CYCLES : natural              := 1;
-    COUNTER_LENGTH     : natural              := 64;
-    BRANCH_PREDICTORS  : natural              := 0;
-    PIPELINE_STAGES    : natural range 4 to 5 := 5;
-    FORWARD_ALU_ONLY   : natural range 0 to 1 := 1;
-    MXP_ENABLE         : natural range 0 to 1 := 0);
+    REGISTER_SIZE      : integer               := 32;
+    RESET_VECTOR       : natural               := 16#00000200#;
+    MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
+    DIVIDE_ENABLE      : natural range 0 to 1  := 0;
+    SHIFTER_MAX_CYCLES : natural               := 1;
+    COUNTER_LENGTH     : natural               := 64;
+    BRANCH_PREDICTORS  : natural               := 0;
+    PIPELINE_STAGES    : natural range 4 to 5  := 5;
+    FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
+    MXP_ENABLE         : natural range 0 to 1  := 0;
+    NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2);
 
   port(clk            : in std_logic;
        scratchpad_clk : in std_logic;
@@ -40,8 +41,8 @@ entity orca_wishbone is
        instr_CYC_O   : out std_logic;
        instr_CTI_O   : out std_logic_vector(2 downto 0);
        instr_STALL_I : in  std_logic;
-       global_interrupts : in std_logic_vector(31 downto 0)
 
+       global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0)
        );
 
 end entity orca_wishbone;
@@ -105,7 +106,8 @@ begin  -- architecture rtl
       BRANCH_PREDICTORS  => BRANCH_PREDICTORS,
       PIPELINE_STAGES    => PIPELINE_STAGES,
       FORWARD_ALU_ONLY   => FORWARD_ALU_ONLY,
-      MXP_ENABLE         => MXP_ENABLE)
+      MXP_ENABLE         => MXP_ENABLE,
+      NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS)
     port map(
       clk            => clk,
       scratchpad_clk => scratchpad_clk,

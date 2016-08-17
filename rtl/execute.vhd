@@ -42,6 +42,7 @@ entity execute is
     wb_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     wb_en   : buffer std_logic;
 
+    instruction_fetch_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     branch_pred    : out    std_logic_vector(REGISTER_SIZE*2+3 -1 downto 0);
     stall_pipeline : buffer std_logic;
@@ -52,8 +53,8 @@ entity execute is
     byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
     write_en       : out    std_logic;
     read_en        : out    std_logic;
-    writedata     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    readdata      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    writedata      : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    readdata       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     waitrequest    : in     std_logic;
     datavalid      : in     std_logic;
 
@@ -62,9 +63,9 @@ entity execute is
     mip_msip_i     : in     std_logic;
     mip_meip_i     : in     std_logic;
 
-    interrupt_pending_o : out std_logic;
+    interrupt_pending_o : out std_logic);
 
-    instruction_fetch_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0));
+
 end entity execute;
 
 architecture behavioural of execute is
@@ -513,6 +514,10 @@ begin
     write_en   <= ls_write_en;
     read_en    <= ls_read_en;
     writedata <= ls_write_data;
+
+    mxp_valid <= '0';
+    mxp_data1 <= (others => '-');
+    mxp_data2 <= (others => '-');
 
   end generate n_enable_mxp;
 

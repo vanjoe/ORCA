@@ -11,6 +11,7 @@ de2-115/incremental_db/*
 *.mif
 *.bin
 *.elf
+tags
 
 software/obj/*
 

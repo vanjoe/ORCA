@@ -21,12 +21,11 @@ entity load_store_unit is
     stalled        : buffer std_logic;
     data_out       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_enable    : out    std_logic;
-    wb_sel         : out    std_logic_vector(4 downto 0);
 --memory-bus
     address        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-    write_en       : out    std_logic;
-    read_en        : out    std_logic;
+    write_en       : buffer std_logic;
+    read_en        : buffer std_logic;
     write_data     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     waitrequest    : in     std_logic;
@@ -54,7 +53,6 @@ architecture rtl of load_store_unit is
   signal imm          : std_logic_vector(11 downto 0);
 
   signal address_unaligned : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal latched_address   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal alignment         : std_logic_vector(1 downto 0);
 
   signal w0 : std_logic_vector(7 downto 0);
@@ -82,8 +80,10 @@ begin
 
   we       <= '1' when opcode = STORE_INSTR and valid = '1'else '0';
   re       <= '1' when opcode = LOAD_INSTR and valid = '1' else '0';
-  write_en <= we;
-  read_en  <= re;
+  write_en <= '0' when (expecting_data_valid = '1' and readvalid = '0') else we;
+  -- To prevent an additional read when readvalid has not come back yet, but 
+  -- waitrequest has gone low.
+  read_en  <= '0' when (expecting_data_valid = '1' and readvalid = '0') else re;
 
   imm <= instruction(31 downto 25) & instruction(11 downto 7) when instruction(5) = '1'
          else instruction(31 downto 20);
@@ -116,7 +116,7 @@ begin
   --align to word boundary
   address    <= address_unaligned(REGISTER_SIZE-1 downto 2) & "00";
 
-  stalled <= (waitrequest and (re or we)) or (expecting_data_valid and not readvalid);  -- and not (read_in_progress and not readvalid);
+  stalled <= (waitrequest and (read_en or write_en)) or (expecting_data_valid and not readvalid);  -- and not (read_in_progress and not readvalid);
 
 
   --outputs, all of these assignments should happen on the rising edge,
@@ -128,14 +128,14 @@ begin
         alignment    <= address_unaligned(1 downto 0);
         latched_fun3 <= fun3;
       end if;
-      if re ='1' and waitrequest='0' then
+      if read_en = '1' and waitrequest = '0' then
         expecting_data_valid <= '1';
-      elsif expecting_data_valid = '1' and readvalid= '1' then
+      elsif expecting_data_valid = '1' and readvalid = '1' then
         expecting_data_valid <= '0';
       end if;
-    if reset = '1' then
-      expecting_data_valid <= '0';
-    end if;
+      if reset = '1' then
+        expecting_data_valid <= '0';
+      end if;
     end if;
   end process;
 

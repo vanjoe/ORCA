@@ -16,7 +16,6 @@ entity mxp_top is
   port(
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
-
     reset         : in     std_logic;
     instruction   : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     valid_instr   : in     std_logic;

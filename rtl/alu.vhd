@@ -262,11 +262,9 @@ begin  -- architecture rtl
   alu_proc : process(clk) is
     variable func        : std_logic_vector(2 downto 0);
     variable base_result : unsigned(REGISTER_SIZE-1 downto 0);
-    variable subtract    : std_logic;
   begin
     if rising_edge(clk) then
       func     := instruction(14 downto 12);
-      subtract := instruction(30) and instruction(5);
       case func is
         when ADD_OP =>
           base_result := unsigned(sub(REGISTER_SIZE-1 downto 0));

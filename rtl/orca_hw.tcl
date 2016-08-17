@@ -178,6 +178,17 @@ set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipelin
 but 4 stages has a higher fmax"
 set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
 
+add_parameter          PLIC_ENABLE boolean false
+set_parameter_property PLIC_ENABLE HDL_PARAMETER true
+set_parameter_property PLIC_ENABLE DISPLAY_NAME "PLIC_ENABLE"       
+set_parameter_property PLIC_ENABLE DESCRIPTION "Whether or not the Platform Level Interrupt Controller (PLIC) is enabled."
+
+add_parameter          NUM_EXT_INTERRUPTS integer 2
+set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
+set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "NUM_EXT_INTERRUPTS"
+set_parameter_property NUM_EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
+set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES {2:32}
+
 
 
 #
@@ -307,7 +318,7 @@ set_interface_property global_interrupts PORT_NAME_MAP ""
 set_interface_property global_interrupts CMSIS_SVD_VARIABLES ""
 set_interface_property global_interrupts SVD_ADDRESS_GROUP ""
 
-add_interface_port global_interrupts global_interrupts export Input register_size
+add_interface_port global_interrupts global_interrupts export Input NUM_EXT_INTERRUPTS 
 
 proc log_out {out_str} {
         set chan [open ~/orca_hw_log.txt a]

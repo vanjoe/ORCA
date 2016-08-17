@@ -1,6 +1,15 @@
 #!/bin/sh
 SCRIPTDIR=$(dirname $0)
 
+if which mif2hex >/dev/null
+then
+	 :
+else
+	 echo "ERROR: Cant find command mif2hex, have you loaded nios2 tools? Exiting." >&2
+	 exit -1;
+fi
+
+
 echo "initializing git submodules containing tests, and building them"
 git submodule update --init $SCRIPTDIR/riscv-toolchain/riscv-tools/
 (cd $SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/ && git submodule update --init --recursive . )
@@ -19,13 +28,6 @@ PREFIX=riscv32-unknown-elf
 OBJDUMP=$PREFIX-objdump
 OBJCOPY=$PREFIX-objcopy
 
-if which mif2hex >/dev/null
-then
-	 :
-else
-	 echo "ERROR: Cant find command mif2hex, have you loaded nios2 tools? Exiting." >&2
-	 exit -1;
-fi
 mkdir -p test
 
 

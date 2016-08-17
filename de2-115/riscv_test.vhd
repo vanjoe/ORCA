@@ -8,8 +8,6 @@ entity riscv_test is
     SW       : in std_logic_vector(17 downto 0);
     clock_50 : in std_logic;
 
-    EX_IO : inout std_logic_vector(6 downto 0);
-
     LEDR : out std_logic_vector(17 downto 0);
     LEDG : out std_logic_vector(7 downto 0);
     HEX7 : out std_logic_vector(6 downto 0);
@@ -28,6 +26,7 @@ architecture rtl of riscv_test is
 
   component system is
     port (
+
       clk_clk                : in  std_logic                     := '0';  --             clk.clk
       hex0_export            : out std_logic_vector(31 downto 0);  --            hex0.export
       hex1_export            : out std_logic_vector(31 downto 0);  --            hex1.export
@@ -35,20 +34,13 @@ architecture rtl of riscv_test is
       hex3_export            : out std_logic_vector(31 downto 0);  --            hex3.export
       ledg_export            : out std_logic_vector(31 downto 0);  --            ledg.export
       ledr_export            : out std_logic_vector(31 downto 0);  --            ledr.export
-      pll_areset_export      : in  std_logic                     := '0';  --      pll_areset.export
-      pmod_mic_sdata         : in  std_logic_vector(0 downto 0)  := (others => '0');  --        pmod_mic.sdata
-      pmod_mic_sclk          : out std_logic_vector(0 downto 0);  --                .sclk
-      pmod_mic_cs_n          : out std_logic_vector(0 downto 0);  --                .cs_n
       reset_reset_n          : in  std_logic                     := '0'  --           reset.reset_n
 
       );
-  end component;
+  end component ;
 
 
   signal hex_input   : std_logic_vector(31 downto 0);
-  signal pc          : std_logic_vector(31 downto 0);
-  signal th          : std_logic_vector(31 downto 0);
-  signal fh          : std_logic_vector(31 downto 0);
   signal clk         : std_logic;
   signal reset       : std_logic;
   signal ledg_export : std_logic_vector(31 downto 0);
@@ -57,12 +49,6 @@ architecture rtl of riscv_test is
   signal hex2_export : std_logic_vector(31 downto 0);
   signal hex1_export : std_logic_vector(31 downto 0);
   signal hex0_export : std_logic_vector(31 downto 0);
-
-
-  signal pmod_mic_sdata : std_logic_vector(0 downto 0);  --        pmod_mic.sdata
-  signal pmod_mic_sclk  : std_logic_vector(0 downto 0);  --                .sclk
-  signal pmod_mic_cs_n  : std_logic_vector(0 downto 0);  --                .cs_n
-
 
   function seven_segment (
     signal input : std_logic_vector)
@@ -94,43 +80,27 @@ begin
   clk   <= clock_50;
   reset <= key(1);
 
-  fh <= std_logic_vector(resize(signed(sw), fh'length));
-
   rv : component system
     port map (
       clk_clk                => clk,
       reset_reset_n          => reset,
-
-      pmod_mic_sdata => pmod_mic_sdata,
-      pmod_mic_sclk  => pmod_mic_sclk,
-      pmod_mic_cs_n  => pmod_mic_cs_n,
-
-      ledg_export => ledg_export,
-      ledr_export => ledr_export,
-      hex3_export => hex3_export,
-      hex2_export => hex2_export,
-      hex1_export => hex1_export,
-      hex0_export => hex0_export);
-
-
-  --pmod mic is connected via the ex_io port
-  EX_IO(6 downto 4) <= "010";           --unused except to check if the port is
-                                        --working
-  ex_io(3)          <= pmod_mic_sclk(0);
-  ex_io(2)          <= 'Z';             --input
-  ex_io(1)          <= '0';             --unused
-  ex_io(0)          <= pmod_mic_cs_n(0);
-  pmod_mic_sdata(0)    <= ex_io(2);
+      ledg_export            => ledg_export,
+      ledr_export            => ledr_export,
+      hex3_export            => hex3_export,
+      hex2_export            => hex2_export,
+      hex1_export            => hex1_export,
+      hex0_export            => hex0_export);
 
 
 --  hex_input(15 downto 0)  <= pc(15 downto 0);
 --  hex_input(31 downto 16) <= th(15 downto 0);
+  
   hex_input <=
     hex3_export when sw(3) = '1' else
     hex2_export when sw(2) = '1' else
     hex1_export when sw(1) = '1' else
     hex0_export when sw(0) = '1' else
-    pc;
+    (others => '0');
 
   HEX0 <= seven_segment(hex_input(3 downto 0));
   HEX1 <= seven_segment(hex_input(7 downto 4));

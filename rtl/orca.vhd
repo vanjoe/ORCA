@@ -8,21 +8,22 @@ use work.utils.all;
 entity Orca is
 
   generic (
-    REGISTER_SIZE      : integer              := 32;
-    RESET_VECTOR       : natural              := 16#00000200#;
-    MULTIPLY_ENABLE    : natural range 0 to 1 := 0;
-    DIVIDE_ENABLE      : natural range 0 to 1 := 0;
-    SHIFTER_MAX_CYCLES : natural              := 1;
-    COUNTER_LENGTH     : natural              := 0;
-    BRANCH_PREDICTORS  : natural              := 0;
-    PIPELINE_STAGES    : natural range 4 to 5 := 5;
-    FORWARD_ALU_ONLY   : natural range 0 to 1 := 1;
-    MXP_ENABLE         : natural range 0 to 1 := 0);
+    REGISTER_SIZE      : integer               := 32;
+    RESET_VECTOR       : natural               := 16#00000200#;
+    MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
+    DIVIDE_ENABLE      : natural range 0 to 1  := 0;
+    SHIFTER_MAX_CYCLES : natural               := 1;
+    COUNTER_LENGTH     : natural               := 0;
+    BRANCH_PREDICTORS  : natural               := 0;
+    PIPELINE_STAGES    : natural range 4 to 5  := 5;
+    FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
+    MXP_ENABLE         : natural range 0 to 1  := 0;
+    PLIC_ENABLE        : boolean               := FALSE;
+    NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2);
 
   port(clk            : in std_logic;
        scratchpad_clk : in std_logic;
        reset          : in std_logic;
-
 
        --avalon master bus
        avm_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -40,7 +41,7 @@ entity Orca is
        avm_instruction_waitrequest   : in  std_logic                                  := '0';
        avm_instruction_readdatavalid : in  std_logic                                  := '0';
 
-       global_interrupts : in std_logic_vector(31 downto 0)
+       global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
        );
 
 end entity Orca;
@@ -96,8 +97,6 @@ architecture rtl of Orca is
   signal instr_read_en   : std_logic;
   signal instr_readvalid : std_logic;
 
-  signal instruction_fetch_pc : std_logic_vector(REGISTER_SIZE-1 downto 0);
-
   -- Data splitter signals
   signal data_sel      : std_logic;
   signal data_sel_prev : std_logic;
@@ -147,7 +146,6 @@ begin  -- architecture rtl
       read_data            => instr_data,
       read_datavalid       => instr_readvalid,
       read_wait            => instr_read_wait,
-      instruction_fetch_pc => instruction_fetch_pc,
       interrupt_pending    => interrupt_pending);
 
   d_valid <= if_valid_out and not pipeline_flush;
@@ -236,66 +234,96 @@ begin  -- architecture rtl
       mip_msip_i           => mip_msip,
       mip_meip_i           => mip_meip,
       interrupt_pending_o  => interrupt_pending,
-      instruction_fetch_pc => instruction_fetch_pc);
+      instruction_fetch_pc => d_pc);
+  
+  plic_gen : if PLIC_ENABLE generate
 
+    interrupt_controller : component plic
+      generic map (
+        REGISTER_SIZE => REGISTER_SIZE,
+        NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS)
+      port map (
+        clk   => clk,
+        reset => reset,
 
-  interrupt_controller : component plic
-    generic map (
-      REGISTER_SIZE => REGISTER_SIZE)
-    port map (
-      clk   => clk,
-      reset => reset,
+        global_interrupts => global_interrupts,
 
-      global_interrupts => global_interrupts,
+        mtime_o    => mtime,
+        mip_mtip_o => mip_mtip,
+        mip_msip_o => mip_msip,
+        mip_meip_o => mip_meip,
 
-      mtime_o    => mtime,
-      mip_mtip_o => mip_mtip,
-      mip_msip_o => mip_msip,
-      mip_meip_o => mip_meip,
+        plic_address       => plic_address,
+        plic_byteenable    => plic_byteenable,
+        plic_read          => plic_read,
+        plic_readdata      => plic_readdata,
+        plic_response      => plic_response,
+        plic_write         => plic_write,
+        plic_writedata     => plic_writedata,
+        plic_lock          => plic_lock,
+        plic_waitrequest   => plic_waitrequest,
+        plic_readdatavalid => plic_readdatavalid);
 
-      plic_address       => plic_address,
-      plic_byteenable    => plic_byteenable,
-      plic_read          => plic_read,
-      plic_readdata      => plic_readdata,
-      plic_response      => plic_response,
-      plic_write         => plic_write,
-      plic_writedata     => plic_writedata,
-      plic_lock          => plic_lock,
-      plic_waitrequest   => plic_waitrequest,
-      plic_readdatavalid => plic_readdatavalid);
+    -- Handle arbitration between the bus and the PLIC
+    data_sel <= '1' when unsigned(data_address) >= X"100"
+                else '0';
 
-  -- Handle arbitration between the bus and the PLIC
-  data_sel <= '1' when unsigned(data_address) >= X"100"
-              else '0';
-
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      if reset = '1' then
-        data_sel_prev <= '0';
-      else
-        data_sel_prev <= data_sel;
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        if reset = '1' then
+          data_sel_prev <= '0';
+        elsif data_read_en = '1' and data_wait = '0' then
+          data_sel_prev <= data_sel;
+        end if;
       end if;
-    end if;
-  end process;
+    end process;
 
-  plic_address    <= data_address(7 downto 0) when data_sel = '0' else (others => '0');
-  plic_byteenable <= data_byte_en             when data_sel = '0' else (others => '0');
-  plic_read       <= data_read_en             when data_sel = '0' else '0';
-  plic_write      <= data_write_en            when data_sel = '0' else '0';
-  plic_writedata  <= data_write_data          when data_sel = '0' else (others => '0');
-  plic_lock       <= '0';
+    plic_address    <= data_address(7 downto 0) when data_sel = '0' else (others => '0');
+    plic_byteenable <= data_byte_en             when data_sel = '0' else (others => '0');
+    plic_read       <= data_read_en             when data_sel = '0' else '0';
+    plic_write      <= data_write_en            when data_sel = '0' else '0';
+    plic_writedata  <= data_write_data          when data_sel = '0' else (others => '0');
+    plic_lock       <= '0';
 
-  avm_data_address    <= data_address    when data_sel = '1' else (others => '0');
-  avm_data_byteenable <= data_byte_en    when data_sel = '1' else (others => '0');
-  avm_data_read       <= data_read_en    when data_sel = '1' else '0';
-  avm_data_write      <= data_write_en   when data_sel = '1' else '0';
-  avm_data_writedata  <= data_write_data when data_sel = '1' else (others => '0');
+    avm_data_address    <= data_address    when data_sel = '1' else (others => '0');
+    avm_data_byteenable <= data_byte_en    when data_sel = '1' else (others => '0');
+    avm_data_read       <= data_read_en    when data_sel = '1' else '0';
+    avm_data_write      <= data_write_en   when data_sel = '1' else '0';
+    avm_data_writedata  <= data_write_data when data_sel = '1' else (others => '0');
 
-  data_wait <= plic_waitrequest when data_sel = '0' else avm_data_waitrequest;
+    data_wait <= plic_waitrequest when data_sel = '0' else avm_data_waitrequest;
 
-  data_read_data <= plic_readdata      when data_sel_prev = '0' else avm_data_readdata;
-  e_readvalid    <= plic_readdatavalid when data_sel_prev = '0' else avm_data_readdatavalid;
+    data_read_data <= plic_readdata      when data_sel_prev = '0' else avm_data_readdata;
+    e_readvalid    <= plic_readdatavalid when data_sel_prev = '0' else avm_data_readdatavalid;
+
+  end generate;
+
+  plic_gen_n : if not PLIC_ENABLE generate
+
+    avm_data_address    <= data_address;
+    avm_data_byteenable <= data_byte_en;
+    avm_data_read       <= data_read_en;
+    avm_data_write      <= data_write_en;
+    avm_data_writedata  <= data_write_data;
+
+    data_wait <= avm_data_waitrequest;
+    data_read_data <= avm_data_readdata;
+    e_readvalid <= avm_data_readdatavalid;
+
+    -- Only handle the cycle counter (mtime) if the PLIC is disabled.
+    process (clk)
+    begin
+      if rising_edge(clk) then
+        if (reset = '1') then
+          mtime <= (others => '0');
+        else
+          mtime <= std_logic_vector(to_unsigned(1, 64) + unsigned(mtime));
+        end if;
+      end if;
+    end process;
+  
+  end generate; 
 
   avm_instruction_address <= instr_address;
   avm_instruction_read    <= instr_read_en;
