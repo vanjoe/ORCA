@@ -18,7 +18,9 @@ int main()
 {
   int retval;
   retval = lve_test();
-  asm volatile("add t3, %0, %1"
+  asm volatile(
+							 "add t3, %0, %1\n"
+							 "Done: beq t3, t3, Done\n"
     :
     : "r" (retval), "r" ((int) 0));
 }

@@ -154,13 +154,11 @@ begin
   address_gen : process(clk)
   begin
     if rising_edge(clk) then
-
-      srca_ptr_reg <= srca_ptr + POINTER_INCREMENT;
-      srcb_ptr_reg <= srcb_ptr + POINTER_INCREMENT;
-      dest_ptr_reg <= dest_ptr + POINTER_INCREMENT;
-
-
       if valid_lve_instr = '1' then
+        srca_ptr_reg <= srca_ptr + POINTER_INCREMENT;
+        srcb_ptr_reg <= srcb_ptr + POINTER_INCREMENT;
+        dest_ptr_reg <= dest_ptr + POINTER_INCREMENT;
+
         if is_prefix = '1' then
           first_cycle  <= '1';
           scalar_value <= unsigned(rs1_data);
@@ -189,7 +187,7 @@ begin
   srca_data <= scalar_value when srca_s = '1' else unsigned(srca_data_read);
   srcb_data <= enum_count   when srcb_e = '1' else unsigned(srcb_data_read);
 
-  rd_en      <= '1' when (is_prefix and valid_lve_instr) = '1' or vlen > 1 else '0';
+  rd_en      <= valid_lve_instr when (is_prefix = '1') or (vlen > 1) else '0';
   lve_data1  <= std_logic_vector(srca_data);
   lve_data2  <= std_logic_vector(srcb_data);
   lve_enable <= data_valid;

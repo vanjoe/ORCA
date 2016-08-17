@@ -67,7 +67,7 @@ proc wave_X { } {
     add wave -hex /top_tb/dut/rv/rv/X/*
 }
 
-proc recom { t } {
+proc recom { t {extra_waves false} } {
     noview wave
 
     com
@@ -83,6 +83,11 @@ proc recom { t } {
     add wave -noupdate /top_tb/dut/rv/rv/X/valid_instr
     add wave -hex -noupdate /top_tb/dut/rv/rv/X/pc_current
     add wave -hex -noupdate /top_tb/dut/rv/rv/X/instruction
+
+    if { $extra_waves } {
+	wave_X
+	wave_LVE
+    }
 
     run $t
 }
