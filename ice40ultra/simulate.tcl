@@ -12,6 +12,10 @@ proc com {} {
 							../rtl/register_file.vhd   \
 							../rtl/orca.vhd 			  \
 							../rtl/sys_call.vhd 		  \
+							../rtl/mxp-top.vhd 		  \
+							../rtl/4port_mem.vhd 		  \
+							../rtl/plic.vhd \
+							../rtl/gateway.vhd \
 							../rtl/wishbone_wrapper.vhd \
 							hdl/top_util_pkg.vhd \
 							hdl/top_component_pkg.vhd\
@@ -53,9 +57,9 @@ add log -r *
 
 add wave -noupdate /top_tb/dut/rv/rv/clk
 add wave -noupdate /top_tb/dut/rv/rv/reset
-add wave -noupdate /top_tb/dut/rv/coe_to_host
+add wave -noupdate /top_tb/dut/rv/rv/X/syscall/mtohost
 add wave -noupdate -divider Decode
-add wave -noupdate /top_tb/dut/rv/rv/D/register_file_1/registers(28)
+add wave -noupdate /top_tb/dut/rv/rv/D/register_file_1/t3
 add wave -noupdate -divider Execute
 add wave -noupdate /top_tb/dut/rv/rv/X/valid_instr
 add wave -noupdate /top_tb/dut/rv/rv/X/pc_current

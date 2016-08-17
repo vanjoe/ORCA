@@ -1,0 +1,7 @@
+Apply the riscv-tools.patch to a repository from https://github.com/riscv/riscv-tools.git
+
+In that repository run `patch -p1 < riscv-tools.patch`
+
+To create a new patch after making modifications use
+
+diff --exclude=.git -Nur riscv-tools-clean riscv-tools-changed > riscv-tools.patch

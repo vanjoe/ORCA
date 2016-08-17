@@ -19,7 +19,7 @@ for i in test/*.hex
 do
    riscv64-unknown-elf-objcopy  -O binary test/$(basename $i .hex) temp.bin
    python ../tools/bin2mif.py temp.bin 0x100 > temp.mif
-   mif2hex temp.mif test/$(basename $i .hex).gex
+   mif2hex temp.mif test/$(basename $i .hex).qex
 done
 rm temp.bin temp.mif
 ```
@@ -40,5 +40,5 @@ already.
 
 
 ```
-cp test/rv32ui-p-auipc.gex test.hex ;quartus_cdb --update_mif vblox1.qpf ; quartus_asm vblox1.qpf;quartus_pgm -m JTAG -o P\;output_files/vblox1.sof
+cp test/rv32ui-p-auipc.qex test.hex ;quartus_cdb --update_mif vblox1.qpf ; quartus_asm vblox1.qpf;quartus_pgm -m JTAG -o P\;output_files/vblox1.sof
 ```

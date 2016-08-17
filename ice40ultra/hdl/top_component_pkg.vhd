@@ -174,7 +174,7 @@ package top_component_pkg is
       WE_I         : in    std_logic;
       CYC_I        : in    std_logic;
       STB_I        : in    std_logic;
-      SEL_I        : in    std_logic_vector(3 downto 0);
+      SEL_I        : in    std_logic_vector(DATA_WIDTH/8-1 downto 0);
       CTI_I        : in    std_logic_vector(2 downto 0);
       BTE_I        : in    std_logic_vector(1 downto 0);
       LOCK_I       : in    std_logic;

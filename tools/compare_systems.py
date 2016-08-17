@@ -121,9 +121,9 @@ class system:
             #repository. they only run 5 loops, all printf calls and setStats calls
             #are removed, and usertime is written to a gpio called hex0
             if self.multiply_enable == '1' :
-                hex_file="../dhrystone.riscv.rv32im.gex"
+                hex_file="../dhrystone.riscv.rv32im.qex"
             else:
-                hex_file="../dhrystone.riscv.rv32i.gex"
+                hex_file="../dhrystone.riscv.rv32i.qex"
 
             if not os.path.exists(hex_file):
                 self.dhrystones="No Hex File"

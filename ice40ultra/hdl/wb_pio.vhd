@@ -68,6 +68,9 @@ begin
           control <= (others => '0');
         end if;
         in_reg <= input_output;
+        if RST_I = '1' then
+          out_reg <= (others => '0');
+        end if;
       end if;
     end process;
 
@@ -109,6 +112,10 @@ begin
           DATA_O <= out_reg;
         else
           DATA_O <= (others => '1');
+        end if;
+
+        if RST_I = '1' then
+          out_reg <= (others => '0');
         end if;
 
       end if;

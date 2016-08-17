@@ -64,9 +64,22 @@ sim/db/*
 *.dump
 *.elf
 
-software/obj
+software/obj/
+*.swp
+*.dump
+*.qex
+*.mif
+*.bin
+*.elf
+tags
 
 wishbone/cae_library/*
 ice40ultra/ice40ultra_Implmnt/*
 ice40ultra/init_*.imem
 */test/*
+
+*~
+\#*
+.#*
+
+transcript
