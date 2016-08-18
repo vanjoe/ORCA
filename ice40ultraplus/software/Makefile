@@ -1,4 +1,6 @@
 #define C_MAIN as env or in config.mk to override test
+#define C_LINK as env or in config.mk to add additional sources to 
+#link against
 -include config.mk
 C_MAIN ?= main.c
 
@@ -7,7 +9,9 @@ AS_SRCS=crt.S
 
 C_SRCS=
 C_SRCS+=$(C_MAIN)
-C_SRCS+=printf.c interrupt.c lve_test.c vbx_api.c
+C_SRCS+=$(C_LINK)
+C_SRCS+=interrupt.c vbx_api.c printf.c
+
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
 S_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(AS_SRCS)))

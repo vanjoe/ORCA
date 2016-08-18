@@ -249,6 +249,8 @@ architecture rtl of system_calls is
   signal mcause_ex         : std_logic_vector(3 downto 0);
 
   signal mbadaddr          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mscratch          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
   signal csr_read_val      : std_logic_vector(REGISTER_SIZE -1 downto 0);
   signal csr_write_val     : std_logic_vector(REGISTER_SIZE -1 downto 0);
   signal bit_sel           : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -608,6 +610,9 @@ begin  -- architecture rtl
                   -- mip_meip set and cleared by memory mapped PLIC operations.
                   -- mip_mtip set and cleared by memory mapped timer operations.
                   -- mip_msip set and cleared by memory mapped reserved software registers.
+                when CSR_MSCRATCH =>
+                  -- Scratch register to be potentially used for swapping user registers during a trap.
+                  mscratch <= csr_write_val;
                 when others =>
               end case;
             end if;
@@ -628,6 +633,7 @@ begin  -- architecture rtl
         mie_msie <= '0';
         mcause_i   <= '0';
         mcause_ex  <= (others => '0');
+        mscratch <= (others => '0');
         interrupt_pending <= '0';
         pc_corr_en <= '0';
         pc_correction <= (others => '0');
