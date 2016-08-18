@@ -30,12 +30,15 @@ architecture rtl of i2s_decode is
 begin  -- architecture rtl
 
 
-  process(clk)
+  sclk_generation : process(clk)
   begin
     if rising_edge(clk) then
       count      <= count +1;
       data_valid <= '0';
-      if count > unsigned(clk_divider) then
+
+      --use >= rather than == because otherwise bad things can happen when
+      --clk_divider is changed
+      if count >= unsigned(clk_divider) then
         count        <= (others => '0');
         serial_clock <= not serial_clock;
         if serial_clock = '1' then

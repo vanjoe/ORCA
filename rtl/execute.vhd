@@ -168,7 +168,7 @@ architecture behavioural of execute is
   alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
 
   constant SP_ADDRESS : unsigned(REGISTER_SIZE-1 downto 0) := x"80000000";
-  constant SP_SIZE    : integer                            := 4*1024;
+
 
   signal use_after_load_stall : std_logic;
 
@@ -478,7 +478,7 @@ begin
     ---------------------------------
     ---------------------------------
 
-    use_scratchpad <= '1' when (unsigned(ls_address) and not to_unsigned(SP_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and LVE_ENABLE else '0';
+    use_scratchpad <= '1' when (unsigned(ls_address) and not to_unsigned(SCRATCHPAD_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and LVE_ENABLE else '0';
     process(clk)
     begin
       if rising_edge(clk) then

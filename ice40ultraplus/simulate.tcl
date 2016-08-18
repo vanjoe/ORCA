@@ -16,7 +16,6 @@ proc com {} {
                      ../rtl/plic.vhd                    \
                      ../rtl/gateway.vhd                 \
                      ../rtl/lve-top.vhd                 \
-		     SB_SPRAM256KA.vhd                  \
                      ../rtl/4port_mem.vhd               \
                      hdl/top_util_pkg.vhd               \
                      hdl/top_component_pkg.vhd          \
@@ -40,7 +39,14 @@ proc com {} {
                      hdl/i2s_interface/i2s_decode.vhd   \
                      hdl/i2s_interface/i2s_wb.vhd       \
                      top.vhd                            \
-                     top_tb.vhd]
+                     top_tb.vhd \
+							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIPTBS8.v              \
+							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIWTCZ4.v				  \
+							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_ipenc_modelsim.v \
+							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_lc.v				  \
+							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_syn.v            \
+
+]
 
     vlib work
 

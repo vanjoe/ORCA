@@ -85,7 +85,7 @@ begin
         CLOCK      => clk,
         STANDBY    => '0',
         SLEEP      => '0',
-        POWEROFF   => '0',
+        POWEROFF   => '1',
         DATAOUT    => data_out(15 downto 0));
 
     mask_wren1 <= byte_en(3) & byte_en(3) & byte_en(2) & byte_en(2);
@@ -99,9 +99,8 @@ begin
         CLOCK      => clk,
         STANDBY    => '0',
         SLEEP      => '0',
-        POWEROFF   => '0',
+        POWEROFF   => '1',
         DATAOUT    => data_out(31 downto 16));
-
   end generate;
 
 end architecture behav;
