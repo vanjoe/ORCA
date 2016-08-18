@@ -39,7 +39,10 @@ imem.mem: $(MEM_FILE)
 	tail -n +$$(( $(IMEM_BASE)/4 +1)) test.mem | head -n $$(( $(IMEM_LEN)/4)) >$@
 dmem.mem: $(MEM_FILE)
 	tail -n +$$(($(DMEM_BASE)/4 +1)) test.mem | head -n $$(( $(DMEM_LEN)/4)) >$@
-$(MEM_FILE):build-software
+
+sim: imem.mem dmem.mem
+run_sim: sim
+	vsim -gui -do simulate.tcl &
 
 define ice-tcl
 ICECUBE2=$(ICECUBE2) tclsh
@@ -81,12 +84,15 @@ clean:
 clean-all: clean
 	make -C software clean
 
-build-software:
+build-software: $(MEM_FILE)
+$(MEM_FILE)::
 	make -C software FORMAT=mem
-	ln -sf software/*.mem $(MEM_FILE)
+	ln -sf software/*.mem $@
 
 PGM_CMD=$(ICECUBE2)/../../diamond/3.8_x64/bin/lin64/pgrcmd -infile
 pgm : $(BITFILE)
 	$(PGM_CMD) programmer.xcf
 
-.PHONY: syn all clean clean-all build-software bit pgm
+.PHONY: syn all clean clean-all build-software bit pgm sim run_sim
+
+.DELETE_ON_ERROR:
