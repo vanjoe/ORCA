@@ -25,28 +25,33 @@ static inline i2s_data_t i2s_get_data(){
   return data.as_struct;
 }
 
-static  void i2s_set_frequency(int system_clk_freq,int i2s_frequency){
-  //how many clock cycles are necessary between flipping the i2s clock (1/2 a wavelengt)?
-  //for each sample there are 2 channels,each channel has 16 bits for 32 bits per sample
-  //each bit has two clock transitions (rising/falling)
 
-  //so the clock divider is set to the following:
-  int clk_divider=system_clk_freq/(i2s_frequency*(2*32));
-
-  RX_I2S_BASE[RX_I2S_CLOCK_DIV_OFFSET]=clk_divider;
-
-}
 
 
 /*********************/
 /* I2S OUTPUT (JACK) */
 /*********************/
 
-#define I2S_BUFFER_SIZE 0x100
-#define I2S_VERSION     ((volatile unsigned short *)0x00040000)
-#define I2S_CONFIG      ((volatile unsigned short *)0x00040002)
-#define I2S_INT_MASK    ((volatile unsigned short *)0x00040004)
-#define I2S_INT_STAT    ((volatile unsigned short *)0x00040006)
-#define I2S_WORD0       ((volatile short *)(0x00040000 + (I2S_BUFFER_SIZE<<1)))
+#define TX_I2S_BUFFER_SIZE 0x100
+#define TX_I2S_VERSION     ((volatile unsigned short *)0x00040000)
+#define TX_I2S_CONFIG      ((volatile unsigned short *)0x00040002)
+#define TX_I2S_INT_MASK    ((volatile unsigned short *)0x00040004)
+#define TX_I2S_INT_STAT    ((volatile unsigned short *)0x00040006)
+#define TX_I2S_BUFFER       ((volatile short *)(0x00040000 + (TX_I2S_BUFFER_SIZE<<1)))
 
-#define I2S_WORD(NUM) ((I2S_WORD0)+(NUM))
+extern int i2s_put_data_pointer;
+static inline void i2s_put_data(short left,short right)
+{
+  //NOT THREADSAFE......
+  TX_I2S_BUFFER[i2s_put_data_pointer++]=left;
+  TX_I2S_BUFFER[i2s_put_data_pointer++]=right;
+
+  //MODULO BUFFER size
+  i2s_put_data_pointer &= TX_I2S_BUFFER_SIZE-1;
+}
+
+
+
+
+//This function sets the frequency for both the input and the output
+void i2s_set_frequency(int system_clk_freq,int i2s_frequency);

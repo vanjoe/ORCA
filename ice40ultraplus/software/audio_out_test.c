@@ -44,10 +44,7 @@ int main(void) {
 
 	int buffer_loc = 0;
 	short mic0, mic1;
-
-	// Sampling rate is approximately 48823 Hz as calculated in hello_world.c
-	*I2S_CONFIG = 0x0601;
-	// *MIC_COUNT = default
+	i2s_set_frequency(SYS_CLK,8000);
 
 	mic0 = 5;
 	mic1 = 6;
@@ -61,14 +58,7 @@ int main(void) {
 			}
 
 
-
-
-
-			// Output Left
-			I2S_WORD0[buffer_loc] = mic0;
-
-			// Output Right
-			I2S_WORD0[buffer_loc+1] = mic1;
+			i2s_put_data(mic0,mic1);
 			mic0++;mic1=0;
 	}
 	while(1);
