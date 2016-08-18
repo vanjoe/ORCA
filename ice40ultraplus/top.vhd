@@ -23,10 +23,9 @@ entity top is
     i2s_ws_mic1_mic2 : out std_logic;
     i2s_clk          : out std_logic;
 
-    i2s_mclk         : out std_logic;
-    i2s_sdin         : out std_logic;
-    i2s_sck          : out std_logic;
-    i2s_lrck         : out std_logic;
+    i2s_out_sdin         : out std_logic;
+    i2s_out_sck          : out std_logic;
+    i2s_out_lrck         : out std_logic;
 
     gpio : inout std_logic_vector(1 downto 0)
     );
@@ -674,7 +673,11 @@ begin
   -- Resizing to fit the REGISTER_SIZE bit wishbone splitter.
   i2s_DAT_O_32 <= i2s_DAT_O & i2s_DAT_O;
   i2s_DAT_I <= i2s_DAT_I_32(I2S_DATA_WIDTH-1 downto 0);
-  i2s_ADR_I <= i2s_ADR_O_32(I2S_ADDR_WIDTH-1 downto 0);
+
+--The i2s module uses a 16bit bus, use the sel bits to choose which address is
+--appropriate
+  i2s_ADR_I <= i2s_ADR_O_32(I2S_ADDR_WIDTH downto 2) & not i2s_SEL_I(0);
+  i2s_stall_o <= i2s_STB_I and not i2s_ACK_O;
 
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
@@ -710,7 +713,7 @@ begin
       port map (
         wb_clk_i  => clk,
         wb_rst_i => reset,
-        wb_sel_i => i2s_SEL_I(0),
+        wb_sel_i => '1',
         wb_stb_i => i2s_STB_I,
         wb_we_i => i2s_WE_I,
         wb_cyc_i => i2s_CYC_I,
@@ -723,12 +726,12 @@ begin
 
         tx_int_o => i2s_interrupt,
 
-        i2s_sd_o => i2s_sdin,
-        i2s_sck_o => i2s_sck,
-        i2s_ws_o => i2s_lrck);
+        i2s_sd_o => i2s_out_sdin,
+        i2s_sck_o => i2s_out_sck,
+        i2s_ws_o => i2s_out_lrck);
 
-    -- This is not used while operating in external serial mode.
-    i2s_mclk <= clk_12;
+  -- This is not used while operating in external serial mode.
+  --i2s_out_mclk <= clk_12;
 
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)

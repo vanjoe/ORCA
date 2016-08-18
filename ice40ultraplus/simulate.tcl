@@ -40,6 +40,14 @@ proc com {} {
                      hdl/i2s_interface/i2s_wb.vhd       \
                      top.vhd                            \
                      top_tb.vhd \
+							hdl/i2s_tx/i2s_codec.vhd       \
+							hdl/i2s_tx/tx_i2s_pack.vhd		 \
+							hdl/i2s_tx/gen_control_reg.vhd \
+							hdl/i2s_tx/i2s_version.vhd		 \
+							hdl/i2s_tx/dpram_rtl.vhd		 \
+							hdl/i2s_tx/gen_event_reg.vhd	 \
+							hdl/i2s_tx/tx_i2s_wbd.vhd      \
+							hdl/i2s_tx/tx_i2s_topm.vhd		 \
 							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIPTBS8.v              \
 							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIWTCZ4.v				  \
 							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_ipenc_modelsim.v \
@@ -104,5 +112,7 @@ proc rerun { t } {
 }
 
 set DefaultRadix hex
+
+config wave -signalnamewidth 2
 
 recom 0

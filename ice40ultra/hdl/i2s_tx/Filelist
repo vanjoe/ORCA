@@ -1,0 +1,9 @@
+# Files in dependency order for Modelsim
+tx_i2s_pack.vhd
+dpram_rtl.vhd
+gen_control_reg.vhd
+gen_event_reg.vhd
+i2s_codec.vhd
+i2s_version.vhd
+tx_i2s_wbd.vhd
+tx_i2s_topm.vhd
