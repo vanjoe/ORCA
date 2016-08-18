@@ -6,8 +6,8 @@
 #include <stdint.h>
 
 #define SYS_CLK 8000000 
-#define SAMPLE_RATE 48e3 // Hz
-#define DISTANCE 58U // mm
+#define SAMPLE_RATE 7800 // Hz
+#define DISTANCE 140U // mm
 #define SPEED_OF_SOUND 343e3 // mm/s
 #define SAMPLE_DIFFERENCE ((int) (DISTANCE*SAMPLE_RATE/SPEED_OF_SOUND))
 
@@ -15,7 +15,7 @@
 #define MIC2 ((volatile int32_t *) (0x10000004)) // TODO placeholder
 #define MIC_READY ((volatile int32_t *) (0x10000008)) // TODO placeholder
 
-#define WINDOW_LENGTH 128
+#define WINDOW_LENGTH 64 
 #define NUM_WINDOWS 2
 #define BUFFER_LENGTH WINDOW_LENGTH*NUM_WINDOWS 
 
@@ -35,15 +35,16 @@ int main() {
 
   int32_t i;
   int32_t buffer_count = 0;
-  int32_t power_front = 0;
-  int32_t power_left = 0;
-  int32_t power_right = 0;
+  volatile int32_t power_front = 0;
+  volatile int32_t power_left = 0;
+  volatile int32_t power_right = 0;
   int32_t transfer_index;
 
   vbx_word_t *mic_buffer_l = SCRATCHPAD_BASE;
   vbx_word_t *mic_buffer_r = SCRATCHPAD_BASE + BUFFER_LENGTH;
-  vbx_word_t *sound_vector_l = mic_buffer_r + WINDOW_LENGTH + SAMPLE_DIFFERENCE;
+  vbx_word_t *sound_vector_l = mic_buffer_r + BUFFER_LENGTH;
   vbx_word_t *sound_vector_r = sound_vector_l + WINDOW_LENGTH + SAMPLE_DIFFERENCE;
+  vbx_word_t *sum_vector = sound_vector_r + WINDOW_LENGTH + SAMPLE_DIFFERENCE;
 
   vbx_set_vl(BUFFER_LENGTH);
   vbx(SEWS, VADD, mic_buffer_l, 0, vbx_ENUM);
@@ -88,14 +89,40 @@ int main() {
     vbx(VVWS, VMOV, (sound_vector_l + SAMPLE_DIFFERENCE), (mic_buffer_l + transfer_index), 0);
     vbx(VVWS, VMOV, (sound_vector_r + SAMPLE_DIFFERENCE), (mic_buffer_r + transfer_index), 0);
 
+    power_front = 0;
+    power_left = 0;
+    power_right = 0;
+
     // Calculate the power assuming the sound is coming from the front.
-    vbx_acc(VVWS, VMUL, &power_front, (sound_vector_l + SAMPLE_DIFFERENCE), (sound_vector_r + SAMPLE_DIFFERENCE));
+    vbx(VVWS, VADD, sum_vector, (sound_vector_l + SAMPLE_DIFFERENCE), (sound_vector_r + SAMPLE_DIFFERENCE));
+    //vbx_acc(VVWS, VMUL, &power_front, sum_vector, sum_vector);
+    vbx_sync();
+    for (i = 0; i < WINDOW_LENGTH; i++) {
+      power_front += sum_vector[i] * sum_vector[i];
+    }
+
+    // Calculate the power assuming the sound is coming from the left (right microphone is 
+    // delayed during sampling, so delay left microphone to compensate).
+    vbx(VVWS, VADD, sum_vector, sound_vector_l, (sound_vector_r + SAMPLE_DIFFERENCE));
+    //vbx_acc(VVWS, VMUL, &power_left, sum_vector, sum_vector);
+    vbx_sync();
+    for (i = 0; i < WINDOW_LENGTH; i++) {
+      power_left += sum_vector[i] * sum_vector[i];
+    }
     
-    // Calculate the power assuming the sound is coming from the left (right microphone is delayed).
-    vbx_acc(VVWS, VMUL, &power_left, (sound_vector_l + SAMPLE_DIFFERENCE), sound_vector_r);
+    // Calculate the power assuming the sound is coming from the right (left microphone is delayed
+    // during sampling, so delay right microphone to compensate).
+    vbx(VVWS, VADD, sum_vector, (sound_vector_l + SAMPLE_DIFFERENCE), sound_vector_r);
+    //vbx_acc(VVWS, VMUL, &power_right, sum_vector, sum_vector); 
+    vbx_sync();
+    for (i = 0; i < WINDOW_LENGTH; i++) {
+      power_right += sum_vector[i] * sum_vector[i];
+    }
+
+    asm volatile("csrw mscratch, %0\n csrw mscratch, %1\n csrw mscratch, %2"
+      :
+      : "r" (power_front), "r" (power_left), "r" (power_right));
     
-    // Calculate the power assuming the sound is coming from the right (left microphone is delayed).
-    vbx_acc(VVWS, VMUL, &power_right, sound_vector_l, (sound_vector_r + SAMPLE_DIFFERENCE)); 
 
     if (power_front > power_left) {
       if (power_front > power_right) {
