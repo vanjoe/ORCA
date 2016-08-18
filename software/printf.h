@@ -118,4 +118,7 @@ void tfp_format(void* putp,void (*putf) (void*,char),char *fmt, va_list va);
 #define printf tfp_printf
 #define sprintf tfp_sprintf
 
+#define debug(var) printf("%s:%d  %s = %d \r\n",__FILE__,__LINE__,#var,(signed)(var))
+#define debugx(var) printf("%s:%d  %s = %08X \r\n",__FILE__,__LINE__,#var,(unsigned)(var))
+
 #endif

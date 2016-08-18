@@ -8,7 +8,7 @@ use work.top_util_pkg.all;
 -------------------------------------------------------------------------------
 -- Address Map
 -- 0x00 Version
--- 0x04 clock_divider
+-- 0x04 clock_divider (Max 0xFFFF)
 -- 0x08 DATA
 -------------------------------------------------------------------------------address
 
@@ -55,7 +55,7 @@ architecture rtl of i2s_wb is
 
   end component i2s_decode;
 
-  constant CLOCK_DIVIDER : integer := 12000000/(8000*64*2);
+  signal clock_divider : unsigned(15 downto 0);
 
   constant FIFO_DEPTH   : integer := 32;
   signal i2s_data       : std_logic_vector(31 downto 0);
@@ -73,6 +73,7 @@ architecture rtl of i2s_wb is
   signal fifo_dataout : std_logic_vector(fifo(0)'range);
 
   signal do_read : boolean;
+  signal do_write : boolean;
 
 
   constant REGISTER_NAME_SIZE     : integer                                 := 4;
@@ -80,9 +81,10 @@ architecture rtl of i2s_wb is
   constant CLOCK_DIVIDER_REGISTER : unsigned(REGISTER_NAME_SIZE-1 downto 0) := x"4";
   constant DATA_REGISTER          : unsigned(REGISTER_NAME_SIZE-1 downto 0) := x"8";
   signal addr                     : unsigned(REGISTER_NAME_SIZE-1 downto 0);
-
+  signal clk_div_32 : std_logic_vector(31 downto 0);
 begin  -- architecture rtl
 
+  clk_div_32 <= std_logic_vector(resize(clock_divider,32));
   dec : i2s_decode
     port map (
       clk   => wb_clk_i,
@@ -91,7 +93,7 @@ begin  -- architecture rtl
       sd    => i2s_sd_i,
       sclk  => i2s_sck_o,
 
-      clk_divider => std_logic_vector(to_unsigned(CLOCK_DIVIDER, 32)),
+      clk_divider => clk_div_32,
       pdata       => i2s_data,
       data_valid  => i2s_data_valid);
 
@@ -129,6 +131,7 @@ begin  -- architecture rtl
   end process;
 
   do_read    <= (wb_cyc_i and wb_stb_i and not wb_we_i) = '1';
+  do_write   <= (wb_cyc_i and wb_stb_i and wb_we_i) = '1';
   wb_stall_o <= '1' when fifo_empty and do_read and unsigned(wb_adr_i) = DATA_REGISTER else '0';
   addr       <= unsigned(wb_adr_i(addr'range));
   process(clk)
@@ -142,7 +145,7 @@ begin  -- architecture rtl
             wb_dat_o <= x"00010000";
             wb_ack_o <= '1';
           when CLOCK_DIVIDER_REGISTER =>
-            wb_dat_o <= std_logic_vector(to_unsigned(CLOCK_DIVIDER, 32));
+            wb_dat_o <= std_logic_vector(resize(clock_divider, 32));
             wb_ack_o <= '1';
           when DATA_REGISTER =>
             wb_dat_o <= fifo_dataout;
@@ -153,8 +156,14 @@ begin  -- architecture rtl
           when others => null;
         end case;
       end if;
+      if do_write then
+        if addr = CLOCK_DIVIDER_REGISTER then
+          clock_divider <= resize(unsigned(wb_dat_i),16);
+        end if;
+      end if;
       if wb_rst_i = '1' then
-        read_ptr  <= to_unsigned(0, read_ptr'length);
+        read_ptr      <= to_unsigned(0, read_ptr'length);
+        clock_divider <= (others => '1');
       end if;
     end if;
   end process;
