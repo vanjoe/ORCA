@@ -1,6 +1,10 @@
 #define C_MAIN as env or in config.mk to override test
 -include config.mk
-C_MAIN ?= main.c
+C_MAIN?=main.c
+OBJDUMP_STYLE?=--disassemble-all
+ARCH?=RV32IMXmxp
+RISCV_OLEVEL?=-O2
+RISCV_CFLAGS?=
 
 all:
 AS_SRCS=crt.S
@@ -16,9 +20,8 @@ CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
-ARCH=RV32IMXmxp
-CFLAGS= -m32  -march=$(ARCH) -O2 -MD -Wall -std=gnu99
-LD_FLAGS= -m32 -march=$(ARCH) -static -nostartfiles
+CFLAGS=-m32 -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS)
+LD_FLAGS=-m32 -march=$(ARCH) -static -nostartfiles
 
 TARGET=test
 
@@ -37,7 +40,7 @@ LIBC=
 
 $(TARGET).elf: $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
 	$(CC) -T $(LD_SCRIPT) $(S_OBJ_FILES)  $(C_OBJ_FILES)  -o $@ $(LD_FLAGS)
-	$(OBJDUMP)  --disassemble-all test.elf > test.dump
+	$(OBJDUMP) $(OBJDUMP_STYLE) test.elf > test.dump
 $(TARGET).bin: $(TARGET).elf
 	$(OBJCOPY) -O binary $< $@
 

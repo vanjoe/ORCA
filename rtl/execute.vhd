@@ -24,7 +24,7 @@ entity execute is
     FORWARD_ALU_ONLY    : boolean;
     LVE_ENABLE          : boolean;
     SCRATCHPAD_SIZE     : integer := 1024;
-    FAMILY              : string := "ALTERA");
+    FAMILY              : string  := "ALTERA");
   port(
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
@@ -40,30 +40,31 @@ entity execute is
     rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     sign_extension : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
 
-    wb_sel  : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    wb_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_en   : buffer std_logic;
+    wb_sel       : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    wb_data      : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    wb_enable    : buffer std_logic;
+    valid_output : out    std_logic;
 
-    instruction_fetch_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-    branch_pred    : out    std_logic_vector(REGISTER_SIZE*2+3 -1 downto 0);
-    stall_pipeline : buffer std_logic;
-    pipeline_empty : in     std_logic;
+    branch_pred        : out    std_logic_vector(REGISTER_SIZE*2+3 -1 downto 0);
+    stall_from_execute : buffer std_logic;
+    pipeline_empty     : in     std_logic;
 
 --memory-bus
-    address        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-    write_en       : out    std_logic;
-    read_en        : out    std_logic;
-    writedata      : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    readdata       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    waitrequest    : in     std_logic;
-    datavalid      : in     std_logic;
+    address     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    byte_en     : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    write_en    : out std_logic;
+    read_en     : out std_logic;
+    writedata   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    readdata    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    waitrequest : in  std_logic;
+    datavalid   : in  std_logic;
 
-    mtime_i        : in     std_logic_vector(63 downto 0);
-    mip_mtip_i     : in     std_logic;
-    mip_msip_i     : in     std_logic;
-    mip_meip_i     : in     std_logic;
+    mtime_i    : in std_logic_vector(63 downto 0);
+    mip_mtip_i : in std_logic;
+    mip_msip_i : in std_logic;
+    mip_meip_i : in std_logic;
 
     interrupt_pending_o : out std_logic);
 
@@ -103,18 +104,19 @@ architecture behavioural of execute is
   signal upp_data_out : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sys_data_out : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal br_data_en  : std_logic;
-  signal alu_data_en : std_logic;
-  signal ld_data_en  : std_logic;
-  signal upp_data_en : std_logic;
-  signal sys_data_en : std_logic;
-  signal less_than   : std_logic;
-  signal wb_mux      : std_logic_vector(1 downto 0);
+  signal br_data_enable     : std_logic;
+  signal alu_data_out_valid : std_logic;
+  signal ld_data_enable     : std_logic;
+  signal upp_data_enable    : std_logic;
+  signal sys_data_enable    : std_logic;
+  signal less_than          : std_logic;
+  signal wb_mux             : std_logic_vector(1 downto 0);
 
-  signal alu_stall : std_logic;
+  signal stall_to_alu   : std_logic;
+  signal stall_from_alu : std_logic;
 
-  signal br_bad_predict            : std_logic;
-  signal br_new_pc                 : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal br_bad_predict : std_logic;
+  signal br_new_pc      : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal predict_pc     : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal syscall_en     : std_logic;
@@ -123,6 +125,7 @@ architecture behavioural of execute is
   signal rs1_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs2_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
+  signal stall_to_lsu    : std_logic;
   signal ls_unit_waiting : std_logic;
 
   signal fwd_sel  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
@@ -130,11 +133,13 @@ architecture behavioural of execute is
   signal fwd_en   : std_logic;
   signal fwd_mux  : std_logic;
 
-  signal lve_data1  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal lve_data2  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal lve_result : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal lve_stall  : std_logic;
-  signal lve_valid : std_logic;
+  signal stall_from_lve   : std_logic;
+  signal lve_data1        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lve_data2        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lve_result       : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lve_result_valid : std_logic;
+  signal lve_source_valid : std_logic;
+  signal stall_to_lve     : std_logic;
 
   signal valid_instr  : std_logic;
   signal ld_latch_en  : std_logic;
@@ -217,18 +222,18 @@ begin
       rs2_data     when NO_FWD;
   end generate ALL_FWD;
 
-  wb_mux <= "00" when sys_data_en = '1' else
-            "01" when ld_data_en = '1' else
-            "10" when br_data_en = '1' else
-            "11";                       --when alu_data_en = '1'
+  wb_mux <= "00" when sys_data_enable = '1' else
+            "01" when ld_data_enable = '1' else
+            "10" when br_data_enable = '1' else
+            "11";                       --when alu_data_out_valid = '1'
 
---  assert (((sys_data_en = '1') and (ld_data_en = '0') and (br_data_en = '0') and (alu_data_en = '0')) or
---          ((sys_data_en = '0') and (ld_data_en = '1') and (br_data_en = '0') and (alu_data_en = '0')) or
---          ((sys_data_en = '0') and (ld_data_en = '0') and (br_data_en = '1') and (alu_data_en = '0')) or
---          ((sys_data_en = '0') and (ld_data_en = '0') and (br_data_en = '0') and (alu_data_en = '1')) or
---          ((sys_data_en = '0') and (ld_data_en = '0') and (br_data_en = '0') and (alu_data_en = '0')))
---          or sys_data_en = 'U' or sys_data_en = 'X' or ld_data_en = 'U' or ld_data_en = 'X'
---          or br_data_en = 'U' or br_data_en = 'X' or alu_data_en = 'U' or alu_data_en = 'X'
+--  assert (((sys_data_enable = '1') and (ld_data_enable = '0') and (br_data_enable = '0') and (alu_data_out_valid = '0')) or
+--          ((sys_data_enable = '0') and (ld_data_enable = '1') and (br_data_enable = '0') and (alu_data_out_valid = '0')) or
+--          ((sys_data_enable = '0') and (ld_data_enable = '0') and (br_data_enable = '1') and (alu_data_out_valid = '0')) or
+--          ((sys_data_enable = '0') and (ld_data_enable = '0') and (br_data_enable = '0') and (alu_data_out_valid = '1')) or
+--          ((sys_data_enable = '0') and (ld_data_enable = '0') and (br_data_enable = '0') and (alu_data_out_valid = '0')))
+--          or sys_data_enable = 'U' or sys_data_enable = 'X' or ld_data_enable = 'U' or ld_data_enable = 'X'
+--          or br_data_enable = 'U' or br_data_enable = 'X' or alu_data_out_valid = 'U' or alu_data_out_valid = 'X'
 --         report "MULTIPLE DATA ENABLES ASSERTED" severity failure;
 
   with wb_mux select
@@ -238,14 +243,26 @@ begin
     br_data_out  when "10",
     alu_data_out when others;
 
-  wb_en  <= sys_data_en or ld_data_en or br_data_en or alu_data_en when wb_sel /= ZERO else '0';
-  wb_sel <= rd_latch;
+  wb_enable <= sys_data_enable or ld_data_enable or br_data_enable or (alu_data_out_valid and (not stall_from_lve)) when wb_sel /= ZERO else '0';
+  wb_sel    <= rd_latch;
 
-  fwd_data <= sys_data_out when sys_data_en = '1' else
-              alu_data_out when alu_data_en = '1' else
+  fwd_data <= sys_data_out when sys_data_enable = '1' else
+              alu_data_out when alu_data_out_valid = '1' else
               br_data_out;
 
-  stall_pipeline <= (ls_unit_waiting or alu_stall or use_after_load_stall or lve_stall) and valid_input;
+  stall_to_lve       <= (ls_unit_waiting or stall_from_alu or use_after_load_stall) and valid_input;
+  stall_to_alu       <= (ls_unit_waiting or use_after_load_stall) and valid_input;
+  stall_from_execute <= (ls_unit_waiting or stall_from_alu or use_after_load_stall or stall_from_lve) and valid_input;
+  stall_to_lsu       <= stall_from_execute;
+
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if stall_from_execute = '0' then
+        valid_output <= valid_input;
+      end if;
+    end if;
+  end process;
 
 
   process(clk)
@@ -260,7 +277,7 @@ begin
                      opcode = AUIPC_OP or
                      opcode = ALU_OP or
                      opcode = ALUI_OP;
-      if stall_pipeline = '0' then
+      if stall_from_execute = '0' then
         if rd = ni_rs1 and rd /= ZERO and valid_instr = '1' then
           if (current_alu) then
             rs1_mux <= ALU_FWD;
@@ -293,18 +310,18 @@ begin
 
       --save various flip flops for forwarding
       --and writeback
-      if stall_pipeline = '0' then
+      if stall_from_execute = '0' then
         rd_latch <= rd;
       end if;
       if ls_unit_waiting = '0' then
         use_after_load_stall <= '0';
         if FORWARD_ONLY_FROM_ALU then
           if (ni_rs2 = rd or ni_rs1 = rd) and not current_alu then
-            use_after_load_stall <= valid_instr and not stall_pipeline;
+            use_after_load_stall <= valid_instr and not stall_from_execute;
           end if;
         else
           if (ni_rs2 = rd or ni_rs1 = rd) and opcode = LD_OP then
-            use_after_load_stall <= valid_instr and not stall_pipeline;
+            use_after_load_stall <= valid_instr and not stall_from_execute;
           end if;
         end if;
       end if;
@@ -323,25 +340,24 @@ begin
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
       FAMILY              => FAMILY)
     port map (
-      clk               => clk,
-      stall_in          => stall_pipeline,
-      valid             => valid_instr,
-      rs1_data          => rs1_data_fwd,
-      rs2_data          => rs2_data_fwd,
-      instruction       => instruction,
-      sign_extension    => sign_extension,
-      program_counter   => pc_current,
-      data_out          => alu_data_out,
-      data_enable       => alu_data_en,
-      illegal_alu_instr => illegal_alu_instr,
-      less_than         => less_than,
-      stall_out         => alu_stall,
+      clk                => clk,
+      stall_to_alu       => stall_to_alu,
+      stall_from_execute => stall_from_execute,
+      valid_instr        => valid_instr,
+      rs1_data           => rs1_data_fwd,
+      rs2_data           => rs2_data_fwd,
+      instruction        => instruction,
+      sign_extension     => sign_extension,
+      program_counter    => pc_current,
+      data_out           => alu_data_out,
+      data_out_valid     => alu_data_out_valid,
+      illegal_alu_instr  => illegal_alu_instr,
+      less_than          => less_than,
+      stall_from_alu     => stall_from_alu,
 
-      lve_data1  => lve_data1,
-      lve_data2  => lve_data2,
-      lve_enable => lve_valid,
-      lve_result => lve_result
-
+      lve_data1        => lve_data1,
+      lve_data2        => lve_data2,
+      lve_source_valid => lve_source_valid
       );
 
 
@@ -354,7 +370,7 @@ begin
       clk            => clk,
       reset          => reset,
       valid          => valid_instr,
-      stall          => stall_pipeline,
+      stall          => stall_from_execute,
       rs1_data       => rs1_data_fwd,
       rs2_data       => rs2_data_fwd,
       current_pc     => pc_current,
@@ -363,7 +379,7 @@ begin
       less_than      => less_than,
       sign_extension => sign_extension,
       data_out       => br_data_out,
-      data_out_en    => br_data_en,
+      data_out_en    => br_data_enable,
       new_pc         => br_new_pc,
       is_branch      => is_branch,
       br_taken_out   => br_taken_out,
@@ -378,13 +394,14 @@ begin
       clk            => clk,
       reset          => reset,
       valid          => valid_instr,
+      stall_to_lsu   => stall_to_lsu,
       rs1_data       => rs1_data_fwd,
       rs2_data       => rs2_data_fwd,
       instruction    => instruction,
       sign_extension => sign_extension,
       stalled        => ls_unit_waiting,
       data_out       => ld_data_out,
-      data_enable    => ld_data_en,
+      data_enable    => ld_data_enable,
       --memory bus
       address        => ls_address,
       byte_en        => ls_byte_en,
@@ -409,27 +426,27 @@ begin
       instruction    => instruction,
       finished_instr => finished_instr,
       wb_data        => sys_data_out,
-      wb_en          => sys_data_en,
+      wb_enable      => sys_data_enable,
 
       current_pc           => pc_current,
       pc_correction        => syscall_target,
       pc_corr_en           => syscall_en,
       illegal_alu_instr    => illegal_alu_instr,
       use_after_load_stall => '0',
-      load_stall           => stall_pipeline,
+      load_stall           => stall_from_execute,
       predict_corr         => predict_corr_en,
 
-      mtime_i              => mtime_i,
-      mip_mtip_i           => mip_mtip_i,
-      mip_msip_i           => mip_msip_i,
-      mip_meip_i           => mip_meip_i,
+      mtime_i    => mtime_i,
+      mip_mtip_i => mip_mtip_i,
+      mip_msip_i => mip_msip_i,
+      mip_meip_i => mip_meip_i,
 
-      interrupt_pending_o  => interrupt_pending_o,
-      pipeline_empty       => pipeline_empty,
+      interrupt_pending_o => interrupt_pending_o,
+      pipeline_empty      => pipeline_empty,
 
-      instruction_fetch_pc      => instruction_fetch_pc,
-      br_bad_predict            => br_bad_predict,
-      br_new_pc                 => br_new_pc);
+      instruction_fetch_pc => instruction_fetch_pc,
+      br_bad_predict       => br_bad_predict,
+      br_new_pc            => br_new_pc);
 
   enable_lve : if LVE_ENABLE generate
     signal sp_read_en          : std_logic;
@@ -452,9 +469,9 @@ begin
         reset          => reset,
         instruction    => instruction,
         valid_instr    => valid_instr,
+        stall_to_lve   => stall_to_lve,
         rs1_data       => rs1_data_fwd,
         rs2_data       => rs2_data_fwd,
-        instr_running  => lve_stall,
         slave_address  => ls_address,
         slave_read_en  => sp_read_en,
         slave_write_en => sp_write_en,
@@ -463,22 +480,19 @@ begin
         slave_data_out => sp_read_data,
         slave_wait     => sp_wait,
 
-        lve_data1  => lve_data1,
-        lve_data2  => lve_data2,
-        lve_enable => lve_valid,
-        alu_stall => alu_stall,
-        lve_result => lve_result
+        stall_from_lve   => stall_from_lve,
+        lve_data1        => lve_data1,
+        lve_data2        => lve_data2,
+        lve_source_valid => lve_source_valid,
+        lve_result       => alu_data_out,
+        lve_result_valid => alu_data_out_valid
         );
 
-    ---------------------------------
-    ---------------------------------
-    ---------------------------------
-    --------data bus splitter--------
-    ---------------------------------
-    ---------------------------------
-    ---------------------------------
-
+    -----------------------------------------------------------------------------
+    -- data bus splitter
+    -----------------------------------------------------------------------------
     use_scratchpad <= '1' when (unsigned(ls_address) and not to_unsigned(SP_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and LVE_ENABLE else '0';
+
     process(clk)
     begin
       if rising_edge(clk) then
@@ -494,41 +508,36 @@ begin
     sp_write_en <= use_scratchpad and ls_write_en;
 
     ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else readdata;
-    ls_waitrequest <= sp_wait when use_scratchpad = '1' else  waitrequest;
+    ls_waitrequest <= sp_wait      when use_scratchpad = '1'      else waitrequest;
     ls_datavalid   <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
 
-    byte_en    <= ls_byte_en;
-    address    <= ls_address;
-    write_en   <= not use_scratchpad and ls_write_en;
-    read_en    <= not use_scratchpad and ls_read_en;
+    byte_en   <= ls_byte_en;
+    address   <= ls_address;
+    write_en  <= not use_scratchpad and ls_write_en;
+    read_en   <= not use_scratchpad and ls_read_en;
     writedata <= ls_write_data;
-
-
   end generate enable_lve;
 
   n_enable_lve : if not LVE_ENABLE generate
-    lve_stall <= '0';
+    stall_from_lve <= '0';
 
     ls_read_data   <= readdata;
     ls_waitrequest <= waitrequest;
     ls_datavalid   <= datavalid;
 
-    byte_en    <= ls_byte_en;
-    address    <= ls_address;
-    write_en   <= ls_write_en;
-    read_en    <= ls_read_en;
+    byte_en   <= ls_byte_en;
+    address   <= ls_address;
+    write_en  <= ls_write_en;
+    read_en   <= ls_read_en;
     writedata <= ls_write_data;
 
-    lve_valid <= '0';
-    lve_data1 <= (others => '-');
-    lve_data2 <= (others => '-');
-
+    lve_source_valid <= '0';
+    lve_data1        <= (others => '-');
+    lve_data2        <= (others => '-');
   end generate n_enable_lve;
 
 
-
-
-  finished_instr <= valid_instr and not stall_pipeline;
+  finished_instr <= valid_instr and (not stall_from_execute);
 
   predict_corr_en <= syscall_en or br_bad_predict;
   predict_corr    <= br_new_pc  when syscall_en = '0' else syscall_target;
@@ -549,7 +558,7 @@ begin
         hwrite(my_line, (pc_current));  -- format type std_logic_vector as hex
         write(my_line, string'(" instr =  "));        -- formatting
         hwrite(my_line, (instruction));  -- format type std_logic_vector as hex
-        if stall_pipeline = '1' then
+        if stall_from_execute = '1' then
           write(my_line, string'(" stalling"));       -- formatting
         end if;
         writeline(output, my_line);     -- write to "output"

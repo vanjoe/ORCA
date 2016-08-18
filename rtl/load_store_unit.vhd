@@ -14,6 +14,7 @@ entity load_store_unit is
     clk            : in     std_logic;
     reset          : in     std_logic;
     valid          : in     std_logic;
+    stall_to_lsu   : in     std_logic;
     rs1_data       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction    : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -67,10 +68,8 @@ architecture rtl of load_store_unit is
   signal r3           : std_logic_vector(7 downto 0);
   signal fixed_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal latched_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal re           : std_logic;
-  signal we           : std_logic;
 
-  signal expecting_data_valid :std_logic;
+  signal expecting_data_valid : std_logic;
 
 begin
 
@@ -78,12 +77,8 @@ begin
   opcode <= instruction(6 downto 0);
   fun3   <= instruction(14 downto 12);
 
-  we       <= '1' when opcode = STORE_INSTR and valid = '1'else '0';
-  re       <= '1' when opcode = LOAD_INSTR and valid = '1' else '0';
-  write_en <= '0' when (expecting_data_valid = '1' and readvalid = '0') else we;
-  -- To prevent an additional read when readvalid has not come back yet, but 
-  -- waitrequest has gone low.
-  read_en  <= '0' when (expecting_data_valid = '1' and readvalid = '0') else re;
+  write_en <= '1' when opcode = STORE_INSTR and valid = '1' and stall_to_lsu = '0' else '0';
+  read_en  <= '1' when opcode = LOAD_INSTR and valid = '1' and stall_to_lsu = '0'  else '0';
 
   imm <= instruction(31 downto 25) & instruction(11 downto 7) when instruction(5) = '1'
          else instruction(31 downto 20);

@@ -49,7 +49,7 @@ add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file plic.vhd VHDL PATH plic.vhd
 add_fileset_file gateway.vhd VHDL PATH gateway.vhd
 add_fileset_file 4port_mem.vhd VHDL PATH 4port_mem.vhd
-add_fileset_file lve-top.vhd VHDL PATH lve-top.vhd
+add_fileset_file lve_top.vhd VHDL PATH lve_top.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL Orca
@@ -69,7 +69,7 @@ add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file plic.vhd VHDL PATH plic.vhd
 add_fileset_file gateway.vhd VHDL PATH gateway.vhd
 add_fileset_file 4port_mem.vhd VHDL PATH 4port_mem.vhd
-add_fileset_file lve-top.vhd VHDL PATH lve-top.vhd
+add_fileset_file lve_top.vhd VHDL PATH lve_top.vhd
 
 
 #

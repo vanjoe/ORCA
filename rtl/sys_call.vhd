@@ -1,6 +1,7 @@
-library IEEE;
-use IEEE.STD_LOGIC_1164.all;
-use IEEE.NUMERIC_STD.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
 entity instruction_legal is
   generic (
     INSTRUCTION_SIZE         : positive;
@@ -15,7 +16,7 @@ architecture rtl of instruction_legal is
   alias opcode7 is instruction(6 downto 0);
   alias func3 is instruction(14 downto 12);
 begin
-                                
+  
   legal <=
     not other_illegal when (CHECK_LEGAL_INSTRUCTIONS = false or
                             opcode7 = "0110111" or
@@ -46,45 +47,45 @@ entity system_calls is
     COUNTER_LENGTH   : natural);
 
   port (
-    clk                  : in std_logic;
-    reset                : in std_logic;
-    valid                : in std_logic;
-    rs1_data             : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instruction          : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    clk         : in std_logic;
+    reset       : in std_logic;
+    valid       : in std_logic;
+    rs1_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
-    finished_instr       : in std_logic;
+    finished_instr : in std_logic;
 
-    wb_data              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_en                : out std_logic;
+    wb_data   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    wb_enable : out std_logic;
 
-    current_pc           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    pc_correction        : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
-    pc_corr_en           : buffer std_logic;
+    current_pc    : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    pc_correction : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
+    pc_corr_en    : buffer std_logic;
 
-    illegal_alu_instr    : in std_logic;
+    illegal_alu_instr : in std_logic;
 
     use_after_load_stall : in std_logic;
     predict_corr         : in std_logic;
     load_stall           : in std_logic;
 
     -- From the PLIC
-    mtime_i              : in std_logic_vector(63 downto 0);
-    mip_mtip_i           : in std_logic;
-    mip_msip_i           : in std_logic;
-    mip_meip_i           : in std_logic;
+    mtime_i    : in std_logic_vector(63 downto 0);
+    mip_mtip_i : in std_logic;
+    mip_msip_i : in std_logic;
+    mip_meip_i : in std_logic;
 
     -- To the Instruction Fetch Stage
-    interrupt_pending_o  : out std_logic;
+    interrupt_pending_o : out std_logic;
     -- Signals when an interrupt may proceed.
-    pipeline_empty       : in std_logic;
+    pipeline_empty      : in  std_logic;
 
     -- These signals are used to tell the interrupt handler which instruction
     -- to return to upon exit. They are sourced from the instruction fetch
     -- stage of the processor.
-    instruction_fetch_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-    br_bad_predict            : in std_logic;
-    br_new_pc                 : in std_logic_vector(REGISTER_SIZE-1 downto 0));
+    br_bad_predict : in std_logic;
+    br_new_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0));
 
 end entity system_calls;
 
@@ -133,7 +134,7 @@ architecture rtl of system_calls is
   constant CSR_MARCHID   : csr_t := X"F12";
   constant CSR_MIMPID    : csr_t := X"F13";
   constant CSR_MHARTID   : csr_t := X"F14";
-  constant CSR_MSTATUS   : csr_t := X"300"; -- contains current/prev interrupt enable bits
+  constant CSR_MSTATUS   : csr_t := X"300";  -- contains current/prev interrupt enable bits
   -- Virtualization Management (28:24) should be "00000"
   -- Only machine level, so all lower levels of interrupts should be disabled (U, S, H)
   -- MPIE (3) = Machine Privilege Global Interrupt Enable
@@ -171,13 +172,13 @@ architecture rtl of system_calls is
   constant CSR_MTIMEH    : csr_t := X"F81";
   constant CSR_MINSTRETH : csr_t := X"F82";
 
-  constant FENCE_I     : std_logic_vector(31 downto 0) := x"0000100F";
+  constant FENCE_I : std_logic_vector(31 downto 0) := x"0000100F";
 
   -- Exception Codes
-  constant ILLEGAL_I   : std_logic_vector(3 downto 0)  := x"2";
-  constant MMODE_ECALL : std_logic_vector(3 downto 0)  := x"B";
-  constant UMODE_ECALL : std_logic_vector(3 downto 0)  := x"8";
-  constant BREAKPOINT  : std_logic_vector(3 downto 0)  := x"3";
+  constant ILLEGAL_I   : std_logic_vector(3 downto 0) := x"2";
+  constant MMODE_ECALL : std_logic_vector(3 downto 0) := x"B";
+  constant UMODE_ECALL : std_logic_vector(3 downto 0) := x"8";
+  constant BREAKPOINT  : std_logic_vector(3 downto 0) := x"3";
 
   -- Interrupt Codes
   constant M_SOFTWARE_INTERRUPT : std_logic_vector(3 downto 0) := x"3";
@@ -199,54 +200,54 @@ architecture rtl of system_calls is
   constant CSRRCI : std_logic_vector(2 downto 0) := "111";
 
   -- Constant CSRs
-  constant mtvec      : std_logic_vector(REGISTER_SIZE-1 downto 0) := x"00000200";
-  constant medeleg    : std_logic_vector(REGISTER_SIZE-1 downto 0) := x"00000000";
-  constant mideleg    : std_logic_vector(REGISTER_SIZE-1 downto 0) := x"00000000";
+  constant mtvec   : std_logic_vector(REGISTER_SIZE-1 downto 0) := x"00000200";
+  constant medeleg : std_logic_vector(REGISTER_SIZE-1 downto 0) := x"00000000";
+  constant mideleg : std_logic_vector(REGISTER_SIZE-1 downto 0) := x"00000000";
 
   -- Internal signals
-  signal use_after_load_stalls      : unsigned(31 downto 0);
-  signal jal_instructions           : unsigned(31 downto 0);
-  signal jalr_instructions          : unsigned(31 downto 0);
-  signal branch_mispredicts         : unsigned(31 downto 0);
-  signal other_flush                : unsigned(31 downto 0);
-  signal load_stalls                : unsigned(31 downto 0);
+  signal use_after_load_stalls : unsigned(31 downto 0);
+  signal jal_instructions      : unsigned(31 downto 0);
+  signal jalr_instructions     : unsigned(31 downto 0);
+  signal branch_mispredicts    : unsigned(31 downto 0);
+  signal other_flush           : unsigned(31 downto 0);
+  signal load_stalls           : unsigned(31 downto 0);
 
-  signal br_bad_predict_reg         : std_logic;
-  signal br_new_pc_reg              : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal pc_corr_en_reg             : std_logic;
-  signal pc_correction_reg          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal br_bad_predict_reg : std_logic;
+  signal br_new_pc_reg      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal pc_corr_en_reg     : std_logic;
+  signal pc_correction_reg  : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   -- Signals related to variable csrs
-  signal mstatus           : std_logic_vector(register_size-1 downto 0);
-  signal mstatus_mpp       : std_logic_vector(1 downto 0);
-  signal mstatus_mpie      : std_logic;
-  signal mstatus_mie       : std_logic;
+  signal mstatus      : std_logic_vector(register_size-1 downto 0);
+  signal mstatus_mpp  : std_logic_vector(1 downto 0);
+  signal mstatus_mpie : std_logic;
+  signal mstatus_mie  : std_logic;
 
-  signal mip               : std_logic_vector(register_size-1 downto 0);
-  signal mip_meip          : std_logic;
-  signal mip_mtip          : std_logic;
-  signal mip_msip          : std_logic;
+  signal mip      : std_logic_vector(register_size-1 downto 0);
+  signal mip_meip : std_logic;
+  signal mip_mtip : std_logic;
+  signal mip_msip : std_logic;
 
-  signal mie               : std_logic_vector(register_size-1 downto 0);
-  signal mie_meie          : std_logic;
-  signal mie_mtie          : std_logic;
-  signal mie_msie          : std_logic;
+  signal mie      : std_logic_vector(register_size-1 downto 0);
+  signal mie_meie : std_logic;
+  signal mie_mtie : std_logic;
+  signal mie_msie : std_logic;
 
-  signal mtime             : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mtimeh            : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal instret           : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal instreth          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mtime    : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mtimeh   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal instret  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal instreth : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal misa              : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mvendorid         : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal marchid           : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mimpid            : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mhartid           : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal misa      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mvendorid : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal marchid   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mimpid    : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mhartid   : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal mepc              : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mcause            : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mcause_i          : std_logic;
-  signal mcause_ex         : std_logic_vector(3 downto 0);
+  signal mepc      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mcause    : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mcause_i  : std_logic;
+  signal mcause_ex : std_logic_vector(3 downto 0);
 
   signal mbadaddr          : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal csr_read_val      : std_logic_vector(REGISTER_SIZE -1 downto 0);
@@ -324,16 +325,16 @@ begin  -- architecture rtl
     end process;
   end generate extra_counters_gen;
 
-  misa                           <= (31 => '0', 30 => '1',  8 => '1', 12 => '1', others => '0');
-  mvendorid                      <= (others => '0'); -- not implemented
-  marchid                        <= (others => '0'); -- not implemented
-  mimpid                         <= (others => '0'); -- not implemented
-  mhartid                        <= (others => '0'); -- not implemented
+  misa                           <= (31     => '0', 30 => '1', 8 => '1', 12 => '1', others => '0');
+  mvendorid                      <= (others => '0');  -- not implemented
+  marchid                        <= (others => '0');  -- not implemented
+  mimpid                         <= (others => '0');  -- not implemented
+  mhartid                        <= (others => '0');  -- not implemented
   mtime                          <= mtime_i(register_size-1 downto 0);
   mtimeh                         <= mtime_i(63 downto 64-register_size);
-  mstatus                        <= (12 => mstatus_mpp(1), 11 => mstatus_mpp(0),  7 => mstatus_mpie, 3 => mstatus_mie, others => '0');
-  mip                            <= (11 => mip_meip, 7 => mip_mtip, 3 => mip_msip, others => '0');
-  mie                            <= (11 => mie_meie, 7 => mie_mtie, 3 => mie_msie, others => '0');
+  mstatus                        <= (12     => mstatus_mpp(1), 11 => mstatus_mpp(0), 7 => mstatus_mpie, 3 => mstatus_mie, others => '0');
+  mip                            <= (11     => mip_meip, 7 => mip_mtip, 3 => mip_msip, others => '0');
+  mie                            <= (11     => mie_meie, 7 => mie_mtie, 3 => mie_msie, others => '0');
   mcause(mcause'left)            <= mcause_i;
   mcause(mcause'left-1 downto 4) <= (others => '0');
   mcause(3 downto 0)             <= mcause_ex;
@@ -409,16 +410,16 @@ begin  -- architecture rtl
     count32_gen : if counter_length = 32 generate
       with csr select
         csr_read_val <=
-        mtime   when csr_time,
-        mtime   when csr_cycle,
-        mtime   when csr_mtime,
-        mtime   when csr_mcycle,
-        mstatus when csr_mstatus,
-        medeleg when csr_medeleg,
-        mideleg when csr_mideleg,
-        mtvec   when csr_mtvec,
-        mepc    when csr_mepc,
-        mcause  when csr_mcause,
+        mtime           when csr_time,
+        mtime           when csr_cycle,
+        mtime           when csr_mtime,
+        mtime           when csr_mcycle,
+        mstatus         when csr_mstatus,
+        medeleg         when csr_medeleg,
+        mideleg         when csr_mideleg,
+        mtvec           when csr_mtvec,
+        mepc            when csr_mepc,
+        mcause          when csr_mcause,
         (others => '0') when others;
       bad_csr_num <= csr_read_en when csr = csr_timeh or csr = csr_cycleh else '0';
     end generate;
@@ -426,12 +427,12 @@ begin  -- architecture rtl
     count0_gen : if counter_length = 0 generate
       with csr select
         csr_read_val <=
-        mstatus when csr_mstatus,
-        medeleg when csr_medeleg,
-        mideleg when csr_mideleg,
-        mtvec   when csr_mtvec,
-        mepc    when csr_mepc,
-        mcause  when csr_mcause,
+        mstatus         when csr_mstatus,
+        medeleg         when csr_medeleg,
+        mideleg         when csr_mideleg,
+        mtvec           when csr_mtvec,
+        mepc            when csr_mepc,
+        mcause          when csr_mcause,
         (others => '0') when others;
       bad_csr_num <= '0';
     end generate;
@@ -466,11 +467,11 @@ begin  -- architecture rtl
       -- in case there is an interrupt while the pipeline is being flushed during a branch.
       if br_bad_predict = '1' then
         br_bad_predict_reg <= '1';
-        br_new_pc_reg <= br_new_pc;
+        br_new_pc_reg      <= br_new_pc;
       end if;
       if valid = '1' then
         br_bad_predict_reg <= '0';
-        br_new_pc_reg <= (others => '0');
+        br_new_pc_reg      <= (others => '0');
       end if;
 
       interrupt_pending <= '0';
@@ -490,7 +491,7 @@ begin  -- architecture rtl
           -- interrupt repeatedly. This should be reenabled by the
           -- interrupt handler after servicing the interrupt.
           mstatus_mie <= '0';
-          mcause_i <= '1';
+          mcause_i    <= '1';
           -- Handle the incoming interrupts according to their priority:
           -- External Priority > Software Priority > Timer Priority.
           if mip_meip = '1' then
@@ -500,8 +501,8 @@ begin  -- architecture rtl
           else
             mcause_ex <= M_TIMER_INTERRUPT;
           end if;
-          pc_corr_en <= '1';
-          pc_correction <= MACHINE_MODE_TRAP;
+          pc_corr_en        <= '1';
+          pc_correction     <= MACHINE_MODE_TRAP;
           interrupt_pending <= '0';
           -- The program counter must be set to the correct pc after exiting the trap.
           -- If a branch is going to be taken, then the next instruction should be the
@@ -528,17 +529,17 @@ begin  -- architecture rtl
           end if;
           -- Clear the branch and pc correction registers.
           br_bad_predict_reg <= '0';
-          br_new_pc_reg <= (others => '0');
-          pc_corr_en_reg <= '0';
-          pc_correction_reg <= (others => '0');
+          br_new_pc_reg      <= (others => '0');
+          pc_corr_en_reg     <= '0';
+          pc_correction_reg  <= (others => '0');
         end if;
       end if;
 
       -- Handle CSR functionality. If required, prevent an interrupt from progressing
       -- to ensure proper CSR functionality.
       if load_stall = '0' then
-        wb_data    <= csr_read_val;
-        wb_en      <= '0';
+        wb_data   <= csr_read_val;
+        wb_enable <= '0';
         -- The default value of pc_corr_en should be zero. However, if the
         -- pipeline is empty and an interrupt is pending, mepc has been adjusted to 
         -- enter the trap. Unless one of the higher priority trap instructions (ECALL,
@@ -554,45 +555,45 @@ begin  -- architecture rtl
           -- re-enables them.
           if legal_instruction = '0' then
             interrupt_pending <= '0';
-            mstatus_mie   <= '0';
-            mcause_i      <= '0';
-            mcause_ex     <= ILLEGAL_I;
-            pc_corr_en    <= '1';
-            pc_correction <= MACHINE_MODE_TRAP;
-            mepc <= std_logic_vector(unsigned(current_pc) + to_unsigned(4, 32));
+            mstatus_mie       <= '0';
+            mcause_i          <= '0';
+            mcause_ex         <= ILLEGAL_I;
+            pc_corr_en        <= '1';
+            pc_correction     <= MACHINE_MODE_TRAP;
+            mepc              <= std_logic_vector(unsigned(current_pc) + to_unsigned(4, 32));
 
-          elsif opcode = "11100" then        --SYSTEM OP CODE
-            wb_en <= csr_read_en;
+          elsif opcode = "11100" then   --SYSTEM OP CODE
+            wb_enable <= csr_read_en;
             if zimm & func3 = "00000" & "000" then
-              if csr = x"000" then           --ECALL
+              if csr = x"000" then      --ECALL
                 interrupt_pending <= '0';
                 mstatus_mie       <= '0';
                 mcause_i          <= '0';
                 mcause_ex         <= UMODE_ECALL;
                 pc_corr_en        <= '1';
                 pc_correction     <= MACHINE_MODE_TRAP;
-                mepc <= std_logic_vector(unsigned(current_pc) + to_unsigned(4, 32));
-              elsif csr = x"001" then        --EBREAK
+                mepc              <= std_logic_vector(unsigned(current_pc) + to_unsigned(4, 32));
+              elsif csr = x"001" then   --EBREAK
                 interrupt_pending <= '0';
                 mstatus_mie       <= '0';
                 mcause_i          <= '0';
                 mcause_ex         <= BREAKPOINT;
                 pc_corr_en        <= '1';
                 pc_correction     <= MACHINE_MODE_TRAP;
-                mepc <= std_logic_vector(unsigned(current_pc) + to_unsigned(4, 32));
-              elsif csr = x"302" then        --MRET
+                mepc              <= std_logic_vector(unsigned(current_pc) + to_unsigned(4, 32));
+              elsif csr = x"302" then   --MRET
                 -- If a valid mret instruction occurs while an interrupt is pending,
                 -- mepc will need to be modified to the mret destination.
                 if interrupt_pending = '1' then
                   pc_corr_en_reg    <= '1';
                   pc_correction_reg <= mepc;
                 end if;
-                pc_corr_en        <= '1';
-                pc_correction     <= mepc;
+                pc_corr_en    <= '1';
+                pc_correction <= mepc;
               end if;
 
             else
-              case csr is                    --writeback to CSR
+              case csr is               --writeback to CSR
                 when CSR_MEPC =>
                   -- This may interfere with traps if written to during
                   -- a trap handler.
@@ -601,13 +602,13 @@ begin  -- architecture rtl
                   mstatus_mie <= csr_write_val(3);
                 when CSR_MIE =>
                   mie_meie <= csr_write_val(11);
-                  mie_mtie  <= csr_write_val(7);
-                  mie_msie  <= csr_write_val(3);
+                  mie_mtie <= csr_write_val(7);
+                  mie_msie <= csr_write_val(3);
                 when CSR_MIP =>
-                  -- This is a read-only register.
-                  -- mip_meip set and cleared by memory mapped PLIC operations.
-                  -- mip_mtip set and cleared by memory mapped timer operations.
-                  -- mip_msip set and cleared by memory mapped reserved software registers.
+                -- This is a read-only register.
+                -- mip_meip set and cleared by memory mapped PLIC operations.
+                -- mip_mtip set and cleared by memory mapped timer operations.
+                -- mip_msip set and cleared by memory mapped reserved software registers.
                 when others =>
               end case;
             end if;
@@ -620,22 +621,22 @@ begin  -- architecture rtl
       end if;  --stall
 
       if reset = '1' then
-        mstatus_mpp <= (others => '1'); -- hardwired to "11"
-        mstatus_mpie <= '0';
-        mstatus_mie <= '0';
-        mie_meie <= '0';
-        mie_mtie <= '0';
-        mie_msie <= '0';
-        mcause_i   <= '0';
-        mcause_ex  <= (others => '0');
-        interrupt_pending <= '0';
-        pc_corr_en <= '0';
-        pc_correction <= (others => '0');
-        mepc <= (others => '0');
+        mstatus_mpp        <= (others => '1');  -- hardwired to "11"
+        mstatus_mpie       <= '0';
+        mstatus_mie        <= '0';
+        mie_meie           <= '0';
+        mie_mtie           <= '0';
+        mie_msie           <= '0';
+        mcause_i           <= '0';
+        mcause_ex          <= (others => '0');
+        interrupt_pending  <= '0';
+        pc_corr_en         <= '0';
+        pc_correction      <= (others => '0');
+        mepc               <= (others => '0');
         br_bad_predict_reg <= '0';
-        br_new_pc_reg <= (others => '0');
-        pc_corr_en_reg <= '0';
-        pc_correction_reg <= (others => '0');
+        br_new_pc_reg      <= (others => '0');
+        pc_corr_en_reg     <= '0';
+        pc_correction_reg  <= (others => '0');
       end if;  --reset
     end if;  --clk
   end process;
