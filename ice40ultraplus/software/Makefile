@@ -10,7 +10,7 @@ AS_SRCS=crt.S
 C_SRCS=
 C_SRCS+=$(C_MAIN)
 C_SRCS+=$(C_LINK)
-C_SRCS+=interrupt.c vbx_api.c
+C_SRCS+=interrupt.c vbx_api.c printf.c
 
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
