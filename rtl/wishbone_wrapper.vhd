@@ -17,7 +17,7 @@ entity orca_wishbone is
     PIPELINE_STAGES    : natural range 4 to 5  := 5;
     FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
     LVE_ENABLE         : natural range 0 to 1  := 0;
-    PLIC_ENABLE        : boolean               := FALSE;
+    PLIC_ENABLE        : boolean               := false;
     NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2;
     SCRATCHPAD_SIZE    : integer               := 1024;
     FAMILY             : string                := "ALTERA");
@@ -110,6 +110,7 @@ begin  -- architecture rtl
       PIPELINE_STAGES    => PIPELINE_STAGES,
       FORWARD_ALU_ONLY   => FORWARD_ALU_ONLY,
       LVE_ENABLE         => LVE_ENABLE,
+      SCRATCHPAD_SIZE    => SCRATCHPAD_SIZE,
       NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS,
       FAMILY             => FAMILY)
     port map(
@@ -143,8 +144,8 @@ begin  -- architecture rtl
   data_DAT_O             <= avm_data_writedata;
   data_WE_O              <= avm_data_write;
   data_SEL_O             <= avm_data_byteenable;
-  data_STB_O             <= (avm_data_write or avm_data_read) ;
-  data_CYC_O             <= (avm_data_write or avm_data_read) ;
+  data_STB_O             <= (avm_data_write or avm_data_read);
+  data_CYC_O             <= (avm_data_write or avm_data_read);
   data_CTI_O             <= CLASSIC_CYC;
   --input
   avm_data_readdata      <= data_saved_data when data_delayed_valid = '1' else data_DAT_I;
