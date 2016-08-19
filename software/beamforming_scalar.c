@@ -1,7 +1,9 @@
 #include <stdint.h>
 
+#include "i2s.h"
 #include "interrupt.h"
 #include "samples.h"
+#include "printf.h"
 
 #define SYS_CLK 8000000 
 #define SAMPLE_RATE 7800 // Hz
@@ -9,16 +11,32 @@
 #define SPEED_OF_SOUND 343e3 // mm/s
 #define SAMPLE_DIFFERENCE ((int) (DISTANCE*SAMPLE_RATE/SPEED_OF_SOUND))
 
-#define MIC1 ((volatile int32_t *) (0x10000000)) // TODO placeholder
-#define MIC2 ((volatile int32_t *) (0x10000004)) // TODO placeholder
-#define MIC_READY ((volatile int32_t *) (0x10000008)) // TODO placeholder
-
 #define WINDOW_LENGTH 64 
 #define NUM_WINDOWS 2
 #define BUFFER_LENGTH WINDOW_LENGTH*NUM_WINDOWS 
+#define STARTUP_BUFFER 64*1024/2
 
+#define DEBUG 0
+
+#define  UART_BASE ((volatile int*) 0x00020000)
+volatile int*  UART_DATA=UART_BASE;
+volatile int*  UART_LCR=UART_BASE+3;
+volatile int*  UART_LSR=UART_BASE+5;
+
+#define UART_LCR_8BIT_DEFAULT 0x03
+#define UART_INIT() do{*UART_LCR = UART_LCR_8BIT_DEFAULT;}while(0)
+#define UART_PUTC(c) do{*UART_DATA = (c);}while(0)
+#define UART_BUSY() (!((*UART_LSR) &0x20))
+void mputc ( void* p, char c)
+{
+  while(UART_BUSY());
+  *UART_DATA = c;
+}
+
+#if DEBUG
 extern int samples_l[NUM_SAMPLES]; 
 extern int samples_r[NUM_SAMPLES];
+#endif
 
 int main() {
 
@@ -28,35 +46,48 @@ int main() {
   volatile int32_t mic_buffer_r[BUFFER_LENGTH];
   int32_t temp;
 
-  // TODO Use mics properly
+#if DEBUG
   int sample_count = 0;
+#endif
 
   int i;
   int index_l;
   int index_r;
   int buffer_count = 0;
+
+  i2s_data_t mic_data;
   
   volatile int power_front;
   volatile int power_left;
   volatile int power_right;
 
+  UART_INIT();
+  init_printf(0, mputc);
+  i2s_set_frequency(SYS_CLK, 8000);
+
+  for (i = 0; i < STARTUP_BUFFER; i++) {
+    mic_data = i2s_get_data();
+  }
+
   for (i = 0; i < BUFFER_LENGTH; i++) {
     mic_buffer_l[i] = 0;
     mic_buffer_r[i] = 0;
   }
-
+  buffer_count = 0;
 
   while(1) {
 
     // Collect WINDOW_LENGTH samples.
     for (i = 0; i < WINDOW_LENGTH; i++) {
-      //while(!(*MIC_READY));
-      //mic_buffer_l[buffer_count] = *MIC_LEFT;
-      //mic_buffer_r[buffer_count] = *MIC_RIGHT;
+#if DEBUG      
       mic_buffer_l[buffer_count] = samples_l[sample_count];
       mic_buffer_r[buffer_count] = samples_r[sample_count];
       sample_count++;
-
+#else
+      mic_data = i2s_get_data();
+      mic_buffer_l[buffer_count] = (int32_t)mic_data.left;
+      mic_buffer_r[buffer_count] = (int32_t)mic_data.right;
+#endif
       buffer_count++;
 
       if (buffer_count == BUFFER_LENGTH) {
@@ -79,12 +110,14 @@ int main() {
       temp = mic_buffer_l[index_l] + mic_buffer_r[index_r];
       power_front += temp * temp; 
 
+#if DEBUG
       asm volatile("csrw mscratch, %0"
         :
         : "r" (i));
       asm volatile("csrw mscratch, %0"
         :
         : "r" (power_front));
+#endif
 
       index_l++;
       index_r++;
@@ -112,12 +145,14 @@ int main() {
       temp = mic_buffer_l[index_l] + mic_buffer_r[index_r];
       power_left += temp * temp;
 
+#if DEBUG
       asm volatile("csrw mscratch, %0"
         :
         : "r" (i));
       asm volatile("csrw mscratch, %0"
         :
         : "r" (power_left));
+#endif
 
       index_l++;
       index_r++;
@@ -145,12 +180,14 @@ int main() {
       temp = mic_buffer_l[index_l] + mic_buffer_r[index_r];
       power_right += temp * temp;
 
+#if DEBUG
       asm volatile("csrw mscratch, %0"
         :
         : "r" (i));
       asm volatile("csrw mscratch, %0"
         :
         : "r" (power_right));
+#endif
 
       index_l++;
       index_r++;
@@ -162,10 +199,13 @@ int main() {
       }
     }
 
+#if DEBUG
     asm volatile("csrw mscratch, %0\n csrw mscratch, %1\n csrw mscratch, %2"
       :
       : "r" (power_front), "r" (power_left), "r" (power_right));
+#endif
 
+#if DEBUG
     if (power_front > power_left) {
       if (power_front > power_right) {
         asm volatile("csrw mscratch, 0"
@@ -190,6 +230,25 @@ int main() {
           : );
       }
     }
+
+#else
+    if (power_front > power_left) {
+      if (power_front > power_right) {
+        printf("Front\n");
+      }
+      else {
+        printf("Right\n");
+      }
+    }
+    else {
+      if (power_left > power_right) {
+        printf("Left\n");
+      }
+      else {
+        printf("Right\n");
+      }
+    }
+#endif
 
   }
 
