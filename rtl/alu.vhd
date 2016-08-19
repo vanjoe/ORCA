@@ -234,7 +234,7 @@ begin  -- architecture rtl
         lshifted_result <= unsigned(mul_dest(REGISTER_SIZE-1 downto 0));
         rshifted_result <= unsigned(mul_dest(REGISTER_SIZE*2-1 downto REGISTER_SIZE));
         if mul_dest_shift_amt = to_unsigned(0, mul_dest_shift_amt'length) then
-          rshifted_result <= unsigned(shift_value(REGISTER_SIZE-1 downto 0));
+          rshifted_result <= unsigned(mul_dest(REGISTER_SIZE-1 downto 0));
         end if;
         shifted_result_valid <= mul_dest_valid;
       end if;
