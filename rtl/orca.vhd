@@ -18,7 +18,7 @@ entity Orca is
     PIPELINE_STAGES    : natural range 4 to 5  := 5;
     FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
     LVE_ENABLE         : natural range 0 to 1  := 0;
-    PLIC_ENABLE        : boolean               := FALSE;
+    PLIC_ENABLE        : boolean               := false;
     NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
     SCRATCHPAD_SIZE    : integer               := 1024;
     FAMILY             : string                := "ALTERA");
@@ -64,9 +64,10 @@ architecture rtl of Orca is
   signal d_valid     : std_logic;
   signal d_valid_out : std_logic;
 
-  signal wb_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal wb_sel  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal wb_en   : std_logic;
+  signal wb_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal wb_sel    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal wb_enable : std_logic;
+  signal wb_valid  : std_logic;
 
   --signals going into execute
   signal e_instr        : std_logic_vector(INSTRUCTION_SIZE -1 downto 0);
@@ -74,13 +75,14 @@ architecture rtl of Orca is
   signal e_pc           : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal e_br_taken     : std_logic;
   signal e_valid        : std_logic;
+  signal e_valid_out    : std_logic;
   signal e_readvalid    : std_logic;
   signal pipeline_empty : std_logic;
 
-  signal execute_stalled : std_logic;
-  signal rs1_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal rs2_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sign_extension  : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
+  signal stall_from_execute : std_logic;
+  signal rs1_data           : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs2_data           : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sign_extension     : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
 
   signal pipeline_flush : std_logic;
 
@@ -126,7 +128,7 @@ architecture rtl of Orca is
 begin  -- architecture rtl
   pipeline_flush <= branch_get_flush(branch_pred);
 
-  if_stall_in <= execute_stalled;
+  if_stall_in <= stall_from_execute;
   instr_fetch : component instruction_fetch
     generic map (
       REGISTER_SIZE     => REGISTER_SIZE,
@@ -139,16 +141,16 @@ begin  -- architecture rtl
       stall       => if_stall_in,
       branch_pred => branch_pred,
 
-      instr_out            => d_instr,
-      pc_out               => d_pc,
-      br_taken             => d_br_taken,
-      valid_instr_out      => if_valid_out,
-      read_address         => instr_address,
-      read_en              => instr_read_en,
-      read_data            => instr_data,
-      read_datavalid       => instr_readvalid,
-      read_wait            => instr_read_wait,
-      interrupt_pending    => interrupt_pending);
+      instr_out         => d_instr,
+      pc_out            => d_pc,
+      br_taken          => d_br_taken,
+      valid_instr_out   => if_valid_out,
+      read_address      => instr_address,
+      read_en           => instr_read_en,
+      read_data         => instr_data,
+      read_datavalid    => instr_readvalid,
+      read_wait         => instr_read_wait,
+      interrupt_pending => interrupt_pending);
 
   d_valid <= if_valid_out and not pipeline_flush;
 
@@ -162,14 +164,15 @@ begin  -- architecture rtl
     port map(
       clk            => clk,
       reset          => reset,
-      stall          => execute_stalled,
+      stall          => stall_from_execute,
       flush          => pipeline_flush,
       instruction    => d_instr,
       valid_input    => d_valid,
       --writeback signals
       wb_sel         => wb_sel,
       wb_data        => wb_data,
-      wb_enable      => wb_en,
+      wb_enable      => wb_enable,
+      wb_valid       => wb_valid,
       --output signals
       rs1_data       => rs1_data,
       rs2_data       => rs2_data,
@@ -186,7 +189,7 @@ begin  -- architecture rtl
   e_valid        <= d_valid_out and not pipeline_flush;
   -- The pipeline_empty signal means that all stages of the pipeline are finished with
   -- their current instruction, and bubbles have fully propagated through the pipeline.
-  pipeline_empty <= ((not if_valid_out) and (not d_valid_out) and (not execute_stalled));
+  pipeline_empty <= ((not if_valid_out) and (not d_valid_out) and (not stall_from_execute));
   X : component execute
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
@@ -216,19 +219,20 @@ begin  -- architecture rtl
       sign_extension => sign_extension,
       wb_sel         => wb_sel,
       wb_data        => wb_data,
-      wb_en          => wb_en,
+      wb_enable      => wb_enable,
+      valid_output   => e_valid_out,
       branch_pred    => branch_pred,
 
-      stall_pipeline => execute_stalled,
-      pipeline_empty => pipeline_empty,
+      stall_from_execute => stall_from_execute,
+      pipeline_empty     => pipeline_empty,
 
       --Memory bus
       address     => data_address,
       byte_en     => data_byte_en,
       write_en    => data_write_en,
       read_en     => data_read_en,
-      writedata  => data_write_data,
-      readdata   => data_read_data,
+      writedata   => data_write_data,
+      readdata    => data_read_data,
       waitrequest => data_wait,
       datavalid   => e_readvalid,
 
@@ -239,12 +243,15 @@ begin  -- architecture rtl
       mip_meip_i           => mip_meip,
       interrupt_pending_o  => interrupt_pending,
       instruction_fetch_pc => d_pc);
-  
+
+  wb_valid <= e_valid_out; --Don't check pipeline_flush since branch will flush
+                           --input, and jalr will writeback while pipeline is flushing.
+
   plic_gen : if PLIC_ENABLE generate
 
     interrupt_controller : component plic
       generic map (
-        REGISTER_SIZE => REGISTER_SIZE,
+        REGISTER_SIZE      => REGISTER_SIZE,
         NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS)
       port map (
         clk   => clk,
@@ -311,9 +318,9 @@ begin  -- architecture rtl
     avm_data_write      <= data_write_en;
     avm_data_writedata  <= data_write_data;
 
-    data_wait <= avm_data_waitrequest;
+    data_wait      <= avm_data_waitrequest;
     data_read_data <= avm_data_readdata;
-    e_readvalid <= avm_data_readdatavalid;
+    e_readvalid    <= avm_data_readdatavalid;
 
     -- Only handle the cycle counter (mtime) if the PLIC is disabled.
     process (clk)
@@ -326,8 +333,8 @@ begin  -- architecture rtl
         end if;
       end if;
     end process;
-  
-  end generate; 
+    
+  end generate;
 
   avm_instruction_address <= instr_address;
   avm_instruction_read    <= instr_read_en;

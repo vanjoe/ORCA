@@ -15,7 +15,7 @@ proc com {} {
                      ../rtl/wishbone_wrapper.vhd        \
                      ../rtl/plic.vhd                    \
                      ../rtl/gateway.vhd                 \
-                     ../rtl/lve-top.vhd                 \
+                     ../rtl/lve_top.vhd                 \
                      ../rtl/4port_mem.vhd               \
                      hdl/top_util_pkg.vhd               \
                      hdl/top_component_pkg.vhd          \
@@ -48,11 +48,12 @@ proc com {} {
 							hdl/i2s_tx/gen_event_reg.vhd	 \
 							hdl/i2s_tx/tx_i2s_wbd.vhd      \
 							hdl/i2s_tx/tx_i2s_topm.vhd		 \
-							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIPTBS8.v              \
-							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIWTCZ4.v				  \
-							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_ipenc_modelsim.v \
-							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_lc.v				  \
-							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_syn.v            \
+							SB_SPRAM256KA.vhd
+#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIPTBS8.v              \
+#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIWTCZ4.v				  \
+#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_ipenc_modelsim.v \
+#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_lc.v				  \
+#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_syn.v            \
 
 ]
 
@@ -81,6 +82,21 @@ proc wave_X { } {
     add wave -hex /top_tb/dut/rv/rv/X/*
 }
 
+proc wave_ALU { } {
+    add wave -noupdate -divider "ALU (full)"
+    add wave -hex /top_tb/dut/rv/rv/X/alu/*
+}
+
+proc wave_RF { } {
+    add wave -noupdate -divider "Register File (full)"
+    add wave -hex /top_tb/dut/rv/rv/D/register_file_1/*
+}
+
+proc wave_Top { } {
+    add wave -noupdate -divider "Orca top level (full)"
+    add wave -hex /top_tb/dut/rv/rv/*
+}
+
 proc recom { t {extra_waves false} } {
     noview wave
 
@@ -99,7 +115,10 @@ proc recom { t {extra_waves false} } {
     add wave -hex -noupdate /top_tb/dut/rv/rv/X/instruction
 
     if { $extra_waves } {
+	wave_RF
+	wave_Top
 	wave_X
+	wave_ALU
 	wave_LVE
     }
 
