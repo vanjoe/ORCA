@@ -29,9 +29,6 @@ end entity ram_1port;
 
 architecture behav of ram_1port is
 
-  type ram_type is array (0 to MEM_DEPTH-1) of std_logic_vector(MEM_WIDTH-1 downto 0);
-  signal ram : ram_type;
-  signal Q   : std_logic_vector(MEM_WIDTH-1 downto 0);
 
   component SB_SPRAM256KA is
     port (
@@ -50,7 +47,10 @@ architecture behav of ram_1port is
 begin
 
   behavioural_ram : if FAMILY /= "LATTICE" generate
-
+    type ram_type is array (0 to MEM_DEPTH-1) of std_logic_vector(MEM_WIDTH-1 downto 0);
+    signal ram : ram_type;
+    signal Q   : std_logic_vector(MEM_WIDTH-1 downto 0);
+  begin
     process (clk)
     begin
       if rising_edge(clk) then

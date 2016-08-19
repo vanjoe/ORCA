@@ -60,7 +60,7 @@ architecture rtl of instruction_fetch is
 begin  -- architecture rtl
 
   -- The instruction address should always be word aligned.
-  assert program_counter(1 downto 0) = "00" report "BAD INSTRUCTION ADDRESS" severity error;
+  assert (reset /= '0') or (stall /= '0') or (program_counter(1 downto 0) = "00") report "BAD INSTRUCTION ADDRESS" severity error;
 
   -- pc_corr is the program counter correction from the execute stage, which results from either
   -- a branch or a system call (ex ECALL instruction, or a trap). pc_corr_en denotes whether
