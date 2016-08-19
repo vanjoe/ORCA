@@ -42,29 +42,17 @@ void delayus(int us)
 
 int main()
 {
-  int retval=0;
+  i2s_data_t data;
+
   UART_INIT();
   init_printf(0,mputc);
   i2s_set_frequency(SYS_CLK,8000);
 
-  //capture 5 secondes of data
-  int16_t *buffer=(int16_t* )SCRATCHPAD_BASE;
-  const int BUFFER_SIZE=64*1024/2;
-  int index;
-  //discard the first bunch of data, seems to be garbage
-  for(index=0;index<BUFFER_SIZE;index++){
-	 int left=i2s_get_data().left;
-  }
-  //keep the second bunch of data
-  for(index=0;index<BUFFER_SIZE;index++){
-	 int left=i2s_get_data().left;
-	 buffer[index]=left;
+  while (1) {
+    data = i2s_get_data();
+    i2s_put_data(data.left, data.right);  
   }
 
-  for(index=0;index<BUFFER_SIZE;index++){
-	 printf("%d\r\n",buffer[index]);
-  }
-  mputc(0,4);
   return 1;
 }
 

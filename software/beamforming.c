@@ -24,21 +24,19 @@
 extern int samples_l[NUM_SAMPLES];
 extern int samples_r[NUM_SAMPLES];
 
+//extern int fir_taps[NUM_TAPS];
+
 int main() {
   
-  //volatile int32_t *MIC_LEFT = MIC1;
-  //volatile int32_t *MIC_RIGHT = MIC2;
-
   //TODO Use mics properly
   int sample_count = 0;
-
 
   int32_t i;
   int32_t buffer_count = 0;
   volatile int32_t power_front = 0;
   volatile int32_t power_left = 0;
   volatile int32_t power_right = 0;
-  int32_t transfer_index;
+  int32_t transfer_offset;
 
   vbx_word_t *mic_buffer_l = SCRATCHPAD_BASE;
   vbx_word_t *mic_buffer_r = SCRATCHPAD_BASE + BUFFER_LENGTH;
@@ -57,9 +55,6 @@ int main() {
 
     // Collect WINDOW_LENGTH samples.
     for (i = 0; i < WINDOW_LENGTH; i++) {
-     // while(!(*MIC_READY));
-     // mic_buffer_l[buffer_count] = *MIC_LEFT;
-     // mic_buffer_r[buffer_count] = *MIC_RIGHT;
       mic_buffer_l[buffer_count] = samples_l[sample_count];
       mic_buffer_r[buffer_count] = samples_r[sample_count];
       sample_count++;
@@ -71,32 +66,33 @@ int main() {
       }
     }
 
-    transfer_index = buffer_count - WINDOW_LENGTH - SAMPLE_DIFFERENCE;
-    if (transfer_index < 0) {
-     transfer_index += BUFFER_LENGTH; 
+    transfer_offset = buffer_count - WINDOW_LENGTH - SAMPLE_DIFFERENCE;
+    if (transfer_offset < 0) {
+     transfer_offset += BUFFER_LENGTH; 
     }
 
     vbx_set_vl(SAMPLE_DIFFERENCE);
-    vbx(VVWS, VMOV, sound_vector_l, (mic_buffer_l + transfer_index), 0);
-    vbx(VVWS, VMOV, sound_vector_r, (mic_buffer_r + transfer_index), 0);
+    vbx(VVWS, VMOV, sound_vector_l, (mic_buffer_l + transfer_offset), 0);
+    vbx(VVWS, VMOV, sound_vector_r, (mic_buffer_r + transfer_offset), 0);
 
-    transfer_index = buffer_count - WINDOW_LENGTH;
-    if (transfer_index < 0) {
-      transfer_index += BUFFER_LENGTH;
+    transfer_offset = buffer_count - WINDOW_LENGTH;
+    if (transfer_offset < 0) {
+      transfer_offset += BUFFER_LENGTH;
     }
 
     vbx_set_vl(WINDOW_LENGTH);
-    vbx(VVWS, VMOV, (sound_vector_l + SAMPLE_DIFFERENCE), (mic_buffer_l + transfer_index), 0);
-    vbx(VVWS, VMOV, (sound_vector_r + SAMPLE_DIFFERENCE), (mic_buffer_r + transfer_index), 0);
+    vbx(VVWS, VMOV, (sound_vector_l + SAMPLE_DIFFERENCE), (mic_buffer_l + transfer_offset), 0);
+    vbx(VVWS, VMOV, (sound_vector_r + SAMPLE_DIFFERENCE), (mic_buffer_r + transfer_offset), 0);
 
     power_front = 0;
     power_left = 0;
     power_right = 0;
 
+
     // Calculate the power assuming the sound is coming from the front.
     vbx(VVWS, VADD, sum_vector, (sound_vector_l + SAMPLE_DIFFERENCE), (sound_vector_r + SAMPLE_DIFFERENCE));
     //vbx_acc(VVWS, VMUL, &power_front, sum_vector, sum_vector);
-    vbx_sync();
+
     for (i = 0; i < WINDOW_LENGTH; i++) {
       power_front += sum_vector[i] * sum_vector[i];
     }
@@ -105,7 +101,6 @@ int main() {
     // delayed during sampling, so delay left microphone to compensate).
     vbx(VVWS, VADD, sum_vector, sound_vector_l, (sound_vector_r + SAMPLE_DIFFERENCE));
     //vbx_acc(VVWS, VMUL, &power_left, sum_vector, sum_vector);
-    vbx_sync();
     for (i = 0; i < WINDOW_LENGTH; i++) {
       power_left += sum_vector[i] * sum_vector[i];
     }
@@ -114,7 +109,6 @@ int main() {
     // during sampling, so delay right microphone to compensate).
     vbx(VVWS, VADD, sum_vector, (sound_vector_l + SAMPLE_DIFFERENCE), sound_vector_r);
     //vbx_acc(VVWS, VMUL, &power_right, sum_vector, sum_vector); 
-    vbx_sync();
     for (i = 0; i < WINDOW_LENGTH; i++) {
       power_right += sum_vector[i] * sum_vector[i];
     }
@@ -148,7 +142,6 @@ int main() {
           : );
       }
     }
-
   }
 }
 

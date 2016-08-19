@@ -63,10 +63,12 @@ int main() {
 
   UART_INIT();
   init_printf(0, mputc);
+  printf("Hello World\r\n");
   i2s_set_frequency(SYS_CLK, 8000);
 
   for (i = 0; i < STARTUP_BUFFER; i++) {
     mic_data = i2s_get_data();
+    printf("%x %x\r\n", mic_data.left, mic_data.right);
   }
 
   for (i = 0; i < BUFFER_LENGTH; i++) {
@@ -234,18 +236,18 @@ int main() {
 #else
     if (power_front > power_left) {
       if (power_front > power_right) {
-        printf("Front\n");
+        printf("Front\r\n");
       }
       else {
-        printf("Right\n");
+        printf("Right\r\n");
       }
     }
     else {
       if (power_left > power_right) {
-        printf("Left\n");
+        printf("Left\r\n");
       }
       else {
-        printf("Right\n");
+        printf("Right\r\n");
       }
     }
 #endif
