@@ -16,7 +16,7 @@ architecture rtl of instruction_legal is
   alias opcode7 is instruction(6 downto 0);
   alias func3 is instruction(14 downto 12);
 begin
-  
+
   legal <=
     not other_illegal when (CHECK_LEGAL_INSTRUCTIONS = false or
                             opcode7 = "0110111" or
@@ -250,6 +250,8 @@ architecture rtl of system_calls is
   signal mcause_ex : std_logic_vector(3 downto 0);
 
   signal mbadaddr          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mscratch          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
   signal csr_read_val      : std_logic_vector(REGISTER_SIZE -1 downto 0);
   signal csr_write_val     : std_logic_vector(REGISTER_SIZE -1 downto 0);
   signal bit_sel           : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -541,7 +543,7 @@ begin  -- architecture rtl
         wb_data   <= csr_read_val;
         wb_enable <= '0';
         -- The default value of pc_corr_en should be zero. However, if the
-        -- pipeline is empty and an interrupt is pending, mepc has been adjusted to 
+        -- pipeline is empty and an interrupt is pending, mepc has been adjusted to
         -- enter the trap. Unless one of the higher priority trap instructions (ECALL,
         -- ILLEGAL_INSTR, etc.) is called below, then the interrupt will be serviced on
         -- the next instruction.
@@ -605,10 +607,13 @@ begin  -- architecture rtl
                   mie_mtie <= csr_write_val(7);
                   mie_msie <= csr_write_val(3);
                 when CSR_MIP =>
-                -- This is a read-only register.
-                -- mip_meip set and cleared by memory mapped PLIC operations.
-                -- mip_mtip set and cleared by memory mapped timer operations.
-                -- mip_msip set and cleared by memory mapped reserved software registers.
+                  -- This is a read-only register.
+                  -- mip_meip set and cleared by memory mapped PLIC operations.
+                  -- mip_mtip set and cleared by memory mapped timer operations.
+                  -- mip_msip set and cleared by memory mapped reserved software registers.
+                when CSR_MSCRATCH =>
+                  -- Scratch register to be potentially used for swapping user registers during a trap.
+                  mscratch <= csr_write_val;
                 when others =>
               end case;
             end if;
@@ -621,18 +626,19 @@ begin  -- architecture rtl
       end if;  --stall
 
       if reset = '1' then
-        mstatus_mpp        <= (others => '1');  -- hardwired to "11"
-        mstatus_mpie       <= '0';
-        mstatus_mie        <= '0';
-        mie_meie           <= '0';
-        mie_mtie           <= '0';
-        mie_msie           <= '0';
-        mcause_i           <= '0';
-        mcause_ex          <= (others => '0');
-        interrupt_pending  <= '0';
-        pc_corr_en         <= '0';
-        pc_correction      <= (others => '0');
-        mepc               <= (others => '0');
+        mstatus_mpp <= (others => '1'); -- hardwired to "11"
+        mstatus_mpie <= '0';
+        mstatus_mie <= '0';
+        mie_meie <= '0';
+        mie_mtie <= '0';
+        mie_msie <= '0';
+        mcause_i   <= '0';
+        mcause_ex  <= (others => '0');
+        mscratch <= (others => '0');
+        interrupt_pending <= '0';
+        pc_corr_en <= '0';
+        pc_correction <= (others => '0');
+        mepc <= (others => '0');
         br_bad_predict_reg <= '0';
         br_new_pc_reg      <= (others => '0');
         pc_corr_en_reg     <= '0';

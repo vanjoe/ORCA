@@ -16,7 +16,6 @@ proc com {} {
                      ../rtl/plic.vhd                    \
                      ../rtl/gateway.vhd                 \
                      ../rtl/lve_top.vhd                 \
-		     SB_SPRAM256KA.vhd                  \
                      ../rtl/4port_mem.vhd               \
                      hdl/top_util_pkg.vhd               \
                      hdl/top_component_pkg.vhd          \
@@ -40,7 +39,23 @@ proc com {} {
                      hdl/i2s_interface/i2s_decode.vhd   \
                      hdl/i2s_interface/i2s_wb.vhd       \
                      top.vhd                            \
-                     top_tb.vhd]
+                     top_tb.vhd \
+							hdl/i2s_tx/i2s_codec.vhd       \
+							hdl/i2s_tx/tx_i2s_pack.vhd		 \
+							hdl/i2s_tx/gen_control_reg.vhd \
+							hdl/i2s_tx/i2s_version.vhd		 \
+							hdl/i2s_tx/dpram_rtl.vhd		 \
+							hdl/i2s_tx/gen_event_reg.vhd	 \
+							hdl/i2s_tx/tx_i2s_wbd.vhd      \
+							hdl/i2s_tx/tx_i2s_topm.vhd		 \
+							SB_SPRAM256KA.vhd
+#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIPTBS8.v              \
+#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIWTCZ4.v				  \
+#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_ipenc_modelsim.v \
+#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_lc.v				  \
+#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_syn.v            \
+
+]
 
     vlib work
 
@@ -116,5 +131,7 @@ proc rerun { t } {
 }
 
 set DefaultRadix hex
+
+config wave -signalnamewidth 2
 
 recom 0

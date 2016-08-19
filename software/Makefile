@@ -1,8 +1,8 @@
 all:
 AS_SRCS=crt.S
 
-TARGETS=interrupt_test interrupt_branch_test consecutive_read_shift_test read_mul_div_test
-C_SRCS=interrupt
+TARGETS=interrupt_test interrupt_branch_test consecutive_read_shift_test read_mul_div_test beamforming beamforming_scalar
+C_SRCS=interrupt printf vbx_api
 TARGET_C_SRCS=$(addsuffix .c,$(TARGETS))
 TARGET_C_OBJS=$(addprefix obj/,$(addsuffix .c.o,$(TARGETS)))
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .c.o, $(C_SRCS))) 
@@ -12,8 +12,7 @@ CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
-#ARCH=RV32IXmxp
-ARCH=RV32IM
+ARCH=RV32IMXmxp
 CFLAGS= -m32 -O2 -fno-delete-null-pointer-checks -g -march=$(ARCH) -MD -Wall -std=gnu99 -msoft-float -mmuldiv 
 LD_FLAGS= -m32 -march=$(ARCH) -static -nostartfiles
 

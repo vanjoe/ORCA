@@ -9,7 +9,7 @@ use work.rv_components.all;
 
 entity top is
   generic (
-    USE_PLL : boolean := FALSE);  
+    USE_PLL : boolean := FALSE);
   port(
     reset_btn : in std_logic;
 
@@ -23,10 +23,9 @@ entity top is
     i2s_ws_mic1_mic2 : out std_logic;
     i2s_clk          : out std_logic;
 
-    i2s_mclk         : out std_logic;
-    i2s_sdin         : out std_logic;
-    i2s_sck          : out std_logic;
-    i2s_lrck         : out std_logic;
+    i2s_out_sdin         : out std_logic;
+    i2s_out_sck          : out std_logic;
+    i2s_out_lrck         : out std_logic;
 
     gpio : inout std_logic_vector(1 downto 0)
     );
@@ -55,13 +54,13 @@ architecture rtl of top is
   signal i2s_WE_I      : std_logic;
   signal i2s_CYC_I     : std_logic;
   signal i2s_STB_I     : std_logic;
-  signal i2s_SEL_I     : std_logic_vector(REGISTER_SIZE/8-1 downto 0);  
-  signal i2s_CTI_I     : std_logic_vector(2 downto 0); 
-  signal i2s_BTE_I     : std_logic_vector(1 downto 0); 
+  signal i2s_SEL_I     : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
+  signal i2s_CTI_I     : std_logic_vector(2 downto 0);
+  signal i2s_BTE_I     : std_logic_vector(1 downto 0);
   signal i2s_LOCK_I    : std_logic;
   signal i2s_STALL_O   : std_logic;
-  signal i2s_DAT_O     : std_logic_vector(I2S_DATA_WIDTH-1 downto 0); 
-  signal i2s_ACK_O     : std_logic; 
+  signal i2s_DAT_O     : std_logic_vector(I2S_DATA_WIDTH-1 downto 0);
+  signal i2s_ACK_O     : std_logic;
   signal i2s_DAT_O_32  : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal i2s_DAT_I_32  : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal i2s_ADR_O_32  : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -209,7 +208,7 @@ architecture rtl of top is
 
   signal hp_pwm      : std_logic;
 
-  constant SYSCLK_FREQ_HZ         : natural                                     := 6000000;
+  constant SYSCLK_FREQ_HZ         : natural                                     := 8000000;
   constant HEARTBEAT_COUNTER_BITS : positive                                    := log2(SYSCLK_FREQ_HZ);  -- ~1 second to roll over
   signal heartbeat_counter        : unsigned(HEARTBEAT_COUNTER_BITS-1 downto 0) := (others => '0');
 
@@ -219,10 +218,10 @@ architecture rtl of top is
 begin
 
   CLK_LOGIC_DIVIDER : if not USE_PLL generate
-  
+
     hf_osc : component osc_48MHz
       generic map (
-        DIVIDER => "01") -- 24 MHz
+        DIVIDER => "00") -- 48 MHz
       port map (
         CLKOUT    => osc_clk);
 
@@ -235,7 +234,7 @@ begin
           clk_count <= (others => '0');
           clk_int   <= not clk_int;
         end if;
-    
+
         if clk_reset_count /= -1 then
           clk_reset_count <= clk_reset_count + 1;
           clk_3x_int <= '0';
@@ -258,7 +257,7 @@ begin
         end if;
       end if;
     end process;
-    
+
     clk_gb : SB_GB
       port map (
         GLOBAL_BUFFER_OUTPUT         => clk,
@@ -485,14 +484,14 @@ begin
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
       MULTIPLY_ENABLE    => 1,
-      DIVIDE_ENABLE      => 0,
+      DIVIDE_ENABLE      => 1,
       SHIFTER_MAX_CYCLES => 32,
       COUNTER_LENGTH     => 32,
       PIPELINE_STAGES    => 4,
       LVE_ENABLE         => 1,
       PLIC_ENABLE        => FALSE,
       NUM_EXT_INTERRUPTS => 2,
-      SCRATCHPAD_SIZE    => 16384,
+      SCRATCHPAD_SIZE    => 128*1024,
       FAMILY             => "LATTICE")
     port map(
 
@@ -518,7 +517,7 @@ begin
       instr_CYC_O   => instr_CYC_O,
       instr_CTI_O   => instr_CTI_O,
       instr_STALL_I => instr_STALL_I,
-      
+
       global_interrupts => (others => '0'));
 
   data_BTE_O   <= "00";
@@ -527,10 +526,10 @@ begin
   split_wb_data : component wb_splitter
     generic map(
       master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE), -- RAM
-      master1_address => (16#00010000#, 4*1024),           -- LED
+      master1_address => (16#00010000#, 4*1024),           -- MIC
       master2_address => (16#00020000#, 4*1024),           -- UART
       master3_address => (16#00030000#, 4*1024),           -- GPIO
-      master4_address => (16#00040000#, 4*1024))           -- I2S 
+      master4_address => (16#00040000#, 4*1024))           -- I2S
 
     port map(
       clk_i => clk,
@@ -626,55 +625,59 @@ begin
       master4_ERR_I   => OPEN,
       master4_RTY_I   => OPEN,
 
-      master5_ADR_O   => OPEN, 
-      master5_DAT_O   => OPEN, 
-      master5_WE_O    => OPEN, 
-      master5_CYC_O   => OPEN, 
-      master5_STB_O   => OPEN, 
-      master5_SEL_O   => OPEN, 
-      master5_CTI_O   => OPEN, 
-      master5_BTE_O   => OPEN, 
-      master5_LOCK_O  => OPEN, 
-      master5_STALL_I => OPEN, 
-      master5_DAT_I   => OPEN, 
-      master5_ACK_I   => OPEN, 
-      master5_ERR_I   => OPEN, 
-      master5_RTY_I   => OPEN, 
+      master5_ADR_O   => OPEN,
+      master5_DAT_O   => OPEN,
+      master5_WE_O    => OPEN,
+      master5_CYC_O   => OPEN,
+      master5_STB_O   => OPEN,
+      master5_SEL_O   => OPEN,
+      master5_CTI_O   => OPEN,
+      master5_BTE_O   => OPEN,
+      master5_LOCK_O  => OPEN,
+      master5_STALL_I => OPEN,
+      master5_DAT_I   => OPEN,
+      master5_ACK_I   => OPEN,
+      master5_ERR_I   => OPEN,
+      master5_RTY_I   => OPEN,
 
-      master6_ADR_O   => OPEN, 
-      master6_DAT_O   => OPEN, 
-      master6_WE_O    => OPEN, 
-      master6_CYC_O   => OPEN, 
-      master6_STB_O   => OPEN, 
-      master6_SEL_O   => OPEN, 
-      master6_CTI_O   => OPEN, 
-      master6_BTE_O   => OPEN, 
-      master6_LOCK_O  => OPEN, 
-      master6_STALL_I => OPEN, 
-      master6_DAT_I   => OPEN, 
-      master6_ACK_I   => OPEN, 
-      master6_ERR_I   => OPEN, 
-      master6_RTY_I   => OPEN, 
+      master6_ADR_O   => OPEN,
+      master6_DAT_O   => OPEN,
+      master6_WE_O    => OPEN,
+      master6_CYC_O   => OPEN,
+      master6_STB_O   => OPEN,
+      master6_SEL_O   => OPEN,
+      master6_CTI_O   => OPEN,
+      master6_BTE_O   => OPEN,
+      master6_LOCK_O  => OPEN,
+      master6_STALL_I => OPEN,
+      master6_DAT_I   => OPEN,
+      master6_ACK_I   => OPEN,
+      master6_ERR_I   => OPEN,
+      master6_RTY_I   => OPEN,
 
-      master7_ADR_O   => OPEN, 
-      master7_DAT_O   => OPEN, 
-      master7_WE_O    => OPEN, 
-      master7_CYC_O   => OPEN, 
-      master7_STB_O   => OPEN, 
-      master7_SEL_O   => OPEN, 
-      master7_CTI_O   => OPEN, 
-      master7_BTE_O   => OPEN, 
-      master7_LOCK_O  => OPEN, 
-      master7_STALL_I => OPEN, 
-      master7_DAT_I   => OPEN, 
-      master7_ACK_I   => OPEN, 
-      master7_ERR_I   => OPEN, 
+      master7_ADR_O   => OPEN,
+      master7_DAT_O   => OPEN,
+      master7_WE_O    => OPEN,
+      master7_CYC_O   => OPEN,
+      master7_STB_O   => OPEN,
+      master7_SEL_O   => OPEN,
+      master7_CTI_O   => OPEN,
+      master7_BTE_O   => OPEN,
+      master7_LOCK_O  => OPEN,
+      master7_STALL_I => OPEN,
+      master7_DAT_I   => OPEN,
+      master7_ACK_I   => OPEN,
+      master7_ERR_I   => OPEN,
       master7_RTY_I   => OPEN);
 
   -- Resizing to fit the REGISTER_SIZE bit wishbone splitter.
   i2s_DAT_O_32 <= i2s_DAT_O & i2s_DAT_O;
   i2s_DAT_I <= i2s_DAT_I_32(I2S_DATA_WIDTH-1 downto 0);
-  i2s_ADR_I <= i2s_ADR_O_32(I2S_ADDR_WIDTH-1 downto 0);
+
+--The i2s module uses a 16bit bus, use the sel bits to choose which address is
+--appropriate
+  i2s_ADR_I <= i2s_ADR_O_32(I2S_ADDR_WIDTH downto 2) & not i2s_SEL_I(0);
+  i2s_stall_o <= i2s_STB_I and not i2s_ACK_O;
 
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
@@ -710,7 +713,7 @@ begin
       port map (
         wb_clk_i  => clk,
         wb_rst_i => reset,
-        wb_sel_i => i2s_SEL_I(0), 
+        wb_sel_i => '1',
         wb_stb_i => i2s_STB_I,
         wb_we_i => i2s_WE_I,
         wb_cyc_i => i2s_CYC_I,
@@ -723,12 +726,12 @@ begin
 
         tx_int_o => i2s_interrupt,
 
-        i2s_sd_o => i2s_sdin,
-        i2s_sck_o => i2s_sck,
-        i2s_ws_o => i2s_lrck);
+        i2s_sd_o => i2s_out_sdin,
+        i2s_sck_o => i2s_out_sck,
+        i2s_ws_o => i2s_out_lrck);
 
-    -- This is not used while operating in external serial mode.
-    i2s_mclk <= clk_12;
+  -- This is not used while operating in external serial mode.
+  --i2s_out_mclk <= clk_12;
 
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
