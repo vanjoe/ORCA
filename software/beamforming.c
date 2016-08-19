@@ -29,9 +29,9 @@ int main() {
 
   int32_t i;
   int32_t buffer_count = 0;
-  volatile int32_t power_front = 0;
-  volatile int32_t power_left = 0;
-  volatile int32_t power_right = 0;
+  int32_t power_front = 0;
+  int32_t power_left = 0;
+  int32_t power_right = 0;
   int32_t transfer_offset;
 
   vbx_word_t *mic_buffer_l = SCRATCHPAD_BASE;
@@ -86,36 +86,17 @@ int main() {
 
     // Calculate the power assuming the sound is coming from the front.
     vbx(VVWS, VADD, sum_vector, (sound_vector_l + SAMPLE_DIFFERENCE), (sound_vector_r + SAMPLE_DIFFERENCE));
-    //vbx_acc(VVWS, VMUL, &power_front, sum_vector, sum_vector);
-
-    for (i = 0; i < WINDOW_LENGTH; i++) {
-      power_front += sum_vector[i] * sum_vector[i];
-      asm volatile("csrw mscratch, %0\n"
-                   "csrw mscratch, %1\n"
-                   "csrw mscratch, %2\n"
-                   "csrw mscratch, %3"
-        :
-        : "r" (i), "r" (sum_vector[i]), "r" (sound_vector_l[i + SAMPLE_DIFFERENCE]), "r" (sound_vector_l[i + SAMPLE_DIFFERENCE]));
-    }
+    vbx_acc(VVWS, VMUL, &power_front, sum_vector, sum_vector);
 
     // Calculate the power assuming the sound is coming from the left (right microphone is 
     // delayed during sampling, so delay left microphone to compensate).
     vbx(VVWS, VADD, sum_vector, sound_vector_l, (sound_vector_r + SAMPLE_DIFFERENCE));
-    //vbx_acc(VVWS, VMUL, &power_left, sum_vector, sum_vector);
-    for (i = 0; i < WINDOW_LENGTH; i++) {
-      power_left += sum_vector[i] * sum_vector[i];
-      asm volatile("csrw mscratch, %0\n"
-                   "csrw mscratch, %1\n"
-                   "csrw mscratch, %2\n"
-                   "csrw mscratch, %3"
-        :
-        : "r" (i), "r" (sum_vector[i]), "r" (sound_vector_l[i]), "r" (sound_vector_l[i + SAMPLE_DIFFERENCE]));
-    }
+    vbx_acc(VVWS, VMUL, &power_left, sum_vector, sum_vector);
     
     // Calculate the power assuming the sound is coming from the right (left microphone is delayed
     // during sampling, so delay right microphone to compensate).
     vbx(VVWS, VADD, sum_vector, (sound_vector_l + SAMPLE_DIFFERENCE), sound_vector_r);
-    //vbx_acc(VVWS, VMUL, &power_right, sum_vector, sum_vector); 
+    vbx_acc(VVWS, VMUL, &power_right, sum_vector, sum_vector); 
     for (i = 0; i < WINDOW_LENGTH; i++) {
       power_right += sum_vector[i] * sum_vector[i];
       asm volatile("csrw mscratch, %0\n"
@@ -161,4 +142,5 @@ int main() {
 
 int handle_interrupt(long cause, long epc, long regs[32]) {
   for(;;);
+  return 0;
 }
