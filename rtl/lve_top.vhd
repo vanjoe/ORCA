@@ -111,6 +111,8 @@ architecture rtl of lve_top is
   signal write_vector_length    : unsigned(log2(SCRATCHPAD_SIZE) downto 0);
   signal srca_ptr_reg           : unsigned(REGISTER_SIZE-1 downto 0);
   signal srcb_ptr_reg           : unsigned(REGISTER_SIZE-1 downto 0);
+  signal writeback_data         : unsigned(REGISTER_SIZE-1 downto 0);
+
 
   signal scalar_value : unsigned(REGISTER_SIZE-1 downto 0);
 
@@ -145,6 +147,9 @@ architecture rtl of lve_top is
   constant FUNC_VMULH   : std_logic_vector(4 downto 0) := "00000";
   constant FUNC_VCMV_NZ : std_logic_vector(4 downto 0) := "00000";
 
+  signal accumulation_register : unsigned(REGISTER_SIZE - 1 downto 0);
+  signal accumulation_result   : unsigned(REGISTER_SIZE - 1 downto 0);
+
 begin
   func5 <= func_bit4 & func_bit3 & func;
 
@@ -155,8 +160,11 @@ begin
     if rising_edge(clk) then
       if valid_lve_instr = '1' then
         if lve_result_valid = '1' then
-          dest_ptr            <= dest_ptr + POINTER_INCREMENT;
-          write_vector_length <= write_vector_length - 1;
+          if acc = '0' then
+            dest_ptr              <= dest_ptr + POINTER_INCREMENT;
+          end if;
+          write_vector_length   <= write_vector_length - 1;
+          accumulation_register <= accumulation_result;
         end if;
 
         srca_ptr_reg <= srca_ptr + POINTER_INCREMENT;
@@ -168,8 +176,9 @@ begin
           enum_count    <= to_unsigned(0, enum_count'length);
         else
           if first_element = '1' then
-            dest_ptr            <= unsigned(rs1_data);
-            write_vector_length <= unsigned(rs2_data(write_vector_length'range));
+            dest_ptr              <= unsigned(rs1_data);
+            write_vector_length   <= unsigned(rs2_data(write_vector_length'range));
+            accumulation_register <= to_unsigned(0, accumulation_register'length);
           end if;
           first_element <= '0';
           enum_count    <= enum_count +1;
@@ -192,14 +201,16 @@ begin
   read_vector_length <=
     unsigned(rs2_data(read_vector_length'range)) when first_element = '1' else read_vector_length_reg;
 
-  srca_data <= scalar_value when srca_s = '1' else unsigned(srca_data_read);
-  srcb_data <= enum_count   when srcb_e = '1' else unsigned(srcb_data_read);
+  srca_data <= scalar_value when srca_s = '0' else unsigned(srca_data_read);
+  srcb_data <= enum_count   when srcb_e = '0' else unsigned(srcb_data_read);
 
-  stall_from_lve <= valid_lve_instr when (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
-  rd_en          <= valid_lve_instr when (is_prefix = '1') or (read_vector_length > 1)           else '0';
+  stall_from_lve <= valid_lve_instr      when (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
+  rd_en          <= valid_lve_instr      when (is_prefix = '1') or (read_vector_length > 1)           else '0';
   lve_data1      <= std_logic_vector(srca_data);
   lve_data2      <= std_logic_vector(srcb_data);
-  alu_result     <= unsigned(lve_result);
+  writeback_data <= unsigned(lve_result) when acc = '0'                                               else accumulation_result;
+
+  accumulation_result <= accumulation_register + unsigned(lve_result);
 
   alu_proc : process(clk)
   begin
@@ -207,7 +218,7 @@ begin
       lve_source_valid <= rd_en;
     end if;
   end process;
-  write_enable <= lve_result_valid;
+  write_enable <= lve_result_valid and valid_lve_instr;
 
   scratchpad_memory : component ram_4port
     generic map (
@@ -230,7 +241,7 @@ begin
       waddr2    => std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1+2 downto 2)),
       byte_en2  => (others => '1'),
       wen2      => write_enable,
-      data_in2  => std_logic_vector(alu_result),
+      data_in2  => std_logic_vector(writeback_data),
       rwaddr3   => slave_address(log2(SCRATCHPAD_SIZE)-1+2 downto 2),
       ren3      => slave_read_en,
       wen3      => slave_write_en,
