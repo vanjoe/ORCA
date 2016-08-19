@@ -16,7 +16,7 @@
 #define BUFFER_LENGTH WINDOW_LENGTH*NUM_WINDOWS 
 #define STARTUP_BUFFER 64*1024/2
 
-#define DEBUG 0
+#define DEBUG 1
 
 #define  UART_BASE ((volatile int*) 0x00020000)
 volatile int*  UART_DATA=UART_BASE;
@@ -61,6 +61,7 @@ int main() {
   volatile int power_left;
   volatile int power_right;
 
+#if !DEBUG
   UART_INIT();
   init_printf(0, mputc);
   printf("Hello World\r\n");
@@ -70,6 +71,7 @@ int main() {
     mic_data = i2s_get_data();
     printf("%x %x\r\n", mic_data.left, mic_data.right);
   }
+#endif
 
   for (i = 0; i < BUFFER_LENGTH; i++) {
     mic_buffer_l[i] = 0;

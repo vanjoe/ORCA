@@ -22,6 +22,9 @@ SPEED_OF_SOUND  = 343e3 # mm/s
 SAMPLE_DIFFERENCE = int(DISTANCE*SAMPLE_RATE/SPEED_OF_SOUND)
 WINDOW_SIZE = 64 
 
+print SAMPLE_DIFFERENCE
+print '\n'
+
 if REAL_DATA:
   with serial.Serial('/dev/ttyUSB0', 115200, timeout = 1) as ser:
     while True:
@@ -101,25 +104,24 @@ for i in range(0, SAMPLE_DIFFERENCE):
   vector1.insert(0, 0)
   vector2.insert(0, 0)
 
-#n = list(range(0-SAMPLE_DIFFERENCE, 3*WINDOW_SIZE)) 
-#print len(n)
-#print len(vector1)
-#plt.plot(n, vector1, n, vector2)
-#plt.show()
-#raw_input("Press any key to continue.");
-
 power_front = 0
 power_left = 0
 power_right = 0
 for i in range(0, WINDOW_SIZE):
   temp = vector1[i+SAMPLE_DIFFERENCE]+vector2[i+SAMPLE_DIFFERENCE]
+  print '{} {} {} {}'.format(i, temp, vector1[i+SAMPLE_DIFFERENCE], vector2[i+SAMPLE_DIFFERENCE])
   power_front += temp*temp
+print '\n'
 for i in range(0, WINDOW_SIZE):
   temp = vector1[i]+vector2[i+SAMPLE_DIFFERENCE]
+  print '{} {} {} {}'.format(i, temp, vector1[i], vector2[i+SAMPLE_DIFFERENCE])
   power_left += temp*temp
+print '\n'
 for i in range(0, WINDOW_SIZE):
   temp = vector1[i+SAMPLE_DIFFERENCE]+vector2[i]
+  print '{} {} {} {}'.format(i, temp, vector1[i+SAMPLE_DIFFERENCE], vector2[i])
   power_right += temp*temp
+print '\n'
 
 print power_front
 print power_left

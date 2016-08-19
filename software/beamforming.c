@@ -11,10 +11,6 @@
 #define SPEED_OF_SOUND 343e3 // mm/s
 #define SAMPLE_DIFFERENCE ((int) (DISTANCE*SAMPLE_RATE/SPEED_OF_SOUND))
 
-#define MIC1 ((volatile int32_t *) (0x10000000)) // TODO placeholder
-#define MIC2 ((volatile int32_t *) (0x10000004)) // TODO placeholder
-#define MIC_READY ((volatile int32_t *) (0x10000008)) // TODO placeholder
-
 #define WINDOW_LENGTH 64 
 #define NUM_WINDOWS 2
 #define BUFFER_LENGTH WINDOW_LENGTH*NUM_WINDOWS 
@@ -45,11 +41,11 @@ int main() {
   vbx_word_t *sum_vector = sound_vector_r + WINDOW_LENGTH + SAMPLE_DIFFERENCE;
 
   vbx_set_vl(BUFFER_LENGTH);
-  vbx(SEWS, VADD, mic_buffer_l, 0, vbx_ENUM);
-  vbx(SEWS, VADD, mic_buffer_r, 0, vbx_ENUM);
+  vbx(SEWS, VAND, mic_buffer_l, 0, vbx_ENUM);
+  vbx(SEWS, VAND, mic_buffer_r, 0, vbx_ENUM);
   vbx_set_vl(WINDOW_LENGTH + SAMPLE_DIFFERENCE);
-  vbx(SEWS, VADD, sound_vector_l, 0, vbx_ENUM);
-  vbx(SEWS, VADD, sound_vector_r, 0, vbx_ENUM);
+  vbx(SEWS, VAND, sound_vector_l, 0, vbx_ENUM);
+  vbx(SEWS, VAND, sound_vector_r, 0, vbx_ENUM);
 
   while (1) {
 
@@ -88,13 +84,18 @@ int main() {
     power_left = 0;
     power_right = 0;
 
-
     // Calculate the power assuming the sound is coming from the front.
     vbx(VVWS, VADD, sum_vector, (sound_vector_l + SAMPLE_DIFFERENCE), (sound_vector_r + SAMPLE_DIFFERENCE));
     //vbx_acc(VVWS, VMUL, &power_front, sum_vector, sum_vector);
 
     for (i = 0; i < WINDOW_LENGTH; i++) {
       power_front += sum_vector[i] * sum_vector[i];
+      asm volatile("csrw mscratch, %0\n"
+                   "csrw mscratch, %1\n"
+                   "csrw mscratch, %2\n"
+                   "csrw mscratch, %3"
+        :
+        : "r" (i), "r" (sum_vector[i]), "r" (sound_vector_l[i + SAMPLE_DIFFERENCE]), "r" (sound_vector_l[i + SAMPLE_DIFFERENCE]));
     }
 
     // Calculate the power assuming the sound is coming from the left (right microphone is 
@@ -103,6 +104,12 @@ int main() {
     //vbx_acc(VVWS, VMUL, &power_left, sum_vector, sum_vector);
     for (i = 0; i < WINDOW_LENGTH; i++) {
       power_left += sum_vector[i] * sum_vector[i];
+      asm volatile("csrw mscratch, %0\n"
+                   "csrw mscratch, %1\n"
+                   "csrw mscratch, %2\n"
+                   "csrw mscratch, %3"
+        :
+        : "r" (i), "r" (sum_vector[i]), "r" (sound_vector_l[i]), "r" (sound_vector_l[i + SAMPLE_DIFFERENCE]));
     }
     
     // Calculate the power assuming the sound is coming from the right (left microphone is delayed
@@ -111,6 +118,12 @@ int main() {
     //vbx_acc(VVWS, VMUL, &power_right, sum_vector, sum_vector); 
     for (i = 0; i < WINDOW_LENGTH; i++) {
       power_right += sum_vector[i] * sum_vector[i];
+      asm volatile("csrw mscratch, %0\n"
+                   "csrw mscratch, %1\n"
+                   "csrw mscratch, %2\n"
+                   "csrw mscratch, %3"
+        :
+        : "r" (i), "r" (sum_vector[i]), "r" (sound_vector_l[i + SAMPLE_DIFFERENCE]), "r" (sound_vector_l[i]));
     }
 
     asm volatile("csrw mscratch, %0\n csrw mscratch, %1\n csrw mscratch, %2"
