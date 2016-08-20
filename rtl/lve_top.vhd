@@ -97,8 +97,8 @@ architecture rtl of lve_top is
   alias acc       : std_logic is instruction(26);
   alias func_bit3 : std_logic is instruction(25);
   alias func      : std_logic_vector(2 downto 0) is instruction(14 downto 12);
-  alias srca_s    : std_logic is instruction(11);
-  alias srcb_e    : std_logic is instruction(10);
+  alias srca_s    : std_logic is instruction(10);
+  alias srcb_e    : std_logic is instruction(11);
   alias dim       : std_logic_vector(1 downto 0) is instruction(9 downto 8);
   alias sign_d    : std_logic is instruction(7);
 
@@ -201,8 +201,8 @@ begin
   read_vector_length <=
     unsigned(rs2_data(read_vector_length'range)) when first_element = '1' else read_vector_length_reg;
 
-  srca_data <= scalar_value when srca_s = '0' else unsigned(srca_data_read);
-  srcb_data <= enum_count   when srcb_e = '0' else unsigned(srcb_data_read);
+  srca_data <= scalar_value when srca_s = '1' else unsigned(srca_data_read);
+  srcb_data <= enum_count   when srcb_e = '1' else unsigned(srcb_data_read);
 
   stall_from_lve <= valid_lve_instr      when (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
   rd_en          <= valid_lve_instr      when (is_prefix = '1') or (read_vector_length > 1)           else '0';
@@ -218,7 +218,7 @@ begin
       lve_source_valid <= rd_en;
     end if;
   end process;
-  write_enable <= lve_result_valid and valid_lve_instr;
+  write_enable <= lve_result_valid and (valid_lve_instr and not is_prefix);
 
   scratchpad_memory : component ram_4port
     generic map (
