@@ -340,7 +340,7 @@ begin  -- architecture rtl
       data_out_valid <= '0';
       case OPCODE is
         when OP | LVE_OP =>
-          if func7 = mul_f7 and MULTIPLY_ENABLE then
+          if (func7 = mul_f7 or (instruction(25)='1' and opcode = LVE_OP))and MULTIPLY_ENABLE then
             data_out       <= std_logic_vector(mul_result);
             data_out_valid <= mul_result_valid;
           else
@@ -373,7 +373,8 @@ begin  -- architecture rtl
 
     signal mul_d : signed(mul_dest'range);
   begin
-    mul_enable <= valid_instr and source_valid when func7 = mul_f7 and opcode = OP and instruction(14) = '0' else '0';
+    mul_enable <= valid_instr and source_valid when ((func7 = mul_f7 and opcode = OP) or
+                                                     (instruction(25)='1' and opcode = LVE_OP)) and instruction(14)  = '0' else '0';
     mul_stall  <= mul_enable and (not mul_dest_valid);
 
     lattice_mul_gen : if FAMILY = "LATTICE" generate
@@ -739,8 +740,8 @@ begin  -- architecture rtl
   m_op1     <= signed((m_op1_msk and rs1_data(data1'left)) & data1);
   m_op2     <= signed((m_op2_msk and rs2_data(data2'left)) & data2);
 
-  mul_srca          <= signed(m_op1) when func7 = mul_f7 or not SHIFTER_USE_MULTIPLIER else shifter_multiply;
-  mul_srcb          <= signed(m_op2) when func7 = mul_f7 or not SHIFTER_USE_MULTIPLIER else shift_value;
+  mul_srca          <= signed(m_op1) when instruction(25)='1' or not SHIFTER_USE_MULTIPLIER else shifter_multiply;
+  mul_srcb          <= signed(m_op2) when instruction(25)='1' or not SHIFTER_USE_MULTIPLIER else shift_value;
   mul_src_shift_amt <= shift_amt;
   mul_src_valid     <= source_valid;
 end architecture rtl;

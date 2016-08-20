@@ -269,6 +269,8 @@ begin
   process(clk)
     variable next_instr  : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     variable current_alu : boolean;
+    variable a           : boolean;
+    variable b           : boolean;
   begin
     if rising_edge(clk) then
 
@@ -311,263 +313,264 @@ begin
 
       --save various flip flops for forwarding
       --and writeback
+
       if stall_from_execute = '0' then
         rd_latch <= rd;
       end if;
       if ls_unit_waiting = '0' then
         use_after_load_stall <= '0';
         if FORWARD_ONLY_FROM_ALU then
-          if (ni_rs2 = rd or ni_rs1 = rd) and not current_alu and not opcode = LVE_OP then
+          if (ni_rs2 = rd or ni_rs1 = rd) and not current_alu and not (opcode = LVE_OP) then
             use_after_load_stall <= valid_instr and not stall_from_execute;
-        end if;
-      else
-        if (ni_rs2 = rd or ni_rs1 = rd) and opcode = LD_OP then
-          use_after_load_stall <= valid_instr and not stall_from_execute;
+          end if;
+        else
+          if (ni_rs2 = rd or ni_rs1 = rd) and opcode = LD_OP then
+            use_after_load_stall <= valid_instr and not stall_from_execute;
+          end if;
         end if;
       end if;
     end if;
-  end if;
 
 
-end process;
+  end process;
 
-alu : component arithmetic_unit
-  generic map (
-    INSTRUCTION_SIZE    => INSTRUCTION_SIZE,
-    REGISTER_SIZE       => REGISTER_SIZE,
-    SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
-    MULTIPLY_ENABLE     => MULTIPLY_ENABLE,
-    DIVIDE_ENABLE       => DIVIDE_ENABLE,
-    SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
-    FAMILY              => FAMILY)
-  port map (
-    clk                => clk,
-    stall_to_alu       => stall_to_alu,
-    stall_from_execute => stall_from_execute,
-    valid_instr        => valid_instr,
-    rs1_data           => rs1_data_fwd,
-    rs2_data           => rs2_data_fwd,
-    instruction        => instruction,
-    sign_extension     => sign_extension,
-    program_counter    => pc_current,
-    data_out           => alu_data_out,
-    data_out_valid     => alu_data_out_valid,
-    illegal_alu_instr  => illegal_alu_instr,
-    less_than          => less_than,
-    stall_from_alu     => stall_from_alu,
+  alu : component arithmetic_unit
+    generic map (
+      INSTRUCTION_SIZE    => INSTRUCTION_SIZE,
+      REGISTER_SIZE       => REGISTER_SIZE,
+      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
+      MULTIPLY_ENABLE     => MULTIPLY_ENABLE,
+      DIVIDE_ENABLE       => DIVIDE_ENABLE,
+      SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
+      FAMILY              => FAMILY)
+    port map (
+      clk                => clk,
+      stall_to_alu       => stall_to_alu,
+      stall_from_execute => stall_from_execute,
+      valid_instr        => valid_instr,
+      rs1_data           => rs1_data_fwd,
+      rs2_data           => rs2_data_fwd,
+      instruction        => instruction,
+      sign_extension     => sign_extension,
+      program_counter    => pc_current,
+      data_out           => alu_data_out,
+      data_out_valid     => alu_data_out_valid,
+      illegal_alu_instr  => illegal_alu_instr,
+      less_than          => less_than,
+      stall_from_alu     => stall_from_alu,
 
-    lve_data1        => lve_data1,
-    lve_data2        => lve_data2,
-    lve_source_valid => lve_source_valid
-    );
+      lve_data1        => lve_data1,
+      lve_data2        => lve_data2,
+      lve_source_valid => lve_source_valid
+      );
 
 
-branch : entity work.branch_unit(latch_middle)
-  generic map (
-    REGISTER_SIZE       => REGISTER_SIZE,
-    INSTRUCTION_SIZE    => INSTRUCTION_SIZE,
-    SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE)
-  port map(
-    clk            => clk,
-    reset          => reset,
-    valid          => valid_instr,
-    stall          => stall_from_execute,
-    rs1_data       => rs1_data_fwd,
-    rs2_data       => rs2_data_fwd,
-    current_pc     => pc_current,
-    br_taken_in    => br_taken_in,
-    instr          => instruction,
-    less_than      => less_than,
-    sign_extension => sign_extension,
-    data_out       => br_data_out,
-    data_out_en    => br_data_enable,
-    new_pc         => br_new_pc,
-    is_branch      => is_branch,
-    br_taken_out   => br_taken_out,
-    bad_predict    => br_bad_predict);
+  branch : entity work.branch_unit(latch_middle)
+    generic map (
+      REGISTER_SIZE       => REGISTER_SIZE,
+      INSTRUCTION_SIZE    => INSTRUCTION_SIZE,
+      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE)
+    port map(
+      clk            => clk,
+      reset          => reset,
+      valid          => valid_instr,
+      stall          => stall_from_execute,
+      rs1_data       => rs1_data_fwd,
+      rs2_data       => rs2_data_fwd,
+      current_pc     => pc_current,
+      br_taken_in    => br_taken_in,
+      instr          => instruction,
+      less_than      => less_than,
+      sign_extension => sign_extension,
+      data_out       => br_data_out,
+      data_out_en    => br_data_enable,
+      new_pc         => br_new_pc,
+      is_branch      => is_branch,
+      br_taken_out   => br_taken_out,
+      bad_predict    => br_bad_predict);
 
-ls_unit : component load_store_unit
-  generic map(
-    REGISTER_SIZE       => REGISTER_SIZE,
-    SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
-    INSTRUCTION_SIZE    => INSTRUCTION_SIZE)
-  port map(
-    clk            => clk,
-    reset          => reset,
-    valid          => valid_instr,
-    stall_to_lsu   => stall_to_lsu,
-    rs1_data       => rs1_data_fwd,
-    rs2_data       => rs2_data_fwd,
-    instruction    => instruction,
-    sign_extension => sign_extension,
-    stalled        => ls_unit_waiting,
-    data_out       => ld_data_out,
-    data_enable    => ld_data_enable,
-    --memory bus
-    address        => ls_address,
-    byte_en        => ls_byte_en,
-    write_en       => ls_write_en,
-    read_en        => ls_read_en,
-    write_data     => ls_write_data,
-    read_data      => ls_read_data,
-    waitrequest    => ls_waitrequest,
-    readvalid      => ls_datavalid);
+  ls_unit : component load_store_unit
+    generic map(
+      REGISTER_SIZE       => REGISTER_SIZE,
+      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
+      INSTRUCTION_SIZE    => INSTRUCTION_SIZE)
+    port map(
+      clk            => clk,
+      reset          => reset,
+      valid          => valid_instr,
+      stall_to_lsu   => stall_to_lsu,
+      rs1_data       => rs1_data_fwd,
+      rs2_data       => rs2_data_fwd,
+      instruction    => instruction,
+      sign_extension => sign_extension,
+      stalled        => ls_unit_waiting,
+      data_out       => ld_data_out,
+      data_enable    => ld_data_enable,
+      --memory bus
+      address        => ls_address,
+      byte_en        => ls_byte_en,
+      write_en       => ls_write_en,
+      read_en        => ls_read_en,
+      write_data     => ls_write_data,
+      read_data      => ls_read_data,
+      waitrequest    => ls_waitrequest,
+      readvalid      => ls_datavalid);
 
-syscall : component system_calls
-  generic map (
-    REGISTER_SIZE    => REGISTER_SIZE,
-    INSTRUCTION_SIZE => INSTRUCTION_SIZE,
-    RESET_VECTOR     => RESET_VECTOR,
-    COUNTER_LENGTH   => COUNTER_LENGTH)
-  port map (
-    clk            => clk,
-    reset          => reset,
-    valid          => valid_instr,
-    rs1_data       => rs1_data_fwd,
-    instruction    => instruction,
-    finished_instr => finished_instr,
-    wb_data        => sys_data_out,
-    wb_enable      => sys_data_enable,
-
-    current_pc           => pc_current,
-    pc_correction        => syscall_target,
-    pc_corr_en           => syscall_en,
-    illegal_alu_instr    => illegal_alu_instr,
-    use_after_load_stall => '0',
-    load_stall           => stall_from_execute,
-    predict_corr         => predict_corr_en,
-
-    mtime_i    => mtime_i,
-    mip_mtip_i => mip_mtip_i,
-    mip_msip_i => mip_msip_i,
-    mip_meip_i => mip_meip_i,
-
-    interrupt_pending_o => interrupt_pending_o,
-    pipeline_empty      => pipeline_empty,
-
-    instruction_fetch_pc => instruction_fetch_pc,
-    br_bad_predict       => br_bad_predict,
-    br_new_pc            => br_new_pc);
-
-enable_lve : if LVE_ENABLE generate
-  signal sp_read_en          : std_logic;
-  signal sp_write_en         : std_logic;
-  signal sp_read_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sp_wait             : std_logic;
-  signal sp_datavalid        : std_logic;
-  signal use_scratchpad      : std_logic;
-  signal last_use_scratchpad : std_logic;
-begin
-  lve : component lve_top
+  syscall : component system_calls
     generic map (
       REGISTER_SIZE    => REGISTER_SIZE,
       INSTRUCTION_SIZE => INSTRUCTION_SIZE,
-      SCRATCHPAD_SIZE  => SCRATCHPAD_SIZE,
-      FAMILY           => FAMILY)
+      RESET_VECTOR     => RESET_VECTOR,
+      COUNTER_LENGTH   => COUNTER_LENGTH)
     port map (
       clk            => clk,
-      scratchpad_clk => scratchpad_clk,
       reset          => reset,
-      instruction    => instruction,
-      valid_instr    => valid_instr,
-      stall_to_lve   => stall_to_lve,
+      valid          => valid_instr,
       rs1_data       => rs1_data_fwd,
-      rs2_data       => rs2_data_fwd,
-      slave_address  => ls_address,
-      slave_read_en  => sp_read_en,
-      slave_write_en => sp_write_en,
-      slave_byte_en  => ls_byte_en,
-      slave_data_in  => ls_write_data,
-      slave_data_out => sp_read_data,
-      slave_wait     => sp_wait,
+      instruction    => instruction,
+      finished_instr => finished_instr,
+      wb_data        => sys_data_out,
+      wb_enable      => sys_data_enable,
 
-      stall_from_lve   => stall_from_lve,
-      lve_data1        => lve_data1,
-      lve_data2        => lve_data2,
-      lve_source_valid => lve_source_valid,
-      lve_result       => alu_data_out,
-      lve_result_valid => alu_data_out_valid
-      );
+      current_pc           => pc_current,
+      pc_correction        => syscall_target,
+      pc_corr_en           => syscall_en,
+      illegal_alu_instr    => illegal_alu_instr,
+      use_after_load_stall => '0',
+      load_stall           => stall_from_execute,
+      predict_corr         => predict_corr_en,
 
-  -----------------------------------------------------------------------------
-  -- data bus splitter
-  -----------------------------------------------------------------------------
+      mtime_i    => mtime_i,
+      mip_mtip_i => mip_mtip_i,
+      mip_msip_i => mip_msip_i,
+      mip_meip_i => mip_meip_i,
 
-  use_scratchpad <= '1' when (unsigned(ls_address) and not to_unsigned(SCRATCHPAD_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and LVE_ENABLE else '0';
-  process(clk)
+      interrupt_pending_o => interrupt_pending_o,
+      pipeline_empty      => pipeline_empty,
+
+      instruction_fetch_pc => instruction_fetch_pc,
+      br_bad_predict       => br_bad_predict,
+      br_new_pc            => br_new_pc);
+
+  enable_lve : if LVE_ENABLE generate
+    signal sp_read_en          : std_logic;
+    signal sp_write_en         : std_logic;
+    signal sp_read_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+    signal sp_wait             : std_logic;
+    signal sp_datavalid        : std_logic;
+    signal use_scratchpad      : std_logic;
+    signal last_use_scratchpad : std_logic;
+  begin
+    lve : component lve_top
+      generic map (
+        REGISTER_SIZE    => REGISTER_SIZE,
+        INSTRUCTION_SIZE => INSTRUCTION_SIZE,
+        SCRATCHPAD_SIZE  => SCRATCHPAD_SIZE,
+        FAMILY           => FAMILY)
+      port map (
+        clk            => clk,
+        scratchpad_clk => scratchpad_clk,
+        reset          => reset,
+        instruction    => instruction,
+        valid_instr    => valid_instr,
+        stall_to_lve   => stall_to_lve,
+        rs1_data       => rs1_data_fwd,
+        rs2_data       => rs2_data_fwd,
+        slave_address  => ls_address,
+        slave_read_en  => sp_read_en,
+        slave_write_en => sp_write_en,
+        slave_byte_en  => ls_byte_en,
+        slave_data_in  => ls_write_data,
+        slave_data_out => sp_read_data,
+        slave_wait     => sp_wait,
+
+        stall_from_lve   => stall_from_lve,
+        lve_data1        => lve_data1,
+        lve_data2        => lve_data2,
+        lve_source_valid => lve_source_valid,
+        lve_result       => alu_data_out,
+        lve_result_valid => alu_data_out_valid
+        );
+
+    -----------------------------------------------------------------------------
+    -- data bus splitter
+    -----------------------------------------------------------------------------
+
+    use_scratchpad <= '1' when (unsigned(ls_address) and not to_unsigned(SCRATCHPAD_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and LVE_ENABLE else '0';
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        last_use_scratchpad <= use_scratchpad;
+        if (not sp_wait and ls_read_en) = '1'then
+          sp_datavalid <= '1';
+        else
+          sp_datavalid <= '0';
+        end if;
+      end if;
+    end process;
+    sp_read_en  <= use_scratchpad and ls_read_en;
+    sp_write_en <= use_scratchpad and ls_write_en;
+
+    ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else readdata;
+    ls_waitrequest <= sp_wait      when use_scratchpad = '1'      else waitrequest;
+    ls_datavalid   <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
+
+    byte_en   <= ls_byte_en;
+    address   <= ls_address;
+    write_en  <= not use_scratchpad and ls_write_en;
+    read_en   <= not use_scratchpad and ls_read_en;
+    writedata <= ls_write_data;
+  end generate enable_lve;
+
+  n_enable_lve : if not LVE_ENABLE generate
+    stall_from_lve <= '0';
+
+    ls_read_data   <= readdata;
+    ls_waitrequest <= waitrequest;
+    ls_datavalid   <= datavalid;
+
+    byte_en   <= ls_byte_en;
+    address   <= ls_address;
+    write_en  <= ls_write_en;
+    read_en   <= ls_read_en;
+    writedata <= ls_write_data;
+
+    lve_source_valid <= '0';
+    lve_data1        <= (others => '-');
+    lve_data2        <= (others => '-');
+  end generate n_enable_lve;
+
+
+  finished_instr <= valid_instr and (not stall_from_execute);
+
+  predict_corr_en <= syscall_en or br_bad_predict;
+  predict_corr    <= br_new_pc  when syscall_en = '0' else syscall_target;
+  predict_pc      <= pc_current when rising_edge(clk);
+
+  branch_pred <= branch_pack_signal(predict_pc,       --this pc
+                                    predict_corr,     --branch target
+                                    br_taken_out,     --taken
+                                    predict_corr_en,  --flush
+                                    is_branch);       --is_branch
+--pragma translate_off
+  my_print : process(clk)
+    variable my_line : line;            -- type 'line' comes from textio
   begin
     if rising_edge(clk) then
-      last_use_scratchpad <= use_scratchpad;
-      if (not sp_wait and ls_read_en) = '1'then
-        sp_datavalid <= '1';
+      if valid_instr = '1' then
+        write(my_line, string'("executing pc = "));   -- formatting
+        hwrite(my_line, (pc_current));  -- format type std_logic_vector as hex
+        write(my_line, string'(" instr =  "));        -- formatting
+        hwrite(my_line, (instruction));  -- format type std_logic_vector as hex
+        if stall_from_execute = '1' then
+          write(my_line, string'(" stalling"));       -- formatting
+        end if;
+        writeline(output, my_line);     -- write to "output"
       else
-        sp_datavalid <= '0';
+      --write(my_line, string'("bubble"));  -- formatting
+      --writeline(output, my_line);     -- write to "output"
       end if;
     end if;
-  end process;
-  sp_read_en  <= use_scratchpad and ls_read_en;
-  sp_write_en <= use_scratchpad and ls_write_en;
-
-  ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else readdata;
-  ls_waitrequest <= sp_wait      when use_scratchpad = '1'      else waitrequest;
-  ls_datavalid   <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
-
-  byte_en   <= ls_byte_en;
-  address   <= ls_address;
-  write_en  <= not use_scratchpad and ls_write_en;
-  read_en   <= not use_scratchpad and ls_read_en;
-  writedata <= ls_write_data;
-end generate enable_lve;
-
-             n_enable_lve : if not LVE_ENABLE generate
-               stall_from_lve <= '0';
-
-               ls_read_data   <= readdata;
-               ls_waitrequest <= waitrequest;
-               ls_datavalid   <= datavalid;
-
-               byte_en   <= ls_byte_en;
-               address   <= ls_address;
-               write_en  <= ls_write_en;
-               read_en   <= ls_read_en;
-               writedata <= ls_write_data;
-
-               lve_source_valid <= '0';
-               lve_data1        <= (others => '-');
-               lve_data2        <= (others => '-');
-             end generate n_enable_lve;
-
-
-                            finished_instr <= valid_instr and (not stall_from_execute);
-
-                            predict_corr_en <= syscall_en or br_bad_predict;
-                            predict_corr    <= br_new_pc  when syscall_en = '0' else syscall_target;
-                            predict_pc      <= pc_current when rising_edge(clk);
-
-                            branch_pred <= branch_pack_signal(predict_pc,  --this pc
-                                                              predict_corr,  --branch target
-                                                              br_taken_out,  --taken
-                                                              predict_corr_en,  --flush
-                                                              is_branch);  --is_branch
---pragma translate_off
-                            my_print : process(clk)
-                              variable my_line : line;  -- type 'line' comes from textio
-                            begin
-                              if rising_edge(clk) then
-                                if valid_instr = '1' then
-                                  write(my_line, string'("executing pc = "));  -- formatting
-                                  hwrite(my_line, (pc_current));  -- format type std_logic_vector as hex
-                                  write(my_line, string'(" instr =  "));  -- formatting
-                                  hwrite(my_line, (instruction));  -- format type std_logic_vector as hex
-                                  if stall_from_execute = '1' then
-                                    write(my_line, string'(" stalling"));  -- formatting
-                                  end if;
-                                  writeline(output, my_line);  -- write to "output"
-                                else
-                                --write(my_line, string'("bubble"));  -- formatting
-                                --writeline(output, my_line);     -- write to "output"
-                                end if;
-                              end if;
-                            end process my_print;
+  end process my_print;
 --pragma translate_on
-                            end architecture;
+end architecture;
