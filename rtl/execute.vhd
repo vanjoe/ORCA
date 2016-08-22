@@ -254,7 +254,7 @@ begin
   stall_to_lve       <= (ls_unit_waiting or stall_from_alu or use_after_load_stall) and valid_input;
   stall_to_alu       <= (ls_unit_waiting or use_after_load_stall) and valid_input;
   stall_from_execute <= (ls_unit_waiting or stall_from_alu or use_after_load_stall or stall_from_lve) and valid_input;
-  stall_to_lsu       <= stall_from_execute;
+  stall_to_lsu       <= (stall_from_alu or use_after_load_stall or stall_from_lve) and valid_input;
 
   process(clk)
   begin
