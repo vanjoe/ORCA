@@ -4,6 +4,7 @@
 #include "interrupt.h"
 #include "samples.h"
 #include "printf.h"
+#include "fir.h"
 
 #define SYS_CLK 8000000 
 #define SAMPLE_RATE 7800 // Hz
@@ -17,6 +18,10 @@
 #define STARTUP_BUFFER 64*1024/2
 
 #define DEBUG 1
+
+#define scratch_write(a) asm volatile ("csrw mscratch, %0"	\
+													:							\
+													: "r" (a))
 
 #define  UART_BASE ((volatile int*) 0x00020000)
 volatile int*  UART_DATA=UART_BASE;
@@ -40,26 +45,28 @@ extern int samples_r[NUM_SAMPLES];
 
 int main() {
 
-//  volatile int32_t *MIC_LEFT = MIC1;
-//  volatile int32_t *MIC_RIGHT = MIC2;
   volatile int32_t mic_buffer_l[BUFFER_LENGTH];
   volatile int32_t mic_buffer_r[BUFFER_LENGTH];
+  volatile int32_t temp_l[BUFFER_LENGTH];
+  volatile int32_t temp_r[BUFFER_LENGTH];
   int32_t temp;
 
 #if DEBUG
   int sample_count = 0;
 #endif
 
-  int i;
+  int i, j;
   int index_l;
   int index_r;
   int buffer_count = 0;
 
   i2s_data_t mic_data;
   
-  volatile int power_front;
-  volatile int power_left;
-  volatile int power_right;
+  volatile int64_t power_front;
+  volatile int64_t power_left;
+  volatile int64_t power_right;
+  volatile int64_t fir_acc_l;
+  volatile int64_t fir_acc_r;
 
 #if !DEBUG
   UART_INIT();
@@ -76,27 +83,55 @@ int main() {
   for (i = 0; i < BUFFER_LENGTH; i++) {
     mic_buffer_l[i] = 0;
     mic_buffer_r[i] = 0;
+    temp_l[i] = 0;
+    temp_r[i] = 0;
   }
   buffer_count = 0;
 
   while(1) {
 
+    scratch_write(0xFFFF);
+
     // Collect WINDOW_LENGTH samples.
     for (i = 0; i < WINDOW_LENGTH; i++) {
+      for (j = 0; j < BUFFER_LENGTH-1; j++) {
+        temp_l[j] = temp_l[j+1];
+        temp_r[j] = temp_r[j+1]; 
+      }
+
 #if DEBUG      
-      mic_buffer_l[buffer_count] = samples_l[sample_count];
-      mic_buffer_r[buffer_count] = samples_r[sample_count];
+      temp_l[BUFFER_LENGTH-1] = samples_l[sample_count];
+      temp_r[BUFFER_LENGTH-1] = samples_r[sample_count];
       sample_count++;
+      if (sample_count >= NUM_SAMPLES) {
+        sample_count = 0;
+      }
 #else
       mic_data = i2s_get_data();
-      mic_buffer_l[buffer_count] = (int32_t)mic_data.left;
-      mic_buffer_r[buffer_count] = (int32_t)mic_data.right;
+      temp_l[BUFFER_LENGTH-1] = (int32_t)mic_data.left;
+      temp_r[BUFFER_LENGTH-1] = (int32_t)mic_data.right;
 #endif
-      buffer_count++;
 
+      // Apply the FIR filter.
+      fir_acc_l = 0;
+      fir_acc_r = 0;
+      for (j = 0; j < NUM_TAPS; j++) {
+        fir_acc_l += temp_l[BUFFER_LENGTH-NUM_TAPS+j] * fir_taps[j];
+        fir_acc_r += temp_r[BUFFER_LENGTH-NUM_TAPS+j] * fir_taps[j];
+
+      }
+
+      
+
+      mic_buffer_l[buffer_count] = fir_acc_l >> 16;
+      mic_buffer_r[buffer_count] = fir_acc_r >> 16;
+
+
+      buffer_count++;
       if (buffer_count == BUFFER_LENGTH) {
         buffer_count = 0; 
       }
+
     }
 
     // Calculate the power assuming the sound is coming from the front.

@@ -236,7 +236,7 @@ begin  -- architecture rtl
         if mul_dest_shift_amt = to_unsigned(0, mul_dest_shift_amt'length) then
           rshifted_result <= unsigned(mul_dest(REGISTER_SIZE-1 downto 0));
         end if;
-        shifted_result_valid <= mul_dest_valid;
+        shifted_result_valid <= mul_dest_valid and sh_enable;
       end if;
     end process;
 
