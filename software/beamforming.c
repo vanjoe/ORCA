@@ -40,6 +40,7 @@ void mputc ( void* p, char c)
 #define BUFFER_LENGTH WINDOW_LENGTH*NUM_WINDOWS
 
 #define PRESCALE 4
+#define PRESCALE_MUL 1 << (32 - PRESCALE)
 
 #define SCRATCHPAD_BASE ((int32_t *) (0x80000000))
 
@@ -53,14 +54,20 @@ extern int fir_taps[NUM_TAPS];
 													: "r" (a))
 
 
+#define USE_PRINT 1
+#define USE_MICS  1
 
 int main() {
 
+#if USE_PRINT
   UART_INIT();
   init_printf(0,mputc);
   printf("HELLO UART!!\r\n");
-  //TODO Use mics properly
+#endif
+
+#if USE_MICS
   i2s_set_frequency(SYS_CLK, 8000);
+#endif
   int sample_count = 0;
 
   vbx_word_t *mic_buffer_l = SCRATCHPAD_BASE;
@@ -95,8 +102,9 @@ int main() {
     fir_vector[i] = fir_taps[i];
   }
 
-
+#if USE_PRINT
   printf("entering loop\r\n");
+#endif
 
   #include "fragment.c"
 

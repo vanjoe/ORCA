@@ -149,7 +149,7 @@ architecture behavioural of execute is
 
   constant ZERO : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := (others => '0');
 
-  type fwd_mux_t is (ALU_FWD, JAL_FWD, SYS_FWD, NO_FWD);
+  type fwd_mux_t is (ALU_FWD, NO_FWD);
   signal rs1_mux : fwd_mux_t;
   signal rs2_mux : fwd_mux_t;
 
@@ -208,21 +208,6 @@ begin
       rs2_data     when others;
   end generate;
 
-  ALL_FWD : if not FORWARD_ONLY_FROM_ALU generate
-    with rs1_mux select
-      rs1_data_fwd <=
-      sys_data_out when SYS_FWD,
-      alu_data_out when ALU_FWD,
-      br_data_out  when JAL_FWD,
-      rs1_data     when NO_FWD;
-    with rs2_mux select
-      rs2_data_fwd <=
-      sys_data_out when SYS_FWD,
-      alu_data_out when ALU_FWD,
-      br_data_out  when JAL_FWD,
-      rs2_data     when NO_FWD;
-  end generate ALL_FWD;
-
   wb_mux <= "00" when sys_data_enable = '1' else
             "01" when ld_data_enable = '1' else
             "10" when br_data_enable = '1' else
@@ -250,7 +235,7 @@ begin
   fwd_data <= sys_data_out when sys_data_enable = '1' else
               alu_data_out when alu_data_out_valid = '1' else
               br_data_out;
-
+  
   stall_to_lve       <= (ls_unit_waiting or stall_from_alu or use_after_load_stall) and valid_input;
   stall_to_alu       <= (ls_unit_waiting or use_after_load_stall) and valid_input;
   stall_from_execute <= (ls_unit_waiting or stall_from_alu or use_after_load_stall or stall_from_lve) and valid_input;
@@ -267,10 +252,7 @@ begin
 
 
   process(clk)
-    variable next_instr  : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     variable current_alu : boolean;
-    variable a           : boolean;
-    variable b           : boolean;
   begin
     if rising_edge(clk) then
 
@@ -280,14 +262,10 @@ begin
                      opcode = AUIPC_OP or
                      opcode = ALU_OP or
                      opcode = ALUI_OP;
-      if stall_from_execute = '0' then
+      --if stall_from_execute = '0' then
         if rd = ni_rs1 and rd /= ZERO and valid_instr = '1' then
           if (current_alu) then
             rs1_mux <= ALU_FWD;
-          elsif (opcode = JAL_OP or opcode = JALR_OP) and not FORWARD_ONLY_FROM_ALU then
-            rs2_mux <= JAL_FWD;
-          elsif opcode = CSR_OP and not FORWARD_ONLY_FROM_ALU then
-            rs2_mux <= SYS_FWD;
           else
             rs1_mux <= NO_FWD;
           end if;
@@ -298,10 +276,6 @@ begin
         if rd = ni_rs2 and rd /= ZERO and valid_instr = '1' then
           if current_alu then
             rs2_mux <= ALU_FWD;
-          elsif (opcode = JAL_OP or opcode = JALR_OP) and not FORWARD_ONLY_FROM_ALU then
-            rs2_mux <= JAL_FWD;
-          elsif opcode = CSR_OP and not FORWARD_ONLY_FROM_ALU then
-            rs2_mux <= SYS_FWD;
           else
             rs2_mux <= NO_FWD;
           end if;
@@ -309,7 +283,7 @@ begin
           rs2_mux <= NO_FWD;
         end if;
 
-      end if;
+      --end if;
 
       --save various flip flops for forwarding
       --and writeback
@@ -319,14 +293,8 @@ begin
       end if;
       if ls_unit_waiting = '0' then
         use_after_load_stall <= '0';
-        if FORWARD_ONLY_FROM_ALU then
-          if (ni_rs2 = rd or ni_rs1 = rd) and not current_alu and not (opcode = LVE_OP) then
-            use_after_load_stall <= valid_instr and not stall_from_execute;
-          end if;
-        else
-          if (ni_rs2 = rd or ni_rs1 = rd) and opcode = LD_OP then
-            use_after_load_stall <= valid_instr and not stall_from_execute;
-          end if;
+        if (ni_rs2 = rd or ni_rs1 = rd) and not current_alu and not (opcode = LVE_OP) then
+          use_after_load_stall <= valid_instr and not stall_from_execute;
         end if;
       end if;
     end if;

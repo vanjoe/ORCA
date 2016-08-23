@@ -113,6 +113,7 @@ proc recom { t {extra_waves false} } {
     add wave -noupdate /top_tb/dut/rv/rv/X/valid_instr
     add wave -hex -noupdate /top_tb/dut/rv/rv/X/pc_current
     add wave -hex -noupdate /top_tb/dut/rv/rv/X/instruction
+    add wave -hex -noupdate /top_tb/dut/rv/rv/X/syscall/mscratch
 
     if { $extra_waves } {
 	wave_RF
