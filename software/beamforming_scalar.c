@@ -38,6 +38,14 @@ void mputc ( void* p, char c)
   *UART_DATA = c;
 }
 
+static inline unsigned get_time() {
+  int tmp;       
+  asm volatile("csrr %0, time"
+    : "=r" (tmp) 
+    : );
+  return tmp;
+}
+
 #if DEBUG
 extern int samples_l[NUM_SAMPLES]; 
 extern int samples_r[NUM_SAMPLES];
@@ -68,6 +76,8 @@ int main() {
   volatile int64_t fir_acc_l;
   volatile int64_t fir_acc_r;
 
+
+
 #if !DEBUG
   UART_INIT();
   init_printf(0, mputc);
@@ -89,8 +99,10 @@ int main() {
   buffer_count = 0;
 
   while(1) {
+    unsigned int time;
 
     scratch_write(0xFFFF);
+    time = get_time();
 
     // Collect WINDOW_LENGTH samples.
     for (i = 0; i < WINDOW_LENGTH; i++) {
@@ -121,8 +133,6 @@ int main() {
 
       }
 
-      
-
       mic_buffer_l[buffer_count] = fir_acc_l >> 16;
       mic_buffer_r[buffer_count] = fir_acc_r >> 16;
 
@@ -133,6 +143,12 @@ int main() {
       }
 
     }
+
+    time = get_time() - time;
+    scratch_write(time);
+
+    scratch_write(0xFFFF);
+    time = get_time();
 
     // Calculate the power assuming the sound is coming from the front.
     index_l = buffer_count - WINDOW_LENGTH;
@@ -149,14 +165,6 @@ int main() {
       temp = mic_buffer_l[index_l] + mic_buffer_r[index_r];
       power_front += temp * temp; 
 
-#if DEBUG
-      asm volatile("csrw mscratch, %0"
-        :
-        : "r" (i));
-      asm volatile("csrw mscratch, %0"
-        :
-        : "r" (power_front));
-#endif
 
       index_l++;
       index_r++;
@@ -184,14 +192,6 @@ int main() {
       temp = mic_buffer_l[index_l] + mic_buffer_r[index_r];
       power_left += temp * temp;
 
-#if DEBUG
-      asm volatile("csrw mscratch, %0"
-        :
-        : "r" (i));
-      asm volatile("csrw mscratch, %0"
-        :
-        : "r" (power_left));
-#endif
 
       index_l++;
       index_r++;
@@ -219,14 +219,6 @@ int main() {
       temp = mic_buffer_l[index_l] + mic_buffer_r[index_r];
       power_right += temp * temp;
 
-#if DEBUG
-      asm volatile("csrw mscratch, %0"
-        :
-        : "r" (i));
-      asm volatile("csrw mscratch, %0"
-        :
-        : "r" (power_right));
-#endif
 
       index_l++;
       index_r++;
@@ -237,6 +229,9 @@ int main() {
         index_r = 0;
       }
     }
+
+    scratch_write(get_time() - time);
+    scratch_write(0xFFFF);
 
 #if DEBUG
     asm volatile("csrw mscratch, %0\n csrw mscratch, %1\n csrw mscratch, %2"
