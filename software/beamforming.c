@@ -3,6 +3,29 @@
 #include "interrupt.h"
 #include "samples.h"
 #include "fir.h"
+#include "printf.h"
+#include "i2s.h"
+
+//////////////////////
+//
+// UART stuff
+//////////////////////
+#define  UART_BASE ((volatile int*) 0x00020000)
+volatile int*  UART_DATA=UART_BASE;
+volatile int*  UART_LCR=UART_BASE+3;
+volatile int*  UART_LSR=UART_BASE+5;
+
+#define UART_LCR_8BIT_DEFAULT 0x03
+#define UART_INIT() do{*UART_LCR = UART_LCR_8BIT_DEFAULT;}while(0)
+#define UART_PUTC(c) do{*UART_DATA = (c);}while(0)
+#define UART_BUSY() (!((*UART_LSR) &0x20))
+void mputc ( void* p, char c)
+{
+        while(UART_BUSY());
+        *UART_DATA = c;
+}
+
+
 
 #include <stdint.h>
 
@@ -25,20 +48,19 @@ extern int samples_r[NUM_SAMPLES];
 
 extern int fir_taps[NUM_TAPS];
 
-static inline unsigned get_time() {
-  int tmp;       
-  asm volatile("csrr %0, time"
-    : "=r" (tmp) 
-    : );
-  return tmp;
-}
-
 #define scratch_write(a) asm volatile ("csrw mscratch, %0"	\
 													:							\
 													: "r" (a))
+
+
+
 int main() {
 
+  UART_INIT();
+  init_printf(0,mputc);
+  printf("HELLO UART!!\r\n");
   //TODO Use mics properly
+  i2s_set_frequency(SYS_CLK,8000);
   int sample_count = 0;
 
   vbx_word_t *mic_buffer_l = SCRATCHPAD_BASE;
@@ -52,8 +74,8 @@ int main() {
 
   int32_t i, j;
   int32_t buffer_count = 0;
-  int32_t *power_front = temp_r + BUFFER_LENGTH;
-  int32_t *power_left = power_front + 1;
+  int32_t *power_center = temp_r + BUFFER_LENGTH;
+  int32_t *power_left = power_center + 1;
   int32_t *power_right = power_left + 1;
   int32_t *fir_acc_l = power_right + 1;
   int32_t *fir_acc_r = fir_acc_l + 1;
@@ -79,139 +101,10 @@ int main() {
 	 total+=(vec_name)[i];					\
   }scratch_write(total); } while(0)
 
-#define output_vec(vec_name,length) do{			\
-	 int i;										\
-	 for(i=0;i<length;i++) {							\
-		scratch_write((vec_name)[i]);					\
-	 } } while(0)
+  printf("entering loop\r\n");
+  int k=0;
 
-
-  while (1) {
-    
-    unsigned int time;
-    // Collect WINDOW_LENGTH samples.
-    // Apply the FIR filter after acquiring each sample.
-    // FIR filter is symmetric, applying cross-correlation is simpler than
-    // convolution (no need for array flipping).
-    scratch_write(0xFFFF);
-    time = get_time();
-    for (i = 0; i < WINDOW_LENGTH; i++) {
-      // Insert new sample at the end of the temporary vector.
-
-      vbx_set_vl(BUFFER_LENGTH - 1);
-      vbx(SVWS, VADD, temp_l, 0, temp_l + 1);
-      vbx(SVWS, VADD, temp_r, 0, temp_r + 1);
-      temp_l[BUFFER_LENGTH - 1] = samples_l[sample_count];
-      temp_r[BUFFER_LENGTH - 1] = samples_r[sample_count];
-
-      sample_count++;
-      if (sample_count >= NUM_SAMPLES) {
-        sample_count = 0;
-      }
-
-      // Apply the FIR filter to the last NUM_TAPS samples of the temp buffer.
-      // Write to the accumulated result to the mic buffer for beamforming.
-      vbx_set_vl(NUM_TAPS);
-      vbx_acc(VVWS, VMUL, fir_acc_l, temp_l + BUFFER_LENGTH - NUM_TAPS, fir_vector);
-      vbx_acc(VVWS, VMUL, fir_acc_r, temp_r + BUFFER_LENGTH - NUM_TAPS, fir_vector);
-
-//      scratch_write(i);
-//      scratch_write(*fir_acc_l);
-      
-
-      *fir_acc_l >>= (FIR_PRECISION + PRESCALE);
-      *fir_acc_r >>= (FIR_PRECISION + PRESCALE);
-
-      scratch_write(i);
-      scratch_write(*fir_acc_l);
-
-      mic_buffer_l[buffer_count] = *fir_acc_l;
-      mic_buffer_r[buffer_count] = *fir_acc_r;
-
-      buffer_count++;
-      if (buffer_count >= BUFFER_LENGTH) {
-        buffer_count = 0;
-      }
-    }
-    time = get_time() - time;
-    scratch_write(time);
-  
-    scratch_write(0xFFFF);
-    time = get_time();
-
-    transfer_offset = buffer_count - WINDOW_LENGTH - SAMPLE_DIFFERENCE;
-    if (transfer_offset < 0) {
-     transfer_offset += BUFFER_LENGTH;
-    }
-
-    vbx_set_vl(SAMPLE_DIFFERENCE);
-    vbx(SVWS, VADD, sound_vector_l, 0, (mic_buffer_l + transfer_offset));
-    vbx(SVWS, VADD, sound_vector_r, 0, (mic_buffer_r + transfer_offset));
-
-    transfer_offset = buffer_count - WINDOW_LENGTH;
-    if (transfer_offset < 0) {
-     transfer_offset += BUFFER_LENGTH;
-    }
-    //MOV mic_buffer to sound_vector
-    vbx_set_vl(WINDOW_LENGTH);
-    vbx(SVWS, VADD, (sound_vector_l + SAMPLE_DIFFERENCE), 0, (mic_buffer_l + transfer_offset));
-    vbx(SVWS, VADD, (sound_vector_r + SAMPLE_DIFFERENCE), 0, (mic_buffer_r + transfer_offset));
-
-
-    // Calculate the power assuming the sound is coming from the front.
-    vbx(VVWS, VADD, sum_vector, (sound_vector_l + SAMPLE_DIFFERENCE), (sound_vector_r + SAMPLE_DIFFERENCE));
-//    for (j = 0; j < WINDOW_LENGTH; j++) {
-//      sum_vector[j] = sum_vector[j] >> PRESCALE;
-//    }
-    //vbx(SVWS, VSRA, sum_vector, PRESCALE, sum_vector);
-    vbx_acc(VVWS, VMUL, power_front, sum_vector, sum_vector);
-
-    // Calculate the power assuming the sound is coming from the left (right microphone is
-    // delayed during sampling, so delay left microphone to compensate).
-    vbx(VVWS, VADD, sum_vector, sound_vector_l, (sound_vector_r + SAMPLE_DIFFERENCE));
-//    for (j = 0; j < WINDOW_LENGTH; j++) {
-//      sum_vector[j] = sum_vector[j] >> PRESCALE;
-//    }
-    //vbx(SVWS, VSRA, sum_vector, PRESCALE, sum_vector);
-    vbx_acc(VVWS, VMUL, power_left, sum_vector, sum_vector);
-
-    // Calculate the power assuming the sound is coming from the right (left microphone is delayed
-    // during sampling, so delay right microphone to compensate).
-    vbx(VVWS, VADD, sum_vector, (sound_vector_l + SAMPLE_DIFFERENCE), sound_vector_r);
-//    for (j = 0; j < WINDOW_LENGTH; j++) {
-//      sum_vector[j] = sum_vector[j] >> PRESCALE;
-//    }
-    //vbx(SVWS, VSRA, sum_vector, PRESCALE, sum_vector);
-    vbx_acc(VVWS, VMUL, power_right, sum_vector, sum_vector);
-
-    scratch_write(get_time() - time);
-    scratch_write(0xFFFF);
-  
-    scratch_write(0);
-    scratch_write(*power_front);
-    scratch_write(1);
-    scratch_write(*power_left);
-    scratch_write(2);
-    scratch_write(*power_right);
-    scratch_write(0xFFFF);
-
-    if (*power_front > *power_left) {
-      if (*power_front > *power_right) {
-        scratch_write(0);
-      }
-      else {
-        scratch_write(2);
-      }
-    }
-    else {
-      if (*power_left > *power_right) {
-        scratch_write(1);
-      }
-      else {
-        scratch_write(2);
-      }
-    }
-  }
+  #include "fragment.c"
 
   return 0;
 }
