@@ -778,7 +778,7 @@ entity divider is
 end entity;
 
 architecture rtl of divider is
-  type div_state is (IDLE, DIVIDING);
+  type div_state is (IDLE, DIVIDING,DONE);
   signal state       : div_state;
   signal count       : natural range REGISTER_SIZE-1 downto 0;
   signal numerator   : unsigned(REGISTER_SIZE-1 downto 0);
@@ -857,8 +857,10 @@ begin  -- architecture rtl
               count <= count - 1;
             else
               div_result_valid <= '1';
-              state            <= IDLE;
+              state            <= DONE;
             end if;
+          when DONE =>
+            state <= IDLE;
         end case;
         div_res <= Q;
         rem_res <= R;

@@ -85,7 +85,7 @@ clean-all: clean
 	make -C software clean
 
 build-software: $(MEM_FILE)
-$(MEM_FILE)::
+$(MEM_FILE):
 	make -C software FORMAT=mem
 	ln -sf software/*.mem $@
 
