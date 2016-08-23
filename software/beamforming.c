@@ -60,7 +60,7 @@ int main() {
   init_printf(0,mputc);
   printf("HELLO UART!!\r\n");
   //TODO Use mics properly
-  i2s_set_frequency(SYS_CLK,8000);
+  i2s_set_frequency(SYS_CLK, 8000);
   int sample_count = 0;
 
   vbx_word_t *mic_buffer_l = SCRATCHPAD_BASE;
@@ -95,14 +95,8 @@ int main() {
     fir_vector[i] = fir_taps[i];
   }
 
-#define output_vec_sum(vec_name,length) do{				\
-  int i,total=0;													\
-  for(i=0;i<length;i++) {										\
-	 total+=(vec_name)[i];					\
-  }scratch_write(total); } while(0)
 
   printf("entering loop\r\n");
-  int k=0;
 
   #include "fragment.c"
 

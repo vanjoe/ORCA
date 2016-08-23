@@ -11,11 +11,19 @@
 	 } } while(0)
 
 #define USE_MICS 1
+
+
 printf("\n");
 
 
+// These counters add hysteresis to the system, improving output stability 
+int center_count = 0;
+int left_count = 0;
+int right_count = 0;
+int window_count = 0;
+
 while (1) {
-  k++;
+ 
   // Collect WINDOW_LENGTH samples.
   // Apply the FIR filter after acquiring each sample.
   // FIR filter is symmetric, applying cross-correlation is simpler than
@@ -108,24 +116,51 @@ while (1) {
   vbx_acc(VVWS, VMUL, power_right, sum_vector, sum_vector);
 
   char* position_str[3] = { " C \r\n",
-									 "  R\r\n",
-									 "L  \r\n"};
-  int position ;
+									          "  R\r\n",
+									          "L  \r\n"};
+  int position;
+  window_count++;
   if (*power_center > *power_left) {
 	 if (*power_center > *power_right) {
-		position = 0;
+    center_count++;
 	 }
 	 else {
-		position = 1;
+    right_count++;
 	 }
   }
   else {
 	 if (*power_left > *power_right) {
-		position = 2;
+    left_count++;
 	 }
 	 else {
-		position = 1;
+    right_count++;
 	 }
   }
-  printf(position_str[position]);
+
+#define WINDOWS_PER_QUARTERSECOND SAMPLE_RATE / 4 / WINDOW_LENGTH 
+  window_count++;
+  if (window_count == WINDOWS_PER_QUARTERSECOND) {
+    window_count = 0;
+    if (center_count > left_count) {
+      if (center_count > right_count) {
+        position = 0;
+      }
+      else {
+        position = 1;
+      }
+    }
+    else {
+      if (left_count > right_count) {
+        position = 2;
+      }
+      else {
+        position = 1;
+      }
+    }
+    center_count >>= 2;
+    left_count >>= 2;
+    right_count >>= 2;
+    printf(position_str[position]);
+  }
+  
  }
