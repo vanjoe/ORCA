@@ -19,7 +19,7 @@ pushd $SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/
   sed -i 's/ ecall/fence.i;ecall/' env/p/riscv_test.h
   ./configure --with-xlen=32 2>&1
   make clean 2 >/dev/null 2>&1
-  make isa >/dev/null 2>&1
+  make -k isa -j10 >/dev/null 2>&1
 popd
 
 TEST_DIR=$SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/isa
@@ -29,7 +29,7 @@ TEST_DIR=$SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/isa
 
 SOFTWARE_DIR=../software
 #all files that aren't dump or hex (the hex files are not correctly formatted)
-FILES=$(ls ${TEST_DIR}/rv32ui-p-* | grep -v dump | grep -v hex)
+FILES=$(ls ${TEST_DIR}/rv32u?-p-* | grep -v dump | grep -v hex)
 ORCA_FILES=$(ls ${SOFTWARE_DIR}/* | grep .elf)
 
 PREFIX=riscv32-unknown-elf
