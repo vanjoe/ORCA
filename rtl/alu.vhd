@@ -110,7 +110,7 @@ architecture rtl of arithmetic_unit is
   signal mul_dest_shift_amt : unsigned(log2(REGISTER_SIZE)-1 downto 0);
   signal mul_dest_valid     : std_logic;
 
-  signal mul_stall        : std_logic;
+  signal mul_stall : std_logic;
 
   signal div_op1          : unsigned(REGISTER_SIZE-1 downto 0);
   signal div_op2          : unsigned(REGISTER_SIZE-1 downto 0);
@@ -224,8 +224,8 @@ begin  -- architecture rtl
   data_in2     <= lve_data2        when lve_source_valid = '1' else rs2_data;
   source_valid <= lve_source_valid when opcode = LVE_OP        else (not stall_to_alu);
 
-  sh_enable <= valid_instr and source_valid when (opcode = OP or opcode = OP_IMM or (opcode = LVE_OP and lve_source_valid = '1')) and (func3 = "001" or func3 = "101") else '0';
-  sh_stall  <= (not shifted_result_valid)   when sh_enable = '1'                                                                                                       else '0';
+  sh_enable <= valid_instr and source_valid when ((opcode = OP and func7 = "0000000") or opcode = OP_IMM or (opcode = LVE_OP and lve_source_valid = '1')) and (func3 = "001" or func3 = "101") else '0';
+  sh_stall  <= (not shifted_result_valid)   when sh_enable = '1'                                                                                                                               else '0';
 
   SH_GEN0 : if SHIFTER_USE_MULTIPLIER generate
     process(clk) is
@@ -272,8 +272,8 @@ begin  -- architecture rtl
     variable func              : std_logic_vector(2 downto 0);
     variable base_result       : unsigned(REGISTER_SIZE-1 downto 0);
     variable base_result_valid : std_logic;
-    variable mul_result       : unsigned(REGISTER_SIZE-1 downto 0);
-    variable mul_result_valid : std_logic;
+    variable mul_result        : unsigned(REGISTER_SIZE-1 downto 0);
+    variable mul_result_valid  : std_logic;
   begin
     if rising_edge(clk) then
       func := instruction(14 downto 12);
@@ -333,6 +333,10 @@ begin  -- architecture rtl
         when REM_OP =>
           mul_result       := unsigned(rem_result);
           mul_result_valid := div_result_valid;
+        when REMU_OP =>
+          mul_result       := unsigned(rem_result);
+          mul_result_valid := div_result_valid;
+
         when others =>
           null;
       end case;
@@ -340,7 +344,7 @@ begin  -- architecture rtl
       data_out_valid <= '0';
       case OPCODE is
         when OP | LVE_OP =>
-          if (func7 = mul_f7 or (instruction(25)='1' and opcode = LVE_OP))and MULTIPLY_ENABLE then
+          if (func7 = mul_f7 or (instruction(25) = '1' and opcode = LVE_OP))and MULTIPLY_ENABLE then
             data_out       <= std_logic_vector(mul_result);
             data_out_valid <= mul_result_valid;
           else
@@ -374,8 +378,8 @@ begin  -- architecture rtl
     signal mul_d : signed(mul_dest'range);
   begin
     mul_enable <= valid_instr and source_valid when ((func7 = mul_f7 and opcode = OP) or
-                                                     (instruction(25)='1' and opcode = LVE_OP)) and instruction(14)  = '0' else '0';
-    mul_stall  <= mul_enable and (not mul_dest_valid);
+                                                     (instruction(25) = '1' and opcode = LVE_OP)) and instruction(14)  = '0' else '0';
+    mul_stall <= mul_enable and (not mul_dest_valid);
 
     lattice_mul_gen : if FAMILY = "LATTICE" generate
       signal mul_a_absval    : unsigned(mul_a'length - 2 downto 0);
@@ -740,8 +744,8 @@ begin  -- architecture rtl
   m_op1     <= signed((m_op1_msk and rs1_data(data1'left)) & data1);
   m_op2     <= signed((m_op2_msk and rs2_data(data2'left)) & data2);
 
-  mul_srca          <= signed(m_op1) when instruction(25)='1' or not SHIFTER_USE_MULTIPLIER else shifter_multiply;
-  mul_srcb          <= signed(m_op2) when instruction(25)='1' or not SHIFTER_USE_MULTIPLIER else shift_value;
+  mul_srca          <= signed(m_op1) when instruction(25) = '1' or not SHIFTER_USE_MULTIPLIER else shifter_multiply;
+  mul_srcb          <= signed(m_op2) when instruction(25) = '1' or not SHIFTER_USE_MULTIPLIER else shift_value;
   mul_src_shift_amt <= shift_amt;
   mul_src_valid     <= source_valid;
 end architecture rtl;
@@ -780,8 +784,10 @@ architecture rtl of divider is
   signal numerator   : unsigned(REGISTER_SIZE-1 downto 0);
   signal denominator : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal div_neg_op1 : std_logic;
-  signal div_neg_op2 : std_logic;
+  signal div_neg_op1      : std_logic;
+  signal div_neg_op2      : std_logic;
+  signal div_neg_quotient : std_logic;
+  signal div_neg_remainder : std_logic;
 
   signal div_zero     : boolean;
   signal div_overflow : boolean;
@@ -806,7 +812,7 @@ begin  -- architecture rtl
 
 
   div_proc : process(clk)
-    alias D        : unsigned(REGISTER_SIZE-1 downto 0) is denominator;
+    variable D     : unsigned(REGISTER_SIZE-1 downto 0);
     variable N     : unsigned(REGISTER_SIZE-1 downto 0);
     variable R     : unsigned(REGISTER_SIZE-1 downto 0);
     variable Q     : unsigned(REGISTER_SIZE-1 downto 0);
@@ -819,8 +825,11 @@ begin  -- architecture rtl
       if div_enable = '1' then
         case state is
           when IDLE =>
-            N := numerator;
-            R := (others => '0');
+            div_neg_quotient   <= div_neg_op2 xor div_neg_op1;
+            div_neg_remainder <= div_neg_op1;
+            D                 := denominator;
+            N                 := numerator;
+            R                 := (others => '0');
             if div_zero then
               Q                := (others => '1');
               R                := rs1_data;
@@ -860,6 +869,6 @@ begin  -- architecture rtl
     end if;  -- clk
   end process;
 
-  remainder <= rem_res when div_neg_op1 = '0'                   else unsigned(-signed(rem_res));
-  quotient  <= div_res when (div_neg_op1 xor div_neg_op2) = '0' else unsigned(-signed(div_res));
+  remainder <= rem_res when div_neg_remainder = '0' else unsigned(-signed(rem_res));
+  quotient  <= div_res when div_neg_quotient = '0'   else unsigned(-signed(div_res));
 end architecture rtl;
