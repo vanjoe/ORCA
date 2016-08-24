@@ -16,7 +16,6 @@ entity Orca is
     COUNTER_LENGTH     : natural               := 0;
     BRANCH_PREDICTORS  : natural               := 0;
     PIPELINE_STAGES    : natural range 4 to 5  := 5;
-    FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
     LVE_ENABLE         : natural range 0 to 1  := 0;
     PLIC_ENABLE        : boolean               := false;
     NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
@@ -201,7 +200,6 @@ begin  -- architecture rtl
       DIVIDE_ENABLE       => DIVIDE_ENABLE = 1,
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
       COUNTER_LENGTH      => COUNTER_LENGTH,
-      FORWARD_ALU_ONLY    => FORWARD_ALU_ONLY = 1,
       LVE_ENABLE          => LVE_ENABLE = 1,
       SCRATCHPAD_SIZE     => SCRATCHPAD_SIZE,
       FAMILY              => FAMILY)
@@ -333,7 +331,7 @@ begin  -- architecture rtl
         end if;
       end if;
     end process;
-    
+
   end generate;
 
   avm_instruction_address <= instr_address;

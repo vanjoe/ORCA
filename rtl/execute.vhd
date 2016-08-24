@@ -21,7 +21,6 @@ entity execute is
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
     COUNTER_LENGTH      : natural;
-    FORWARD_ALU_ONLY    : boolean;
     LVE_ENABLE          : boolean;
     SCRATCHPAD_SIZE     : integer := 1024;
     FAMILY              : string  := "ALTERA");
@@ -85,7 +84,6 @@ architecture behavioural of execute is
   signal predict_corr    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal predict_corr_en : std_logic;
 
-  constant FORWARD_ONLY_FROM_ALU : boolean := FORWARD_ALU_ONLY;
 
   signal ls_address     : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal ls_byte_en     : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
@@ -197,16 +195,14 @@ begin
   -- Note that because the load instruction doesn't directly forward into the
   -- next instruction, we have to watch out for use after load hazards.
   -----------------------------------------------------------------------------
-  ALU_ONLY_FWD : if FORWARD_ONLY_FROM_ALU generate
-    with rs1_mux select
-      rs1_data_fwd <=
-      alu_data_out when ALU_FWD,
-      rs1_data     when others;
-    with rs2_mux select
-      rs2_data_fwd <=
-      alu_data_out when ALU_FWD,
-      rs2_data     when others;
-  end generate;
+  with rs1_mux select
+    rs1_data_fwd <=
+    alu_data_out when ALU_FWD,
+    rs1_data     when others;
+  with rs2_mux select
+    rs2_data_fwd <=
+    alu_data_out when ALU_FWD,
+    rs2_data     when others;
 
   wb_mux <= "00" when sys_data_enable = '1' else
             "01" when ld_data_enable = '1' else
@@ -235,7 +231,7 @@ begin
   fwd_data <= sys_data_out when sys_data_enable = '1' else
               alu_data_out when alu_data_out_valid = '1' else
               br_data_out;
-  
+
   stall_to_lve       <= (ls_unit_waiting or stall_from_alu or use_after_load_stall) and valid_input;
   stall_to_alu       <= (ls_unit_waiting or use_after_load_stall) and valid_input;
   stall_from_execute <= (ls_unit_waiting or stall_from_alu or use_after_load_stall or stall_from_lve) and valid_input;

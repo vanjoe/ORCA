@@ -193,7 +193,7 @@ architecture rtl of arithmetic_unit is
       mul_src_valid     : out    std_logic
       );
   end component;
-
+  signal func7_shift : boolean;
 begin  -- architecture rtl
 
   oc : component operand_creation
@@ -223,8 +223,8 @@ begin  -- architecture rtl
   data_in1     <= lve_data1        when lve_source_valid = '1' else rs1_data;
   data_in2     <= lve_data2        when lve_source_valid = '1' else rs2_data;
   source_valid <= lve_source_valid when opcode = LVE_OP        else (not stall_to_alu);
-
-  sh_enable <= valid_instr and source_valid when ((opcode = OP and func7 = "0000000") or opcode = OP_IMM or (opcode = LVE_OP and lve_source_valid = '1')) and (func3 = "001" or func3 = "101") else '0';
+  func7_shift <= func7 ="0000000" or func7="0100000";
+  sh_enable <= valid_instr and source_valid when ((opcode = OP and func7_shift) or (opcode = OP_IMM) or (opcode = LVE_OP and lve_source_valid = '1')) and (func3 = "001" or func3 = "101") else '0';
   sh_stall  <= (not shifted_result_valid)   when sh_enable = '1'                                                                                                                               else '0';
 
   SH_GEN0 : if SHIFTER_USE_MULTIPLIER generate
