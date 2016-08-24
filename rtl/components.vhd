@@ -16,7 +16,6 @@ package rv_components is
       COUNTER_LENGTH     : natural               := 64;
       BRANCH_PREDICTORS  : natural               := 0;
       PIPELINE_STAGES    : natural range 4 to 5  := 5;
-      FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
       LVE_ENABLE         : natural range 0 to 1  := 0;
       PLIC_ENABLE        : boolean               := false;
       NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
@@ -58,7 +57,6 @@ package rv_components is
       COUNTER_LENGTH     : natural               := 64;
       BRANCH_PREDICTORS  : natural               := 0;
       PIPELINE_STAGES    : natural range 4 to 5  := 5;
-      FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
       LVE_ENABLE         : natural range 0 to 1  := 0;
       PLIC_ENABLE        : boolean               := false;
       NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2;
@@ -139,7 +137,6 @@ package rv_components is
       DIVIDE_ENABLE       : boolean;
       SHIFTER_MAX_CYCLES  : natural;
       COUNTER_LENGTH      : natural;
-      FORWARD_ALU_ONLY    : boolean;
       LVE_ENABLE          : boolean;
       SCRATCHPAD_SIZE     : integer := 1024;
       FAMILY              : string  := "ALTERA");

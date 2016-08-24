@@ -15,7 +15,6 @@ entity orca_wishbone is
     COUNTER_LENGTH     : natural               := 64;
     BRANCH_PREDICTORS  : natural               := 0;
     PIPELINE_STAGES    : natural range 4 to 5  := 5;
-    FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
     LVE_ENABLE         : natural range 0 to 1  := 0;
     PLIC_ENABLE        : boolean               := false;
     NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2;
@@ -108,7 +107,6 @@ begin  -- architecture rtl
       COUNTER_LENGTH     => COUNTER_LENGTH,
       BRANCH_PREDICTORS  => BRANCH_PREDICTORS,
       PIPELINE_STAGES    => PIPELINE_STAGES,
-      FORWARD_ALU_ONLY   => FORWARD_ALU_ONLY,
       LVE_ENABLE         => LVE_ENABLE,
       SCRATCHPAD_SIZE    => SCRATCHPAD_SIZE,
       NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS,

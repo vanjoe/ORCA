@@ -7,7 +7,7 @@
    description=""
    tags=""
    categories="System" />
- <parameter name="bonusData"><![CDATA[bonusData 
+ <parameter name="bonusData"><![CDATA[bonusData
 {
    element clk_0
    {
@@ -679,7 +679,6 @@
   <parameter name="BTB_SIZE" value="0" />
   <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DIVIDE_ENABLE" value="1" />
-  <parameter name="FORWARD_ALU_ONLY" value="1" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="MXP_ENABLE" value="0" />
   <parameter name="NUM_EXT_INTERRUPTS" value="2" />

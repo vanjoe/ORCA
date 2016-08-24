@@ -131,17 +131,6 @@ set_parameter_property SHIFTER_MAX_CYCLES ALLOWED_RANGES {1 8 32}
 set_parameter_property SHIFTER_MAX_CYCLES HDL_PARAMETER true
 
 
-add_parameter          FORWARD_ALU_ONLY natural 1
-set_parameter_property FORWARD_ALU_ONLY ALLOWED_RANGES 0:1
-set_parameter_property FORWARD_ALU_ONLY DISPLAY_NAME "FORWARD FROM_ALU ONLY"
-set_parameter_property FORWARD_ALU_ONLY HDL_PARAMETER true
-set_parameter_property FORWARD_ALU_ONLY DESCRIPTION "\
-If the data is not forwarded to the next instruction, then a bubble is \
-inserted into the pipeline to wait until the data is ready. Be default \
-the the load instruction isn't forwarded, but FORWARD_ALU_ONLY is \
-selected then only the alu \(OP,OP-IMM,LUI,AUIPC\) are forwarded to \
-the next cycle."
-set_display_item_property FORWARD_ALU_ONLY DISPLAY_HINT boolean
 
 add_parameter COUNTER_LENGTH natural 64
 set_parameter_property COUNTER_LENGTH DISPLAY_NAME "COUNTERS REGISTER SIZE"
@@ -180,7 +169,7 @@ set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
 
 add_parameter          PLIC_ENABLE boolean false
 set_parameter_property PLIC_ENABLE HDL_PARAMETER true
-set_parameter_property PLIC_ENABLE DISPLAY_NAME "PLIC_ENABLE"       
+set_parameter_property PLIC_ENABLE DISPLAY_NAME "PLIC_ENABLE"
 set_parameter_property PLIC_ENABLE DESCRIPTION "Whether or not the Platform Level Interrupt Controller (PLIC) is enabled."
 
 add_parameter          NUM_EXT_INTERRUPTS integer 2
@@ -318,7 +307,7 @@ set_interface_property global_interrupts PORT_NAME_MAP ""
 set_interface_property global_interrupts CMSIS_SVD_VARIABLES ""
 set_interface_property global_interrupts SVD_ADDRESS_GROUP ""
 
-add_interface_port global_interrupts global_interrupts export Input NUM_EXT_INTERRUPTS 
+add_interface_port global_interrupts global_interrupts export Input NUM_EXT_INTERRUPTS
 
 proc log_out {out_str} {
         set chan [open ~/orca_hw_log.txt a]

@@ -44,9 +44,6 @@ endif
 ifdef SHIFTER_MAX_CYCLES
 	sed -i 's|parameter name="SHIFTER_MAX_CYCLES" value=".*" />|parameter name="SHIFTER_MAX_CYCLES" value="$(SHIFTER__CYCLES)" />|' $(QSYS_FILE)
 endif
-ifdef FORWARD_ALU_ONLY
-	sed -i 's|parameter name="FORWARD_ALU_ONLY" value=".*" />|parameter name="FORWARD_ALU_ONLY" value="$(FORWARD_ALU_ONLY)" />|' $(QSYS_FILE)
-endif
 
 $(QIP_FILE):$(QSYS_FILE) ../rtl/orca_hw.tcl
 	qsys-generate --synthesis=VHDL system.qsys 2>&1 | tee ./system.qsys.log
