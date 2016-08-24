@@ -18,7 +18,10 @@ int right_count = 0;
 int window_count = 0;
 
 while (1) {
- 
+
+#if TRACK_TIME
+  int time; 
+#endif
   // Collect WINDOW_LENGTH samples.
   // Apply the FIR filter after acquiring each sample.
   // FIR filter is symmetric, applying cross-correlation is simpler than
@@ -26,9 +29,14 @@ while (1) {
 
   // Empty fifo of possibly old data.
 #if USE_MICS
-  for(i=0;i<32;i++){
+  for(i = 0; i < 32; i++){
 	 i2s_get_data();
   }
+#endif
+
+#if TRACK_TIME
+  scratch_write(0xFFFF);
+  time = get_time();
 #endif
 
   for (i = 0; i < WINDOW_LENGTH; i++) {
@@ -56,8 +64,8 @@ while (1) {
  	  vbx_set_vl(NUM_TAPS);
  	  vbx_acc(VVWS, VMUL, fir_acc_l, temp_l + BUFFER_LENGTH - NUM_TAPS, fir_vector);
  	  vbx_acc(VVWS, VMUL, fir_acc_r, temp_r + BUFFER_LENGTH - NUM_TAPS, fir_vector);
- 	  *fir_acc_l >>= FIR_PRECISION;
- 	  *fir_acc_r >>= FIR_PRECISION;
+ 	  *fir_acc_l >>= (FIR_PRECISION);
+ 	  *fir_acc_r >>= (FIR_PRECISION);
  
  	  mic_buffer_l[buffer_count] = *fir_acc_l;
  	  mic_buffer_r[buffer_count] = *fir_acc_r;
@@ -67,6 +75,15 @@ while (1) {
       buffer_count = 0;
  	  }
   }
+
+#if TRACK_TIME
+  time = get_time() - time;
+  scratch_write(time);
+  scratch_write(0xFFFF);
+
+  time = get_time();
+#endif
+
   transfer_offset = buffer_count - WINDOW_LENGTH - SAMPLE_DIFFERENCE;
   if (transfer_offset < 0) {
 	 transfer_offset += BUFFER_LENGTH;
@@ -113,6 +130,11 @@ while (1) {
   vbx(SVWS, VMULH, sum_vector, PRESCALE_MUL, sum_vector);
   vbx_acc(VVWS, VMUL, power_right, sum_vector, sum_vector);
 
+#if TRACK_TIME
+  time = get_time() - time;
+  scratch_write(time);
+#endif
+    
 #if !USE_PRINT
   scratch_write(*power_center); 
   scratch_write(*power_right); 
@@ -184,4 +206,4 @@ while (1) {
 #endif
   }
   
- }
+}

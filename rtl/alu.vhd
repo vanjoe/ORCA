@@ -6,7 +6,6 @@ use work.utils.all;
 --use IEEE.std_logic_arith.all;
 
 entity arithmetic_unit is
-
   generic (
     INSTRUCTION_SIZE    : integer;
     REGISTER_SIZE       : integer;
@@ -438,7 +437,12 @@ begin  -- architecture rtl
         mul_dest_shift_amt <= mul_ab_shift_amt;
         mul_dest_valid     <= mul_ab_valid;
 
-        if stall_from_execute = '0' then
+        --if we don't want to pipeline multiple multiplies (as is the case when we are not using LVE)
+        -- then we want to flush the valid signals
+        -- Another way of phrasing this is that unless we have an LVE instruction we only want 
+        -- mul_dest_valid to be high for one cycle
+        if stall_from_execute = '0' or (opcode /= LVE_OP and mul_dest_valid='1') then
+
           mul_ab_valid   <= '0';
           mul_dest_valid <= '0';
         end if;

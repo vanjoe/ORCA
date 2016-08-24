@@ -25,7 +25,13 @@ void mputc ( void* p, char c)
         *UART_DATA = c;
 }
 
-
+  
+static inline unsigned get_time() {
+  int tmp;       
+  asm volatile("csrr %0, time"
+    : "=r" (tmp));
+  return tmp;
+}
 
 #include <stdint.h>
 
@@ -54,8 +60,9 @@ extern int fir_taps[NUM_TAPS];
 													: "r" (a))
 
 
-#define USE_PRINT 1
-#define USE_MICS  1
+#define USE_PRINT 0
+#define USE_MICS  0
+#define TRACK_TIME 1
 
 int main() {
 
