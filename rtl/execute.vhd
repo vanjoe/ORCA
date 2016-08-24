@@ -258,31 +258,26 @@ begin
                      opcode = AUIPC_OP or
                      opcode = ALU_OP or
                      opcode = ALUI_OP;
-      --if stall_from_execute = '0' then
-        if rd = ni_rs1 and rd /= ZERO and valid_instr = '1' then
-          if (current_alu) then
-            rs1_mux <= ALU_FWD;
-          else
-            rs1_mux <= NO_FWD;
-          end if;
+
+      if rd = ni_rs1 and rd /= ZERO and valid_instr = '1' then
+        if (current_alu) then
+          rs1_mux <= ALU_FWD;
         else
           rs1_mux <= NO_FWD;
         end if;
+      else
+        rs1_mux <= NO_FWD;
+      end if;
 
-        if rd = ni_rs2 and rd /= ZERO and valid_instr = '1' then
-          if current_alu then
-            rs2_mux <= ALU_FWD;
-          else
-            rs2_mux <= NO_FWD;
-          end if;
+      if rd = ni_rs2 and rd /= ZERO and valid_instr = '1' then
+        if current_alu then
+          rs2_mux <= ALU_FWD;
         else
           rs2_mux <= NO_FWD;
         end if;
-
-      --end if;
-
-      --save various flip flops for forwarding
-      --and writeback
+      else
+        rs2_mux <= NO_FWD;
+      end if;
 
       if stall_from_execute = '0' then
         rd_latch <= rd;

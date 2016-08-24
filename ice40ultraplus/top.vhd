@@ -9,7 +9,7 @@ use work.rv_components.all;
 
 entity top is
   generic (
-    USE_PLL : boolean := FALSE);
+    USE_PLL : boolean := false);
   port(
     reset_btn : in std_logic;
 
@@ -23,15 +23,16 @@ entity top is
     i2s_ws_mic1_mic2 : out std_logic;
     i2s_clk          : out std_logic;
 
-    i2s_out_sdin         : out std_logic;
-    i2s_out_sck          : out std_logic;
-    i2s_out_lrck         : out std_logic;
-
-    gpio : inout std_logic_vector(1 downto 0)
+    i2s_out_sdin : out std_logic;
+    i2s_out_sck  : out std_logic;
+    i2s_out_lrck : out std_logic
     );
 end entity;
 
 architecture rtl of top is
+
+
+  constant SYSCLK_FREQ_HZ : natural := 8000000;
 
   constant REGISTER_SIZE : integer := 32;
 
@@ -86,10 +87,10 @@ architecture rtl of top is
   signal data_ERR_I   : std_logic;
   signal data_RTY_I   : std_logic;
 
-  signal instr_ADR_O  : std_logic_vector(31 downto 0);
-  signal instr_CYC_O  : std_logic;
-  signal instr_STB_O  : std_logic;
-  signal instr_CTI_O  : std_logic_vector(2 downto 0);
+  signal instr_ADR_O : std_logic_vector(31 downto 0);
+  signal instr_CYC_O : std_logic;
+  signal instr_STB_O : std_logic;
+  signal instr_CTI_O : std_logic_vector(2 downto 0);
 
   signal instr_STALL_I : std_logic;
   signal instr_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -97,20 +98,6 @@ architecture rtl of top is
   signal instr_ERR_I   : std_logic;
   signal instr_RTY_I   : std_logic;
 
-  signal gpio_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal gpio_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal gpio_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal gpio_stb_i   : std_logic;
-  signal gpio_cyc_i   : std_logic;
-  signal gpio_we_i    : std_logic;
-  signal gpio_sel_i   : std_logic_vector(3 downto 0);
-  signal gpio_cti_i   : std_logic_vector(2 downto 0);
-  signal gpio_bte_i   : std_logic_vector(1 downto 0);
-  signal gpio_ack_o   : std_logic;
-  signal gpio_stall_o : std_logic;
-  signal gpio_lock_i  : std_logic;
-  signal gpio_err_o   : std_logic;
-  signal gpio_rty_o   : std_logic;
 
 
   constant MIC_BUFFER_SIZE : integer := 1024;
@@ -160,7 +147,7 @@ architecture rtl of top is
   signal data_ram_rty_o   : std_logic;
 
 
-  constant DEBUG_ENABLE  : boolean := False;
+  constant DEBUG_ENABLE  : boolean := false;
   signal debug_en        : std_logic;
   signal debug_write     : std_logic;
   signal debug_writedata : std_logic_vector(7 downto 0);
@@ -196,7 +183,7 @@ architecture rtl of top is
   signal clk_int         : std_logic;
   signal clk_3x_int      : std_logic;
   signal clk_3x          : std_logic;
-  signal clk_reset_count : signed(3 downto 0) := (others => '0');
+  signal clk_reset_count : signed(3 downto 0)   := (others => '0');
   signal clk_12          : std_logic;
 
   constant UART_ADDR_DAT         : std_logic_vector(7 downto 0) := "00000000";
@@ -206,29 +193,46 @@ architecture rtl of top is
   signal mem_instr_stall         : std_logic;
   signal mem_instr_ack           : std_logic;
 
-  signal hp_pwm      : std_logic;
-
-  constant SYSCLK_FREQ_HZ         : natural                                     := 8000000;
-  constant HEARTBEAT_COUNTER_BITS : positive                                    := log2(SYSCLK_FREQ_HZ);  -- ~1 second to roll over
-  signal heartbeat_counter        : unsigned(HEARTBEAT_COUNTER_BITS-1 downto 0) := (others => '0');
 
   signal nreset           : std_logic;
   signal auto_reset_count : unsigned(3 downto 0) := (others => '0');
   signal auto_reset       : std_logic;
+
+  component myI2C is
+    port (
+      I2C2_SCL : inout std_logic;
+      I2C2_SDA : inout std_logic;
+      RST      : in    std_logic;
+      IPLOAD   : in    std_logic;
+      IPDONE   : out   std_logic;
+      SBCLKi   : in    std_logic;
+      sbwri    : in    std_logic;
+      sbstbi   : in    std_logic;
+      SBADRi   : in    std_logic;
+      SBDATi   : in    std_logic_vector(7 downto 0);
+      SBDATo   : out   std_logic_vector(7 downto 0);
+      SBACKo   : out   std_logic;
+      I2CPIRQ  : out   std_logic_vector(1 downto 0);
+      I2CPWKUP : out   std_logic_vector(1 downto 0);
+      SPIPIRQ  : out   std_logic_vector(1 downto 0);
+      SPIPWKUP : out   std_logic_vector(1 downto 0));
+
+  end component myI2C;
+
 begin
 
   CLK_LOGIC_DIVIDER : if not USE_PLL generate
 
     hf_osc : component osc_48MHz
       generic map (
-        DIVIDER => "00") -- 48 MHz
+        DIVIDER => "00")                -- 48 MHz
       port map (
-        CLKOUT    => osc_clk);
+        CLKOUT => osc_clk);
 
     process (osc_clk)
     begin
       if rising_edge(osc_clk) then
-        clk_count <= clk_count + 1;
+        clk_count  <= clk_count + 1;
         clk_3x_int <= not clk_3x_int;
         if clk_count = 2 then
           clk_count <= (others => '0');
@@ -237,9 +241,9 @@ begin
 
         if clk_reset_count /= -1 then
           clk_reset_count <= clk_reset_count + 1;
-          clk_3x_int <= '0';
-          clk_int <= '0';
-          clk_count <= (others => '0');
+          clk_3x_int      <= '0';
+          clk_int         <= '0';
+          clk_count       <= (others => '0');
         end if;
 
         if reset_btn = '0' then
@@ -272,41 +276,41 @@ begin
 
   CLK_PLL : if USE_PLL generate
 
-  hf_osc : component osc_48MHz
-    generic map (
-      DIVIDER => "10") -- 12 MHz
-    port map (
-      CLKOUT => clk);
+    hf_osc : component osc_48MHz
+      generic map (
+        DIVIDER => "10")                -- 12 MHz
+      port map (
+        CLKOUT => clk);
 
-  pll_3x : SB_PLL40_CORE
-    generic map(
+    pll_3x : SB_PLL40_CORE
+      generic map(
 
-      -- Entity Parameters
-      FEEDBACK_PATH                  => "PHASE_AND_DELAY",
-      DELAY_ADJUSTMENT_MODE_FEEDBACK => "FIXED",  -- FIXED/DYNAMIC
-      DELAY_ADJUSTMENT_MODE_RELATIVE => "FIXED",  -- FIXED/DYNAMIC
-      SHIFTREG_DIV_MODE              => "00",  -- 00 (div by 4)/ 01 (div by 7)/11 (div by 5)
-      FDA_FEEDBACK                   => "0000",
-      FDA_RELATIVE                   => "0000",
-      PLLOUT_SELECT                  => "SHIFTREG_0deg",
+                                        -- Entity Parameters
+        FEEDBACK_PATH                  => "PHASE_AND_DELAY",
+        DELAY_ADJUSTMENT_MODE_FEEDBACK => "FIXED",  -- FIXED/DYNAMIC
+        DELAY_ADJUSTMENT_MODE_RELATIVE => "FIXED",  -- FIXED/DYNAMIC
+        SHIFTREG_DIV_MODE              => "00",  -- 00 (div by 4)/ 01 (div by 7)/11 (div by 5)
+        FDA_FEEDBACK                   => "0000",
+        FDA_RELATIVE                   => "0000",
+        PLLOUT_SELECT                  => "SHIFTREG_0deg",
 
-      DIVR         => "0000",
-      DIVF         => "0000010",
-      DIVQ         => "001",
-      FILTER_RANGE => "001",
+        DIVR         => "0000",
+        DIVF         => "0000010",
+        DIVQ         => "001",
+        FILTER_RANGE => "001",
 
-      ENABLE_ICEGATE => '0')
-    port map (
-      REFERENCECLK => clk,
+        ENABLE_ICEGATE => '0')
+      port map (
+        REFERENCECLK => clk,
 
-      PLLOUTGLOBAL    => clk_3x,
-      EXTFEEDBACK     => 'X',
-      DYNAMICDELAY    => (others => 'X'),
-      BYPASS          => '0',
-      RESETB          => nreset,
-      SDI             => 'X',
-      SCLK            => 'X',
-      LATCHINPUTVALUE => 'X');
+        PLLOUTGLOBAL    => clk_3x,
+        EXTFEEDBACK     => 'X',
+        DYNAMICDELAY    => (others => 'X'),
+        BYPASS          => '0',
+        RESETB          => nreset,
+        SDI             => 'X',
+        SCLK            => 'X',
+        LATCHINPUTVALUE => 'X');
 
     clk_12 <= clk;
 
@@ -324,7 +328,7 @@ begin
     end if;
   end process;
 
-  reset <= not reset_btn or auto_reset;
+  reset  <= not reset_btn or auto_reset;
   nreset <= not reset;
 
   COMBINED_RAM_GEN : if not SEPERATE_MEMS generate
@@ -489,7 +493,7 @@ begin
       COUNTER_LENGTH     => 32,
       PIPELINE_STAGES    => 4,
       LVE_ENABLE         => 1,
-      PLIC_ENABLE        => FALSE,
+      PLIC_ENABLE        => false,
       NUM_EXT_INTERRUPTS => 2,
       SCRATCHPAD_SIZE    => 128*1024,
       FAMILY             => "LATTICE")
@@ -520,16 +524,16 @@ begin
 
       global_interrupts => (others => '0'));
 
-  data_BTE_O   <= "00";
-  data_LOCK_O  <= '0';
+  data_BTE_O  <= "00";
+  data_LOCK_O <= '0';
 
   split_wb_data : component wb_splitter
     generic map(
-      master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE), -- RAM
-      master1_address => (16#00010000#, 4*1024),           -- MIC
-      master2_address => (16#00020000#, 4*1024),           -- UART
-      master3_address => (16#00030000#, 4*1024),           -- GPIO
-      master4_address => (16#00040000#, 4*1024))           -- I2S
+      master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE),  -- RAM
+      master1_address => (16#00010000#, 4*1024),            -- MIC
+      master2_address => (16#00020000#, 4*1024),            -- UART
+      master3_address => (16#00030000#, 4*1024),            --I2S Transmit
+      master4_address => (16#00040000#, 4*1024))            --i2c
 
     port map(
       clk_i => clk,
@@ -595,143 +599,123 @@ begin
       master2_ERR_I   => data_uart_ERR_O,
       master2_RTY_I   => data_uart_RTY_O,
 
-      master3_ADR_O   => gpio_ADR_I,
-      master3_DAT_O   => gpio_DAT_I,
-      master3_WE_O    => gpio_WE_I,
-      master3_CYC_O   => gpio_CYC_I,
-      master3_STB_O   => gpio_STB_I,
-      master3_SEL_O   => gpio_SEL_I,
-      master3_CTI_O   => gpio_CTI_I,
-      master3_BTE_O   => gpio_BTE_I,
-      master3_LOCK_O  => gpio_LOCK_I,
-      master3_STALL_I => gpio_STALL_O,
-      master3_DAT_I   => gpio_DAT_O,
-      master3_ACK_I   => gpio_ACK_O,
-      master3_ERR_I   => gpio_ERR_O,
-      master3_RTY_I   => gpio_RTY_O,
 
-      master4_ADR_O   => i2s_ADR_O_32,
-      master4_DAT_O   => i2s_DAT_I_32,
-      master4_WE_O    => i2s_WE_I,
-      master4_CYC_O   => i2s_CYC_I,
-      master4_STB_O   => i2s_STB_I,
-      master4_SEL_O   => i2s_SEL_I,
-      master4_CTI_O   => i2s_CTI_I,
-      master4_BTE_O   => i2s_BTE_I,
-      master4_LOCK_O  => i2s_LOCK_I,
-      master4_STALL_I => i2s_STALL_O,
-      master4_DAT_I   => i2s_DAT_O_32,
-      master4_ACK_I   => i2s_ACK_O,
-      master4_ERR_I   => OPEN,
-      master4_RTY_I   => OPEN,
+      master3_ADR_O   => i2s_ADR_O_32,
+      master3_DAT_O   => i2s_DAT_I_32,
+      master3_WE_O    => i2s_WE_I,
+      master3_CYC_O   => i2s_CYC_I,
+      master3_STB_O   => i2s_STB_I,
+      master3_SEL_O   => i2s_SEL_I,
+      master3_CTI_O   => i2s_CTI_I,
+      master3_BTE_O   => i2s_BTE_I,
+      master3_LOCK_O  => i2s_LOCK_I,
+      master3_STALL_I => i2s_STALL_O,
+      master3_DAT_I   => i2s_DAT_O_32,
+      master3_ACK_I   => i2s_ACK_O,
+      master3_ERR_I   => open,
+      master3_RTY_I   => open,
 
-      master5_ADR_O   => OPEN,
-      master5_DAT_O   => OPEN,
-      master5_WE_O    => OPEN,
-      master5_CYC_O   => OPEN,
-      master5_STB_O   => OPEN,
-      master5_SEL_O   => OPEN,
-      master5_CTI_O   => OPEN,
-      master5_BTE_O   => OPEN,
-      master5_LOCK_O  => OPEN,
-      master5_STALL_I => OPEN,
-      master5_DAT_I   => OPEN,
-      master5_ACK_I   => OPEN,
-      master5_ERR_I   => OPEN,
-      master5_RTY_I   => OPEN,
+      --master4_ADR_O   => i2c_ADR_O_32,
+      --master4_DAT_O   => i2c_DAT_I_32,
+      --master4_WE_O    => i2c_WE_I,
+      --master4_CYC_O   => i2c_CYC_I,
+      --master4_STB_O   => i2c_STB_I,
+      --master4_SEL_O   => i2c_SEL_I,
+      --master4_CTI_O   => i2c_CTI_I,
+      --master4_BTE_O   => i2c_BTE_I,
+      --master4_LOCK_O  => i2c_LOCK_I,
+      --master4_STALL_I => i2c_STALL_O,
+      --master4_DAT_I   => i2c_DAT_O_32,
+      --master4_ACK_I   => i2c_ACK_O,
+      --master4_ERR_I   => open,
+      --master4_RTY_I   => open,
 
-      master6_ADR_O   => OPEN,
-      master6_DAT_O   => OPEN,
-      master6_WE_O    => OPEN,
-      master6_CYC_O   => OPEN,
-      master6_STB_O   => OPEN,
-      master6_SEL_O   => OPEN,
-      master6_CTI_O   => OPEN,
-      master6_BTE_O   => OPEN,
-      master6_LOCK_O  => OPEN,
-      master6_STALL_I => OPEN,
-      master6_DAT_I   => OPEN,
-      master6_ACK_I   => OPEN,
-      master6_ERR_I   => OPEN,
-      master6_RTY_I   => OPEN,
 
-      master7_ADR_O   => OPEN,
-      master7_DAT_O   => OPEN,
-      master7_WE_O    => OPEN,
-      master7_CYC_O   => OPEN,
-      master7_STB_O   => OPEN,
-      master7_SEL_O   => OPEN,
-      master7_CTI_O   => OPEN,
-      master7_BTE_O   => OPEN,
-      master7_LOCK_O  => OPEN,
-      master7_STALL_I => OPEN,
-      master7_DAT_I   => OPEN,
-      master7_ACK_I   => OPEN,
-      master7_ERR_I   => OPEN,
-      master7_RTY_I   => OPEN);
+      master5_ADR_O   => open,
+      master5_DAT_O   => open,
+      master5_WE_O    => open,
+      master5_CYC_O   => open,
+      master5_STB_O   => open,
+      master5_SEL_O   => open,
+      master5_CTI_O   => open,
+      master5_BTE_O   => open,
+      master5_LOCK_O  => open,
+      master5_STALL_I => open,
+      master5_DAT_I   => open,
+      master5_ACK_I   => open,
+      master5_ERR_I   => open,
+      master5_RTY_I   => open,
 
-  -- Resizing to fit the REGISTER_SIZE bit wishbone splitter.
+      master6_ADR_O   => open,
+      master6_DAT_O   => open,
+      master6_WE_O    => open,
+      master6_CYC_O   => open,
+      master6_STB_O   => open,
+      master6_SEL_O   => open,
+      master6_CTI_O   => open,
+      master6_BTE_O   => open,
+      master6_LOCK_O  => open,
+      master6_STALL_I => open,
+      master6_DAT_I   => open,
+      master6_ACK_I   => open,
+      master6_ERR_I   => open,
+      master6_RTY_I   => open,
+
+      master7_ADR_O   => open,
+      master7_DAT_O   => open,
+      master7_WE_O    => open,
+      master7_CYC_O   => open,
+      master7_STB_O   => open,
+      master7_SEL_O   => open,
+      master7_CTI_O   => open,
+      master7_BTE_O   => open,
+      master7_LOCK_O  => open,
+      master7_STALL_I => open,
+      master7_DAT_I   => open,
+      master7_ACK_I   => open,
+      master7_ERR_I   => open,
+      master7_RTY_I   => open);
+
+                                        -- Resizing to fit the REGISTER_SIZE bit wishbone splitter.
   i2s_DAT_O_32 <= i2s_DAT_O & i2s_DAT_O;
-  i2s_DAT_I <= i2s_DAT_I_32(I2S_DATA_WIDTH-1 downto 0);
+  i2s_DAT_I    <= i2s_DAT_I_32(I2S_DATA_WIDTH-1 downto 0);
 
 --The i2s module uses a 16bit bus, use the sel bits to choose which address is
 --appropriate
-  i2s_ADR_I <= i2s_ADR_O_32(I2S_ADDR_WIDTH downto 2) & not i2s_SEL_I(0);
+  i2s_ADR_I   <= i2s_ADR_O_32(I2S_ADDR_WIDTH downto 2) & not i2s_SEL_I(0);
   i2s_stall_o <= i2s_STB_I and not i2s_ACK_O;
 
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
 
 
-    gpio_pio : component wb_pio
+
+  i2s_tx : component tx_i2s_topm
     generic map (
-       DATA_WIDTH => gpio'length)
-    port map(
-      CLK_I => clk,
-      RST_I => reset,
+      DATA_WIDTH => I2S_DATA_WIDTH,
+      ADDR_WIDTH => I2S_ADDR_WIDTH)
+    port map (
+      wb_clk_i => clk,
+      wb_rst_i => reset,
+      wb_sel_i => '1',
+      wb_stb_i => i2s_STB_I,
+      wb_we_i  => i2s_WE_I,
+      wb_cyc_i => i2s_CYC_I,
+      wb_bte_i => i2s_BTE_I,
+      wb_cti_i => i2s_CTI_I,
+      wb_adr_i => i2s_ADR_I,
+      wb_dat_i => i2s_DAT_I,
+      wb_ack_o => i2s_ACK_O,
+      wb_dat_o => i2s_DAT_O,
 
-      ADR_I   => gpio_ADR_I,
-      DAT_I   => gpio_DAT_I(gpio'range),
-      WE_I    => gpio_WE_I,
-      CYC_I   => gpio_CYC_I,
-      STB_I   => gpio_STB_I,
-      SEL_I   => gpio_SEL_I,
-      CTI_I   => gpio_CTI_I,
-      BTE_I   => gpio_BTE_I,
-      LOCK_I  => gpio_LOCK_I,
-      ACK_O   => gpio_ACK_O,
-      STALL_O => gpio_STALL_O,
-      DATA_O  => gpio_DAT_O(gpio'range),
-      ERR_O   => gpio_ERR_O,
-      RTY_O   => gpio_RTY_O,
-      input_output  => gpio);
+      tx_int_o => i2s_interrupt,
 
-    i2s_tx : component tx_i2s_topm
-      generic map (
-        DATA_WIDTH => I2S_DATA_WIDTH,
-        ADDR_WIDTH => I2S_ADDR_WIDTH)
-      port map (
-        wb_clk_i  => clk,
-        wb_rst_i => reset,
-        wb_sel_i => '1',
-        wb_stb_i => i2s_STB_I,
-        wb_we_i => i2s_WE_I,
-        wb_cyc_i => i2s_CYC_I,
-        wb_bte_i => i2s_BTE_I,
-        wb_cti_i => i2s_CTI_I,
-        wb_adr_i => i2s_ADR_I,
-        wb_dat_i => i2s_DAT_I,
-        wb_ack_o => i2s_ACK_O,
-        wb_dat_o => i2s_DAT_O,
+      i2s_sd_o  => i2s_out_sdin,
+      i2s_sck_o => i2s_out_sck,
+      i2s_ws_o  => i2s_out_lrck);
 
-        tx_int_o => i2s_interrupt,
-
-        i2s_sd_o => i2s_out_sdin,
-        i2s_sck_o => i2s_out_sck,
-        i2s_ws_o => i2s_out_lrck);
-
-  -- This is not used while operating in external serial mode.
-  --i2s_out_mclk <= clk_12;
+                                        -- This is not used while operating in external serial mode.
+                                        --i2s_out_mclk <= clk_12;
 
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
@@ -746,17 +730,17 @@ begin
     signal debug_count        : unsigned(log2((last_valid_data'length+3)/4)-1 downto 0);
     signal debug_wait         : std_logic;
 
-    --Convert a hex digit to ASCII for outputting on the UART
+                                        --Convert a hex digit to ASCII for outputting on the UART
     function to_ascii_hex (
       signal hex_in : std_logic_vector)
       return std_logic_vector is
     begin
       if unsigned(hex_in) > to_unsigned(9, hex_in'length) then
-        --value + 'A' - 10
+                                        --value + 'A' - 10
         return std_logic_vector(resize(unsigned(hex_in), 8) + to_unsigned(55, 8));
       end if;
 
-      --value + '0'
+                                        --value + '0'
       return std_logic_vector(resize(unsigned(hex_in), 8) + to_unsigned(48, 8));
     end to_ascii_hex;
 
@@ -848,9 +832,9 @@ begin
     uart_stall      <= '0';
   end generate no_debug_gen;
 
-  -----------------------------------------------------------------------------
-  -- UART signals and interface
-  -----------------------------------------------------------------------------
+                                        -----------------------------------------------------------------------------
+                                        -- UART signals and interface
+                                        -----------------------------------------------------------------------------
   cts_n     <= cts;
   txd       <= serial_out;
   serial_in <= rxd;

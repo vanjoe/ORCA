@@ -4,7 +4,6 @@
 
 add_file -vhdl -lib work "top.vhd" 
 add_file -vhdl -lib work "osc_hf.vhd" 
-add_file -vhdl -lib work "../ice40ultra/hdl/wb_pio.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/i2s_interface/i2s_wb.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/i2s_interface/i2s_decode.vhd" 
 add_file -vhdl -lib work "../rtl/alu.vhd" 

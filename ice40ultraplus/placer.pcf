@@ -12,9 +12,6 @@
 
 # ##############################################################################
 
-###MergeFF List 2
-set_io_ff gpio[0] -in ON
-set_io_ff gpio[1] -in ON
 
 ###IOSet List 9
 set_io i2s_clk C3
