@@ -25,13 +25,18 @@ popd
 
 TEST_DIR=$SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/isa
 
+#build vectorblox unit tests
+make -C $SCRIPTDIR/../software/unit_test
+
+
 
 
 
 SOFTWARE_DIR=../software
 #all files that aren't dump or hex (the hex files are not correctly formatted)
 FILES=$(ls ${TEST_DIR}/rv32u?-p-* | grep -v dump | grep -v hex)
-ORCA_FILES=$(ls ${SOFTWARE_DIR}/* | grep .elf)
+ORCA_FILES=$(find  ${SOFTWARE_DIR}/unit_test -iname "*.elf" )
+
 
 PREFIX=riscv32-unknown-elf
 OBJDUMP=$PREFIX-objdump
