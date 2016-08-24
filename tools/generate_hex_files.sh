@@ -16,6 +16,7 @@ git submodule update --init $SCRIPTDIR/riscv-toolchain/riscv-tools/
 pushd $SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/
   git submodule update --init --recursive .
   sed -i 's/. = 0x80000000/. = 0x00000200/' env/p/link.ld
+  sed -i 's/.tohost.*$//' env/p/link.ld
   sed -i 's/ ecall/fence.i;ecall/' env/p/riscv_test.h
   ./configure --with-xlen=32 2>&1
   make clean 2 >/dev/null 2>&1
