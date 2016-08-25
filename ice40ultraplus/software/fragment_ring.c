@@ -63,31 +63,33 @@ while (1) {
 
     // Check if vector instructions need to be broken up.
     if ((buffer_count + 1) - NUM_TAPS < 0) {
+      int taps_offset = NUM_TAPS - (buffer_count + 1);
+      vbx_word_t *v_fir_taps_end = v_fir_taps + taps_offset;
+      vbx_word_t *mic_buffer_end_l = mic_buffer_l + BUFFER_LENGTH - taps_offset;
+      vbx_word_t *mic_buffer_end_r = mic_buffer_r + BUFFER_LENGTH - taps_offset;
+       
       vbx_set_vl(buffer_count + 1);
-      vbx_acc(VVWS, VMUL, fir_acc_l, mic_buffer_l, v_fir_taps + NUM_TAPS - (buffer_count + 1));
+      vbx_acc(VVWS, VMUL, fir_acc_l, mic_buffer_l, v_fir_taps_end);
       fir_acc_l_temp = *fir_acc_l;
-      vbx_acc(VVWS, VMUL, fir_acc_r, mic_buffer_r, v_fir_taps + NUM_TAPS - (buffer_count + 1));
+      vbx_acc(VVWS, VMUL, fir_acc_r, mic_buffer_r, v_fir_taps_end);
       fir_acc_r_temp = *fir_acc_r;
 
-      vbx_set_vl(NUM_TAPS - (buffer_count + 1));
-      vbx_acc(VVWS, VMUL, fir_acc_l, (mic_buffer_l + BUFFER_LENGTH - (NUM_TAPS - (buffer_count + 1))), v_fir_taps);
+      vbx_set_vl(taps_offset);
+      vbx_acc(VVWS, VMUL, fir_acc_l, mic_buffer_end_l, v_fir_taps);
       *fir_acc_l += fir_acc_l_temp;
-      vbx_acc(VVWS, VMUL, fir_acc_r, (mic_buffer_r + BUFFER_LENGTH - (NUM_TAPS - (buffer_count + 1))), v_fir_taps);
+      vbx_acc(VVWS, VMUL, fir_acc_r, mic_buffer_end_r, v_fir_taps);
       *fir_acc_r += fir_acc_r_temp;
-
     }
     
     else {
+      int buffer_offset = buffer_count - (NUM_TAPS - 1);
       vbx_set_vl(NUM_TAPS);
-      vbx_acc(VVWS, VMUL, fir_acc_l, mic_buffer_l + buffer_count - (NUM_TAPS - 1), v_fir_taps);
-      vbx_acc(VVWS, VMUL, fir_acc_r, mic_buffer_r + buffer_count - (NUM_TAPS - 1), v_fir_taps);
+      vbx_acc(VVWS, VMUL, fir_acc_l, mic_buffer_l + buffer_offset, v_fir_taps);
+      vbx_acc(VVWS, VMUL, fir_acc_r, mic_buffer_r + buffer_offset, v_fir_taps);
     }
-
     
     v_filtered_l[buffer_count] = (*fir_acc_l) >> FIR_PRECISION;
     v_filtered_r[buffer_count] = (*fir_acc_r) >> FIR_PRECISION;
-
-    
 
  	  buffer_count++;
  	  if (buffer_count >= BUFFER_LENGTH) {
