@@ -17,6 +17,11 @@ int left_count = 0;
 int right_count = 0;
 int window_count = 0;
 
+// This is a temp variable used when breaking up vector instructions.
+int fir_acc_l_temp = 0;
+int fir_acc_r_temp = 0; 
+
+
 while (1) {
 
 #if TRACK_TIME
@@ -40,36 +45,52 @@ while (1) {
 #endif
 
   for (i = 0; i < WINDOW_LENGTH; i++) {
-	  // Insert new sample at the end of the temporary vector.
-	  vbx_set_vl(BUFFER_LENGTH - 1);
-	  vbx(SVWS, VADD, temp_l, 0, temp_l + 1);
-	  vbx(SVWS, VADD, temp_r, 0, temp_r + 1);
+    // Insert new sample into the ring buffer.
 #if USE_MICS
 	  i2s_data_t mic_data;
 	  mic_data=i2s_get_data();
-	  temp_l[BUFFER_LENGTH - 1] = mic_data.left;
-	  temp_r[BUFFER_LENGTH - 1] = mic_data.right;
+	  mic_buffer_l[buffer_count] = mic_data.left;
+	  mic_buffer_r[buffer_count] = mic_data.right;
 #else
-	  temp_l[BUFFER_LENGTH - 1] = samples_l[sample_count];
-	  temp_r[BUFFER_LENGTH - 1] = samples_r[sample_count];
-#endif
- 
+	  mic_buffer_l[buffer_count] = samples_l[sample_count];
+	  mic_buffer_r[buffer_count] = samples_r[sample_count];
+
  	  sample_count++;
  	  if (sample_count >= NUM_SAMPLES) {
  	   sample_count = 0;
  	  }
- 
- 	  // Apply the FIR filter to the last NUM_TAPS samples of the temp buffer.
- 	  // Write to the accumulated result to the mic buffer for beamforming.
- 	  vbx_set_vl(NUM_TAPS);
- 	  vbx_acc(VVWS, VMUL, fir_acc_l, temp_l + BUFFER_LENGTH - NUM_TAPS, v_fir_taps);
- 	  vbx_acc(VVWS, VMUL, fir_acc_r, temp_r + BUFFER_LENGTH - NUM_TAPS, v_fir_taps);
- 	  *fir_acc_l >>= (FIR_PRECISION);
- 	  *fir_acc_r >>= (FIR_PRECISION);
- 
- 	  mic_buffer_l[buffer_count] = *fir_acc_l;
- 	  mic_buffer_r[buffer_count] = *fir_acc_r;
- 
+#endif
+
+    // Check if vector instructions need to be broken up.
+    if ((buffer_count + 1) - NUM_TAPS < 0) {
+      vbx_set_vl(buffer_count + 1);
+      vbx_acc(VVWS, VMUL, fir_acc_l, mic_buffer_l, v_fir_taps + NUM_TAPS - (buffer_count + 1));
+      fir_acc_l_temp = *fir_acc_l;
+      vbx_acc(VVWS, VMUL, fir_acc_r, mic_buffer_r, v_fir_taps + NUM_TAPS - (buffer_count + 1));
+      fir_acc_r_temp = *fir_acc_r;
+
+      vbx_set_vl(NUM_TAPS - (buffer_count + 1));
+      vbx_acc(VVWS, VMUL, fir_acc_l, (mic_buffer_l + BUFFER_LENGTH - (NUM_TAPS - (buffer_count + 1))), v_fir_taps);
+      *fir_acc_l += fir_acc_l_temp;
+      vbx_acc(VVWS, VMUL, fir_acc_r, (mic_buffer_r + BUFFER_LENGTH - (NUM_TAPS - (buffer_count + 1))), v_fir_taps);
+      *fir_acc_r += fir_acc_r_temp;
+
+    }
+    
+    else {
+      vbx_set_vl(NUM_TAPS);
+      vbx_acc(VVWS, VMUL, fir_acc_l, mic_buffer_l + buffer_count - (NUM_TAPS - 1), v_fir_taps);
+      vbx_acc(VVWS, VMUL, fir_acc_r, mic_buffer_r + buffer_count - (NUM_TAPS - 1), v_fir_taps);
+    }
+
+    
+    v_filtered_l[buffer_count] = (*fir_acc_l) >> FIR_PRECISION;
+    v_filtered_r[buffer_count] = (*fir_acc_r) >> FIR_PRECISION;
+
+    scratch_write(buffer_count);
+    scratch_write(v_filtered_r[buffer_count]);
+    
+
  	  buffer_count++;
  	  if (buffer_count >= BUFFER_LENGTH) {
       buffer_count = 0;
@@ -90,8 +111,8 @@ while (1) {
   }
 
   vbx_set_vl(SAMPLE_DIFFERENCE);
-  vbx(SVWS, VADD, sound_vector_l, 0, (mic_buffer_l + transfer_offset));
-  vbx(SVWS, VADD, sound_vector_r, 0, (mic_buffer_r + transfer_offset));
+  vbx(SVWS, VADD, sound_vector_l, 0, (v_filtered_l + transfer_offset));
+  vbx(SVWS, VADD, sound_vector_r, 0, (v_filtered_r + transfer_offset));
 
   transfer_offset = buffer_count - WINDOW_LENGTH;
   if (transfer_offset < 0) {
@@ -100,8 +121,8 @@ while (1) {
 
   // MOV mic_buffer to sound_vector
   vbx_set_vl(WINDOW_LENGTH);
-  vbx(SVWS, VADD, (sound_vector_l + SAMPLE_DIFFERENCE), 0, (mic_buffer_l + transfer_offset));
-  vbx(SVWS, VADD, (sound_vector_r + SAMPLE_DIFFERENCE), 0, (mic_buffer_r + transfer_offset));
+  vbx(SVWS, VADD, (sound_vector_l + SAMPLE_DIFFERENCE), 0, (v_filtered_l + transfer_offset));
+  vbx(SVWS, VADD, (sound_vector_r + SAMPLE_DIFFERENCE), 0, (v_filtered_r + transfer_offset));
 
   // Calculate the power assuming the sound is coming from the center.
   vbx(VVWS, VADD, sum_vector, (sound_vector_l + SAMPLE_DIFFERENCE), (sound_vector_r + SAMPLE_DIFFERENCE));

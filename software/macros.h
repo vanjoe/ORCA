@@ -131,7 +131,7 @@ extern vbx_mxp_t the_mxp;
 #define riscv_vector_asm_(vinstr,src_t,op_sz,dim,acc,sign,sync,vlen,dest,srca,srcb) \
 	do{\
 		asm( "vtype."#op_sz sync " %0, %1\n\t"\
-		     #vinstr"."#src_t"."#dim"d."#sign acc " %2,%3" ::"r"(srca),"r"(srcb),"r"(dest),"r"(vlen):); \
+		     #vinstr"."#src_t"."#dim"d."#sign acc " %2,%3" ::"r"(srca),"r"(srcb),"r"(dest),"r"(vlen):"memory"); \
 }while(0)
 #define riscv_vector_asm(vinstr,src_t,op_sz,dim,acc,sign,sync,vlen,dest,srca,srcb) \
 	riscv_vector_asm_(vinstr,src_t,op_sz,dim,acc,sign,sync,vlen,dest,srca,srcb) \
