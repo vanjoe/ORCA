@@ -87,8 +87,6 @@ while (1) {
     v_filtered_l[buffer_count] = (*fir_acc_l) >> FIR_PRECISION;
     v_filtered_r[buffer_count] = (*fir_acc_r) >> FIR_PRECISION;
 
-    scratch_write(buffer_count);
-    scratch_write(v_filtered_r[buffer_count]);
     
 
  	  buffer_count++;
