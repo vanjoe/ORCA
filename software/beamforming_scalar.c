@@ -2,6 +2,7 @@
 
 #include "samples.h"
 #include "printf.h"
+#include "i2s.h"
 #include "fir.h"
 
 #define SYS_CLK 8000000 
@@ -23,7 +24,7 @@ volatile int*  UART_LCR=UART_BASE+3;
 volatile int*  UART_LSR=UART_BASE+5;
 
 #define UART_LCR_8BIT_DEFAULT 0x03
-#define UART_INIT() do{*UART_LCR = ;}while(0)
+#define UART_INIT() do{*UART_LCR = UART_LCR_8BIT_DEFAULT;}while(0)
 #define UART_PUTC(c) do{*UART_DATA = (c);}while(0)
 #define UART_BUSY() (!((*UART_LSR) &0x20))
 void mputc ( void* p, char c)
@@ -69,6 +70,10 @@ int main() {
   volatile int32_t filtered_l[BUFFER_LENGTH];
   volatile int32_t filtered_r[BUFFER_LENGTH];
 
+#define USE_PRINT 1
+#define USE_MICS 1
+#define TRACK_TIME 1
+
 #if !USE_MICS 
   int sample_count = 0;
 #else
@@ -93,9 +98,7 @@ int main() {
   int right_count = 0;
   int window_count = 0;
 
-#define USE_PRINT 0
-#define USE_MICS 0
-#define TRACK_TIME 1
+
 
 
 #if USE_MICS 

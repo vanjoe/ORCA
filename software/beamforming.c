@@ -80,8 +80,8 @@ vbx_void_t *vbx_lattice_sp_malloc(size_t num_bytes) {
 }
 
 
-#define USE_PRINT 0
-#define USE_MICS  0
+#define USE_PRINT 1
+#define USE_MICS  1
 #define TRACK_TIME 1
 
 int main() {
