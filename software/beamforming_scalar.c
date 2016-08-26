@@ -80,12 +80,12 @@ int main() {
   int index_r;
   int buffer_count = 0;
 
-  volatile int64_t power_center;
-  volatile int64_t power_left;
-  volatile int64_t power_right;
-  volatile int64_t power_temp;
-  volatile int64_t fir_acc_l;
-  volatile int64_t fir_acc_r;
+  volatile int32_t power_center;
+  volatile int32_t power_left;
+  volatile int32_t power_right;
+  volatile int32_t power_temp;
+  volatile int32_t fir_acc_l;
+  volatile int32_t fir_acc_r;
 
   // These counters add hysteresis to the system, improving output stability 
   int center_count = 0;
@@ -168,8 +168,8 @@ int main() {
         }
       }
 
-      filtered_l[buffer_count] = fir_acc_l >> 16;
-      filtered_r[buffer_count] = fir_acc_r >> 16;
+      filtered_l[buffer_count] = fir_acc_l >> 20;
+      filtered_r[buffer_count] = fir_acc_r >> 20;
 
       // Accumulate the powers.
       index_l = buffer_count;
@@ -179,7 +179,7 @@ int main() {
       power_center += power_temp * power_temp;
 
       index_l -= SAMPLE_DIFFERENCE;
-      if (index_l < 0 ) {
+      if (index_l < 0) {
         index_l += BUFFER_LENGTH;
       }
       power_temp = filtered_l[index_l] + filtered_r[index_r];
@@ -193,8 +193,6 @@ int main() {
       power_temp = filtered_l[index_l] + filtered_r[index_r];
       power_right += power_temp * power_temp;
 
-
-
       buffer_count++;
       if (buffer_count == BUFFER_LENGTH) {
         buffer_count = 0; 
@@ -207,9 +205,9 @@ int main() {
 #endif
 
 #if !USE_PRINT
-    scratch_write(power_center >> 8);
-    scratch_write(power_left >> 8);
-    scratch_write(power_right >> 8);
+    scratch_write(power_center);
+    scratch_write(power_left);
+    scratch_write(power_right);
 #endif
 
 #if USE_PRINT
