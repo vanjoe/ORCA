@@ -47,15 +47,20 @@ proc com {} {
 							hdl/i2s_tx/dpram_rtl.vhd		 \
 							hdl/i2s_tx/gen_event_reg.vhd	 \
 							hdl/i2s_tx/tx_i2s_wbd.vhd      \
-							hdl/i2s_tx/tx_i2s_topm.vhd		 \
-							SB_SPRAM256KA.vhd
-#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIPTBS8.v              \
-#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIWTCZ4.v				  \
-#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_ipenc_modelsim.v \
-#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_lc.v				  \
-#							/nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_syn.v            \
+							hdl/i2s_tx/tx_i2s_topm.vhd
+					 ]
 
-]
+
+	 lappend fileset /nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIPTBS8.v
+	 lappend fileset /nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIWTCZ4.v
+	 lappend fileset /nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_ipenc_modelsim.v
+	 lappend fileset /nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_lc.v
+	 lappend fileset /nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_syn.v
+
+    ##If you want to view the ram contents of the scratchpad use this file, otherwise the Toolchain files above should work
+	 #
+	 #  lappend fileset SB_SPRAM256KA.vhd
+
 
     vlib work
 

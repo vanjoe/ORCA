@@ -175,8 +175,16 @@ architecture behavioural of execute is
 
 
   signal use_after_load_stall : std_logic;
-
-
+  function bool_to_int (
+    signal a : std_logic)
+    return integer is
+  begin  -- function bool_to_int
+    if a = '1' then
+      return 1;
+    end if;
+    return 0;
+  end function bool_to_int;
+  signal myint : integer;
 begin
   valid_instr <= valid_input and not use_after_load_stall;
   -----------------------------------------------------------------------------
@@ -209,15 +217,18 @@ begin
             "10" when br_data_enable = '1' else
             "11";                       --when alu_data_out_valid = '1'
 
---  assert (((sys_data_enable = '1') and (ld_data_enable = '0') and (br_data_enable = '0') and (alu_data_out_valid = '0')) or
---          ((sys_data_enable = '0') and (ld_data_enable = '1') and (br_data_enable = '0') and (alu_data_out_valid = '0')) or
---          ((sys_data_enable = '0') and (ld_data_enable = '0') and (br_data_enable = '1') and (alu_data_out_valid = '0')) or
---          ((sys_data_enable = '0') and (ld_data_enable = '0') and (br_data_enable = '0') and (alu_data_out_valid = '1')) or
---          ((sys_data_enable = '0') and (ld_data_enable = '0') and (br_data_enable = '0') and (alu_data_out_valid = '0')))
---          or sys_data_enable = 'U' or sys_data_enable = 'X' or ld_data_enable = 'U' or ld_data_enable = 'X'
---          or br_data_enable = 'U' or br_data_enable = 'X' or alu_data_out_valid = 'U' or alu_data_out_valid = 'X'
---         report "MULTIPLE DATA ENABLES ASSERTED" severity failure;
-
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if reset = '0' then
+        assert (bool_to_int(sys_data_enable) +
+                bool_to_int(ld_data_enable) +
+                bool_to_int(br_data_enable) +
+                bool_to_int(alu_data_out_valid)) <=1  and reset = '0' report "Multiple Data Enables Asserted" severity Failure;
+      end if;
+    end if;
+  end process;
+  myint <= bool_to_int(sys_data_enable);
   with wb_mux select
     wb_data <=
     sys_data_out when "00",
@@ -282,6 +293,7 @@ begin
       if stall_from_execute = '0' then
         rd_latch <= rd;
       end if;
+
       if ls_unit_waiting = '0' then
         use_after_load_stall <= '0';
         if (ni_rs2 = rd or ni_rs1 = rd) and not current_alu and not (opcode = LVE_OP) then

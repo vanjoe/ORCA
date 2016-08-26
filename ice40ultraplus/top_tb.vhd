@@ -15,9 +15,8 @@ architecture rtl of top_tb is
     rxd : in  std_logic;
     txd : out std_logic;
     cts : in  std_logic;
-    rts : out std_logic;
+    rts : out std_logic
 
-    gpio : inout std_logic_vector(3 downto 0)
     );
   end component;
 

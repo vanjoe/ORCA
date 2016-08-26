@@ -23,9 +23,14 @@ entity top is
     i2s_ws_mic1_mic2 : out std_logic;
     i2s_clk          : out std_logic;
 
+    I2C_SCL : inout std_logic;
+    I2C_SDA : inout std_logic;
+
     i2s_out_sdin : out std_logic;
     i2s_out_sck  : out std_logic;
     i2s_out_lrck : out std_logic
+
+
     );
 end entity;
 
@@ -97,6 +102,23 @@ architecture rtl of top is
   signal instr_ACK_I   : std_logic;
   signal instr_ERR_I   : std_logic;
   signal instr_RTY_I   : std_logic;
+
+
+
+  signal i2c_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal i2c_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal i2c_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal i2c_stb_i   : std_logic;
+  signal i2c_cyc_i   : std_logic;
+  signal i2c_we_i    : std_logic;
+  signal i2c_sel_i   : std_logic_vector(3 downto 0);
+  signal i2c_cti_i   : std_logic_vector(2 downto 0);
+  signal i2c_bte_i   : std_logic_vector(1 downto 0);
+  signal i2c_ack_o   : std_logic;
+  signal i2c_stall_o : std_logic;
+  signal i2c_lock_i  : std_logic;
+  signal i2c_err_o   : std_logic;
+  signal i2c_rty_o   : std_logic;
 
 
 
@@ -198,6 +220,15 @@ architecture rtl of top is
   signal auto_reset_count : unsigned(3 downto 0) := (others => '0');
   signal auto_reset       : std_logic;
 
+
+  signal i2c_SCLI   : std_logic;
+  signal i2c_SDAI   : std_logic;
+  signal i2c_SCLO   : std_logic;
+  signal i2c_SCLOE  : std_logic;
+  signal i2c_SDAO   : std_logic;
+  signal i2c_SDAOE  : std_logic;
+  signal i2c_ack_hw : std_logic;
+  signal i2c_stb_hw : std_logic;
   component myI2C is
     port (
       I2C2_SCL : inout std_logic;
@@ -208,7 +239,7 @@ architecture rtl of top is
       SBCLKi   : in    std_logic;
       sbwri    : in    std_logic;
       sbstbi   : in    std_logic;
-      SBADRi   : in    std_logic;
+      SBADRi   : in    std_logic_vector(7 downto 0);
       SBDATi   : in    std_logic_vector(7 downto 0);
       SBDATo   : out   std_logic_vector(7 downto 0);
       SBACKo   : out   std_logic;
@@ -615,20 +646,20 @@ begin
       master3_ERR_I   => open,
       master3_RTY_I   => open,
 
-      --master4_ADR_O   => i2c_ADR_O_32,
-      --master4_DAT_O   => i2c_DAT_I_32,
-      --master4_WE_O    => i2c_WE_I,
-      --master4_CYC_O   => i2c_CYC_I,
-      --master4_STB_O   => i2c_STB_I,
-      --master4_SEL_O   => i2c_SEL_I,
-      --master4_CTI_O   => i2c_CTI_I,
-      --master4_BTE_O   => i2c_BTE_I,
-      --master4_LOCK_O  => i2c_LOCK_I,
-      --master4_STALL_I => i2c_STALL_O,
-      --master4_DAT_I   => i2c_DAT_O_32,
-      --master4_ACK_I   => i2c_ACK_O,
-      --master4_ERR_I   => open,
-      --master4_RTY_I   => open,
+      master4_ADR_O   => i2c_ADR_i,
+      master4_DAT_O   => i2c_DAT_i,
+      master4_WE_O    => i2c_WE_I,
+      master4_CYC_O   => i2c_CYC_I,
+      master4_STB_O   => i2c_STB_I,
+      master4_SEL_O   => i2c_SEL_I,
+      master4_CTI_O   => i2c_CTI_I,
+      master4_BTE_O   => i2c_BTE_I,
+      master4_LOCK_O  => i2c_LOCK_I,
+      master4_STALL_I => i2c_STALL_O,
+      master4_DAT_I   => i2c_DAT_o,
+      master4_ACK_I   => i2c_ACK_O,
+      master4_ERR_I   => open,
+      master4_RTY_I   => open,
 
 
       master5_ADR_O   => open,
@@ -937,4 +968,71 @@ begin
 --      rx_int_o  => mic_1_2_rx_int_o,
       i2s_sck_o  => i2s_clk,
       i2s_ws_o   => i2s_ws_mic1_mic2);
+
+
+  i2c_dat_o(31 downto 8) <= (others => '0');
+  i2c_STALL_O            <= not i2c_ack_hw;
+  i2c_ack_o              <= i2c_ack_hw when rising_edge(clk);
+  i2c_stb_hw <= i2c_STB_I and not i2c_ack_o;
+  i2c_scl                <= i2c_sclo   when i2c_scloe = '1' else 'Z';
+  i2c_sda                <= i2c_sdao   when i2c_sdaoe = '1' else 'Z';
+
+  i2c_scli <= i2c_scl;
+  i2c_sdai <= i2c_sda;
+
+  i2c : component SB_I2C
+    generic map(
+      I2C_SLAVE_INIT_ADDR => "0b1000001",
+      BUS_ADDR74          => "0b0001")
+
+    port map(
+
+      SBCLKI  => clk,
+      SBRWI   => i2c_we_i,
+      SBSTBI  => i2c_stb_hw,
+      SBADRI7 => i2c_adr_i(9),
+      SBADRI6 => i2c_adr_i(8),
+      SBADRI5 => i2c_adr_i(7),
+      SBADRI4 => i2c_adr_i(6),
+      SBADRI3 => i2c_adr_i(5),
+      SBADRI2 => i2c_adr_i(4),
+      SBADRI1 => i2c_adr_i(3),
+      SBADRI0 => i2c_adr_i(2),
+      SBDATI7 => i2c_dat_i(7),
+      SBDATI6 => i2c_dat_i(6),
+      SBDATI5 => i2c_dat_i(5),
+      SBDATI4 => i2c_dat_i(4),
+      SBDATI3 => i2c_dat_i(3),
+      SBDATI2 => i2c_dat_i(2),
+      SBDATI1 => i2c_dat_i(1),
+      SBDATI0 => i2c_dat_i(0),
+      SCLI    => i2c_scli,
+      SDAI    => i2c_sdai,
+      SBDATO7 => i2c_dat_o(7),
+      SBDATO6 => i2c_dat_o(6),
+      SBDATO5 => i2c_dat_o(5),
+      SBDATO4 => i2c_dat_o(4),
+      SBDATO3 => i2c_dat_o(3),
+      SBDATO2 => i2c_dat_o(2),
+      SBDATO1 => i2c_dat_o(1),
+      SBDATO0 => i2c_dat_o(0),
+      SBACKO  => i2c_ack_hw,
+      SCLO    => i2c_SCLO,
+      SCLOE   => i2c_SCLOE,
+      SDAO    => i2c_SDAO,
+      SDAOE   => i2c_SDAOE);
+
+--  my_i2c:  component myI2C
+--    port map(
+----      I2C2_SCL : inout std_logic;
+----      I2C2_SDA : inout std_logic;
+--      RST  => reset,
+--      IPLOAD  =>  '1',
+--      SBCLKi =>  clk,
+--      sbwri => '0',
+--      sbstbi => '0',
+--      SBADRi  => (others => '0'),
+--      SBDATi   => (others => '0'));
+
+
 end architecture rtl;
