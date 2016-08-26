@@ -1,7 +1,5 @@
 #include <stdint.h>
 
-#include "i2s.h"
-#include "interrupt.h"
 #include "samples.h"
 #include "printf.h"
 #include "fir.h"
@@ -19,17 +17,13 @@
 
 #define DEBUG 1
 
-#define scratch_write(a) asm volatile ("csrw mscratch, %0"	\
-													:							\
-													: "r" (a))
-
 #define  UART_BASE ((volatile int*) 0x00020000)
 volatile int*  UART_DATA=UART_BASE;
 volatile int*  UART_LCR=UART_BASE+3;
 volatile int*  UART_LSR=UART_BASE+5;
 
 #define UART_LCR_8BIT_DEFAULT 0x03
-#define UART_INIT() do{*UART_LCR = UART_LCR_8BIT_DEFAULT;}while(0)
+#define UART_INIT() do{*UART_LCR = ;}while(0)
 #define UART_PUTC(c) do{*UART_DATA = (c);}while(0)
 #define UART_BUSY() (!((*UART_LSR) &0x20))
 void mputc ( void* p, char c)
@@ -41,44 +35,70 @@ void mputc ( void* p, char c)
 static inline unsigned get_time() {
   int tmp;       
   asm volatile("csrr %0, time"
-    : "=r" (tmp) 
-    : );
+    : "=r" (tmp));
   return tmp;
 }
+
+#define scratch_write(a) asm volatile ("csrw mscratch, %0" \
+                           :          \
+                           : "r" (a))
+
+
+#define output_vec_sum(vec_name,length) do{				\
+  int i,total=0;													\
+  for(i=0;i<length;i++) {										\
+	 +=(vec_name)[i];					\
+  }scratch_write(); } while(0)
+
+#define output_vec(vec_name,length) do{			\
+	 int i;										\
+	 for(i=0;i<length;i++) {							\
+		scratch_write(()[i]);					\
+	 } } while(0)
 
 #if DEBUG
 extern int samples_l[NUM_SAMPLES]; 
 extern int samples_r[NUM_SAMPLES];
 #endif
 
+
 int main() {
 
   volatile int32_t mic_buffer_l[BUFFER_LENGTH];
   volatile int32_t mic_buffer_r[BUFFER_LENGTH];
-  volatile int32_t temp_l[BUFFER_LENGTH];
-  volatile int32_t temp_r[BUFFER_LENGTH];
-  int32_t temp;
+  volatile int32_t filtered_l[BUFFER_LENGTH];
+  volatile int32_t filtered_r[BUFFER_LENGTH];
 
-#if DEBUG
+#if !USE_MICS 
   int sample_count = 0;
+#else
+  i2s_data_t mic_data;
 #endif
 
-  int i, j;
+  int i, j, k;
   int index_l;
   int index_r;
   int buffer_count = 0;
 
-  i2s_data_t mic_data;
-  
-  volatile int64_t power_front;
+  volatile int64_t power_center;
   volatile int64_t power_left;
   volatile int64_t power_right;
+  volatile int64_t power_temp;
   volatile int64_t fir_acc_l;
   volatile int64_t fir_acc_r;
 
+  // These counters add hysteresis to the system, improving output stability 
+  int center_count = 0;
+  int left_count = 0;
+  int right_count = 0;
+  int window_count = 0;
+
+#define USE_PRINT 0
+#define USE_MICS 0
+#define TRACK_TIME 1
 
 
-#if !DEBUG
+#if USE_MICS 
   UART_INIT();
   init_printf(0, mputc);
   printf("Hello World\r\n");
@@ -93,199 +113,170 @@ int main() {
   for (i = 0; i < BUFFER_LENGTH; i++) {
     mic_buffer_l[i] = 0;
     mic_buffer_r[i] = 0;
-    temp_l[i] = 0;
-    temp_r[i] = 0;
+    filtered_l[i] = 0;
+    filtered_r[i] = 0;
   }
   buffer_count = 0;
 
-  while(1) {
-    unsigned int time;
+  while (1) {
+   
+#if TRACK_TIME
+   int time;
+#endif
 
-    scratch_write(0xFFFF);
-    time = get_time();
+#if TRACK_TIME
+  scratch_write(0xFFFF);
+  time = get_time();
+#endif
+    
+    // Collect WINDOW_LENGTH samples, and calculate the power.
+    power_center = 0;
+    power_left = 0;
+    power_right = 0; 
 
-    // Collect WINDOW_LENGTH samples.
     for (i = 0; i < WINDOW_LENGTH; i++) {
-      for (j = 0; j < BUFFER_LENGTH-1; j++) {
-        temp_l[j] = temp_l[j+1];
-        temp_r[j] = temp_r[j+1]; 
-      }
-
-#if DEBUG      
-      temp_l[BUFFER_LENGTH-1] = samples_l[sample_count];
-      temp_r[BUFFER_LENGTH-1] = samples_r[sample_count];
+    
+#if !USE_MICS      
+      mic_buffer_l[buffer_count] = samples_l[sample_count];
+      mic_buffer_r[buffer_count] = samples_r[sample_count];
+              
       sample_count++;
       if (sample_count >= NUM_SAMPLES) {
         sample_count = 0;
       }
 #else
       mic_data = i2s_get_data();
-      temp_l[BUFFER_LENGTH-1] = (int32_t)mic_data.left;
-      temp_r[BUFFER_LENGTH-1] = (int32_t)mic_data.right;
+      mic_buffer_l[buffer_count] = (int32_t)mic_data.left;
+      mic_buffer_r[buffer_count] = (int32_t)mic_data.right;
 #endif
 
       // Apply the FIR filter.
+      // Initialize k to the start point to apply the FIR filter.
       fir_acc_l = 0;
       fir_acc_r = 0;
-      for (j = 0; j < NUM_TAPS; j++) {
-        fir_acc_l += temp_l[BUFFER_LENGTH-NUM_TAPS+j] * fir_taps[j];
-        fir_acc_r += temp_r[BUFFER_LENGTH-NUM_TAPS+j] * fir_taps[j];
-
+      k = buffer_count - (NUM_TAPS - 1);
+      if (k < 0) {
+        k += BUFFER_LENGTH;
       }
 
-      mic_buffer_l[buffer_count] = fir_acc_l >> 16;
-      mic_buffer_r[buffer_count] = fir_acc_r >> 16;
+      for (j = 0; j < NUM_TAPS; j++) {
+        fir_acc_l += mic_buffer_l[k] * fir_taps[j];
+        fir_acc_r += mic_buffer_r[k] * fir_taps[j];         
+        k++;
+        if (k == BUFFER_LENGTH) {
+          k = 0;
+        }
+      }
+
+      filtered_l[buffer_count] = fir_acc_l >> 16;
+      filtered_r[buffer_count] = fir_acc_r >> 16;
+
+      // Accumulate the powers.
+      index_l = buffer_count;
+      index_r = buffer_count;
+
+      power_temp = filtered_l[index_l] + filtered_r[index_r];
+      power_center += power_temp * power_temp;
+
+      index_l -= SAMPLE_DIFFERENCE;
+      if (index_l < 0 ) {
+        index_l += BUFFER_LENGTH;
+      }
+      power_temp = filtered_l[index_l] + filtered_r[index_r];
+      power_left += power_temp * power_temp;
+
+      index_l = buffer_count;
+      index_r -= SAMPLE_DIFFERENCE;
+      if (index_r < 0) {
+        index_r += BUFFER_LENGTH;
+      }
+      power_temp = filtered_l[index_l] + filtered_r[index_r];
+      power_right += power_temp * power_temp;
+
 
 
       buffer_count++;
       if (buffer_count == BUFFER_LENGTH) {
         buffer_count = 0; 
       }
-
     }
 
+#if TRACK_TIME
     time = get_time() - time;
-    scratch_write(time);
-
-    scratch_write(0xFFFF);
-    time = get_time();
-
-    // Calculate the power assuming the sound is coming from the front.
-    index_l = buffer_count - WINDOW_LENGTH;
-    index_r = buffer_count - WINDOW_LENGTH;
-    if (index_l < 0) {
-      index_l += BUFFER_LENGTH;
-    }
-    if (index_r < 0) {
-      index_r += BUFFER_LENGTH;
-    }
-
-    power_front = 0;
-    for (i = 0; i < WINDOW_LENGTH; i++) {
-      temp = mic_buffer_l[index_l] + mic_buffer_r[index_r];
-      power_front += temp * temp; 
-
-
-      index_l++;
-      index_r++;
-      if (index_l == BUFFER_LENGTH) {
-        index_l = 0;
-      }
-      if (index_r == BUFFER_LENGTH) {
-        index_r = 0;
-      }
-    }
-    
-    // Calculate the power assuming the sound is coming from the left (right microphone is 
-    // delayed during sampling, delay left microphone to compensate).
-    index_l = buffer_count - WINDOW_LENGTH - SAMPLE_DIFFERENCE;
-    index_r = buffer_count - WINDOW_LENGTH;
-    if (index_l < 0) {
-      index_l += BUFFER_LENGTH;
-    }
-    if (index_r < 0) {
-      index_r += BUFFER_LENGTH;
-    }
-    
-    power_left = 0;
-    for (i = 0; i < WINDOW_LENGTH; i++) {
-      temp = mic_buffer_l[index_l] + mic_buffer_r[index_r];
-      power_left += temp * temp;
-
-
-      index_l++;
-      index_r++;
-      if (index_l == BUFFER_LENGTH) {
-        index_l = 0;
-      }
-      if (index_r == BUFFER_LENGTH) {
-        index_r = 0;
-      }
-    }
-    
-    // Calculate the power assuming the sound is coming from the right (left microphone is 
-    // delayed during sampling, delay right microphone to compensate).
-    index_l = buffer_count - WINDOW_LENGTH;
-    index_r = buffer_count - WINDOW_LENGTH - SAMPLE_DIFFERENCE;
-    if (index_l < 0) {
-      index_l += BUFFER_LENGTH;
-    }
-    if (index_r < 0) {
-      index_r += BUFFER_LENGTH;
-    }
-
-    power_right = 0;
-    for (i = 0; i < WINDOW_LENGTH; i++) {
-      temp = mic_buffer_l[index_l] + mic_buffer_r[index_r];
-      power_right += temp * temp;
-
-
-      index_l++;
-      index_r++;
-      if (index_l == BUFFER_LENGTH) {
-        index_l = 0;
-      }
-      if (index_r == BUFFER_LENGTH) {
-        index_r = 0;
-      }
-    }
-
-    scratch_write(get_time() - time);
-    scratch_write(0xFFFF);
-
-#if DEBUG
-    asm volatile("csrw mscratch, %0\n csrw mscratch, %1\n csrw mscratch, %2"
-      :
-      : "r" (power_front), "r" (power_left), "r" (power_right));
+    scratch_write(time); 
 #endif
 
-#if DEBUG
-    if (power_front > power_left) {
-      if (power_front > power_right) {
-        asm volatile("csrw mscratch, 0"
-          :
-          : );
+#if !USE_PRINT
+    scratch_write(power_center >> 8);
+    scratch_write(power_left >> 8);
+    scratch_write(power_right >> 8);
+#endif
+
+#if USE_PRINT
+    char* position_str[3] = { " C \r\n",
+                              "  R\r\n",
+                              "L  \r\n"};
+#endif
+
+    int position;
+    window_count++;
+
+    if (power_center > power_left) {
+      if (power_center > power_right) {
+        center_count++;
+#if !USE_PRINT
+        scratch_write(0);
+#endif
       }
       else {
-        asm volatile("csrw mscratch, 2"
-          :
-          : );
+        right_count++;
+#if !USE_PRINT
+        scratch_write(1);
+#endif
       }
     }
     else {
       if (power_left > power_right) {
-        asm volatile("csrw mscratch, 1"
-          :
-          : );
-      }
-      else {
-        asm volatile("csrw mscratch, 2"
-          :
-          : );
-      }
-    }
-
-#else
-    if (power_front > power_left) {
-      if (power_front > power_right) {
-        printf("Front\r\n");
-      }
-      else {
-        printf("Right\r\n");
-      }
-    }
-    else {
-      if (power_left > power_right) {
-        printf("Left\r\n");
-      }
-      else {
-        printf("Right\r\n");
-      }
-    }
+        left_count++;
+#if !USE_PRINT
+        scratch_write(2);
 #endif
+      }
+      else {
+        right_count++;
+#if !USE_PRINT
+        scratch_write(1);
+#endif
+      }
+    }
 
+#define WINDOWS_PER_QUARTERSECOND SAMPLE_RATE / 4 / WINDOW_LENGTH 
+    if (window_count == WINDOWS_PER_QUARTERSECOND) {
+      window_count = 0;
+      if (center_count > left_count) {
+        if (center_count > right_count) {
+          position = 0;
+        }
+        else {
+          position = 1;
+        }
+      }
+      else {
+        if (left_count > right_count) {
+          position = 2;
+        }
+        else {
+          position = 1;
+        }
+      }
+      center_count >>= 2;
+      left_count >>= 2;
+      right_count >>= 2;
+#if USE_PRINT
+      printf(position_str[position]);
+#endif
+    }
   }
-
 }
 
 int handle_interrupt(long cause, long epc, long regs[32]) {

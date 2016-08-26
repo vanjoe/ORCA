@@ -21,6 +21,8 @@ int window_count = 0;
 int fir_acc_l_temp = 0;
 int fir_acc_r_temp = 0; 
 
+int position;
+
 
 while (1) {
 
@@ -158,8 +160,8 @@ while (1) {
 									          "L  \r\n"};
 #endif
 
-  int position;
   window_count++;
+
   if (*power_center > *power_left) {
 	  if (*power_center > *power_right) {
       center_count++;
@@ -190,7 +192,6 @@ while (1) {
   }
 
 #define WINDOWS_PER_QUARTERSECOND SAMPLE_RATE / 4 / WINDOW_LENGTH 
-  window_count++;
   if (window_count == WINDOWS_PER_QUARTERSECOND) {
     window_count = 0;
     if (center_count > left_count) {
