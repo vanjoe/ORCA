@@ -223,7 +223,7 @@ begin
   scratchpad_memory : component ram_4port
     generic map (
       MEM_WIDTH => 32,
-      MEM_DEPTH => SCRATCHPAD_SIZE,
+      MEM_DEPTH => SCRATCHPAD_SIZE/4,
       FAMILY    => FAMILY)
     port map (
       clk            => clk,
@@ -231,18 +231,18 @@ begin
       reset          => reset,
       stall_012      => rd_stall,
       stall_3        => slave_wait,
-      raddr0         => std_logic_vector(srca_ptr(log2(SCRATCHPAD_SIZE)-1+2 downto 2)),
+      raddr0         => std_logic_vector(srca_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
       ren0           => rd_en,
       data_out0      => srca_data_read,
-      raddr1         => std_logic_vector(srcb_ptr(log2(SCRATCHPAD_SIZE)-1+2 downto 2)),
+      raddr1         => std_logic_vector(srcb_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
       ren1           => rd_en,
       data_out1      => srcb_data_read,
 
-      waddr2    => std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1+2 downto 2)),
+      waddr2    => std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
       byte_en2  => (others => '1'),
       wen2      => write_enable,
       data_in2  => std_logic_vector(writeback_data),
-      rwaddr3   => slave_address(log2(SCRATCHPAD_SIZE)-1+2 downto 2),
+      rwaddr3   => slave_address(log2(SCRATCHPAD_SIZE)-1 downto 2),
       ren3      => slave_read_en,
       wen3      => slave_write_en,
       byte_en3  => slave_byte_en,

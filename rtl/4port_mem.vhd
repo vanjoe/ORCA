@@ -71,36 +71,87 @@ begin
     signal spram_address : std_logic_vector(13 downto 0);
     signal mask_wren0    : std_logic_vector(3 downto 0);
     signal mask_wren1    : std_logic_vector(3 downto 0);
+
+    signal hi_sel : std_logic;
+    signal hi_sel_latch : std_logic;
+    signal low_data_out : std_logic_vector(data_out'range);
+    signal hi_data_out : std_logic_vector(data_out'range);
+    signal low_we : std_logic;
+    signal hi_we : std_logic;
+
   begin
+
     spram_address <= std_logic_vector(resize(unsigned(addr), 14));
 
     mask_wren0 <= byte_en(1) & byte_en(1) & byte_en(0) & byte_en(0);
+    mask_wren1 <= byte_en(3) & byte_en(3) & byte_en(2) & byte_en(2);
+
+    hi_sel <= addr(14) when MEM_DEPTH > 2**14 else '0';
+    hi_sel_latch <= hi_sel when rising_edge(clk);
+    data_out <= hi_data_out when hi_sel_latch = '1' else low_data_out;
+    low_we <= not hi_sel and wr_en;
+    hi_we <= hi_sel and wr_en;
+
     SPRAM0 : component SB_SPRAM256KA
       port map (
         ADDRESS    => spram_address,
         DATAIN     => data_in(15 downto 0),
         MASKWREN   => mask_wren0,
-        WREN       => wr_en,
+        WREN       => low_we,
         CHIPSELECT => chip_sel,
         CLOCK      => clk,
         STANDBY    => '0',
         SLEEP      => '0',
         POWEROFF   => '1',
-        DATAOUT    => data_out(15 downto 0));
+        DATAOUT    => low_data_out(15 downto 0));
 
-    mask_wren1 <= byte_en(3) & byte_en(3) & byte_en(2) & byte_en(2);
+
     SPRAM1 : component SB_SPRAM256KA
       port map (
         ADDRESS    => spram_address,
         DATAIN     => data_in(31 downto 16),
         MASKWREN   => mask_wren1,
-        WREN       => wr_en,
+        WREN       => low_we,
         CHIPSELECT => chip_sel,
         CLOCK      => clk,
         STANDBY    => '0',
         SLEEP      => '0',
         POWEROFF   => '1',
-        DATAOUT    => data_out(31 downto 16));
+        DATAOUT    => low_data_out(31 downto 16));
+
+    BIG_MEM: if MEM_DEPTH > 2**14 generate
+    begin
+
+
+      SPRAM2 : component SB_SPRAM256KA
+        port map (
+          ADDRESS    => spram_address,
+          DATAIN     => data_in(15 downto 0),
+          MASKWREN   => mask_wren0,
+          WREN       => hi_we,
+          CHIPSELECT => chip_sel,
+          CLOCK      => clk,
+          STANDBY    => '0',
+          SLEEP      => '0',
+          POWEROFF   => '1',
+          DATAOUT    => hi_data_out(15 downto 0));
+
+      SPRAM3 : component SB_SPRAM256KA
+        port map (
+          ADDRESS    => spram_address,
+          DATAIN     => data_in(31 downto 16),
+          MASKWREN   => mask_wren1,
+          WREN       => hi_we,
+          CHIPSELECT => chip_sel,
+          CLOCK      => clk,
+          STANDBY    => '0',
+          SLEEP      => '0',
+          POWEROFF   => '1',
+          DATAOUT    => hi_data_out(31 downto 16));
+
+
+    end generate BIG_MEM;
+
   end generate;
 
 end architecture behav;
