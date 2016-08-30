@@ -22,6 +22,6 @@ set_io i2s_out_sdin E5
 set_io i2s_sd_mic1_mic2 B1
 set_io i2s_ws_mic1_mic2 F4
 set_io reset_btn B3 -pullup yes
-set_io rxd A2
+set_io rts D5
+set_io rxd A4 -pullup yes
 set_io txd A1
-

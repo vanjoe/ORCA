@@ -33,11 +33,11 @@ static inline i2s_data_t i2s_get_data(){
 /*********************/
 
 #define TX_I2S_BUFFER_SIZE 0x100
-#define TX_I2S_VERSION     ((volatile unsigned short *)0x00040000)
-#define TX_I2S_CONFIG      ((volatile unsigned short *)0x00040002)
-#define TX_I2S_INT_MASK    ((volatile unsigned short *)0x00040004)
-#define TX_I2S_INT_STAT    ((volatile unsigned short *)0x00040006)
-#define TX_I2S_BUFFER       ((volatile short *)(0x00040000 + (TX_I2S_BUFFER_SIZE<<1)))
+#define TX_I2S_VERSION     ((volatile unsigned short *)0x00030000)
+#define TX_I2S_CONFIG      ((volatile unsigned short *)0x00030002)
+#define TX_I2S_INT_MASK    ((volatile unsigned short *)0x00030004)
+#define TX_I2S_INT_STAT    ((volatile unsigned short *)0x00030006)
+#define TX_I2S_BUFFER       ((volatile short *)(0x00030000 + (TX_I2S_BUFFER_SIZE<<1)))
 
 extern int i2s_put_data_pointer;
 static inline void i2s_put_data(short left,short right)

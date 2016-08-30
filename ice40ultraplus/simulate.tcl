@@ -59,7 +59,7 @@ proc com {} {
 
     ##If you want to view the ram contents of the scratchpad use this file, otherwise the Toolchain files above should work
 	 #
-	 #  lappend fileset SB_SPRAM256KA.vhd
+	 lappend fileset SB_SPRAM256KA.vhd
 
 
     vlib work
@@ -107,7 +107,7 @@ proc recom { t {extra_waves false} } {
 
     com
 
-    vsim work.top_tb
+    vsim -t 1ns work.top_tb
     add log -r *
 
     add wave -noupdate /top_tb/dut/rv/rv/clk

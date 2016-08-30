@@ -86,7 +86,7 @@ begin
     mask_wren0 <= byte_en(1) & byte_en(1) & byte_en(0) & byte_en(0);
     mask_wren1 <= byte_en(3) & byte_en(3) & byte_en(2) & byte_en(2);
 
-    hi_sel <= addr(14) when MEM_DEPTH > 2**14 else '0';
+    hi_sel <= '0' when  MEM_DEPTH <= 2**14 else addr(addr'left);
     hi_sel_latch <= hi_sel when rising_edge(clk);
     data_out <= hi_data_out when hi_sel_latch = '1' else low_data_out;
     low_we <= not hi_sel and wr_en;
