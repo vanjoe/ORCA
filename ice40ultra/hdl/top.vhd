@@ -4,8 +4,9 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
 library work;
-use work.rv_components.all;
+
 use work.top_component_pkg.all;
+use work.rv_components.all;
 use work.top_util_pkg.all;
 
 entity top is
@@ -358,7 +359,7 @@ begin
 
 
 
-  rv : component orca_wishbone
+  rv : component orca
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
       MULTIPLY_ENABLE    => 0,
@@ -366,8 +367,9 @@ begin
       COUNTER_LENGTH     => 32,
       PIPELINE_STAGES    => 4,
       MXP_ENABLE         => 0,
-      PLIC_ENABLE        => FALSE,
-      NUM_EXT_INTERRUPTS => 2)
+      NUM_EXT_INTERRUPTS => 2,
+      WISHBONE_ENABLE => 1,
+      PLIC_ENABLE => 0)
     port map(
 
       clk            => clk,

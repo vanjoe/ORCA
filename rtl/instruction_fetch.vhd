@@ -17,11 +17,12 @@ entity instruction_fetch is
     reset : in std_logic;
     stall : in std_logic;
 
-    branch_pred : in std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
+    branch_pred_data_in : in std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
 
+    br_taken        : buffer std_logic;
     instr_out       : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     pc_out          : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    br_taken        : buffer std_logic;
+    next_pc_out     : out    std_logic;
     valid_instr_out : out    std_logic;
 
     read_address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -47,6 +48,8 @@ architecture rtl of instruction_fetch is
   signal saved_instr_en : std_logic;
 
 
+
+
   signal instr : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
   signal valid_instr : std_logic;
@@ -66,8 +69,8 @@ begin  -- architecture rtl
   -- a branch or a system call (ex ECALL instruction, or a trap). pc_corr_en denotes whether
   -- the branch or system call should cause the program counter to be corrected on the
   -- next cycle.
-  pc_corr    <= branch_get_tgt(branch_pred);
-  pc_corr_en <= branch_get_flush(branch_pred);
+  pc_corr    <= branch_get_tgt(branch_pred_data_in);
+  pc_corr_en <= branch_get_flush(branch_pred_data_in);
 
   read_en <= not reset;
 
@@ -110,7 +113,7 @@ begin  -- architecture rtl
       -- saved_address is the previously read program counter, if there is a stall from the
       -- instruction slave, saved_address_en latches high and it keeps the same address on
       -- the instruction slave bus.
-      saved_address    <= program_counter;
+      saved_address <= program_counter;
       if read_wait = '1' then
         saved_address_en <= '1';
       else
@@ -131,13 +134,13 @@ begin  -- architecture rtl
   -- interrupt to the execute stage, and now bubbles need to be injected into the pipeline
   -- until all stages are done executing.
   valid_instr <= read_datavalid and not pc_corr_en and not pc_corr_en_latch
-                    and not interrupt_pending;
+                 and not interrupt_pending;
 
   -- The instruction to send to the decode stage. If the instruction fetch is stalled
   -- (either from the execute stage stalling, or from the instruction slave) then the previous
   -- instruction will remain out on the bus. The valid_instr_out signal will not go high until
   -- the instruction fetch is unstalled.
-  instr_out <= instr when saved_instr_en = '0' else saved_instr;
+  instr_out       <= instr when saved_instr_en = '0' else saved_instr;
   valid_instr_out <= (valid_instr or saved_instr_en) and (not (if_stall or interrupt_pending));
 
   -- If the instruction slave is stalling, keep the same address on the instruction slave bus.
@@ -178,12 +181,12 @@ begin  -- architecture rtl
   end generate nuse_BP;
 
   use_BP : if BTB_SIZE > 0 generate
-    constant INDEX_SIZE : integer := log2(BTB_SIZE);
-    constant TAG_SIZE   : integer := REGISTER_SIZE-2-INDEX_SIZE;
+    constant INDEX_SIZE     : integer  := log2(BTB_SIZE);
+    constant TAG_SIZE       : integer  := REGISTER_SIZE-2-INDEX_SIZE;
     type btb_type is array(BTB_SIZE-1 downto 0) of std_logic_vector(REGISTER_SIZE+TAG_SIZE+1 -1 downto 0);
     signal branch_btb       : btb_type := (others => (others => '0'));
     signal prediction_match : std_logic;
-    signal branch_taken     : std_logic;
+    signal branch_taken_in  : std_logic;
     signal branch_pc        : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal branch_tgt       : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal branch_flush     : std_logic;
@@ -207,11 +210,14 @@ begin  -- architecture rtl
     signal saved_br_en        : std_logic;
 
   begin
-    branch_tgt   <= branch_get_tgt(branch_pred);
-    branch_pc    <= branch_get_pc(branch_pred);
-    branch_taken <= branch_get_taken(branch_pred);
-    branch_en    <= branch_get_enable(branch_pred);
-    btb_raddr    <= 0 when BTB_SIZE = 1 else
+
+    --unpack branch_pred_data_in;
+
+    branch_tgt      <= branch_get_tgt(branch_pred_data_in);
+    branch_pc       <= branch_get_pc(branch_pred_data_in);
+    branch_taken_in <= branch_get_taken(branch_pred_data_in);
+    branch_en       <= branch_get_enable(branch_pred_data_in);
+    btb_raddr       <= 0 when BTB_SIZE = 1 else
                     to_integer(unsigned(next_pc(INDEX_SIZE+2-1 downto 2)));
     btb_waddr <= 0 when BTB_SIZE = 1 else
                  to_integer(unsigned(branch_pc(INDEX_SIZE+2-1 downto 2)));
@@ -222,7 +228,7 @@ begin  -- architecture rtl
         --block ram read
         btb_entry_rd <= branch_btb(btb_raddr);
         if branch_en = '1' then
-          branch_btb(btb_waddr) <= branch_taken &branch_pc(INDEX_SIZE+2+TAG_SIZE-1 downto INDEX_SIZE+2) & branch_tgt;
+          branch_btb(btb_waddr) <= branch_taken_in &branch_pc(INDEX_SIZE+2+TAG_SIZE-1 downto INDEX_SIZE+2) & branch_tgt;
         end if;
 
         --latched values
@@ -240,16 +246,16 @@ begin  -- architecture rtl
 
         if if_stall = '0' then
           br_taken <= '0';
-          if btb_tag = addr_tag  then
+          if btb_tag = addr_tag then
             br_taken <= btb_taken;
           end if;
         end if;
       end if;
 
     end process;
-    btb_entry <= btb_entry_rd when btb_entry_saved_en = '0' else btb_entry_saved;
-    predicted_pc <= btb_target when btb_tag = addr_tag and btb_taken = '1' else add4;
-    prediction_match <= '1' when btb_tag = addr_tag else '0';
+    btb_entry        <= btb_entry_rd when btb_entry_saved_en = '0'               else btb_entry_saved;
+    predicted_pc     <= btb_target   when btb_tag = addr_tag and btb_taken = '1' else add4;
+    prediction_match <= '1'          when btb_tag = addr_tag                     else '0';
   end generate use_BP;
 
 end architecture rtl;

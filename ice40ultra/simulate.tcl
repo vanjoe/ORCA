@@ -16,7 +16,7 @@ proc com {} {
 							../rtl/4port_mem.vhd 		  \
 							../rtl/plic.vhd \
 							../rtl/gateway.vhd \
-							../rtl/wishbone_wrapper.vhd \
+							../rtl/orca_core.vhd \
 							hdl/top_util_pkg.vhd \
 							hdl/top_component_pkg.vhd\
 							hdl/wb_ram.vhd 		  \
@@ -55,18 +55,18 @@ com
 vsim work.top_tb
 add log -r *
 
-add wave -noupdate /top_tb/dut/rv/rv/clk
-add wave -noupdate /top_tb/dut/rv/rv/reset
-add wave -noupdate /top_tb/dut/rv/rv/X/syscall/mtohost
+add wave -noupdate /top_tb/dut/rv/core/clk
+add wave -noupdate /top_tb/dut/rv/core/reset
 add wave -noupdate -divider Decode
-add wave -noupdate /top_tb/dut/rv/rv/D/register_file_1/t3
+add wave -noupdate /top_tb/dut/rv/core/D/register_file_1/t3
 add wave -noupdate -divider Execute
-add wave -noupdate /top_tb/dut/rv/rv/X/valid_instr
-add wave -noupdate /top_tb/dut/rv/rv/X/pc_current
-add wave -noupdate /top_tb/dut/rv/rv/X/instruction
+add wave -noupdate /top_tb/dut/rv/core/X/valid_instr
+add wave -noupdate /top_tb/dut/rv/core/X/pc_current
+add wave -noupdate /top_tb/dut/rv/core/X/instruction
 
 proc rerun { t } {
 				restart -f;
 				run $t
 		  }
 set DefaultRadix hex
+config wave -signalnamewidth 2

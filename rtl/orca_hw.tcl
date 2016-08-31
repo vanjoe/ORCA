@@ -45,6 +45,7 @@ add_fileset_file instruction_fetch.vhd VHDL PATH instruction_fetch.vhd
 add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file orca.vhd VHDL PATH orca.vhd TOP_LEVEL_FILE
+add_fileset_file orca_core.vhd VHDL PATH orca_core.vhd TOP_LEVEL_FILE
 add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file plic.vhd VHDL PATH plic.vhd
 add_fileset_file gateway.vhd VHDL PATH gateway.vhd
@@ -65,6 +66,7 @@ add_fileset_file instruction_fetch.vhd VHDL PATH instruction_fetch.vhd
 add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
 add_fileset_file register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file orca.vhd VHDL PATH orca.vhd
+add_fileset_file orca_core.vhd VHDL PATH orca_core.vhd
 add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file plic.vhd VHDL PATH plic.vhd
 add_fileset_file gateway.vhd VHDL PATH gateway.vhd
@@ -82,6 +84,26 @@ set_parameter_property REGISTER_SIZE TYPE INTEGER
 set_parameter_property REGISTER_SIZE UNITS None
 set_parameter_property REGISTER_SIZE ALLOWED_RANGES {32}
 set_parameter_property REGISTER_SIZE HDL_PARAMETER true
+set_parameter_property REGISTER_SIZE visible false
+
+
+
+add_parameter          BUS_TYPE string Avalon
+set_parameter_property BUS_TYPE HDL_PARAMETER false
+set_parameter_property BUS_TYPE DISPLAY_NAME "Bus Type"
+set_parameter_property BUS_TYPE ALLOWED_RANGES {Axi,Avalon}
+
+add_parameter             AVALON_ENABLE natural 1
+set_parameter_property    AVALON_ENABLE ALLOWED_RANGES 0:1
+set_parameter_property    AVALON_ENABLE HDL_PARAMETER true
+set_parameter_property    AVALON_ENABLE visible false
+set_parameter_property    AVALON_ENABLE derived true
+
+add_parameter             AXI_ENABLE natural 1
+set_parameter_property    AXI_ENABLE ALLOWED_RANGES 0:1
+set_parameter_property    AXI_ENABLE HDL_PARAMETER true
+set_parameter_property    AXI_ENABLE visible false
+set_parameter_property    AXI_ENABLE derived true
 
 add_parameter MXP_ENABLE natural 0
 set_parameter_property MXP_ENABLE DEFAULT_VALUE 0
@@ -178,17 +200,19 @@ set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipelin
 but 4 stages has a higher fmax"
 set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
 
-add_parameter          PLIC_ENABLE boolean false
+add_parameter          PLIC_ENABLE natural 0
+set_parameter_property PLIC_ENABLE ALLOWED_RANGES 0:1
 set_parameter_property PLIC_ENABLE HDL_PARAMETER true
-set_parameter_property PLIC_ENABLE DISPLAY_NAME "PLIC_ENABLE"       
+set_parameter_property PLIC_ENABLE DISPLAY_NAME "PLIC_ENABLE"
 set_parameter_property PLIC_ENABLE DESCRIPTION "Whether or not the Platform Level Interrupt Controller (PLIC) is enabled."
+set_display_item_property PLIC_ENABLE DISPLAY_HINT boolean
+
 
 add_parameter          NUM_EXT_INTERRUPTS integer 2
 set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
 set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "NUM_EXT_INTERRUPTS"
 set_parameter_property NUM_EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
 set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES {2:32}
-
 
 
 #
@@ -273,6 +297,111 @@ add_interface_port data avm_data_readdatavalid readdatavalid Input 1
 
 
 #
+# Data Axi Port
+#
+add_interface axi_data_master axi start
+set_interface_property axi_data_master associatedClock clock
+set_interface_property axi_data_master associatedReset reset
+set_interface_property axi_data_master readIssuingCapability 1
+set_interface_property axi_data_master writeIssuingCapability 1
+set_interface_property axi_data_master combinedIssuingCapability 1
+set_interface_property axi_data_master ENABLED true
+set_interface_property axi_data_master EXPORT_OF ""
+set_interface_property axi_data_master PORT_NAME_MAP ""
+set_interface_property axi_data_master CMSIS_SVD_VARIABLES ""
+set_interface_property axi_data_master SVD_ADDRESS_GROUP ""
+
+add_interface_port axi_data_master data_ARADDR araddr Output register_size
+add_interface_port axi_data_master data_ARBURST arburst Output 2
+add_interface_port axi_data_master data_ARCACHE arcache Output 4
+add_interface_port axi_data_master data_ARID arid Output 4
+add_interface_port axi_data_master data_ARLEN arlen Output 4
+add_interface_port axi_data_master data_ARLOCK arlock Output 2
+add_interface_port axi_data_master data_ARPROT arprot Output 3
+add_interface_port axi_data_master data_ARREADY arready Input 1
+add_interface_port axi_data_master data_ARSIZE arsize Output 3
+add_interface_port axi_data_master data_ARVALID arvalid Output 1
+add_interface_port axi_data_master data_AWADDR awaddr Output register_size
+add_interface_port axi_data_master data_AWBURST awburst Output 2
+add_interface_port axi_data_master data_AWCACHE awcache Output 4
+add_interface_port axi_data_master data_AWID awid Output 4
+add_interface_port axi_data_master data_AWLEN awlen Output 4
+add_interface_port axi_data_master data_AWLOCK awlock Output 2
+add_interface_port axi_data_master data_AWPROT awprot Output 3
+add_interface_port axi_data_master data_AWREADY awready Input 1
+add_interface_port axi_data_master data_AWSIZE awsize Output 3
+add_interface_port axi_data_master data_AWVALID awvalid Output 1
+add_interface_port axi_data_master data_BID bid Input 4
+add_interface_port axi_data_master data_BREADY bready Output 1
+add_interface_port axi_data_master data_BRESP bresp Input 2
+add_interface_port axi_data_master data_BVALID bvalid Input 1
+add_interface_port axi_data_master data_RDATA rdata Input register_size
+add_interface_port axi_data_master data_RID rid Input 4
+add_interface_port axi_data_master data_RLAST rlast Input 1
+add_interface_port axi_data_master data_RREADY rready Output 1
+add_interface_port axi_data_master data_RRESP rresp Input 2
+add_interface_port axi_data_master data_RVALID rvalid Input 1
+add_interface_port axi_data_master data_WDATA wdata Output register_size
+add_interface_port axi_data_master data_WID wid Output 4
+add_interface_port axi_data_master data_WLAST wlast Output 1
+add_interface_port axi_data_master data_WREADY wready Input 1
+add_interface_port axi_data_master data_WSTRB wstrb Output register_size/8
+add_interface_port axi_data_master data_WVALID wvalid Output 1
+
+
+#
+# Data Axi Port
+#
+add_interface axi_instr_master axi start
+set_interface_property axi_instr_master associatedClock clock
+set_interface_property axi_instr_master associatedReset reset
+set_interface_property axi_instr_master readIssuingCapability 1
+set_interface_property axi_instr_master writeIssuingCapability 1
+set_interface_property axi_instr_master combinedIssuingCapability 1
+set_interface_property axi_instr_master ENABLED true
+set_interface_property axi_instr_master EXPORT_OF ""
+set_interface_property axi_instr_master PORT_NAME_MAP ""
+set_interface_property axi_instr_master CMSIS_SVD_VARIABLES ""
+set_interface_property axi_instr_master SVD_ADDRESS_GROUP ""
+
+add_interface_port axi_instr_master instr_ARADDR araddr Output register_size
+add_interface_port axi_instr_master instr_ARBURST arburst Output 2
+add_interface_port axi_instr_master instr_ARCACHE arcache Output 4
+add_interface_port axi_instr_master instr_ARID arid Output 4
+add_interface_port axi_instr_master instr_ARLEN arlen Output 4
+add_interface_port axi_instr_master instr_ARLOCK arlock Output 2
+add_interface_port axi_instr_master instr_ARPROT arprot Output 3
+add_interface_port axi_instr_master instr_ARREADY arready Input 1
+add_interface_port axi_instr_master instr_ARSIZE arsize Output 3
+add_interface_port axi_instr_master instr_ARVALID arvalid Output 1
+add_interface_port axi_instr_master instr_AWADDR awaddr Output register_size
+add_interface_port axi_instr_master instr_AWBURST awburst Output 2
+add_interface_port axi_instr_master instr_AWCACHE awcache Output 4
+add_interface_port axi_instr_master instr_AWID awid Output 4
+add_interface_port axi_instr_master instr_AWLEN awlen Output 4
+add_interface_port axi_instr_master instr_AWLOCK awlock Output 2
+add_interface_port axi_instr_master instr_AWPROT awprot Output 3
+add_interface_port axi_instr_master instr_AWREADY awready Input 1
+add_interface_port axi_instr_master instr_AWSIZE awsize Output 3
+add_interface_port axi_instr_master instr_AWVALID awvalid Output 1
+add_interface_port axi_instr_master instr_BID bid Input 4
+add_interface_port axi_instr_master instr_BREADY bready Output 1
+add_interface_port axi_instr_master instr_BRESP bresp Input 2
+add_interface_port axi_instr_master instr_BVALID bvalid Input 1
+add_interface_port axi_instr_master instr_RDATA rdata Input register_size
+add_interface_port axi_instr_master instr_RID rid Input 4
+add_interface_port axi_instr_master instr_RLAST rlast Input 1
+add_interface_port axi_instr_master instr_RREADY rready Output 1
+add_interface_port axi_instr_master instr_RRESP rresp Input 2
+add_interface_port axi_instr_master instr_RVALID rvalid Input 1
+add_interface_port axi_instr_master instr_WDATA wdata Output register_size
+add_interface_port axi_instr_master instr_WID wid Output 4
+add_interface_port axi_instr_master instr_WLAST wlast Output 1
+add_interface_port axi_instr_master instr_WREADY wready Input 1
+add_interface_port axi_instr_master instr_WSTRB wstrb Output register_size/8
+add_interface_port axi_instr_master instr_WVALID wvalid Output 1
+
+#
 # connection point instruction
 #
 add_interface instruction avalon start
@@ -318,7 +447,7 @@ set_interface_property global_interrupts PORT_NAME_MAP ""
 set_interface_property global_interrupts CMSIS_SVD_VARIABLES ""
 set_interface_property global_interrupts SVD_ADDRESS_GROUP ""
 
-add_interface_port global_interrupts global_interrupts export Input NUM_EXT_INTERRUPTS 
+add_interface_port global_interrupts global_interrupts export Input NUM_EXT_INTERRUPTS
 
 proc log_out {out_str} {
         set chan [open ~/orca_hw_log.txt a]
@@ -360,4 +489,23 @@ proc elaboration_callback {} {
 		  send_message Error "BTB_SIZE is not a power of two"
 	 }
 	 set_parameter_value BRANCH_PREDICTORS $table_size
+
+	 if {  [get_parameter_value BUS_TYPE ] == "Axi" } {
+		  set axi_bus true
+		  set avalon_bus false
+	 } else {
+		  set axi_bus false
+		  set avalon_bus true
+	 }
+
+
+	 set_parameter_value AXI_ENABLE   $axi_bus
+	 set_parameter_value AVALON_ENABLE  $avalon_bus
+
+	 set_interface_property axi_instr_master ENABLED $axi_bus
+	 set_interface_property axi_data_master ENABLED $axi_bus
+
+	 set_interface_property data ENABLED $avalon_bus
+	 set_interface_property instruction ENABLED $avalon_bus
+
 }

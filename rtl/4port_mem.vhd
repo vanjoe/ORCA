@@ -61,8 +61,8 @@ use work.utils.all;
 
 entity ram_4port is
   generic(
-    MEM_DEPTH : natural;
-    MEM_WIDTH : natural);
+    MEM_DEPTH : natural := 1024;
+    MEM_WIDTH : natural := 32);
   port(
     clk            : in  std_logic;
     scratchpad_clk : in  std_logic;
