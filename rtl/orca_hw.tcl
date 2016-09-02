@@ -449,6 +449,38 @@ set_interface_property global_interrupts SVD_ADDRESS_GROUP ""
 
 add_interface_port global_interrupts global_interrupts export Input NUM_EXT_INTERRUPTS
 
+#
+# connection point wishbone bus (disabled)
+#
+add_interface unused_wishbone_bus conduit end
+set_interface_property unused_wishbone_bus associatedClock ""
+set_interface_property unused_wishbone_bus associatedReset ""
+set_interface_property unused_wishbone_bus ENABLED false
+set_interface_property unused_wishbone_bus EXPORT_OF ""
+set_interface_property unused_wishbone_bus PORT_NAME_MAP ""
+set_interface_property unused_wishbone_bus CMSIS_SVD_VARIABLES ""
+set_interface_property unused_wishbone_bus SVD_ADDRESS_GROUP ""
+
+add_interface_port unused_wishbone_bus       data_ADR_O     export0     output REGISTER_SIZE
+add_interface_port unused_wishbone_bus       data_DAT_I     export1      input  REGISTER_SIZE
+add_interface_port unused_wishbone_bus       data_DAT_O     export2     output REGISTER_SIZE
+add_interface_port unused_wishbone_bus       data_WE_O      export3     output 1
+add_interface_port unused_wishbone_bus       data_SEL_O     export4    output REGISTER_SIZE/8
+add_interface_port unused_wishbone_bus       data_STB_O     export5     output 1
+add_interface_port unused_wishbone_bus       data_ACK_I     export6      input 1
+add_interface_port unused_wishbone_bus       data_CYC_O     export7     output 1
+add_interface_port unused_wishbone_bus       data_CTI_O     export8     output 3
+add_interface_port unused_wishbone_bus       data_STALL_I   export9      input 1
+add_interface_port unused_wishbone_bus       instr_ADR_O    export10     output REGISTER_SIZE
+add_interface_port unused_wishbone_bus       instr_DAT_I    export11      input REGISTER_SIZE
+add_interface_port unused_wishbone_bus       instr_STB_O    export12     output 1
+add_interface_port unused_wishbone_bus       instr_ACK_I    export13      input 1
+add_interface_port unused_wishbone_bus       instr_CYC_O    export14     output 1
+add_interface_port unused_wishbone_bus       instr_CTI_O    export15     output 3
+add_interface_port unused_wishbone_bus       instr_STALL_I  export16      input 1
+
+
+
 proc log_out {out_str} {
         set chan [open ~/orca_hw_log.txt a]
         set timestamp [clock format [clock seconds]]

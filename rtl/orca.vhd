@@ -247,10 +247,16 @@ begin  -- architecture rtl
     -- incremental bursts
     constant BURST_INCR : std_logic_vector(1 downto 0) := "01";
 
+    signal allow_awvalid : std_logic;
+    signal allow_wvalid  : std_logic;
+
     signal core_data_stall1        : std_logic;
     signal core_data_stall2        : std_logic;
     signal core_data_stall3        : std_logic;
     signal core_instruction_stall4 : std_logic;
+
+    type state_t is (IDLE, WRITE_ADDR, WRITE_DATA, READING);
+    signal state : state_t;
   begin
 
 --BUG: this combinational logic assumes that AWREADY and WREADY are the same signal
@@ -264,13 +270,13 @@ begin  -- architecture rtl
     data_AWLOCK      <= (others => '0');
     data_AWCACHE     <= (others => '0');
     data_AWPROT      <= (others => '0');
-    data_AWVALID     <= core_data_write;
+    data_AWVALID     <= core_data_write and allow_awvalid;
     core_data_stall1 <= not data_AWREADY;
     data_WID         <= (others => '0');
     data_WDATA       <= core_data_writedata;
     data_WSTRB       <= core_data_byteenable;
     data_WLAST       <= '1';
-    data_WVALID      <= core_data_write;
+    data_WVALID      <= core_data_write and allow_wvalid;
     core_data_stall2 <= data_WREADY;
     --data_BID
     --data_BRESP
@@ -295,7 +301,50 @@ begin  -- architecture rtl
     core_data_readdatavalid <= data_RVALID;
     data_RREADY             <= '1';
 
-    --Instruction read port
+    -- This Process handles coupling the decoupled write data and write address channels
+    data_write_proc : process(clk)
+    begin
+      if rising_edge(clk) then
+        case state is
+          when IDLE =>
+            if core_data_write = '1' then
+              if (data_AWREADY and not data_WREADY) = '1' then
+                state <= WRITE_DATA;
+              elsif (not data_AWREADY and data_WREADY) = '1' then
+                state <= WRITE_ADDR;
+              end if;
+            elsif core_data_read = '1' then
+              if data_ARREADY = '1' then
+                state <= READING;
+              end if;
+            end if;
+          when WRITE_ADDR =>
+            if data_AWREADY = '1' then
+              state <= IDLE;
+            end if;
+          when WRITE_DATA =>
+            if data_WREADY = '1' then
+              state <= IDLE;
+            end if;
+          when READING =>
+            if data_ARREADY = '1' then
+              state <= IDLE;
+            end if;
+
+          when others => null;
+        end case;
+        if reset = '1' then
+          state <= IDLE;
+        end if;
+      end if;
+    end process;
+    core_data_waitrequest <= not (data_WREADY and data_AWREADY) when core_data_write = '1' and state = IDLE else
+                             not(data_ARREADY)  when core_data_read = '1' and state = IDLE else
+                             not data_WREADY  when state = WRITE_DATA else
+                             not data_AWREADY when state = WRITE_ADDR else
+                             '0';
+
+                                        --Instruction read port
 
     instr_ARID                     <= (others => '0');
     instr_ARADDR                   <= core_instruction_address;
@@ -307,13 +356,14 @@ begin  -- architecture rtl
     instr_ARPROT                   <= (others => '0');
     instr_ARVALID                  <= core_instruction_read;
     core_instruction_stall4        <= not instr_ARREADY;
-    -- instr_RID
+                                        -- instr_RID
     core_instruction_readdata      <= instr_RDATA;
-    --instr_RRESP
-    --instr_RLAST
+                                        --instr_RRESP
+                                        --instr_RLAST
     core_instruction_readdatavalid <= instr_RVALID;
     instr_RREADY                   <= '1';
 
+    core_instruction_waitrequest <= core_instruction_stall4;
 
     instr_AWID    <= (others => '0');
     instr_AWADDR  <= (others => '0');
@@ -354,7 +404,7 @@ begin  -- architecture rtl
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
 
-      --avalon master bus
+                                        --avalon master bus
       core_data_address              => core_data_address,
       core_data_byteenable           => core_data_byteenable,
       core_data_read                 => core_data_read,
@@ -363,7 +413,7 @@ begin  -- architecture rtl
       core_data_writedata            => core_data_writedata,
       core_data_waitrequest          => core_data_waitrequest,
       core_data_readdatavalid        => core_data_readdatavalid,
-      --avalon master bus
+                                        --avalon master bus
       core_instruction_address       => core_instruction_address,
       core_instruction_read          => core_instruction_read,
       core_instruction_readdata      => core_instruction_readdata,

@@ -291,7 +291,7 @@ begin
 
       --save various flip flops for forwarding
       --and writeback
-      if stall_pipeline = '0' then
+      if stall_pipeline = '0' and ls_unit_waiting = '0' then
         rd_latch <= rd;
       end if;
       if ls_unit_waiting = '0' then
