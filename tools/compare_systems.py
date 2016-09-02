@@ -96,7 +96,6 @@ class system:
             f.write('COUNTER_LENGTH="%s"\n'    %self.counter_length)
             f.write('PIPELINE_STAGES="%s"\n'     %self.pipeline_stages)
             f.write('SHIFTER_MAX_CYCLES="%s"\n'%self.shifter_single_cycle)
-            f.write('FORWARD_ALU_ONLY="%s"\n'    %self.fwd_alu_only)
     def build(self,use_qsub=False,build_target="all"):
         make_cmd='make -C %s %s'%(self.directory,build_target)
         if use_qsub:
@@ -142,7 +141,6 @@ class system:
             replace('COUNTER_LENGTH',"64" if self.counter_length == "0" else self.counter_length)
             replace('PIPELINE_STAGES',self.pipeline_stages)
             replace('SHIFTER_MAX_CYCLES',self.shifter_single_cycle)
-            replace('FORWARD_ALU_ONLY',self.fwd_alu_only)
             vsim_tcl=("do ../tools/runsim.tcl",
                       "add wave /vblox1/hex_0_external_connection_export",
                       "restart -f",
@@ -204,7 +202,6 @@ class system:
             f.write('COUNTER_LENGTH="%s"\n'    %self.multiply_enable)
             f.write('MULTIPLY_ENABLE="%s"\n'     %self.counter_length)
             f.write('SHIFTER_MAX_CYCLES="%s"\n'%self.shifter_single_cycle)
-            f.write("FORWARD_ALU_ONLY=%s\n"      %self.fwd_alu_only)
             f.write( "fmax=%f\n"                 %self.fmax)
             f.write( "cpu_prefit_size=%d\n"      %self.cpu_prefit_size)
             f.write( "cpu_postfit_size=%d\n"     %self.cpu_postfit_size)

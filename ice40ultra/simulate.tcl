@@ -12,7 +12,7 @@ proc com {} {
 							../rtl/register_file.vhd   \
 							../rtl/orca.vhd 			  \
 							../rtl/sys_call.vhd 		  \
-							../rtl/mxp-top.vhd 		  \
+							../rtl/lve_top.vhd 		  \
 							../rtl/4port_mem.vhd 		  \
 							../rtl/plic.vhd \
 							../rtl/gateway.vhd \
@@ -57,7 +57,6 @@ add log -r *
 
 add wave -noupdate /top_tb/dut/rv/rv/clk
 add wave -noupdate /top_tb/dut/rv/rv/reset
-add wave -noupdate /top_tb/dut/rv/rv/X/syscall/mtohost
 add wave -noupdate -divider Decode
 add wave -noupdate /top_tb/dut/rv/rv/D/register_file_1/t3
 add wave -noupdate -divider Execute

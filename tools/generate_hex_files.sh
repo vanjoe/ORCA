@@ -11,18 +11,32 @@ fi
 
 
 echo "initializing git submodules containing tests, and building them"
-git submodule update --init $SCRIPTDIR/riscv-toolchain/riscv-tools/
-(cd $SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/ && git submodule update --init --recursive . )
+(cd $SCRIPTDIR ;git submodule update --init $SCRIPTDIR/riscv-toolchain/riscv-tools/)
+
+pushd $SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/
+  git submodule update --init --recursive .
+  sed -i 's/. = 0x80000000/. = 0x00000200/' env/p/link.ld
+  sed -i 's/.tohost.*$//' env/p/link.ld
+  sed -i 's/ ecall/fence.i;ecall/' env/p/riscv_test.h
+  ./configure --with-xlen=32 2>&1
+  make clean 2 >/dev/null 2>&1
+  make -k isa -j10 >/dev/null 2>&1
+popd
 
 TEST_DIR=$SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/isa
 
-(cd $TEST_DIR/../ && ./configure --with-xlen=32 && make isa ) 2>/dev/null 1>&2
+#build vectorblox unit tests
+make -C $SCRIPTDIR/../software/unit_test
+
+
+
 
 
 SOFTWARE_DIR=../software
 #all files that aren't dump or hex (the hex files are not correctly formatted)
-FILES=$(ls ${TEST_DIR}/rv32ui-p-* | grep -v dump | grep -v hex)
-ORCA_FILES=$(ls ${SOFTWARE_DIR}/* | grep .elf)
+FILES=$(ls ${TEST_DIR}/rv32u?-p-* | grep -v dump | grep -v hex)
+ORCA_FILES=$(find  ${SOFTWARE_DIR}/unit_test -iname "*.elf" )
+
 
 PREFIX=riscv32-unknown-elf
 OBJDUMP=$PREFIX-objdump
@@ -43,8 +57,8 @@ do
 	 echo "$f > $QEX_FILE"
 	 (
 		  cp $f test/
-		  $OBJCOPY -O binary $f $BIN_FILE
-		  $OBJDUMP -D $f > test/$(basename $f).dump
+		  $OBJCOPY  -O binary $f $BIN_FILE
+		  $OBJDUMP --disassemble-all -Mnumeric,no-aliases $f > test/$(basename $f).dump
 
 		  python ../tools/bin2mif.py $BIN_FILE 0x200 > $MIF_FILE || exit -1
 		  mif2hex $MIF_FILE $QEX_FILE >/dev/null 2>&1 || exit -1

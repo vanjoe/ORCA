@@ -1,6 +1,6 @@
-library IEEE;
-use IEEE.STD_LOGIC_1164.all;
-use IEEE.NUMERIC_STD.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 
 entity register_file is
@@ -9,18 +9,17 @@ entity register_file is
     REGISTER_NAME_SIZE : positive
     );
   port(
-    clk              : in std_logic;
-    stall            : in std_logic;
-    valid_input      : in std_logic;
-    rs1_sel          : in std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
-    rs2_sel          : in std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
-    writeback_sel    : in std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
-    writeback_data   : in std_logic_vector(REGISTER_SIZE -1 downto 0);
-    writeback_enable : in std_logic;
+    clk         : in std_logic;
+    valid_input : in std_logic;
+    rs1_sel     : in std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
+    rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
+    wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
+    wb_data     : in std_logic_vector(REGISTER_SIZE -1 downto 0);
+    wb_enable   : in std_logic;
+    wb_valid    : in std_logic;
 
     rs1_data : buffer std_logic_vector(REGISTER_SIZE -1 downto 0);
     rs2_data : buffer std_logic_vector(REGISTER_SIZE -1 downto 0)
-
     );
 end;
 
@@ -74,12 +73,12 @@ architecture rtl of register_file is
 
 begin
 
-  we <= writeback_enable;
+  we <= wb_enable and wb_valid;
   register_proc : process (clk) is
   begin
     if rising_edge(clk) then
       if we = '1' then
-        registers(to_integer(unsigned(writeback_sel))) <= writeback_data;
+        registers(to_integer(unsigned(wb_sel))) <= wb_data;
       end if;
       out1 <= registers(to_integer(unsigned(rs1_sel)));
       out2 <= registers(to_integer(unsigned(rs2_sel)));
@@ -95,17 +94,15 @@ begin
     if rising_edge(clk) then
       read_during_write2 <= '0';
       read_during_write1 <= '0';
-      if rs1_sel = writeback_sel and writeback_enable = '1' then
+      if rs1_sel = wb_sel and wb_enable = '1' and wb_valid = '1' then
         read_during_write1 <= '1';
       end if;
-      if rs2_sel = writeback_sel and writeback_enable = '1' then
+      if rs2_sel = wb_sel and wb_enable = '1' and wb_valid = '1' then
         read_during_write2 <= '1';
       end if;
-      wb_data_latched <= writeback_data;
+      wb_data_latched <= wb_data;
     end if;
 
   end process;
-
-
 
 end architecture;

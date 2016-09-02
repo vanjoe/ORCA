@@ -15,9 +15,11 @@ entity orca_wishbone is
     COUNTER_LENGTH     : natural               := 64;
     BRANCH_PREDICTORS  : natural               := 0;
     PIPELINE_STAGES    : natural range 4 to 5  := 5;
-    FORWARD_ALU_ONLY   : natural range 0 to 1  := 1;
-    MXP_ENABLE         : natural range 0 to 1  := 0;
-    NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2);
+    LVE_ENABLE         : natural range 0 to 1  := 0;
+    PLIC_ENABLE        : boolean               := false;
+    NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2;
+    SCRATCHPAD_SIZE    : integer               := 1024;
+    FAMILY             : string                := "ALTERA");
 
   port(clk            : in std_logic;
        scratchpad_clk : in std_logic;
@@ -105,9 +107,10 @@ begin  -- architecture rtl
       COUNTER_LENGTH     => COUNTER_LENGTH,
       BRANCH_PREDICTORS  => BRANCH_PREDICTORS,
       PIPELINE_STAGES    => PIPELINE_STAGES,
-      FORWARD_ALU_ONLY   => FORWARD_ALU_ONLY,
-      MXP_ENABLE         => MXP_ENABLE,
-      NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS)
+      LVE_ENABLE         => LVE_ENABLE,
+      SCRATCHPAD_SIZE    => SCRATCHPAD_SIZE,
+      NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS,
+      FAMILY             => FAMILY)
     port map(
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
@@ -139,8 +142,8 @@ begin  -- architecture rtl
   data_DAT_O             <= avm_data_writedata;
   data_WE_O              <= avm_data_write;
   data_SEL_O             <= avm_data_byteenable;
-  data_STB_O             <= (avm_data_write or avm_data_read) ;
-  data_CYC_O             <= (avm_data_write or avm_data_read) ;
+  data_STB_O             <= (avm_data_write or avm_data_read);
+  data_CYC_O             <= (avm_data_write or avm_data_read);
   data_CTI_O             <= CLASSIC_CYC;
   --input
   avm_data_readdata      <= data_saved_data when data_delayed_valid = '1' else data_DAT_I;

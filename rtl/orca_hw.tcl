@@ -49,7 +49,7 @@ add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file plic.vhd VHDL PATH plic.vhd
 add_fileset_file gateway.vhd VHDL PATH gateway.vhd
 add_fileset_file 4port_mem.vhd VHDL PATH 4port_mem.vhd
-add_fileset_file mxp-top.vhd VHDL PATH mxp-top.vhd
+add_fileset_file lve_top.vhd VHDL PATH lve_top.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL Orca
@@ -69,7 +69,7 @@ add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file plic.vhd VHDL PATH plic.vhd
 add_fileset_file gateway.vhd VHDL PATH gateway.vhd
 add_fileset_file 4port_mem.vhd VHDL PATH 4port_mem.vhd
-add_fileset_file mxp-top.vhd VHDL PATH mxp-top.vhd
+add_fileset_file lve_top.vhd VHDL PATH lve_top.vhd
 
 
 #
@@ -83,15 +83,15 @@ set_parameter_property REGISTER_SIZE UNITS None
 set_parameter_property REGISTER_SIZE ALLOWED_RANGES {32}
 set_parameter_property REGISTER_SIZE HDL_PARAMETER true
 
-add_parameter MXP_ENABLE natural 0
-set_parameter_property MXP_ENABLE DEFAULT_VALUE 0
-set_parameter_property MXP_ENABLE DISPLAY_NAME "Vector Extensions"
-set_parameter_property MXP_ENABLE DESCRIPTION "Enable Vector Extensions"
-set_parameter_property MXP_ENABLE TYPE NATURAL
-set_parameter_property MXP_ENABLE UNITS None
-set_parameter_property MXP_ENABLE ALLOWED_RANGES 0:1
-set_parameter_property MXP_ENABLE HDL_PARAMETER true
-set_display_item_property MXP_ENABLE DISPLAY_HINT boolean
+add_parameter LVE_ENABLE natural 0
+set_parameter_property LVE_ENABLE DEFAULT_VALUE 0
+set_parameter_property LVE_ENABLE DISPLAY_NAME "Vector Extensions"
+set_parameter_property LVE_ENABLE DESCRIPTION "Enable Vector Extensions"
+set_parameter_property LVE_ENABLE TYPE NATURAL
+set_parameter_property LVE_ENABLE UNITS None
+set_parameter_property LVE_ENABLE ALLOWED_RANGES 0:1
+set_parameter_property LVE_ENABLE HDL_PARAMETER true
+set_display_item_property LVE_ENABLE DISPLAY_HINT boolean
 
 
 
@@ -131,17 +131,6 @@ set_parameter_property SHIFTER_MAX_CYCLES ALLOWED_RANGES {1 8 32}
 set_parameter_property SHIFTER_MAX_CYCLES HDL_PARAMETER true
 
 
-add_parameter          FORWARD_ALU_ONLY natural 1
-set_parameter_property FORWARD_ALU_ONLY ALLOWED_RANGES 0:1
-set_parameter_property FORWARD_ALU_ONLY DISPLAY_NAME "FORWARD FROM_ALU ONLY"
-set_parameter_property FORWARD_ALU_ONLY HDL_PARAMETER true
-set_parameter_property FORWARD_ALU_ONLY DESCRIPTION "\
-If the data is not forwarded to the next instruction, then a bubble is \
-inserted into the pipeline to wait until the data is ready. Be default \
-the the load instruction isn't forwarded, but FORWARD_ALU_ONLY is \
-selected then only the alu \(OP,OP-IMM,LUI,AUIPC\) are forwarded to \
-the next cycle."
-set_display_item_property FORWARD_ALU_ONLY DISPLAY_HINT boolean
 
 add_parameter COUNTER_LENGTH natural 64
 set_parameter_property COUNTER_LENGTH DISPLAY_NAME "COUNTERS REGISTER SIZE"
@@ -334,7 +323,7 @@ proc elaboration_callback {} {
 		  set_display_item_property SHIFTER_MAX_CYCLES ENABLED true
 	 }
 
-	 if { [get_parameter_value MXP_ENABLE] } {
+	 if { [get_parameter_value LVE_ENABLE] } {
 
 		  set_interface_property scratchpad_clk ENABLED true
 	 } else {

@@ -365,7 +365,7 @@ begin
       SHIFTER_MAX_CYCLES => 1,
       COUNTER_LENGTH     => 32,
       PIPELINE_STAGES    => 4,
-      MXP_ENABLE         => 0,
+      LVE_ENABLE => 0,
       PLIC_ENABLE        => FALSE,
       NUM_EXT_INTERRUPTS => 2)
     port map(

@@ -169,7 +169,6 @@ package top_component_pkg is
       CLK_I : in std_logic;
       RST_I : in std_logic;
 
-
       ADR_I        : in    std_logic_vector(31 downto 0);
       DAT_I        : in    std_logic_vector(DATA_WIDTH-1 downto 0);
       WE_I         : in    std_logic;
@@ -198,6 +197,9 @@ package top_component_pkg is
       master2_address : address_array := (0, 0);
       master3_address : address_array := (0, 0);
       master4_address : address_array := (0, 0);
+      master5_address : address_array := (0, 0);
+      master6_address : address_array := (0, 0);
+      master7_address : address_array := (0, 0);
       DATA_WIDTH      : natural       := 32
       );
     port(
@@ -219,7 +221,6 @@ package top_component_pkg is
       slave_ACK_O   : out std_logic;
       slave_ERR_O   : out std_logic;
       slave_RTY_O   : out std_logic;
-
 
       master0_ADR_O   : out std_logic_vector(31 downto 0);
       master0_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -294,7 +295,52 @@ package top_component_pkg is
       master4_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
       master4_ACK_I   : in  std_logic                               := '0';
       master4_ERR_I   : in  std_logic                               := '0';
-      master4_RTY_I   : in  std_logic                               := '0');
+      master4_RTY_I   : in  std_logic                               := '0';
+
+      master5_ADR_O   : out std_logic_vector(31 downto 0);
+      master5_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      master5_WE_O    : out std_logic;
+      master5_CYC_O   : out std_logic;
+      master5_STB_O   : out std_logic;
+      master5_SEL_O   : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
+      master5_CTI_O   : out std_logic_vector(2 downto 0);
+      master5_BTE_O   : out std_logic_vector(1 downto 0);
+      master5_LOCK_O  : out std_logic;
+      master5_STALL_I : in  std_logic                               := '0';
+      master5_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+      master5_ACK_I   : in  std_logic                               := '0';
+      master5_ERR_I   : in  std_logic                               := '0';
+      master5_RTY_I   : in  std_logic                               := '0';
+
+      master6_ADR_O   : out std_logic_vector(31 downto 0);
+      master6_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      master6_WE_O    : out std_logic;
+      master6_CYC_O   : out std_logic;
+      master6_STB_O   : out std_logic;
+      master6_SEL_O   : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
+      master6_CTI_O   : out std_logic_vector(2 downto 0);
+      master6_BTE_O   : out std_logic_vector(1 downto 0);
+      master6_LOCK_O  : out std_logic;
+      master6_STALL_I : in  std_logic                               := '0';
+      master6_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+      master6_ACK_I   : in  std_logic                               := '0';
+      master6_ERR_I   : in  std_logic                               := '0';
+      master6_RTY_I   : in  std_logic                               := '0';
+
+      master7_ADR_O   : out std_logic_vector(31 downto 0);
+      master7_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      master7_WE_O    : out std_logic;
+      master7_CYC_O   : out std_logic;
+      master7_STB_O   : out std_logic;
+      master7_SEL_O   : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
+      master7_CTI_O   : out std_logic_vector(2 downto 0);
+      master7_BTE_O   : out std_logic_vector(1 downto 0);
+      master7_LOCK_O  : out std_logic;
+      master7_STALL_I : in  std_logic                               := '0';
+      master7_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+      master7_ACK_I   : in  std_logic                               := '0';
+      master7_ERR_I   : in  std_logic                               := '0';
+      master7_RTY_I   : in  std_logic                               := '0');
   end component wb_splitter;
 
   component pmod_mic_wb is
@@ -327,8 +373,247 @@ package top_component_pkg is
   end component pmod_mic_wb;
 
 
-end package;
+  component i2s_wb is
+    generic (DATA_WIDTH : integer range 16 to 32;
+             ADDR_WIDTH : integer range 5 to 32);
+    port (
+      wb_clk_i   : in  std_logic;
+      wb_rst_i   : in  std_logic;
+      wb_sel_i   : in  std_logic;
+      wb_stb_i   : in  std_logic;
+      wb_we_i    : in  std_logic;
+      wb_cyc_i   : in  std_logic;
+      wb_bte_i   : in  std_logic_vector(1 downto 0);
+      wb_cti_i   : in  std_logic_vector(2 downto 0);
+      wb_adr_i   : in  std_logic_vector(ADDR_WIDTH - 1 downto 0);
+      wb_dat_i   : in  std_logic_vector(DATA_WIDTH -1 downto 0);
+      i2s_sd_i   : in  std_logic;       -- I2S data input
+      wb_ack_o   : out std_logic;
+      wb_stall_o : out std_logic;
+      wb_dat_o   : out std_logic_vector(DATA_WIDTH - 1 downto 0);
+      rx_int_o   : out std_logic;       -- Interrupt line
+      i2s_sck_o  : out std_logic;       -- I2S clock out
+      i2s_ws_o   : out std_logic);      -- I2S word select out
 
+  end component i2s_wb;
+
+  component SB_PLL40_CORE is
+    generic (
+      --- VITAL input port delay
+      -- Entity Parameters
+      FEEDBACK_PATH                  : string                 := "SIMPLE";  -- SIMPLE/DELAY/PHASE_AND_DELAY/EXTERNAL
+      DELAY_ADJUSTMENT_MODE_FEEDBACK : string                 := "FIXED";  -- FIXED/DYNAMIC
+      DELAY_ADJUSTMENT_MODE_RELATIVE : string                 := "FIXED";  -- FIXED/DYNAMIC
+      SHIFTREG_DIV_MODE              : bit_vector(1 downto 0) := "00";  -- 00 (div by 4)/ 01 (div by 7)/11 (div by 5)
+      FDA_FEEDBACK                   : bit_vector(3 downto 0) := "0000";
+      FDA_RELATIVE                   : bit_vector(3 downto 0) := "0000";
+      PLLOUT_SELECT                  : string                 := "GENCLK";
+
+      DIVR         : bit_vector(3 downto 0) := "0000";
+      DIVF         : bit_vector(6 downto 0) := "0000000";
+      DIVQ         : bit_vector(2 downto 0) := "000";
+      FILTER_RANGE : bit_vector(2 downto 0) := "000";
+
+      ENABLE_ICEGATE         : bit     := '0';
+      TEST_MODE              : bit     := '0';
+      EXTERNAL_DIVIDE_FACTOR : integer := 1  -- Required for PLL Config Wizard.
+      );
+    port (
+      REFERENCECLK    : in  std_logic;  -- PLL ref clock, driven by core logic
+      PLLOUTCORE      : out std_logic;  -- PLL output to core logic through local routings.
+      PLLOUTGLOBAL    : out std_logic;  -- PLL output to dedicated global clock network
+      EXTFEEDBACK     : in  std_logic;  -- FB driven by core logic
+      DYNAMICDELAY    : in  std_logic_vector(7 downto 0);  -- driven by core logic
+      LOCK            : out std_logic;  -- PLL Lock signal output
+      BYPASS          : in  std_logic;  -- REFCLK passed to PLLOUT when bypass is '1'.Driven by core logic
+      RESETB          : in  std_logic;  -- Active low reset,Driven by core logic
+      SDI             : in  std_logic;  -- Test Input. Driven by core logic.
+      SDO             : out std_logic;  -- Test output to RB Logic Tile.
+      SCLK            : in  std_logic;  -- Test Clk input.Driven by core logic.
+      LATCHINPUTVALUE : in  std_logic   -- iCEGate signal
+      );
+  end component SB_PLL40_CORE;
+
+  component SB_GB is
+    port (
+      GLOBAL_BUFFER_OUTPUT         : out std_logic;
+      USER_SIGNAL_TO_GLOBAL_BUFFER : in  std_logic);
+  end component SB_GB;
+
+  component osc_48MHz is
+    generic (
+      DIVIDER : std_logic_vector(1 downto 0) := "00"
+      );
+    port (
+      clkout : out std_logic
+      );
+  end component osc_48MHz;
+
+  component tx_i2s_topm is
+    generic (
+      DATA_WIDTH : integer range 16 to 32 := 16;
+      ADDR_WIDTH : integer range 5 to 32  := 5);
+    port (
+      -- Wishbone interface
+      wb_clk_i  : in  std_logic;
+      wb_rst_i  : in  std_logic;
+      wb_sel_i  : in  std_logic;
+      wb_stb_i  : in  std_logic;
+      wb_we_i   : in  std_logic;
+      wb_cyc_i  : in  std_logic;
+      wb_bte_i  : in  std_logic_vector(1 downto 0);
+      wb_cti_i  : in  std_logic_vector(2 downto 0);
+      wb_adr_i  : in  std_logic_vector(ADDR_WIDTH - 1 downto 0);
+      wb_dat_i  : in  std_logic_vector(DATA_WIDTH -1 downto 0);
+      wb_ack_o  : out std_logic;
+      wb_dat_o  : out std_logic_vector(DATA_WIDTH - 1 downto 0);
+      -- Interrupt line
+      tx_int_o  : out std_logic;
+      -- I2S signals
+      i2s_sd_o  : out std_logic;
+      i2s_sck_o : out std_logic;
+      i2s_ws_o  : out std_logic);
+  end component tx_i2s_topm;
+
+  component tx_i2s_wbd is
+    generic (DATA_WIDTH : integer range 16 to 32;
+             ADDR_WIDTH : integer range 5 to 32);
+    port (
+      -- Wishbone interface
+      wb_clk_i  : in  std_logic;
+      wb_rst_i  : in  std_logic;
+      wb_sel_i  : in  std_logic;
+      wb_stb_i  : in  std_logic;
+      wb_we_i   : in  std_logic;
+      wb_cyc_i  : in  std_logic;
+      wb_bte_i  : in  std_logic_vector(1 downto 0);
+      wb_cti_i  : in  std_logic_vector(2 downto 0);
+      wb_adr_i  : in  std_logic_vector(ADDR_WIDTH - 1 downto 0);
+      wb_dat_i  : in  std_logic_vector(DATA_WIDTH -1 downto 0);
+      wb_ack_o  : out std_logic;
+      wb_dat_o  : out std_logic_vector(DATA_WIDTH - 1 downto 0);
+      -- Interrupt line
+      tx_int_o  : out std_logic;
+      -- I2S signals
+      i2s_sd_o  : out std_logic;
+      i2s_sck_o : out std_logic;
+      i2s_ws_o  : out std_logic);
+  end component tx_i2s_wbd;
+
+  component i2s_version is
+    generic (DATA_WIDTH : integer;
+             ADDR_WIDTH : integer;
+             IS_MASTER  : integer);
+    port (
+      ver_rd   : in  std_logic;         -- version register read
+      ver_dout : out std_logic_vector(DATA_WIDTH - 1 downto 0));  -- reg. contents
+  end component i2s_version;
+
+  component gen_event_reg is
+    generic (DATA_WIDTH : integer := 32);
+    port (
+      clk      : in  std_logic;         -- clock
+      rst      : in  std_logic;         -- reset
+      evt_wr   : in  std_logic;         -- event register write
+      evt_rd   : in  std_logic;         -- event register read
+      evt_din  : in  std_logic_vector(DATA_WIDTH - 1 downto 0);  -- write data
+      event    : in  std_logic_vector(DATA_WIDTH - 1 downto 0);  -- event vector
+      evt_mask : in  std_logic_vector(DATA_WIDTH - 1 downto 0);  -- irq mask
+      evt_en   : in  std_logic;         -- irq enable
+      evt_dout : out std_logic_vector(DATA_WIDTH - 1 downto 0);  -- read data
+      evt_irq  : out std_logic);        -- interrupt  request
+  end component gen_event_reg;
+
+  component dpram is
+    generic (DATA_WIDTH : positive;
+             RAM_WIDTH  : positive);
+    port (
+      clk     : in  std_logic;
+      rst     : in  std_logic;          -- reset is optional, not used here
+      din     : in  std_logic_vector(DATA_WIDTH - 1 downto 0);
+      wr_en   : in  std_logic;
+      rd_en   : in  std_logic;
+      wr_addr : in  std_logic_vector(RAM_WIDTH - 1 downto 0);
+      rd_addr : in  std_logic_vector(RAM_WIDTH - 1 downto 0);
+      dout    : out std_logic_vector(DATA_WIDTH - 1 downto 0));
+  end component dpram;
+
+  component i2s_codec is
+    generic (DATA_WIDTH  : integer;
+             ADDR_WIDTH  : integer;
+             IS_MASTER   : integer range 0 to 1;
+             IS_RECEIVER : integer range 0 to 1);
+    port (
+      wb_clk_i     : in  std_logic;     -- wishbone clock
+      conf_res     : in  std_logic_vector(5 downto 0);  -- sample resolution
+      conf_ratio   : in  std_logic_vector(7 downto 0);  -- clock divider ratio
+      conf_swap    : in  std_logic;     -- left/right sample order
+      conf_en      : in  std_logic;     -- transmitter/recevier enable
+      i2s_sd_i     : in  std_logic;     -- I2S serial data input
+      i2s_sck_i    : in  std_logic;     -- I2S clock input
+      i2s_ws_i     : in  std_logic;     -- I2S word select input
+      sample_dat_i : in  std_logic_vector(DATA_WIDTH - 1 downto 0);  -- audio data
+      sample_dat_o : out std_logic_vector(DATA_WIDTH - 1 downto 0);  -- audio data
+      mem_rdwr     : out std_logic;     -- sample buffer read/write
+      sample_addr  : out std_logic_vector(ADDR_WIDTH - 2 downto 0);  -- address
+      evt_hsbf     : out std_logic;     -- higher sample buf empty event
+      evt_lsbf     : out std_logic;     -- lower sample buf empty event
+      i2s_sd_o     : out std_logic;     -- I2S serial data output
+      i2s_sck_o    : out std_logic;     -- I2S clock output
+      i2s_ws_o     : out std_logic);    -- I2S word select output
+  end component i2s_codec;
+
+
+  component SB_I2C
+
+    generic (
+      I2C_SLAVE_INIT_ADDR : string := "0b1000001";
+      BUS_ADDR74          : string := "0b0001"
+      );
+
+    port(
+      SBCLKI  : in std_logic;
+      SBRWI   : in std_logic;
+      SBSTBI  : in std_logic;
+      SBADRI7 : in std_logic;
+      SBADRI6 : in std_logic;
+      SBADRI5 : in std_logic;
+      SBADRI4 : in std_logic;
+      SBADRI3 : in std_logic;
+      SBADRI2 : in std_logic;
+      SBADRI1 : in std_logic;
+      SBADRI0 : in std_logic;
+      SBDATI7 : in std_logic;
+      SBDATI6 : in std_logic;
+      SBDATI5 : in std_logic;
+      SBDATI4 : in std_logic;
+      SBDATI3 : in std_logic;
+      SBDATI2 : in std_logic;
+      SBDATI1 : in std_logic;
+      SBDATI0 : in std_logic;
+      SCLI    : in std_logic;
+      SDAI    : in std_logic;
+
+      SBDATO7 : out   std_logic;
+      SBDATO6 : out   std_logic;
+      SBDATO5 : out   std_logic;
+      SBDATO4 : out   std_logic;
+      SBDATO3 : out   std_logic;
+      SBDATO2 : out   std_logic;
+      SBDATO1 : out   std_logic;
+      SBDATO0 : out   std_logic;
+      SBACKO  : out   std_logic;
+      i2ciRQ  : out   std_logic;
+      I2CWKUP : out   std_logic;
+      SCLO    : inout std_logic;
+      SCLOE   : out   std_logic;
+      SDAO    : out   std_logic;
+      SDAOE   : out   std_logic
+      );
+  end component;
+
+
+end package;
 
 package body top_component_pkg is
 end top_component_pkg;
