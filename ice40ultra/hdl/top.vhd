@@ -4,6 +4,7 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
 library work;
+
 use work.rv_components.all;
 use work.top_component_pkg.all;
 use work.top_util_pkg.all;
@@ -358,16 +359,18 @@ begin
 
 
 
-  rv : component orca_wishbone
+  rv : component orca
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
+      WISHBONE_ENABLE => 1,
       MULTIPLY_ENABLE    => 0,
       SHIFTER_MAX_CYCLES => 1,
       COUNTER_LENGTH     => 32,
       PIPELINE_STAGES    => 4,
-      LVE_ENABLE => 0,
-      PLIC_ENABLE        => FALSE,
-      NUM_EXT_INTERRUPTS => 2)
+      PLIC_ENABLE        => 0,
+      NUM_EXT_INTERRUPTS => 2,
+      LVE_ENABLE         => 0,
+      FAMILY            => "LATTICE")
     port map(
 
       clk            => clk,
