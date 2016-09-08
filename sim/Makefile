@@ -1,7 +1,8 @@
 
 
 ifndef BUS_TYPE
-$(error ERROR: define BUS_TYPE to 'avalon' or 'axi')
+$(info INFO: BUS_TYPE not defined, defaulting to avalon )
+BUS_TYPE=avalon
 endif
 
 all:
@@ -34,4 +35,5 @@ all: $(SYSTEM)/simulation/mentor/msim_setup.tcl
 sim: all $(SIM_FILE)
 	vsim -do $(SIM_FILE)
 clean:
-	rm -rf system_avalon/ system_axi
+	rm -rf system_avalon system_axi
+	rm -f *_axi.tcl *_avalon.tcl transcript
