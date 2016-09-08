@@ -247,8 +247,6 @@ begin  -- architecture rtl
     -- incremental bursts
     constant BURST_INCR : std_logic_vector(1 downto 0) := "01";
 
-    signal allow_awvalid : std_logic;
-    signal allow_wvalid  : std_logic;
 
     signal core_data_stall1        : std_logic;
     signal core_data_stall2        : std_logic;
@@ -270,13 +268,13 @@ begin  -- architecture rtl
     data_AWLOCK      <= (others => '0');
     data_AWCACHE     <= (others => '0');
     data_AWPROT      <= (others => '0');
-    data_AWVALID     <= core_data_write and allow_awvalid;
+    data_AWVALID     <= core_data_write when (state = IDLE or state = WRITE_ADDR) else '0';
     core_data_stall1 <= not data_AWREADY;
     data_WID         <= (others => '0');
     data_WDATA       <= core_data_writedata;
     data_WSTRB       <= core_data_byteenable;
     data_WLAST       <= '1';
-    data_WVALID      <= core_data_write and allow_wvalid;
+    data_WVALID      <= core_data_write when (state = IDLE or state = WRITE_DATA) else '0';
     core_data_stall2 <= data_WREADY;
     --data_BID
     --data_BRESP
@@ -327,7 +325,7 @@ begin  -- architecture rtl
               state <= IDLE;
             end if;
           when READING =>
-            if data_ARREADY = '1' then
+            if data_RVALID = '1' then
               state <= IDLE;
             end if;
 
