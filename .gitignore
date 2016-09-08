@@ -19,3 +19,4 @@ wishbone/cae_library/*
 ice40ultra/ice40ultra_Implmnt/*
 ice40ultra/init_*.imem
 */test/*
+system_avalon.sopcinfo system_axi.sopcinfo system.sopcinfo
