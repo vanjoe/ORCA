@@ -5,28 +5,33 @@ $(error ERROR: define BUS_TYPE to 'avalon' or 'axi')
 endif
 
 all:
-
-SOURCE_QSYS=system_$(BUS_TYPE).qsys
-
-ORCA_FILES=$(wildcard rtl/*.vhd)
+SYSTEM=system_$(BUS_TYPE)
+QSYS_FILE=$(SYSTEM).qsys
+SIM_FILE=simulate_$(BUS_TYPE).tcl
+TESTALL_FILE=testall_$(BUS_TYPE).tcl
 
 ORCA_COPY_FILES=$(addprfix system/simulation/submodules/, $(notdir $(ORCA_FILES)))
 
-system.qsys:$(SOURCE_QSYS)
-	cp -f $^ $@
-
-system/simulation/mentor/msim_setup.tcl: system.qsys
-	qsys-generate --simulation=vhdl system.qsys
-	( cd system/simulation/submodules/; for i in *.vhd; do if [ -f ../../../rtl/$$i ] ; then ln -sf ../../../rtl/$$i $$i; fi; done; )
+$(SYSTEM)/simulation/mentor/msim_setup.tcl: $(QSYS_FILE)
+	qsys-generate --simulation=vhdl $^
+	( cd $(SYSTEM)/simulation/submodules/; for i in *.vhd; do if [ -f ../../../rtl/$$i ] ; then ln -sf ../../../rtl/$$i $$i; fi; done; )
 
 test/rv32ui-p-add.qex:
 	../tools/generate_hex_files.sh
 
-testall: test/rv32ui-p-add.qex system/simulation/mentor/msim_setup.tcl
-	vsim -c -do testall_sim.tcl | grep '\.qex'
+$(SIM_FILE):simulate.tcl
+	sed 's/system/system_$(BUS_TYPE)/g' $^ > $@
+$(TESTALL_FILE):testall_sim.tcl
+	sed 's/system/system_$(BUS_TYPE)/g' $^ > $@
 
-all: system/simulation/mentor/msim_setup.tcl
-	(cd system/simulation/mentor/; ln -sf ../../../test.hex .)
 
+testall: test/rv32ui-p-add.qex $(SYSTEM)/simulation/mentor/msim_setup.tcl $(TESTALL_FILE)
+	vsim -c -do $(TESTALL_FILE) | grep '\.qex'
+
+all: $(SYSTEM)/simulation/mentor/msim_setup.tcl
+	(cd $(SYSTEM)/simulation/mentor/; ln -sf ../../../test.hex .)
+
+sim: all $(SIM_FILE)
+	vsim -do $(SIM_FILE)
 clean:
-	rm -rf system system.qsys
+	rm -rf system_avalon/ system_axi
