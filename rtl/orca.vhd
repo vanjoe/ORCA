@@ -190,14 +190,23 @@ begin  -- architecture rtl
   assert AVALON_ENABLE + WISHBONE_ENABLE + AXI_ENABLE = 1 report "Exactly one bus type must be enabled" severity failure;
 
   avalon_enabled : if AVALON_ENABLE = 1 generate
-    avm_data_address        <= core_data_address;
-    avm_data_byteenable     <= core_data_byteenable;
-    avm_data_read           <= core_data_read;
+
+    core_data_waitrequest   <= '0';
     core_data_readdata      <= avm_data_readdata;
-    avm_data_write          <= core_data_write;
-    avm_data_writedata      <= core_data_writedata;
-    core_data_waitrequest   <= avm_data_waitrequest;
+
     core_data_readdatavalid <= avm_data_readdatavalid;
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        if avm_data_waitrequest = '0' then
+          avm_data_address        <= core_data_address;
+          avm_data_byteenable     <= core_data_byteenable;
+          avm_data_read           <= core_data_read;
+          avm_data_write          <= core_data_write;
+          avm_data_writedata      <= core_data_writedata;
+        end if;
+      end if;
+    end process;
 
     avm_instruction_address        <= core_instruction_address;
     avm_instruction_read           <= core_instruction_read;
