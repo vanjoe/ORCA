@@ -12,7 +12,6 @@ foreach f $files {
 		  set max_length $len
 	 }
 }
-puts "qex max_length = $max_length"
 foreach f $files {
 	 file copy -force $f test.hex
 	 restart -f
@@ -21,8 +20,12 @@ foreach f $files {
 	 #when {system/vectorblox_orca_0/core/X/syscall/legal_instruction == "0" && system/vectorblox_orca_0/core/X/syscall/valid == "1"  } {stop}
 
 	 run 2000 ns
-	 set v [examine -decimal /system/vectorblox_orca_0/core/D/register_file_1/t3]
-	 puts [format "%-${max_length}s = $v" $f ]
+	 set v [examine -radix decimal /system/vectorblox_orca_0/core/D/register_file_1/t3]
+	 set passfail  ""
+	 if { $v != 1 } {
+		  set passfail "FAIL"
+	 }
+	 puts [format "%-${max_length}s = %-6d %s" $f $v $passfail ]
 }
 
 exit -f;
