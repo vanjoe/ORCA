@@ -501,7 +501,6 @@ proc elaboration_callback {} {
 
 	 set count 0
 	 for {set i 0} {$i<32} {incr i} {
-		  log_out "$i\n"
 		  if { $table_size & [expr 1<< $i ] } {
 				set count [expr $count + 1]
 		  }
