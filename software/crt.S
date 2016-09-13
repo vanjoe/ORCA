@@ -334,6 +334,14 @@ fail_ecall:
   ecall
   j fail_ecall
 
+.weak handle_interrupt
+handle_interrupt:
+.weak handle_trap
+handle_trap:
+1:
+ j 1b
+
+
 _init:
 		  la sp, _end_of_memory
 		  jal main

@@ -17,12 +17,28 @@ test_2:
 		  addi    x28,x0,2
 		  bne     x3,x29,fail
 
+test_3:
+		  la      x1, data_3_0
+		  la      x2, data_3_1
+        lw      x3, 0(x1)
+		  lw      x4, 0(x2)
+		  addi    x28,x0,3
+		  li      x29,0xAAAAAAAA
+		  bne     x3,x29,fail
+		  li      x29,0xBBBBBBBB
+		  bne     x4,x29,fail
+
 		  TEST_PASSFAIL
 
 RVTEST_CODE_END
 
   .data
 RVTEST_DATA_BEGIN
+
+data_3_0:
+		  .word 0xAAAAAAAA
+data_3_1:
+		  .word 0xBBBBBBBB
 
   TEST_DATA
 
