@@ -246,7 +246,7 @@ begin
   stall_to_lve       <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall) and valid_input;
   stall_to_alu       <= (ls_unit_waiting or use_after_produce_stall) and valid_input;
   stall_from_execute <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
-  stall_to_lsu       <= (stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
+  stall_to_lsu       <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
 
   --TODO clean this up.
   -- There was a bug here that valid output would not go high if a load was followed
