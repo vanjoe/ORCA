@@ -1,3 +1,5 @@
+#!/bin/bash
+set -e
 #warning Compiling for r
 
 SCRIPTDIR=$(dirname $0)
@@ -30,4 +32,33 @@ riscv32-unknown-elf-objcopy -O binary $ELF_FILE $BIN_FILE
 
 riscv32-unknown-elf-objdump --disassemble-all -Mnumeric,no-aliases $ELF_FILE > $DUMP_FILE
 python $SCRIPTDIR/bin2mif.py $BIN_FILE 0x100 > $MIF_FILE || exit -1
-mif2hex $MIF_FILE $HEX_FILE >/dev/null 2>&1 || exit -
+mif2hex $MIF_FILE $HEX_FILE >/dev/null 2>&1 || exit -1
+cp $HEX_FILE test.hex
+HOST_OUT=$(timeout 10s $compile_dir/csmith-host-seed$SEED || echo timeout)
+if [ "$HOST_OUT" = "timeout" ]
+then
+	 echo timeout $SEED
+	 exit 0
+fi
+SIM_TCL="cd system_avalon/simulation/mentor;
+do msim_setup.tcl;
+ld;
+
+add wave /system_avalon/vectorblox_orca_0/core/X/syscall/mscratch;
+when {system_avalon/vectorblox_orca_0/core/X/instruction == x\"00000073\" && system_avalon/vectorblox_orca_0/core/X/valid_input == \"1\" } {stop};
+run 1ms;
+set v [examine -radix decimal /system_avalon/vectorblox_orca_0/core/X/syscall/mscratch];
+puts [format \"checksum = %X\" \$v ];
+exit -f ;
+"
+
+
+RISCV_OUT=$(vsim -c -do "$SIM_TCL" | egrep '^[^#R]')
+
+
+if [ "${RISCV_OUT}" = "${HOST_OUT}" ]
+then
+	 echo "r$RISCV_OUT h$HOST_OUT PASS  $SEED" | sed 's/checksum = //g'
+else
+	 echo "r$RISCV_OUT h$HOST_OUT FAIL  $SEED" | sed 's/checksum = //g'
+fi
