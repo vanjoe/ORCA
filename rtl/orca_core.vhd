@@ -9,7 +9,7 @@ entity orca_core is
 
   generic (
       REGISTER_SIZE      : integer               := 32;
-      RESET_VECTOR       : natural               := 16#00000200#;
+      RESET_VECTOR       : integer               := 16#00000200#;
       MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
       DIVIDE_ENABLE      : natural range 0 to 1  := 0;
       SHIFTER_MAX_CYCLES : natural               := 1;

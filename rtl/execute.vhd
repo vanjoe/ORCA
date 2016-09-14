@@ -16,7 +16,7 @@ entity execute is
     REGISTER_NAME_SIZE  : positive;
     INSTRUCTION_SIZE    : positive;
     SIGN_EXTENSION_SIZE : positive;
-    RESET_VECTOR        : natural;
+    RESET_VECTOR        : integer;
     MULTIPLY_ENABLE     : boolean;
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;

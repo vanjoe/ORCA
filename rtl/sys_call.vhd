@@ -43,7 +43,7 @@ entity system_calls is
   generic (
     REGISTER_SIZE    : natural;
     INSTRUCTION_SIZE : natural;
-    RESET_VECTOR     : natural;
+    RESET_VECTOR     : integer;
     COUNTER_LENGTH   : natural);
 
   port (

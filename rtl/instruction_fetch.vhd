@@ -11,7 +11,7 @@ entity instruction_fetch is
   generic (
     REGISTER_SIZE     : positive;
     INSTRUCTION_SIZE  : positive;
-    RESET_VECTOR      : natural;
+    RESET_VECTOR      : integer;
     BRANCH_PREDICTORS : natural);
   port (
     clk   : in std_logic;

@@ -14,7 +14,7 @@ package rv_components is
       WISHBONE_ENABLE : integer range 0 to 1 := 0;
       AXI_ENABLE      : integer range 0 to 1 := 0;
 
-      RESET_VECTOR       : natural               := 16#00000200#;
+      RESET_VECTOR       : integer               := 16#00000200#;
       MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
       DIVIDE_ENABLE      : natural range 0 to 1  := 0;
       SHIFTER_MAX_CYCLES : natural               := 1;
@@ -166,7 +166,7 @@ package rv_components is
   component orca_core is
     generic (
       REGISTER_SIZE      : integer               := 32;
-      RESET_VECTOR       : natural               := 16#00000200#;
+      RESET_VECTOR       : integer               := 16#00000200#;
       MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
       DIVIDE_ENABLE      : natural range 0 to 1  := 0;
       SHIFTER_MAX_CYCLES : natural               := 1;
@@ -244,7 +244,7 @@ package rv_components is
       REGISTER_NAME_SIZE  : positive;
       INSTRUCTION_SIZE    : positive;
       SIGN_EXTENSION_SIZE : positive;
-      RESET_VECTOR        : natural;
+      RESET_VECTOR        : integer;
       MULTIPLY_ENABLE     : boolean;
       DIVIDE_ENABLE       : boolean;
       SHIFTER_MAX_CYCLES  : natural;
@@ -299,7 +299,7 @@ package rv_components is
     generic (
       REGISTER_SIZE     : positive;
       INSTRUCTION_SIZE  : positive;
-      RESET_VECTOR      : natural;
+      RESET_VECTOR      : integer;
       BRANCH_PREDICTORS : natural);
     port (
       clk   : in std_logic;
@@ -565,7 +565,7 @@ package rv_components is
     generic (
       REGISTER_SIZE    : natural;
       INSTRUCTION_SIZE : natural;
-      RESET_VECTOR     : natural;
+      RESET_VECTOR     : integer;
       COUNTER_LENGTH   : natural);
     port (
       clk         : in std_logic;

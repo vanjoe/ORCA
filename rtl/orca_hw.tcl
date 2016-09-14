@@ -116,15 +116,14 @@ set_parameter_property LVE_ENABLE HDL_PARAMETER true
 set_display_item_property LVE_ENABLE DISPLAY_HINT boolean
 
 
-
 add_parameter RESET_VECTOR NATURAL 512
 set_parameter_property RESET_VECTOR DEFAULT_VALUE 512
 set_parameter_property RESET_VECTOR DISPLAY_NAME RESET_VECTOR
-set_parameter_property RESET_VECTOR TYPE NATURAL
+set_parameter_property RESET_VECTOR TYPE integer
 set_parameter_property RESET_VECTOR UNITS None
-set_parameter_property RESET_VECTOR ALLOWED_RANGES 0:2147483647
 set_parameter_property RESET_VECTOR HDL_PARAMETER true
 set_display_item_property RESET_VECTOR DISPLAY_HINT hexadecimal
+
 add_parameter MULTIPLY_ENABLE natural 0
 set_parameter_property MULTIPLY_ENABLE DEFAULT_VALUE 0
 set_parameter_property MULTIPLY_ENABLE DISPLAY_NAME "HARDWARE MULTIPLY"
