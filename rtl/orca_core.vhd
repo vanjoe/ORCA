@@ -8,19 +8,19 @@ use work.utils.all;
 entity orca_core is
 
   generic (
-      REGISTER_SIZE      : integer               := 32;
-      RESET_VECTOR       : integer               := 16#00000200#;
-      MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
-      DIVIDE_ENABLE      : natural range 0 to 1  := 0;
-      SHIFTER_MAX_CYCLES : natural               := 1;
-      COUNTER_LENGTH     : natural               := 0;
-      BRANCH_PREDICTORS  : natural               := 0;
-      PIPELINE_STAGES    : natural range 4 to 5  := 5;
-      LVE_ENABLE         : natural range 0 to 1  := 0;
-      PLIC_ENABLE        : natural range 0 to 1  := 0;
-      NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
-      SCRATCHPAD_SIZE    : integer               := 1024;
-      FAMILY             : string                := "ALTERA");
+    REGISTER_SIZE      : integer               := 32;
+    RESET_VECTOR       : integer               := 16#00000200#;
+    MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
+    DIVIDE_ENABLE      : natural range 0 to 1  := 0;
+    SHIFTER_MAX_CYCLES : natural               := 1;
+    COUNTER_LENGTH     : natural               := 0;
+    BRANCH_PREDICTORS  : natural               := 0;
+    PIPELINE_STAGES    : natural range 4 to 5  := 5;
+    LVE_ENABLE         : natural range 0 to 1  := 0;
+    PLIC_ENABLE        : natural range 0 to 1  := 0;
+    NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
+    SCRATCHPAD_SIZE    : integer               := 1024;
+    FAMILY             : string                := "ALTERA");
 
   port(clk            : in std_logic;
        scratchpad_clk : in std_logic;
@@ -198,7 +198,9 @@ begin  -- architecture rtl
       DIVIDE_ENABLE       => DIVIDE_ENABLE = 1,
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
       COUNTER_LENGTH      => COUNTER_LENGTH,
-      LVE_ENABLE          => LVE_ENABLE = 1)
+      LVE_ENABLE          => LVE_ENABLE = 1,
+      SCRATCHPAD_SIZE     => SCRATCHPAD_SIZE,
+      FAMILY              => FAMILY)
     port map (
       clk            => clk,
       scratchpad_clk => scratchpad_clk,

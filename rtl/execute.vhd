@@ -228,6 +228,18 @@ begin
             "10" when br_data_enable = '1' else
             "11";                       --when alu_data_out_valid = '1'
 
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if reset = '0' then
+        assert (bool_to_int(sys_data_enable) +
+                bool_to_int(ld_data_enable) +
+                bool_to_int(br_data_enable) +
+                bool_to_int(alu_data_out_valid)) <=1  and reset = '0' report "Multiple Data Enables Asserted" severity Failure;
+      end if;
+    end if;
+  end process;
+
   with wb_mux select
     wb_data <=
     sys_data_out when "00",
@@ -429,6 +441,7 @@ begin
         REGISTER_SIZE    => REGISTER_SIZE,
         INSTRUCTION_SIZE => INSTRUCTION_SIZE,
         SCRATCHPAD_SIZE  => SCRATCHPAD_SIZE,
+        SLAVE_DATA_WIDTH => REGISTER_SIZE,
         FAMILY           => FAMILY)
       port map (
         clk            => clk,

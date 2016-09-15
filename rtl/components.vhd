@@ -250,8 +250,8 @@ package rv_components is
       SHIFTER_MAX_CYCLES  : natural;
       COUNTER_LENGTH      : natural;
       LVE_ENABLE          : boolean;
-      SCRATCHPAD_SIZE     : integer := 1024;
-      FAMILY              : string  := "ALTERA");
+      SCRATCHPAD_SIZE     : integer;
+      FAMILY              : string);
     port(
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
@@ -330,8 +330,7 @@ package rv_components is
       MULTIPLY_ENABLE     : boolean;
       DIVIDE_ENABLE       : boolean;
       SHIFTER_MAX_CYCLES  : natural;
-      FAMILY              : string := "ALTERA"
-      );
+      FAMILY              : string);
     port (
       clk                : in  std_logic;
       stall_to_alu       : in  std_logic;
@@ -607,9 +606,9 @@ package rv_components is
     generic(
       REGISTER_SIZE    : natural;
       INSTRUCTION_SIZE : natural;
-      SLAVE_DATA_WIDTH : natural := 32;
-      SCRATCHPAD_SIZE  : integer := 1024;
-      FAMILY           : string  := "ALTERA");
+      SLAVE_DATA_WIDTH : natural;
+      SCRATCHPAD_SIZE  : integer;
+      FAMILY           : string);
     port(
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
@@ -640,8 +639,8 @@ package rv_components is
 
   component plic is
     generic (
-      REGISTER_SIZE      : integer               := 32;
-      NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2);
+      REGISTER_SIZE      : integer;
+      NUM_EXT_INTERRUPTS : integer range 2 to 32);
     port (
       mtime_o    : out std_logic_vector(63 downto 0);
       mip_mtip_o : out std_logic;
