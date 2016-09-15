@@ -11,7 +11,7 @@ fi
 
 
 echo "initializing git submodules containing tests, and building them"
-git submodule update --init $SCRIPTDIR/riscv-toolchain/riscv-tools/
+(cd $SCRIPTDIR ;git submodule update --init $SCRIPTDIR/riscv-toolchain/riscv-tools/)
 
 pushd $SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/
   git submodule update --init --recursive .

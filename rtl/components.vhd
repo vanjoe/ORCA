@@ -8,16 +8,21 @@ use work.utils.all;
 package rv_components is
   component orca is
     generic (
-      REGISTER_SIZE      : integer               := 32;
-      RESET_VECTOR       : natural               := 16#00000200#;
+      REGISTER_SIZE   : integer              := 32;
+      --BUS Select
+      AVALON_ENABLE   : integer range 0 to 1 := 0;
+      WISHBONE_ENABLE : integer range 0 to 1 := 0;
+      AXI_ENABLE      : integer range 0 to 1 := 0;
+
+      RESET_VECTOR       : integer               := 16#00000200#;
       MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
       DIVIDE_ENABLE      : natural range 0 to 1  := 0;
-      SHIFTER_MAX_CYCLES : natural;
-      COUNTER_LENGTH     : natural               := 64;
+      SHIFTER_MAX_CYCLES : natural               := 1;
+      COUNTER_LENGTH     : natural               := 0;
       BRANCH_PREDICTORS  : natural               := 0;
       PIPELINE_STAGES    : natural range 4 to 5  := 5;
       LVE_ENABLE         : natural range 0 to 1  := 0;
-      PLIC_ENABLE        : boolean               := false;
+      PLIC_ENABLE        : natural range 0 to 1  := 0;
       NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
       SCRATCHPAD_SIZE    : integer               := 1024;
       FAMILY             : string                := "ALTERA");
@@ -26,70 +31,177 @@ package rv_components is
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
 
-      --avalon master bus
-      avm_data_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_data_byteenable    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      avm_data_read          : out std_logic;
-      avm_data_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
-      avm_data_write         : out std_logic;
-      avm_data_writedata     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_data_waitrequest   : in  std_logic                                  := '0';
-      avm_data_readdatavalid : in  std_logic                                  := '0';
-
-      --avalon master bus
+      --avalon data bus
+      avm_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      avm_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      avm_data_read                 : out std_logic;
+      avm_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
+      avm_data_write                : out std_logic;
+      avm_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      avm_data_waitrequest          : in  std_logic                                  := '0';
+      avm_data_readdatavalid        : in  std_logic                                  := '0';
+      --avalon instruction bus
       avm_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       avm_instruction_read          : out std_logic;
       avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
       avm_instruction_waitrequest   : in  std_logic                                  := '0';
       avm_instruction_readdatavalid : in  std_logic                                  := '0';
+      --wishbone data bus
+      data_ADR_O                    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_DAT_I                    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_DAT_O                    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_WE_O                     : out std_logic;
+      data_SEL_O                    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      data_STB_O                    : out std_logic;
+      data_ACK_I                    : in  std_logic;
+      data_CYC_O                    : out std_logic;
+      data_CTI_O                    : out std_logic_vector(2 downto 0);
+      data_STALL_I                  : in  std_logic;
+      --wishbone instruction bus
+      instr_ADR_O                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instr_DAT_I                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instr_STB_O                   : out std_logic;
+      instr_ACK_I                   : in  std_logic;
+      instr_CYC_O                   : out std_logic;
+      instr_CTI_O                   : out std_logic_vector(2 downto 0);
+      instr_STALL_I                 : in  std_logic;
 
-      global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0)
+      --AXI BUS
+
+      -- Write address channel ---------------------------------------------------------
+      data_AWID    : out std_logic_vector(3 downto 0);  -- ID for write address signals
+      data_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);  -- Address of the first transferin a burst
+      data_AWLEN   : out std_logic_vector(3 downto 0);  -- Number of transfers in a burst, burst must not cross 4 KB boundary, burst length of 1 to 16 transfers in AXI3
+      data_AWSIZE  : out std_logic_vector(2 downto 0);  -- Maximum number of bytes to transfer in each data transfer (beat) in a burst
+      -- See Table A3-2 for AxSIZE encoding
+      -- 0b010 => 4 bytes in a transfer
+      data_AWBURST : out std_logic_vector(1 downto 0);  -- defines the burst type, fixed, incr, or wrap
+      -- fixed accesses the same address repeatedly, incr increments the address for each transfer, wrap = incr except rolls over to lower address if upper limit is reached
+      -- see table A3-3 for AxBURST encoding
+      data_AWLOCK  : out std_logic_vector(1 downto 0);  -- Ensures that only the master can access the targeted slave region
+      data_AWCACHE : out std_logic_vector(3 downto 0);  -- specifies memory type, see Table A4-5
+      data_AWPROT  : out std_logic_vector(2 downto 0);  -- specifies access permission, see Table A4-6
+      data_AWVALID : out std_logic;  -- Valid address and control information on bus, asserted until slave asserts AWREADY
+      data_AWREADY : in  std_logic := '-';  -- Slave is ready to accept address and control signals
+
+      -- Write data channel ------------------------------------------------------------
+      data_WID    : out std_logic_vector(3 downto 0);  -- ID for write data signals
+      data_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      data_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);  -- Specifies which byte lanes contain valid information
+      data_WLAST  : out std_logic;  -- Asserted when master is driving the final write transfer in the burst
+      data_WVALID : out std_logic;  -- Valid data available on bus, asserted until slave asserts WREADY
+      data_WREADY : in  std_logic := '-';  -- Slave is now available to accept write data
+
+      -- Write response channel ---------------------------------------------------------
+      data_BID    : in  std_logic_vector(3 downto 0) := (others => '-');  -- ID for write response
+      data_BRESP  : in  std_logic_vector(1 downto 0) := (others => '-');  -- Slave response (with error codes) to a write
+      data_BVALID : in  std_logic                    := '-';  -- Indicates that the channel is signaling a valid write response
+      data_BREADY : out std_logic;  -- Indicates that master has acknowledged write response
+
+      -- Read address channel ------------------------------------------------------------
+      data_ARID    : out std_logic_vector(3 downto 0);
+      data_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      data_ARLEN   : out std_logic_vector(3 downto 0);
+      data_ARSIZE  : out std_logic_vector(2 downto 0);
+      data_ARBURST : out std_logic_vector(1 downto 0);
+      data_ARLOCK  : out std_logic_vector(1 downto 0);
+      data_ARCACHE : out std_logic_vector(3 downto 0);
+      data_ARPROT  : out std_logic_vector(2 downto 0);
+      data_ARVALID : out std_logic;
+      data_ARREADY : in  std_logic := '-';
+
+      -- Read data channel -----------------------------------------------------------------
+      data_RID    : in  std_logic_vector(3 downto 0)                := (others => '-');
+      data_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '-');
+      data_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '-');
+      data_RLAST  : in  std_logic                                   := '-';
+      data_RVALID : in  std_logic                                   := '-';
+      data_RREADY : out std_logic;
+
+      -- Read address channel ------------------------------------------------------------
+      instr_ARID    : out std_logic_vector(3 downto 0);
+      instr_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      instr_ARLEN   : out std_logic_vector(3 downto 0);
+      instr_ARSIZE  : out std_logic_vector(2 downto 0);
+      instr_ARBURST : out std_logic_vector(1 downto 0);
+      instr_ARLOCK  : out std_logic_vector(1 downto 0);
+      instr_ARCACHE : out std_logic_vector(3 downto 0);
+      instr_ARPROT  : out std_logic_vector(2 downto 0);
+      instr_ARVALID : out std_logic;
+      instr_ARREADY : in  std_logic := '-';
+
+      -- Read data channel -----------------------------------------------------------------
+      instr_RID    : in  std_logic_vector(3 downto 0)                := (others => '-');
+      instr_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '-');
+      instr_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '-');
+      instr_RLAST  : in  std_logic                                   := '-';
+      instr_RVALID : in  std_logic                                   := '-';
+      instr_RREADY : out std_logic;
+
+      instr_AWID    : out std_logic_vector(3 downto 0);
+      instr_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      instr_AWLEN   : out std_logic_vector(3 downto 0);
+      instr_AWSIZE  : out std_logic_vector(2 downto 0);
+      instr_AWBURST : out std_logic_vector(1 downto 0);
+      instr_AWLOCK  : out std_logic_vector(1 downto 0);
+      instr_AWCACHE : out std_logic_vector(3 downto 0);
+      instr_AWPROT  : out std_logic_vector(2 downto 0);
+      instr_AWVALID : out std_logic;
+      instr_AWREADY : in  std_logic                    := '-';
+      instr_WID     : out std_logic_vector(3 downto 0);
+      instr_WDATA   : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      instr_WSTRB   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      instr_WLAST   : out std_logic;
+      instr_WVALID  : out std_logic;
+      instr_WREADY  : in  std_logic                    := '-';
+      instr_BID     : in  std_logic_vector(3 downto 0) := (others => '-');
+      instr_BRESP   : in  std_logic_vector(1 downto 0) := (others => '-');
+      instr_BVALID  : in  std_logic                    := '-';
+      instr_BREADY  : out std_logic;
+
+
+      global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
       );
   end component orca;
-
-  component orca_wishbone is
+  component orca_core is
     generic (
       REGISTER_SIZE      : integer               := 32;
-      RESET_VECTOR       : natural               := 16#00000200#;
+      RESET_VECTOR       : integer               := 16#00000200#;
       MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
       DIVIDE_ENABLE      : natural range 0 to 1  := 0;
-      SHIFTER_MAX_CYCLES : natural               := 8;
-      COUNTER_LENGTH     : natural               := 64;
+      SHIFTER_MAX_CYCLES : natural               := 1;
+      COUNTER_LENGTH     : natural               := 0;
       BRANCH_PREDICTORS  : natural               := 0;
       PIPELINE_STAGES    : natural range 4 to 5  := 5;
       LVE_ENABLE         : natural range 0 to 1  := 0;
-      PLIC_ENABLE        : boolean               := false;
-      NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2;
+      PLIC_ENABLE        : natural range 0 to 1  := 0;
+      NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
       SCRATCHPAD_SIZE    : integer               := 1024;
       FAMILY             : string                := "ALTERA");
-    port(
-      clk            : in std_logic;
-      scratchpad_clk : in std_logic;
-      reset          : in std_logic;
 
-      data_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_WE_O    : out std_logic;
-      data_SEL_O   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      data_STB_O   : out std_logic;
-      data_ACK_I   : in  std_logic;
-      data_CYC_O   : out std_logic;
-      data_CTI_O   : out std_logic_vector(2 downto 0);
-      data_STALL_I : in  std_logic;
+    port(clk            : in std_logic;
+         scratchpad_clk : in std_logic;
+         reset          : in std_logic;
 
-      instr_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instr_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instr_STB_O   : out std_logic;
-      instr_ACK_I   : in  std_logic;
-      instr_CYC_O   : out std_logic;
-      instr_CTI_O   : out std_logic_vector(2 downto 0);
-      instr_STALL_I : in  std_logic;
+         --avalon master bus
+         core_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+         core_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+         core_data_read                 : out std_logic;
+         core_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
+         core_data_write                : out std_logic;
+         core_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+         core_data_waitrequest          : in  std_logic                                  := '0';
+         core_data_readdatavalid        : in  std_logic                                  := '0';
+         --avalon master bus
+         core_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+         core_instruction_read          : out std_logic;
+         core_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
+         core_instruction_waitrequest   : in  std_logic                                  := '0';
+         core_instruction_readdatavalid : in  std_logic                                  := '0';
 
-      global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
-
-      );
-  end component orca_wishbone;
+         global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
+         );
+  end component orca_core;
 
   component decode is
     generic(
@@ -132,7 +244,7 @@ package rv_components is
       REGISTER_NAME_SIZE  : positive;
       INSTRUCTION_SIZE    : positive;
       SIGN_EXTENSION_SIZE : positive;
-      RESET_VECTOR        : natural;
+      RESET_VECTOR        : integer;
       MULTIPLY_ENABLE     : boolean;
       DIVIDE_ENABLE       : boolean;
       SHIFTER_MAX_CYCLES  : natural;
@@ -187,7 +299,7 @@ package rv_components is
     generic (
       REGISTER_SIZE     : positive;
       INSTRUCTION_SIZE  : positive;
-      RESET_VECTOR      : natural;
+      RESET_VECTOR      : integer;
       BRANCH_PREDICTORS : natural);
     port (
       clk   : in std_logic;
@@ -453,7 +565,7 @@ package rv_components is
     generic (
       REGISTER_SIZE    : natural;
       INSTRUCTION_SIZE : natural;
-      RESET_VECTOR     : natural;
+      RESET_VECTOR     : integer;
       COUNTER_LENGTH   : natural);
     port (
       clk         : in std_logic;

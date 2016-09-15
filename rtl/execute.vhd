@@ -16,7 +16,7 @@ entity execute is
     REGISTER_NAME_SIZE  : positive;
     INSTRUCTION_SIZE    : positive;
     SIGN_EXTENSION_SIZE : positive;
-    RESET_VECTOR        : natural;
+    RESET_VECTOR        : integer;
     MULTIPLY_ENABLE     : boolean;
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
@@ -140,10 +140,10 @@ architecture behavioural of execute is
   signal stall_to_lve     : std_logic;
 
   signal valid_instr  : std_logic;
-  signal ld_latch_en  : std_logic;
-  signal ld_latch_out : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ld_rd        : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal rd_latch     : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+
+  signal valid_input_latched : std_logic;
+
 
   constant ZERO : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := (others => '0');
 
@@ -173,6 +173,18 @@ architecture behavioural of execute is
 
   constant SP_ADDRESS : unsigned(REGISTER_SIZE-1 downto 0) := x"80000000";
 
+  signal use_after_produce_stall      : std_logic;
+  signal use_after_produce_stall_mask : std_logic;
+
+  function bool_to_int (
+    signal a : std_logic)
+    return integer is
+  begin  -- function bool_to_int
+    if a = '1' then
+      return 1;
+    end if;
+    return 0;
+  end function bool_to_int;
 
   signal use_after_load_stall : std_logic;
   function bool_to_int (
@@ -186,22 +198,16 @@ architecture behavioural of execute is
   end function bool_to_int;
   signal myint : integer;
 begin
-  valid_instr <= valid_input and not use_after_load_stall;
+  valid_instr <= valid_input and not use_after_produce_stall;
   -----------------------------------------------------------------------------
   -- REGISTER FORWADING
   -- Knowing the next instruction coming downt the pipeline, we can
   -- generate the mux select bits for the next cycle.
   -- there are several functional units that could generate a writeback. ALU,
-  -- JAL, Syscalls, load_store. the syscall and alu forward directly to the next
-  -- instruction. on a load instruction, we don't have enogh time to forward it
-  -- directly so we save it into a temporary register.  JAL and JALR always
-  -- result in a pipeline flush so we don't have to worry about forwarding the
-  -- writeback register. This means that the source register can come either
-  -- from the register file if there is no forwarding, the saved register from
-  -- a load instruction or from forwarding the csr read or alu instruction.
+  -- JAL, Syscalls, load_store. the Alu forward directly to the next
+  -- instruction, The others stall the pipeline to wait for the registers to
+  -- propogate if the next instruction uses them.
   --
-  -- Note that because the load instruction doesn't directly forward into the
-  -- next instruction, we have to watch out for use after load hazards.
   -----------------------------------------------------------------------------
   with rs1_mux select
     rs1_data_fwd <=
@@ -211,6 +217,22 @@ begin
     rs2_data_fwd <=
     alu_data_out when ALU_FWD,
     rs2_data     when others;
+
+
+  -------------------------------------------------------------------------------
+  -- This process is useful for finding bugs in simulation
+  -------------------------------------------------------------------------------
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if reset = '0' then
+        assert (bool_to_int(sys_data_enable) +
+                bool_to_int(ld_data_enable) +
+                bool_to_int(br_data_enable) +
+                bool_to_int(alu_data_out_valid)) <=1  and reset = '0' report "Multiple Data Enables Asserted" severity failure;
+      end if;
+    end if;
+  end process;
 
   wb_mux <= "00" when sys_data_enable = '1' else
             "01" when ld_data_enable = '1' else
@@ -243,66 +265,59 @@ begin
               alu_data_out when alu_data_out_valid = '1' else
               br_data_out;
 
-  stall_to_lve       <= (ls_unit_waiting or stall_from_alu or use_after_load_stall) and valid_input;
-  stall_to_alu       <= (ls_unit_waiting or use_after_load_stall) and valid_input;
-  stall_from_execute <= (ls_unit_waiting or stall_from_alu or use_after_load_stall or stall_from_lve) and valid_input;
-  stall_to_lsu       <= (stall_from_alu or use_after_load_stall or stall_from_lve) and valid_input;
+  use_after_produce_stall <= wb_enable and valid_input and use_after_produce_stall_mask ;
+  stall_to_lve       <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall) and valid_input;
+  stall_to_alu       <= (ls_unit_waiting or use_after_produce_stall) and valid_input;
+  stall_from_execute <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
+  stall_to_lsu       <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
 
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      if stall_from_execute = '0' then
-        valid_output <= valid_input;
-      end if;
-    end if;
-  end process;
-
+  --TODO clean this up.
+  -- There was a bug here that valid output would not go high if a load was followed
+  -- by a pipeline bubble, the "or ld_data_enable" belwo fixes that, but it
+  -- doesn't seem to be the right fix.
+  valid_output <= valid_input_latched or ls_datavalid;
 
   process(clk)
     variable current_alu : boolean;
+    variable rs1_mux_var : fwd_mux_t;
+    variable rs2_mux_var : fwd_mux_t;
+    variable rd_latch_var : std_logic_vector(rd'range);
   begin
     if rising_edge(clk) then
 
-
+      valid_input_latched          <= valid_input and not stall_from_execute;
       --calculate where the next forward data will go
       current_alu := opcode = LUI_OP or
                      opcode = AUIPC_OP or
                      opcode = ALU_OP or
                      opcode = ALUI_OP;
 
-      if rd = ni_rs1 and rd /= ZERO and valid_instr = '1' then
-        if (current_alu) then
-          rs1_mux <= ALU_FWD;
-        else
-          rs1_mux <= NO_FWD;
+      rs1_mux_var := NO_FWD;
+      rs2_mux_var := NO_FWD;
+      if (current_alu) then
+        if rd = ni_rs1 and rd /= ZERO and valid_instr = '1' then
+          rs1_mux_var := ALU_FWD;
         end if;
-      else
-        rs1_mux <= NO_FWD;
-      end if;
-
-      if rd = ni_rs2 and rd /= ZERO and valid_instr = '1' then
-        if current_alu then
-          rs2_mux <= ALU_FWD;
-        else
-          rs2_mux <= NO_FWD;
+        if rd = ni_rs2 and rd /= ZERO and valid_instr = '1' then
+          rs2_mux_var := ALU_FWD;
         end if;
-      else
-        rs2_mux <= NO_FWD;
       end if;
-
+      rd_latch_var := rd_latch;
       if stall_from_execute = '0' then
-        rd_latch <= rd;
+        rd_latch_var := rd;
       end if;
 
-      if ls_unit_waiting = '0' then
-        use_after_load_stall <= '0';
-        if (ni_rs2 = rd or ni_rs1 = rd) and not current_alu and not (opcode = LVE_OP) then
-          use_after_load_stall <= valid_instr and not stall_from_execute;
-        end if;
+      if  ((rd_latch_var = ni_rs1 and rs1_mux_var = NO_FWD) or (rd_latch_var = ni_rs2 and rs2_mux_var = NO_FWD)) then
+        use_after_produce_stall_mask <= '1';
       end if;
+      if use_after_produce_stall = '1' and wb_enable = '1' then
+        use_after_produce_stall_mask <= '0';
+      end if;
+
+      rd_latch <= rd_latch_var;
+      rs1_mux <= rs1_mux_var;
+      rs2_mux <= rs2_mux_var;
     end if;
-
-
   end process;
 
   alu : component arithmetic_unit

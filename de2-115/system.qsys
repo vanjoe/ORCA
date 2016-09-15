@@ -105,7 +105,7 @@
    {
       datum _sortIndex
       {
-         value = "15";
+         value = "14";
          type = "int";
       }
    }
@@ -176,7 +176,7 @@
    {
       datum _sortIndex
       {
-         value = "13";
+         value = "12";
          type = "int";
       }
    }
@@ -184,7 +184,7 @@
    {
       datum _sortIndex
       {
-         value = "11";
+         value = "10";
          type = "int";
       }
    }
@@ -239,7 +239,7 @@
    {
       datum _sortIndex
       {
-         value = "14";
+         value = "13";
          type = "int";
       }
    }
@@ -256,32 +256,11 @@
          type = "String";
       }
    }
-   element pmod_mic_0
-   {
-      datum _sortIndex
-      {
-         value = "10";
-         type = "int";
-      }
-   }
-   element pmod_mic_0.s1
-   {
-      datum _lockedAddress
-      {
-         value = "0";
-         type = "boolean";
-      }
-      datum baseAddress
-      {
-         value = "256";
-         type = "String";
-      }
-   }
    element read_pipeline_0
    {
       datum _sortIndex
       {
-         value = "12";
+         value = "11";
          type = "int";
       }
    }
@@ -474,11 +453,6 @@
    internal="ledr.external_connection"
    type="conduit"
    dir="end" />
- <interface
-   name="pmod_mic"
-   internal="pmod_mic_0.conduit_end"
-   type="conduit"
-   dir="end" />
  <interface name="program_counter" internal="vectorblox_orca_0.program_counter" />
  <interface name="reset" internal="clk_0.clk_in_reset" type="reset" dir="end" />
  <interface name="to_host" internal="vectorblox_orca_0.to_host" />
@@ -661,11 +635,6 @@
    enabled="1">
   <parameter name="REGISTER_SIZE" value="32" />
  </module>
- <module name="pmod_mic_0" kind="pmod_mic" version="1.0" enabled="1">
-  <parameter name="CLK_FREQ_HZ" value="50000000" />
-  <parameter name="PORTS" value="1" />
-  <parameter name="SAMPLE_RATE_HZ" value="10000" />
- </module>
  <module name="read_pipeline_0" kind="read_pipeline" version="1.0" enabled="1">
   <parameter name="MAX_PIPELINE" value="7" />
   <parameter name="REGISTER_SIZE" value="32" />
@@ -677,12 +646,14 @@
    enabled="1">
   <parameter name="BRANCH_PREDICTION" value="false" />
   <parameter name="BTB_SIZE" value="0" />
+  <parameter name="BUS_TYPE" value="Avalon" />
   <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DIVIDE_ENABLE" value="1" />
+  <parameter name="LVE_ENABLE" value="0" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
-  <parameter name="MXP_ENABLE" value="0" />
   <parameter name="NUM_EXT_INTERRUPTS" value="2" />
   <parameter name="PIPELINE_STAGES" value="4" />
+  <parameter name="PLIC_ENABLE" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="512" />
   <parameter name="SHIFTER_MAX_CYCLES" value="1" />
@@ -739,15 +710,6 @@
    end="read_pipeline_0.master_in">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0200" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection
-   kind="avalon"
-   version="15.1"
-   start="mm_bridge_0.m0"
-   end="pmod_mic_0.s1">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0100" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="avalon" version="15.1" start="mm_bridge_0.m0" end="hex_3.s1">
@@ -812,7 +774,6 @@
    version="15.1"
    start="clk_0.clk"
    end="vectorblox_orca_0.clock" />
- <connection kind="clock" version="15.1" start="clk_0.clk" end="pmod_mic_0.clock" />
  <connection
    kind="clock"
    version="15.1"
@@ -871,11 +832,6 @@
    version="15.1"
    start="clk_0.clk_reset"
    end="vectorblox_orca_0.reset" />
- <connection
-   kind="reset"
-   version="15.1"
-   start="clk_0.clk_reset"
-   end="pmod_mic_0.reset" />
  <connection
    kind="reset"
    version="15.1"

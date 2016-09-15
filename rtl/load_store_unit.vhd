@@ -111,7 +111,7 @@ begin
   --align to word boundary
   address    <= address_unaligned(REGISTER_SIZE-1 downto 2) & "00";
 
-  stalled <= (waitrequest and (read_en or write_en)) or (expecting_data_valid and not readvalid);  -- and not (read_in_progress and not readvalid);
+  stalled <= (expecting_data_valid and not readvalid);
 
 
   --outputs, all of these assignments should happen on the rising edge,

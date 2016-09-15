@@ -81,9 +81,6 @@ wishbone/cae_library/*
 ice40ultra/ice40ultra_Implmnt/*
 ice40ultra/init_*.imem
 */test/*
-
-*~
-\#*
-.#*
-
+*.sopcinfo
 transcript
+*/work
