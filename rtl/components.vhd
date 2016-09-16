@@ -190,7 +190,7 @@ package rv_components is
          core_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
          core_data_write                : out std_logic;
          core_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-         core_data_readdatavalid        : in  std_logic                                  := '0';
+         core_data_ack                  : in  std_logic                                  := '0';
          --avalon master bus
          core_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
          core_instruction_read          : out std_logic;
@@ -284,7 +284,7 @@ package rv_components is
       read_en   : out std_logic;
       writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      datavalid : in  std_logic;
+      data_ack  : in  std_logic;
 
       mtime_i             : in  std_logic_vector(63 downto 0);
       mip_mtip_i          : in  std_logic;

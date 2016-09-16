@@ -33,7 +33,7 @@ entity orca_core is
        core_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
        core_data_write                : out std_logic;
        core_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-       core_data_readdatavalid        : in  std_logic                                  := '0';
+       core_data_ack        : in  std_logic                                  := '0';
        --avalon master bus
        core_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
        core_instruction_read          : out std_logic;
@@ -72,7 +72,7 @@ architecture rtl of orca_core is
   signal e_pc           : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal e_br_taken     : std_logic;
   signal e_valid        : std_logic;
-  signal e_readvalid    : std_logic;
+  signal e_data_ack    : std_logic;
   signal pipeline_empty : std_logic;
 
   signal execute_stalled : std_logic;
@@ -227,7 +227,7 @@ begin  -- architecture rtl
       read_en     => data_read_en,
       writedata   => data_write_data,
       readdata    => data_read_data,
-      datavalid   => e_readvalid,
+      data_ack   => e_data_ack,
 
       -- Interrupt lines
       mtime_i              => mtime,
@@ -296,7 +296,7 @@ begin  -- architecture rtl
 
 
     data_read_data <= plic_readdata      when data_sel_prev = '0' else core_data_readdata;
-    e_readvalid    <= plic_readdatavalid when data_sel_prev = '0' else core_data_readdatavalid;
+    e_data_ack    <= plic_readdatavalid when data_sel_prev = '0' else core_data_ack;
 
   end generate;
 
@@ -309,7 +309,7 @@ begin  -- architecture rtl
     core_data_writedata  <= data_write_data;
 
     data_read_data <= core_data_readdata;
-    e_readvalid    <= core_data_readdatavalid;
+    e_data_ack    <= core_data_ack;
 
     -- Only handle the cycle counter (mtime) if the PLIC is disabled.
     process (clk)

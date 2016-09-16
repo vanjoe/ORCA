@@ -57,7 +57,7 @@ entity execute is
     read_en   : out std_logic;
     writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    datavalid : in  std_logic;
+    data_ack  : in  std_logic;
 
     mtime_i    : in std_logic_vector(63 downto 0);
     mip_mtip_i : in std_logic;
@@ -90,7 +90,7 @@ architecture behavioural of execute is
   signal ls_read_en    : std_logic;
   signal ls_write_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal ls_read_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ls_datavalid  : std_logic;
+  signal ls_ack  : std_logic;
 
 
   -- various writeback sources
@@ -262,7 +262,7 @@ begin
   -- There was a bug here that valid output would not go high if a load was followed
   -- by a pipeline bubble, the "or ld_data_enable" belwo fixes that, but it
   -- doesn't seem to be the right fix.
-  valid_output <= valid_input_latched or ls_datavalid;
+  valid_output <= valid_input_latched or ls_ack;
 
   process(clk)
     variable current_alu  : boolean;
@@ -275,9 +275,9 @@ begin
       valid_input_latched <= valid_input and not stall_from_execute;
       --calculate where the next forward data will go
       current_alu         := opcode = LUI_OP or
-                     opcode = AUIPC_OP or
-                     opcode = ALU_OP or
-                     opcode = ALUI_OP;
+                             opcode = AUIPC_OP or
+                             opcode = ALU_OP or
+                             opcode = ALUI_OP;
 
       rs1_mux_var := NO_FWD;
       rs2_mux_var := NO_FWD;
@@ -386,7 +386,7 @@ begin
       read_en        => ls_read_en,
       write_data     => ls_write_data,
       read_data      => ls_read_data,
-      ack            => ls_datavalid);
+      ack            => ls_ack);
 
   syscall : component system_calls
     generic map (
@@ -485,7 +485,7 @@ begin
     sp_write_en <= use_scratchpad and ls_write_en;
 
     ls_read_data <= sp_read_data when last_use_scratchpad = '1' else readdata;
-    ls_datavalid <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
+    ls_ack <= sp_datavalid when last_use_scratchpad = '1' else data_ack;
 
     byte_en   <= ls_byte_en;
     address   <= ls_address;
@@ -498,7 +498,7 @@ begin
     stall_from_lve <= '0';
 
     ls_read_data <= readdata;
-    ls_datavalid <= datavalid;
+    ls_ack <= data_ack;
 
     byte_en   <= ls_byte_en;
     address   <= ls_address;
