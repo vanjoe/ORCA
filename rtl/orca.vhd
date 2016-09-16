@@ -223,7 +223,7 @@ begin  -- architecture rtl
     core_data_readdata      <= data_DAT_I;
     data_WE_O               <= core_data_write;
     data_DAT_O              <= core_data_writedata;
-    core_data_readdatavalid <= data_ACK_I and is_read_transaction;
+    core_data_readdatavalid <= data_ACK_I ;
 
     instr_ADR_O                    <= core_instruction_address;
     instr_CYC_O                    <= core_instruction_read;

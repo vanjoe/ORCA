@@ -278,13 +278,13 @@ package rv_components is
       instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       --memory-bus
-      address     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      byte_en     : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      write_en    : out std_logic;
-      read_en     : out std_logic;
-      writedata   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      readdata    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      datavalid   : in  std_logic;
+      address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      byte_en   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      write_en  : out std_logic;
+      read_en   : out std_logic;
+      writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      datavalid : in  std_logic;
 
       mtime_i             : in  std_logic_vector(63 downto 0);
       mip_mtip_i          : in  std_logic;
@@ -401,7 +401,7 @@ package rv_components is
       read_en        : out    std_logic;
       write_data     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      readvalid      : in     std_logic);
+      ack            : in     std_logic);
   end component load_store_unit;
 
   component true_dual_port_ram_single_clock is

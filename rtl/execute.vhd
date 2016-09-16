@@ -51,13 +51,13 @@ entity execute is
     pipeline_empty     : in     std_logic;
 
 --memory-bus
-    address     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    byte_en     : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-    write_en    : out std_logic;
-    read_en     : out std_logic;
-    writedata   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    readdata    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    datavalid   : in  std_logic;
+    address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    byte_en   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    write_en  : out std_logic;
+    read_en   : out std_logic;
+    writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    datavalid : in  std_logic;
 
     mtime_i    : in std_logic_vector(63 downto 0);
     mip_mtip_i : in std_logic;
@@ -84,13 +84,13 @@ architecture behavioural of execute is
   signal predict_corr_en : std_logic;
 
 
-  signal ls_address     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ls_byte_en     : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-  signal ls_write_en    : std_logic;
-  signal ls_read_en     : std_logic;
-  signal ls_write_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ls_read_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ls_datavalid   : std_logic;
+  signal ls_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ls_byte_en    : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal ls_write_en   : std_logic;
+  signal ls_read_en    : std_logic;
+  signal ls_write_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ls_read_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ls_datavalid  : std_logic;
 
 
   -- various writeback sources
@@ -137,8 +137,8 @@ architecture behavioural of execute is
   signal lve_source_valid : std_logic;
   signal stall_to_lve     : std_logic;
 
-  signal valid_instr  : std_logic;
-  signal rd_latch     : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal valid_instr : std_logic;
+  signal rd_latch    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
   signal valid_input_latched : std_logic;
 
@@ -233,7 +233,7 @@ begin
         assert (bool_to_int(sys_data_enable) +
                 bool_to_int(ld_data_enable) +
                 bool_to_int(br_data_enable) +
-                bool_to_int(alu_data_out_valid)) <=1  and reset = '0' report "Multiple Data Enables Asserted" severity Failure;
+                bool_to_int(alu_data_out_valid)) <=1  and reset = '0' report "Multiple Data Enables Asserted" severity failure;
       end if;
     end if;
   end process;
@@ -252,11 +252,11 @@ begin
               alu_data_out when alu_data_out_valid = '1' else
               br_data_out;
 
-  use_after_produce_stall <= wb_enable and valid_input and use_after_produce_stall_mask ;
-  stall_to_lve       <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall) and valid_input;
-  stall_to_alu       <= (ls_unit_waiting or use_after_produce_stall) and valid_input;
-  stall_from_execute <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
-  stall_to_lsu       <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
+  use_after_produce_stall <= wb_enable and valid_input and use_after_produce_stall_mask;
+  stall_to_lve            <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall) and valid_input;
+  stall_to_alu            <= (ls_unit_waiting or use_after_produce_stall) and valid_input;
+  stall_from_execute      <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
+  stall_to_lsu            <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
 
   --TODO clean this up.
   -- There was a bug here that valid output would not go high if a load was followed
@@ -265,16 +265,16 @@ begin
   valid_output <= valid_input_latched or ls_datavalid;
 
   process(clk)
-    variable current_alu : boolean;
-    variable rs1_mux_var : fwd_mux_t;
-    variable rs2_mux_var : fwd_mux_t;
+    variable current_alu  : boolean;
+    variable rs1_mux_var  : fwd_mux_t;
+    variable rs2_mux_var  : fwd_mux_t;
     variable rd_latch_var : std_logic_vector(rd'range);
   begin
     if rising_edge(clk) then
 
-      valid_input_latched          <= valid_input and not stall_from_execute;
+      valid_input_latched <= valid_input and not stall_from_execute;
       --calculate where the next forward data will go
-      current_alu := opcode = LUI_OP or
+      current_alu         := opcode = LUI_OP or
                      opcode = AUIPC_OP or
                      opcode = ALU_OP or
                      opcode = ALUI_OP;
@@ -294,7 +294,7 @@ begin
         rd_latch_var := rd;
       end if;
 
-      if  ((rd_latch_var = ni_rs1 and rs1_mux_var = NO_FWD) or (rd_latch_var = ni_rs2 and rs2_mux_var = NO_FWD)) then
+      if ((rd_latch_var = ni_rs1 and rs1_mux_var = NO_FWD) or (rd_latch_var = ni_rs2 and rs2_mux_var = NO_FWD)) then
         use_after_produce_stall_mask <= '1';
       end if;
       if use_after_produce_stall = '1' and wb_enable = '1' then
@@ -302,8 +302,8 @@ begin
       end if;
 
       rd_latch <= rd_latch_var;
-      rs1_mux <= rs1_mux_var;
-      rs2_mux <= rs2_mux_var;
+      rs1_mux  <= rs1_mux_var;
+      rs2_mux  <= rs2_mux_var;
     end if;
   end process;
 
@@ -386,7 +386,7 @@ begin
       read_en        => ls_read_en,
       write_data     => ls_write_data,
       read_data      => ls_read_data,
-      readvalid      => ls_datavalid);
+      ack            => ls_datavalid);
 
   syscall : component system_calls
     generic map (
@@ -484,8 +484,8 @@ begin
     sp_read_en  <= use_scratchpad and ls_read_en;
     sp_write_en <= use_scratchpad and ls_write_en;
 
-    ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else readdata;
-    ls_datavalid   <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
+    ls_read_data <= sp_read_data when last_use_scratchpad = '1' else readdata;
+    ls_datavalid <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
 
     byte_en   <= ls_byte_en;
     address   <= ls_address;
@@ -497,8 +497,8 @@ begin
   n_enable_lve : if not LVE_ENABLE generate
     stall_from_lve <= '0';
 
-    ls_read_data   <= readdata;
-    ls_datavalid   <= datavalid;
+    ls_read_data <= readdata;
+    ls_datavalid <= datavalid;
 
     byte_en   <= ls_byte_en;
     address   <= ls_address;
