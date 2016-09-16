@@ -29,7 +29,6 @@ entity load_store_unit is
     read_en        : buffer std_logic;
     write_data     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    waitrequest    : in     std_logic;
     readvalid      : in     std_logic);
 
 end entity load_store_unit;
@@ -123,7 +122,7 @@ begin
         alignment    <= address_unaligned(1 downto 0);
         latched_fun3 <= fun3;
       end if;
-      if read_en = '1' and waitrequest = '0' then
+      if read_en = '1'  then
         expecting_data_valid <= '1';
       elsif expecting_data_valid = '1' and readvalid = '1' then
         expecting_data_valid <= '0';

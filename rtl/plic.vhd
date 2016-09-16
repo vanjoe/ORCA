@@ -15,10 +15,10 @@ entity plic is
     mip_mtip_o : out std_logic;
     mip_msip_o : out std_logic;
     mip_meip_o : out std_logic;
-  
+
     -- External interrupts
     global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
-    
+
     -- Avalon bus
     clk : in std_logic;
     reset : in std_logic;
@@ -30,7 +30,6 @@ entity plic is
     plic_write : in std_logic;
     plic_writedata : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     plic_lock : in std_logic;
-    plic_waitrequest : out std_logic;
     plic_readdatavalid : out std_logic);
 end entity plic;
 
@@ -38,13 +37,13 @@ architecture rtl of plic is
   signal mtime_reg : std_logic_vector(63 downto 0);
   signal mtimecmp_l_reg : std_logic_vector(31 downto 0);
   signal mtimecmp_h_reg : std_logic_vector(31 downto 0);
-  signal mip_mtip_reg   : std_logic; 
+  signal mip_mtip_reg   : std_logic;
   signal mip_msip_reg   : std_logic;
   signal mip_meip_reg   : std_logic;
-  
+
   -- 0 denotes level sensitive external interrupt, 1 denotes edge sensitive external interrupt.
   signal edge_sensitive_vector     : std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
-  -- Holds the one-hot ID of the highest priority pending interrupt 
+  -- Holds the one-hot ID of the highest priority pending interrupt
   -- (arbitrated on priority, then ID).
   signal interrupt_claim           : std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
   -- Tells the gateway which interrupt was claimed this cycle (if one was).
@@ -62,10 +61,10 @@ architecture rtl of plic is
 
   -- The interrupt register lables.
   constant MTIMECMP_L       : std_logic_vector(7 downto 0) := X"00";
-  constant MTIMECMP_H       : std_logic_vector(7 downto 0) := X"04"; 
+  constant MTIMECMP_H       : std_logic_vector(7 downto 0) := X"04";
   constant MSOFTWARE_I      : std_logic_vector(7 downto 0) := X"08";
   constant EDGE_SENS_VECTOR : std_logic_vector(7 downto 0) := X"0C";
-  constant INTRPT_CLAIM     : std_logic_vector(7 downto 0) := X"10";         
+  constant INTRPT_CLAIM     : std_logic_vector(7 downto 0) := X"10";
   constant INTRPT_COMPLETE  : std_logic_vector(7 downto 0) := X"14";
 
   -- A constant representing zero interrupts pending.
@@ -73,7 +72,7 @@ architecture rtl of plic is
 
 begin
   -- This is the gateway that converts edge or level sensitive external interrupts into
-  -- interrupt requests for the PLIC. 
+  -- interrupt requests for the PLIC.
   interrupt_gateway : component gateway
     generic map (
       NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS)
@@ -84,8 +83,8 @@ begin
       edge_sensitive_vector => edge_sensitive_vector,
       interrupt_claimed => interrupt_claimed,
       interrupt_complete => interrupt_complete,
-      pending_interrupts => pending_interrupts); 
-  
+      pending_interrupts => pending_interrupts);
+
   -- Interrupt pending signals
   mtime_o <= mtime_reg;
   mip_mtip_o <= mip_mtip_reg;
@@ -93,25 +92,24 @@ begin
   mip_meip_o <= mip_meip_reg;
 
   -- Data write/read signals
-  plic_waitrequest <= '0';
   plic_response <= "00";
 
-  byteen_3 <= (others => plic_byteenable(3)); 
-  byteen_2 <= (others => plic_byteenable(2)); 
-  byteen_1 <= (others => plic_byteenable(1)); 
-  byteen_0 <= (others => plic_byteenable(0)); 
+  byteen_3 <= (others => plic_byteenable(3));
+  byteen_2 <= (others => plic_byteenable(2));
+  byteen_1 <= (others => plic_byteenable(1));
+  byteen_0 <= (others => plic_byteenable(0));
 
   writedata <= (plic_writedata(31 downto 24) and byteen_3) &
                (plic_writedata(23 downto 16) and byteen_2) &
                (plic_writedata(15 downto  8) and byteen_1) &
-               (plic_writedata( 7 downto  0) and byteen_0); 
+               (plic_writedata( 7 downto  0) and byteen_0);
 
   process (clk)
   begin
     if rising_edge(clk) then
       -- Handle triggering the timer interrupt pending.
       mtime_reg <= std_logic_vector(unsigned(mtime_reg) + to_unsigned(1, 64));
-      if (unsigned(mtime_reg) + to_unsigned(1, 64) 
+      if (unsigned(mtime_reg) + to_unsigned(1, 64)
         >= unsigned(mtimecmp_h_reg & mtimecmp_l_reg)) then
         mip_mtip_reg <= '1';
       end if;
@@ -119,7 +117,7 @@ begin
       -- Handle triggering the external interrupt pending.
       if interrupt_claim /= ZERO then
         mip_meip_reg <= '1';
-      else 
+      else
         mip_meip_reg <= '0';
       end if;
 
@@ -129,7 +127,7 @@ begin
 
       if (reset = '1') then
         mtime_reg <= (others => '0');
-        -- mtimecmp_reg gets all '1's to prevent timer interrupts from happening right when 
+        -- mtimecmp_reg gets all '1's to prevent timer interrupts from happening right when
         -- they get enabled.
         mtimecmp_h_reg <= (others => '1');
         mtimecmp_l_reg <= (others => '1');
@@ -161,7 +159,7 @@ begin
               mtimecmp_h_reg <= writedata;
             -- Writes to the MSOFTWARE_I register induce a pending software interrupt.
             when MSOFTWARE_I =>
-              mip_msip_reg <= '1';                           
+              mip_msip_reg <= '1';
             when EDGE_SENS_VECTOR =>
               edge_sensitive_vector <= writedata(NUM_EXT_INTERRUPTS-1 downto 0);
             when INTRPT_CLAIM =>
@@ -184,7 +182,7 @@ begin
               plic_readdata <= mtimecmp_l_reg;
             when MTIMECMP_H =>
               plic_readdata <= mtimecmp_h_reg;
-            -- Reads from the MSOFTWARE_I register clear a pending software interrupt. 
+            -- Reads from the MSOFTWARE_I register clear a pending software interrupt.
             when MSOFTWARE_I =>
               mip_msip_reg <= '0';
               plic_readdata <= (others => '0');
@@ -196,9 +194,9 @@ begin
               for i in 0 to NUM_EXT_INTERRUPTS-1 loop
                 if (interrupt_claim(i) = '1') then
                   plic_readdata <= std_logic_vector(to_unsigned(i, REGISTER_SIZE));
-                end if; 
-              end loop;  
-              -- Signal to the gateway that the highest priority pending interrupt has 
+                end if;
+              end loop;
+              -- Signal to the gateway that the highest priority pending interrupt has
               -- been claimed.
               interrupt_claimed <= interrupt_claim;
             when INTRPT_COMPLETE =>
@@ -226,7 +224,7 @@ begin
           interrupt_claim <= (others => '0');
           interrupt_claim(i) <= '1';
         end if;
-      end loop; 
+      end loop;
     end if;
   end process;
 

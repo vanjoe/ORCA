@@ -190,7 +190,6 @@ package rv_components is
          core_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
          core_data_write                : out std_logic;
          core_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-         core_data_waitrequest          : in  std_logic                                  := '0';
          core_data_readdatavalid        : in  std_logic                                  := '0';
          --avalon master bus
          core_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -285,7 +284,6 @@ package rv_components is
       read_en     : out std_logic;
       writedata   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       readdata    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      waitrequest : in  std_logic;
       datavalid   : in  std_logic;
 
       mtime_i             : in  std_logic_vector(63 downto 0);
@@ -403,7 +401,6 @@ package rv_components is
       read_en        : out    std_logic;
       write_data     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      waitrequest    : in     std_logic;
       readvalid      : in     std_logic);
   end component load_store_unit;
 
@@ -660,7 +657,6 @@ package rv_components is
       plic_write         : in  std_logic;
       plic_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       plic_lock          : in  std_logic;
-      plic_waitrequest   : out std_logic;
       plic_readdatavalid : out std_logic);
   end component plic;
 

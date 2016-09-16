@@ -57,7 +57,6 @@ entity execute is
     read_en     : out std_logic;
     writedata   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     readdata    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    waitrequest : in  std_logic;
     datavalid   : in  std_logic;
 
     mtime_i    : in std_logic_vector(63 downto 0);
@@ -91,7 +90,6 @@ architecture behavioural of execute is
   signal ls_read_en     : std_logic;
   signal ls_write_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal ls_read_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ls_waitrequest : std_logic;
   signal ls_datavalid   : std_logic;
 
 
@@ -388,7 +386,6 @@ begin
       read_en        => ls_read_en,
       write_data     => ls_write_data,
       read_data      => ls_read_data,
-      waitrequest    => ls_waitrequest,
       readvalid      => ls_datavalid);
 
   syscall : component system_calls
@@ -488,7 +485,6 @@ begin
     sp_write_en <= use_scratchpad and ls_write_en;
 
     ls_read_data   <= sp_read_data when last_use_scratchpad = '1' else readdata;
-    ls_waitrequest <= sp_wait      when use_scratchpad = '1'      else waitrequest;
     ls_datavalid   <= sp_datavalid when last_use_scratchpad = '1' else datavalid;
 
     byte_en   <= ls_byte_en;
@@ -502,7 +498,6 @@ begin
     stall_from_lve <= '0';
 
     ls_read_data   <= readdata;
-    ls_waitrequest <= waitrequest;
     ls_datavalid   <= datavalid;
 
     byte_en   <= ls_byte_en;

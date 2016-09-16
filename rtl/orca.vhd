@@ -175,7 +175,6 @@ architecture rtl of Orca is
   signal core_data_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal core_data_write         : std_logic;
   signal core_data_writedata     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_waitrequest   : std_logic;
   signal core_data_readdatavalid : std_logic;
 
   signal core_instruction_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -191,7 +190,6 @@ begin  -- architecture rtl
 
   avalon_enabled : if AVALON_ENABLE = 1 generate
 
-    core_data_waitrequest   <= '0';
     core_data_readdata      <= avm_data_readdata;
 
     core_data_readdatavalid <= avm_data_readdatavalid;
@@ -225,7 +223,6 @@ begin  -- architecture rtl
     core_data_readdata      <= data_DAT_I;
     data_WE_O               <= core_data_write;
     data_DAT_O              <= core_data_writedata;
-    core_data_waitrequest   <= data_STALL_I;
     core_data_readdatavalid <= data_ACK_I and is_read_transaction;
 
     instr_ADR_O                    <= core_instruction_address;
@@ -345,11 +342,6 @@ begin  -- architecture rtl
         end if;
       end if;
     end process;
-    core_data_waitrequest <= not (data_WREADY and data_AWREADY) when core_data_write = '1' and state = IDLE else
-                             not(data_ARREADY) when core_data_read = '1' and state = IDLE else
-                             not data_WREADY   when state = WRITE_DATA else
-                             not data_AWREADY  when state = WRITE_ADDR else
-                             '0';
 
                                         --Instruction read port
 
@@ -419,7 +411,6 @@ begin  -- architecture rtl
       core_data_readdata             => core_data_readdata,
       core_data_write                => core_data_write,
       core_data_writedata            => core_data_writedata,
-      core_data_waitrequest          => core_data_waitrequest,
       core_data_readdatavalid        => core_data_readdatavalid,
                                         --avalon master bus
       core_instruction_address       => core_instruction_address,
