@@ -226,18 +226,6 @@ begin
             "10" when br_data_enable = '1' else
             "11";                       --when alu_data_out_valid = '1'
 
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      if reset = '0' then
-        assert (bool_to_int(sys_data_enable) +
-                bool_to_int(ld_data_enable) +
-                bool_to_int(br_data_enable) +
-                bool_to_int(alu_data_out_valid)) <=1  and reset = '0' report "Multiple Data Enables Asserted" severity failure;
-      end if;
-    end if;
-  end process;
-
   with wb_mux select
     wb_data <=
     sys_data_out when "00",
@@ -281,11 +269,11 @@ begin
 
       rs1_mux_var := NO_FWD;
       rs2_mux_var := NO_FWD;
-      if (current_alu) then
-        if rd = ni_rs1 and rd /= ZERO and valid_instr = '1' then
+      if (current_alu)  and valid_instr = '1' and stall_from_execute = '0' then
+        if rd = ni_rs1 and rd /= ZERO then
           rs1_mux_var := ALU_FWD;
         end if;
-        if rd = ni_rs2 and rd /= ZERO and valid_instr = '1' then
+        if rd = ni_rs2 and rd /= ZERO then
           rs2_mux_var := ALU_FWD;
         end if;
       end if;
@@ -429,7 +417,7 @@ begin
     signal sp_write_en         : std_logic;
     signal sp_read_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal sp_wait             : std_logic;
-    signal sp_datavalid        : std_logic;
+    signal sp_ack        : std_logic;
     signal use_scratchpad      : std_logic;
     signal last_use_scratchpad : std_logic;
   begin
@@ -469,23 +457,21 @@ begin
     -- data bus splitter
     -----------------------------------------------------------------------------
 
-    use_scratchpad <= '1' when (unsigned(ls_address) and not to_unsigned(SCRATCHPAD_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and LVE_ENABLE else '0';
+    use_scratchpad <= ls_write_en or ls_read_en when
+                    (unsigned(ls_address) and not to_unsigned(SCRATCHPAD_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and LVE_ENABLE  else '0';
     process(clk)
     begin
       if rising_edge(clk) then
+
         last_use_scratchpad <= use_scratchpad;
-        if (not sp_wait and ls_read_en) = '1'then
-          sp_datavalid <= '1';
-        else
-          sp_datavalid <= '0';
-        end if;
+        sp_ack <=(not sp_wait and (ls_read_en or ls_write_en));
       end if;
     end process;
     sp_read_en  <= use_scratchpad and ls_read_en;
     sp_write_en <= use_scratchpad and ls_write_en;
 
     ls_read_data <= sp_read_data when last_use_scratchpad = '1' else readdata;
-    ls_ack <= sp_datavalid when last_use_scratchpad = '1' else data_ack;
+    ls_ack <= sp_ack when last_use_scratchpad = '1' else data_ack;
 
     byte_en   <= ls_byte_en;
     address   <= ls_address;

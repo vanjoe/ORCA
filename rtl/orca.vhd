@@ -232,13 +232,7 @@ begin  -- architecture rtl
   wishbone_enabled : if WISHBONE_ENABLE = 1 generate
     signal is_read_transaction : std_logic;
   begin
-    data_ADR_O              <= core_data_address;
-    data_SEL_O              <= core_data_byteenable;
-    data_CYC_O              <= core_data_read or core_data_write;
-    data_STB_O              <= core_data_read or core_data_write;
     core_data_readdata      <= data_DAT_I;
-    data_WE_O               <= core_data_write;
-    data_DAT_O              <= core_data_writedata;
     core_data_ack <= data_ACK_I;
 
     instr_ADR_O                    <= core_instruction_address;
@@ -251,10 +245,13 @@ begin  -- architecture rtl
     process(clk)
     begin
       if rising_edge(clk) then
-        if core_data_read = '1' then
-          is_read_transaction <= '1';
-        elsif is_read_transaction = '1' and DATA_ACK_I = '1' then
-          is_read_transaction <= '0';
+        if data_STALL_I = '0' then
+          data_ADR_O              <= core_data_address;
+          data_SEL_O              <= core_data_byteenable;
+          data_CYC_O              <= core_data_read or core_data_write;
+          data_STB_O              <= core_data_read or core_data_write;
+          data_WE_O               <= core_data_write;
+          data_DAT_O              <= core_data_writedata;
         end if;
       end if;
     end process;
