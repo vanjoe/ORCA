@@ -380,7 +380,10 @@ begin  -- architecture rt
   process(clk_i)
   begin
     if rising_edge(clk_I) then
-      last_choice <= choice;
+      if slave_CYC_I = '1' then
+        last_choice <= choice;
+      end if;
+
     end if;
   end process;
 

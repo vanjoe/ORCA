@@ -50,10 +50,11 @@ int main()
   UART_INIT();
   init_printf(0,mputc);
   i2s_set_frequency(SYS_CLK,MIC_HZ);
-  volatile int16_t *buffer=(volatile int16_t* )SCRATCHPAD_BASE;
+  volatile int16_t *buffer=(volatile int16_t* )SCRATCHPAD_BASE ;
 
   //128 KB divided by 2 bytes per channel
   const int BUFFER_SIZE=128*1024/2;
+  //const int BUFFER_SIZE=300;
   int index;
   buffer[0]=2;
   buffer[1]=3;
@@ -62,26 +63,27 @@ int main()
   buffer[4]=6;
   buffer[5]=7;
 
-
   int sum=buffer[0]+buffer[1];
   to_host(sum);
-#if 1
+#if 0
   //discard the first bunch of data, seems to be garbage
-  printf("discarding samples\r\n");
+  printf("discarding samples ... ");
 
    for(int i=0;i<3*MIC_HZ ;i++){
 	  i2s_get_data();
    }
-
-
+  printf("done\r\n");
 
 #endif
+
+
   while(1){
 	 int buffer_overflow=0;
 
 	 //wait for start signal
 	 printf("Waiting for start signal\r\n");
 	 while( getc() != '1');
+	 printf("starting\r\n");
 
 	 //capture audio data;
 	 for(index=0;;){
@@ -94,7 +96,12 @@ int main()
 		  if(g == '2'){
 			 break;
 		  }
-		  printf("getc = %d\r\n",g);
+		  printf("spurious getc\r\n");
+		  if(g == '1'){
+			 //restart capture
+			 index = 0;
+			 continue;
+		  }
 		}
 		if(index>=BUFFER_SIZE){
 		  while(getc() !='2');
@@ -105,10 +112,10 @@ int main()
 	 //print audio data over uart
 	 int audio_clip_len=index;
 	 printf("START\r\n");
-	 for(index=0;index<audio_clip_len;){
+	 for(index=0;index<audio_clip_len;index+=2){
 		int sum=buffer[index] + buffer[index+1];
-		printf("%d ",buffer[index++]);
-		printf("%d ",buffer[index++]);
+		printf("%d ",buffer[index]);
+		printf("%d ",buffer[index+1]);
 		printf("%d\r\n",sum);
 	 }
 

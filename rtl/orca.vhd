@@ -175,8 +175,7 @@ architecture rtl of Orca is
   signal core_data_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal core_data_write         : std_logic;
   signal core_data_writedata     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_waitrequest   : std_logic;
-  signal core_data_readdatavalid : std_logic;
+  signal core_data_ack : std_logic;
 
   signal core_instruction_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal core_instruction_read          : std_logic;
@@ -189,22 +188,34 @@ architecture rtl of Orca is
 begin  -- architecture rtl
   assert AVALON_ENABLE + WISHBONE_ENABLE + AXI_ENABLE = 1 report "Exactly one bus type must be enabled" severity failure;
 
+
+  -----------------------------------------------------------------------------
+  -- AVALON
+  -----------------------------------------------------------------------------
   avalon_enabled : if AVALON_ENABLE = 1 generate
+    signal is_writing : std_logic;
+    signal write_ack  : std_logic;
 
-    core_data_waitrequest   <= '0';
-    core_data_readdata      <= avm_data_readdata;
+  begin
+    core_data_readdata <= avm_data_readdata;
 
-    core_data_readdatavalid <= avm_data_readdatavalid;
+    core_data_ack <= avm_data_readdatavalid or write_ack;
+    avm_data_write          <= is_writing;
     process(clk)
+
     begin
       if rising_edge(clk) then
+        write_ack <= '0';
         if avm_data_waitrequest = '0' then
-          avm_data_address        <= core_data_address;
-          avm_data_byteenable     <= core_data_byteenable;
-          avm_data_read           <= core_data_read;
-          avm_data_write          <= core_data_write;
-          avm_data_writedata      <= core_data_writedata;
+          avm_data_address    <= core_data_address;
+          avm_data_byteenable <= core_data_byteenable;
+          avm_data_read       <= core_data_read;
+          avm_data_write      <= core_data_write;
+          avm_data_writedata  <= core_data_writedata;
+          is_writing          <= core_data_write;
+          write_ack           <= is_writing;
         end if;
+
       end if;
     end process;
 
@@ -215,18 +226,14 @@ begin  -- architecture rtl
     core_instruction_readdatavalid <= avm_instruction_readdatavalid;
   end generate avalon_enabled;
 
+  -----------------------------------------------------------------------------
+  -- WISHBONE
+  -----------------------------------------------------------------------------
   wishbone_enabled : if WISHBONE_ENABLE = 1 generate
     signal is_read_transaction : std_logic;
   begin
-    data_ADR_O              <= core_data_address;
-    data_SEL_O              <= core_data_byteenable;
-    data_CYC_O              <= core_data_read or core_data_write;
-    data_STB_O              <= core_data_read or core_data_write;
     core_data_readdata      <= data_DAT_I;
-    data_WE_O               <= core_data_write;
-    data_DAT_O              <= core_data_writedata;
-    core_data_waitrequest   <= data_STALL_I;
-    core_data_readdatavalid <= data_ACK_I and is_read_transaction;
+    core_data_ack <= data_ACK_I;
 
     instr_ADR_O                    <= core_instruction_address;
     instr_CYC_O                    <= core_instruction_read;
@@ -238,10 +245,13 @@ begin  -- architecture rtl
     process(clk)
     begin
       if rising_edge(clk) then
-        if core_data_read = '1' then
-          is_read_transaction <= '1';
-        elsif is_read_transaction = '1' and DATA_ACK_I = '1' then
-          is_read_transaction <= '0';
+        if data_STALL_I = '0' then
+          data_ADR_O              <= core_data_address;
+          data_SEL_O              <= core_data_byteenable;
+          data_CYC_O              <= core_data_read or core_data_write;
+          data_STB_O              <= core_data_read or core_data_write;
+          data_WE_O               <= core_data_write;
+          data_DAT_O              <= core_data_writedata;
         end if;
       end if;
     end process;
@@ -260,6 +270,7 @@ begin  -- architecture rtl
     signal core_data_stall1        : std_logic;
     signal core_data_stall2        : std_logic;
     signal core_data_stall3        : std_logic;
+    signal write_ack               : std_logic;
     signal core_instruction_stall4 : std_logic;
 
     type state_t is (IDLE, WRITE_ADDR, WRITE_DATA, READING);
@@ -305,16 +316,18 @@ begin  -- architecture rtl
     core_data_readdata      <= data_RDATA;
     -- data_RRESP
     -- data_RLAST
-    core_data_readdatavalid <= data_RVALID;
+    core_data_ack <= data_RVALID or write_ack;
     data_RREADY             <= '1';
 
     -- This Process handles coupling the decoupled write data and write address channels
     data_write_proc : process(clk)
     begin
       if rising_edge(clk) then
+        write_ack <= '0';
         case state is
           when IDLE =>
             if core_data_write = '1' then
+              write_ack <= data_AWREADY and data_WREADY;
               if (data_AWREADY and not data_WREADY) = '1' then
                 state <= WRITE_DATA;
               elsif (not data_AWREADY and data_WREADY) = '1' then
@@ -327,11 +340,13 @@ begin  -- architecture rtl
             end if;
           when WRITE_ADDR =>
             if data_AWREADY = '1' then
-              state <= IDLE;
+              state     <= IDLE;
+              write_ack <= '1';
             end if;
           when WRITE_DATA =>
             if data_WREADY = '1' then
-              state <= IDLE;
+              state     <= IDLE;
+              write_ack <= '1';
             end if;
           when READING =>
             if data_RVALID = '1' then
@@ -345,11 +360,6 @@ begin  -- architecture rtl
         end if;
       end if;
     end process;
-    core_data_waitrequest <= not (data_WREADY and data_AWREADY) when core_data_write = '1' and state = IDLE else
-                             not(data_ARREADY) when core_data_read = '1' and state = IDLE else
-                             not data_WREADY   when state = WRITE_DATA else
-                             not data_AWREADY  when state = WRITE_ADDR else
-                             '0';
 
                                         --Instruction read port
 
@@ -419,8 +429,7 @@ begin  -- architecture rtl
       core_data_readdata             => core_data_readdata,
       core_data_write                => core_data_write,
       core_data_writedata            => core_data_writedata,
-      core_data_waitrequest          => core_data_waitrequest,
-      core_data_readdatavalid        => core_data_readdatavalid,
+      core_data_ack        => core_data_ack,
                                         --avalon master bus
       core_instruction_address       => core_instruction_address,
       core_instruction_read          => core_instruction_read,

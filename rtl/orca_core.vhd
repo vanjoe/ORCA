@@ -33,8 +33,7 @@ entity orca_core is
        core_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
        core_data_write                : out std_logic;
        core_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-       core_data_waitrequest          : in  std_logic                                  := '0';
-       core_data_readdatavalid        : in  std_logic                                  := '0';
+       core_data_ack        : in  std_logic                                  := '0';
        --avalon master bus
        core_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
        core_instruction_read          : out std_logic;
@@ -73,7 +72,7 @@ architecture rtl of orca_core is
   signal e_pc           : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal e_br_taken     : std_logic;
   signal e_valid        : std_logic;
-  signal e_readvalid    : std_logic;
+  signal e_data_ack    : std_logic;
   signal pipeline_empty : std_logic;
 
   signal execute_stalled : std_logic;
@@ -89,7 +88,7 @@ architecture rtl of orca_core is
   signal data_read_en    : std_logic;
   signal data_write_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_read_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_wait       : std_logic;
+
 
   signal instr_address : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal instr_data    : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -111,7 +110,6 @@ architecture rtl of orca_core is
   signal plic_write         : std_logic;
   signal plic_writedata     : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal plic_lock          : std_logic;
-  signal plic_waitrequest   : std_logic;
   signal plic_readdatavalid : std_logic;
 
   -- Interrupt lines
@@ -229,8 +227,7 @@ begin  -- architecture rtl
       read_en     => data_read_en,
       writedata   => data_write_data,
       readdata    => data_read_data,
-      waitrequest => data_wait,
-      datavalid   => e_readvalid,
+      data_ack   => e_data_ack,
 
       -- Interrupt lines
       mtime_i              => mtime,
@@ -267,7 +264,6 @@ begin  -- architecture rtl
         plic_write         => plic_write,
         plic_writedata     => plic_writedata,
         plic_lock          => plic_lock,
-        plic_waitrequest   => plic_waitrequest,
         plic_readdatavalid => plic_readdatavalid);
 
     -- Handle arbitration between the bus and the PLIC
@@ -279,7 +275,7 @@ begin  -- architecture rtl
       if rising_edge(clk) then
         if reset = '1' then
           data_sel_prev <= '0';
-        elsif data_read_en = '1' and data_wait = '0' then
+        elsif data_read_en = '1'  then
           data_sel_prev <= data_sel;
         end if;
       end if;
@@ -298,10 +294,9 @@ begin  -- architecture rtl
     core_data_write      <= data_write_en   when data_sel = '1' else '0';
     core_data_writedata  <= data_write_data when data_sel = '1' else (others => '0');
 
-    data_wait <= plic_waitrequest when data_sel = '0' else core_data_waitrequest;
 
     data_read_data <= plic_readdata      when data_sel_prev = '0' else core_data_readdata;
-    e_readvalid    <= plic_readdatavalid when data_sel_prev = '0' else core_data_readdatavalid;
+    e_data_ack    <= plic_readdatavalid when data_sel_prev = '0' else core_data_ack;
 
   end generate;
 
@@ -313,9 +308,8 @@ begin  -- architecture rtl
     core_data_write      <= data_write_en;
     core_data_writedata  <= data_write_data;
 
-    data_wait      <= core_data_waitrequest;
     data_read_data <= core_data_readdata;
-    e_readvalid    <= core_data_readdatavalid;
+    e_data_ack    <= core_data_ack;
 
     -- Only handle the cycle counter (mtime) if the PLIC is disabled.
     process (clk)

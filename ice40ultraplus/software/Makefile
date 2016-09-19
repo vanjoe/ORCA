@@ -1,10 +1,10 @@
 #define C_MAIN as env or in config.mk to override test
-#define C_LINK as env or in config.mk to add additional sources to 
+#define C_LINK as env or in config.mk to add additional sources to
 #link against
 -include config.mk
 C_MAIN?=main.c
 OBJDUMP_STYLE?=--disassemble-all
-ARCH?=RV32IMXmxp
+ARCH?=RV32IXmxp
 RISCV_OLEVEL?=-O1
 RISCV_CFLAGS?=
 

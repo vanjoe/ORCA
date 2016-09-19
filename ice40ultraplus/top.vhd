@@ -515,16 +515,17 @@ begin
 
   end generate SEPERATE_MEM_GEN;
 
-  rv : component orca_wishbone
+  rv : component orca
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
+      WISHBONE_ENABLE    => 1,
       MULTIPLY_ENABLE    => 1,
-      DIVIDE_ENABLE      => 1,
+      DIVIDE_ENABLE      => 0,
       SHIFTER_MAX_CYCLES => 32,
       COUNTER_LENGTH     => 32,
       PIPELINE_STAGES    => 4,
       LVE_ENABLE         => 1,
-      PLIC_ENABLE        => false,
+      PLIC_ENABLE        => 0,
       NUM_EXT_INTERRUPTS => 2,
       SCRATCHPAD_SIZE    => 128*1024,
       FAMILY             => "LATTICE")
@@ -973,7 +974,7 @@ begin
   i2c_dat_o(31 downto 8) <= (others => '0');
   i2c_STALL_O            <= not i2c_ack_hw;
   i2c_ack_o              <= i2c_ack_hw when rising_edge(clk);
-  i2c_stb_hw <= i2c_STB_I and not i2c_ack_o;
+  i2c_stb_hw             <= i2c_STB_I and not i2c_ack_o;
   i2c_scl                <= i2c_sclo   when i2c_scloe = '1' else 'Z';
   i2c_sda                <= i2c_sdao   when i2c_sdaoe = '1' else 'Z';
 

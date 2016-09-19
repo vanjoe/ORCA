@@ -159,6 +159,7 @@ begin  -- architecture rtl
       if do_write then
         if addr = CLOCK_DIVIDER_REGISTER then
           clock_divider <= resize(unsigned(wb_dat_i),16);
+          wb_ack_o <= '1';
         end if;
       end if;
       if wb_rst_i = '1' then
