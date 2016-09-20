@@ -44,11 +44,53 @@ void delayus(int us)
 #define SCRATCHPAD_BASE 0x80000000
 
 #define MIC_HZ 8000
+
+
+
+
+static void print_base64(char* in_str, int in_len)
+{
+  union base64_t{
+	 struct {
+		char byte_c;
+		char byte_b;
+		char byte_a;
+
+	 };
+	 struct {
+		unsigned int index_d : 6;
+		unsigned int index_c : 6;
+		unsigned int index_b : 6;
+		unsigned int index_a : 6;
+	 };
+  };
+
+  static const char base_64_table[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  int i;
+  union base64_t b64;
+  for(i = 0;i<in_len;i+=3){
+
+	 b64.byte_a=in_str[i];
+	 b64.byte_b=i+1<in_len?in_str[i+1]:0;
+	 b64.byte_c=i+2<in_len?in_str[i+2]:0;
+
+	 printf("%c%c%c%c",
+			  base_64_table[b64.index_a],
+			  base_64_table[b64.index_b],
+			  i+1<in_len?base_64_table[b64.index_c]:'=',
+			  i+2<in_len?base_64_table[b64.index_d]:'=');
+  }
+
+
+}
+
+
 int main()
 {
   int retval=0;
   UART_INIT();
   init_printf(0,mputc);
+
   i2s_set_frequency(SYS_CLK,MIC_HZ);
   volatile int16_t *buffer=(volatile int16_t* )SCRATCHPAD_BASE ;
 
@@ -82,10 +124,14 @@ int main()
 
 	 //wait for start signal
 	 printf("Waiting for start signal\r\n");
-	 while( getc() != '1');
+	 while( UART_RX_EMPTY() || getc() != '1'){
+		i2s_get_data();
+	 }
 	 printf("starting\r\n");
 
 	 //capture audio data;
+	 int k=0;
+	 (void)k;
 	 for(index=0;;){
 		i2s_data_t data=i2s_get_data();
 		buffer[index++]=data.left;
@@ -112,12 +158,15 @@ int main()
 	 //print audio data over uart
 	 int audio_clip_len=index;
 	 printf("START\r\n");
+
+	 print_base64((char*)buffer,audio_clip_len*sizeof(buffer[0]));
+	 printf("\r\n");
+	 int sum=0;
 	 for(index=0;index<audio_clip_len;index+=2){
-		int sum=buffer[index] + buffer[index+1];
-		printf("%d ",buffer[index]);
-		printf("%d ",buffer[index+1]);
-		printf("%d\r\n",sum);
+		sum+=buffer[index];
+		sum+= buffer[index+1];
 	 }
+	 printf("checksum = %08x\r\n",sum);
 
 	 printf(buffer_overflow?"OVERFLOW\r\n":"END\r\n");
 
@@ -127,26 +176,26 @@ int main()
   return retval;
 }
 
-int handle_interrupt(long cause, long epc, long regs[32]) {
-  switch(cause & 0xF) {
-
-    case M_SOFTWARE_INTERRUPT:
-      clear_software_interrupt();
-
-    case M_TIMER_INTERRUPT:
-      clear_timer_interrupt_cycles();
-
-    case M_EXTERNAL_INTERRUPT:
-      {
-        int plic_claim;
-        claim_external_interrupt(&plic_claim);
-        complete_external_interrupt(plic_claim);
-      }
-      break;
-
-    default:
-      break;
-  }
-
-  return epc;
-}
+//nt handle_interrupt(long cause, long epc, long regs[32]) {
+// switch(cause & 0xF) {
+//
+//   case M_SOFTWARE_INTERRUPT:
+//     clear_software_interrupt();
+//
+//   case M_TIMER_INTERRUPT:
+//     clear_timer_interrupt_cycles();
+//
+//   case M_EXTERNAL_INTERRUPT:
+//     {
+//       int plic_claim;
+//       claim_external_interrupt(&plic_claim);
+//       complete_external_interrupt(plic_claim);
+//     }
+//     break;
+//
+//   default:
+//     break;
+// }
+//
+// return epc;
+//
