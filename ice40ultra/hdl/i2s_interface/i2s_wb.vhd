@@ -10,7 +10,11 @@ use work.top_util_pkg.all;
 -- 0x00 Version
 -- 0x04 clock_divider (Max 0xFFFF)
 -- 0x08 DATA
--------------------------------------------------------------------------------address
+
+-- The DATA register at 0x08 reads a fifo. the fifo always has the latest data
+-- in it. If the data is not read often enough, the oldest data will be dropped
+-------------------------------------------------------------------------------
+
 
 
 entity i2s_wb is
@@ -107,7 +111,7 @@ begin  -- architecture rtl
   begin
     if rising_edge(clk) then
 
-      if i2s_data_valid = '1' and not fifo_full then
+      if i2s_data_valid = '1' then
         write_ptr <= write_ptr +1;
       end if;
       if wb_rst_i = '1' then
@@ -161,6 +165,9 @@ begin  -- architecture rtl
           clock_divider <= resize(unsigned(wb_dat_i),16);
           wb_ack_o <= '1';
         end if;
+      end if;
+      if i2s_data_valid = '1' and fifo_full then
+        read_ptr <= read_ptr +1;
       end if;
       if wb_rst_i = '1' then
         read_ptr      <= to_unsigned(0, read_ptr'length);

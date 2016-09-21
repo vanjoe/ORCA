@@ -134,8 +134,9 @@ int main()
 	 (void)k;
 	 for(index=0;;){
 		i2s_data_t data=i2s_get_data();
-		buffer[index++]=data.left;
-		buffer[index++]=data.right;
+		//double the volume
+		buffer[index++]=(data.left )<<1;
+		buffer[index++]=(data.right)<<1;
 
 		if(! UART_RX_EMPTY()){
 		  int g=getc();

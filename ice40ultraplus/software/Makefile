@@ -5,7 +5,7 @@
 C_MAIN?=main.c
 OBJDUMP_STYLE?=--disassemble-all
 ARCH?=RV32IXmxp
-RISCV_OLEVEL?=-O1
+RISCV_OLEVEL?=-O2
 RISCV_CFLAGS?=
 
 all:
@@ -14,7 +14,7 @@ AS_SRCS=crt.S
 C_SRCS=
 C_SRCS+=$(C_MAIN)
 C_SRCS+=$(C_LINK)
-C_SRCS+=interrupt.c vbx_api.c printf.c
+C_SRCS+= vbx_api.c printf.c
 
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
