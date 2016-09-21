@@ -294,9 +294,6 @@ begin  -- architecture rtl
       if last_cycle_count = FIRST_READ then
         data_out0_tmp <= actual_data_out;
       end if;
-      if last_cycle_count = SECOND_READ then
-
-      end if;
     end if;
   end process;
 

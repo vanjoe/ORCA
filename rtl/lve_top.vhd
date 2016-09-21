@@ -150,6 +150,7 @@ architecture rtl of lve_top is
   signal accumulation_register : unsigned(REGISTER_SIZE - 1 downto 0);
   signal accumulation_result   : unsigned(REGISTER_SIZE - 1 downto 0);
 
+  signal readdata_valid : std_logic;
 begin
   func5 <= func_bit4 & func_bit3 & func;
 
@@ -158,17 +159,18 @@ begin
   address_gen : process(clk)
   begin
     if rising_edge(clk) then
+
       if valid_lve_instr = '1' then
+        srca_ptr_reg <= srca_ptr;
+        srcb_ptr_reg <= srcb_ptr;
+
         if lve_result_valid = '1' then
           if acc = '0' then
-            dest_ptr              <= dest_ptr + POINTER_INCREMENT;
+            dest_ptr <= dest_ptr + POINTER_INCREMENT;
           end if;
           write_vector_length   <= write_vector_length - 1;
           accumulation_register <= accumulation_result;
         end if;
-
-        srca_ptr_reg <= srca_ptr + POINTER_INCREMENT;
-        srcb_ptr_reg <= srcb_ptr + POINTER_INCREMENT;
 
         if is_prefix = '1' then
           first_element <= '1';
@@ -195,8 +197,14 @@ begin
     end if;
 
   end process;
-  srca_ptr <= unsigned(rs1_data) when is_prefix = '1' else srca_ptr_reg;
-  srcb_ptr <= unsigned(rs2_data) when is_prefix = '1' else srcb_ptr_reg;
+
+  srca_ptr <= unsigned(rs1_data) when is_prefix = '1' and valid_lve_instr = '1' else
+              srca_ptr_reg + POINTER_INCREMENT when valid_lve_instr = '1' else
+              srca_ptr_reg;
+
+  srcb_ptr <= unsigned(rs2_data) when is_prefix = '1' and valid_lve_instr = '1' else
+              srcb_ptr_reg + POINTER_INCREMENT when valid_lve_instr = '1' else
+              srcb_ptr_reg;
 
   read_vector_length <=
     unsigned(rs2_data(read_vector_length'range)) when first_element = '1' else read_vector_length_reg;
@@ -204,18 +212,21 @@ begin
   srca_data <= scalar_value when srca_s = '1' else unsigned(srca_data_read);
   srcb_data <= enum_count   when srcb_e = '1' else unsigned(srcb_data_read);
 
-  stall_from_lve <= valid_lve_instr      when (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
-  rd_en          <= valid_lve_instr      when (is_prefix = '1') or (read_vector_length > 1)           else '0';
+  stall_from_lve <= valid_lve_instr when (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
+
+  rd_en <= '1' when (first_element or is_prefix) = '1' or (valid_lve_instr = '1' and read_vector_length > 1) else first_element;
+
   lve_data1      <= std_logic_vector(srca_data);
   lve_data2      <= std_logic_vector(srcb_data);
-  writeback_data <= unsigned(lve_result) when acc = '0'                                               else accumulation_result;
+  writeback_data <= unsigned(lve_result) when acc = '0' else accumulation_result;
 
   accumulation_result <= accumulation_register + unsigned(lve_result);
 
+  lve_source_valid <= valid_lve_instr and readdata_valid;
   alu_proc : process(clk)
   begin
     if rising_edge(clk) then
-      lve_source_valid <= rd_en;
+      readdata_valid <= rd_en;
     end if;
   end process;
   write_enable <= lve_result_valid and (valid_lve_instr and not is_prefix);

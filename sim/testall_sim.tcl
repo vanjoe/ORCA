@@ -17,9 +17,10 @@ foreach f $files {
 	 restart -f
 	 onbreak {resume}
 	 when {system/vectorblox_orca_0/core/X/instruction == x"00000073" && system/vectorblox_orca_0/core/X/valid_input == "1" } {stop}
-	 #when {system/vectorblox_orca_0/core/X/syscall/legal_instruction == "0" && system/vectorblox_orca_0/core/X/syscall/valid == "1"  } {stop}
 
-	 run 2000 ns
+
+
+	 run 12000 ns
 	 set v [examine -radix decimal /system/vectorblox_orca_0/core/D/register_file_1/t3]
 	 set passfail  ""
 	 if { $v != 1 } {
