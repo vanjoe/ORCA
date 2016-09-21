@@ -9,17 +9,12 @@
    categories="System" />
  <parameter name="bonusData"><![CDATA[bonusData 
 {
-   element clock_source_0
+   element clock_gen_0
    {
       datum _sortIndex
       {
          value = "0";
          type = "int";
-      }
-      datum sopceditor_expanded
-      {
-         value = "1";
-         type = "boolean";
       }
    }
    element onchip_memory2_0
@@ -62,6 +57,134 @@
       {
          value = "1";
          type = "boolean";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
       }
    }
    element vblox1
@@ -115,9 +238,9 @@
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
- <parameter name="device" value="EP4CE115F29C7" />
+ <parameter name="device" value="Unknown" />
  <parameter name="deviceFamily" value="Cyclone IV E" />
- <parameter name="deviceSpeedGrade" value="7" />
+ <parameter name="deviceSpeedGrade" value="Unknown" />
  <parameter name="fabricMode" value="QSYS" />
  <parameter name="generateLegacySim" value="false" />
  <parameter name="generationId" value="0" />
@@ -133,13 +256,8 @@
  <parameter name="timeStamp" value="0" />
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
- <module
-   name="clock_source_0"
-   kind="altera_avalon_clock_source"
-   version="15.1"
-   enabled="1">
-  <parameter name="CLOCK_RATE" value="1000" />
-  <parameter name="CLOCK_UNIT" value="1000000" />
+ <module name="clock_gen_0" kind="clock_gen" version="1.0" enabled="1">
+  <parameter name="CLK_MHZ" value="1000" />
  </module>
  <module
    name="onchip_memory2_0"
@@ -176,7 +294,7 @@
    version="15.1"
    enabled="1">
   <parameter name="ASSERT_HIGH_RESET" value="1" />
-  <parameter name="INITIAL_RESET_CYCLES" value="2" />
+  <parameter name="INITIAL_RESET_CYCLES" value="6" />
  </module>
  <module
    name="vectorblox_orca_0"
@@ -188,13 +306,14 @@
   <parameter name="BUS_TYPE" value="Avalon" />
   <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DIVIDE_ENABLE" value="1" />
-  <parameter name="LVE_ENABLE" value="0" />
+  <parameter name="LVE_ENABLE" value="1" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="NUM_EXT_INTERRUPTS" value="2" />
   <parameter name="PIPELINE_STAGES" value="4" />
   <parameter name="PLIC_ENABLE" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="512" />
+  <parameter name="SCRATCHPAD_SIZE" value="1024" />
   <parameter name="SHIFTER_MAX_CYCLES" value="32" />
  </module>
  <connection
@@ -218,17 +337,22 @@
  <connection
    kind="clock"
    version="15.1"
-   start="clock_source_0.clk"
+   start="clock_gen_0.clk_3x"
+   end="vectorblox_orca_0.scratchpad_clk" />
+ <connection
+   kind="clock"
+   version="15.1"
+   start="clock_gen_0.clock"
    end="reset_source_0.clk" />
  <connection
    kind="clock"
    version="15.1"
-   start="clock_source_0.clk"
+   start="clock_gen_0.clock"
    end="onchip_memory2_0.clk1" />
  <connection
    kind="clock"
    version="15.1"
-   start="clock_source_0.clk"
+   start="clock_gen_0.clock"
    end="vectorblox_orca_0.clock" />
  <connection
    kind="reset"

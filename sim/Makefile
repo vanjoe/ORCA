@@ -36,4 +36,4 @@ sim: all $(SIM_FILE)
 	vsim -do $(SIM_FILE)
 clean:
 	rm -rf system_avalon system_axi
-	rm -f *_axi.tcl *_avalon.tcl transcript
+	rm -f *_axi.tcl *_avalon.tcl transcript *.sopcinfo platform.info
