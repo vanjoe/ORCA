@@ -115,10 +115,17 @@ set_parameter_property LVE_ENABLE ALLOWED_RANGES 0:1
 set_parameter_property LVE_ENABLE HDL_PARAMETER true
 set_display_item_property LVE_ENABLE DISPLAY_HINT boolean
 
+add_parameter  SCRATCHPAD_SIZE integer 1024
+set_parameter_property SCRATCHPAD_SIZE DISPLAY_NAME "        Scratchpad size"
+set_parameter_property SCRATCHPAD_SIZE DESCRIPTION "Enable Vector Extensions"
+set_parameter_property SCRATCHPAD_SIZE UNITS Bytes
+set_parameter_property SCRATCHPAD_SIZE HDL_PARAMETER true
+set_parameter_property SCRATCHPAD_SIZE visible false
+
+
 
 add_parameter RESET_VECTOR NATURAL 512
-set_parameter_property RESET_VECTOR DEFAULT_VALUE 512
-set_parameter_property RESET_VECTOR DISPLAY_NAME RESET_VECTOR
+set_parameter_property RESET_VECTOR DISPLAY_NAME "Reset Vector"
 set_parameter_property RESET_VECTOR TYPE integer
 set_parameter_property RESET_VECTOR UNITS None
 set_parameter_property RESET_VECTOR HDL_PARAMETER true
@@ -126,7 +133,7 @@ set_display_item_property RESET_VECTOR DISPLAY_HINT hexadecimal
 
 add_parameter MULTIPLY_ENABLE natural 0
 set_parameter_property MULTIPLY_ENABLE DEFAULT_VALUE 0
-set_parameter_property MULTIPLY_ENABLE DISPLAY_NAME "HARDWARE MULTIPLY"
+set_parameter_property MULTIPLY_ENABLE DISPLAY_NAME "Hardware Multiply"
 set_parameter_property MULTIPLY_ENABLE DESCRIPTION "Enable Multiplier, uses around 100 LUT4s, Shift instruction use the multiplier, 2 cycle operation"
 set_parameter_property MULTIPLY_ENABLE TYPE NATURAL
 set_parameter_property MULTIPLY_ENABLE UNITS None
@@ -136,7 +143,7 @@ set_display_item_property MULTIPLY_ENABLE DISPLAY_HINT boolean
 
 add_parameter DIVIDE_ENABLE natural 0
 set_parameter_property DIVIDE_ENABLE DEFAULT_VALUE 0
-set_parameter_property DIVIDE_ENABLE DISPLAY_NAME "HARDWARE DIVIDE"
+set_parameter_property DIVIDE_ENABLE DISPLAY_NAME "Hardware Divide"
 set_parameter_property DIVIDE_ENABLE DESCRIPTION "Enable Divider, uses around 400 LUT4s, 35 cycle operation"
 set_parameter_property DIVIDE_ENABLE TYPE NATURAL
 set_parameter_property DIVIDE_ENABLE UNITS None
@@ -145,7 +152,7 @@ set_parameter_property DIVIDE_ENABLE HDL_PARAMETER true
 set_display_item_property DIVIDE_ENABLE DISPLAY_HINT boolean
 
 add_parameter SHIFTER_MAX_CYCLES natural 32
-set_parameter_property SHIFTER_MAX_CYCLES DISPLAY_NAME "SHIFTER MAX CYCLES"
+set_parameter_property SHIFTER_MAX_CYCLES DISPLAY_NAME "Shifter Max Cycles"
 set_parameter_property SHIFTER_MAX_CYCLES TYPE NATURAL
 set_parameter_property SHIFTER_MAX_CYCLES UNITS Cycles
 set_parameter_property SHIFTER_MAX_CYCLES ALLOWED_RANGES {1 8 32}
@@ -154,7 +161,7 @@ set_parameter_property SHIFTER_MAX_CYCLES HDL_PARAMETER true
 
 
 add_parameter COUNTER_LENGTH natural 64
-set_parameter_property COUNTER_LENGTH DISPLAY_NAME "COUNTERS REGISTER SIZE"
+set_parameter_property COUNTER_LENGTH DISPLAY_NAME "Counters Register Size"
 set_parameter_property COUNTER_LENGTH DESCRIPTION "\
 rdcycle and rdinstret size. If this is set to zero those \
 instructions throw unimplemented exception"
@@ -174,16 +181,17 @@ set_parameter_property BRANCH_PREDICTORS derived true
 
 add_parameter          BRANCH_PREDICTION boolean false
 set_parameter_property BRANCH_PREDICTION HDL_PARAMETER false
+set_parameter_property BRANCH_PREDICTION DISPLAY_NAME "Branch Prediction"
 
 add_parameter          BTB_SIZE natural
 set_parameter_property BTB_SIZE HDL_PARAMETER false
-set_parameter_property BTB_SIZE DISPLAY_NAME "BRANCH TARGET BUFFER SIZE"
+set_parameter_property BTB_SIZE DISPLAY_NAME "        Branch Target Buffer Size"
 set_parameter_property BTB_SIZE DISPLAY_UNITS entries
 set_parameter_property BTB_SIZE visible false
 
 add_parameter          PIPELINE_STAGES natural 4
 set_parameter_property PIPELINE_STAGES HDL_PARAMETER true
-set_parameter_property PIPELINE_STAGES DISPLAY_NAME "PIPELINE STAGES"
+set_parameter_property PIPELINE_STAGES DISPLAY_NAME "Pipeline Stages"
 set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipeline stages, 3 stages is smaller\
 but 4 stages has a higher fmax"
 set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
@@ -191,16 +199,16 @@ set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
 add_parameter          PLIC_ENABLE natural 0
 set_parameter_property PLIC_ENABLE ALLOWED_RANGES 0:1
 set_parameter_property PLIC_ENABLE HDL_PARAMETER true
-set_parameter_property PLIC_ENABLE DISPLAY_NAME "PLIC_ENABLE"
+set_parameter_property PLIC_ENABLE DISPLAY_NAME "Enable Plic"
 set_parameter_property PLIC_ENABLE DESCRIPTION "Whether or not the Platform Level Interrupt Controller (PLIC) is enabled."
 set_display_item_property PLIC_ENABLE DISPLAY_HINT boolean
 
 
 add_parameter          NUM_EXT_INTERRUPTS integer 2
 set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
-set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "NUM_EXT_INTERRUPTS"
+set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "       External Interruptes"
 set_parameter_property NUM_EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
-set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES {2:32}
+set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31}
 
 
 #
@@ -486,8 +494,10 @@ proc elaboration_callback {} {
 	 if { [get_parameter_value LVE_ENABLE] } {
 
 		  set_interface_property scratchpad_clk ENABLED true
+		  set_parameter_property SCRATCHPAD_SIZE visible true
 	 } else {
 		  set_interface_property scratchpad_clk ENABLED false
+		  set_parameter_property SCRATCHPAD_SIZE visible false
 	 }
 
 	 set table_size 0
@@ -498,6 +508,11 @@ proc elaboration_callback {} {
 	  set_parameter_property BTB_SIZE visible false
 	 }
 
+	 if { [get_parameter_value PLIC_ENABLE] } {
+		  set_parameter_property NUM_EXT_INTERRUPTS visible true
+	 } else {
+		  set_parameter_property NUM_EXT_INTERRUPTS visible false
+	 }
 	 set count 0
 	 for {set i 0} {$i<32} {incr i} {
 		  if { $table_size & [expr 1<< $i ] } {
