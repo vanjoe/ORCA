@@ -241,7 +241,7 @@ begin
               br_data_out;
 
   use_after_produce_stall <= wb_enable and valid_input and use_after_produce_stall_mask;
-  stall_to_lve            <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall) and valid_input;
+  stall_to_lve            <= (ls_unit_waiting or use_after_produce_stall) and valid_input;
   stall_to_alu            <= (ls_unit_waiting or use_after_produce_stall) and valid_input;
   stall_from_execute      <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
   stall_to_lsu            <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;

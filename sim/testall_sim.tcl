@@ -20,7 +20,7 @@ foreach f $files {
 
 
 
-	 run 12000 ns
+	 run 15000 ns
 	 set v [examine -radix decimal /system/vectorblox_orca_0/core/D/register_file_1/t3]
 	 set passfail  ""
 	 if { $v != 1 } {

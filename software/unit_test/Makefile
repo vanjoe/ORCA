@@ -22,7 +22,7 @@ TEST_C=simple_c_test.c vbx_test.c
 TEST_ASM_ELF=$(addsuffix .elf,$(basename $(TEST_ASM)))
 TEST_C_ELF=$(addsuffix .elf,$(basename $(TEST_C)))
 
-C_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=$(ARCH)
+C_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=$(ARCH) -Wall
 INCLUDE_DIRS:=$(RISCV_ENV_DIR) $(RISCV_TESTS_DIR)/isa/macros/scalar ../
 
 INCLUDE_DIRS:=$(addprefix -I,$(INCLUDE_DIRS))

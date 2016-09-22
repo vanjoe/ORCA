@@ -160,7 +160,7 @@ begin
   begin
     if rising_edge(clk) then
 
-      if valid_lve_instr = '1' then
+      if valid_lve_instr = '1' and not stall_to_lve = '1' then
         srca_ptr_reg <= srca_ptr;
         srcb_ptr_reg <= srcb_ptr;
 
@@ -188,11 +188,12 @@ begin
             read_vector_length_reg <= read_vector_length - 1;
           end if;
         end if;
+      else
+        write_vector_length <= to_unsigned(0, write_vector_length'length);
       end if;
       if reset = '1' then
         first_element          <= '0';
         read_vector_length_reg <= to_unsigned(0, read_vector_length_reg'length);
-        write_vector_length    <= to_unsigned(0, write_vector_length'length);
       end if;
     end if;
 
