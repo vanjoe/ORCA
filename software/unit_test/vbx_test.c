@@ -107,6 +107,30 @@ TEST_ATTR int test_6()
 
 
 
+TEST_ATTR int test_7()
+{
+  //test 0 and 1 length vector instructions
+  vbx_word_t* a =(vbx_word_t*)SCRATCHPAD_BASE;
+  vbx_word_t b[] ={1,2,3};
+  for(int vlen=3;vlen>=0;vlen--){
+	 vbx_set_vl(vlen);
+	 vbx(SEW,VAND,a,0,vbx_ENUM);
+	 vbx(SVW,VADD,a,vlen,a);
+  }
+  for(int i=0;i<3;i++){
+	 if(b[i] != a[i]){
+		return 1;
+	 }
+
+  }
+
+  // TEST SUCCESS
+  return 0;
+
+}
+
+
+
 //this macro runs the test, and returns the test number on failure
 #define do_test(i) do{if ( test_##i () ) return i;}while(0)
 
@@ -118,6 +142,7 @@ int main()
   do_test(4);
   do_test(5);
   do_test(6);
+  do_test(7);
   return 0;
 
 }

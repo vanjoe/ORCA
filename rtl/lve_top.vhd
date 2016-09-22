@@ -215,7 +215,8 @@ begin
 
   stall_from_lve <= valid_lve_instr when (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
 
-  rd_en <= '1' when (first_element  = '1' ) or (valid_lve_instr = '1' and (is_prefix = '1' or read_vector_length > 1) ) else '0';
+  rd_en <= first_element when valid_lve_instr = '0' else  '1' when is_prefix = '1' or read_vector_length > 1 else '0';
+
 
   lve_data1      <= std_logic_vector(srca_data);
   lve_data2      <= std_logic_vector(srcb_data);
