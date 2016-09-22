@@ -91,6 +91,22 @@ TEST_ATTR int test_5()
 
 }
 
+TEST_ATTR int test_6()
+{
+  //test storeing word when bit 27 is set in instruction
+  vbx_word_t* a =(vbx_word_t*)SCRATCHPAD_BASE;
+  vbx_word_t b=15 ;
+  asm volatile("sw %1 , 128(%0)"::"r"(a),"r"(b):"memory");
+  if(a[128/4] != b)
+	 return 1;
+
+  // TEST SUCCESS
+  return 0;
+
+}
+
+
+
 //this macro runs the test, and returns the test number on failure
 #define do_test(i) do{if ( test_##i () ) return i;}while(0)
 
@@ -101,6 +117,7 @@ int main()
   do_test(3);
   do_test(4);
   do_test(5);
+  do_test(6);
   return 0;
 
 }
