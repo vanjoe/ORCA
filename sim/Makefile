@@ -35,5 +35,6 @@ all: $(SYSTEM)/simulation/mentor/msim_setup.tcl
 sim: all $(SIM_FILE)
 	vsim -do $(SIM_FILE)
 clean:
-	rm -rf system_avalon system_axi
+	rm -rf system_avalon system_axi test test.hex
 	rm -f *_axi.tcl *_avalon.tcl transcript *.sopcinfo platform.info
+	rm -r .qsys_edit
