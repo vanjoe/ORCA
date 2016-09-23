@@ -15,7 +15,12 @@
   .section .init
   .align 6
 user_trap_entry:
+  /*sometimes this becomes the reset vector , check if gp has been set to fine out if this is reset*/
+  beqz gp, 1f
   j trap_entry
+1:
+  j _start
+
 
   .align 6
 supervisor_trap_entry:
