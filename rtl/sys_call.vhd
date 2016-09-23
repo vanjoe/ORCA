@@ -187,9 +187,9 @@ architecture rtl of system_calls is
 
   -- Reset Vectors
   constant SYSTEM_RESET :
-    std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_unsigned(RESET_VECTOR - 16#00#, REGISTER_SIZE));
+    std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_signed(RESET_VECTOR - 16#00#, REGISTER_SIZE));
   constant MACHINE_MODE_TRAP :
-    std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_unsigned(RESET_VECTOR - 16#40#, REGISTER_SIZE));
+    std_logic_vector(REGISTER_SIZE-1 downto 0) := std_logic_vector(to_signed(RESET_VECTOR - 16#40#, REGISTER_SIZE));
 
   -- func3 constants
   constant CSRRW  : std_logic_vector(2 downto 0) := "001";

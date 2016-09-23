@@ -144,7 +144,7 @@ begin  -- architecture rtl
         program_counter <= next_address;
       end if;
       if reset = '1' then
-        program_counter <= to_unsigned(RESET_VECTOR, REGISTER_SIZE);
+        program_counter <= unsigned(to_signed(RESET_VECTOR, REGISTER_SIZE));
       end if;
     end if;
   end process;
