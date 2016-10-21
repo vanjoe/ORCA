@@ -35,43 +35,45 @@ add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
 set_fileset_property QUARTUS_SYNTH TOP_LEVEL Orca
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file utils.vhd VHDL PATH utils.vhd
-add_fileset_file components.vhd VHDL PATH components.vhd
-add_fileset_file alu.vhd VHDL PATH alu.vhd
-add_fileset_file branch_unit.vhd VHDL PATH branch_unit.vhd
-add_fileset_file decode.vhd VHDL PATH decode.vhd
-add_fileset_file execute.vhd VHDL PATH execute.vhd
-add_fileset_file instruction_fetch.vhd VHDL PATH instruction_fetch.vhd
-add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
-add_fileset_file register_file.vhd VHDL PATH register_file.vhd
-add_fileset_file orca.vhd VHDL PATH orca.vhd TOP_LEVEL_FILE
-add_fileset_file orca_core.vhd VHDL PATH orca_core.vhd TOP_LEVEL_FILE
-add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file plic.vhd VHDL PATH plic.vhd
-add_fileset_file gateway.vhd VHDL PATH gateway.vhd
-add_fileset_file 4port_mem.vhd VHDL PATH 4port_mem.vhd
-add_fileset_file lve_top.vhd VHDL PATH lve_top.vhd
+add_fileset_file vblox_orca/utils.vhd VHDL PATH utils.vhd
+add_fileset_file vblox_orca/constants_pkg.vhd VHDL PATH constants_pkg.vhd
+add_fileset_file vblox_orca/components.vhd VHDL PATH components.vhd
+add_fileset_file vblox_orca/alu.vhd VHDL PATH alu.vhd
+add_fileset_file vblox_orca/branch_unit.vhd VHDL PATH branch_unit.vhd
+add_fileset_file vblox_orca/decode.vhd VHDL PATH decode.vhd
+add_fileset_file vblox_orca/execute.vhd VHDL PATH execute.vhd
+add_fileset_file vblox_orca/instruction_fetch.vhd VHDL PATH instruction_fetch.vhd
+add_fileset_file vblox_orca/load_store_unit.vhd VHDL PATH load_store_unit.vhd
+add_fileset_file vblox_orca/register_file.vhd VHDL PATH register_file.vhd
+add_fileset_file vblox_orca/orca.vhd VHDL PATH orca.vhd TOP_LEVEL_FILE
+add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd TOP_LEVEL_FILE
+add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
+add_fileset_file vblox_orca/plic.vhd VHDL PATH plic.vhd
+add_fileset_file vblox_orca/gateway.vhd VHDL PATH gateway.vhd
+add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
+add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL Orca
 set_fileset_property SIM_VHDL ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property SIM_VHDL ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file utils.vhd VHDL PATH utils.vhd
-add_fileset_file components.vhd VHDL PATH components.vhd
-add_fileset_file alu.vhd VHDL PATH alu.vhd
-add_fileset_file branch_unit.vhd VHDL PATH branch_unit.vhd
-add_fileset_file decode.vhd VHDL PATH decode.vhd
-add_fileset_file execute.vhd VHDL PATH execute.vhd
-add_fileset_file instruction_fetch.vhd VHDL PATH instruction_fetch.vhd
-add_fileset_file load_store_unit.vhd VHDL PATH load_store_unit.vhd
-add_fileset_file register_file.vhd VHDL PATH register_file.vhd
-add_fileset_file orca.vhd VHDL PATH orca.vhd
-add_fileset_file orca_core.vhd VHDL PATH orca_core.vhd
-add_fileset_file sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file plic.vhd VHDL PATH plic.vhd
-add_fileset_file gateway.vhd VHDL PATH gateway.vhd
-add_fileset_file 4port_mem.vhd VHDL PATH 4port_mem.vhd
-add_fileset_file lve_top.vhd VHDL PATH lve_top.vhd
+add_fileset_file vblox_orca/utils.vhd VHDL PATH utils.vhd
+add_fileset_file vblox_orca/constants_pkg.vhd VHDL PATH constants_pkg.vhd
+add_fileset_file vblox_orca/components.vhd VHDL PATH components.vhd
+add_fileset_file vblox_orca/alu.vhd VHDL PATH alu.vhd
+add_fileset_file vblox_orca/branch_unit.vhd VHDL PATH branch_unit.vhd
+add_fileset_file vblox_orca/decode.vhd VHDL PATH decode.vhd
+add_fileset_file vblox_orca/execute.vhd VHDL PATH execute.vhd
+add_fileset_file vblox_orca/instruction_fetch.vhd VHDL PATH instruction_fetch.vhd
+add_fileset_file vblox_orca/load_store_unit.vhd VHDL PATH load_store_unit.vhd
+add_fileset_file vblox_orca/register_file.vhd VHDL PATH register_file.vhd
+add_fileset_file vblox_orca/orca.vhd VHDL PATH orca.vhd
+add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd
+add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
+add_fileset_file vblox_orca/plic.vhd VHDL PATH plic.vhd
+add_fileset_file vblox_orca/gateway.vhd VHDL PATH gateway.vhd
+add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
+add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
 
 
 #
@@ -510,8 +512,10 @@ proc elaboration_callback {} {
 
 	 if { [get_parameter_value PLIC_ENABLE] } {
 		  set_parameter_property NUM_EXT_INTERRUPTS visible true
+		  set_interface_property global_interrupts enabled true
 	 } else {
 		  set_parameter_property NUM_EXT_INTERRUPTS visible false
+		  set_interface_property global_interrupts enabled false
 	 }
 	 set count 0
 	 for {set i 0} {$i<32} {incr i} {

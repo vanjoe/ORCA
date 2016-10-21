@@ -11,11 +11,10 @@ QSYS_FILE=$(SYSTEM).qsys
 SIM_FILE=simulate_$(BUS_TYPE).tcl
 TESTALL_FILE=testall_$(BUS_TYPE).tcl
 
-ORCA_COPY_FILES=$(addprfix system/simulation/submodules/, $(notdir $(ORCA_FILES)))
 
 $(SYSTEM)/simulation/mentor/msim_setup.tcl: $(QSYS_FILE)
 	qsys-generate --simulation=vhdl $^
-	( cd $(SYSTEM)/simulation/submodules/; for i in *.vhd; do if [ -f ../../../rtl/$$i ] ; then ln -sf ../../../rtl/$$i $$i; fi; done; )
+	(cd $(SYSTEM)/simulation/submodules/vblox_orca; for i in *.vhd; do if [ -f ../../../../rtl/$$i ] ; then ln -sf ../../../../rtl/$$i $$i; fi; done; )
 
 test/rv32ui-p-add.qex:
 	../tools/generate_hex_files.sh

@@ -200,7 +200,6 @@ begin  -- architecture rtl
     core_data_readdata <= avm_data_readdata;
 
     core_data_ack <= avm_data_readdatavalid or write_ack;
-    avm_data_write          <= is_writing;
     process(clk)
 
     begin

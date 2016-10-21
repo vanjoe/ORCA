@@ -7,7 +7,7 @@
    description=""
    tags=""
    categories="System" />
- <parameter name="bonusData"><![CDATA[bonusData 
+ <parameter name="bonusData"><![CDATA[bonusData
 {
    element clk_0
    {
@@ -99,14 +99,6 @@
       {
          value = "16777312";
          type = "String";
-      }
-   }
-   element interrupt_generator_0
-   {
-      datum _sortIndex
-      {
-         value = "14";
-         type = "int";
       }
    }
    element jtag_uart_0
@@ -519,13 +511,6 @@
   <parameter name="width" value="32" />
  </module>
  <module
-   name="interrupt_generator_0"
-   kind="interrupt_generator"
-   version="1.0"
-   enabled="1">
-  <parameter name="NUM_EXT_INTERRUPTS" value="2" />
- </module>
- <module
    name="jtag_uart_0"
    kind="altera_avalon_jtag_uart"
    version="15.1"
@@ -647,8 +632,8 @@
   <parameter name="BRANCH_PREDICTION" value="false" />
   <parameter name="BTB_SIZE" value="0" />
   <parameter name="BUS_TYPE" value="Avalon" />
-  <parameter name="COUNTER_LENGTH" value="64" />
-  <parameter name="DIVIDE_ENABLE" value="1" />
+  <parameter name="COUNTER_LENGTH" value="0" />
+  <parameter name="DIVIDE_ENABLE" value="0" />
   <parameter name="LVE_ENABLE" value="0" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="NUM_EXT_INTERRUPTS" value="2" />
@@ -656,6 +641,7 @@
   <parameter name="PLIC_ENABLE" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="512" />
+  <parameter name="SCRATCHPAD_SIZE" value="1024" />
   <parameter name="SHIFTER_MAX_CYCLES" value="1" />
  </module>
  <connection
@@ -790,22 +776,6 @@
    start="clk_0.clk"
    end="pipeline_counter_0.clock" />
  <connection
-   kind="clock"
-   version="15.1"
-   start="clk_0.clk"
-   end="interrupt_generator_0.clock" />
- <connection
-   kind="conduit"
-   version="15.1"
-   start="interrupt_generator_0.conduit_end"
-   end="vectorblox_orca_0.global_interrupts">
-  <parameter name="endPort" value="" />
-  <parameter name="endPortLSB" value="0" />
-  <parameter name="startPort" value="" />
-  <parameter name="startPortLSB" value="0" />
-  <parameter name="width" value="0" />
- </connection>
- <connection
    kind="conduit"
    version="15.1"
    start="pipeline_counter_0.conduit_end_1"
@@ -852,11 +822,6 @@
    version="15.1"
    start="clk_0.clk_reset"
    end="pipeline_counter_0.reset" />
- <connection
-   kind="reset"
-   version="15.1"
-   start="clk_0.clk_reset"
-   end="interrupt_generator_0.reset" />
  <connection
    kind="reset"
    version="15.1"

@@ -42,7 +42,7 @@ entity execute is
     wb_sel       : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
     wb_data      : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     wb_enable    : buffer std_logic;
-    valid_output : out    std_logic;
+    valid_output : buffer std_logic;
 
     instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
@@ -90,7 +90,7 @@ architecture behavioural of execute is
   signal ls_read_en    : std_logic;
   signal ls_write_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal ls_read_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ls_ack  : std_logic;
+  signal ls_ack        : std_logic;
 
 
   -- various writeback sources
@@ -269,7 +269,7 @@ begin
 
       rs1_mux_var := NO_FWD;
       rs2_mux_var := NO_FWD;
-      if (current_alu)  and valid_instr = '1' and stall_from_execute = '0' then
+      if (current_alu) and valid_instr = '1' and stall_from_execute = '0' then
         if rd = ni_rs1 and rd /= ZERO then
           rs1_mux_var := ALU_FWD;
         end if;
@@ -417,7 +417,7 @@ begin
     signal sp_write_en         : std_logic;
     signal sp_read_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal sp_wait             : std_logic;
-    signal sp_ack        : std_logic;
+    signal sp_ack              : std_logic;
     signal use_scratchpad      : std_logic;
     signal last_use_scratchpad : std_logic;
   begin
@@ -458,20 +458,20 @@ begin
     -----------------------------------------------------------------------------
 
     use_scratchpad <= ls_write_en or ls_read_en when
-                    (unsigned(ls_address) and not to_unsigned(SCRATCHPAD_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and LVE_ENABLE  else '0';
+                      (unsigned(ls_address) and not to_unsigned(SCRATCHPAD_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and LVE_ENABLE else '0';
     process(clk)
     begin
       if rising_edge(clk) then
 
         last_use_scratchpad <= use_scratchpad;
-        sp_ack <=(not sp_wait and (ls_read_en or ls_write_en));
+        sp_ack              <= (not sp_wait and (ls_read_en or ls_write_en));
       end if;
     end process;
     sp_read_en  <= use_scratchpad and ls_read_en;
     sp_write_en <= use_scratchpad and ls_write_en;
 
     ls_read_data <= sp_read_data when last_use_scratchpad = '1' else readdata;
-    ls_ack <= sp_ack when last_use_scratchpad = '1' else data_ack;
+    ls_ack       <= sp_ack       when last_use_scratchpad = '1' else data_ack;
 
     byte_en   <= ls_byte_en;
     address   <= ls_address;
@@ -484,7 +484,7 @@ begin
     stall_from_lve <= '0';
 
     ls_read_data <= readdata;
-    ls_ack <= data_ack;
+    ls_ack       <= data_ack;
 
     byte_en   <= ls_byte_en;
     address   <= ls_address;
@@ -511,22 +511,51 @@ begin
                                     is_branch);       --is_branch
 --pragma translate_off
   my_print : process(clk)
-    variable my_line : line;            -- type 'line' comes from textio
+    variable my_line       : line;      -- type 'line' comes from textio
+    variable last_valid_pc : std_logic_vector(pc_current'range);
+    type register_list is array(0 to 31) of std_logic_vector(REGISTER_SIZE-1 downto 0);
+    variable shadow_registers : register_list := (others => (others => '0'));
+
+    constant DEBUG_WRITEBACK : boolean := false;
+
   begin
     if rising_edge(clk) then
+
+      if valid_output = '1'  and DEBUG_WRITEBACK then
+        write(my_line, string'("WRITEBACK: PC = "));
+        hwrite(my_line, last_valid_pc);
+        if wb_enable = '1' then
+          shadow_registers(to_integer(unsigned(wb_sel))) := wb_data;
+        end if;
+        write(my_line, string'(" REGISTERS = {"));
+        for i in shadow_registers'range loop
+          hwrite(my_line,shadow_registers(i));
+          if i /= shadow_registers'right then
+              write(my_line, string'(","));
+          end if;
+
+        end loop;  -- i
+        write(my_line, string'("}"));
+        writeline(output, my_line);
+      end if;
+
+
       if valid_instr = '1' then
-        write(my_line, string'("executing pc = "));   -- formatting
+        write(my_line, string'("executing pc = "));  -- formatting
         hwrite(my_line, (pc_current));  -- format type std_logic_vector as hex
-        write(my_line, string'(" instr =  "));        -- formatting
+        write(my_line, string'(" instr =  "));       -- formatting
         hwrite(my_line, (instruction));  -- format type std_logic_vector as hex
         if stall_from_execute = '1' then
-          write(my_line, string'(" stalling"));       -- formatting
+          write(my_line, string'(" stalling"));      -- formatting
+        else
+          last_valid_pc := pc_current;
         end if;
         writeline(output, my_line);     -- write to "output"
       else
       --write(my_line, string'("bubble"));  -- formatting
       --writeline(output, my_line);     -- write to "output"
       end if;
+
     end if;
   end process my_print;
 --pragma translate_on

@@ -4,7 +4,7 @@ use IEEE.NUMERIC_STD.all;
 
 library work;
 use work.rv_components.all;
-
+use work.constants_pkg.all;
 entity decode is
   generic(
     REGISTER_SIZE       : positive;
@@ -85,11 +85,11 @@ begin
       rs2_data    => rs2_reg
       );
   two_cycle : if PIPELINE_STAGES = 2 generate
-    rs1 <= instruction(19 downto 15) when stall = '0' else instr_latch(19 downto 15);
-    rs2 <= instruction(24 downto 20) when stall = '0' else instr_latch(24 downto 20);
+    rs1 <= instruction(REGISTER_RS1'range) when stall = '0' else instr_latch(REGISTER_RS1'range);
+    rs2 <= instruction(REGISTER_RS2'range) when stall = '0' else instr_latch(REGISTER_RS2'range);
 
-    rs1_p <= instr_latch(19 downto 15) when stall = '0' else instr_out(19 downto 15);
-    rs2_p <= instr_latch(24 downto 20) when stall = '0' else instr_out(24 downto 20);
+    rs1_p <= instr_latch(REGISTER_RS1'range) when stall = '0' else instr_out(REGISTER_RS1'range);
+    rs2_p <= instr_latch(REGISTER_RS2'range) when stall = '0' else instr_out(REGISTER_RS2'range);
 
 
 
