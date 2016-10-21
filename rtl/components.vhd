@@ -19,6 +19,7 @@ package rv_components is
       DIVIDE_ENABLE      : natural range 0 to 1  := 0;
       SHIFTER_MAX_CYCLES : natural               := 1;
       COUNTER_LENGTH     : natural               := 0;
+      ENABLE_EXCEPTIONS  : natural               := 1;
       BRANCH_PREDICTORS  : natural               := 0;
       PIPELINE_STAGES    : natural range 4 to 5  := 5;
       LVE_ENABLE         : natural range 0 to 1  := 0;
@@ -171,6 +172,7 @@ package rv_components is
       DIVIDE_ENABLE      : natural range 0 to 1  := 0;
       SHIFTER_MAX_CYCLES : natural               := 1;
       COUNTER_LENGTH     : natural               := 0;
+      ENABLE_EXCEPTIONS  : natural               := 1;
       BRANCH_PREDICTORS  : natural               := 0;
       PIPELINE_STAGES    : natural range 4 to 5  := 5;
       LVE_ENABLE         : natural range 0 to 1  := 0;
@@ -248,6 +250,7 @@ package rv_components is
       DIVIDE_ENABLE       : boolean;
       SHIFTER_MAX_CYCLES  : natural;
       COUNTER_LENGTH      : natural;
+      ENABLE_EXCEPTIONS   : boolean;
       LVE_ENABLE          : boolean;
       SCRATCHPAD_SIZE     : integer;
       FAMILY              : string);
@@ -559,10 +562,11 @@ package rv_components is
 
   component system_calls is
     generic (
-      REGISTER_SIZE    : natural;
-      INSTRUCTION_SIZE : natural;
-      RESET_VECTOR     : integer;
-      COUNTER_LENGTH   : natural);
+      REGISTER_SIZE     : natural;
+      INSTRUCTION_SIZE  : natural;
+      RESET_VECTOR      : integer;
+      COUNTER_LENGTH    : natural;
+      ENABLE_EXCEPTIONS : boolean);
     port (
       clk         : in std_logic;
       reset       : in std_logic;

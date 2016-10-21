@@ -634,6 +634,7 @@
   <parameter name="BUS_TYPE" value="Avalon" />
   <parameter name="COUNTER_LENGTH" value="0" />
   <parameter name="DIVIDE_ENABLE" value="0" />
+  <parameter name="ENABLE_EXCEPTIONS" value="1" />
   <parameter name="LVE_ENABLE" value="0" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="NUM_EXT_INTERRUPTS" value="2" />

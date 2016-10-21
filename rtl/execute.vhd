@@ -21,6 +21,7 @@ entity execute is
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
     COUNTER_LENGTH      : natural;
+    ENABLE_EXCEPTIONS   : boolean;
     LVE_ENABLE          : boolean;
     SCRATCHPAD_SIZE     : integer := 1024;
     FAMILY              : string  := "ALTERA");
@@ -378,10 +379,11 @@ begin
 
   syscall : component system_calls
     generic map (
-      REGISTER_SIZE    => REGISTER_SIZE,
-      INSTRUCTION_SIZE => INSTRUCTION_SIZE,
-      RESET_VECTOR     => RESET_VECTOR,
-      COUNTER_LENGTH   => COUNTER_LENGTH)
+      REGISTER_SIZE     => REGISTER_SIZE,
+      INSTRUCTION_SIZE  => INSTRUCTION_SIZE,
+      RESET_VECTOR      => RESET_VECTOR,
+      ENABLE_EXCEPTIONS => ENABLE_EXCEPTIONS,
+      COUNTER_LENGTH    => COUNTER_LENGTH)
     port map (
       clk            => clk,
       reset          => reset,
@@ -511,8 +513,8 @@ begin
                                     is_branch);       --is_branch
 --pragma translate_off
   my_print : process(clk)
-    variable my_line       : line;      -- type 'line' comes from textio
-    variable last_valid_pc : std_logic_vector(pc_current'range);
+    variable my_line          : line;   -- type 'line' comes from textio
+    variable last_valid_pc    : std_logic_vector(pc_current'range);
     type register_list is array(0 to 31) of std_logic_vector(REGISTER_SIZE-1 downto 0);
     variable shadow_registers : register_list := (others => (others => '0'));
 
@@ -521,7 +523,7 @@ begin
   begin
     if rising_edge(clk) then
 
-      if valid_output = '1'  and DEBUG_WRITEBACK then
+      if valid_output = '1' and DEBUG_WRITEBACK then
         write(my_line, string'("WRITEBACK: PC = "));
         hwrite(my_line, last_valid_pc);
         if wb_enable = '1' then
@@ -529,9 +531,9 @@ begin
         end if;
         write(my_line, string'(" REGISTERS = {"));
         for i in shadow_registers'range loop
-          hwrite(my_line,shadow_registers(i));
+          hwrite(my_line, shadow_registers(i));
           if i /= shadow_registers'right then
-              write(my_line, string'(","));
+            write(my_line, string'(","));
           end if;
 
         end loop;  -- i

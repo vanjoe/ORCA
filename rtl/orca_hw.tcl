@@ -161,6 +161,15 @@ set_parameter_property SHIFTER_MAX_CYCLES ALLOWED_RANGES {1 8 32}
 set_parameter_property SHIFTER_MAX_CYCLES HDL_PARAMETER true
 
 
+add_parameter ENABLE_EXCEPTIONS natural 1
+set_parameter_property ENABLE_EXCEPTIONS DISPLAY_NAME "Enable Excecptions"
+set_parameter_property ENABLE_EXCEPTIONS DESCRIPTION "Enable handling of illegal instructions, external interrupts, and timer interrupts (Recommended)"
+set_parameter_property ENABLE_EXCEPTIONS TYPE NATURAL
+set_parameter_property ENABLE_EXCEPTIONS UNITS None
+set_parameter_property ENABLE_EXCEPTIONS ALLOWED_RANGES 0:1
+set_parameter_property ENABLE_EXCEPTIONS HDL_PARAMETER true
+set_display_item_property ENABLE_EXCEPTIONS DISPLAY_HINT boolean
+
 
 add_parameter COUNTER_LENGTH natural 64
 set_parameter_property COUNTER_LENGTH DISPLAY_NAME "Counters Register Size"

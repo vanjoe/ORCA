@@ -14,6 +14,7 @@ entity orca_core is
     DIVIDE_ENABLE      : natural range 0 to 1  := 0;
     SHIFTER_MAX_CYCLES : natural               := 1;
     COUNTER_LENGTH     : natural               := 0;
+    ENABLE_EXCEPTIONS  : natural               := 1;
     BRANCH_PREDICTORS  : natural               := 0;
     PIPELINE_STAGES    : natural range 4 to 5  := 5;
     LVE_ENABLE         : natural range 0 to 1  := 0;
@@ -33,7 +34,7 @@ entity orca_core is
        core_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
        core_data_write                : out std_logic;
        core_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-       core_data_ack        : in  std_logic                                  := '0';
+       core_data_ack                  : in  std_logic                                  := '0';
        --avalon master bus
        core_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
        core_instruction_read          : out std_logic;
@@ -72,7 +73,7 @@ architecture rtl of orca_core is
   signal e_pc           : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal e_br_taken     : std_logic;
   signal e_valid        : std_logic;
-  signal e_data_ack    : std_logic;
+  signal e_data_ack     : std_logic;
   signal pipeline_empty : std_logic;
 
   signal execute_stalled : std_logic;
@@ -196,6 +197,7 @@ begin  -- architecture rtl
       DIVIDE_ENABLE       => DIVIDE_ENABLE = 1,
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
       COUNTER_LENGTH      => COUNTER_LENGTH,
+      ENABLE_EXCEPTIONS => ENABLE_EXCEPTIONS = 1,
       LVE_ENABLE          => LVE_ENABLE = 1,
       SCRATCHPAD_SIZE     => SCRATCHPAD_SIZE,
       FAMILY              => FAMILY)
@@ -221,13 +223,13 @@ begin  -- architecture rtl
       pipeline_empty     => pipeline_empty,
 
       --Memory bus
-      address     => data_address,
-      byte_en     => data_byte_en,
-      write_en    => data_write_en,
-      read_en     => data_read_en,
-      writedata   => data_write_data,
-      readdata    => data_read_data,
-      data_ack   => e_data_ack,
+      address   => data_address,
+      byte_en   => data_byte_en,
+      write_en  => data_write_en,
+      read_en   => data_read_en,
+      writedata => data_write_data,
+      readdata  => data_read_data,
+      data_ack  => e_data_ack,
 
       -- Interrupt lines
       mtime_i              => mtime,
@@ -275,7 +277,7 @@ begin  -- architecture rtl
       if rising_edge(clk) then
         if reset = '1' then
           data_sel_prev <= '0';
-        elsif data_read_en = '1'  then
+        elsif data_read_en = '1' then
           data_sel_prev <= data_sel;
         end if;
       end if;
@@ -296,7 +298,7 @@ begin  -- architecture rtl
 
 
     data_read_data <= plic_readdata      when data_sel_prev = '0' else core_data_readdata;
-    e_data_ack    <= plic_readdatavalid when data_sel_prev = '0' else core_data_ack;
+    e_data_ack     <= plic_readdatavalid when data_sel_prev = '0' else core_data_ack;
 
   end generate;
 
@@ -309,7 +311,7 @@ begin  -- architecture rtl
     core_data_writedata  <= data_write_data;
 
     data_read_data <= core_data_readdata;
-    e_data_ack    <= core_data_ack;
+    e_data_ack     <= core_data_ack;
 
     -- Only handle the cycle counter (mtime) if the PLIC is disabled.
     process (clk)

@@ -18,6 +18,7 @@ entity Orca is
     DIVIDE_ENABLE      : natural range 0 to 1  := 0;
     SHIFTER_MAX_CYCLES : natural               := 1;
     COUNTER_LENGTH     : natural               := 0;
+    ENABLE_EXCEPTIONS  : natural               := 1;
     BRANCH_PREDICTORS  : natural               := 0;
     PIPELINE_STAGES    : natural range 4 to 5  := 5;
     LVE_ENABLE         : natural range 0 to 1  := 0;
@@ -169,13 +170,13 @@ end entity Orca;
 
 architecture rtl of Orca is
 
-  signal core_data_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_byteenable    : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-  signal core_data_read          : std_logic;
-  signal core_data_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_write         : std_logic;
-  signal core_data_writedata     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_ack : std_logic;
+  signal core_data_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal core_data_byteenable : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal core_data_read       : std_logic;
+  signal core_data_readdata   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal core_data_write      : std_logic;
+  signal core_data_writedata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal core_data_ack        : std_logic;
 
   signal core_instruction_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal core_instruction_read          : std_logic;
@@ -231,8 +232,8 @@ begin  -- architecture rtl
   wishbone_enabled : if WISHBONE_ENABLE = 1 generate
     signal is_read_transaction : std_logic;
   begin
-    core_data_readdata      <= data_DAT_I;
-    core_data_ack <= data_ACK_I;
+    core_data_readdata <= data_DAT_I;
+    core_data_ack      <= data_ACK_I;
 
     instr_ADR_O                    <= core_instruction_address;
     instr_CYC_O                    <= core_instruction_read;
@@ -245,12 +246,12 @@ begin  -- architecture rtl
     begin
       if rising_edge(clk) then
         if data_STALL_I = '0' then
-          data_ADR_O              <= core_data_address;
-          data_SEL_O              <= core_data_byteenable;
-          data_CYC_O              <= core_data_read or core_data_write;
-          data_STB_O              <= core_data_read or core_data_write;
-          data_WE_O               <= core_data_write;
-          data_DAT_O              <= core_data_writedata;
+          data_ADR_O <= core_data_address;
+          data_SEL_O <= core_data_byteenable;
+          data_CYC_O <= core_data_read or core_data_write;
+          data_STB_O <= core_data_read or core_data_write;
+          data_WE_O  <= core_data_write;
+          data_DAT_O <= core_data_writedata;
         end if;
       end if;
     end process;
@@ -301,22 +302,22 @@ begin  -- architecture rtl
     data_BREADY      <= '1';
 
 
-    data_ARID               <= (others => '0');
-    data_ARADDR             <= core_data_address;
-    data_ARLEN              <= BURST_LEN;
-    data_ARSIZE             <= BURST_SIZE;
-    data_ARBURST            <= BURST_INCR;
-    data_ARLOCK             <= (others => '0');
-    data_ARCACHE            <= (others => '0');
-    data_ARPROT             <= (others => '0');
-    data_ARVALID            <= core_data_read;
-    core_data_stall3        <= not data_ARREADY;
+    data_ARID          <= (others => '0');
+    data_ARADDR        <= core_data_address;
+    data_ARLEN         <= BURST_LEN;
+    data_ARSIZE        <= BURST_SIZE;
+    data_ARBURST       <= BURST_INCR;
+    data_ARLOCK        <= (others => '0');
+    data_ARCACHE       <= (others => '0');
+    data_ARPROT        <= (others => '0');
+    data_ARVALID       <= core_data_read;
+    core_data_stall3   <= not data_ARREADY;
     -- data_RID
-    core_data_readdata      <= data_RDATA;
+    core_data_readdata <= data_RDATA;
     -- data_RRESP
     -- data_RLAST
-    core_data_ack <= data_RVALID or write_ack;
-    data_RREADY             <= '1';
+    core_data_ack      <= data_RVALID or write_ack;
+    data_RREADY        <= '1';
 
     -- This Process handles coupling the decoupled write data and write address channels
     data_write_proc : process(clk)
@@ -408,6 +409,7 @@ begin  -- architecture rtl
       DIVIDE_ENABLE      => DIVIDE_ENABLE,
       SHIFTER_MAX_CYCLES => SHIFTER_MAX_CYCLES,
       COUNTER_LENGTH     => COUNTER_LENGTH,
+      ENABLE_EXCEPTIONS  => ENABLE_EXCEPTIONS,
       BRANCH_PREDICTORS  => BRANCH_PREDICTORS,
       PIPELINE_STAGES    => PIPELINE_STAGES,
       LVE_ENABLE         => LVE_ENABLE,
@@ -428,7 +430,7 @@ begin  -- architecture rtl
       core_data_readdata             => core_data_readdata,
       core_data_write                => core_data_write,
       core_data_writedata            => core_data_writedata,
-      core_data_ack        => core_data_ack,
+      core_data_ack                  => core_data_ack,
                                         --avalon master bus
       core_instruction_address       => core_instruction_address,
       core_instruction_read          => core_instruction_read,
