@@ -37,7 +37,8 @@ entity decode is
     pc_curr_out    : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     instr_out      : buffer std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     subseq_instr   : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    valid_output   : out    std_logic);
+    valid_output   : out    std_logic;
+    decode_flushed : out    std_logic);
 end;
 
 architecture rtl of decode is
@@ -91,7 +92,7 @@ begin
     rs1_p <= instr_latch(REGISTER_RS1'range) when stall = '0' else instr_out(REGISTER_RS1'range);
     rs2_p <= instr_latch(REGISTER_RS2'range) when stall = '0' else instr_out(REGISTER_RS2'range);
 
-
+    decode_flushed <= not (valid_input or valid_latch);
 
     decode_stage : process (clk, reset) is
     begin  -- process decode_stage

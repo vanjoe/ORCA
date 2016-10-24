@@ -53,7 +53,6 @@ architecture rtl of orca_core is
   constant SIGN_EXTENSION_SIZE : integer := 20;
 
   --signals going into fetch
-  signal if_stall_in  : std_logic;
   signal if_valid_out : std_logic;
 
   --signals going into decode
@@ -113,18 +112,20 @@ architecture rtl of orca_core is
   signal plic_lock          : std_logic;
   signal plic_readdatavalid : std_logic;
 
+
+
   -- Interrupt lines
-  signal mtime             : std_logic_vector(63 downto 0);
-  signal mip_mtip          : std_logic;
-  signal mip_msip          : std_logic;
-  signal mip_meip          : std_logic;
-  signal interrupt_pending : std_logic;
+  signal external_interrupts_32 : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal e_interrupt_pending    : std_logic;
 
   signal branch_pred_to_instr_fetch : std_logic_vector(REGISTER_SIZE*2 + 3-1 downto 0);
+
+  signal decode_flushed : std_logic;
+  signal ifetch_next_pc : std_logic_vector(REGISTER_SIZE-1 downto 0);
 begin  -- architecture rtl
   pipeline_flush <= branch_get_flush(branch_pred_to_instr_fetch);
 
-  if_stall_in <= execute_stalled;
+
   instr_fetch : component instruction_fetch
     generic map (
       REGISTER_SIZE     => REGISTER_SIZE,
@@ -132,21 +133,22 @@ begin  -- architecture rtl
       RESET_VECTOR      => RESET_VECTOR,
       BRANCH_PREDICTORS => BRANCH_PREDICTORS)
     port map (
-      clk         => clk,
-      reset       => reset,
-      stall       => if_stall_in,
-      branch_pred => branch_pred_to_instr_fetch,
+      clk                => clk,
+      reset              => reset,
+      downstream_stalled => execute_stalled,
+      interrupt_pending => e_interrupt_pending,
+      branch_pred        => branch_pred_to_instr_fetch,
 
-      instr_out         => d_instr,
-      pc_out            => d_pc,
-      br_taken          => d_br_taken,
-      valid_instr_out   => if_valid_out,
-      read_address      => instr_address,
-      read_en           => instr_read_en,
-      read_data         => instr_data,
-      read_datavalid    => instr_readvalid,
-      read_wait         => instr_read_wait,
-      interrupt_pending => interrupt_pending);
+      instr_out       => d_instr,
+      pc_out          => d_pc,
+      next_pc_out     => ifetch_next_pc,
+      br_taken        => d_br_taken,
+      valid_instr_out => if_valid_out,
+      read_address    => instr_address,
+      read_en         => instr_read_en,
+      read_data       => instr_data,
+      read_datavalid  => instr_readvalid,
+      read_wait       => instr_read_wait);
 
   d_valid <= if_valid_out and not pipeline_flush;
 
@@ -180,12 +182,10 @@ begin  -- architecture rtl
       pc_curr_out    => e_pc,
       instr_out      => e_instr,
       subseq_instr   => e_subseq_instr,
-      valid_output   => d_valid_out);
+      valid_output   => d_valid_out,
+      decode_flushed => decode_flushed);
 
-  e_valid        <= d_valid_out and not pipeline_flush;
-  -- The pipeline_empty signal means that all stages of the pipeline are finished with
-  -- their current instruction, and bubbles have fully propagated through the pipeline.
-  pipeline_empty <= ((not if_valid_out) and (not d_valid_out) and (not execute_stalled));
+  e_valid <= d_valid_out and not pipeline_flush;
   X : component execute
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
@@ -197,30 +197,29 @@ begin  -- architecture rtl
       DIVIDE_ENABLE       => DIVIDE_ENABLE = 1,
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
       COUNTER_LENGTH      => COUNTER_LENGTH,
-      ENABLE_EXCEPTIONS => ENABLE_EXCEPTIONS = 1,
+      ENABLE_EXCEPTIONS   => ENABLE_EXCEPTIONS = 1,
       LVE_ENABLE          => LVE_ENABLE = 1,
       SCRATCHPAD_SIZE     => SCRATCHPAD_SIZE,
       FAMILY              => FAMILY)
     port map (
-      clk            => clk,
-      scratchpad_clk => scratchpad_clk,
-      reset          => reset,
-      valid_input    => e_valid,
-      br_taken_in    => e_br_taken,
-      pc_current     => e_pc,
-      instruction    => e_instr,
-      subseq_instr   => e_subseq_instr,
-      rs1_data       => rs1_data,
-      rs2_data       => rs2_data,
-      sign_extension => sign_extension,
-      wb_sel         => wb_sel,
-      wb_data        => wb_data,
-      wb_enable      => wb_en,
-      valid_output   => wb_valid,
-      branch_pred    => branch_pred_to_instr_fetch,
-
+      clk                => clk,
+      scratchpad_clk     => scratchpad_clk,
+      reset              => reset,
+      valid_input        => e_valid,
+      br_taken_in        => e_br_taken,
+      pc_current         => e_pc,
+      instruction        => e_instr,
+      subseq_instr       => e_subseq_instr,
+      rs1_data           => rs1_data,
+      rs2_data           => rs2_data,
+      sign_extension     => sign_extension,
+      wb_sel             => wb_sel,
+      wb_data            => wb_data,
+      wb_enable          => wb_en,
+      valid_output       => wb_valid,
+      branch_pred        => branch_pred_to_instr_fetch,
+      ifetch_next_pc     => ifetch_next_pc,
       stall_from_execute => execute_stalled,
-      pipeline_empty     => pipeline_empty,
 
       --Memory bus
       address   => data_address,
@@ -232,100 +231,13 @@ begin  -- architecture rtl
       data_ack  => e_data_ack,
 
       -- Interrupt lines
-      mtime_i              => mtime,
-      mip_mtip_i           => mip_mtip,
-      mip_msip_i           => mip_msip,
-      mip_meip_i           => mip_meip,
-      interrupt_pending_o  => interrupt_pending,
-      instruction_fetch_pc => d_pc);
+      external_interrupts => external_interrupts_32,
+      pipeline_empty      => decode_flushed,
+      interrupt_pending   => e_interrupt_pending);
 
+  external_interrupts_32 <= std_logic_vector(to_unsigned(0, REGISTER_SIZE-NUM_EXT_INTERRUPTS))
+                            & global_interrupts;
 
-
-  plic_gen : if PLIC_ENABLE = 1 generate
-
-    interrupt_controller : component plic
-      generic map (
-        REGISTER_SIZE      => REGISTER_SIZE,
-        NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS)
-      port map (
-        clk   => clk,
-        reset => reset,
-
-        global_interrupts => global_interrupts,
-
-        mtime_o    => mtime,
-        mip_mtip_o => mip_mtip,
-        mip_msip_o => mip_msip,
-        mip_meip_o => mip_meip,
-
-        plic_address       => plic_address,
-        plic_byteenable    => plic_byteenable,
-        plic_read          => plic_read,
-        plic_readdata      => plic_readdata,
-        plic_response      => plic_response,
-        plic_write         => plic_write,
-        plic_writedata     => plic_writedata,
-        plic_lock          => plic_lock,
-        plic_readdatavalid => plic_readdatavalid);
-
-    -- Handle arbitration between the bus and the PLIC
-    data_sel <= '1' when unsigned(data_address) >= X"100"
-                else '0';
-
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        if reset = '1' then
-          data_sel_prev <= '0';
-        elsif data_read_en = '1' then
-          data_sel_prev <= data_sel;
-        end if;
-      end if;
-    end process;
-
-    plic_address    <= data_address(7 downto 0) when data_sel = '0' else (others => '0');
-    plic_byteenable <= data_byte_en             when data_sel = '0' else (others => '0');
-    plic_read       <= data_read_en             when data_sel = '0' else '0';
-    plic_write      <= data_write_en            when data_sel = '0' else '0';
-    plic_writedata  <= data_write_data          when data_sel = '0' else (others => '0');
-    plic_lock       <= '0';
-
-    core_data_address    <= data_address    when data_sel = '1' else (others => '0');
-    core_data_byteenable <= data_byte_en    when data_sel = '1' else (others => '0');
-    core_data_read       <= data_read_en    when data_sel = '1' else '0';
-    core_data_write      <= data_write_en   when data_sel = '1' else '0';
-    core_data_writedata  <= data_write_data when data_sel = '1' else (others => '0');
-
-
-    data_read_data <= plic_readdata      when data_sel_prev = '0' else core_data_readdata;
-    e_data_ack     <= plic_readdatavalid when data_sel_prev = '0' else core_data_ack;
-
-  end generate;
-
-  plic_gen_n : if PLIC_ENABLE = 0 generate
-
-    core_data_address    <= data_address;
-    core_data_byteenable <= data_byte_en;
-    core_data_read       <= data_read_en;
-    core_data_write      <= data_write_en;
-    core_data_writedata  <= data_write_data;
-
-    data_read_data <= core_data_readdata;
-    e_data_ack     <= core_data_ack;
-
-    -- Only handle the cycle counter (mtime) if the PLIC is disabled.
-    process (clk)
-    begin
-      if rising_edge(clk) then
-        if (reset = '1') then
-          mtime <= (others => '0');
-        else
-          mtime <= std_logic_vector(to_unsigned(1, 64) + unsigned(mtime));
-        end if;
-      end if;
-    end process;
-
-  end generate;
 
   core_instruction_address <= instr_address;
   core_instruction_read    <= instr_read_en;

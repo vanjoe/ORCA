@@ -14,25 +14,23 @@ entity instruction_fetch is
     RESET_VECTOR      : integer;
     BRANCH_PREDICTORS : natural);
   port (
-    clk   : in std_logic;
-    reset : in std_logic;
-    stall : in std_logic;
-
-    branch_pred : in std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
+    clk                : in std_logic;
+    reset              : in std_logic;
+    downstream_stalled : in std_logic;
+    interrupt_pending  : in std_logic;
+    branch_pred        : in std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
 
     br_taken        : buffer std_logic;
     instr_out       : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     pc_out          : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    next_pc_out     : out    std_logic;
+    next_pc_out     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     valid_instr_out : out    std_logic;
 
     read_address   : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     read_en        : buffer std_logic;
     read_data      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     read_datavalid : in     std_logic;
-    read_wait      : in     std_logic;
-
-    interrupt_pending : in std_logic);
+    read_wait      : in     std_logic);
 end entity instruction_fetch;
 
 
@@ -53,12 +51,11 @@ architecture rtl of instruction_fetch is
   signal instr_out_saved       : std_logic_vector(instr_out'range);
   signal valid_instr_out_saved : std_logic;
 
-  alias execute_stalled : std_logic is stall;
-
   signal predicted_pc : unsigned(REGISTER_SIZE -1 downto 0);
   signal next_address : unsigned(REGISTER_SIZE -1 downto 0);
 
   signal suppress_valid_instr_out : std_logic;
+  signal dont_increment           : std_logic;
 begin  -- architecture rtl
 
 
@@ -69,9 +66,10 @@ begin  -- architecture rtl
   pc_corr    <= unsigned(branch_get_tgt(branch_pred));
   pc_corr_en <= branch_get_flush(branch_pred);
 
+  dont_increment <= downstream_stalled or interrupt_pending;
 
-  move_to_next_address <= (state = state_1 and read_datavalid = '1' and execute_stalled = '0') or
-                          (state = state_2 and execute_stalled = '0');
+  move_to_next_address <= (state = state_1 and read_datavalid = '1' and dont_increment = '0') or
+                          (state = state_2 and dont_increment = '0');
 
 
 
@@ -87,7 +85,7 @@ begin  -- architecture rtl
           end if;
         when state_1 =>                 --waiting for readvalid
           if read_datavalid = '1' then
-            if execute_stalled = '1' then
+            if dont_increment = '1' then
               state <= state_2;
             elsif read_wait = '0' then
               state <= state_1;
@@ -96,7 +94,7 @@ begin  -- architecture rtl
             end if;
           end if;
         when state_2 =>                 -- waiting for execute_stall
-          if execute_stalled = '0' then
+          if dont_increment = '0' then
             if read_wait = '0' then
               state <= state_1;
             else
@@ -152,7 +150,7 @@ begin  -- architecture rtl
   save_fetched_instr : process(clk)
   begin
     if rising_edge(clk) then
-      if execute_stalled = '1' then
+      if downstream_stalled = '1' then
         if read_datavalid = '1' then
           instr_out_saved       <= read_data;
           valid_instr_out_saved <= read_datavalid;
@@ -167,7 +165,7 @@ begin  -- architecture rtl
   begin
     if rising_edge(clk) then
       if pc_corr_en = '1' then
-        suppress_valid_instr_out <= '1';
+        suppress_valid_instr_out <= not interrupt_pending;
       end if;
       if read_datavalid = '1' then
         suppress_valid_instr_out <= '0';
@@ -187,7 +185,7 @@ begin  -- architecture rtl
                   pc_corr_saved when pc_corr_saved_en = '1' and move_to_next_address else
                   predicted_pc  when move_to_next_address else
                   program_counter;
-
+  next_pc_out  <= std_logic_vector(next_address);
   read_address <= std_logic_vector(program_counter) when state = state_0                           else std_logic_vector(next_address);
   read_en      <= not reset                         when (state = state_0 or move_to_next_address) else '0';
   br_taken     <= '0';

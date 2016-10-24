@@ -56,8 +56,6 @@ entity system_calls is
     rs1_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
-    finished_instr : in std_logic;
-
     wb_data   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     wb_enable : out std_logic;
 
@@ -65,20 +63,10 @@ entity system_calls is
     pc_correction : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
     pc_corr_en    : buffer std_logic;
 
-    illegal_alu_instr : in std_logic;
-
-    use_after_load_stall : in std_logic;
-    predict_corr         : in std_logic;
-    load_stall           : in std_logic;
-
-    -- From the PLIC
-    mtime_i    : in std_logic_vector(63 downto 0);
-    mip_mtip_i : in std_logic;
-    mip_msip_i : in std_logic;
-    mip_meip_i : in std_logic;
 
     -- To the Instruction Fetch Stage
-    interrupt_pending_o : out std_logic;
+    interrupt_pending   : buffer std_logic;
+    external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     -- Signals when an interrupt may proceed.
     pipeline_empty      : in  std_logic;
 
@@ -262,7 +250,7 @@ begin  -- architecture rtl
             if instruction(31 downto 30) = "00" and instruction(27 downto 20) = "00000010" then
               --treat all [USHM]RET instructions the same
               mstatus(CSR_MSTATUS_MIE)  <= mstatus(CSR_MSTATUS_MPIE);
-              mstatus(CSR_MSTATUS_MPIE) <= '1';
+              mstatus(CSR_MSTATUS_MPIE) <= '0';
               was_mret                  <= '1';
             end if;  --other system
           end if;  --any system
@@ -302,10 +290,12 @@ begin  -- architecture rtl
 -- nterrupt_processor goes high when pipeline is empty and and interrupt
 --is pending
 --
---If interrupt is pending and pipeline is not empty, slip the pipeline.
+--If interrupt is pending and enabled, slip the pipeline.
 -------------------------------------------------------------------------------
-  interrupt_processor <= '0';
-  interrupt_pending_o <= '0';
+  meipend <= external_interrupts;
+
+  interrupt_processor <= interrupt_pending and pipeline_empty;
+  interrupt_pending   <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 else '0';
 
 
 -----------------------------------------------------------------------------
@@ -317,7 +307,7 @@ begin  -- architecture rtl
 -- fence.i  (flush pipelin, and start over)
 -----------------------------------------------------------------------------
 
-  pc_corr_en <= was_fence_i or was_mret or was_illegal;
+  pc_corr_en <= was_fence_i or was_mret or was_illegal or interrupt_processor;
 
   pc_correction <= pc_add_4 when was_fence_i = '1' else
                    std_logic_vector(to_unsigned(RESET_VECTOR-16#10#, pc_correction'length)) when was_illegal = '1' or interrupt_processor = '1' else

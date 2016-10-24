@@ -6,6 +6,7 @@ use IEEE.std_logic_textio.all;          -- I/O for logic types
 library work;
 use work.rv_components.all;
 use work.utils.all;
+use work.constants_pkg.all;
 
 library STD;
 use STD.textio.all;                     -- basic I/O
@@ -45,11 +46,11 @@ entity execute is
     wb_enable    : buffer std_logic;
     valid_output : buffer std_logic;
 
-    instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     branch_pred        : out    std_logic_vector(REGISTER_SIZE*2+3 -1 downto 0);
     stall_from_execute : buffer std_logic;
-    pipeline_empty     : in     std_logic;
+
+
 
 --memory-bus
     address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -60,26 +61,20 @@ entity execute is
     readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_ack  : in  std_logic;
 
-    mtime_i    : in std_logic_vector(63 downto 0);
-    mip_mtip_i : in std_logic;
-    mip_msip_i : in std_logic;
-    mip_meip_i : in std_logic;
-
-    interrupt_pending_o : out std_logic);
+    external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    pipeline_empty      : in  std_logic;
+    ifetch_next_pc      : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    interrupt_pending   : out std_logic);
 
 
 end entity execute;
 
 architecture behavioural of execute is
 
-  alias rd : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
-    instruction(11 downto 7);
-  alias rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
-    instruction(19 downto 15);
-  alias rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
-    instruction(24 downto 20);
-  alias opcode : std_logic_vector(4 downto 0) is
-    instruction(6 downto 2);
+  alias rd is instruction (REGISTER_RD'range);
+  alias rs1 is instruction(REGISTER_RS1'range);
+  alias rs2 is instruction(REGISTER_RS2'range);
+  alias opcode is instruction(MAJOR_OP'range);
 
   signal predict_corr    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal predict_corr_en : std_logic;
@@ -154,18 +149,10 @@ architecture behavioural of execute is
 
   signal illegal_alu_instr : std_logic;
 
-  signal is_branch    : std_logic;
-  signal br_taken_out : std_logic;
+  signal entire_pipeline_empty : std_logic;
+  signal is_branch             : std_logic;
+  signal br_taken_out          : std_logic;
 
-  constant JAL_OP   : std_logic_vector(4 downto 0) := "11011";
-  constant JALR_OP  : std_logic_vector(4 downto 0) := "11001";
-  constant LUI_OP   : std_logic_vector(4 downto 0) := "01101";
-  constant AUIPC_OP : std_logic_vector(4 downto 0) := "00101";
-  constant ALU_OP   : std_logic_vector(4 downto 0) := "01100";
-  constant ALUI_OP  : std_logic_vector(4 downto 0) := "00100";
-  constant CSR_OP   : std_logic_vector(4 downto 0) := "11100";
-  constant LD_OP    : std_logic_vector(4 downto 0) := "00000";
-  constant LVE_OP   : std_logic_vector(4 downto 0) := "01010";
 
   alias ni_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(19 downto 15);
   alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
@@ -175,15 +162,6 @@ architecture behavioural of execute is
   signal use_after_produce_stall      : std_logic;
   signal use_after_produce_stall_mask : std_logic;
 
-  function bool_to_int (
-    signal a : std_logic)
-    return integer is
-  begin  -- function bool_to_int
-    if a = '1' then
-      return 1;
-    end if;
-    return 0;
-  end function bool_to_int;
 
 begin
   valid_instr <= valid_input and not use_after_produce_stall;
@@ -377,6 +355,8 @@ begin
       read_data      => ls_read_data,
       ack            => ls_ack);
 
+  entire_pipeline_empty <= pipeline_empty and not valid_input;
+
   syscall : component system_calls
     generic map (
       REGISTER_SIZE     => REGISTER_SIZE,
@@ -385,32 +365,23 @@ begin
       ENABLE_EXCEPTIONS => ENABLE_EXCEPTIONS,
       COUNTER_LENGTH    => COUNTER_LENGTH)
     port map (
-      clk            => clk,
-      reset          => reset,
-      valid          => valid_instr,
-      rs1_data       => rs1_data_fwd,
-      instruction    => instruction,
-      finished_instr => finished_instr,
-      wb_data        => sys_data_out,
-      wb_enable      => sys_data_enable,
+      clk         => clk,
+      reset       => reset,
+      valid       => valid_instr,
+      rs1_data    => rs1_data_fwd,
+      instruction => instruction,
+      wb_data     => sys_data_out,
+      wb_enable   => sys_data_enable,
 
-      current_pc           => pc_current,
-      pc_correction        => syscall_target,
-      pc_corr_en           => syscall_en,
-      illegal_alu_instr    => illegal_alu_instr,
-      use_after_load_stall => '0',
-      load_stall           => stall_from_execute,
-      predict_corr         => predict_corr_en,
+      current_pc    => pc_current,
+      pc_correction => syscall_target,
+      pc_corr_en    => syscall_en,
 
-      mtime_i    => mtime_i,
-      mip_mtip_i => mip_mtip_i,
-      mip_msip_i => mip_msip_i,
-      mip_meip_i => mip_meip_i,
+      interrupt_pending   => interrupt_pending,
+      pipeline_empty      => entire_pipeline_empty,
+      external_interrupts => external_interrupts,
 
-      interrupt_pending_o => interrupt_pending_o,
-      pipeline_empty      => pipeline_empty,
-
-      instruction_fetch_pc => instruction_fetch_pc,
+      instruction_fetch_pc => ifetch_next_pc,
       br_bad_predict       => br_bad_predict,
       br_new_pc            => br_new_pc);
 
@@ -500,7 +471,6 @@ begin
   end generate n_enable_lve;
 
 
-  finished_instr <= valid_instr and (not stall_from_execute);
 
   predict_corr_en <= syscall_en or br_bad_predict;
   predict_corr    <= br_new_pc  when syscall_en = '0' else syscall_target;
