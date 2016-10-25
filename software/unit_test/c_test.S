@@ -8,8 +8,7 @@
 .section .text.init
 
 _start:
-c_begin:
-		  beqz sp,1f /*if sp is not initialized this is a reset*/
+		  beqz sp,c_begin /*if sp is not initialized this is a reset*/
 		  addi sp,sp,-(4*32)
 		  sw x1, 4*0 (sp)
 		  sw x2, 4*1 (sp)
@@ -44,6 +43,8 @@ c_begin:
 		  sw x31,4*30(sp)
 		  csrr a0,mcause
 		  csrr a1,mepc
+		  li t0 ,0x8000000B /*external interrupt*/
+1:		  bne a0,t0,1b /*spin forever*/
 		  jal handle_interrupt
 		  csrw mepc,a0
 		  lw x1, 4*0 (sp)
@@ -77,10 +78,9 @@ c_begin:
 		  lw x29,4*28(sp)
 		  lw x30,4*29(sp)
 		  lw x31,4*30(sp)
-		  addi sp,sp,-(4*32)
+		  addi sp,sp,(4*32)
 		  mret
-
-1:
+c_begin:
 		  la sp, ( data_begin + 2048)
 		  jal main
 		  mv x28 , a0

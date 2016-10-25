@@ -17,6 +17,14 @@
          type = "int";
       }
    }
+   element interrrupt_gen_0
+   {
+      datum _sortIndex
+      {
+         value = "4";
+         type = "int";
+      }
+   }
    element onchip_memory2_0
    {
       datum _sortIndex
@@ -57,6 +65,78 @@
       {
          value = "1";
          type = "boolean";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
       }
    }
    element system_avalon
@@ -237,7 +317,7 @@
    }
 }
 ]]></parameter>
- <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
+ <parameter name="clockCrossingAdapter" value="AUTO" />
  <parameter name="device" value="Unknown" />
  <parameter name="deviceFamily" value="Cyclone IV E" />
  <parameter name="deviceSpeedGrade" value="Unknown" />
@@ -248,7 +328,7 @@
  <parameter name="hdlLanguage" value="VERILOG" />
  <parameter name="hideFromIPCatalog" value="false" />
  <parameter name="lockedInterfaceDefinition" value="" />
- <parameter name="maxAdditionalLatency" value="0" />
+ <parameter name="maxAdditionalLatency" value="1" />
  <parameter name="projectName" value="" />
  <parameter name="sopcBorderPoints" value="false" />
  <parameter name="systemHash" value="0" />
@@ -259,6 +339,11 @@
  <module name="clock_gen_0" kind="clock_gen" version="1.0" enabled="1">
   <parameter name="CLK_MHZ" value="1000" />
  </module>
+ <module
+   name="interrrupt_gen_0"
+   kind="interrrupt_gen"
+   version="1.0"
+   enabled="1" />
  <module
    name="onchip_memory2_0"
    kind="altera_avalon_onchip_memory2"
@@ -307,16 +392,24 @@
   <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DIVIDE_ENABLE" value="1" />
   <parameter name="ENABLE_EXCEPTIONS" value="1" />
+  <parameter name="EXT_INTERRUPTS" value="1" />
   <parameter name="LVE_ENABLE" value="1" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
-  <parameter name="NUM_EXT_INTERRUPTS" value="2" />
   <parameter name="PIPELINE_STAGES" value="5" />
-  <parameter name="PLIC_ENABLE" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="512" />
   <parameter name="SCRATCHPAD_SIZE" value="1024" />
   <parameter name="SHIFTER_MAX_CYCLES" value="32" />
  </module>
+ <connection
+   kind="avalon"
+   version="15.1"
+   start="vectorblox_orca_0.data"
+   end="interrrupt_gen_0.s0">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x01000000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
  <connection
    kind="avalon"
    version="15.1"
@@ -356,6 +449,22 @@
    start="clock_gen_0.clock"
    end="vectorblox_orca_0.clock" />
  <connection
+   kind="clock"
+   version="15.1"
+   start="clock_gen_0.clock"
+   end="interrrupt_gen_0.clock" />
+ <connection
+   kind="conduit"
+   version="15.1"
+   start="interrrupt_gen_0.interrupt_out"
+   end="vectorblox_orca_0.global_interrupts">
+  <parameter name="endPort" value="" />
+  <parameter name="endPortLSB" value="0" />
+  <parameter name="startPort" value="" />
+  <parameter name="startPortLSB" value="0" />
+  <parameter name="width" value="0" />
+ </connection>
+ <connection
    kind="reset"
    version="15.1"
    start="reset_source_0.reset"
@@ -364,8 +473,13 @@
    kind="reset"
    version="15.1"
    start="reset_source_0.reset"
+   end="interrrupt_gen_0.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="reset_source_0.reset"
    end="onchip_memory2_0.reset1" />
- <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
+ <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="AUTO" />
  <interconnectRequirement for="$system" name="qsys_mm.insertDefaultSlave" value="FALSE" />
- <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="0" />
+ <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
 </system>

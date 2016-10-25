@@ -54,40 +54,40 @@ add_fileset_file test_components/interrupt_generator.vhd VHDL PATH interrupt_gen
 
 
 #
-# connection point avalon_slave_0
+# connection point s0
 #
-add_interface avalon_slave_0 avalon end
-set_interface_property avalon_slave_0 addressUnits WORDS
-set_interface_property avalon_slave_0 associatedClock clock
-set_interface_property avalon_slave_0 associatedReset reset
-set_interface_property avalon_slave_0 bitsPerSymbol 8
-set_interface_property avalon_slave_0 burstOnBurstBoundariesOnly false
-set_interface_property avalon_slave_0 burstcountUnits WORDS
-set_interface_property avalon_slave_0 explicitAddressSpan 0
-set_interface_property avalon_slave_0 holdTime 0
-set_interface_property avalon_slave_0 linewrapBursts false
-set_interface_property avalon_slave_0 maximumPendingReadTransactions 0
-set_interface_property avalon_slave_0 maximumPendingWriteTransactions 0
-set_interface_property avalon_slave_0 readLatency 0
-set_interface_property avalon_slave_0 readWaitTime 1
-set_interface_property avalon_slave_0 setupTime 0
-set_interface_property avalon_slave_0 timingUnits Cycles
-set_interface_property avalon_slave_0 writeWaitTime 0
-set_interface_property avalon_slave_0 ENABLED true
-set_interface_property avalon_slave_0 EXPORT_OF ""
-set_interface_property avalon_slave_0 PORT_NAME_MAP ""
-set_interface_property avalon_slave_0 CMSIS_SVD_VARIABLES ""
-set_interface_property avalon_slave_0 SVD_ADDRESS_GROUP ""
+add_interface s0 avalon end
+set_interface_property s0 addressUnits WORDS
+set_interface_property s0 associatedClock clock
+set_interface_property s0 associatedReset reset
+set_interface_property s0 bitsPerSymbol 8
+set_interface_property s0 burstOnBurstBoundariesOnly false
+set_interface_property s0 burstcountUnits WORDS
+set_interface_property s0 explicitAddressSpan 0
+set_interface_property s0 holdTime 0
+set_interface_property s0 linewrapBursts false
+set_interface_property s0 maximumPendingReadTransactions 0
+set_interface_property s0 maximumPendingWriteTransactions 0
+set_interface_property s0 readLatency 0
+set_interface_property s0 readWaitTime 1
+set_interface_property s0 setupTime 0
+set_interface_property s0 timingUnits Cycles
+set_interface_property s0 writeWaitTime 0
+set_interface_property s0 ENABLED true
+set_interface_property s0 EXPORT_OF ""
+set_interface_property s0 PORT_NAME_MAP ""
+set_interface_property s0 CMSIS_SVD_VARIABLES ""
+set_interface_property s0 SVD_ADDRESS_GROUP ""
 
-add_interface_port avalon_slave_0 address address Input 2
-add_interface_port avalon_slave_0 chipselect chipselect Input 1
-add_interface_port avalon_slave_0 write write Input 1
-add_interface_port avalon_slave_0 writedata writedata Input 32
-add_interface_port avalon_slave_0 waitrequest waitrequest Output 1
-set_interface_assignment avalon_slave_0 embeddedsw.configuration.isFlash 0
-set_interface_assignment avalon_slave_0 embeddedsw.configuration.isMemoryDevice 0
-set_interface_assignment avalon_slave_0 embeddedsw.configuration.isNonVolatileStorage 0
-set_interface_assignment avalon_slave_0 embeddedsw.configuration.isPrintableDevice 0
+add_interface_port s0 address address Input 2
+add_interface_port s0 chipselect chipselect Input 1
+add_interface_port s0 write write Input 1
+add_interface_port s0 writedata writedata Input 32
+add_interface_port s0 waitrequest waitrequest Output 1
+set_interface_assignment s0 embeddedsw.configuration.isFlash 0
+set_interface_assignment s0 embeddedsw.configuration.isMemoryDevice 0
+set_interface_assignment s0 embeddedsw.configuration.isNonVolatileStorage 0
+set_interface_assignment s0 embeddedsw.configuration.isPrintableDevice 0
 
 
 #

@@ -178,7 +178,7 @@ begin  -- architecture rtl
 
   pc_out          <= std_logic_vector(program_counter);
   instr_out       <= read_data when valid_instr_out_saved = '0' else instr_out_saved;
-  valid_instr_out <= (read_datavalid or valid_instr_out_saved) and not (suppress_valid_instr_out or pc_corr_en);
+  valid_instr_out <= (read_datavalid or valid_instr_out_saved) and not (suppress_valid_instr_out or pc_corr_en or interrupt_pending);
 
 
   next_address <= pc_corr when pc_corr_en = '1' and move_to_next_address else

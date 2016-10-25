@@ -19,9 +19,9 @@ entity arithmetic_unit is
 
   port (
     clk                : in  std_logic;
+    valid_instr        : in  std_logic;
     stall_to_alu       : in  std_logic;
     stall_from_execute : in  std_logic;
-    valid_instr        : in  std_logic;
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -194,12 +194,15 @@ begin  -- architecture rtl
       mul_src_valid     => mul_src_valid
       );
 
-  data_in1     <= lve_data1        when lve_source_valid = '1' else rs1_data;
-  data_in2     <= lve_data2        when lve_source_valid = '1' else rs2_data;
-  source_valid <= lve_source_valid when opcode = LVE_OP        else (not stall_to_alu);
-  func7_shift <= func7 ="0000000" or func7="0100000";
-  sh_enable <= valid_instr and source_valid when ((opcode = ALU_OP and func7_shift) or (opcode = ALUI_OP) or (opcode = LVE_OP and lve_source_valid = '1')) and (func3 = "001" or func3 = "101") else '0';
-  sh_stall  <= (not shifted_result_valid)   when sh_enable = '1'                                                                                                                               else '0';
+  data_in1 <= lve_data1 when lve_source_valid = '1' else rs1_data;
+  data_in2 <= lve_data2 when lve_source_valid = '1' else rs2_data;
+
+  source_valid <= lve_source_valid when opcode = LVE_OP else
+                  not stall_to_alu and valid_instr;
+
+  func7_shift <= func7 = "0000000" or func7 = "0100000";
+  sh_enable   <= valid_instr and source_valid when ((opcode = ALU_OP and func7_shift) or (opcode = ALUI_OP) or (opcode = LVE_OP and lve_source_valid = '1')) and (func3 = "001" or func3 = "101") else '0';
+  sh_stall    <= (not shifted_result_valid)   when sh_enable = '1'                                                                                                                                else '0';
 
   SH_GEN0 : if SHIFTER_USE_MULTIPLIER generate
     process(clk) is
@@ -416,7 +419,7 @@ begin  -- architecture rtl
         -- then we want to flush the valid signals
         -- Another way of phrasing this is that unless we have an LVE instruction we only want
         -- mul_dest_valid to be high for one cycle
-        if stall_from_execute = '0' or (opcode /= LVE_OP and mul_dest_valid='1') then
+        if stall_from_execute = '0' or (opcode /= LVE_OP and mul_dest_valid = '1') then
 
           mul_ab_valid   <= '0';
           mul_dest_valid <= '0';
@@ -757,15 +760,15 @@ entity divider is
 end entity;
 
 architecture rtl of divider is
-  type div_state is (IDLE, DIVIDING,DONE);
+  type div_state is (IDLE, DIVIDING, DONE);
   signal state       : div_state;
   signal count       : natural range REGISTER_SIZE-1 downto 0;
   signal numerator   : unsigned(REGISTER_SIZE-1 downto 0);
   signal denominator : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal div_neg_op1      : std_logic;
-  signal div_neg_op2      : std_logic;
-  signal div_neg_quotient : std_logic;
+  signal div_neg_op1       : std_logic;
+  signal div_neg_op2       : std_logic;
+  signal div_neg_quotient  : std_logic;
   signal div_neg_remainder : std_logic;
 
   signal div_zero     : boolean;
@@ -804,7 +807,7 @@ begin  -- architecture rtl
       if div_enable = '1' then
         case state is
           when IDLE =>
-            div_neg_quotient   <= div_neg_op2 xor div_neg_op1;
+            div_neg_quotient  <= div_neg_op2 xor div_neg_op1;
             div_neg_remainder <= div_neg_op1;
             D                 := denominator;
             N                 := numerator;
@@ -851,5 +854,5 @@ begin  -- architecture rtl
   end process;
 
   remainder <= rem_res when div_neg_remainder = '0' else unsigned(-signed(rem_res));
-  quotient  <= div_res when div_neg_quotient = '0'   else unsigned(-signed(div_res));
+  quotient  <= div_res when div_neg_quotient = '0'  else unsigned(-signed(div_res));
 end architecture rtl;

@@ -15,6 +15,7 @@ architecture rtl of instruction_legal is
   alias opcode7 is instruction(6 downto 0);
   alias func3 is instruction(INSTR_FUNC3'range);
   alias func7 is instruction(31 downto 25);
+  alias csr_num is instruction(SYSTEM_MINOR_OP'range);
 begin
 
   legal <=
@@ -30,7 +31,7 @@ begin
                                         --shift amountes
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
               (opcode7 = FENCE_OP) or   --all fence ops are treated as legal
-              opcode7 = SYSTEM_OP or
+              (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /=SYSTEM_EBREAK) or
               opcode7 = LVE_OP) else '0';
 
 end architecture;
@@ -66,9 +67,9 @@ entity system_calls is
 
     -- To the Instruction Fetch Stage
     interrupt_pending   : buffer std_logic;
-    external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    external_interrupts : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     -- Signals when an interrupt may proceed.
-    pipeline_empty      : in  std_logic;
+    pipeline_empty      : in     std_logic;
 
     -- These signals are used to tell the interrupt handler which instruction
     -- to return to upon exit. They are sourced from the instruction fetch
@@ -182,8 +183,6 @@ begin  -- architecture rtl
     mtimeh          when CSR_MTIMEH,
     (others => '0') when others;
 
-  wb_data <= csr_read_val;
-
   bit_sel <= rs1_data;
 
   with func3 select
@@ -198,6 +197,7 @@ begin  -- architecture rtl
   begin
     if rising_edge(clk) then
       wb_enable   <= '0';
+      wb_data <=  csr_read_val;
       pc_add_4    <= std_logic_vector(unsigned(current_pc) + 4);
       was_mret    <= '0';
       was_fence_i <= '0';
@@ -262,7 +262,9 @@ begin  -- architecture rtl
       elsif interrupt_processor = '1' and ENABLE_EXCEPTIONS then
         mstatus(CSR_MSTATUS_MIE)  <= '0';
         mstatus(CSR_MSTATUS_MPIE) <= '1';
-        mepc                      <= current_pc;
+        mcause(mcause'left)       <= '1';
+        mcause(3 downto 0)        <= std_logic_vector(to_unsigned(11, 4));
+        mepc                      <= instruction_fetch_pc;
       end if;
       if reset = '1' then
 
@@ -311,7 +313,7 @@ begin  -- architecture rtl
 
   pc_correction <= pc_add_4 when was_fence_i = '1' else
                    std_logic_vector(to_unsigned(RESET_VECTOR, pc_correction'length)) when was_illegal = '1' or interrupt_processor = '1' else
-                   mepc                                                                     when was_mret = '1' else
+                   mepc                                                              when was_mret = '1' else
                    (others => '-');
 
 
