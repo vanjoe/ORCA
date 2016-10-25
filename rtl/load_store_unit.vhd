@@ -2,13 +2,13 @@ library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.NUMERIC_STD.all;
 library work;
+use work.constants_pkg.all;
 
 
 entity load_store_unit is
   generic (
     REGISTER_SIZE       : integer;
-    SIGN_EXTENSION_SIZE : integer;
-    INSTRUCTION_SIZE    : integer);
+    SIGN_EXTENSION_SIZE : integer);
 
   port (
     clk            : in     std_logic;

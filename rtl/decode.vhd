@@ -8,8 +8,6 @@ use work.constants_pkg.all;
 entity decode is
   generic(
     REGISTER_SIZE       : positive;
-    REGISTER_NAME_SIZE  : positive;
-    INSTRUCTION_SIZE    : positive;
     SIGN_EXTENSION_SIZE : positive;
     PIPELINE_STAGES     : natural range 1 to 2);
   port(

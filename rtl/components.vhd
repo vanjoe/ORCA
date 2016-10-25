@@ -4,6 +4,7 @@ use IEEE.NUMERIC_STD.all;
 
 library work;
 use work.utils.all;
+use work.constants_pkg.all;
 
 package rv_components is
 
@@ -207,8 +208,6 @@ package rv_components is
   component decode is
     generic(
       REGISTER_SIZE       : positive;
-      REGISTER_NAME_SIZE  : positive;
-      INSTRUCTION_SIZE    : positive;
       SIGN_EXTENSION_SIZE : positive;
       PIPELINE_STAGES     : natural range 1 to 2);
     port(
@@ -243,8 +242,6 @@ package rv_components is
   component execute is
     generic(
       REGISTER_SIZE       : positive;
-      REGISTER_NAME_SIZE  : positive;
-      INSTRUCTION_SIZE    : positive;
       SIGN_EXTENSION_SIZE : positive;
       RESET_VECTOR        : integer;
       MULTIPLY_ENABLE     : boolean;
@@ -252,7 +249,6 @@ package rv_components is
       SHIFTER_MAX_CYCLES  : natural;
       COUNTER_LENGTH      : natural;
       ENABLE_EXCEPTIONS   : boolean;
-      LVE_ENABLE          : boolean;
       SCRATCHPAD_SIZE     : integer;
       FAMILY              : string);
     port(
@@ -299,7 +295,6 @@ package rv_components is
   component instruction_fetch is
     generic (
       REGISTER_SIZE     : positive;
-      INSTRUCTION_SIZE  : positive;
       RESET_VECTOR      : integer;
       BRANCH_PREDICTORS : natural);
     port (
@@ -325,7 +320,6 @@ package rv_components is
 
   component arithmetic_unit is
     generic (
-      INSTRUCTION_SIZE    : integer;
       REGISTER_SIZE       : integer;
       SIGN_EXTENSION_SIZE : integer;
       MULTIPLY_ENABLE     : boolean;
@@ -356,7 +350,6 @@ package rv_components is
   component branch_unit is
     generic (
       REGISTER_SIZE       : integer;
-      INSTRUCTION_SIZE    : integer;
       SIGN_EXTENSION_SIZE : integer);
     port (
       clk            : in  std_logic;
@@ -382,8 +375,7 @@ package rv_components is
   component load_store_unit is
     generic (
       REGISTER_SIZE       : integer;
-      SIGN_EXTENSION_SIZE : integer;
-      INSTRUCTION_SIZE    : integer);
+      SIGN_EXTENSION_SIZE : integer);
     port (
       clk            : in     std_logic;
       reset          : in     std_logic;
@@ -427,8 +419,7 @@ package rv_components is
 
   component upper_immediate is
     generic (
-      REGISTER_SIZE    : positive;
-      INSTRUCTION_SIZE : positive);
+      REGISTER_SIZE    : positive);
     port (
       clk         : in  std_logic;
       valid       : in  std_logic;
@@ -441,7 +432,6 @@ package rv_components is
   component system_calls is
     generic (
       REGISTER_SIZE     : natural;
-      INSTRUCTION_SIZE  : natural;
       RESET_VECTOR      : integer;
       COUNTER_LENGTH    : natural;
       ENABLE_EXCEPTIONS : boolean);
@@ -473,7 +463,6 @@ package rv_components is
   component lve_top is
     generic(
       REGISTER_SIZE    : natural;
-      INSTRUCTION_SIZE : natural;
       SLAVE_DATA_WIDTH : natural;
       SCRATCHPAD_SIZE  : integer;
       FAMILY           : string);

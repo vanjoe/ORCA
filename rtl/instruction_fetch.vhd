@@ -5,12 +5,11 @@ use IEEE.NUMERIC_STD.all;
 library work;
 use work.rv_components.all;
 use work.utils.all;
-
+use work.constants_pkg.all;
 
 entity instruction_fetch is
   generic (
     REGISTER_SIZE     : positive;
-    INSTRUCTION_SIZE  : positive;
     RESET_VECTOR      : integer;
     BRANCH_PREDICTORS : natural);
   port (

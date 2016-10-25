@@ -14,8 +14,6 @@ use STD.textio.all;                     -- basic I/O
 entity execute is
   generic(
     REGISTER_SIZE       : positive;
-    REGISTER_NAME_SIZE  : positive;
-    INSTRUCTION_SIZE    : positive;
     SIGN_EXTENSION_SIZE : positive;
     RESET_VECTOR        : integer;
     MULTIPLY_ENABLE     : boolean;
@@ -23,9 +21,8 @@ entity execute is
     SHIFTER_MAX_CYCLES  : natural;
     COUNTER_LENGTH      : natural;
     ENABLE_EXCEPTIONS   : boolean;
-    LVE_ENABLE          : boolean;
-    SCRATCHPAD_SIZE     : integer := 1024;
-    FAMILY              : string  := "ALTERA");
+    SCRATCHPAD_SIZE     : integer;
+    FAMILY              : string);
   port(
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
@@ -157,9 +154,11 @@ architecture behavioural of execute is
   alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
 
   constant SP_ADDRESS : unsigned(REGISTER_SIZE-1 downto 0) := x"80000000";
+  constant LVE_ENABLE : boolean := SCRATCHPAD_SIZE /= 0;
 
   signal use_after_produce_stall      : std_logic;
   signal use_after_produce_stall_mask : std_logic;
+
 
 
 begin
@@ -275,7 +274,6 @@ begin
 
   alu : component arithmetic_unit
     generic map (
-      INSTRUCTION_SIZE    => INSTRUCTION_SIZE,
       REGISTER_SIZE       => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
       MULTIPLY_ENABLE     => MULTIPLY_ENABLE,
@@ -306,7 +304,6 @@ begin
   branch : entity work.branch_unit(latch_middle)
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
-      INSTRUCTION_SIZE    => INSTRUCTION_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE)
     port map(
       clk            => clk,
@@ -330,8 +327,7 @@ begin
   ls_unit : component load_store_unit
     generic map(
       REGISTER_SIZE       => REGISTER_SIZE,
-      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
-      INSTRUCTION_SIZE    => INSTRUCTION_SIZE)
+      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE)
     port map(
       clk            => clk,
       reset          => reset,
@@ -358,7 +354,6 @@ begin
   syscall : component system_calls
     generic map (
       REGISTER_SIZE     => REGISTER_SIZE,
-      INSTRUCTION_SIZE  => INSTRUCTION_SIZE,
       RESET_VECTOR      => RESET_VECTOR,
       ENABLE_EXCEPTIONS => ENABLE_EXCEPTIONS,
       COUNTER_LENGTH    => COUNTER_LENGTH)
@@ -395,7 +390,6 @@ begin
     lve : component lve_top
       generic map (
         REGISTER_SIZE    => REGISTER_SIZE,
-        INSTRUCTION_SIZE => INSTRUCTION_SIZE,
         SCRATCHPAD_SIZE  => SCRATCHPAD_SIZE,
         SLAVE_DATA_WIDTH => REGISTER_SIZE,
         FAMILY           => FAMILY)
@@ -479,6 +473,12 @@ begin
                                     br_taken_out,     --taken
                                     predict_corr_en,  --flush
                                     is_branch);       --is_branch
+
+
+  -----------------------------------------------------------------------------
+  -- This process does some debug printing during simulation,
+  -- it should have no impact on synthesis
+  -----------------------------------------------------------------------------
 --pragma translate_off
   my_print : process(clk)
     variable my_line          : line;   -- type 'line' comes from textio

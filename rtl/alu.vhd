@@ -4,12 +4,11 @@ use IEEE.NUMERIC_STD.all;
 library work;
 use work.utils.all;
 use work.constants_pkg.all;
-
+use work.constants_pkg.all;
 --use IEEE.std_logic_arith.all;
 
 entity arithmetic_unit is
   generic (
-    INSTRUCTION_SIZE    : integer;
     REGISTER_SIZE       : integer;
     SIGN_EXTENSION_SIZE : integer;
     MULTIPLY_ENABLE     : boolean;

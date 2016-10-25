@@ -9,7 +9,6 @@ entity branch_unit is
 
   generic (
     REGISTER_SIZE       : integer;
-    INSTRUCTION_SIZE    : integer;
     SIGN_EXTENSION_SIZE : integer);
 
   port (

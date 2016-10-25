@@ -4,6 +4,7 @@ use IEEE.NUMERIC_STD.all;
 library work;
 use work.rv_components.all;
 use work.utils.all;
+use work.constants_pkg.all;
 
 entity orca_core is
 
@@ -17,8 +18,8 @@ entity orca_core is
     ENABLE_EXCEPTIONS  : natural;
     BRANCH_PREDICTORS  : natural;
     PIPELINE_STAGES    : natural range 4 to 5;
-    LVE_ENABLE         : natural range 0 to 1;
     NUM_EXT_INTERRUPTS : integer range 0 to 32;
+    LVE_ENABLE         : natural range 0 to 1;
     SCRATCHPAD_SIZE    : integer;
     FAMILY             : string);
 
@@ -47,8 +48,6 @@ entity orca_core is
 end entity Orca_core;
 
 architecture rtl of orca_core is
-  constant REGISTER_NAME_SIZE  : integer := 5;
-  constant INSTRUCTION_SIZE    : integer := 32;
   constant SIGN_EXTENSION_SIZE : integer := 20;
 
   --signals going into fetch
@@ -97,8 +96,8 @@ architecture rtl of orca_core is
   signal instr_readvalid : std_logic;
 
   -- Interrupt lines
-  signal e_interrupt_pending    : std_logic;
-  signal ext_int_resized : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal e_interrupt_pending : std_logic;
+  signal ext_int_resized     : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal branch_pred_to_instr_fetch : std_logic_vector(REGISTER_SIZE*2 + 3-1 downto 0);
 
@@ -113,7 +112,6 @@ begin  -- architecture rtl
   instr_fetch : component instruction_fetch
     generic map (
       REGISTER_SIZE     => REGISTER_SIZE,
-      INSTRUCTION_SIZE  => INSTRUCTION_SIZE,
       RESET_VECTOR      => RESET_VECTOR,
       BRANCH_PREDICTORS => BRANCH_PREDICTORS)
     port map (
@@ -139,8 +137,6 @@ begin  -- architecture rtl
   D : component decode
     generic map(
       REGISTER_SIZE       => REGISTER_SIZE,
-      REGISTER_NAME_SIZE  => REGISTER_NAME_SIZE,
-      INSTRUCTION_SIZE    => INSTRUCTION_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
       PIPELINE_STAGES     => PIPELINE_STAGES-3)
     port map(
@@ -173,8 +169,6 @@ begin  -- architecture rtl
   X : component execute
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
-      REGISTER_NAME_SIZE  => REGISTER_NAME_SIZE,
-      INSTRUCTION_SIZE    => INSTRUCTION_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
       RESET_VECTOR        => RESET_VECTOR,
       MULTIPLY_ENABLE     => MULTIPLY_ENABLE = 1,
@@ -182,8 +176,7 @@ begin  -- architecture rtl
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
       COUNTER_LENGTH      => COUNTER_LENGTH,
       ENABLE_EXCEPTIONS   => ENABLE_EXCEPTIONS = 1,
-      LVE_ENABLE          => LVE_ENABLE = 1,
-      SCRATCHPAD_SIZE     => SCRATCHPAD_SIZE,
+      SCRATCHPAD_SIZE     => CONDITIONAL(LVE_ENABLE = 1, SCRATCHPAD_SIZE, 0),
       FAMILY              => FAMILY)
     port map (
       clk                => clk,
@@ -215,11 +208,11 @@ begin  -- architecture rtl
       data_ack  => e_data_ack,
 
       -- Interrupt lines
-      external_interrupts =>ext_int_resized,
+      external_interrupts => ext_int_resized,
       pipeline_empty      => decode_flushed,
       interrupt_pending   => e_interrupt_pending);
 
-  ext_int_resized <= std_logic_vector(RESIZE(unsigned(external_interrupts),ext_int_resized'length));
+  ext_int_resized <= std_logic_vector(RESIZE(unsigned(external_interrupts), ext_int_resized'length));
 
   core_data_address    <= data_address;
   core_data_byteenable <= data_byte_en;

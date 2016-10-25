@@ -45,7 +45,6 @@ entity system_calls is
 
   generic (
     REGISTER_SIZE     : natural;
-    INSTRUCTION_SIZE  : natural;
     RESET_VECTOR      : integer;
     ENABLE_EXCEPTIONS : boolean := true;
     COUNTER_LENGTH    : natural);
