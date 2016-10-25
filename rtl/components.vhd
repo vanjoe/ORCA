@@ -23,8 +23,7 @@ package rv_components is
       BRANCH_PREDICTORS  : natural               := 0;
       PIPELINE_STAGES    : natural range 4 to 5  := 5;
       LVE_ENABLE         : natural range 0 to 1  := 0;
-      PLIC_ENABLE        : natural range 0 to 1  := 0;
-      NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
+      NUM_EXT_INTERRUPTS : integer range 0 to 32 := 0;
       SCRATCHPAD_SIZE    : integer               := 1024;
       FAMILY             : string                := "ALTERA");
     port(
@@ -166,20 +165,19 @@ package rv_components is
   end component orca;
   component orca_core is
     generic (
-      REGISTER_SIZE      : integer               := 32;
-      RESET_VECTOR       : integer               := 16#00000200#;
-      MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
-      DIVIDE_ENABLE      : natural range 0 to 1  := 0;
-      SHIFTER_MAX_CYCLES : natural               := 1;
-      COUNTER_LENGTH     : natural               := 0;
-      ENABLE_EXCEPTIONS  : natural               := 1;
-      BRANCH_PREDICTORS  : natural               := 0;
-      PIPELINE_STAGES    : natural range 4 to 5  := 5;
-      LVE_ENABLE         : natural range 0 to 1  := 0;
-      PLIC_ENABLE        : natural range 0 to 1  := 0;
-      NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
-      SCRATCHPAD_SIZE    : integer               := 1024;
-      FAMILY             : string                := "ALTERA");
+      REGISTER_SIZE      : integer;
+      RESET_VECTOR       : integer;
+      MULTIPLY_ENABLE    : natural range 0 to 1;
+      DIVIDE_ENABLE      : natural range 0 to 1;
+      SHIFTER_MAX_CYCLES : natural;
+      COUNTER_LENGTH     : natural;
+      ENABLE_EXCEPTIONS  : natural;
+      BRANCH_PREDICTORS  : natural;
+      PIPELINE_STAGES    : natural range 4 to 5;
+      LVE_ENABLE         : natural range 0 to 1;
+      NUM_EXT_INTERRUPTS : integer range 0 to 32;
+      SCRATCHPAD_SIZE    : integer;
+      FAMILY             : string);
 
     port(clk            : in std_logic;
          scratchpad_clk : in std_logic;
@@ -303,11 +301,11 @@ package rv_components is
       RESET_VECTOR      : integer;
       BRANCH_PREDICTORS : natural);
     port (
-      clk   : in std_logic;
-      reset : in std_logic;
+      clk                : in std_logic;
+      reset              : in std_logic;
       downstream_stalled : in std_logic;
-      interrupt_pending : in std_logic;
-      branch_pred : in std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
+      interrupt_pending  : in std_logic;
+      branch_pred        : in std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
 
       instr_out   : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       pc_out      : out    std_logic_vector(REGISTER_SIZE-1 downto 0);

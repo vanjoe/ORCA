@@ -13,19 +13,19 @@ entity Orca is
     WISHBONE_ENABLE : integer range 0 to 1 := 0;
     AXI_ENABLE      : integer range 0 to 1 := 0;
 
-    RESET_VECTOR       : integer               := 16#00000200#;
-    MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
-    DIVIDE_ENABLE      : natural range 0 to 1  := 0;
-    SHIFTER_MAX_CYCLES : natural               := 1;
-    COUNTER_LENGTH     : natural               := 0;
-    ENABLE_EXCEPTIONS  : natural               := 1;
-    BRANCH_PREDICTORS  : natural               := 0;
-    PIPELINE_STAGES    : natural range 4 to 5  := 5;
-    LVE_ENABLE         : natural range 0 to 1  := 0;
-    PLIC_ENABLE        : natural range 0 to 1  := 0;
-    NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
-    SCRATCHPAD_SIZE    : integer               := 1024;
-    FAMILY             : string                := "ALTERA");
+    RESET_VECTOR          : integer               := 16#00000200#;
+    MULTIPLY_ENABLE       : natural range 0 to 1  := 0;
+    DIVIDE_ENABLE         : natural range 0 to 1  := 0;
+    SHIFTER_MAX_CYCLES    : natural               := 1;
+    COUNTER_LENGTH        : natural               := 0;
+    ENABLE_EXCEPTIONS     : natural               := 1;
+    BRANCH_PREDICTORS     : natural               := 0;
+    PIPELINE_STAGES       : natural range 4 to 5  := 5;
+    LVE_ENABLE            : natural range 0 to 1  := 0;
+    ENABLE_EXT_INTERRUPTS : natural range 0 to 1  := 0;
+    NUM_EXT_INTERRUPTS    : integer range 1 to 32 := 1;
+    SCRATCHPAD_SIZE       : integer               := 1024;
+    FAMILY                : string                := "ALTERA");
 
   port(clk            : in std_logic;
        scratchpad_clk : in std_logic;
@@ -413,8 +413,7 @@ begin  -- architecture rtl
       BRANCH_PREDICTORS  => BRANCH_PREDICTORS,
       PIPELINE_STAGES    => PIPELINE_STAGES,
       LVE_ENABLE         => LVE_ENABLE,
-      PLIC_ENABLE        => PLIC_ENABLE,
-      NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS,
+      NUM_EXT_INTERRUPTS => CONDITIONAL(ENABLE_EXT_INTERRUPTS>0,NUM_EXT_INTERRUPTS,0),
       SCRATCHPAD_SIZE    => SCRATCHPAD_SIZE,
       FAMILY             => FAMILY)
 
@@ -438,7 +437,7 @@ begin  -- architecture rtl
       core_instruction_waitrequest   => core_instruction_waitrequest,
       core_instruction_readdatavalid => core_instruction_readdatavalid,
 
-      global_interrupts => global_interrupts);
+      global_interrupts => global_interrupts(CONDITIONAL(ENABLE_EXT_INTERRUPTS>0,NUM_EXT_INTERRUPTS,0)-1 downto 0));
 
 
 

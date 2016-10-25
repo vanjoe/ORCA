@@ -8,20 +8,19 @@ use work.utils.all;
 entity orca_core is
 
   generic (
-    REGISTER_SIZE      : integer               := 32;
-    RESET_VECTOR       : integer               := 16#00000200#;
-    MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
-    DIVIDE_ENABLE      : natural range 0 to 1  := 0;
-    SHIFTER_MAX_CYCLES : natural               := 1;
-    COUNTER_LENGTH     : natural               := 0;
-    ENABLE_EXCEPTIONS  : natural               := 1;
-    BRANCH_PREDICTORS  : natural               := 0;
-    PIPELINE_STAGES    : natural range 4 to 5  := 5;
-    LVE_ENABLE         : natural range 0 to 1  := 0;
-    PLIC_ENABLE        : natural range 0 to 1  := 0;
-    NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
-    SCRATCHPAD_SIZE    : integer               := 1024;
-    FAMILY             : string                := "ALTERA");
+    REGISTER_SIZE      : integer;
+    RESET_VECTOR       : integer;
+    MULTIPLY_ENABLE    : natural range 0 to 1;
+    DIVIDE_ENABLE      : natural range 0 to 1;
+    SHIFTER_MAX_CYCLES : natural;
+    COUNTER_LENGTH     : natural;
+    ENABLE_EXCEPTIONS  : natural;
+    BRANCH_PREDICTORS  : natural;
+    PIPELINE_STAGES    : natural range 4 to 5;
+    LVE_ENABLE         : natural range 0 to 1;
+    NUM_EXT_INTERRUPTS : integer range 0 to 32;
+    SCRATCHPAD_SIZE    : integer;
+    FAMILY             : string);
 
   port(clk            : in std_logic;
        scratchpad_clk : in std_logic;
@@ -136,7 +135,7 @@ begin  -- architecture rtl
       clk                => clk,
       reset              => reset,
       downstream_stalled => execute_stalled,
-      interrupt_pending => e_interrupt_pending,
+      interrupt_pending  => e_interrupt_pending,
       branch_pred        => branch_pred_to_instr_fetch,
 
       instr_out       => d_instr,
@@ -238,6 +237,14 @@ begin  -- architecture rtl
   external_interrupts_32 <= std_logic_vector(to_unsigned(0, REGISTER_SIZE-NUM_EXT_INTERRUPTS))
                             & global_interrupts;
 
+  core_data_address    <= data_address;
+  core_data_byteenable <= data_byte_en;
+  core_data_read       <= data_read_en;
+  core_data_write      <= data_write_en;
+  core_data_writedata  <= data_write_data;
+
+  data_read_data <= core_data_readdata;
+  e_data_ack     <= core_data_ack;
 
   core_instruction_address <= instr_address;
   core_instruction_read    <= instr_read_en;

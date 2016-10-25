@@ -170,6 +170,24 @@ set_parameter_property ENABLE_EXCEPTIONS ALLOWED_RANGES 0:1
 set_parameter_property ENABLE_EXCEPTIONS HDL_PARAMETER true
 set_display_item_property ENABLE_EXCEPTIONS DISPLAY_HINT boolean
 
+add_parameter          EXT_INTERRUPTS integer 1
+set_parameter_property EXT_INTERRUPTS HDL_PARAMETER false
+set_parameter_property EXT_INTERRUPTS DISPLAY_NAME "       External Interruptes"
+set_parameter_property EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
+set_parameter_property EXT_INTERRUPTS ALLOWED_RANGES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,32}
+
+add_parameter          NUM_EXT_INTERRUPTS integer 1
+set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
+set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES 1:32
+set_parameter_property NUM_EXT_INTERRUPTS visible false
+set_parameter_property NUM_EXT_INTERRUPTS derived true
+
+add_parameter          ENABLE_EXT_INTERRUPTS natural 1
+set_parameter_property ENABLE_EXT_INTERRUPTS HDL_PARAMETER true
+set_parameter_property ENABLE_EXT_INTERRUPTS ALLOWED_RANGES 0:1
+set_parameter_property ENABLE_EXT_INTERRUPTS visible false
+set_parameter_property ENABLE_EXT_INTERRUPTS derived true
+
 
 add_parameter COUNTER_LENGTH natural 64
 set_parameter_property COUNTER_LENGTH DISPLAY_NAME "Counters Register Size"
@@ -207,19 +225,6 @@ set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipelin
 but 4 stages has a higher fmax"
 set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
 
-add_parameter          PLIC_ENABLE natural 0
-set_parameter_property PLIC_ENABLE ALLOWED_RANGES 0:1
-set_parameter_property PLIC_ENABLE HDL_PARAMETER true
-set_parameter_property PLIC_ENABLE DISPLAY_NAME "Enable Plic"
-set_parameter_property PLIC_ENABLE DESCRIPTION "Whether or not the Platform Level Interrupt Controller (PLIC) is enabled."
-set_display_item_property PLIC_ENABLE DISPLAY_HINT boolean
-
-
-add_parameter          NUM_EXT_INTERRUPTS integer 2
-set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
-set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "       External Interruptes"
-set_parameter_property NUM_EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
-set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31}
 
 
 #
@@ -519,12 +524,23 @@ proc elaboration_callback {} {
 	  set_parameter_property BTB_SIZE visible false
 	 }
 
-	 if { [get_parameter_value PLIC_ENABLE] } {
-		  set_parameter_property NUM_EXT_INTERRUPTS visible true
-		  set_interface_property global_interrupts enabled true
+	 if { [get_parameter_value ENABLE_EXCEPTIONS] } {
+		  set_parameter_property EXT_INTERRUPTS visible true
+		  if { [ get_parameter_value EXT_INTERRUPTS ] > 0 } {
+				set_interface_property global_interrupts enabled true
+				set_parameter_value ENABLE_EXT_INTERRUPTS 1
+				set_parameter_value NUM_EXT_INTERRUPTS [ get_parameter_value EXT_INTERRUPTS ]
+
+	     } else {
+				set_interface_property global_interrupts enabled false
+				set_parameter_value ENABLE_EXT_INTERRUPTS 0
+				set_parameter_value NUM_EXT_INTERRUPTS 1
+		  }
 	 } else {
-		  set_parameter_property NUM_EXT_INTERRUPTS visible false
+		  set_parameter_property EXT_INTERRUPTS visible false
 		  set_interface_property global_interrupts enabled false
+		  set_parameter_value ENABLE_EXT_INTERRUPTS 0
+		  set_parameter_value NUM_EXT_INTERRUPTS 1
 	 }
 	 set count 0
 	 for {set i 0} {$i<32} {incr i} {

@@ -141,7 +141,7 @@ begin
     rs1 <= instruction(19 downto 15) when stall = '0' else instr_out(19 downto 15);
     rs2 <= instruction(24 downto 20) when stall = '0' else instr_out(24 downto 20);
 
-
+    decode_flushed <=  not valid_input;
     decode_stage : process (clk, reset) is
     begin  -- process decode_stage
       if rising_edge(clk) then          -- rising clock edge

@@ -310,7 +310,7 @@ begin  -- architecture rtl
   pc_corr_en <= was_fence_i or was_mret or was_illegal or interrupt_processor;
 
   pc_correction <= pc_add_4 when was_fence_i = '1' else
-                   std_logic_vector(to_unsigned(RESET_VECTOR-16#10#, pc_correction'length)) when was_illegal = '1' or interrupt_processor = '1' else
+                   std_logic_vector(to_unsigned(RESET_VECTOR, pc_correction'length)) when was_illegal = '1' or interrupt_processor = '1' else
                    mepc                                                                     when was_mret = '1' else
                    (others => '-');
 
