@@ -215,7 +215,11 @@ begin  -- architecture rtl
           is_writing          <= core_data_write;
           write_ack           <= is_writing;
         end if;
+        if reset = '1' then
+          avm_data_read       <= '0';
+          avm_data_write      <= '0';
 
+        end if;
       end if;
     end process;
 
@@ -437,7 +441,7 @@ begin  -- architecture rtl
       core_instruction_waitrequest   => core_instruction_waitrequest,
       core_instruction_readdatavalid => core_instruction_readdatavalid,
 
-      global_interrupts => global_interrupts(CONDITIONAL(ENABLE_EXT_INTERRUPTS>0,NUM_EXT_INTERRUPTS,0)-1 downto 0));
+      external_interrupts => global_interrupts(CONDITIONAL(ENABLE_EXT_INTERRUPTS>0,NUM_EXT_INTERRUPTS,0)-1 downto 0));
 
 
 

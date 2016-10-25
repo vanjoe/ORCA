@@ -41,7 +41,7 @@ entity orca_core is
        core_instruction_waitrequest   : in  std_logic                                  := '0';
        core_instruction_readdatavalid : in  std_logic                                  := '0';
 
-       global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
+       external_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
        );
 
 end entity Orca_core;
@@ -96,31 +96,16 @@ architecture rtl of orca_core is
   signal instr_read_en   : std_logic;
   signal instr_readvalid : std_logic;
 
-  -- Data splitter signals
-  signal data_sel      : std_logic;
-  signal data_sel_prev : std_logic;
-
-  -- Reserved register bus lines
-  signal plic_address       : std_logic_vector(7 downto 0);
-  signal plic_byteenable    : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-  signal plic_read          : std_logic;
-  signal plic_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal plic_response      : std_logic_vector(1 downto 0);
-  signal plic_write         : std_logic;
-  signal plic_writedata     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal plic_lock          : std_logic;
-  signal plic_readdatavalid : std_logic;
-
-
-
   -- Interrupt lines
-  signal external_interrupts_32 : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal e_interrupt_pending    : std_logic;
+  signal ext_int_resized : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal branch_pred_to_instr_fetch : std_logic_vector(REGISTER_SIZE*2 + 3-1 downto 0);
 
   signal decode_flushed : std_logic;
   signal ifetch_next_pc : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+
 begin  -- architecture rtl
   pipeline_flush <= branch_get_flush(branch_pred_to_instr_fetch);
 
@@ -230,12 +215,11 @@ begin  -- architecture rtl
       data_ack  => e_data_ack,
 
       -- Interrupt lines
-      external_interrupts => external_interrupts_32,
+      external_interrupts =>ext_int_resized,
       pipeline_empty      => decode_flushed,
       interrupt_pending   => e_interrupt_pending);
 
-  external_interrupts_32 <= std_logic_vector(to_unsigned(0, REGISTER_SIZE-NUM_EXT_INTERRUPTS))
-                            & global_interrupts;
+  ext_int_resized <= std_logic_vector(RESIZE(unsigned(external_interrupts),ext_int_resized'length));
 
   core_data_address    <= data_address;
   core_data_byteenable <= data_byte_en;

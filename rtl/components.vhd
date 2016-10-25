@@ -6,6 +6,7 @@ library work;
 use work.utils.all;
 
 package rv_components is
+
   component orca is
     generic (
       REGISTER_SIZE   : integer              := 32;
@@ -163,6 +164,7 @@ package rv_components is
       global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
       );
   end component orca;
+
   component orca_core is
     generic (
       REGISTER_SIZE      : integer;
@@ -178,28 +180,28 @@ package rv_components is
       NUM_EXT_INTERRUPTS : integer range 0 to 32;
       SCRATCHPAD_SIZE    : integer;
       FAMILY             : string);
+    port(
+      clk            : in std_logic;
+      scratchpad_clk : in std_logic;
+      reset          : in std_logic;
 
-    port(clk            : in std_logic;
-         scratchpad_clk : in std_logic;
-         reset          : in std_logic;
+      --avalon master bus
+      core_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      core_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      core_data_read                 : out std_logic;
+      core_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
+      core_data_write                : out std_logic;
+      core_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      core_data_ack                  : in  std_logic                                  := '0';
+      --avalon master bus
+      core_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      core_instruction_read          : out std_logic;
+      core_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
+      core_instruction_waitrequest   : in  std_logic                                  := '0';
+      core_instruction_readdatavalid : in  std_logic                                  := '0';
 
-         --avalon master bus
-         core_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-         core_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-         core_data_read                 : out std_logic;
-         core_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
-         core_data_write                : out std_logic;
-         core_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-         core_data_ack                  : in  std_logic                                  := '0';
-         --avalon master bus
-         core_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-         core_instruction_read          : out std_logic;
-         core_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
-         core_instruction_waitrequest   : in  std_logic                                  := '0';
-         core_instruction_readdatavalid : in  std_logic                                  := '0';
-
-         global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
-         );
+      external_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
+      );
   end component orca_core;
 
   component decode is
@@ -405,89 +407,6 @@ package rv_components is
       ack            : in     std_logic);
   end component load_store_unit;
 
-  component true_dual_port_ram_single_clock is
-    generic (
-      DATA_WIDTH : natural := 8;
-      ADDR_WIDTH : natural := 6
-      );
-    port (
-      clk    : in  std_logic;
-      addr_a : in  natural range 0 to 2**ADDR_WIDTH - 1;
-      addr_b : in  natural range 0 to 2**ADDR_WIDTH - 1;
-      data_a : in  std_logic_vector((DATA_WIDTH-1) downto 0);
-      data_b : in  std_logic_vector((DATA_WIDTH-1) downto 0);
-      we_a   : in  std_logic := '1';
-      we_b   : in  std_logic := '1';
-      q_a    : out std_logic_vector((DATA_WIDTH -1) downto 0);
-      q_b    : out std_logic_vector((DATA_WIDTH -1) downto 0)
-      );
-  end component true_dual_port_ram_single_clock;
-
-  component byte_enabled_true_dual_port_ram is
-    generic (
-      BYTES      : natural := 4;
-      ADDR_WIDTH : natural);
-    port (
-      clk    : in  std_logic;
-      addr1  : in  natural range 0 to 2**ADDR_WIDTH-1;
-      addr2  : in  natural range 0 to 2**ADDR_WIDTH-1;
-      wdata1 : in  std_logic_vector(BYTES*8-1 downto 0);
-      wdata2 : in  std_logic_vector(BYTES*8-1 downto 0);
-      we1    : in  std_logic;
-      be1    : in  std_logic_vector(BYTES-1 downto 0);
-      we2    : in  std_logic;
-      be2    : in  std_logic_vector(BYTES-1 downto 0);
-      rdata1 : out std_logic_vector(BYTES*8-1 downto 0);
-      rdata2 : out std_logic_vector(BYTES*8-1 downto 0)
-      );
-  end component byte_enabled_true_dual_port_ram;
-
-  component instruction_rom is
-    generic (
-      REGISTER_SIZE : integer;
-      ROM_SIZE      : integer;
-      PORTS         : natural range 1 to 2);
-    port (
-      clk        : in std_logic;
-      instr_addr : in natural range 0 to ROM_SIZE -1;
-      data_addr  : in natural range 0 to ROM_SIZE -1;
-      instr_re   : in std_logic;
-      data_re    : in std_logic;
-
-      data_out        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instr_out       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instr_wait      : out std_logic;
-      data_wait       : out std_logic;
-      instr_readvalid : out std_logic;
-      data_readvalid  : out std_logic);
-  end component instruction_rom;
-
-  component single_port_rom is
-    generic (
-      DATA_WIDTH : natural := 8;
-      ADDR_WIDTH : natural := 8
-      );
-    port (
-      clk  : in  std_logic;
-      addr : in  natural range 0 to 2**ADDR_WIDTH - 1;
-      q    : out std_logic_vector((DATA_WIDTH -1) downto 0)
-      );
-  end component single_port_rom;
-
-  component dual_port_rom is
-    generic (
-      DATA_WIDTH : natural := 8;
-      ADDR_WIDTH : natural := 8
-      );
-    port (
-      clk    : in  std_logic;
-      addr_a : in  natural range 0 to 2**ADDR_WIDTH - 1;
-      addr_b : in  natural range 0 to 2**ADDR_WIDTH - 1;
-      q_a    : out std_logic_vector((DATA_WIDTH -1) downto 0);
-      q_b    : out std_logic_vector((DATA_WIDTH -1) downto 0)
-      );
-  end component dual_port_rom;
-
   component register_file
     generic(
       REGISTER_SIZE      : positive;
@@ -506,44 +425,6 @@ package rv_components is
       rs2_data : out std_logic_vector(REGISTER_SIZE -1 downto 0)
       );
   end component register_file;
-
-  component pc_incr is
-    generic (
-      REGISTER_SIZE    : positive;
-      INSTRUCTION_SIZE : positive);
-    port (
-      pc          : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instr       : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      valid_instr : in  std_logic;
-      next_pc     : out std_logic_vector(REGISTER_SIZE-1 downto 0)
-      );
-  end component pc_incr;
-
-  component wait_cycle_bram is
-    generic (
-      BYTES       : natural;
-      ADDR_WIDTH  : natural;
-      WAIT_STATES : natural);
-    port (
-      clk    : in std_logic;
-      addr1  : in natural range 0 to 2**ADDR_WIDTH-1;
-      addr2  : in natural range 0 to 2**ADDR_WIDTH-1;
-      wdata1 : in std_logic_vector(BYTES*8-1 downto 0);
-      wdata2 : in std_logic_vector(BYTES*8-1 downto 0);
-      re1    : in std_logic;
-      re2    : in std_logic;
-      we1    : in std_logic;
-      be1    : in std_logic_vector(BYTES-1 downto 0);
-      we2    : in std_logic;
-      be2    : in std_logic_vector(BYTES-1 downto 0);
-
-      rdata1     : out std_logic_vector(BYTES*8-1 downto 0);
-      rdata2     : out std_logic_vector(BYTES*8-1 downto 0);
-      wait1      : out std_logic;
-      wait2      : out std_logic;
-      readvalid1 : out std_logic;
-      readvalid2 : out std_logic);
-  end component wait_cycle_bram;
 
   component upper_immediate is
     generic (
@@ -623,46 +504,5 @@ package rv_components is
       lve_result_valid : in     std_logic
       );
   end component;
-
-
-  component plic is
-    generic (
-      REGISTER_SIZE      : integer;
-      NUM_EXT_INTERRUPTS : integer range 2 to 32);
-    port (
-      mtime_o    : out std_logic_vector(63 downto 0);
-      mip_mtip_o : out std_logic;
-      mip_msip_o : out std_logic;
-      mip_meip_o : out std_logic;
-
-      global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
-
-      -- Avalon bus
-      clk                : in  std_logic;
-      reset              : in  std_logic;
-      plic_address       : in  std_logic_vector(7 downto 0);
-      plic_byteenable    : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      plic_read          : in  std_logic;
-      plic_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      plic_response      : out std_logic_vector(1 downto 0);
-      plic_write         : in  std_logic;
-      plic_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      plic_lock          : in  std_logic;
-      plic_readdatavalid : out std_logic);
-  end component plic;
-
-  component gateway is
-    generic (
-      NUM_EXT_INTERRUPTS : natural range 2 to 32 := 2);
-    port (
-      clk                   : in  std_logic;
-      reset                 : in  std_logic;
-      global_interrupts     : in  std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
-      edge_sensitive_vector : in  std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
-      interrupt_claimed     : in  std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
-      interrupt_complete    : in  std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
-      pending_interrupts    : out std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0)
-      );
-  end component gateway;
 
 end package rv_components;

@@ -48,8 +48,6 @@ add_fileset_file vblox_orca/register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file vblox_orca/orca.vhd VHDL PATH orca.vhd TOP_LEVEL_FILE
 add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd TOP_LEVEL_FILE
 add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file vblox_orca/plic.vhd VHDL PATH plic.vhd
-add_fileset_file vblox_orca/gateway.vhd VHDL PATH gateway.vhd
 add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
 add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
 
@@ -70,8 +68,6 @@ add_fileset_file vblox_orca/register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file vblox_orca/orca.vhd VHDL PATH orca.vhd
 add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd
 add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file vblox_orca/plic.vhd VHDL PATH plic.vhd
-add_fileset_file vblox_orca/gateway.vhd VHDL PATH gateway.vhd
 add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
 add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
 
