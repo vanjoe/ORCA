@@ -147,7 +147,6 @@ architecture behavioural of execute is
 
   signal finished_instr : std_logic;
 
-  signal illegal_alu_instr : std_logic;
 
   signal entire_pipeline_empty : std_logic;
   signal is_branch             : std_logic;
@@ -295,7 +294,6 @@ begin
       program_counter    => pc_current,
       data_out           => alu_data_out,
       data_out_valid     => alu_data_out_valid,
-      illegal_alu_instr  => illegal_alu_instr,
       less_than          => less_than,
       stall_from_alu     => stall_from_alu,
 

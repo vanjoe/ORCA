@@ -29,7 +29,6 @@ entity arithmetic_unit is
     program_counter    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_out_valid     : out std_logic;
-    illegal_alu_instr  : out std_logic;
     less_than          : out std_logic;
     stall_from_alu     : out std_logic;
 
@@ -466,12 +465,6 @@ begin  -- architecture rtl
   end generate;
 
   stall_from_alu <= div_stall or mul_stall or sh_stall;
-
-  illegal_alu_instr <= '0' when (instruction(31 downto 25) = "0000000" or
-                                 (instruction(31 downto 25) = "0100000" and (instruction(14 downto 12) = "000" or
-                                                                             instruction(14 downto 12) = "101")) or
-                                 (instruction(31 downto 25) = "0000001" and MULTIPLY_ENABLE and (instruction(14) = '0' or DIVIDE_ENABLE)))or                                 opcode /= ALU_OP
-                       else '1';
 end architecture;
 
 -------------------------------------------------------------------------------

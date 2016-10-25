@@ -344,7 +344,6 @@ package rv_components is
       program_counter    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       data_out_valid     : out std_logic;
-      illegal_alu_instr  : out std_logic;
       less_than          : out std_logic;
       stall_from_alu     : out std_logic;
 
