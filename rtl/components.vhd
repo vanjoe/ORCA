@@ -235,6 +235,7 @@ package rv_components is
       pc_curr_out    : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       instr_out      : buffer std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       subseq_instr   : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      subseq_valid   : out    std_logic;
       valid_output   : out    std_logic;
       decode_flushed : out    std_logic);
   end component decode;
@@ -261,6 +262,7 @@ package rv_components is
       pc_current   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       instruction  : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       subseq_instr : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      subseq_valid : in std_logic;
 
       rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -419,7 +421,7 @@ package rv_components is
 
   component upper_immediate is
     generic (
-      REGISTER_SIZE    : positive);
+      REGISTER_SIZE : positive);
     port (
       clk         : in  std_logic;
       valid       : in  std_logic;

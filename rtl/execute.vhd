@@ -33,6 +33,7 @@ entity execute is
     pc_current   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction  : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     subseq_instr : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    subseq_valid : in std_logic;
 
     rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -154,12 +155,12 @@ architecture behavioural of execute is
   alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
 
   constant SP_ADDRESS : unsigned(REGISTER_SIZE-1 downto 0) := x"80000000";
-  constant LVE_ENABLE : boolean := SCRATCHPAD_SIZE /= 0;
+  constant LVE_ENABLE : boolean                            := SCRATCHPAD_SIZE /= 0;
 
   signal use_after_produce_stall      : std_logic;
   signal use_after_produce_stall_mask : std_logic;
 
-
+  signal stalled_component : std_logic;
 
 begin
   valid_instr <= valid_input and not use_after_produce_stall;
@@ -217,11 +218,14 @@ begin
               alu_data_out when alu_data_out_valid = '1' else
               br_data_out;
 
-  use_after_produce_stall <= wb_enable and valid_input and use_after_produce_stall_mask;
-  stall_to_lve            <= (ls_unit_waiting or use_after_produce_stall) and valid_input;
-  stall_to_alu            <= (ls_unit_waiting or use_after_produce_stall) and valid_input;
-  stall_from_execute      <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
-  stall_to_lsu            <= (ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve) and valid_input;
+  --use_after_produce_stall <= wb_enable and valid_input and use_after_produce_stall_mask;
+
+  stalled_component  <= ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve;
+  stall_to_lve       <= (ls_unit_waiting or use_after_produce_stall);
+  stall_to_alu       <= (ls_unit_waiting or use_after_produce_stall);
+  stall_from_execute <= stalled_component and valid_input;
+  stall_to_lsu       <= stalled_component;
+
 
   --TODO clean this up.
   -- There was a bug here that valid output would not go high if a load was followed
@@ -231,6 +235,7 @@ begin
 
   process(clk)
     variable current_alu  : boolean;
+    variable no_fwd_path  : boolean;
     variable rs1_mux_var  : fwd_mux_t;
     variable rs2_mux_var  : fwd_mux_t;
     variable rd_latch_var : std_logic_vector(rd'range);
@@ -246,7 +251,7 @@ begin
 
       rs1_mux_var := NO_FWD;
       rs2_mux_var := NO_FWD;
-      if (current_alu) and valid_instr = '1' and stall_from_execute = '0' then
+      if (current_alu) and valid_instr = '1' and stalled_component = '0' then
         if rd = ni_rs1 and rd /= ZERO then
           rs1_mux_var := ALU_FWD;
         end if;
@@ -254,16 +259,37 @@ begin
           rs2_mux_var := ALU_FWD;
         end if;
       end if;
+
       rd_latch_var := rd_latch;
-      if stall_from_execute = '0' then
+      if (ls_unit_waiting or stall_from_alu) = '0' then
         rd_latch_var := rd;
+        --load, csr_read, jal[r] are the only instructions that writeback but
+        --don't forward. Of these only csr_read and loads don't flush the
+        --pipeline so these are the ones we concern ourselves with here.
+        no_fwd_path  := opcode = LOAD_OP or opcode = SYSTEM_OP;
       end if;
 
-      if ((rd_latch_var = ni_rs1 and rs1_mux_var = NO_FWD) or (rd_latch_var = ni_rs2 and rs2_mux_var = NO_FWD)) then
-        use_after_produce_stall_mask <= '1';
+
+      --generate use after produce stall
+
+      -- 1. normally it is low
+      -- 2. if it was previously set, and a stall is happening in system
+      --    (impossible ) or loadstore it should stay high
+      -- 3. if there next instruction depends on this instruction and there is
+      -- no forward path it shoud go high
+      -- 4. if it was high, and wb_enable is high, it should go low
+
+      use_after_produce_stall <= '0';
+      if use_after_produce_stall = '1' and ls_unit_waiting = '1' then
+        use_after_produce_stall <= '1';
       end if;
-      if use_after_produce_stall = '1' and wb_enable = '1' then
-        use_after_produce_stall_mask <= '0';
+
+      if ((rd_latch_var = ni_rs1 or rd_latch_var = ni_rs2) and
+          rd_latch_var /= ZERO and
+          subseq_valid = '1' and
+          no_fwd_path and
+          (use_after_produce_stall = '0' or wb_enable = '0'))then
+        use_after_produce_stall <= '1';
       end if;
 
       rd_latch <= rd_latch_var;
@@ -309,7 +335,7 @@ begin
       clk            => clk,
       reset          => reset,
       valid          => valid_instr,
-      stall          => stall_from_execute,
+      stall          => stalled_component,
       rs1_data       => rs1_data_fwd,
       rs2_data       => rs2_data_fwd,
       current_pc     => pc_current,

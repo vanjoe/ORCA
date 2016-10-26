@@ -67,6 +67,7 @@ architecture rtl of orca_core is
   --signals going into execute
   signal e_instr        : std_logic_vector(INSTRUCTION_SIZE -1 downto 0);
   signal e_subseq_instr : std_logic_vector(INSTRUCTION_SIZE -1 downto 0);
+  signal e_subseq_valid : std_logic;
   signal e_pc           : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal e_br_taken     : std_logic;
   signal e_valid        : std_logic;
@@ -162,6 +163,7 @@ begin  -- architecture rtl
       pc_curr_out    => e_pc,
       instr_out      => e_instr,
       subseq_instr   => e_subseq_instr,
+      subseq_valid   => e_subseq_valid,
       valid_output   => d_valid_out,
       decode_flushed => decode_flushed);
 
@@ -187,6 +189,7 @@ begin  -- architecture rtl
       pc_current         => e_pc,
       instruction        => e_instr,
       subseq_instr       => e_subseq_instr,
+      subseq_valid       => e_subseq_valid,
       rs1_data           => rs1_data,
       rs2_data           => rs2_data,
       sign_extension     => sign_extension,

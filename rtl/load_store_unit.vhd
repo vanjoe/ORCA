@@ -82,8 +82,8 @@ begin
   write_instr <= opcode = STORE_INSTR and valid = '1';
   read_instr  <= opcode = LOAD_INSTR and valid = '1';
 
-  write_en <= '1' when write_instr and stall_to_lsu = '0' else '0';
-  read_en  <= '1' when read_instr and stall_to_lsu = '0'  else '0';
+  write_en <= valid when write_instr and stall_to_lsu = '0' else '0';
+  read_en  <= valid when read_instr and stall_to_lsu = '0'  else '0';
 
   imm <= instruction(31 downto 25) & instruction(11 downto 7) when instruction(5) = '1'
          else instruction(31 downto 20);

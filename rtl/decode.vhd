@@ -35,6 +35,7 @@ entity decode is
     pc_curr_out    : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     instr_out      : buffer std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     subseq_instr   : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    subseq_valid   : out    std_logic;
     valid_output   : out    std_logic;
     decode_flushed : out    std_logic);
 end;
@@ -129,9 +130,9 @@ begin
       end if;
     end process decode_stage;
     subseq_instr <= instr_latch;
-
-    rs1_data <= outreg1;
-    rs2_data <= outreg2;
+    subseq_valid <= valid_latch;
+    rs1_data     <= outreg1;
+    rs2_data     <= outreg2;
   end generate two_cycle;
 
 
@@ -139,7 +140,7 @@ begin
     rs1 <= instruction(19 downto 15) when stall = '0' else instr_out(19 downto 15);
     rs2 <= instruction(24 downto 20) when stall = '0' else instr_out(24 downto 20);
 
-    decode_flushed <=  not valid_input;
+    decode_flushed <= not valid_input;
     decode_stage : process (clk, reset) is
     begin  -- process decode_stage
       if rising_edge(clk) then          -- rising clock edge
@@ -160,6 +161,7 @@ begin
       end if;
     end process decode_stage;
     subseq_instr <= instruction;
+    subseq_valid <= valid_input;
     rs1_data     <= rs1_reg;
     rs2_data     <= rs2_reg;
   end generate one_cycle;
