@@ -216,8 +216,8 @@ begin  -- architecture rtl
           write_ack           <= is_writing;
         end if;
         if reset = '1' then
-          avm_data_read       <= '0';
-          avm_data_write      <= '0';
+          avm_data_read  <= '0';
+          avm_data_write <= '0';
 
         end if;
       end if;
@@ -277,7 +277,7 @@ begin  -- architecture rtl
     signal write_ack               : std_logic;
     signal core_instruction_stall4 : std_logic;
 
-    type state_t is (IDLE, WRITE_ADDR, WRITE_DATA, READING);
+    type state_t is (IDLE, WRITE_ADDR, WRITE_DATA);
     signal state : state_t;
   begin
 
@@ -292,13 +292,13 @@ begin  -- architecture rtl
     data_AWLOCK      <= (others => '0');
     data_AWCACHE     <= (others => '0');
     data_AWPROT      <= (others => '0');
-    data_AWVALID     <= core_data_write when (state = IDLE or state = WRITE_ADDR) else '0';
+    data_AWVALID     <= core_data_write when (state /= WRITE_DATA) else '0';
     core_data_stall1 <= not data_AWREADY;
     data_WID         <= (others => '0');
     data_WDATA       <= core_data_writedata;
     data_WSTRB       <= core_data_byteenable;
     data_WLAST       <= '1';
-    data_WVALID      <= core_data_write when (state = IDLE or state = WRITE_DATA) else '0';
+    data_WVALID      <= core_data_write when (state /= WRITE_ADDR) else '0';
     core_data_stall2 <= data_WREADY;
     --data_BID
     --data_BRESP
@@ -337,10 +337,6 @@ begin  -- architecture rtl
               elsif (not data_AWREADY and data_WREADY) = '1' then
                 state <= WRITE_ADDR;
               end if;
-            elsif core_data_read = '1' then
-              if data_ARREADY = '1' then
-                state <= READING;
-              end if;
             end if;
           when WRITE_ADDR =>
             if data_AWREADY = '1' then
@@ -352,11 +348,6 @@ begin  -- architecture rtl
               state     <= IDLE;
               write_ack <= '1';
             end if;
-          when READING =>
-            if data_RVALID = '1' then
-              state <= IDLE;
-            end if;
-
           when others => null;
         end case;
         if reset = '1' then
@@ -365,7 +356,7 @@ begin  -- architecture rtl
       end if;
     end process;
 
-                                        --Instruction read port
+    --Instruction read port
 
     instr_ARID                     <= (others => '0');
     instr_ARADDR                   <= core_instruction_address;
@@ -417,7 +408,7 @@ begin  -- architecture rtl
       BRANCH_PREDICTORS  => BRANCH_PREDICTORS,
       PIPELINE_STAGES    => PIPELINE_STAGES,
       LVE_ENABLE         => LVE_ENABLE,
-      NUM_EXT_INTERRUPTS => CONDITIONAL(ENABLE_EXT_INTERRUPTS>0,NUM_EXT_INTERRUPTS,0),
+      NUM_EXT_INTERRUPTS => CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0),
       SCRATCHPAD_SIZE    => SCRATCHPAD_SIZE,
       FAMILY             => FAMILY)
 
@@ -441,7 +432,7 @@ begin  -- architecture rtl
       core_instruction_waitrequest   => core_instruction_waitrequest,
       core_instruction_readdatavalid => core_instruction_readdatavalid,
 
-      external_interrupts => global_interrupts(CONDITIONAL(ENABLE_EXT_INTERRUPTS>0,NUM_EXT_INTERRUPTS,0)-1 downto 0));
+      external_interrupts => global_interrupts(CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0)-1 downto 0));
 
 
 
