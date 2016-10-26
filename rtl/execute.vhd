@@ -269,15 +269,17 @@ begin
         no_fwd_path  := opcode = LOAD_OP or opcode = SYSTEM_OP;
       end if;
 
-
-      --generate use after produce stall
-
+      -------------------------------------------------------------------------------
+      -- Generate use after produce stall
+      --
       -- 1. normally it is low
-      -- 2. if it was previously set, and a stall is happening in system
-      --    (impossible ) or loadstore it should stay high
+      -- 2. if it was previously set, and a stall is happening in syscall
+      --        (impossible ) or loadstore it should stay high
       -- 3. if there next instruction depends on this instruction and there is
-      -- no forward path it shoud go high
-      -- 4. if it was high, and wb_enable is high, it should go low
+      --       no forward path it shoud go high unless it high and wb_enable is
+      --       high
+      -------------------------------------------------------------------------------
+
 
       use_after_produce_stall <= '0';
       if use_after_produce_stall = '1' and ls_unit_waiting = '1' then
@@ -288,7 +290,7 @@ begin
           rd_latch_var /= ZERO and
           subseq_valid = '1' and
           no_fwd_path and
-          (use_after_produce_stall = '0' or wb_enable = '0'))then
+          not (use_after_produce_stall = '1' and wb_enable = '1'))then
         use_after_produce_stall <= '1';
       end if;
 
