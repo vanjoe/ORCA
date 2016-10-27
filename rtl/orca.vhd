@@ -195,32 +195,37 @@ begin  -- architecture rtl
   -----------------------------------------------------------------------------
   avalon_enabled : if AVALON_ENABLE = 1 generate
     signal is_writing : std_logic;
+    signal is_reading : std_logic;
     signal write_ack  : std_logic;
 
   begin
     core_data_readdata <= avm_data_readdata;
 
-    core_data_ack <= avm_data_readdatavalid or write_ack;
+    core_data_ack  <= avm_data_readdatavalid or write_ack;
+    avm_data_write <= is_writing;
+    avm_data_read  <= is_reading;
     process(clk)
 
     begin
       if rising_edge(clk) then
-        write_ack <= '0';
-        if avm_data_waitrequest = '0' then
-          avm_data_address    <= core_data_address;
-          avm_data_byteenable <= core_data_byteenable;
-          avm_data_read       <= core_data_read;
-          avm_data_write      <= core_data_write;
-          avm_data_writedata  <= core_data_writedata;
-          is_writing          <= core_data_write;
-          write_ack           <= is_writing;
-        end if;
-        if reset = '1' then
-          avm_data_read  <= '0';
-          avm_data_write <= '0';
 
+
+        if (is_writing or is_reading) = '1' and avm_data_waitrequest = '1' then
+
+        else
+          is_reading          <= core_data_read;
+          avm_data_address    <= core_data_address;
+          is_writing          <= core_data_write;
+          avm_data_writedata  <= core_data_writedata;
+          avm_data_byteenable <= core_data_byteenable;
+        end if;
+
+        write_ack <= '0';
+        if is_writing = '1' and avm_data_waitrequest = '0' then
+          write_ack <= '1';
         end if;
       end if;
+
     end process;
 
     avm_instruction_address        <= core_instruction_address;
