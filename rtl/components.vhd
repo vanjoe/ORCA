@@ -441,6 +441,7 @@ package rv_components is
       clk         : in std_logic;
       reset       : in std_logic;
       valid       : in std_logic;
+      stall_in    : in std_logic;
       rs1_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 

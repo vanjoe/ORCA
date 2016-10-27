@@ -77,6 +77,7 @@ architecture behavioural of execute is
   signal predict_corr    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal predict_corr_en : std_logic;
 
+  signal stall_to_syscall : std_logic;
 
   signal ls_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal ls_byte_en    : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
@@ -225,7 +226,7 @@ begin
   stall_to_alu       <= (ls_unit_waiting or use_after_produce_stall);
   stall_from_execute <= stalled_component and valid_input;
   stall_to_lsu       <= stalled_component;
-
+  stall_to_syscall   <= stalled_component;
 
   --TODO clean this up.
   -- There was a bug here that valid output would not go high if a load was followed
@@ -278,6 +279,9 @@ begin
       -- 3. if there next instruction depends on this instruction and there is
       --       no forward path it shoud go high unless it high and wb_enable is
       --       high
+      --
+      --  Note this looks pretty complex, but it compiles down to about 20
+      --  LUTs (on a CYCLONEIV)
       -------------------------------------------------------------------------------
 
 
@@ -389,6 +393,9 @@ begin
       clk         => clk,
       reset       => reset,
       valid       => valid_instr,
+
+      stall_in => stall_to_syscall,
+
       rs1_data    => rs1_data_fwd,
       instruction => instruction,
       wb_data     => sys_data_out,

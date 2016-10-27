@@ -31,7 +31,7 @@ begin
                                         --shift amountes
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
               (opcode7 = FENCE_OP) or   --all fence ops are treated as legal
-              (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /=SYSTEM_EBREAK) or
+              (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /= SYSTEM_EBREAK) or
               opcode7 = LVE_OP) else '0';
 
 end architecture;
@@ -53,6 +53,7 @@ entity system_calls is
     clk         : in std_logic;
     reset       : in std_logic;
     valid       : in std_logic;
+    stall_in    : in std_logic;
     rs1_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
@@ -196,7 +197,7 @@ begin  -- architecture rtl
   begin
     if rising_edge(clk) then
       wb_enable   <= '0';
-      wb_data <=  csr_read_val;
+      wb_data     <= csr_read_val;
       pc_add_4    <= std_logic_vector(unsigned(current_pc) + 4);
       was_mret    <= '0';
       was_fence_i <= '0';
@@ -211,7 +212,7 @@ begin  -- architecture rtl
           mcause                    <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, mcause'length));
           mepc                      <= current_pc;
           was_illegal               <= '1';
-        elsif instruction(MAJOR_OP'range) = SYSTEM_OP then
+        elsif instruction(MAJOR_OP'range) = SYSTEM_OP  and stall_in = '0' then
           if func3 /= "000" then
             ---------------------------------------------------------------------
             -- CSR READ/WRITE
