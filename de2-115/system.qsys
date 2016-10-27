@@ -7,7 +7,7 @@
    description=""
    tags=""
    categories="System" />
- <parameter name="bonusData"><![CDATA[bonusData
+ <parameter name="bonusData"><![CDATA[bonusData 
 {
    element clk_0
    {
@@ -21,7 +21,7 @@
    {
       datum _sortIndex
       {
-         value = "5";
+         value = "6";
          type = "int";
       }
    }
@@ -42,7 +42,7 @@
    {
       datum _sortIndex
       {
-         value = "6";
+         value = "7";
          type = "int";
       }
    }
@@ -63,7 +63,7 @@
    {
       datum _sortIndex
       {
-         value = "7";
+         value = "8";
          type = "int";
       }
    }
@@ -84,7 +84,7 @@
    {
       datum _sortIndex
       {
-         value = "8";
+         value = "9";
          type = "int";
       }
    }
@@ -105,7 +105,7 @@
    {
       datum _sortIndex
       {
-         value = "9";
+         value = "10";
          type = "int";
       }
    }
@@ -126,7 +126,7 @@
    {
       datum _sortIndex
       {
-         value = "3";
+         value = "4";
          type = "int";
       }
    }
@@ -147,7 +147,7 @@
    {
       datum _sortIndex
       {
-         value = "4";
+         value = "5";
          type = "int";
       }
    }
@@ -164,19 +164,11 @@
          type = "String";
       }
    }
-   element long_load_store_0
-   {
-      datum _sortIndex
-      {
-         value = "12";
-         type = "int";
-      }
-   }
    element mm_bridge_0
    {
       datum _sortIndex
       {
-         value = "10";
+         value = "3";
          type = "int";
       }
    }
@@ -224,43 +216,6 @@
       datum baseAddress
       {
          value = "16777216";
-         type = "String";
-      }
-   }
-   element pipeline_counter_0
-   {
-      datum _sortIndex
-      {
-         value = "13";
-         type = "int";
-      }
-   }
-   element pipeline_counter_0.counter
-   {
-      datum _lockedAddress
-      {
-         value = "0";
-         type = "boolean";
-      }
-      datum baseAddress
-      {
-         value = "768";
-         type = "String";
-      }
-   }
-   element read_pipeline_0
-   {
-      datum _sortIndex
-      {
-         value = "11";
-         type = "int";
-      }
-   }
-   element read_pipeline_0.master_in
-   {
-      datum baseAddress
-      {
-         value = "512";
          type = "String";
       }
    }
@@ -558,13 +513,6 @@
   <parameter name="width" value="32" />
  </module>
  <module
-   name="long_load_store_0"
-   kind="long_load_store"
-   version="1.0"
-   enabled="1">
-  <parameter name="REGISTER_SIZE" value="32" />
- </module>
- <module
    name="mm_bridge_0"
    kind="altera_avalon_mm_bridge"
    version="15.1"
@@ -580,8 +528,8 @@
   <parameter name="PIPELINE_COMMAND" value="0" />
   <parameter name="PIPELINE_RESPONSE" value="0" />
   <parameter name="SYMBOL_WIDTH" value="8" />
-  <parameter name="SYSINFO_ADDR_WIDTH" value="10" />
-  <parameter name="USE_AUTO_ADDRESS_WIDTH" value="0" />
+  <parameter name="SYSINFO_ADDR_WIDTH" value="7" />
+  <parameter name="USE_AUTO_ADDRESS_WIDTH" value="1" />
   <parameter name="USE_RESPONSE" value="0" />
  </module>
  <module
@@ -614,17 +562,6 @@
   <parameter name="writable" value="true" />
  </module>
  <module
-   name="pipeline_counter_0"
-   kind="pipeline_counter"
-   version="1.0"
-   enabled="1">
-  <parameter name="REGISTER_SIZE" value="32" />
- </module>
- <module name="read_pipeline_0" kind="read_pipeline" version="1.0" enabled="1">
-  <parameter name="MAX_PIPELINE" value="7" />
-  <parameter name="REGISTER_SIZE" value="32" />
- </module>
- <module
    name="vectorblox_orca_0"
    kind="vectorblox_orca"
    version="1.0"
@@ -632,14 +569,13 @@
   <parameter name="BRANCH_PREDICTION" value="false" />
   <parameter name="BTB_SIZE" value="0" />
   <parameter name="BUS_TYPE" value="Avalon" />
-  <parameter name="COUNTER_LENGTH" value="0" />
+  <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DIVIDE_ENABLE" value="0" />
   <parameter name="ENABLE_EXCEPTIONS" value="1" />
+  <parameter name="EXT_INTERRUPTS" value="0" />
   <parameter name="LVE_ENABLE" value="0" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
-  <parameter name="NUM_EXT_INTERRUPTS" value="2" />
   <parameter name="PIPELINE_STAGES" value="4" />
-  <parameter name="PLIC_ENABLE" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="512" />
   <parameter name="SCRATCHPAD_SIZE" value="1024" />
@@ -681,34 +617,6 @@
   <parameter name="baseAddress" value="0x0070" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection
-   kind="avalon"
-   version="15.1"
-   start="mm_bridge_0.m0"
-   end="pipeline_counter_0.counter">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0300" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection
-   kind="avalon"
-   version="15.1"
-   start="mm_bridge_0.m0"
-   end="read_pipeline_0.master_in">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0200" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection kind="avalon" version="15.1" start="mm_bridge_0.m0" end="hex_3.s1">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0060" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection kind="avalon" version="15.1" start="mm_bridge_0.m0" end="hex_2.s1">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0050" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
  <connection kind="avalon" version="15.1" start="mm_bridge_0.m0" end="hex_1.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0040" />
@@ -729,23 +637,24 @@
   <parameter name="baseAddress" value="0x0020" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection
-   kind="avalon"
-   version="15.1"
-   start="read_pipeline_0.slave_out"
-   end="long_load_store_0.avalon_slave_1">
+ <connection kind="avalon" version="15.1" start="mm_bridge_0.m0" end="hex_2.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0000" />
+  <parameter name="baseAddress" value="0x0050" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection kind="avalon" version="15.1" start="mm_bridge_0.m0" end="hex_3.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0060" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="clock" version="15.1" start="clk_0.clk" end="ledg.clk" />
  <connection kind="clock" version="15.1" start="clk_0.clk" end="ledr.clk" />
  <connection kind="clock" version="15.1" start="clk_0.clk" end="hex_0.clk" />
  <connection kind="clock" version="15.1" start="clk_0.clk" end="hex_1.clk" />
- <connection kind="clock" version="15.1" start="clk_0.clk" end="hex_2.clk" />
- <connection kind="clock" version="15.1" start="clk_0.clk" end="hex_3.clk" />
  <connection kind="clock" version="15.1" start="clk_0.clk" end="jtag_uart_0.clk" />
  <connection kind="clock" version="15.1" start="clk_0.clk" end="mm_bridge_0.clk" />
+ <connection kind="clock" version="15.1" start="clk_0.clk" end="hex_2.clk" />
+ <connection kind="clock" version="15.1" start="clk_0.clk" end="hex_3.clk" />
  <connection
    kind="clock"
    version="15.1"
@@ -761,38 +670,10 @@
    version="15.1"
    start="clk_0.clk"
    end="vectorblox_orca_0.clock" />
- <connection
-   kind="clock"
-   version="15.1"
-   start="clk_0.clk"
-   end="long_load_store_0.clock" />
- <connection
-   kind="clock"
-   version="15.1"
-   start="clk_0.clk"
-   end="read_pipeline_0.clock" />
- <connection
-   kind="clock"
-   version="15.1"
-   start="clk_0.clk"
-   end="pipeline_counter_0.clock" />
- <connection
-   kind="conduit"
-   version="15.1"
-   start="pipeline_counter_0.conduit_end_1"
-   end="read_pipeline_0.conduit_end">
-  <parameter name="endPort" value="" />
-  <parameter name="endPortLSB" value="0" />
-  <parameter name="startPort" value="" />
-  <parameter name="startPortLSB" value="0" />
-  <parameter name="width" value="0" />
- </connection>
  <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="ledg.reset" />
  <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="ledr.reset" />
  <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="hex_0.reset" />
  <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="hex_1.reset" />
- <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="hex_2.reset" />
- <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="hex_3.reset" />
  <connection
    kind="reset"
    version="15.1"
@@ -808,21 +689,8 @@
    version="15.1"
    start="clk_0.clk_reset"
    end="mm_bridge_0.reset" />
- <connection
-   kind="reset"
-   version="15.1"
-   start="clk_0.clk_reset"
-   end="long_load_store_0.reset" />
- <connection
-   kind="reset"
-   version="15.1"
-   start="clk_0.clk_reset"
-   end="read_pipeline_0.reset" />
- <connection
-   kind="reset"
-   version="15.1"
-   start="clk_0.clk_reset"
-   end="pipeline_counter_0.reset" />
+ <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="hex_2.reset" />
+ <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="hex_3.reset" />
  <connection
    kind="reset"
    version="15.1"
