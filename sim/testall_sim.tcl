@@ -18,9 +18,12 @@ foreach f $files {
 	 onbreak {resume}
 	 when {system/vectorblox_orca_0/core/X/instruction == x"00000073" && system/vectorblox_orca_0/core/X/valid_input == "1" } {stop}
 
-
-
-	 run 15000 ns
+	 if { [string match "*.elf*" $f ] } {
+		  #some of the unit tests may have to run for a much longer time
+		  run 60 us
+	 } else {
+		  run 15 us
+	 }
 	 set v [examine -radix decimal /system/vectorblox_orca_0/core/D/register_file_1/t3]
 	 set passfail  ""
 	 if { $v != 1 } {

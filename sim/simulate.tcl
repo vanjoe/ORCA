@@ -18,5 +18,5 @@ proc rerun { t } {
 				restart -f;
 				run $t
 		  }
-set DefaultRadix hex
+radix -hexadecimal
 config wave -signalnamewidth 2

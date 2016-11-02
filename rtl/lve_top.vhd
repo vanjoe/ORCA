@@ -6,12 +6,11 @@ use STD.TEXTIO.all;
 
 library work;
 use work.utils.all;
-
+use work.constants_pkg.all;
 
 entity lve_top is
   generic(
     REGISTER_SIZE    : natural;
-    INSTRUCTION_SIZE : natural;
     SLAVE_DATA_WIDTH : natural := 32;
     SCRATCHPAD_SIZE  : integer := 1024;
     FAMILY           : string  := "ALTERA");

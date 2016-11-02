@@ -80,10 +80,6 @@ _start:
   li  x30,0
   li  x31,0
 
-  li t0, MSTATUS_FS
-  csrs mstatus, t0    # enable FPU
-  li t0, MSTATUS_XS
-  csrs mstatus, t0    # enable accelerator
 
 #ifdef __riscv64
   csrr t0, mcpuid
@@ -94,14 +90,6 @@ _start:
 1:
 #endif
 
-  csrr t0, mstatus
-  li t1, MSTATUS_XS
-  and t1, t0, t1
-
-  ## if that didn't stick, we don't have a FPU, so don't initialize it
-  li t1, MSTATUS_FS
-  and t1, t0, t1
-  beqz t1, 1f
 
 #ifdef __riscv_hard_float
   fssr    x0

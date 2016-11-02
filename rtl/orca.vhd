@@ -13,18 +13,19 @@ entity Orca is
     WISHBONE_ENABLE : integer range 0 to 1 := 0;
     AXI_ENABLE      : integer range 0 to 1 := 0;
 
-    RESET_VECTOR       : integer               := 16#00000200#;
-    MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
-    DIVIDE_ENABLE      : natural range 0 to 1  := 0;
-    SHIFTER_MAX_CYCLES : natural               := 1;
-    COUNTER_LENGTH     : natural               := 0;
-    BRANCH_PREDICTORS  : natural               := 0;
-    PIPELINE_STAGES    : natural range 4 to 5  := 5;
-    LVE_ENABLE         : natural range 0 to 1  := 0;
-    PLIC_ENABLE        : natural range 0 to 1  := 0;
-    NUM_EXT_INTERRUPTS : integer range 2 to 32 := 2;
-    SCRATCHPAD_SIZE    : integer               := 1024;
-    FAMILY             : string                := "ALTERA");
+    RESET_VECTOR          : integer               := 16#00000200#;
+    MULTIPLY_ENABLE       : natural range 0 to 1  := 0;
+    DIVIDE_ENABLE         : natural range 0 to 1  := 0;
+    SHIFTER_MAX_CYCLES    : natural               := 1;
+    COUNTER_LENGTH        : natural               := 0;
+    ENABLE_EXCEPTIONS     : natural               := 1;
+    BRANCH_PREDICTORS     : natural               := 0;
+    PIPELINE_STAGES       : natural range 4 to 5  := 5;
+    LVE_ENABLE            : natural range 0 to 1  := 0;
+    ENABLE_EXT_INTERRUPTS : natural range 0 to 1  := 0;
+    NUM_EXT_INTERRUPTS    : integer range 1 to 32 := 1;
+    SCRATCHPAD_SIZE       : integer               := 1024;
+    FAMILY                : string                := "ALTERA");
 
   port(clk            : in std_logic;
        scratchpad_clk : in std_logic;
@@ -169,13 +170,13 @@ end entity Orca;
 
 architecture rtl of Orca is
 
-  signal core_data_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_byteenable    : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-  signal core_data_read          : std_logic;
-  signal core_data_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_write         : std_logic;
-  signal core_data_writedata     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_ack : std_logic;
+  signal core_data_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal core_data_byteenable : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal core_data_read       : std_logic;
+  signal core_data_readdata   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal core_data_write      : std_logic;
+  signal core_data_writedata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal core_data_ack        : std_logic;
 
   signal core_instruction_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal core_instruction_read          : std_logic;
@@ -194,29 +195,37 @@ begin  -- architecture rtl
   -----------------------------------------------------------------------------
   avalon_enabled : if AVALON_ENABLE = 1 generate
     signal is_writing : std_logic;
+    signal is_reading : std_logic;
     signal write_ack  : std_logic;
 
   begin
     core_data_readdata <= avm_data_readdata;
 
-    core_data_ack <= avm_data_readdatavalid or write_ack;
-    avm_data_write          <= is_writing;
+    core_data_ack  <= avm_data_readdatavalid or write_ack;
+    avm_data_write <= is_writing;
+    avm_data_read  <= is_reading;
     process(clk)
 
     begin
       if rising_edge(clk) then
-        write_ack <= '0';
-        if avm_data_waitrequest = '0' then
+
+
+        if (is_writing or is_reading) = '1' and avm_data_waitrequest = '1' then
+
+        else
+          is_reading          <= core_data_read;
           avm_data_address    <= core_data_address;
-          avm_data_byteenable <= core_data_byteenable;
-          avm_data_read       <= core_data_read;
-          avm_data_write      <= core_data_write;
-          avm_data_writedata  <= core_data_writedata;
           is_writing          <= core_data_write;
-          write_ack           <= is_writing;
+          avm_data_writedata  <= core_data_writedata;
+          avm_data_byteenable <= core_data_byteenable;
         end if;
 
+        write_ack <= '0';
+        if is_writing = '1' and avm_data_waitrequest = '0' then
+          write_ack <= '1';
+        end if;
       end if;
+
     end process;
 
     avm_instruction_address        <= core_instruction_address;
@@ -232,8 +241,8 @@ begin  -- architecture rtl
   wishbone_enabled : if WISHBONE_ENABLE = 1 generate
     signal is_read_transaction : std_logic;
   begin
-    core_data_readdata      <= data_DAT_I;
-    core_data_ack <= data_ACK_I;
+    core_data_readdata <= data_DAT_I;
+    core_data_ack      <= data_ACK_I;
 
     instr_ADR_O                    <= core_instruction_address;
     instr_CYC_O                    <= core_instruction_read;
@@ -246,12 +255,12 @@ begin  -- architecture rtl
     begin
       if rising_edge(clk) then
         if data_STALL_I = '0' then
-          data_ADR_O              <= core_data_address;
-          data_SEL_O              <= core_data_byteenable;
-          data_CYC_O              <= core_data_read or core_data_write;
-          data_STB_O              <= core_data_read or core_data_write;
-          data_WE_O               <= core_data_write;
-          data_DAT_O              <= core_data_writedata;
+          data_ADR_O <= core_data_address;
+          data_SEL_O <= core_data_byteenable;
+          data_CYC_O <= core_data_read or core_data_write;
+          data_STB_O <= core_data_read or core_data_write;
+          data_WE_O  <= core_data_write;
+          data_DAT_O <= core_data_writedata;
         end if;
       end if;
     end process;
@@ -273,7 +282,7 @@ begin  -- architecture rtl
     signal write_ack               : std_logic;
     signal core_instruction_stall4 : std_logic;
 
-    type state_t is (IDLE, WRITE_ADDR, WRITE_DATA, READING);
+    type state_t is (IDLE, WRITE_ADDR, WRITE_DATA);
     signal state : state_t;
   begin
 
@@ -288,13 +297,13 @@ begin  -- architecture rtl
     data_AWLOCK      <= (others => '0');
     data_AWCACHE     <= (others => '0');
     data_AWPROT      <= (others => '0');
-    data_AWVALID     <= core_data_write when (state = IDLE or state = WRITE_ADDR) else '0';
+    data_AWVALID     <= core_data_write when (state /= WRITE_DATA) else '0';
     core_data_stall1 <= not data_AWREADY;
     data_WID         <= (others => '0');
     data_WDATA       <= core_data_writedata;
     data_WSTRB       <= core_data_byteenable;
     data_WLAST       <= '1';
-    data_WVALID      <= core_data_write when (state = IDLE or state = WRITE_DATA) else '0';
+    data_WVALID      <= core_data_write when (state /= WRITE_ADDR) else '0';
     core_data_stall2 <= data_WREADY;
     --data_BID
     --data_BRESP
@@ -302,22 +311,22 @@ begin  -- architecture rtl
     data_BREADY      <= '1';
 
 
-    data_ARID               <= (others => '0');
-    data_ARADDR             <= core_data_address;
-    data_ARLEN              <= BURST_LEN;
-    data_ARSIZE             <= BURST_SIZE;
-    data_ARBURST            <= BURST_INCR;
-    data_ARLOCK             <= (others => '0');
-    data_ARCACHE            <= (others => '0');
-    data_ARPROT             <= (others => '0');
-    data_ARVALID            <= core_data_read;
-    core_data_stall3        <= not data_ARREADY;
+    data_ARID          <= (others => '0');
+    data_ARADDR        <= core_data_address;
+    data_ARLEN         <= BURST_LEN;
+    data_ARSIZE        <= BURST_SIZE;
+    data_ARBURST       <= BURST_INCR;
+    data_ARLOCK        <= (others => '0');
+    data_ARCACHE       <= (others => '0');
+    data_ARPROT        <= (others => '0');
+    data_ARVALID       <= core_data_read;
+    core_data_stall3   <= not data_ARREADY;
     -- data_RID
-    core_data_readdata      <= data_RDATA;
+    core_data_readdata <= data_RDATA;
     -- data_RRESP
     -- data_RLAST
-    core_data_ack <= data_RVALID or write_ack;
-    data_RREADY             <= '1';
+    core_data_ack      <= data_RVALID or write_ack;
+    data_RREADY        <= '1';
 
     -- This Process handles coupling the decoupled write data and write address channels
     data_write_proc : process(clk)
@@ -333,10 +342,6 @@ begin  -- architecture rtl
               elsif (not data_AWREADY and data_WREADY) = '1' then
                 state <= WRITE_ADDR;
               end if;
-            elsif core_data_read = '1' then
-              if data_ARREADY = '1' then
-                state <= READING;
-              end if;
             end if;
           when WRITE_ADDR =>
             if data_AWREADY = '1' then
@@ -348,11 +353,6 @@ begin  -- architecture rtl
               state     <= IDLE;
               write_ack <= '1';
             end if;
-          when READING =>
-            if data_RVALID = '1' then
-              state <= IDLE;
-            end if;
-
           when others => null;
         end case;
         if reset = '1' then
@@ -361,7 +361,7 @@ begin  -- architecture rtl
       end if;
     end process;
 
-                                        --Instruction read port
+    --Instruction read port
 
     instr_ARID                     <= (others => '0');
     instr_ARADDR                   <= core_instruction_address;
@@ -409,11 +409,11 @@ begin  -- architecture rtl
       DIVIDE_ENABLE      => DIVIDE_ENABLE,
       SHIFTER_MAX_CYCLES => SHIFTER_MAX_CYCLES,
       COUNTER_LENGTH     => COUNTER_LENGTH,
+      ENABLE_EXCEPTIONS  => ENABLE_EXCEPTIONS,
       BRANCH_PREDICTORS  => BRANCH_PREDICTORS,
       PIPELINE_STAGES    => PIPELINE_STAGES,
       LVE_ENABLE         => LVE_ENABLE,
-      PLIC_ENABLE        => PLIC_ENABLE,
-      NUM_EXT_INTERRUPTS => NUM_EXT_INTERRUPTS,
+      NUM_EXT_INTERRUPTS => CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0),
       SCRATCHPAD_SIZE    => SCRATCHPAD_SIZE,
       FAMILY             => FAMILY)
 
@@ -429,7 +429,7 @@ begin  -- architecture rtl
       core_data_readdata             => core_data_readdata,
       core_data_write                => core_data_write,
       core_data_writedata            => core_data_writedata,
-      core_data_ack        => core_data_ack,
+      core_data_ack                  => core_data_ack,
                                         --avalon master bus
       core_instruction_address       => core_instruction_address,
       core_instruction_read          => core_instruction_read,
@@ -437,7 +437,7 @@ begin  -- architecture rtl
       core_instruction_waitrequest   => core_instruction_waitrequest,
       core_instruction_readdatavalid => core_instruction_readdatavalid,
 
-      global_interrupts => global_interrupts);
+      external_interrupts => global_interrupts(CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0)-1 downto 0));
 
 
 

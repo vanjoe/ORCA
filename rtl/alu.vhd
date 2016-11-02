@@ -3,11 +3,12 @@ use ieee.std_logic_1164.all;
 use IEEE.NUMERIC_STD.all;
 library work;
 use work.utils.all;
+use work.constants_pkg.all;
+use work.constants_pkg.all;
 --use IEEE.std_logic_arith.all;
 
 entity arithmetic_unit is
   generic (
-    INSTRUCTION_SIZE    : integer;
     REGISTER_SIZE       : integer;
     SIGN_EXTENSION_SIZE : integer;
     MULTIPLY_ENABLE     : boolean;
@@ -17,9 +18,9 @@ entity arithmetic_unit is
 
   port (
     clk                : in  std_logic;
+    valid_instr        : in  std_logic;
     stall_to_alu       : in  std_logic;
     stall_from_execute : in  std_logic;
-    valid_instr        : in  std_logic;
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -27,7 +28,6 @@ entity arithmetic_unit is
     program_counter    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_out_valid     : out std_logic;
-    illegal_alu_instr  : out std_logic;
     less_than          : out std_logic;
     stall_from_alu     : out std_logic;
 
@@ -44,37 +44,10 @@ architecture rtl of arithmetic_unit is
   constant SHIFT_SC               : natural := conditional(SHIFTER_USE_MULTIPLIER, 0, SHIFTER_MAX_CYCLES);
 
   --op codes
-  constant OP : std_logic_vector(6 downto 0) := "0110011";
-
-  constant LVE_OP : std_logic_vector(6 downto 0) := "0101011";
-
-  constant OP_IMM : std_logic_vector(6 downto 0) := "0010011";
-  constant LUI    : std_logic_vector(6 downto 0) := "0110111";
-  constant AUIPC  : std_logic_vector(6 downto 0) := "0010111";
-
-
-  constant MUL_OP    : std_logic_vector(2 downto 0) := "000";
-  constant MULH_OP   : std_logic_vector(2 downto 0) := "001";
-  constant MULHSU_OP : std_logic_vector(2 downto 0) := "010";
-  constant MULHU_OP  : std_logic_vector(2 downto 0) := "011";
-  constant DIV_OP    : std_logic_vector(2 downto 0) := "100";
-  constant DIVU_OP   : std_logic_vector(2 downto 0) := "101";
-  constant REM_OP    : std_logic_vector(2 downto 0) := "110";
-  constant REMU_OP   : std_logic_vector(2 downto 0) := "111";
-
-  constant ADD_OP  : std_logic_vector(2 downto 0) := "000";
-  constant SLL_OP  : std_logic_vector(2 downto 0) := "001";
-  constant SLT_OP  : std_logic_vector(2 downto 0) := "010";
-  constant SLTU_OP : std_logic_vector(2 downto 0) := "011";
-  constant XOR_OP  : std_logic_vector(2 downto 0) := "100";
-  constant SR_OP   : std_logic_vector(2 downto 0) := "101";
-  constant OR_OP   : std_logic_vector(2 downto 0) := "110";
-  constant AND_OP  : std_logic_vector(2 downto 0) := "111";
-  constant MUL_F7  : std_logic_vector(6 downto 0) := "0000001";
 
   constant UP_IMM_IMMEDIATE_SIZE : integer := 20;
 
-  alias func3  : std_logic_vector(2 downto 0) is instruction(14 downto 12);
+  alias func3  : std_logic_vector(2 downto 0) is instruction(INSTR_FUNC3'range);
   alias func7  : std_logic_vector(6 downto 0) is instruction(31 downto 25);
   alias opcode : std_logic_vector(6 downto 0) is instruction(6 downto 0);
 
@@ -219,12 +192,15 @@ begin  -- architecture rtl
       mul_src_valid     => mul_src_valid
       );
 
-  data_in1     <= lve_data1        when lve_source_valid = '1' else rs1_data;
-  data_in2     <= lve_data2        when lve_source_valid = '1' else rs2_data;
-  source_valid <= lve_source_valid when opcode = LVE_OP        else (not stall_to_alu);
-  func7_shift <= func7 ="0000000" or func7="0100000";
-  sh_enable <= valid_instr and source_valid when ((opcode = OP and func7_shift) or (opcode = OP_IMM) or (opcode = LVE_OP and lve_source_valid = '1')) and (func3 = "001" or func3 = "101") else '0';
-  sh_stall  <= (not shifted_result_valid)   when sh_enable = '1'                                                                                                                               else '0';
+  data_in1 <= lve_data1 when lve_source_valid = '1' else rs1_data;
+  data_in2 <= lve_data2 when lve_source_valid = '1' else rs2_data;
+
+  source_valid <= lve_source_valid when opcode = LVE_OP else
+                  not stall_to_alu and valid_instr;
+
+  func7_shift <= func7 = "0000000" or func7 = "0100000";
+  sh_enable   <= valid_instr and source_valid when ((opcode = ALU_OP and func7_shift) or (opcode = ALUI_OP) or (opcode = LVE_OP and lve_source_valid = '1')) and (func3 = "001" or func3 = "101") else '0';
+  sh_stall    <= (not shifted_result_valid)   when sh_enable = '1'                                                                                                                                else '0';
 
   SH_GEN0 : if SHIFTER_USE_MULTIPLIER generate
     process(clk) is
@@ -342,7 +318,7 @@ begin  -- architecture rtl
 
       data_out_valid <= '0';
       case OPCODE is
-        when OP | LVE_OP =>
+        when ALU_OP | LVE_OP =>
           if (func7 = mul_f7 or (instruction(25) = '1' and opcode = LVE_OP))and MULTIPLY_ENABLE then
             data_out       <= std_logic_vector(mul_result);
             data_out_valid <= mul_result_valid;
@@ -350,13 +326,13 @@ begin  -- architecture rtl
             data_out       <= std_logic_vector(base_result);
             data_out_valid <= base_result_valid;
           end if;
-        when OP_IMM =>
+        when ALUI_OP =>
           data_out       <= std_logic_vector(base_result);
           data_out_valid <= base_result_valid;
-        when LUI =>
+        when LUI_OP =>
           data_out       <= std_logic_vector(upper_immediate);
           data_out_valid <= source_valid;
-        when AUIPC =>
+        when AUIPC_OP=>
           data_out       <= std_logic_vector(upper_immediate + signed(program_counter));
           data_out_valid <= source_valid;
         when others =>
@@ -376,7 +352,7 @@ begin  -- architecture rtl
 
     signal mul_d : signed(mul_dest'range);
   begin
-    mul_enable <= valid_instr and source_valid when ((func7 = mul_f7 and opcode = OP) or
+    mul_enable <= valid_instr and source_valid when ((func7 = mul_f7 and opcode = ALU_OP) or
                                                      (instruction(25) = '1' and opcode = LVE_OP)) and instruction(14)  = '0' else '0';
     mul_stall <= mul_enable and (not mul_dest_valid);
 
@@ -439,9 +415,9 @@ begin  -- architecture rtl
 
         --if we don't want to pipeline multiple multiplies (as is the case when we are not using LVE)
         -- then we want to flush the valid signals
-        -- Another way of phrasing this is that unless we have an LVE instruction we only want 
+        -- Another way of phrasing this is that unless we have an LVE instruction we only want
         -- mul_dest_valid to be high for one cycle
-        if stall_from_execute = '0' or (opcode /= LVE_OP and mul_dest_valid='1') then
+        if stall_from_execute = '0' or (opcode /= LVE_OP and mul_dest_valid = '1') then
 
           mul_ab_valid   <= '0';
           mul_dest_valid <= '0';
@@ -459,7 +435,7 @@ begin  -- architecture rtl
 
   d_en : if DIVIDE_ENABLE generate
   begin
-    div_enable <= '1' when (func7 = mul_f7 and opcode = OP and instruction(14) = '1') and valid_instr = '1' and source_valid = '1' else '0';
+    div_enable <= '1' when (func7 = mul_f7 and opcode = ALU_OP and instruction(14) = '1') and valid_instr = '1' and source_valid = '1' else '0';
     div : component divider
       generic map (
         REGISTER_SIZE => REGISTER_SIZE)
@@ -488,12 +464,6 @@ begin  -- architecture rtl
   end generate;
 
   stall_from_alu <= div_stall or mul_stall or sh_stall;
-
-  illegal_alu_instr <= '0' when (instruction(31 downto 25) = "0000000" or
-                                 (instruction(31 downto 25) = "0100000" and (instruction(14 downto 12) = "000" or
-                                                                             instruction(14 downto 12) = "101")) or
-                                 (instruction(31 downto 25) = "0000001" and MULTIPLY_ENABLE and (instruction(14) = '0' or DIVIDE_ENABLE)))or                                 opcode /= OP
-                       else '1';
 end architecture;
 
 -------------------------------------------------------------------------------
@@ -782,15 +752,15 @@ entity divider is
 end entity;
 
 architecture rtl of divider is
-  type div_state is (IDLE, DIVIDING,DONE);
+  type div_state is (IDLE, DIVIDING, DONE);
   signal state       : div_state;
   signal count       : natural range REGISTER_SIZE-1 downto 0;
   signal numerator   : unsigned(REGISTER_SIZE-1 downto 0);
   signal denominator : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal div_neg_op1      : std_logic;
-  signal div_neg_op2      : std_logic;
-  signal div_neg_quotient : std_logic;
+  signal div_neg_op1       : std_logic;
+  signal div_neg_op2       : std_logic;
+  signal div_neg_quotient  : std_logic;
   signal div_neg_remainder : std_logic;
 
   signal div_zero     : boolean;
@@ -829,7 +799,7 @@ begin  -- architecture rtl
       if div_enable = '1' then
         case state is
           when IDLE =>
-            div_neg_quotient   <= div_neg_op2 xor div_neg_op1;
+            div_neg_quotient  <= div_neg_op2 xor div_neg_op1;
             div_neg_remainder <= div_neg_op1;
             D                 := denominator;
             N                 := numerator;
@@ -876,5 +846,5 @@ begin  -- architecture rtl
   end process;
 
   remainder <= rem_res when div_neg_remainder = '0' else unsigned(-signed(rem_res));
-  quotient  <= div_res when div_neg_quotient = '0'   else unsigned(-signed(div_res));
+  quotient  <= div_res when div_neg_quotient = '0'  else unsigned(-signed(div_res));
 end architecture rtl;

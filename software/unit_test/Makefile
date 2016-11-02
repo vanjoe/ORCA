@@ -17,7 +17,7 @@ PREFIX=riscv32-unknown-elf-
 CC=$(PREFIX)gcc
 OBJDUMP=$(PREFIX)objdump
 TEST_ASM=consecutive_instr.S
-TEST_C=simple_c_test.c vbx_test.c
+TEST_C=simple_c_test.c vbx_test.c interrupt_test.c
 
 TEST_ASM_ELF=$(addsuffix .elf,$(basename $(TEST_ASM)))
 TEST_C_ELF=$(addsuffix .elf,$(basename $(TEST_C)))
