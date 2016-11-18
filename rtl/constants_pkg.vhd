@@ -150,4 +150,7 @@ package constants_pkg is
   constant ALU_f7 : std_logic_vector(6 downto 0) := "0000000";
 
   constant FENCE_I_BITS : std_logic_vector(31 downto 7) := x"0000"&"00010"&x"0";
+
+  constant LVE_VCMV_Z_FUNC3 : std_logic_vector(2 downto 0) := "011";
+  constant LVE_VCMV_NZ_FUNC3 : std_logic_vector(2 downto 0) := "100";
 end package constants_pkg;

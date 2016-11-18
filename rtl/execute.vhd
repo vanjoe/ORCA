@@ -125,11 +125,9 @@ architecture behavioural of execute is
   signal fwd_mux  : std_logic;
 
   signal stall_from_lve   : std_logic;
-  signal lve_data1        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal lve_data2        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal lve_result       : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal lve_result_valid : std_logic;
-  signal lve_source_valid : std_logic;
+  signal lve_alu_data1        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lve_alu_data2        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lve_alu_source_valid : std_logic;
   signal stall_to_lve     : std_logic;
 
   signal valid_instr : std_logic;
@@ -327,9 +325,9 @@ begin
       less_than          => less_than,
       stall_from_alu     => stall_from_alu,
 
-      lve_data1        => lve_data1,
-      lve_data2        => lve_data2,
-      lve_source_valid => lve_source_valid
+      lve_data1        => lve_alu_data1,
+      lve_data2        => lve_alu_data2,
+      lve_source_valid => lve_alu_source_valid
       );
 
 
@@ -446,11 +444,11 @@ begin
         slave_wait     => sp_wait,
 
         stall_from_lve   => stall_from_lve,
-        lve_data1        => lve_data1,
-        lve_data2        => lve_data2,
-        lve_source_valid => lve_source_valid,
-        lve_result       => alu_data_out,
-        lve_result_valid => alu_data_out_valid
+        lve_alu_data1        => lve_alu_data1,
+        lve_alu_data2        => lve_alu_data2,
+        lve_alu_source_valid => lve_alu_source_valid,
+        lve_alu_result       => alu_data_out,
+        lve_alu_result_valid => alu_data_out_valid
         );
 
     -----------------------------------------------------------------------------
@@ -492,9 +490,9 @@ begin
     read_en   <= ls_read_en;
     writedata <= ls_write_data;
 
-    lve_source_valid <= '0';
-    lve_data1        <= (others => '-');
-    lve_data2        <= (others => '-');
+    lve_alu_source_valid <= '0';
+    lve_alu_data1        <= (others => '-');
+    lve_alu_data2        <= (others => '-');
   end generate n_enable_lve;
 
 

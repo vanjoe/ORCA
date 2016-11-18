@@ -32,12 +32,12 @@ entity lve_top is
     slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
     slave_wait     : out std_logic;
 
-    stall_from_lve   : out    std_logic;
-    lve_data1        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    lve_data2        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    lve_source_valid : buffer std_logic;
-    lve_result       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    lve_result_valid : in     std_logic
+    stall_from_lve       : out    std_logic;
+    lve_alu_data1        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lve_alu_data2        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lve_alu_source_valid : out    std_logic;
+    lve_alu_result       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lve_alu_result_valid : in     std_logic
     );
 end entity;
 
@@ -92,7 +92,7 @@ architecture rtl of lve_top is
   alias sign_a    : std_logic is instruction(31);
   alias func_bit4 : std_logic is instruction(30);
   alias sign_b    : std_logic is instruction(29);
-  alias lve_instr : std_logic is instruction(28);
+  alias cmv_instr : std_logic is instruction(28);
   alias acc       : std_logic is instruction(26);
   alias func_bit3 : std_logic is instruction(25);
   alias func      : std_logic_vector(2 downto 0) is instruction(14 downto 12);
@@ -101,6 +101,17 @@ architecture rtl of lve_top is
   alias dim       : std_logic_vector(1 downto 0) is instruction(9 downto 8);
   alias sign_d    : std_logic is instruction(7);
 
+  alias func3 : std_logic_vector is instruction(INSTR_FUNC3'range);
+
+  signal lve_result_valid : std_logic;
+  signal lve_source_valid : std_logic;
+  signal cmv_result_valid : std_logic;
+  signal lve_result       : std_logic_vector(lve_alu_result'range);
+  signal cmv_result       : std_logic_vector(lve_alu_result'range);
+  signal lve_data1        : std_logic_vector(lve_alu_data1'range);
+  signal lve_data2        : std_logic_vector(lve_alu_data2'range);
+
+  signal cmv_write_en : std_logic;
 
   signal srca_ptr               : unsigned(REGISTER_SIZE-1 downto 0);
   signal srcb_ptr               : unsigned(REGISTER_SIZE-1 downto 0);
@@ -131,27 +142,22 @@ architecture rtl of lve_top is
 
   signal valid_lve_instr : std_logic;
 
-  signal func5          : std_logic_vector(4 downto 0);
-  constant FUNC_VADD    : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VSUB    : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VSLL    : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VSLT    : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VSLTU   : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VSXOR   : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VSRA    : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VSRL    : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VOR     : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VAND    : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VMUL    : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VMULH   : std_logic_vector(4 downto 0) := "00000";
-  constant FUNC_VCMV_NZ : std_logic_vector(4 downto 0) := "00000";
 
   signal accumulation_register : unsigned(REGISTER_SIZE - 1 downto 0);
   signal accumulation_result   : unsigned(REGISTER_SIZE - 1 downto 0);
 
   signal readdata_valid : std_logic;
+  signal eqz            : std_logic;
 begin
-  func5 <= func_bit4 & func_bit3 & func;
+
+  lve_alu_data1        <= lve_data1;
+  lve_alu_data2        <= lve_data2;
+  lve_alu_source_valid <= lve_source_valid and not cmv_instr;
+  lve_result_valid     <= lve_alu_result_valid when cmv_instr = '0' else cmv_result_valid;
+
+  lve_result <= lve_alu_result when cmv_instr = '0' else
+                cmv_result when cmv_write_en = '1' else
+                (others => '0');
 
   valid_lve_instr <= valid_instr when major_op = CUSTOM0 else '0';
   --instruction parsing process
@@ -214,7 +220,7 @@ begin
 
   stall_from_lve <= valid_lve_instr when (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
 
-  rd_en <= first_element when valid_lve_instr = '0' else  '1' when is_prefix = '1' or read_vector_length > 1 else '0';
+  rd_en <= first_element when valid_lve_instr = '0' else '1' when is_prefix = '1' or read_vector_length > 1 else '0';
 
 
   lve_data1      <= std_logic_vector(srca_data);
@@ -224,13 +230,39 @@ begin
   accumulation_result <= accumulation_register + unsigned(lve_result);
 
   lve_source_valid <= valid_lve_instr and readdata_valid;
+
+
+  -----------------------------------------------------------------------------
+  -- Conditional moves
+  -----------------------------------------------------------------------------
+  eqz <= bool_to_sl(unsigned(lve_data2) = 0);
+  process(clk)
+
+  begin
+    if rising_edge(clk) then
+      cmv_result_valid <= '0';
+      if (valid_lve_instr and readdata_valid) = '1' then
+        cmv_result <= lve_data1;
+
+        if func3 = LVE_VCMV_Z_FUNC3 then
+          cmv_write_en <= eqz;
+        elsif func3 = LVE_VCMV_NZ_FUNC3 then
+          cmv_write_en <= not eqz;
+        else
+          cmv_write_en <= '0';
+        end if;
+        cmv_result_valid <= '1';
+      end if;
+    end if;
+  end process;
+
   alu_proc : process(clk)
   begin
     if rising_edge(clk) then
       readdata_valid <= rd_en;
     end if;
   end process;
-  write_enable <= lve_result_valid and (valid_lve_instr and not is_prefix);
+  write_enable <= (lve_alu_result_valid or cmv_write_en) and (valid_lve_instr and not is_prefix);
 
   scratchpad_memory : component ram_4port
     generic map (
