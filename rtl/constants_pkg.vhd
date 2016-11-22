@@ -89,7 +89,7 @@ package constants_pkg is
   constant CSR_MSTATUS_MIE  : integer                        := 3;
   constant CSR_MSTATUS_MPIE : integer                        := 7;
 
-  constant CSR_MCAUSE_MEXT    : integer := 16#8000000B#;
+  --constant CSR_MCAUSE_MEXT    : integer := 16#8000000B#;
   constant CSR_MCAUSE_ILLEGAL : integer := 2;
   constant CSR_MCAUSE_EBREAK  : integer := 3;
   constant CSR_MCAUSE_MECALL  : integer := 11;
@@ -151,6 +151,6 @@ package constants_pkg is
 
   constant FENCE_I_BITS : std_logic_vector(31 downto 7) := x"0000"&"00010"&x"0";
 
-  constant LVE_VCMV_Z_FUNC3 : std_logic_vector(2 downto 0) := "011";
+  constant LVE_VCMV_Z_FUNC3  : std_logic_vector(2 downto 0) := "011";
   constant LVE_VCMV_NZ_FUNC3 : std_logic_vector(2 downto 0) := "100";
 end package constants_pkg;

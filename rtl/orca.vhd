@@ -35,7 +35,7 @@ entity Orca is
        avm_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
        avm_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
        avm_data_read                 : out std_logic;
-       avm_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
+       avm_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := x"00000000";
        avm_data_write                : out std_logic;
        avm_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
        avm_data_waitrequest          : in  std_logic                                  := '0';
@@ -43,7 +43,7 @@ entity Orca is
        --avalon instruction bus
        avm_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
        avm_instruction_read          : out std_logic;
-       avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
+       avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := x"00000000";
        avm_instruction_waitrequest   : in  std_logic                                  := '0';
        avm_instruction_readdatavalid : in  std_logic                                  := '0';
        --wishbone data bus
