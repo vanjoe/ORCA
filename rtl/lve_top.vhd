@@ -148,6 +148,17 @@ architecture rtl of lve_top is
 
   signal readdata_valid : std_logic;
   signal eqz            : std_logic;
+
+
+  function align_input (
+    sign  : std_logic;
+    size  : std_logic_vector(1 downto 0);
+    align : std_logic_vector(1 downto 0);
+    data  : std_logic_vector(REGISTER_SIZE -1 downto 0))
+    return std_logic_vector is
+  begin  -- function select_byte
+    return data;
+  end function align_input;
 begin
 
   lve_alu_data1        <= lve_data1;
