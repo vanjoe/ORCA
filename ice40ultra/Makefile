@@ -3,7 +3,7 @@ all:
 
 ifndef ICECUBE2
 ifeq ($(findstring Vectorblox,$(ORGANIZATION)),Vectorblox)
-ICECUBE2=/nfs/opt/lattice/iCEcube2/2015.14
+ICECUBE2=/nfs/opt/lattice/iCEcube2/2016.02
 else
 $(error Variable $$ICECUBE2 not defined )
 endif

@@ -16,18 +16,19 @@ package rv_components is
       WISHBONE_ENABLE : integer range 0 to 1 := 0;
       AXI_ENABLE      : integer range 0 to 1 := 0;
 
-      RESET_VECTOR       : integer               := 16#00000200#;
-      MULTIPLY_ENABLE    : natural range 0 to 1  := 0;
-      DIVIDE_ENABLE      : natural range 0 to 1  := 0;
-      SHIFTER_MAX_CYCLES : natural               := 1;
-      COUNTER_LENGTH     : natural               := 0;
-      ENABLE_EXCEPTIONS  : natural               := 1;
-      BRANCH_PREDICTORS  : natural               := 0;
-      PIPELINE_STAGES    : natural range 4 to 5  := 5;
-      LVE_ENABLE         : natural range 0 to 1  := 0;
-      NUM_EXT_INTERRUPTS : integer range 0 to 32 := 0;
-      SCRATCHPAD_SIZE    : integer               := 1024;
-      FAMILY             : string                := "ALTERA");
+      RESET_VECTOR          : integer               := 16#00000200#;
+      MULTIPLY_ENABLE       : natural range 0 to 1  := 0;
+      DIVIDE_ENABLE         : natural range 0 to 1  := 0;
+      SHIFTER_MAX_CYCLES    : natural               := 1;
+      COUNTER_LENGTH        : natural               := 0;
+      ENABLE_EXCEPTIONS     : natural               := 1;
+      BRANCH_PREDICTORS     : natural               := 0;
+      PIPELINE_STAGES       : natural range 4 to 5  := 5;
+      LVE_ENABLE            : natural range 0 to 1  := 0;
+      ENABLE_EXT_INTERRUPTS : natural range 0 to 1  := 0;
+      NUM_EXT_INTERRUPTS    : integer range 0 to 32 := 1;
+      SCRATCHPAD_SIZE       : integer               := 1024;
+      FAMILY                : string                := "ALTERA");
     port(
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
@@ -487,7 +488,7 @@ package rv_components is
       slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
       slave_wait     : out std_logic;
 
-      stall_from_lve   : out    std_logic;
+      stall_from_lve       : out    std_logic;
       lve_alu_data1        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       lve_alu_data2        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       lve_alu_source_valid : buffer std_logic;

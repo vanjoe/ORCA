@@ -2,6 +2,7 @@
 proc com {} {
 	 set fileset [list \
 							../rtl/utils.vhd  \
+							../rtl/constants_pkg.vhd \
 							../rtl/components.vhd 	  \
 							../rtl/alu.vhd 				  \
 							../rtl/branch_unit.vhd	  \
@@ -14,8 +15,6 @@ proc com {} {
 							../rtl/sys_call.vhd 		  \
 							../rtl/lve_top.vhd 		  \
 							../rtl/4port_mem.vhd 		  \
-							../rtl/plic.vhd \
-							../rtl/gateway.vhd \
 							../rtl/orca_core.vhd \
 							hdl/top_util_pkg.vhd \
 							hdl/top_component_pkg.vhd\

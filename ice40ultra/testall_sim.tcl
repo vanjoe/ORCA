@@ -16,7 +16,6 @@ foreach f $files {
 	 restart -f
 	 onbreak {resume}
 	 when {/top_tb/dut/rv/core/X/instruction == x"00000073" && /top_tb/dut/rv/core/X/valid_input == "1" } {stop}
-	 when {/top_tb/dut/rv/core//X/syscall/legal_instruction == "0" && /top_tb/dut/rv/core//X/syscall/valid == "1"  } {stop}
 	 run 2000 us
 	 set v [examine -radix decimal /top_tb/dut/rv/core/D/register_file_1/t3 ]
      set passfail  ""
@@ -24,7 +23,7 @@ foreach f $files {
 		  set passfail "FAIL"
 	 }
      puts [format "%-${max_length}s = %-6d %s" $f $v $passfail ]
-	 
+
 }
 
 exit -f;
