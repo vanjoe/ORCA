@@ -252,6 +252,7 @@ begin
   begin
     if rising_edge(clk) then
       cmv_result_valid <= '0';
+      cmv_write_en <= '0';
       if (valid_lve_instr and readdata_valid) = '1' then
         cmv_result <= lve_data1;
 
