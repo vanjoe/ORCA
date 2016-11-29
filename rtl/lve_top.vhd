@@ -223,7 +223,7 @@ begin
   srca_data <= scalar_value when srca_s = '1' else unsigned(srca_data_read);
   srcb_data <= enum_count   when srcb_e = '1' else unsigned(srcb_data_read);
 
-  stall_from_lve <= valid_lve_instr and  not is_prefix when first_element = '1' or (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
+  stall_from_lve <= valid_lve_instr and not is_prefix when first_element = '1' or (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
 
   rd_en <= valid_lve_instr when read_vector_length > 1 or first_element = '1' else '0';
 
