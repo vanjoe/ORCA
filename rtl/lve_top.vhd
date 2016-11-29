@@ -177,8 +177,6 @@ begin
     if rising_edge(clk) then
 
       if valid_lve_instr = '1' and not stall_to_lve = '1' then
-        srca_ptr_reg <= srca_ptr;
-        srcb_ptr_reg <= srcb_ptr;
 
         if lve_result_valid = '1' then
           if acc = '0' then
@@ -192,46 +190,42 @@ begin
           first_element <= '1';
           scalar_value  <= unsigned(rs1_data);
           enum_count    <= to_unsigned(0, enum_count'length);
+
+          srca_ptr <= unsigned(rs1_data);
+          srcb_ptr <= unsigned(rs2_data);
         else
+          srca_ptr <= srca_ptr+ POINTER_INCREMENT;
+          srcb_ptr <= srcb_ptr+ POINTER_INCREMENT;
           if first_element = '1' then
             dest_ptr              <= unsigned(rs1_data);
             write_vector_length   <= unsigned(rs2_data(write_vector_length'range));
+            read_vector_length    <= unsigned(rs2_data(write_vector_length'range));
             accumulation_register <= to_unsigned(0, accumulation_register'length);
+          else
+            enum_count <= enum_count +1;
+            if read_vector_length /= 0 then
+              read_vector_length <= read_vector_length - 1;
+            end if;
           end if;
           first_element <= '0';
-          enum_count    <= enum_count +1;
-          if read_vector_length /= 0 then
-            read_vector_length_reg <= read_vector_length - 1;
-          end if;
         end if;
       else
         write_vector_length <= to_unsigned(0, write_vector_length'length);
       end if;
       if reset = '1' then
-        first_element          <= '0';
-        read_vector_length_reg <= to_unsigned(0, read_vector_length_reg'length);
+        first_element      <= '0';
+        read_vector_length <= to_unsigned(0, read_vector_length_reg'length);
       end if;
     end if;
 
   end process;
 
-  srca_ptr <= unsigned(rs1_data) when is_prefix = '1' and valid_lve_instr = '1' else
-              srca_ptr_reg + POINTER_INCREMENT when valid_lve_instr = '1' else
-              srca_ptr_reg;
-
-  srcb_ptr <= unsigned(rs2_data) when is_prefix = '1' and valid_lve_instr = '1' else
-              srcb_ptr_reg + POINTER_INCREMENT when valid_lve_instr = '1' else
-              srcb_ptr_reg;
-
-  read_vector_length <=
-    unsigned(rs2_data(read_vector_length'range)) when first_element = '1' else read_vector_length_reg;
-
   srca_data <= scalar_value when srca_s = '1' else unsigned(srca_data_read);
   srcb_data <= enum_count   when srcb_e = '1' else unsigned(srcb_data_read);
 
-  stall_from_lve <= valid_lve_instr when (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
+  stall_from_lve <= valid_lve_instr and  not is_prefix when first_element = '1' or (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
 
-  rd_en <= first_element when valid_lve_instr = '0' else '1' when is_prefix = '1' or read_vector_length > 1 else '0';
+  rd_en <= valid_lve_instr when read_vector_length > 1 or first_element = '1' else '0';
 
 
   lve_data1      <= std_logic_vector(srca_data);
@@ -252,7 +246,7 @@ begin
   begin
     if rising_edge(clk) then
       cmv_result_valid <= '0';
-      cmv_write_en <= '0';
+      cmv_write_en     <= '0';
       if (valid_lve_instr and readdata_valid) = '1' then
         cmv_result <= lve_data1;
 
