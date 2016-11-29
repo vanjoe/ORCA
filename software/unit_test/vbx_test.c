@@ -28,15 +28,15 @@ TEST_ATTR int test_3()
   vbx_word_t* b=a+vlen;
   vbx_word_t* c=b+vlen;
   for( int i=0;i<vlen;i++){
-	a[i]= 3;
+	a[i]= 3+i;
   }
   for( int i=0;i<vlen;i++){
-	b[i] = 6;
+	b[i] = 6+i;
   }
 
-  vbx(VVW,VMUL,c,b,a);
+  vbx(VVW,VADD,c,b,a);
   for( int i=0;i<vlen;i++){
-	 if (c[i] != 18){
+	  if (c[i] != (9 + 2*i) ){
 		return 1; //TEST FAIL
 	 }
   }
