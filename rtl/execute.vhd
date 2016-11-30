@@ -116,6 +116,9 @@ architecture behavioural of execute is
   signal rs1_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs2_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
+  signal alu_rs1_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal alu_rs2_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
   signal stall_to_lsu    : std_logic;
   signal ls_unit_waiting : std_logic;
 
@@ -124,11 +127,11 @@ architecture behavioural of execute is
   signal fwd_en   : std_logic;
   signal fwd_mux  : std_logic;
 
-  signal stall_from_lve   : std_logic;
+  signal stall_from_lve       : std_logic;
   signal lve_alu_data1        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lve_alu_data2        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lve_alu_source_valid : std_logic;
-  signal stall_to_lve     : std_logic;
+  signal stall_to_lve         : std_logic;
 
   signal valid_instr : std_logic;
   signal rd_latch    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
@@ -181,6 +184,16 @@ begin
     rs2_data_fwd <=
     alu_data_out when ALU_FWD,
     rs2_data     when others;
+
+
+
+  alu_rs1_data <= rs1_data_fwd when not  LVE_ENABLE else
+                  lve_alu_data1 when lve_alu_source_valid = '1' else
+                  alu_data_out  when rs1_mux = ALU_FWD else rs1_data;
+  alu_rs2_data <= rs2_data_fwd when  not LVE_ENABLE else
+                  lve_alu_data2 when lve_alu_source_valid = '1' else
+                  alu_data_out  when rs2_mux = ALU_FWD else rs2_data;
+
 
 
   -------------------------------------------------------------------------------
@@ -315,8 +328,8 @@ begin
       stall_to_alu       => stall_to_alu,
       stall_from_execute => stall_from_execute,
       valid_instr        => valid_instr,
-      rs1_data           => rs1_data_fwd,
-      rs2_data           => rs2_data_fwd,
+      rs1_data           => alu_rs1_data,
+      rs2_data           => alu_rs2_data,
       instruction        => instruction,
       sign_extension     => sign_extension,
       program_counter    => pc_current,
@@ -388,9 +401,9 @@ begin
       ENABLE_EXCEPTIONS => ENABLE_EXCEPTIONS,
       COUNTER_LENGTH    => COUNTER_LENGTH)
     port map (
-      clk         => clk,
-      reset       => reset,
-      valid       => valid_instr,
+      clk   => clk,
+      reset => reset,
+      valid => valid_instr,
 
       stall_in => stall_to_syscall,
 
@@ -415,7 +428,6 @@ begin
     signal sp_read_en          : std_logic;
     signal sp_write_en         : std_logic;
     signal sp_read_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-    signal sp_wait             : std_logic;
     signal sp_ack              : std_logic;
     signal use_scratchpad      : std_logic;
     signal last_use_scratchpad : std_logic;
@@ -441,9 +453,9 @@ begin
         slave_byte_en  => ls_byte_en,
         slave_data_in  => ls_write_data,
         slave_data_out => sp_read_data,
-        slave_wait     => sp_wait,
+        slave_ack     => sp_ack,
 
-        stall_from_lve   => stall_from_lve,
+        stall_from_lve       => stall_from_lve,
         lve_alu_data1        => lve_alu_data1,
         lve_alu_data2        => lve_alu_data2,
         lve_alu_source_valid => lve_alu_source_valid,
@@ -460,9 +472,12 @@ begin
     process(clk)
     begin
       if rising_edge(clk) then
-
-        last_use_scratchpad <= use_scratchpad;
-        sp_ack              <= (not sp_wait and (ls_read_en or ls_write_en));
+        if sp_ack = '1' then
+          last_use_scratchpad <= '0';
+        end if;
+        if use_scratchpad = '1' then
+          last_use_scratchpad <= '1';
+        end if;
       end if;
     end process;
     sp_read_en  <= use_scratchpad and ls_read_en;

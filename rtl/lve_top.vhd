@@ -30,7 +30,7 @@ entity lve_top is
     slave_byte_en  : in  std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
     slave_data_in  : in  std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
     slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
-    slave_wait     : out std_logic;
+    slave_ack      : out std_logic;
 
     stall_from_lve       : out    std_logic;
     lve_alu_data1        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -52,28 +52,33 @@ architecture rtl of lve_top is
       clk            : in  std_logic;
       scratchpad_clk : in  std_logic;
       reset          : in  std_logic;
-      stall_012      : out std_logic;
-      stall_3        : out std_logic;
-      --read source A
+                                        --read source A
       raddr0         : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
       ren0           : in  std_logic;
+      scalar_value   : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+      scalar_enable  : in  std_logic;
       data_out0      : out std_logic_vector(MEM_WIDTH-1 downto 0);
-      --read source B
-      raddr1         : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      ren1           : in  std_logic;
-      data_out1      : out std_logic_vector(MEM_WIDTH-1 downto 0);
+
+                                        --read source B
+      raddr1      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+      ren1        : in  std_logic;
+      enum_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+      enum_enable : in  std_logic;
+      data_out1   : out std_logic_vector(MEM_WIDTH-1 downto 0);
+      ack01       : out std_logic;
       --write dest
-      waddr2         : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      byte_en2       : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-      wen2           : in  std_logic;
-      data_in2       : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-      --external slave port
-      rwaddr3        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      wen3           : in  std_logic;
-      ren3           : in  std_logic;   --cannot be asserted same cycle as wen3
-      byte_en3       : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-      data_in3       : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-      data_out3      : out std_logic_vector(MEM_WIDTH-1 downto 0));
+      waddr2      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+      byte_en2    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
+      wen2        : in  std_logic;
+      data_in2    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+                                        --external slave port
+      rwaddr3     : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+      wen3        : in  std_logic;
+      ren3        : in  std_logic;      --cannot be asserted same cycle as wen3
+      byte_en3    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
+      data_in3    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+      ack3        : out std_logic;
+      data_out3   : out std_logic_vector(MEM_WIDTH-1 downto 0));
   end component;
 
   constant POINTER_INCREMENT : natural                      := 4;
@@ -113,32 +118,26 @@ architecture rtl of lve_top is
 
   signal cmv_write_en : std_logic;
 
-  signal srca_ptr               : unsigned(REGISTER_SIZE-1 downto 0);
-  signal srcb_ptr               : unsigned(REGISTER_SIZE-1 downto 0);
-  signal dest_ptr               : unsigned(REGISTER_SIZE-1 downto 0);
-  signal read_vector_length     : unsigned(log2(SCRATCHPAD_SIZE) downto 0);
-  signal read_vector_length_reg : unsigned(log2(SCRATCHPAD_SIZE) downto 0);
-  signal write_vector_length    : unsigned(log2(SCRATCHPAD_SIZE) downto 0);
-  signal srca_ptr_reg           : unsigned(REGISTER_SIZE-1 downto 0);
-  signal srcb_ptr_reg           : unsigned(REGISTER_SIZE-1 downto 0);
-  signal writeback_data         : unsigned(REGISTER_SIZE-1 downto 0);
+  signal srca_ptr            : unsigned(REGISTER_SIZE-1 downto 0);
+  signal srcb_ptr            : unsigned(REGISTER_SIZE-1 downto 0);
+  signal dest_ptr            : unsigned(REGISTER_SIZE-1 downto 0);
+  signal read_vector_length  : unsigned(log2(SCRATCHPAD_SIZE) downto 0);
+  signal write_vector_length : unsigned(log2(SCRATCHPAD_SIZE) downto 0);
+  signal srca_ptr_reg        : unsigned(REGISTER_SIZE-1 downto 0);
+  signal srcb_ptr_reg        : unsigned(REGISTER_SIZE-1 downto 0);
+  signal writeback_data      : unsigned(REGISTER_SIZE-1 downto 0);
 
 
   signal scalar_value : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal srca_data      : unsigned(REGISTER_SIZE-1 downto 0);
-  signal srcb_data      : unsigned(REGISTER_SIZE-1 downto 0);
   signal srca_data_read : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal srcb_data_read : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal dest_data      : unsigned(REGISTER_SIZE-1 downto 0);
   signal enum_count     : unsigned(REGISTER_SIZE-1 downto 0);
-  signal alu_result     : unsigned(REGISTER_SIZE-1 downto 0);
-  signal src_data_ready : std_logic;
-  signal rd_stall       : std_logic;
-  signal rd_en          : std_logic;
-  signal done           : std_logic;
-  signal first_element  : std_logic;
-  signal write_enable   : std_logic;
+
+  signal rd_en         : std_logic;
+  signal first_element : std_logic;
+  signal write_enable  : std_logic;
 
   signal valid_lve_instr : std_logic;
 
@@ -149,6 +148,9 @@ architecture rtl of lve_top is
   signal readdata_valid : std_logic;
   signal eqz            : std_logic;
 
+  signal enum_enable   : std_logic;
+  signal scalar_enable : std_logic;
+  signal lve_ack       : std_logic;
 
   function align_input (
     sign  : std_logic;
@@ -167,8 +169,7 @@ begin
   lve_result_valid     <= lve_alu_result_valid when cmv_instr = '0' else cmv_result_valid;
 
   lve_result <= lve_alu_result when cmv_instr = '0' else
-                cmv_result when cmv_write_en = '1' else
-                (others => '0');
+                cmv_result;
 
   valid_lve_instr <= valid_instr when major_op = CUSTOM0 else '0';
   --instruction parsing process
@@ -214,27 +215,27 @@ begin
       end if;
       if reset = '1' then
         first_element      <= '0';
-        read_vector_length <= to_unsigned(0, read_vector_length_reg'length);
+        read_vector_length <= to_unsigned(0, read_vector_length'length);
       end if;
     end if;
 
   end process;
-
-  srca_data <= scalar_value when srca_s = '1' else unsigned(srca_data_read);
-  srcb_data <= enum_count   when srcb_e = '1' else unsigned(srcb_data_read);
 
   stall_from_lve <= valid_lve_instr and not is_prefix when first_element = '1' or (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
 
   rd_en <= valid_lve_instr when read_vector_length > 1 or first_element = '1' else '0';
 
 
-  lve_data1      <= std_logic_vector(srca_data);
-  lve_data2      <= std_logic_vector(srcb_data);
+  lve_data1      <= std_logic_vector(srca_data_read);
+  lve_data2      <= std_logic_vector(srcb_data_read);
   writeback_data <= unsigned(lve_result) when acc = '0' else accumulation_result;
+  write_enable   <= (lve_alu_result_valid or cmv_write_en) and (valid_lve_instr and not is_prefix);
+
+
 
   accumulation_result <= accumulation_register + unsigned(lve_result);
 
-  lve_source_valid <= valid_lve_instr and readdata_valid;
+
 
 
   -----------------------------------------------------------------------------
@@ -242,34 +243,25 @@ begin
   -----------------------------------------------------------------------------
   eqz <= bool_to_sl(unsigned(lve_data2) = 0);
   process(clk)
-
   begin
     if rising_edge(clk) then
       cmv_result_valid <= '0';
       cmv_write_en     <= '0';
-      if (valid_lve_instr and readdata_valid) = '1' then
-        cmv_result <= lve_data1;
-
-        if func3 = LVE_VCMV_Z_FUNC3 then
-          cmv_write_en <= eqz;
-        elsif func3 = LVE_VCMV_NZ_FUNC3 then
-          cmv_write_en <= not eqz;
-        else
-          cmv_write_en <= '0';
+      if (valid_lve_instr and lve_source_valid) = '1' then
+        cmv_result   <= (others => '0');
+        cmv_write_en <= '0';
+        if ((func3 = LVE_VCMV_Z_FUNC3 and eqz = '1') or
+            (func3 = LVE_VCMV_NZ_FUNC3 and eqz = '0'))then
+          cmv_write_en <= '1';
+          cmv_result   <= lve_data1;
         end if;
         cmv_result_valid <= '1';
       end if;
     end if;
   end process;
 
-  alu_proc : process(clk)
-  begin
-    if rising_edge(clk) then
-      readdata_valid <= rd_en;
-    end if;
-  end process;
-  write_enable <= (lve_alu_result_valid or cmv_write_en) and (valid_lve_instr and not is_prefix);
-
+  scalar_enable <= srca_s;
+  enum_enable   <= srcb_e;
   scratchpad_memory : component ram_4port
     generic map (
       MEM_WIDTH => 32,
@@ -279,15 +271,19 @@ begin
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
-      stall_012      => rd_stall,
-      stall_3        => slave_wait,
       raddr0         => std_logic_vector(srca_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
       ren0           => rd_en,
-      data_out0      => srca_data_read,
-      raddr1         => std_logic_vector(srcb_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
-      ren1           => rd_en,
-      data_out1      => srcb_data_read,
+      scalar_value   => std_logic_vector(scalar_value),
+      scalar_enable  => scalar_enable,
 
+      data_out0   => srca_data_read,
+      raddr1      => std_logic_vector(srcb_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
+      ren1        => rd_en,
+      data_out1   => srcb_data_read,
+      enum_value  => std_logic_vector(enum_count),
+      enum_enable => enum_enable,
+
+      ack01     => lve_source_valid,
       waddr2    => std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
       byte_en2  => (others => '1'),
       wen2      => write_enable,
@@ -297,6 +293,7 @@ begin
       wen3      => slave_write_en,
       byte_en3  => slave_byte_en,
       data_out3 => slave_data_out,
+      ack3      => slave_ack,
       data_in3  => slave_data_in);
 
 end architecture;

@@ -192,8 +192,11 @@ begin  -- architecture rtl
       mul_src_valid     => mul_src_valid
       );
 
-  data_in1 <= lve_data1 when lve_source_valid = '1' else rs1_data;
-  data_in2 <= lve_data2 when lve_source_valid = '1' else rs2_data;
+--  data_in1 <= lve_data1 when lve_source_valid = '1' else rs1_data;
+--  data_in2 <= lve_data2 when lve_source_valid = '1' else rs2_data;
+
+  data_in1 <=  rs1_data;
+  data_in2 <=  rs2_data;
 
   source_valid <= lve_source_valid when opcode = LVE_OP else
                   not stall_to_alu and valid_instr;

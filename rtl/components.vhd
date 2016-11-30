@@ -486,7 +486,7 @@ package rv_components is
       slave_byte_en  : in  std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
       slave_data_in  : in  std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
       slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
-      slave_wait     : out std_logic;
+      slave_ack      : out std_logic;
 
       stall_from_lve       : out    std_logic;
       lve_alu_data1        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
