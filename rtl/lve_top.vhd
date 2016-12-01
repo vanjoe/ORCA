@@ -123,10 +123,9 @@ architecture rtl of lve_top is
   signal dest_ptr            : unsigned(REGISTER_SIZE-1 downto 0);
   signal read_vector_length  : unsigned(log2(SCRATCHPAD_SIZE) downto 0);
   signal write_vector_length : unsigned(log2(SCRATCHPAD_SIZE) downto 0);
-  signal srca_ptr_reg        : unsigned(REGISTER_SIZE-1 downto 0);
-  signal srcb_ptr_reg        : unsigned(REGISTER_SIZE-1 downto 0);
   signal writeback_data      : unsigned(REGISTER_SIZE-1 downto 0);
 
+  signal waddr2 : std_logic_vector(log2(SCRATCHPAD_SIZE/4)-1 downto 0);
 
   signal scalar_value : unsigned(REGISTER_SIZE-1 downto 0);
 
@@ -226,11 +225,21 @@ begin
   rd_en <= valid_lve_instr when read_vector_length > 1 or first_element = '1' else '0';
 
 
-  lve_data1      <= std_logic_vector(srca_data_read);
-  lve_data2      <= std_logic_vector(srcb_data_read);
-  writeback_data <= unsigned(lve_result) when acc = '0' else accumulation_result;
-  write_enable   <= (lve_alu_result_valid or cmv_write_en) and (valid_lve_instr and not is_prefix);
+  lve_data1 <= std_logic_vector(srca_data_read);
+  lve_data2 <= std_logic_vector(srcb_data_read);
 
+  wb_proc : process(clk)
+  begin
+    if rising_edge(clk) then
+
+      writeback_data <= unsigned(lve_result);
+      waddr2 <= std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2));
+      if acc = '1' then
+        writeback_data <= accumulation_result;
+      end if;
+      write_enable <= (lve_alu_result_valid or cmv_write_en) and (valid_lve_instr and not is_prefix);
+    end if;
+  end process;
 
 
   accumulation_result <= accumulation_register + unsigned(lve_result);
@@ -284,7 +293,7 @@ begin
       enum_enable => enum_enable,
 
       ack01     => lve_source_valid,
-      waddr2    => std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
+      waddr2    =>waddr2,
       byte_en2  => (others => '1'),
       wen2      => write_enable,
       data_in2  => std_logic_vector(writeback_data),
