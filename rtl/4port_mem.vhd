@@ -124,8 +124,6 @@ architecture behav of ram_2port is
 
   end component;
 
-  type ram_type is array(0 to MEM_DEPTH-1) of std_logic_vector(7 downto 0);
-
 begin
 
   -----------------------------------------------------------------------------
@@ -139,7 +137,7 @@ begin
     signal byte_out0, byte_out1 : std_logic_vector(7 downto 0);
 
     signal addr_a, addr_b : natural range 0 to MEM_DEPTH-1;
-    shared variable ram   : ram_type;
+
 
   begin
     wen0     <= wr_en0 and byte_en0(byte);
