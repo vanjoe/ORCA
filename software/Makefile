@@ -1,8 +1,8 @@
 all:
 AS_SRCS=crt.S
 
-TARGETS=interrupt_test interrupt_branch_test consecutive_read_shift_test read_mul_div_test beamforming beamforming_scalar
-C_SRCS=interrupt printf vbx_api
+TARGETS=interrupt_test interrupt_branch_test consecutive_read_shift_test read_mul_div_test de2-test
+C_SRCS=interrupt
 TARGET_C_SRCS=$(addsuffix .c,$(TARGETS))
 TARGET_C_OBJS=$(addprefix obj/,$(addsuffix .c.o,$(TARGETS)))
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .c.o, $(C_SRCS))) 

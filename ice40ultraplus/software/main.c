@@ -16,17 +16,11 @@ void delayus(int us)
 
 int main()
 {
-  int retval;
-  retval = lve_test();
-  asm volatile(
-							 "add t3, %0, %1\n"
-							 "Done: beq t3, t3, Done\n"
-    :
-    : "r" (retval), "r" ((int) 0));
+	return 0;
 }
 
 int handle_interrupt(long cause, long epc, long regs[32]) {
-  switch(cause & 0xF) {
+	/*  switch(cause & 0xF) {
 
     case M_SOFTWARE_INTERRUPT:
       clear_software_interrupt();
@@ -45,6 +39,7 @@ int handle_interrupt(long cause, long epc, long regs[32]) {
     default:
       break;
   }
-
+	*/
   return epc;
+
 }

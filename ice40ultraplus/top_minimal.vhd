@@ -17,19 +17,7 @@ entity top is
     rxd : in  std_logic;
     txd : out std_logic;
     cts : in  std_logic;
-    rts : out std_logic;
-
-    i2s_sd_mic1_mic2 : in  std_logic := '1';
-    i2s_ws_mic1_mic2 : out std_logic;
-    i2s_clk          : out std_logic;
-
-    I2C_SCL : inout std_logic;
-    I2C_SDA : inout std_logic;
-
-    i2s_out_sdin : out std_logic;
-    i2s_out_sck  : out std_logic;
-    i2s_out_lrck : out std_logic
-
+    rts : out std_logic
 
     );
 end entity;
@@ -54,23 +42,6 @@ architecture rtl of top is
   constant I2S_ADDR_WIDTH       : positive               := I2S_BUFFER_SIZE_LOG2+1;
   constant I2S_DATA_WIDTH       : positive               := 16;
 
-  -- I2S Signals
-  signal i2s_ADR_I     : std_logic_vector(I2S_ADDR_WIDTH-1 downto 0);
-  signal i2s_DAT_I     : std_logic_vector(I2S_DATA_WIDTH-1 downto 0);
-  signal i2s_WE_I      : std_logic;
-  signal i2s_CYC_I     : std_logic;
-  signal i2s_STB_I     : std_logic;
-  signal i2s_SEL_I     : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
-  signal i2s_CTI_I     : std_logic_vector(2 downto 0);
-  signal i2s_BTE_I     : std_logic_vector(1 downto 0);
-  signal i2s_LOCK_I    : std_logic;
-  signal i2s_STALL_O   : std_logic;
-  signal i2s_DAT_O     : std_logic_vector(I2S_DATA_WIDTH-1 downto 0);
-  signal i2s_ACK_O     : std_logic;
-  signal i2s_DAT_O_32  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal i2s_DAT_I_32  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal i2s_ADR_O_32  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal i2s_interrupt : std_logic;
 
 --  constant reset_btn: std_logic := '1';
 
@@ -105,38 +76,8 @@ architecture rtl of top is
 
 
 
-  signal i2c_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal i2c_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal i2c_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal i2c_stb_i   : std_logic;
-  signal i2c_cyc_i   : std_logic;
-  signal i2c_we_i    : std_logic;
-  signal i2c_sel_i   : std_logic_vector(3 downto 0);
-  signal i2c_cti_i   : std_logic_vector(2 downto 0);
-  signal i2c_bte_i   : std_logic_vector(1 downto 0);
-  signal i2c_ack_o   : std_logic;
-  signal i2c_stall_o : std_logic;
-  signal i2c_lock_i  : std_logic;
-  signal i2c_err_o   : std_logic;
-  signal i2c_rty_o   : std_logic;
 
 
-
-  constant MIC_BUFFER_SIZE : integer := 1024;
-  signal mic_1_2_adr_i     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mic_1_2_dat_i     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mic_1_2_dat_o     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal mic_1_2_stb_i     : std_logic;
-  signal mic_1_2_cyc_i     : std_logic;
-  signal mic_1_2_we_i      : std_logic;
-  signal mic_1_2_sel_i     : std_logic_vector(3 downto 0);
-  signal mic_1_2_cti_i     : std_logic_vector(2 downto 0);
-  signal mic_1_2_bte_i     : std_logic_vector(1 downto 0);
-  signal mic_1_2_ack_o     : std_logic;
-  signal mic_1_2_stall_o   : std_logic;
-  signal mic_1_2_lock_i    : std_logic;
-  signal mic_1_2_err_o     : std_logic;
-  signal mic_1_2_rty_o     : std_logic;
 
   signal data_uart_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_uart_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -219,36 +160,6 @@ architecture rtl of top is
   signal nreset           : std_logic;
   signal auto_reset_count : unsigned(3 downto 0) := (others => '0');
   signal auto_reset       : std_logic;
-
-
-  signal i2c_SCLI   : std_logic;
-  signal i2c_SDAI   : std_logic;
-  signal i2c_SCLO   : std_logic;
-  signal i2c_SCLOE  : std_logic;
-  signal i2c_SDAO   : std_logic;
-  signal i2c_SDAOE  : std_logic;
-  signal i2c_ack_hw : std_logic;
-  signal i2c_stb_hw : std_logic;
-  component myI2C is
-    port (
-      I2C2_SCL : inout std_logic;
-      I2C2_SDA : inout std_logic;
-      RST      : in    std_logic;
-      IPLOAD   : in    std_logic;
-      IPDONE   : out   std_logic;
-      SBCLKi   : in    std_logic;
-      sbwri    : in    std_logic;
-      sbstbi   : in    std_logic;
-      SBADRi   : in    std_logic_vector(7 downto 0);
-      SBDATi   : in    std_logic_vector(7 downto 0);
-      SBDATo   : out   std_logic_vector(7 downto 0);
-      SBACKo   : out   std_logic;
-      I2CPIRQ  : out   std_logic_vector(1 downto 0);
-      I2CPWKUP : out   std_logic_vector(1 downto 0);
-      SPIPIRQ  : out   std_logic_vector(1 downto 0);
-      SPIPWKUP : out   std_logic_vector(1 downto 0));
-
-  end component myI2C;
 
 begin
 
@@ -562,10 +473,10 @@ begin
   split_wb_data : component wb_splitter
     generic map(
       master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE),  -- RAM
-      master1_address => (16#00010000#, 4*1024),            -- MIC
+      master1_address => (16#00010000#, 0),                 -- MIC
       master2_address => (16#00020000#, 4*1024),            -- UART
-      master3_address => (16#00030000#, 4*1024),            --I2S Transmit
-      master4_address => (16#00040000#, 4*1024))            --i2c
+      master3_address => (16#00030000#, 0),                 --I2S Transmit
+      master4_address => (16#00040000#, 0))                 --i2c
 
     port map(
       clk_i => clk,
@@ -601,20 +512,20 @@ begin
       master0_ERR_I   => data_ram_ERR_O,
       master0_RTY_I   => data_ram_RTY_O,
 
-      master1_ADR_O   => mic_1_2_ADR_I,
-      master1_DAT_O   => mic_1_2_DAT_I,
-      master1_WE_O    => mic_1_2_WE_I,
-      master1_CYC_O   => mic_1_2_CYC_I,
-      master1_STB_O   => mic_1_2_STB_I,
-      master1_SEL_O   => mic_1_2_SEL_I,
-      master1_CTI_O   => mic_1_2_CTI_I,
-      master1_BTE_O   => mic_1_2_BTE_I,
-      master1_LOCK_O  => mic_1_2_LOCK_I,
-      master1_STALL_I => mic_1_2_STALL_O,
-      master1_DAT_I   => mic_1_2_DAT_O,
-      master1_ACK_I   => mic_1_2_ACK_O,
-      master1_ERR_I   => mic_1_2_ERR_O,
-      master1_RTY_I   => mic_1_2_RTY_O,
+      master1_ADR_O   => open,
+      master1_DAT_O   => open,
+      master1_WE_O    => open,
+      master1_CYC_O   => open,
+      master1_STB_O   => open,
+      master1_SEL_O   => open,
+      master1_CTI_O   => open,
+      master1_BTE_O   => open,
+      master1_LOCK_O  => open,
+      master1_STALL_I => open,
+      master1_DAT_I   => open,
+      master1_ACK_I   => open,
+      master1_ERR_I   => open,
+      master1_RTY_I   => open,
 
       master2_ADR_O   => data_uart_ADR_I,
       master2_DAT_O   => data_uart_DAT_I,
@@ -632,33 +543,33 @@ begin
       master2_RTY_I   => data_uart_RTY_O,
 
 
-      master3_ADR_O   => i2s_ADR_O_32,
-      master3_DAT_O   => i2s_DAT_I_32,
-      master3_WE_O    => i2s_WE_I,
-      master3_CYC_O   => i2s_CYC_I,
-      master3_STB_O   => i2s_STB_I,
-      master3_SEL_O   => i2s_SEL_I,
-      master3_CTI_O   => i2s_CTI_I,
-      master3_BTE_O   => i2s_BTE_I,
-      master3_LOCK_O  => i2s_LOCK_I,
-      master3_STALL_I => i2s_STALL_O,
-      master3_DAT_I   => i2s_DAT_O_32,
-      master3_ACK_I   => i2s_ACK_O,
+      master3_ADR_O   => open,
+      master3_DAT_O   => open,
+      master3_WE_O    => open,
+      master3_CYC_O   => open,
+      master3_STB_O   => open,
+      master3_SEL_O   => open,
+      master3_CTI_O   => open,
+      master3_BTE_O   => open,
+      master3_LOCK_O  => open,
+      master3_STALL_I => open,
+      master3_DAT_I   => open,
+      master3_ACK_I   => open,
       master3_ERR_I   => open,
       master3_RTY_I   => open,
 
-      master4_ADR_O   => i2c_ADR_i,
-      master4_DAT_O   => i2c_DAT_i,
-      master4_WE_O    => i2c_WE_I,
-      master4_CYC_O   => i2c_CYC_I,
-      master4_STB_O   => i2c_STB_I,
-      master4_SEL_O   => i2c_SEL_I,
-      master4_CTI_O   => i2c_CTI_I,
-      master4_BTE_O   => i2c_BTE_I,
-      master4_LOCK_O  => i2c_LOCK_I,
-      master4_STALL_I => i2c_STALL_O,
-      master4_DAT_I   => i2c_DAT_o,
-      master4_ACK_I   => i2c_ACK_O,
+      master4_ADR_O   => open,
+      master4_DAT_O   => open,
+      master4_WE_O    => open,
+      master4_CYC_O   => open,
+      master4_STB_O   => open,
+      master4_SEL_O   => open,
+      master4_CTI_O   => open,
+      master4_BTE_O   => open,
+      master4_LOCK_O  => open,
+      master4_STALL_I => open,
+      master4_DAT_I   => open,
+      master4_ACK_I   => open,
       master4_ERR_I   => open,
       master4_RTY_I   => open,
 
@@ -708,43 +619,12 @@ begin
       master7_ERR_I   => open,
       master7_RTY_I   => open);
 
-                                        -- Resizing to fit the REGISTER_SIZE bit wishbone splitter.
-  i2s_DAT_O_32 <= i2s_DAT_O & i2s_DAT_O;
-  i2s_DAT_I    <= i2s_DAT_I_32(I2S_DATA_WIDTH-1 downto 0);
-
---The i2s module uses a 16bit bus, use the sel bits to choose which address is
---appropriate
-  i2s_ADR_I   <= i2s_ADR_O_32(I2S_ADDR_WIDTH downto 2) & not i2s_SEL_I(0);
-  i2s_stall_o <= i2s_STB_I and not i2s_ACK_O;
 
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
 
 
 
-  i2s_tx : component tx_i2s_topm
-    generic map (
-      DATA_WIDTH => I2S_DATA_WIDTH,
-      ADDR_WIDTH => I2S_ADDR_WIDTH)
-    port map (
-      wb_clk_i => clk,
-      wb_rst_i => reset,
-      wb_sel_i => '1',
-      wb_stb_i => i2s_STB_I,
-      wb_we_i  => i2s_WE_I,
-      wb_cyc_i => i2s_CYC_I,
-      wb_bte_i => i2s_BTE_I,
-      wb_cti_i => i2s_CTI_I,
-      wb_adr_i => i2s_ADR_I,
-      wb_dat_i => i2s_DAT_I,
-      wb_ack_o => i2s_ACK_O,
-      wb_dat_o => i2s_DAT_O,
-
-      tx_int_o => i2s_interrupt,
-
-      i2s_sd_o  => i2s_out_sdin,
-      i2s_sck_o => i2s_out_sck,
-      i2s_ws_o  => i2s_out_lrck);
 
                                         -- This is not used while operating in external serial mode.
                                         --i2s_out_mclk <= clk_12;
@@ -947,93 +827,6 @@ begin
     data_uart_stall_o <= not data_uart_ack_O;
   end generate uart_data_bus;
 
-  mics : component i2s_wb
-    generic map (
-      DATA_WIDTH => 32,
-      ADDR_WIDTH => log2(MIC_BUFFER_SIZE*2))
-    port map(
-      wb_clk_i   => clk,
-      wb_rst_i   => reset,
-      wb_sel_i   => '1',
-      wb_stb_i   => mic_1_2_stb_i,
-      wb_we_i    => mic_1_2_we_i,
-      wb_cyc_i   => mic_1_2_cyc_i,
-      wb_bte_i   => mic_1_2_bte_i,
-      wb_cti_i   => mic_1_2_cti_i,
-      wb_adr_i   => mic_1_2_adr_i(log2(MIC_BUFFER_SIZE*2)-1 downto 0),
-      wb_dat_i   => mic_1_2_dat_i,
-      i2s_sd_i   => i2s_sd_mic1_mic2,
-      wb_ack_o   => mic_1_2_ack_o,
-      wb_dat_o   => mic_1_2_dat_o,
-      wb_stall_o => mic_1_2_stall_o,
---      rx_int_o  => mic_1_2_rx_int_o,
-      i2s_sck_o  => i2s_clk,
-      i2s_ws_o   => i2s_ws_mic1_mic2);
-
-
-  i2c_dat_o(31 downto 8) <= (others => '0');
-  i2c_STALL_O            <= not i2c_ack_hw;
-  i2c_ack_o              <= i2c_ack_hw when rising_edge(clk);
-  i2c_stb_hw             <= i2c_STB_I and not i2c_ack_o;
-  i2c_scl                <= i2c_sclo   when i2c_scloe = '1' else 'Z';
-  i2c_sda                <= i2c_sdao   when i2c_sdaoe = '1' else 'Z';
-
-  i2c_scli <= i2c_scl;
-  i2c_sdai <= i2c_sda;
-
-  i2c : component SB_I2C
-    generic map(
-      I2C_SLAVE_INIT_ADDR => "0b1000001",
-      BUS_ADDR74          => "0b0001")
-
-    port map(
-
-      SBCLKI  => clk,
-      SBRWI   => i2c_we_i,
-      SBSTBI  => i2c_stb_hw,
-      SBADRI7 => i2c_adr_i(9),
-      SBADRI6 => i2c_adr_i(8),
-      SBADRI5 => i2c_adr_i(7),
-      SBADRI4 => i2c_adr_i(6),
-      SBADRI3 => i2c_adr_i(5),
-      SBADRI2 => i2c_adr_i(4),
-      SBADRI1 => i2c_adr_i(3),
-      SBADRI0 => i2c_adr_i(2),
-      SBDATI7 => i2c_dat_i(7),
-      SBDATI6 => i2c_dat_i(6),
-      SBDATI5 => i2c_dat_i(5),
-      SBDATI4 => i2c_dat_i(4),
-      SBDATI3 => i2c_dat_i(3),
-      SBDATI2 => i2c_dat_i(2),
-      SBDATI1 => i2c_dat_i(1),
-      SBDATI0 => i2c_dat_i(0),
-      SCLI    => i2c_scli,
-      SDAI    => i2c_sdai,
-      SBDATO7 => i2c_dat_o(7),
-      SBDATO6 => i2c_dat_o(6),
-      SBDATO5 => i2c_dat_o(5),
-      SBDATO4 => i2c_dat_o(4),
-      SBDATO3 => i2c_dat_o(3),
-      SBDATO2 => i2c_dat_o(2),
-      SBDATO1 => i2c_dat_o(1),
-      SBDATO0 => i2c_dat_o(0),
-      SBACKO  => i2c_ack_hw,
-      SCLO    => i2c_SCLO,
-      SCLOE   => i2c_SCLOE,
-      SDAO    => i2c_SDAO,
-      SDAOE   => i2c_SDAOE);
-
---  my_i2c:  component myI2C
---    port map(
-----      I2C2_SCL : inout std_logic;
-----      I2C2_SDA : inout std_logic;
---      RST  => reset,
---      IPLOAD  =>  '1',
---      SBCLKi =>  clk,
---      sbwri => '0',
---      sbstbi => '0',
---      SBADRi  => (others => '0'),
---      SBDATi   => (others => '0'));
 
 
 end architecture rtl;

@@ -8,7 +8,7 @@ $(RISCV_ENV_DIR):
 	cd $(RISCV_TOOLS_DIR); git submodule update --init .
 	cd $(RISCV_TESTS_DIR); git submodule update --init --recursive .
 	sed -i 's/. = 0x80000000/. = 0x00000200/' $@/link.ld
-	sed -i 's/.tohost.*$//' $@/link.ld
+	sed -i 's/.tohost.*$$//' $@/link.ld
 	sed -i 's/ ecall/fence.i;ecall/' $@/riscv_test.h
 
 
@@ -17,12 +17,12 @@ PREFIX=riscv32-unknown-elf-
 CC=$(PREFIX)gcc
 OBJDUMP=$(PREFIX)objdump
 TEST_ASM=consecutive_instr.S
-TEST_C=simple_c_test.c vbx_test.c
+TEST_C=simple_c_test.c vbx_test.c interrupt_test.c cmov_test.c
 
 TEST_ASM_ELF=$(addsuffix .elf,$(basename $(TEST_ASM)))
 TEST_C_ELF=$(addsuffix .elf,$(basename $(TEST_C)))
 
-C_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=$(ARCH)
+C_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=$(ARCH) -Wall
 INCLUDE_DIRS:=$(RISCV_ENV_DIR) $(RISCV_TESTS_DIR)/isa/macros/scalar ../
 
 INCLUDE_DIRS:=$(addprefix -I,$(INCLUDE_DIRS))

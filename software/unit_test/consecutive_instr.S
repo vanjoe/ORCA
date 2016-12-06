@@ -43,6 +43,17 @@ test_4: /*consecutive stores*/
 		  li      x29,0xBBBBBBBB
 		  bne     x5,x29,fail
 
+test_5: /*csrr after load*/
+		  la      x1, data_5_0
+		  li      x3,0xAAAAAAAA
+		  li      x4,0x80
+		  csrw    mstatus,x4
+		  lw      x5, 0(x1)
+		  csrr    x6, mstatus
+		  li      x28, 5
+		  bne     x5,x3,fail
+		  bne     x6,x4,fail
+
 		  TEST_PASSFAIL
 
 RVTEST_CODE_END
@@ -59,6 +70,9 @@ data_4_0:
 		  .word 0x0
 data_4_1:
 		  .word 0x0
+data_5_0:
+		  .word 0xAAAAAAAA
+
 
   TEST_DATA
 

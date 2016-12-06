@@ -190,90 +190,90 @@ architecture rtl of wb_splitter is
 begin  -- architecture rt
   adr_i <= unsigned(slave_ADR_I);
 
-  master0_gen : if master0_address(0) /= 0 generate
-    constant adr  : natural                            := master0_address(1);
-    constant size : natural                            := master0_address(0);
+  master0_gen : if master0_address(1) /= 0 generate
+    constant adr  : natural                            := master0_address(0);
+    constant size : natural                            := master0_address(1);
     constant mask : unsigned(REGISTER_SIZE-1 downto 0) := not to_unsigned(size-1, REGISTER_SIZE);
   begin
     master0_stb <= slave_STB_I when (adr_i and mask) = to_unsigned(adr, REGISTER_SIZE) else '0';
   end generate master0_gen;
-  nmaster0_gen : if master0_address(0) = 0 generate
+  nmaster0_gen : if master0_address(1) = 0 generate
     master0_stb <= '0';
   end generate nmaster0_gen;
 
   master1_gen : if master1_address(1) /= 0 generate
-    constant adr  : natural                            := master1_address(1);
-    constant size : natural                            := master1_address(0);
+    constant adr  : natural                            := master1_address(0);
+    constant size : natural                            := master1_address(1);
     constant mask : unsigned(REGISTER_SIZE-1 downto 0) := not to_unsigned(size-1, REGISTER_SIZE);
   begin
     master1_stb <= slave_STB_I when (adr_i and mask) = to_unsigned(adr, REGISTER_SIZE) else '0';
   end generate master1_gen;
-  nmaster1_gen : if master1_address(0) = 0 generate
+  nmaster1_gen : if master1_address(1) = 0 generate
     master1_stb <= '0';
   end generate nmaster1_gen;
 
   master2_gen : if master2_address(1) /= 0 generate
-    constant adr  : natural                            := master2_address(1);
-    constant size : natural                            := master2_address(0);
+    constant adr  : natural                            := master2_address(0);
+    constant size : natural                            := master2_address(1);
     constant mask : unsigned(REGISTER_SIZE-1 downto 0) := not to_unsigned(size-1, REGISTER_SIZE);
   begin
     master2_stb <= slave_STB_I when (adr_i and mask) = to_unsigned(adr, REGISTER_SIZE) else '0';
   end generate master2_gen;
-  nmaster2_gen : if master2_address(0) = 0 generate
+  nmaster2_gen : if master2_address(1) = 0 generate
     master2_stb <= '0';
   end generate nmaster2_gen;
 
   master3_gen : if master3_address(1) /= 0 generate
-    constant adr  : natural                            := master3_address(1);
-    constant size : natural                            := master3_address(0);
+    constant adr  : natural                            := master3_address(0);
+    constant size : natural                            := master3_address(1);
     constant mask : unsigned(REGISTER_SIZE-1 downto 0) := not to_unsigned(size-1, REGISTER_SIZE);
   begin
     master3_stb <= slave_STB_I when (adr_i and mask) = to_unsigned(adr, REGISTER_SIZE) else '0';
   end generate master3_gen;
-  nmaster3_gen : if master3_address(0) = 0 generate
+  nmaster3_gen : if master3_address(1) = 0 generate
     master3_stb <= '0';
   end generate nmaster3_gen;
   master4_gen : if master4_address(1) /= 0 generate
-    constant adr  : natural                            := master4_address(1);
-    constant size : natural                            := master4_address(0);
+    constant adr  : natural                            := master4_address(0);
+    constant size : natural                            := master4_address(1);
     constant mask : unsigned(REGISTER_SIZE-1 downto 0) := not to_unsigned(size-1, REGISTER_SIZE);
   begin
     master4_stb <= slave_STB_I when (adr_i and mask) = to_unsigned(adr, REGISTER_SIZE) else '0';
   end generate master4_gen;
-  nmaster4_gen : if master4_address(0) = 0 generate
+  nmaster4_gen : if master4_address(1) = 0 generate
     master4_stb <= '0';
   end generate nmaster4_gen;
 
   master5_gen : if master5_address(1) /= 0 generate
-    constant adr  : natural                            := master5_address(1);
-    constant size : natural                            := master5_address(0);
+    constant adr  : natural                            := master5_address(0);
+    constant size : natural                            := master5_address(1);
     constant mask : unsigned(REGISTER_SIZE-1 downto 0) := not to_unsigned(size-1, REGISTER_SIZE);
   begin
     master5_stb <= slave_STB_I when (adr_i and mask) = to_unsigned(adr, REGISTER_SIZE) else '0';
   end generate master5_gen;
-  nmaster5_gen : if master5_address(0) = 0 generate
+  nmaster5_gen : if master5_address(1) = 0 generate
     master5_stb <= '0';
   end generate nmaster5_gen;
 
   master6_gen : if master6_address(1) /= 0 generate
-    constant adr  : natural                            := master6_address(1);
-    constant size : natural                            := master6_address(0);
+    constant adr  : natural                            := master6_address(0);
+    constant size : natural                            := master6_address(1);
     constant mask : unsigned(REGISTER_SIZE-1 downto 0) := not to_unsigned(size-1, REGISTER_SIZE);
   begin
     master6_stb <= slave_STB_I when (adr_i and mask) = to_unsigned(adr, REGISTER_SIZE) else '0';
   end generate master6_gen;
-  nmaster6_gen : if master6_address(0) = 0 generate
+  nmaster6_gen : if master6_address(1) = 0 generate
     master6_stb <= '0';
   end generate nmaster6_gen;
 
   master7_gen : if master7_address(1) /= 0 generate
-    constant adr  : natural                            := master7_address(1);
-    constant size : natural                            := master7_address(0);
+    constant adr  : natural                            := master7_address(0);
+    constant size : natural                            := master7_address(1);
     constant mask : unsigned(REGISTER_SIZE-1 downto 0) := not to_unsigned(size-1, REGISTER_SIZE);
   begin
     master7_stb <= slave_STB_I when (adr_i and mask) = to_unsigned(adr, REGISTER_SIZE) else '0';
   end generate master7_gen;
-  nmaster7_gen : if master7_address(0) = 0 generate
+  nmaster7_gen : if master7_address(1) = 0 generate
     master7_stb <= '0';
   end generate nmaster7_gen;
 
@@ -365,7 +365,7 @@ begin  -- architecture rt
 
 
 
--------------------------------------------------------------------------------
+  -------------------------------------------------------------------------------
   -- The output signals are multiplexed below
   -------------------------------------------------------------------------------
   choice <= M0 when master0_stb = '1' else

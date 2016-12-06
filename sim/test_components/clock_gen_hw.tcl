@@ -41,7 +41,7 @@ add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL clock_gen
 set_fileset_property SIM_VHDL ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property SIM_VHDL ENABLE_FILE_OVERWRITE_MODE true
-add_fileset_file clock_gen.vhd VHDL PATH clock_gen.vhd
+add_fileset_file test_components/clock_gen.vhd VHDL PATH clock_gen.vhd
 
 
 #
