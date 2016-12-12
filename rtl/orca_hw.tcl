@@ -9,7 +9,14 @@
 #
 package require -exact qsys 15.0
 
-
+proc log2 { num } {
+	 set retval 0
+	 while { $num > 1 } {
+		  set retval [expr $retval + 1 ]
+		  set num [expr $num / 2 ]
+	 }
+	 return $retval
+}
 #
 # module orca
 #
@@ -113,11 +120,17 @@ set_parameter_property LVE_ENABLE ALLOWED_RANGES 0:1
 set_parameter_property LVE_ENABLE HDL_PARAMETER true
 set_display_item_property LVE_ENABLE DISPLAY_HINT boolean
 
-add_parameter  SCRATCHPAD_SIZE integer 1024
+add_parameter SCRATCHPAD_ADDR_BITS integer 1024
+set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
+set_parameter_property SCRATCHPAD_ADDR_BITS visible true
+set_parameter_property SCRATCHPAD_ADDR_BITS derived true
+
+
+add_parameter SCRATCHPAD_SIZE integer 1024
 set_parameter_property SCRATCHPAD_SIZE DISPLAY_NAME "        Scratchpad size"
-set_parameter_property SCRATCHPAD_SIZE DESCRIPTION "Enable Vector Extensions"
+set_parameter_property SCRATCHPAD_SIZE DESCRIPTION "        Scratchpad size"
 set_parameter_property SCRATCHPAD_SIZE UNITS Bytes
-set_parameter_property SCRATCHPAD_SIZE HDL_PARAMETER true
+set_parameter_property SCRATCHPAD_SIZE HDL_PARAMETER false
 set_parameter_property SCRATCHPAD_SIZE visible false
 
 
@@ -304,6 +317,8 @@ add_interface_port data avm_data_waitrequest waitrequest Input 1
 add_interface_port data avm_data_readdatavalid readdatavalid Input 1
 
 
+
+
 #
 # Data Axi Port
 #
@@ -358,7 +373,7 @@ add_interface_port axi_data_master data_WVALID wvalid Output 1
 
 
 #
-# Data Axi Port
+# Instruction Axi Port
 #
 add_interface axi_instr_master axi start
 set_interface_property axi_instr_master associatedClock clock
@@ -443,6 +458,42 @@ add_interface_port instruction avm_instruction_waitrequest waitrequest Input 1
 add_interface_port instruction avm_instruction_readdatavalid readdatavalid Input 1
 
 #
+# connection point scratch
+#
+add_interface scratch avalon slave
+
+set_interface_property scratch addressUnits SYMBOLS
+set_interface_property scratch associatedClock clock
+set_interface_property scratch associatedReset reset
+set_interface_property scratch bitsPerSymbol 8
+set_interface_property scratch burstOnBurstBoundariesOnly false
+set_interface_property scratch burstcountUnits WORDS
+set_interface_property scratch holdTime 0
+set_interface_property scratch linewrapBursts false
+set_interface_property scratch maximumPendingReadTransactions 1
+set_interface_property scratch maximumPendingWriteTransactions 0
+set_interface_property scratch readLatency 0
+set_interface_property scratch readWaitTime 1
+set_interface_property scratch setupTime 0
+set_interface_property scratch timingUnits Cycles
+set_interface_property scratch writeWaitTime 0
+set_interface_property scratch ENABLED true
+set_interface_property scratch EXPORT_OF ""
+set_interface_property scratch PORT_NAME_MAP ""
+set_interface_property scratch CMSIS_SVD_VARIABLES ""
+set_interface_property scratch SVD_ADDRESS_GROUP ""
+
+add_interface_port scratch avm_scratch_address address Input scratchpad_addr_bits
+add_interface_port scratch avm_scratch_byteenable byteenable Input register_size/8
+add_interface_port scratch avm_scratch_read read Input 1
+add_interface_port scratch avm_scratch_readdata readdata Output register_size
+add_interface_port scratch avm_scratch_write write Input 1
+add_interface_port scratch avm_scratch_writedata writedata Input register_size
+add_interface_port scratch avm_scratch_waitrequest waitrequest Output 1
+add_interface_port scratch avm_scratch_readdatavalid readdatavalid Output 1
+
+
+#
 # connection point global_interrupts
 #
 
@@ -497,6 +548,7 @@ proc log_out {out_str} {
 }
 
 proc elaboration_callback {} {
+
 	 if { [get_parameter_value MULTIPLY_ENABLE] } {
 		  set_display_item_property SHIFTER_MAX_CYCLES ENABLED false
 	 } else {
@@ -504,13 +556,15 @@ proc elaboration_callback {} {
 	 }
 
 	 if { [get_parameter_value LVE_ENABLE] } {
-
 		  set_interface_property scratchpad_clk ENABLED true
+		  set_interface_property scratch ENABLED true
 		  set_parameter_property SCRATCHPAD_SIZE visible true
 	 } else {
 		  set_interface_property scratchpad_clk ENABLED false
+		  set_interface_property scratch ENABLED false
 		  set_parameter_property SCRATCHPAD_SIZE visible false
 	 }
+	 set_parameter_value SCRATCHPAD_ADDR_BITS [log2 [get_parameter_value SCRATCHPAD_SIZE ] ]
 
 	 set table_size 0
 	 if { [get_parameter_value BRANCH_PREDICTION] } {

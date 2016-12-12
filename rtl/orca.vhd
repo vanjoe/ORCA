@@ -24,7 +24,7 @@ entity Orca is
     LVE_ENABLE            : natural range 0 to 1  := 0;
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1  := 0;
     NUM_EXT_INTERRUPTS    : integer range 1 to 32 := 1;
-    SCRATCHPAD_SIZE       : integer               := 1024;
+    SCRATCHPAD_ADDR_BITS  : integer               := 10;
     FAMILY                : string                := "ALTERA");
 
   port(clk            : in std_logic;
@@ -162,6 +162,18 @@ entity Orca is
        instr_BVALID  : in  std_logic;
        instr_BREADY  : out std_logic;
 
+       -------------------------------------------------------------------------------
+       -- Scratchpad Slave
+       -------------------------------------------------------------------------------
+       avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
+       avm_scratch_byteenable    : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+       avm_scratch_read          : in  std_logic;
+       avm_scratch_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+       avm_scratch_write         : in  std_logic;
+       avm_scratch_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+       avm_scratch_waitrequest   : out std_logic;
+       avm_scratch_readdatavalid : out std_logic;
+
 
        global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
        );
@@ -184,6 +196,15 @@ architecture rtl of Orca is
   signal core_instruction_waitrequest   : std_logic;
   signal core_instruction_readdatavalid : std_logic;
 
+  signal sp_address   : std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
+  signal sp_byte_en   : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal sp_write_en  : std_logic;
+  signal sp_read_en   : std_logic;
+  signal sp_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sp_readdata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sp_ack       : std_logic;
+
+
 
 
 begin  -- architecture rtl
@@ -198,6 +219,7 @@ begin  -- architecture rtl
     signal is_reading : std_logic;
     signal write_ack  : std_logic;
 
+    signal ack_mask : std_logic;
   begin
     core_data_readdata <= avm_data_readdata;
 
@@ -233,6 +255,27 @@ begin  -- architecture rtl
     core_instruction_readdata      <= avm_instruction_readdata;
     core_instruction_waitrequest   <= avm_instruction_waitrequest;
     core_instruction_readdatavalid <= avm_instruction_readdatavalid;
+
+    sp_address              <= avm_scratch_address;
+    sp_byte_en              <= avm_scratch_byteenable;
+    sp_read_en              <= avm_scratch_read;
+    sp_write_en             <= avm_scratch_write;
+    sp_writedata            <= avm_scratch_writedata;
+    avm_scratch_readdata    <= sp_readdata;
+    avm_scratch_waitrequest <= '0';
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        if sp_ack = '1' then
+          ack_mask <= '0';
+        end if;
+        if sp_read_en = '1' then
+          ack_mask <= '1';
+        end if;
+      end if;
+    end process;
+    avm_scratch_readdatavalid <= sp_ack and ack_mask;
+
   end generate avalon_enabled;
 
   -----------------------------------------------------------------------------
@@ -414,7 +457,7 @@ begin  -- architecture rtl
       PIPELINE_STAGES    => PIPELINE_STAGES,
       LVE_ENABLE         => LVE_ENABLE,
       NUM_EXT_INTERRUPTS => CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0),
-      SCRATCHPAD_SIZE    => SCRATCHPAD_SIZE,
+      SCRATCHPAD_SIZE    => 2**SCRATCHPAD_ADDR_BITS,
       FAMILY             => FAMILY)
 
     port map(
@@ -436,6 +479,14 @@ begin  -- architecture rtl
       core_instruction_readdata      => core_instruction_readdata,
       core_instruction_waitrequest   => core_instruction_waitrequest,
       core_instruction_readdatavalid => core_instruction_readdatavalid,
+
+      sp_address   => sp_address,
+      sp_byte_en   => sp_byte_en,
+      sp_write_en  => sp_write_en,
+      sp_read_en   => sp_read_en,
+      sp_writedata => sp_writedata,
+      sp_readdata  => sp_readdata,
+      sp_ack       => sp_ack,
 
       external_interrupts => global_interrupts(CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0)-1 downto 0));
 

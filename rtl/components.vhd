@@ -202,6 +202,15 @@ package rv_components is
       core_instruction_waitrequest   : in  std_logic                                  := '0';
       core_instruction_readdatavalid : in  std_logic                                  := '0';
 
+      --memory-bus scratchpad-slave
+      sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+      sp_byte_en   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      sp_write_en  : in  std_logic;
+      sp_read_en   : in  std_logic;
+      sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_ack       : out std_logic;
+
       external_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
       );
   end component orca_core;
@@ -277,10 +286,7 @@ package rv_components is
       branch_pred        : out    std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
       stall_from_execute : buffer std_logic;
 
-
-
-
-      --memory-bus
+      --memory-bus master
       address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       byte_en   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
       write_en  : out std_logic;
@@ -288,6 +294,15 @@ package rv_components is
       writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       data_ack  : in  std_logic;
+
+      --memory-bus scratchpad-slave
+      sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+      sp_byte_en   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      sp_write_en  : in  std_logic;
+      sp_read_en   : in  std_logic;
+      sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_ack       : out std_logic;
 
       external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       pipeline_empty      : in  std_logic;
@@ -480,7 +495,7 @@ package rv_components is
       rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-      slave_address  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
       slave_read_en  : in  std_logic;
       slave_write_en : in  std_logic;
       slave_byte_en  : in  std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
