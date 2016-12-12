@@ -10,7 +10,7 @@ package constants_pkg is
   --REGISTER NAMES
   constant REGISTER_NAME_SIZE : integer := 5;
 
-  constant REGISTER_ZERO : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(1, REGISTER_NAME_SIZE);
+  constant REGISTER_ZERO : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(0, REGISTER_NAME_SIZE);
   constant REGISTER_RA   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(1, REGISTER_NAME_SIZE);
   constant REGISTER_SP   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(2, REGISTER_NAME_SIZE);
   constant REGISTER_GP   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(3, REGISTER_NAME_SIZE);
@@ -82,6 +82,9 @@ package constants_pkg is
   constant CSR_MIP          : std_logic_vector(11 downto 0)  := x"344";
   constant CSR_MTIME        : std_logic_vector(11 downto 0)  := x"F01";
   constant CSR_MTIMEH       : std_logic_vector(11 downto 0)  := x"F81";
+  constant CSR_UTIME        : std_logic_vector(11 downto 0)  := x"C01";
+  constant CSR_UTIMEH       : std_logic_vector(11 downto 0)  := x"C81";
+
   --NON-STANDARD
   constant CSR_MEIMASK      : std_logic_vector(11 downto 0)  := x"7C0";
   constant CSR_MEIPEND      : std_logic_vector(11 downto 0)  := x"FC0";

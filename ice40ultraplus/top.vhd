@@ -525,7 +525,7 @@ begin
       COUNTER_LENGTH     => 32,
       PIPELINE_STAGES    => 4,
       LVE_ENABLE         => 1,
-      ENABLE_EXCEPTIONS  => 0,
+      ENABLE_EXCEPTIONS  => 1,
       NUM_EXT_INTERRUPTS => 2,
       SCRATCHPAD_SIZE    => 128*1024,
       FAMILY             => "LATTICE")

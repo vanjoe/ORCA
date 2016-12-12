@@ -2,6 +2,7 @@
 proc com {} {
     set fileset [list \
                      ../rtl/utils.vhd                   \
+							../rtl/constants_pkg.vhd \
                      ../rtl/components.vhd              \
                      ../rtl/alu.vhd                     \
                      ../rtl/branch_unit.vhd             \
@@ -13,10 +14,8 @@ proc com {} {
                      ../rtl/orca.vhd                    \
                      ../rtl/orca_core.vhd               \
                      ../rtl/sys_call.vhd                \
-                     ../rtl/plic.vhd                    \
-                     ../rtl/gateway.vhd                 \
                      ../rtl/lve_top.vhd                 \
-                     ../rtl/4port_mem.vhd               \
+                     ../rtl/4port_mem_ultraplus.vhd               \
                      hdl/top_util_pkg.vhd               \
                      hdl/top_component_pkg.vhd          \
                      hdl/wb_ram.vhd                     \
@@ -118,7 +117,6 @@ proc recom { t {extra_waves false} } {
     add wave -noupdate /top_tb/dut/rv/core/X/valid_instr
     add wave -hex -noupdate /top_tb/dut/rv/core/X/pc_current
     add wave -hex -noupdate /top_tb/dut/rv/core/X/instruction
-    add wave -decimal -noupdate /top_tb/dut/rv/core/X/syscall/mscratch
 
     if { $extra_waves } {
 	wave_RF
