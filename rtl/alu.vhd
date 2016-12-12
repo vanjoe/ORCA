@@ -195,8 +195,8 @@ begin  -- architecture rtl
 --  data_in1 <= lve_data1 when lve_source_valid = '1' else rs1_data;
 --  data_in2 <= lve_data2 when lve_source_valid = '1' else rs2_data;
 
-  data_in1 <=  rs1_data;
-  data_in2 <=  rs2_data;
+  data_in1 <= rs1_data;
+  data_in2 <= rs2_data;
 
   source_valid <= lve_source_valid when opcode = LVE_OP else
                   not stall_to_alu and valid_instr;
@@ -516,7 +516,7 @@ begin  -- architecture rtl
     signal count_next : unsigned(SHIFT_AMT_SIZE downto 0);
     signal count_sub4 : unsigned(SHIFT_AMT_SIZE downto 0);
     signal shift4     : std_logic;
-    type state_t is (IDLE, RUNNING);
+    type state_t is (IDLE, RUNNING, DONE);
     signal state      : state_t;
   begin
     count_sub4 <= count -4;
@@ -547,8 +547,10 @@ begin  -- architecture rtl
               count     <= count_next;
               if count = 1 or count = 4 then
                 shifted_result_valid <= '1';
-                state                <= IDLE;
+                state                <= DONE;
               end if;
+            when Done =>
+              state <= IDLE;
             when others =>
               null;
           end case;
@@ -563,7 +565,7 @@ begin  -- architecture rtl
     signal left_nxt  : signed(REGISTER_SIZE downto 0);
     signal right_nxt : signed(REGISTER_SIZE downto 0);
     signal count     : signed(SHIFT_AMT_SIZE-1 downto 0);
-    type state_t is (IDLE, RUNNING);
+    type state_t is (IDLE, RUNNING, DONE);
     signal state     : state_t;
   begin
     left_nxt  <= SHIFT_LEFT(left_tmp, 1);
@@ -591,8 +593,10 @@ begin  -- architecture rtl
               count     <= count -1;
               if count = 1 then
                 shifted_result_valid <= '1';
-                state                <= IDLE;
+                state                <= DONE;
               end if;
+            when Done =>
+              state <= IDLE;
             when others =>
               null;
           end case;

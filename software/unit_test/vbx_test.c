@@ -75,13 +75,13 @@ TEST_ATTR int test_5()
   vbx_word_t* b=a+vlen;
   vbx_word_t* c=b+vlen;
   for( int i=0;i<vlen;i++){
-	a[i]= 3;
+	a[i]= 3+i;
   }
   for( int i=0;i<vlen;i++){
-	b[i] = 6;
+	b[i] = 6+i;
   }
 
-  vbx_acc(VVW,VMUL,c,b,a);
+  vbx_acc(VVW,VADD,c,b,a);
   if (c[0] != 180){
 	 return 1; //TEST FAIL
   }
