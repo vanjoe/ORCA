@@ -134,8 +134,9 @@ proc rerun { t } {
     run $t
 }
 
+
+recom 0
+
 set DefaultRadix hex
 
 config wave -signalnamewidth 2
-
-recom 0

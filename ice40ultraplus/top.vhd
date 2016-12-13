@@ -36,8 +36,8 @@ end entity;
 
 architecture rtl of top is
 
-
-  constant SYSCLK_FREQ_HZ : natural := 8000000;
+  constant SCRATCHPAD_SIZE : integer := 128*1024;
+  constant SYSCLK_FREQ_HZ  : natural := 8000000;
 
   constant REGISTER_SIZE : integer := 32;
 
@@ -168,6 +168,18 @@ architecture rtl of top is
   signal data_ram_err_o   : std_logic;
   signal data_ram_rty_o   : std_logic;
 
+  signal sp_ADR32 : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sp_ADR   : std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+  signal sp_RDAT  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sp_WDAT  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sp_WE    : std_logic;
+  signal sp_SEL   : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal sp_STB   : std_logic;
+  signal sp_ACK   : std_logic;
+  signal sp_CYC   : std_logic;
+  signal sp_CTI   : std_logic_vector(2 downto 0);
+  signal sp_STALL : std_logic;
+
 
   constant DEBUG_ENABLE  : boolean := false;
   signal debug_en        : std_logic;
@@ -214,6 +226,7 @@ architecture rtl of top is
   signal uart_stall              : std_logic;
   signal mem_instr_stall         : std_logic;
   signal mem_instr_ack           : std_logic;
+
 
 
   signal nreset           : std_logic;
@@ -517,18 +530,18 @@ begin
 
   rv : component orca
     generic map (
-      REGISTER_SIZE      => REGISTER_SIZE,
-      WISHBONE_ENABLE    => 1,
-      MULTIPLY_ENABLE    => 1,
-      DIVIDE_ENABLE      => 0,
-      SHIFTER_MAX_CYCLES => 32,
-      COUNTER_LENGTH     => 32,
-      PIPELINE_STAGES    => 4,
-      LVE_ENABLE         => 1,
-      ENABLE_EXCEPTIONS  => 1,
-      NUM_EXT_INTERRUPTS => 2,
-      SCRATCHPAD_SIZE    => 128*1024,
-      FAMILY             => "LATTICE")
+      REGISTER_SIZE        => REGISTER_SIZE,
+      WISHBONE_ENABLE      => 1,
+      MULTIPLY_ENABLE      => 1,
+      DIVIDE_ENABLE        => 0,
+      SHIFTER_MAX_CYCLES   => 32,
+      COUNTER_LENGTH       => 32,
+      PIPELINE_STAGES      => 4,
+      LVE_ENABLE           => 1,
+      ENABLE_EXCEPTIONS    => 1,
+      NUM_EXT_INTERRUPTS   => 2,
+      SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
+      FAMILY               => "LATTICE")
     port map(
 
       clk            => clk,
@@ -554,7 +567,20 @@ begin
       instr_CTI_O   => instr_CTI_O,
       instr_STALL_I => instr_STALL_I,
 
+      sp_ADR_I   => sp_ADR,
+      sp_DAT_O   => sp_RDAT,
+      sp_DAT_I   => sp_WDAT,
+      sp_WE_I    => sp_WE,
+      sp_SEL_I   => sp_SEL,
+      sp_STB_I   => sp_STB,
+      sp_ACK_O   => sp_ACK,
+      sp_CYC_I   => sp_CYC,
+      sp_CTI_I   => sp_CTI,
+      sp_STALL_O => sp_STALL,
+
       global_interrupts => (others => '0'));
+
+  sp_ADR <= sp_ADR32(sp_ADR'range);
 
   data_BTE_O  <= "00";
   data_LOCK_O <= '0';
@@ -565,7 +591,8 @@ begin
       master1_address => (16#00010000#, 4*1024),            -- MIC
       master2_address => (16#00020000#, 4*1024),            -- UART
       master3_address => (16#00030000#, 4*1024),            --I2S Transmit
-      master4_address => (16#00040000#, 4*1024))            --i2c
+      master4_address => (16#00040000#, 4*1024),            --i2c
+      master5_address => (16#80000000#, SCRATCHPAD_SIZE))
 
     port map(
       clk_i => clk,
@@ -663,18 +690,18 @@ begin
       master4_RTY_I   => open,
 
 
-      master5_ADR_O   => open,
-      master5_DAT_O   => open,
-      master5_WE_O    => open,
-      master5_CYC_O   => open,
-      master5_STB_O   => open,
-      master5_SEL_O   => open,
+      master5_ADR_O   => sp_ADR32,
+      master5_DAT_O   => sp_WDAT,
+      master5_WE_O    => sp_WE,
+      master5_CYC_O   => sp_CYC,
+      master5_STB_O   => sp_STB,
+      master5_SEL_O   => sp_SEL,
       master5_CTI_O   => open,
       master5_BTE_O   => open,
       master5_LOCK_O  => open,
-      master5_STALL_I => open,
-      master5_DAT_I   => open,
-      master5_ACK_I   => open,
+      master5_STALL_I => sp_STALL,
+      master5_DAT_I   => sp_RDAT,
+      master5_ACK_I   => sp_ACK,
       master5_ERR_I   => open,
       master5_RTY_I   => open,
 

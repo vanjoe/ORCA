@@ -187,7 +187,7 @@ package top_component_pkg is
       );
   end component;
 
-  type address_array is array(0 to 1) of natural;
+  type address_array is array(0 to 1) of integer;
 
   component wb_splitter is
 
