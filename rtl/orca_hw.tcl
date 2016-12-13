@@ -120,18 +120,19 @@ set_parameter_property LVE_ENABLE ALLOWED_RANGES 0:1
 set_parameter_property LVE_ENABLE HDL_PARAMETER true
 set_display_item_property LVE_ENABLE DISPLAY_HINT boolean
 
+
+add_parameter SCRATCHPAD_SIZE integer 64
+set_parameter_property SCRATCHPAD_SIZE DISPLAY_NAME "        Scratchpad size"
+set_parameter_property SCRATCHPAD_SIZE DESCRIPTION "        Scratchpad size"
+set_parameter_property SCRATCHPAD_SIZE UNITS kilobytes
+set_parameter_property SCRATCHPAD_SIZE HDL_PARAMETER false
+set_parameter_property SCRATCHPAD_SIZE visible false
+
 add_parameter SCRATCHPAD_ADDR_BITS integer 1024
+set_parameter_property SCRATCHPAD_ADDR_BITS DISPLAY_NAME "        Scratchpad address bits"
 set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
 set_parameter_property SCRATCHPAD_ADDR_BITS visible true
 set_parameter_property SCRATCHPAD_ADDR_BITS derived true
-
-
-add_parameter SCRATCHPAD_SIZE integer 1024
-set_parameter_property SCRATCHPAD_SIZE DISPLAY_NAME "        Scratchpad size"
-set_parameter_property SCRATCHPAD_SIZE DESCRIPTION "        Scratchpad size"
-set_parameter_property SCRATCHPAD_SIZE UNITS Bytes
-set_parameter_property SCRATCHPAD_SIZE HDL_PARAMETER false
-set_parameter_property SCRATCHPAD_SIZE visible false
 
 
 
@@ -538,6 +539,16 @@ add_interface_port unused_wishbone_bus       instr_CYC_O    export14     output 
 add_interface_port unused_wishbone_bus       instr_CTI_O    export15     output 3
 add_interface_port unused_wishbone_bus       instr_STALL_I  export16      input 1
 
+add_interface_port unused_wishbone_bus       sp_ADR_I     export20     input scratchpad_addr_bits
+add_interface_port unused_wishbone_bus       sp_DAT_O     export21      output  REGISTER_SIZE
+add_interface_port unused_wishbone_bus       sp_DAT_I     export22     input REGISTER_SIZE
+add_interface_port unused_wishbone_bus       sp_WE_I      export23     input 1
+add_interface_port unused_wishbone_bus       sp_SEL_I     export24     input REGISTER_SIZE/8
+add_interface_port unused_wishbone_bus       sp_STB_I     export25     input 1
+add_interface_port unused_wishbone_bus       sp_ACK_O     export26     output 1
+add_interface_port unused_wishbone_bus       sp_CYC_I     export27     input 1
+add_interface_port unused_wishbone_bus       sp_CTI_I     export28     input 3
+add_interface_port unused_wishbone_bus       sp_STALL_O   export29      output 1
 
 
 proc log_out {out_str} {
@@ -564,8 +575,12 @@ proc elaboration_callback {} {
 		  set_interface_property scratch ENABLED false
 		  set_parameter_property SCRATCHPAD_SIZE visible false
 	 }
-	 set_parameter_value SCRATCHPAD_ADDR_BITS [log2 [get_parameter_value SCRATCHPAD_SIZE ] ]
-
+	 set sp_size [expr 1024*[get_parameter_value SCRATCHPAD_SIZE ] ]
+	 set log_size [log2 $sp_size]
+	 set_parameter_value SCRATCHPAD_ADDR_BITS $log_size
+	 if { [expr 2**$log_size != $sp_size ] } {
+		  send_message Error "Scratchpad size is not a power of two"
+	 }
 	 set table_size 0
 	 if { [get_parameter_value BRANCH_PREDICTION] } {
 		  set_parameter_property BTB_SIZE visible true
