@@ -715,7 +715,7 @@ begin  -- architecture rtl
 
 
   shift_mul_gen : for n in shifter_multiply'left-1 downto 0 generate
-    shifter_multiply(n) <= '1' when shift_amt = to_unsigned(n, shift_amt'length) else '0';
+    shifter_multiply(n) <= '1' when std_logic_vector(shift_amt) = std_logic_vector(to_unsigned(n, shift_amt'length)) else '0';
   end generate shift_mul_gen;
   shifter_multiply(shifter_multiply'left) <= '0';
 
