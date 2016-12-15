@@ -170,17 +170,17 @@ package top_component_pkg is
       RST_I : in std_logic;
 
       ADR_I        : in    std_logic_vector(31 downto 0);
-      DAT_I        : in    std_logic_vector(DATA_WIDTH-1 downto 0);
+      DAT_I        : in    std_logic_vector(31 downto 0);
       WE_I         : in    std_logic;
       CYC_I        : in    std_logic;
       STB_I        : in    std_logic;
-      SEL_I        : in    std_logic_vector(DATA_WIDTH/8-1 downto 0);
+      SEL_I        : in    std_logic_vector(3 downto 0);
       CTI_I        : in    std_logic_vector(2 downto 0);
       BTE_I        : in    std_logic_vector(1 downto 0);
       LOCK_I       : in    std_logic;
       ACK_O        : out   std_logic;
       STALL_O      : out   std_logic;
-      DATA_O       : out   std_logic_vector(DATA_WIDTH -1 downto 0);
+      DATA_O       : out   std_logic_vector(31 downto 0);
       ERR_O        : out   std_logic;
       RTY_O        : out   std_logic;
       input_output : inout std_logic_vector(DATA_WIDTH -1 downto 0)
@@ -611,7 +611,63 @@ package top_component_pkg is
       SDAOE   : out   std_logic
       );
   end component;
+  component wb_spimaster is
+    generic (
+      dat_sz   : natural := 8;
+      slaves : natural := 1
+      );
+    port (
+      clk_i   : in  std_logic;
+      rst_i   : in  std_logic;
+      --
+      -- Wishbone Interface
+      --
+      adr_i   : in  std_logic_vector(7 downto 0);
+      dat_i   : in  std_logic_vector((dat_sz - 1) downto 0);
+      dat_o   : out std_logic_vector((dat_sz - 1) downto 0);
+      cyc_i   : in  std_logic;
+      sel_i   : in  std_logic;
+      we_i    : in  std_logic;
+      ack_o   : out std_logic;
+      stall_o : out std_logic;
+      stb_i   : in  std_logic;
 
+      spi_mosi : out std_logic;
+      spi_miso : in  std_logic;
+      spi_ss : out std_logic_vector(slaves- 1 downto 0);
+      spi_sclk : out std_logic
+
+      );
+  end component wb_spimaster;
+  component myspi is
+    port (
+      SPI2_MISO : inout std_logic;
+      SPI2_MOSI : inout std_logic;
+      SPI2_SCK  : inout std_logic;
+      SPI2_SCSN : in    std_logic;
+      SPI2_MCSN : out   std_logic_vector(3 downto 0);
+      -- Fabric Interface
+      RST       : in    std_logic;
+      -- Asynchronous Reset,      for Init_SSM
+      IPLOAD    : in    std_logic;
+      -- Rising Edge triggers Hard IP configuration
+      IPDONE    : out   std_logic;
+      -- 1   Hard IP configuration is complete
+      SBCLKi    : in    std_logic;
+                                        -- System bus interface to all 4 Hard IP blocks
+      SBWRi     : in    std_logic;
+                                        -- This bus is available when IPDONE = 1
+      SBSTBi    : in    std_logic;
+      SBADRi    : in    std_logic_vector(7 downto 0);
+      SBDATi    : in    std_logic_vector(7 downto 0);
+      SBDATo    : out   std_logic_vector(7 downto 0);
+      SBACKo    : out   std_logic;
+
+      I2CPIRQ  : out std_logic_vector(1 downto 0);
+      I2CPWKUP : out std_logic_vector(1 downto 0);
+      SPIPIRQ  : out std_logic_vector(1 downto 0);
+      SPIPWKUP : out std_logic_vector(1 downto 0));
+  end component myspi;
 
 end package;
 

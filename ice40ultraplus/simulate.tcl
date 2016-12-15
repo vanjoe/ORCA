@@ -46,15 +46,19 @@ proc com {} {
 							hdl/i2s_tx/dpram_rtl.vhd		 \
 							hdl/i2s_tx/gen_event_reg.vhd	 \
 							hdl/i2s_tx/tx_i2s_wbd.vhd      \
-							hdl/i2s_tx/tx_i2s_topm.vhd
+							hdl/i2s_tx/tx_i2s_topm.vhd \
+							myspi.v \
+							hdl/spi_master/wb_spi_simple.vhd
+
 					 ]
 
-
-	 lappend fileset /nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIPTBS8.v
-	 lappend fileset /nfs/opt/lattice/iCEcube2/2016.02/verilog/ABIWTCZ4.v
-	 lappend fileset /nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_ipenc_modelsim.v
-	 lappend fileset /nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_lc.v
-	 lappend fileset /nfs/opt/lattice/iCEcube2/2016.02/verilog/sb_ice_syn.v
+	 set icecube2_dir /opt/lattice/lscc/iCEcube2.2016.02/
+	 set icecube2_dir	 /nfs/opt/lattice/iCEcube2/2016.02/
+	 lappend fileset $icecube2_dir/verilog/ABIPTBS8.v
+	 lappend fileset $icecube2_dir/verilog/ABIWTCZ4.v
+	 lappend fileset $icecube2_dir/verilog/sb_ice_ipenc_modelsim.v
+	 lappend fileset $icecube2_dir/verilog/sb_ice_lc.v
+	 lappend fileset $icecube2_dir/verilog/sb_ice_syn.v
 
     ##If you want to view the ram contents of the scratchpad use this file, otherwise the Toolchain files above should work
 	 #
@@ -119,11 +123,11 @@ proc recom { t {extra_waves false} } {
     add wave -hex -noupdate /top_tb/dut/rv/core/X/instruction
 
     if { $extra_waves } {
-	wave_RF
-	wave_Top
-	wave_X
-	wave_ALU
-	wave_LVE
+		  wave_RF
+		  wave_Top
+		  wave_X
+		  wave_ALU
+		  wave_LVE
     }
 
     run $t
@@ -134,8 +138,9 @@ proc rerun { t } {
     run $t
 }
 
-set DefaultRadix hex
-
-config wave -signalnamewidth 2
 
 recom 0
+
+radix hex
+
+config wave -signalnamewidth 2
