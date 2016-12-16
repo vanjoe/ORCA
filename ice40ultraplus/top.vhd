@@ -15,7 +15,7 @@ entity top is
 
     --spi
     spi_mosi : out std_logic;
-    spi_miso : in  std_logic := '0';
+    spi_miso : in  std_logic;
     spi_ss   : out std_logic;
     spi_sclk : out std_logic;
 

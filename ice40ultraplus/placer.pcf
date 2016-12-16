@@ -15,9 +15,9 @@
 ###IOSet List 11
 set_io spi_miso F1
 set_io spi_mosi E1
-set_io spi_sclk C1
-set_io spi_ss D1
-set_io reset_btn B3 -pullup yes
+set_io spi_sclk D1
+set_io spi_ss C1
+set_io reset_btn A4 -pullup yes
 #set_io rts D5
 set_io rxd A4 -pullup yes
 set_io txd A1

@@ -7,17 +7,17 @@ end entity;
 
 architecture rtl of top_tb is
   component top is
-      port(
+    port(
 --    clk       : in std_logic;
-    reset_btn : in std_logic;
+      reset_btn : in  std_logic;
+      spi_miso  : in  std_logic;
+      --uart
+      rxd       : in  std_logic;
+      txd       : out std_logic;
+      cts       : in  std_logic;
+      rts       : out std_logic
 
-    --uart
-    rxd : in  std_logic;
-    txd : out std_logic;
-    cts : in  std_logic;
-    rts : out std_logic
-
-    );
+      );
   end component;
 
   signal reset     : std_logic;
@@ -33,8 +33,9 @@ begin
 
   dut : component top
     port map(
-  --    clk       => clk,
+      --    clk       => clk,
       reset_btn => reset,
+      spi_miso  => '0',
       rxd       => rxd,
       txd       => txd,
       cts       => cts,

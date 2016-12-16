@@ -76,80 +76,58 @@ static inline void wait_for_rrdy(){
 static inline void wait_for_not_tip(){
 	while( (SPI_BASE[SPISR] & SPISR_TIP));
 }
-/* void __attribute__((noinline)) spi_read_id(){ */
-/* 	char id_str[20]; */
-
-/* 	//COMMAND */
-/* 	SPI_BASE[SPICR2]=0xC0; */
-/* 	wait_for_trdy(); */
-/* 	SPI_BASE[SPITXDR] =  0x9F; */
-/* 	wait_for_rrdy(); */
-/* 	int dummy_data; */
-/* 	dummy_data=SPI_BASE[SPIRXDR]; */
-/* 	dummy_data=0; */
-/* 	//READ */
-
-/* 	SPI_BASE[SPITXDR] =  dummy_data; */
-/* 	wait_for_rrdy(); */
-/* 	id_str[0]=SPI_BASE[SPIRXDR]; //mem_type */
-
-/* 	SPI_BASE[SPITXDR] =  dummy_data; */
-/* 	wait_for_rrdy(); */
-/* 	id_str[1]=SPI_BASE[SPIRXDR];//mem capacity */
-
-/* 	SPI_BASE[SPITXDR] =  dummy_data; */
-/* 	wait_for_rrdy(); */
-/* 	id_str[2]=SPI_BASE[SPIRXDR];//cfd lenght */
-/* 	int i; */
-/* 	int cfd_length=id_str[2]; */
-/* 	for(i=0;i<cfd_length;i++){ */
-/* 		SPI_BASE[SPITXDR] =  dummy_data; */
-/* 		wait_for_rrdy(); */
-/* 		id_str[2+i]=SPI_BASE[SPIRXDR];//cfd lenght */
-/* 	} */
-/* 	SPI_BASE[SPICR2]=0x80; */
-/* 	//wait for not TIP */
-/* 	wait_for_not_tip(); */
-
-/* 	return ; */
-/* } */
 
 
-void __attribute__((noinline)) spi_read_id(char* id_str)
+char spi_read_write(char write)
+{
+	//assume Slave select has already been set
+	SPI_BASE[0] = write;
+	while(SPI_BASE[2] == 0);
+	return (char)SPI_BASE[0];
+}
+
+void __attribute__((noinline)) spi_run_cmd(char* cmd,char* resp,int cmd_len,int resp_len)
 {
 
-	int dummy_data;
+	int dummy_data=0;
 
-	SPI_BASE[1] = 1;
-	SPI_BASE[0] = 0x9F;
-	while(SPI_BASE[2] == 0);
-	dummy_data=SPI_BASE[0];
-	dummy_data=0x0;
-
-	SPI_BASE[0] = dummy_data;
-	while(SPI_BASE[2] == 0);
-	id_str[0]=SPI_BASE[0];
-
-	SPI_BASE[0] = dummy_data;
-	while(SPI_BASE[2] == 0);
-	id_str[1]=SPI_BASE[0];
-
-	SPI_BASE[0] = dummy_data;
-	while(SPI_BASE[2] == 0);
-	id_str[2]=SPI_BASE[0];
-
-	SPI_BASE[0] = dummy_data;
-	while(SPI_BASE[2] == 0);
-
-
-	int len= 16;
-	int i=0;
-	while(i++ < len){
-		SPI_BASE[0] = dummy_data;
-		id_str[3+i]=SPI_BASE[0];
-	}
 	SPI_BASE[1] = 0;
+	int i;
+	for(i=0;i<cmd_len;i++){
+		spi_read_write(cmd[i]);
+	}
+
+	for(i=0;i<resp_len;i++){
+		resp[i]=spi_read_write(dummy_data);
+	}
+
+	SPI_BASE[1] = (~0);
 }
+
+void __attribute__((noinline)) spi_read_data(char* data,unsigned address,unsigned length)
+{
+	int dummy_data = 0;
+
+	//Slave Select
+	SPI_BASE[1] = 0;
+	//data read cmd
+	spi_read_write(0x03);
+	//address (3 bytes)
+
+	spi_read_write((address>> 16) &0xFF);
+	spi_read_write((address>> 8 ) &0xFF);
+	spi_read_write((address>> 0 ) &0xFF);
+
+	int i;
+	for(i=0;i<length;i++){
+		data[i]=spi_read_write(dummy_data);
+	}
+	//Slave Select
+	SPI_BASE[1] = (~0);
+}
+
+char read_data[1024];
+
 int main()
 {
 	UART_INIT();
@@ -159,22 +137,39 @@ int main()
 		debug(i);
 	}
 
-	int a=0;
-	char id_str[20]={0};
-	while(1){
-		spi_read_id(id_str);
+	char cmd_resp[20]={0};
+	char cmd=0xAB;
+	spi_run_cmd(&cmd,cmd_resp,sizeof(cmd),sizeof(cmd_resp));
+	printf("release form power down = ");
 
-		printf("id_str = ");
+	for(i=0;i<sizeof(cmd_resp);i++){
+		printf(" 0x%x",cmd_resp[i]);
+	}
+	printf("\r\n");
+	cmd=0x9f;
+	spi_run_cmd(&cmd,cmd_resp,sizeof(cmd),sizeof(cmd_resp));
+	printf("id_str = ");
+	for(i=0;i<sizeof(cmd_resp);i++){
+		printf(" 0x%x",cmd_resp[i]);
+	}
+	printf("\r\n");
 
-		for(i=0;i<sizeof(id_str);i++){
-			printf(" 0x%x",id_str[i]);
-		}
-		printf("\r\n");
+
+	int read_address=0;
+
+	unsigned time=get_time();
+	spi_read_data(read_data,read_address,sizeof(read_data));
+	time = get_time()-time;
+	printf("%d bytes read in %d cycles\r\n",sizeof(read_data),time);
+	for(i=0;i<sizeof(read_data);i+=16){
+		printf("%08x:",read_address+i);
+		int j;
+		for(j=0;j<16;j++){
+			printf(" 0x%x",read_data[i+j]);
+		}printf("\r\n");
 	}
-	while(1){
-		debug(a++);
-		delayms(1000);
-	}
+
+
 	return 0;
 }
 
