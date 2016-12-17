@@ -31,8 +31,8 @@ all: build-software bit
 bit: $(BITFILE)
 
 IMEM_BASE=0
-IMEM_LEN=4096
-DMEM_BASE=4096
+IMEM_LEN=8192
+DMEM_BASE=$(IMEM_LEN)
 DMEM_LEN=4096
 
 imem.mem: $(MEM_FILE)

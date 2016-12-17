@@ -69,7 +69,9 @@ if {$::argc == 2} {
 		  while {[gets $mem_file mem_line] != -1 && $line_number < 2048} {
 				if {[string length $mem_line] >= 8 && [string range $mem_line 0 0] != "#"} {
 					 for {set i 0} {$i < [llength $ram_files]} {incr i} {
-						  set hex_value [expr 0x[string range $mem_line $i $i]]
+						  set mask [expr (1<<(32/[llength $ram_files])) -1]
+						  set shift [expr 32-(32/[llength $ram_files])*($i+1) ]
+						  set hex_value [expr ( 0x$mem_line >> $shift) & $mask ]
 						  puts -nonewline [lindex $ram_files [expr $i]] "[format %x $hex_value ]  "
 
 					 }

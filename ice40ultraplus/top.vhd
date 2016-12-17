@@ -37,9 +37,9 @@ architecture rtl of top is
   constant REGISTER_SIZE : integer := 32;
 
   --for combined memory
-  constant RAM_SIZE      : natural := 8*1024;
+  constant RAM_SIZE      : natural := 12*1024;
   --for seperate memory
-  constant INST_RAM_SIZE : natural := 4*1024;
+  constant INST_RAM_SIZE : natural := 8*1024;
   constant DATA_RAM_SIZE : natural := 4*1024;
 
   constant SEPERATE_MEMS : boolean := true;
@@ -442,7 +442,7 @@ begin
       REGISTER_SIZE      => REGISTER_SIZE,
       WISHBONE_ENABLE    => 1,
       MULTIPLY_ENABLE    => 1,
-      DIVIDE_ENABLE      => 0,
+      DIVIDE_ENABLE      => 1,
       SHIFTER_MAX_CYCLES => 32,
       COUNTER_LENGTH     => 32,
       PIPELINE_STAGES    => 4,
