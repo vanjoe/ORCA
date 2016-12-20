@@ -3,7 +3,7 @@
 #include "interrupt.h"
 #include "lve_test.h"
 
-#define SYS_CLK 6000000
+#define SYS_CLK 8000000
 static inline unsigned get_time()
 {int tmp;       asm volatile("csrr %0,time":"=r"(tmp));return tmp;}
 
@@ -91,6 +91,7 @@ void __attribute__((noinline)) spi_run_cmd(char* cmd,char* resp,int cmd_len,int 
 
 	int dummy_data=0;
 
+	debugx(*cmd);
 	SPI_BASE[1] = 0;
 	int i;
 	for(i=0;i<cmd_len;i++){
@@ -133,19 +134,22 @@ int main()
 	UART_INIT();
 	init_printf(0,mputc);
 	int i=0;
-	while(i++<10){
-		debug(i);
-	}
 
 	char cmd_resp[20]={0};
 	char cmd=0xAB;
-	spi_run_cmd(&cmd,cmd_resp,sizeof(cmd),sizeof(cmd_resp));
-	printf("release form power down = ");
+#if 1
+	while(cmd_resp[10]!=0x13){
+#else
+	while(1){
+#endif
+		spi_run_cmd(&cmd,cmd_resp,sizeof(cmd),sizeof(cmd_resp));
+		printf("release form power down = ");
 
-	for(i=0;i<sizeof(cmd_resp);i++){
-		printf(" 0x%x",cmd_resp[i]);
+		for(i=0;i<sizeof(cmd_resp);i++){
+			printf(" 0x%x",cmd_resp[i]);
+		}
+		printf("\r\n");
 	}
-	printf("\r\n");
 	cmd=0x9f;
 	spi_run_cmd(&cmd,cmd_resp,sizeof(cmd),sizeof(cmd_resp));
 	printf("id_str = ");
@@ -155,20 +159,21 @@ int main()
 	printf("\r\n");
 
 
-	int read_address=0;
-
-	unsigned time=get_time();
-	spi_read_data(read_data,read_address,sizeof(read_data));
-	time = get_time()-time;
-	printf("%d bytes read in %d cycles\r\n",sizeof(read_data),time);
-	for(i=0;i<sizeof(read_data);i+=16){
-		printf("%08x:",read_address+i);
-		int j;
-		for(j=0;j<16;j++){
-			printf(" 0x%x",read_data[i+j]);
-		}printf("\r\n");
+	int read_address=0x10;
+	while(1){
+		unsigned time=get_time();
+		spi_read_data(read_data,read_address,sizeof(read_data));
+		time = get_time()-time;
+		printf("%d bytes read in %d cycles\r\n",sizeof(read_data),time);
+		for(i=0;i<sizeof(read_data);i+=16){
+			printf("%08x:",read_address+i);
+			int j;
+			for(j=0;j<16;j++){
+				printf(" 0x%02x",read_data[i+j]);
+			}printf("\r\n");
+		}
+		delayms(1000);
 	}
-
 
 	return 0;
 }
