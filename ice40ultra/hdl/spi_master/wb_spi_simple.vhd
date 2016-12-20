@@ -85,7 +85,7 @@ begin  -- architecture rtl
         end if;
 
       end if;
-                                        --read
+      --read
       if adr_i = TXRX_REG then
         dat_o <= read_register;
       elsif adr_i = SS_REG then
@@ -101,17 +101,16 @@ begin  -- architecture rtl
     end if;
   end process;
 
-
   spi_ss <= slave_select;
-
 
   --shift register process
   done_xfer <= '1' when bits_to_shift = 0 else '0';
-  spi_sclk  <= clock_count(clock_count'left) and not done_xfer;
+  spi_sclk  <= clock_count(clock_count'left);
   spi_mosi  <= w_shift_register(w_shift_register'left);
 
   done_transfer <= done_xfer and not restart_xfer;
   data_out <= read_register;
+
   process(clk_i)
   begin
     if rising_edge(clk_i) then
@@ -129,15 +128,12 @@ begin  -- architecture rtl
             read_register <= read_register(read_register'left -1 downto 0) & spi_miso;
           end if;
           clock_count           <= clock_count +1;
-
         end if;
-
       end if;
 
       if rst_i = '1' then
         read_register    <= (others => '0');
         w_shift_register <= (others => '0');
-        bits_to_shift <= 0;
       end if;
 
     end if;

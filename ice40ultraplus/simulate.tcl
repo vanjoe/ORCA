@@ -123,11 +123,11 @@ proc recom { t {extra_waves false} } {
     add wave -hex -noupdate /top_tb/dut/rv/core/X/instruction
 
     if { $extra_waves } {
-	wave_RF
-	wave_Top
-	wave_X
-	wave_ALU
-	wave_LVE
+		  wave_RF
+		  wave_Top
+		  wave_X
+		  wave_ALU
+		  wave_LVE
     }
 
     run $t
@@ -142,4 +142,5 @@ proc rerun { t } {
 recom 0
 
 radix hex
+
 config wave -signalnamewidth 2

@@ -50,7 +50,7 @@ entity execute is
 
 
 
---memory-bus
+    --memory-bus master
     address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     byte_en   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
     write_en  : out std_logic;
@@ -58,6 +58,15 @@ entity execute is
     writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_ack  : in  std_logic;
+
+    --memory-bus scratchpad-slave
+    sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+    sp_byte_en   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    sp_write_en  : in  std_logic;
+    sp_read_en   : in  std_logic;
+    sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    sp_ack  : out std_logic;
 
     external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     pipeline_empty      : in  std_logic;
@@ -156,7 +165,6 @@ architecture behavioural of execute is
   alias ni_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(19 downto 15);
   alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
 
-  constant SP_ADDRESS : unsigned(REGISTER_SIZE-1 downto 0) := x"80000000";
   constant LVE_ENABLE : boolean                            := SCRATCHPAD_SIZE /= 0;
 
   signal use_after_produce_stall      : std_logic;
@@ -187,10 +195,10 @@ begin
 
 
 
-  alu_rs1_data <= rs1_data_fwd when not  LVE_ENABLE else
+  alu_rs1_data <= rs1_data_fwd when not LVE_ENABLE else
                   lve_alu_data1 when lve_alu_source_valid = '1' else
                   alu_data_out  when rs1_mux = ALU_FWD else rs1_data;
-  alu_rs2_data <= rs2_data_fwd when  not LVE_ENABLE else
+  alu_rs2_data <= rs2_data_fwd when not LVE_ENABLE else
                   lve_alu_data2 when lve_alu_source_valid = '1' else
                   alu_data_out  when rs2_mux = ALU_FWD else rs2_data;
 
@@ -425,12 +433,6 @@ begin
       br_new_pc            => br_new_pc);
 
   enable_lve : if LVE_ENABLE generate
-    signal sp_read_en          : std_logic;
-    signal sp_write_en         : std_logic;
-    signal sp_read_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-    signal sp_ack              : std_logic;
-    signal use_scratchpad      : std_logic;
-    signal last_use_scratchpad : std_logic;
   begin
     lve : component lve_top
       generic map (
@@ -447,13 +449,13 @@ begin
         stall_to_lve   => stall_to_lve,
         rs1_data       => rs1_data_fwd,
         rs2_data       => rs2_data_fwd,
-        slave_address  => ls_address,
+        slave_address  => sp_address,
         slave_read_en  => sp_read_en,
         slave_write_en => sp_write_en,
-        slave_byte_en  => ls_byte_en,
-        slave_data_in  => ls_write_data,
-        slave_data_out => sp_read_data,
-        slave_ack     => sp_ack,
+        slave_byte_en  => sp_byte_en,
+        slave_data_in  => sp_writedata,
+        slave_data_out => sp_readdata,
+        slave_ack      => sp_ack,
 
         stall_from_lve       => stall_from_lve,
         lve_alu_data1        => lve_alu_data1,
@@ -463,52 +465,24 @@ begin
         lve_alu_result_valid => alu_data_out_valid
         );
 
-    -----------------------------------------------------------------------------
-    -- data bus splitter
-    -----------------------------------------------------------------------------
-
-    use_scratchpad <= ls_write_en or ls_read_en when
-                      (unsigned(ls_address) and not to_unsigned(SCRATCHPAD_SIZE-1, REGISTER_SIZE)) = SP_ADDRESS and LVE_ENABLE else '0';
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        if sp_ack = '1' then
-          last_use_scratchpad <= '0';
-        end if;
-        if use_scratchpad = '1' then
-          last_use_scratchpad <= '1';
-        end if;
-      end if;
-    end process;
-    sp_read_en  <= use_scratchpad and ls_read_en;
-    sp_write_en <= use_scratchpad and ls_write_en;
-
-    ls_read_data <= sp_read_data when last_use_scratchpad = '1' else readdata;
-    ls_ack       <= sp_ack       when last_use_scratchpad = '1' else data_ack;
-
-    byte_en   <= ls_byte_en;
-    address   <= ls_address;
-    write_en  <= not use_scratchpad and ls_write_en;
-    read_en   <= not use_scratchpad and ls_read_en;
-    writedata <= ls_write_data;
   end generate enable_lve;
 
   n_enable_lve : if not LVE_ENABLE generate
     stall_from_lve <= '0';
 
-    ls_read_data <= readdata;
-    ls_ack       <= data_ack;
-
-    byte_en   <= ls_byte_en;
-    address   <= ls_address;
-    write_en  <= ls_write_en;
-    read_en   <= ls_read_en;
-    writedata <= ls_write_data;
-
     lve_alu_source_valid <= '0';
     lve_alu_data1        <= (others => '-');
     lve_alu_data2        <= (others => '-');
   end generate n_enable_lve;
+
+  ls_read_data <= readdata;
+  ls_ack       <= data_ack;
+
+  byte_en   <= ls_byte_en;
+  address   <= ls_address;
+  write_en  <= ls_write_en;
+  read_en   <= ls_read_en;
+  writedata <= ls_write_data;
 
 
 

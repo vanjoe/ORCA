@@ -24,7 +24,7 @@ entity lve_top is
     rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-    slave_address  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
     slave_read_en  : in  std_logic;
     slave_write_en : in  std_logic;
     slave_byte_en  : in  std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);

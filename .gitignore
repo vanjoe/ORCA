@@ -3,6 +3,7 @@ config.mk
 *.swp
 tags
 *.nfs*
+*~
 
 de2-115/system/*
 de2-115/system.qsys.log
@@ -31,27 +32,12 @@ ice40ultra/transcript
 ice40ultra/work/
 ice40ultraplus/dmem.mem
 ice40ultraplus/imem.mem
-ice40ultraplus/init_00.dmem
-ice40ultraplus/init_00.imem
-ice40ultraplus/init_01.dmem
-ice40ultraplus/init_01.imem
-ice40ultraplus/init_02.dmem
-ice40ultraplus/init_02.imem
-ice40ultraplus/init_03.dmem
-ice40ultraplus/init_03.imem
-ice40ultraplus/init_04.dmem
-ice40ultraplus/init_04.imem
-ice40ultraplus/init_05.dmem
-ice40ultraplus/init_05.imem
-ice40ultraplus/init_06.dmem
-ice40ultraplus/init_06.imem
-ice40ultraplus/init_07.dmem
-ice40ultraplus/init_07.imem
+ice40ultraplus/init_*.dmem
+ice40ultraplus/init_*.imem
 ice40ultraplus/licbug.txt
 ice40ultraplus/stdout.log
 ice40ultraplus/stdout.log.bak
 ice40ultraplus/synlog.tcl
-ice40ultraplus/test.mem
 ice40ultraplus/transcript
 ice40ultraplus/ultraplus_Implmnt/
 ice40ultraplus/vsim.wlf

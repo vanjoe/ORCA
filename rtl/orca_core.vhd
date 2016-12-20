@@ -42,6 +42,15 @@ entity orca_core is
        core_instruction_waitrequest   : in  std_logic                                  := '0';
        core_instruction_readdatavalid : in  std_logic                                  := '0';
 
+       --memory-bus scratchpad-slave
+       sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+       sp_byte_en   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+       sp_write_en  : in  std_logic;
+       sp_read_en   : in  std_logic;
+       sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+       sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+       sp_ack       : out std_logic;
+
        external_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
        );
 
@@ -209,6 +218,15 @@ begin  -- architecture rtl
       writedata => data_write_data,
       readdata  => data_read_data,
       data_ack  => e_data_ack,
+
+      --sp slave
+      sp_address   => sp_address,
+      sp_byte_en   => sp_byte_en,
+      sp_write_en  => sp_write_en,
+      sp_read_en   => sp_read_en,
+      sp_writedata => sp_writedata,
+      sp_readdata  => sp_readdata,
+      sp_ack       => sp_ack,
 
       -- Interrupt lines
       external_interrupts => ext_int_resized,
