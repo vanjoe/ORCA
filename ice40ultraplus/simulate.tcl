@@ -37,7 +37,7 @@ proc com {} {
                      SB_GB_sim.vhd                      \
                      hdl/i2s_interface/i2s_decode.vhd   \
                      hdl/i2s_interface/i2s_wb.vhd       \
-                     top.vhd                            \
+                     top_dma.vhd                            \
                      top_tb.vhd \
 							hdl/i2s_tx/i2s_codec.vhd       \
 							hdl/i2s_tx/tx_i2s_pack.vhd		 \
@@ -47,7 +47,7 @@ proc com {} {
 							hdl/i2s_tx/gen_event_reg.vhd	 \
 							hdl/i2s_tx/tx_i2s_wbd.vhd      \
 							hdl/i2s_tx/tx_i2s_topm.vhd \
-							myspi.v \
+							hdl/wb_flash_dma.vhd \
 							hdl/spi_master/wb_spi_simple.vhd
 
 					 ]
@@ -123,11 +123,11 @@ proc recom { t {extra_waves false} } {
     add wave -hex -noupdate /top_tb/dut/rv/core/X/instruction
 
     if { $extra_waves } {
-		  wave_RF
-		  wave_Top
-		  wave_X
-		  wave_ALU
-		  wave_LVE
+	wave_RF
+	wave_Top
+	wave_X
+	wave_ALU
+	wave_LVE
     }
 
     run $t
@@ -142,5 +142,4 @@ proc rerun { t } {
 recom 0
 
 radix hex
-
 config wave -signalnamewidth 2

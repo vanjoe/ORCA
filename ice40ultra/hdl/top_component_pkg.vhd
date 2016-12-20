@@ -187,7 +187,7 @@ package top_component_pkg is
       );
   end component;
 
-  type address_array is array(0 to 1) of natural;
+  type address_array is array(0 to 1) of integer;
 
   component wb_splitter is
 
@@ -400,7 +400,7 @@ package top_component_pkg is
   component SB_PLL40_CORE is
     generic (
       --- VITAL input port delay
-      -- Entity Parameters
+      -- Component Parameters
       FEEDBACK_PATH                  : string                 := "SIMPLE";  -- SIMPLE/DELAY/PHASE_AND_DELAY/EXTERNAL
       DELAY_ADJUSTMENT_MODE_FEEDBACK : string                 := "FIXED";  -- FIXED/DYNAMIC
       DELAY_ADJUSTMENT_MODE_RELATIVE : string                 := "FIXED";  -- FIXED/DYNAMIC
@@ -613,7 +613,7 @@ package top_component_pkg is
   end component;
   component wb_spimaster is
     generic (
-      dat_sz   : natural := 8;
+      dat_sz : natural := 8;
       slaves : natural := 1
       );
     port (
@@ -632,9 +632,14 @@ package top_component_pkg is
       stall_o : out std_logic;
       stb_i   : in  std_logic;
 
+      --aux signals
+      done_transfer : out std_logic;
+      data_out      : out std_logic_vector(dat_sz -1 downto 0);
+
+      --spi signals
       spi_mosi : out std_logic;
       spi_miso : in  std_logic;
-      spi_ss : out std_logic_vector(slaves- 1 downto 0);
+      spi_ss   : out std_logic_vector(slaves- 1 downto 0);
       spi_sclk : out std_logic
 
       );
@@ -668,6 +673,46 @@ package top_component_pkg is
       SPIPIRQ  : out std_logic_vector(1 downto 0);
       SPIPWKUP : out std_logic_vector(1 downto 0));
   end component myspi;
+
+
+  component wb_flash_dma is
+    generic (
+      MAX_LENGTH : integer);
+    port (
+
+      clk_i : in std_logic;
+      rst_i : in std_logic;
+
+      master_ADR_O   : out std_logic_vector(32-1 downto 0);
+      master_DAT_I   : in  std_logic_vector(32-1 downto 0);
+      master_DAT_O   : out std_logic_vector(32-1 downto 0);
+      master_WE_O    : out std_logic;
+      master_SEL_O   : out std_logic_vector(32/8 -1 downto 0);
+      master_STB_O   : out std_logic;
+      master_ACK_I   : in  std_logic;
+      master_CYC_O   : out std_logic;
+      master_CTI_O   : out std_logic_vector(2 downto 0);
+      master_STALL_I : in  std_logic;
+
+      slave_ADR_I   : in  std_logic_vector(3 downto 0);
+      slave_DAT_O   : out std_logic_vector(32-1 downto 0);
+      slave_DAT_I   : in  std_logic_vector(32-1 downto 0);
+      slave_WE_I    : in  std_logic;
+      slave_SEL_I   : in  std_logic_vector(32/8 -1 downto 0);
+      slave_STB_I   : in  std_logic;
+      slave_ACK_O   : out std_logic;
+      slave_CYC_I   : in  std_logic;
+      slave_CTI_I   : in  std_logic_vector(2 downto 0);
+      slave_STALL_O : out std_logic;
+
+      --spi signals
+      spi_mosi : out std_logic;
+      spi_miso : in  std_logic;
+      spi_ss   : out std_logic;
+      spi_sclk : out std_logic
+
+      );
+  end component wb_flash_dma;
 
 end package;
 
