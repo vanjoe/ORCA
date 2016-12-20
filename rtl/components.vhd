@@ -27,7 +27,7 @@ package rv_components is
       LVE_ENABLE            : natural range 0 to 1  := 0;
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1  := 0;
       NUM_EXT_INTERRUPTS    : integer range 0 to 32 := 1;
-      SCRATCHPAD_SIZE       : integer               := 1024;
+      SCRATCHPAD_ADDR_BITS  : integer               := 1024;
       FAMILY                : string                := "ALTERA");
     port(
       clk            : in std_logic;
@@ -38,36 +38,37 @@ package rv_components is
       avm_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       avm_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
       avm_data_read                 : out std_logic;
-      avm_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
+      avm_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '-');
       avm_data_write                : out std_logic;
       avm_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_data_waitrequest          : in  std_logic                                  := '0';
-      avm_data_readdatavalid        : in  std_logic                                  := '0';
+      avm_data_waitrequest          : in  std_logic                                  := '-';
+      avm_data_readdatavalid        : in  std_logic                                  := '-';
       --avalon instruction bus
       avm_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       avm_instruction_read          : out std_logic;
-      avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
-      avm_instruction_waitrequest   : in  std_logic                                  := '0';
-      avm_instruction_readdatavalid : in  std_logic                                  := '0';
+      avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '-');
+      avm_instruction_waitrequest   : in  std_logic                                  := '-';
+      avm_instruction_readdatavalid : in  std_logic                                  := '-';
+
       --wishbone data bus
-      data_ADR_O                    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_DAT_I                    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_DAT_O                    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_WE_O                     : out std_logic;
-      data_SEL_O                    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      data_STB_O                    : out std_logic;
-      data_ACK_I                    : in  std_logic;
-      data_CYC_O                    : out std_logic;
-      data_CTI_O                    : out std_logic_vector(2 downto 0);
-      data_STALL_I                  : in  std_logic;
+      data_ADR_O    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_DAT_I    : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '-');
+      data_DAT_O    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_WE_O     : out std_logic;
+      data_SEL_O    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      data_STB_O    : out std_logic;
+      data_ACK_I    : in  std_logic                                  := '-';
+      data_CYC_O    : out std_logic;
+      data_CTI_O    : out std_logic_vector(2 downto 0);
+      data_STALL_I  : in  std_logic                                  := '-';
       --wishbone instruction bus
-      instr_ADR_O                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instr_DAT_I                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instr_STB_O                   : out std_logic;
-      instr_ACK_I                   : in  std_logic;
-      instr_CYC_O                   : out std_logic;
-      instr_CTI_O                   : out std_logic_vector(2 downto 0);
-      instr_STALL_I                 : in  std_logic;
+      instr_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instr_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '-');
+      instr_STB_O   : out std_logic;
+      instr_ACK_I   : in  std_logic                                  := '-';
+      instr_CYC_O   : out std_logic;
+      instr_CTI_O   : out std_logic_vector(2 downto 0);
+      instr_STALL_I : in  std_logic                                  := '-';
 
       --AXI BUS
 
@@ -162,6 +163,32 @@ package rv_components is
       instr_BVALID  : in  std_logic                    := '-';
       instr_BREADY  : out std_logic;
 
+      -------------------------------------------------------------------------------
+      -- Scratchpad Slave
+      -------------------------------------------------------------------------------
+      --avalon
+      avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '-');
+      avm_scratch_byteenable    : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0)     := (others => '-');
+      avm_scratch_read          : in  std_logic                                         := '-';
+      avm_scratch_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      avm_scratch_write         : in  std_logic                                         := '-';
+      avm_scratch_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0)        := (others => '-');
+      avm_scratch_waitrequest   : out std_logic;
+      avm_scratch_readdatavalid : out std_logic;
+
+      --wishbone
+      sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0)    := (others => '-');
+      sp_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)    := (others => '-');
+      sp_WE_I    : in  std_logic                                     := '-';
+      sp_SEL_I   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0) := (others => '-');
+      sp_STB_I   : in  std_logic                                     := '-';
+      sp_ACK_O   : out std_logic;
+      sp_CYC_I   : in  std_logic                                     := '-';
+      sp_CTI_I   : in  std_logic_vector(2 downto 0)                  := (others => '-');
+      sp_STALL_O : out std_logic;
+
+
 
       global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
       );
@@ -201,6 +228,15 @@ package rv_components is
       core_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
       core_instruction_waitrequest   : in  std_logic                                  := '0';
       core_instruction_readdatavalid : in  std_logic                                  := '0';
+
+      --memory-bus scratchpad-slave
+      sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+      sp_byte_en   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      sp_write_en  : in  std_logic;
+      sp_read_en   : in  std_logic;
+      sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_ack       : out std_logic;
 
       external_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
       );
@@ -277,10 +313,7 @@ package rv_components is
       branch_pred        : out    std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
       stall_from_execute : buffer std_logic;
 
-
-
-
-      --memory-bus
+      --memory-bus master
       address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       byte_en   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
       write_en  : out std_logic;
@@ -288,6 +321,15 @@ package rv_components is
       writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       data_ack  : in  std_logic;
+
+      --memory-bus scratchpad-slave
+      sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+      sp_byte_en   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      sp_write_en  : in  std_logic;
+      sp_read_en   : in  std_logic;
+      sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_ack       : out std_logic;
 
       external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       pipeline_empty      : in  std_logic;
@@ -480,7 +522,7 @@ package rv_components is
       rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-      slave_address  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
       slave_read_en  : in  std_logic;
       slave_write_en : in  std_logic;
       slave_byte_en  : in  std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);

@@ -21,3 +21,6 @@ set_io spi_sclk D1
 set_io spi_ss C1
 set_io txd A1
 
+set_io sccb_scl E5
+set_io sccb_sda E4
+set_io cam_xclk B3

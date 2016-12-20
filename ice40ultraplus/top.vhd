@@ -19,20 +19,25 @@ entity top is
     spi_ss   : out std_logic;
     spi_sclk : out std_logic;
 
---uart
+    --uart
     rxd : in  std_logic;
     txd : out std_logic;
     cts : in  std_logic;
-    rts : out std_logic
+    rts : out std_logic;
 
-
+    --clk
+    cam_xclk : in std_logic;
+    
+    --sccb
+    sccb_scl : inout std_logic;
+    sccb_sda : inout std_logic
     );
 end entity;
 
 architecture rtl of top is
 
-
-  constant SYSCLK_FREQ_HZ : natural := 8000000;
+  constant SCRATCHPAD_SIZE : integer := 128*1024;
+  constant SYSCLK_FREQ_HZ  : natural := 8000000;
 
   constant REGISTER_SIZE : integer := 32;
 
@@ -58,6 +63,19 @@ architecture rtl of top is
   signal data_CTI_O  : std_logic_vector(2 downto 0);
   signal data_BTE_O  : std_logic_vector(1 downto 0);
   signal data_LOCK_O : std_logic;
+
+  signal sp_ADR32   : std_logic_vector(31 downto 0);
+  signal sp_ADR   : std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+  signal sp_RDAT  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sp_WDAT  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sp_WE    : std_logic;
+  signal sp_ACK   : std_logic;
+  signal sp_STALL : std_logic;
+  signal sp_CYC   : std_logic;
+  signal sp_STB   : std_logic;
+  signal sp_SEL   : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
+  signal sp_CTI   : std_logic_vector(2 downto 0);
+
 
   signal data_STALL_I : std_logic;
   signal data_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -90,6 +108,21 @@ architecture rtl of top is
   signal data_uart_lock_i  : std_logic;
   signal data_uart_err_o   : std_logic;
   signal data_uart_rty_o   : std_logic;
+
+  signal sccb_pio_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sccb_pio_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sccb_pio_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sccb_pio_stb_i   : std_logic;
+  signal sccb_pio_cyc_i   : std_logic;
+  signal sccb_pio_we_i    : std_logic;
+  signal sccb_pio_sel_i   : std_logic_vector(3 downto 0);
+  signal sccb_pio_cti_i   : std_logic_vector(2 downto 0);
+  signal sccb_pio_bte_i   : std_logic_vector(1 downto 0);
+  signal sccb_pio_ack_o   : std_logic;
+  signal sccb_pio_stall_o : std_logic;
+  signal sccb_pio_lock_i  : std_logic;
+  signal sccb_pio_err_o   : std_logic;
+  signal sccb_pio_rty_o   : std_logic;
 
   signal data_ram_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_ram_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -439,18 +472,18 @@ begin
 
   rv : component orca
     generic map (
-      REGISTER_SIZE      => REGISTER_SIZE,
-      WISHBONE_ENABLE    => 1,
-      MULTIPLY_ENABLE    => 1,
-      DIVIDE_ENABLE      => 1,
-      SHIFTER_MAX_CYCLES => 32,
-      COUNTER_LENGTH     => 32,
-      PIPELINE_STAGES    => 4,
-      LVE_ENABLE         => 1,
-      ENABLE_EXCEPTIONS  => 1,
-      NUM_EXT_INTERRUPTS => 2,
-      SCRATCHPAD_SIZE    => 128*1024,
-      FAMILY             => "LATTICE")
+      REGISTER_SIZE        => REGISTER_SIZE,
+      WISHBONE_ENABLE      => 1,
+      MULTIPLY_ENABLE      => 1,
+      DIVIDE_ENABLE        => 0,
+      SHIFTER_MAX_CYCLES   => 32,
+      COUNTER_LENGTH       => 32,
+      PIPELINE_STAGES      => 4,
+      LVE_ENABLE           => 1,
+      ENABLE_EXCEPTIONS    => 1,
+      NUM_EXT_INTERRUPTS   => 2,
+      SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
+      FAMILY               => "LATTICE")
     port map(
 
       clk            => clk,
@@ -476,7 +509,20 @@ begin
       instr_CTI_O   => instr_CTI_O,
       instr_STALL_I => instr_STALL_I,
 
+      sp_ADR_I   => sp_ADR,
+      sp_DAT_O   => sp_RDAT,
+      sp_DAT_I   => sp_WDAT,
+      sp_WE_I    => sp_WE,
+      sp_SEL_I   => sp_SEL,
+      sp_STB_I   => sp_STB,
+      sp_ACK_O   => sp_ACK,
+      sp_CYC_I   => sp_CYC,
+      sp_CTI_I   => sp_CTI,
+      sp_STALL_O => sp_STALL,
+
       global_interrupts => (others => '0'));
+
+  sp_ADR <= sp_ADR32(sp_ADR'range);
 
   data_BTE_O  <= "00";
   data_LOCK_O <= '0';
@@ -484,11 +530,13 @@ begin
   split_wb_data : component wb_splitter
     generic map(
       master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE),  -- RAM
-      master1_address => (16#00010000#, 1024),                 -- SPI
+      master1_address => (16#00010000#, 1024),              -- SPI
       master2_address => (16#00020000#, 4*1024),            -- UART
-      master3_address => (16#00030000#, 0),                 --I2S Transmit
-      master4_address => (16#00040000#, 0))                 --i2c
-
+      master3_address => (16#00030000#, 0),                 -- I2S Transmit
+      master4_address => (16#00040000#, 0),                 -- I2C
+      master5_address => (16#80000000#, SCRATCHPAD_SIZE),   -- Scratchpad
+      master6_address => (16#00050000#, 1024)               -- SCCB PIO
+      )
     port map(
       clk_i => clk,
       rst_i => reset,
@@ -585,35 +633,35 @@ begin
       master4_RTY_I   => open,
 
 
-      master5_ADR_O   => open,
-      master5_DAT_O   => open,
-      master5_WE_O    => open,
-      master5_CYC_O   => open,
-      master5_STB_O   => open,
-      master5_SEL_O   => open,
+      master5_ADR_O   => sp_ADR32,
+      master5_DAT_O   => sp_WDAT,
+      master5_WE_O    => sp_WE,
+      master5_CYC_O   => sp_CYC,
+      master5_STB_O   => sp_STB,
+      master5_SEL_O   => sp_SEL,
       master5_CTI_O   => open,
       master5_BTE_O   => open,
       master5_LOCK_O  => open,
-      master5_STALL_I => open,
-      master5_DAT_I   => open,
-      master5_ACK_I   => open,
+      master5_STALL_I => sp_STALL,
+      master5_DAT_I   => sp_RDAT,
+      master5_ACK_I   => sp_ACK,
       master5_ERR_I   => open,
       master5_RTY_I   => open,
 
-      master6_ADR_O   => open,
-      master6_DAT_O   => open,
-      master6_WE_O    => open,
-      master6_CYC_O   => open,
-      master6_STB_O   => open,
-      master6_SEL_O   => open,
-      master6_CTI_O   => open,
-      master6_BTE_O   => open,
-      master6_LOCK_O  => open,
-      master6_STALL_I => open,
-      master6_DAT_I   => open,
-      master6_ACK_I   => open,
-      master6_ERR_I   => open,
-      master6_RTY_I   => open,
+      master6_ADR_O   => sccb_pio_ADR_I,
+      master6_DAT_O   => sccb_pio_DAT_I,
+      master6_WE_O    => sccb_pio_WE_I,
+      master6_CYC_O   => sccb_pio_CYC_I,
+      master6_STB_O   => sccb_pio_STB_I,
+      master6_SEL_O   => sccb_pio_SEL_I,
+      master6_CTI_O   => sccb_pio_CTI_I,
+      master6_BTE_O   => sccb_pio_BTE_I,
+      master6_LOCK_O  => sccb_pio_LOCK_I,
+      master6_STALL_I => sccb_pio_STALL_O,
+      master6_DAT_I   => sccb_pio_DAT_O,
+      master6_ACK_I   => sccb_pio_ACK_O,
+      master6_ERR_I   => sccb_pio_ERR_O,
+      master6_RTY_I   => sccb_pio_RTY_O,
 
       master7_ADR_O   => open,
       master7_DAT_O   => open,
@@ -655,7 +703,35 @@ begin
 
       );
   spi_dat_o(spi_dat_o'left downto 8) <= (others => '0');
-  spi_ss <= spi_ss_tmp(0);
+  spi_ss                             <= spi_ss_tmp(0);
+
+  the_sccb_pio : wb_pio
+    generic map (
+      DATA_WIDTH => 2
+      )
+    port map(
+      clk_i => clk,
+      rst_i => reset,
+
+      adr_i   => sccb_pio_adr_i,
+      dat_i   => sccb_pio_dat_i(1 downto 0),
+      we_i    => sccb_pio_we_i,
+      cyc_i   => sccb_pio_cyc_i,
+      stb_i   => sccb_pio_stb_i,
+      sel_i   => sccb_pio_sel_i,
+      cti_i   => sccb_pio_cti_i,
+      bte_i   => sccb_pio_bte_i,
+      lock_i  => sccb_pio_lock_i,
+      ack_o   => sccb_pio_ack_o,
+      stall_o => sccb_pio_stall_o,
+      data_o  => sccb_pio_dat_o(1 downto 0),
+      err_o   => sccb_pio_err_o,
+      rty_o   => sccb_pio_rty_o,
+
+      input_output(1) => sccb_scl,
+      input_output(0) => sccb_sda
+      );
+  sccb_pio_dat_o(sccb_pio_dat_o'left downto 2) <= (others => '0');
 
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
