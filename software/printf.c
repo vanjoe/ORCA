@@ -30,10 +30,11 @@
  */
 
 #include "printf.h"
+#include "stdlib.h"
 
 typedef void (*putcf) (void*,char);
-static putcf stdout_putf;
-static void* stdout_putp;
+static putcf stdout_putf = NULL;
+static void* stdout_putp = NULL;
 volatile int* mem=(volatile int*)4;
 
 #ifdef PRINTF_LONG_SUPPORT
@@ -220,6 +221,7 @@ void init_printf(void* putp,void (*putf) (void*,char))
 
 void tfp_printf(char *fmt, ...)
 {
+	init_printf(0, mputc);
 	va_list va;
 	va_start(va,fmt);
 	tfp_format(stdout_putp,stdout_putf,fmt,va);

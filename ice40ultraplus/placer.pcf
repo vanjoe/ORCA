@@ -21,3 +21,6 @@ set_io reset_btn A4 -pullup yes
 #set_io rts D5
 set_io rxd A2 -pullup yes
 set_io txd A1
+set_io sccb_scl E5
+set_io sccb_sda E4
+set_io cam_xclk B3

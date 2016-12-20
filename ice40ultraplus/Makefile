@@ -22,7 +22,7 @@ BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.hex
 
 IMEM_LIST=imem.list
 DMEM_LIST=dmem.list
-MEM_FILE=test.mem
+MEM_FILE=software/test.mem
 HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) $(wildcard ./*.vhd)
 
 
@@ -36,9 +36,9 @@ DMEM_BASE=$(IMEM_LEN)
 DMEM_LEN=4096
 
 imem.mem: $(MEM_FILE)
-	tail -n +$$(( $(IMEM_BASE)/4 +1)) test.mem | head -n $$(( $(IMEM_LEN)/4)) >$@
+	tail -n +$$(( $(IMEM_BASE)/4 +1)) $< | head -n $$(( $(IMEM_LEN)/4)) >$@
 dmem.mem: $(MEM_FILE)
-	tail -n +$$(($(DMEM_BASE)/4 +1)) test.mem | head -n $$(( $(DMEM_LEN)/4)) >$@
+	tail -n +$$(($(DMEM_BASE)/4 +1)) $< | head -n $$(( $(DMEM_LEN)/4)) >$@
 
 sim: imem.mem dmem.mem
 run_sim: sim
@@ -85,9 +85,8 @@ clean-all: clean
 	make -C software clean
 
 build-software: $(MEM_FILE)
-$(MEM_FILE):
+$(MEM_FILE)::
 	make -C software FORMAT=mem
-	ln -sf software/*.mem $@
 
 PGM_CMD=$(ICECUBE2)/../../diamond/3.8_x64/bin/lin64/pgrcmd -infile
 pgm : $(BITFILE)

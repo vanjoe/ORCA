@@ -19,13 +19,18 @@ entity top is
     spi_ss   : out std_logic;
     spi_sclk : out std_logic;
 
---uart
+    --uart
     rxd : in  std_logic;
     txd : out std_logic;
     cts : in  std_logic;
-    rts : out std_logic
+    rts : out std_logic;
 
-
+    --clk
+    cam_xclk : in std_logic;
+    
+    --sccb
+    sccb_scl : inout std_logic;
+    sccb_sda : inout std_logic
     );
 end entity;
 
@@ -103,6 +108,21 @@ architecture rtl of top is
   signal data_uart_lock_i  : std_logic;
   signal data_uart_err_o   : std_logic;
   signal data_uart_rty_o   : std_logic;
+
+  signal sccb_pio_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sccb_pio_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sccb_pio_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sccb_pio_stb_i   : std_logic;
+  signal sccb_pio_cyc_i   : std_logic;
+  signal sccb_pio_we_i    : std_logic;
+  signal sccb_pio_sel_i   : std_logic_vector(3 downto 0);
+  signal sccb_pio_cti_i   : std_logic_vector(2 downto 0);
+  signal sccb_pio_bte_i   : std_logic_vector(1 downto 0);
+  signal sccb_pio_ack_o   : std_logic;
+  signal sccb_pio_stall_o : std_logic;
+  signal sccb_pio_lock_i  : std_logic;
+  signal sccb_pio_err_o   : std_logic;
+  signal sccb_pio_rty_o   : std_logic;
 
   signal data_ram_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_ram_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -512,10 +532,11 @@ begin
       master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE),  -- RAM
       master1_address => (16#00010000#, 1024),              -- SPI
       master2_address => (16#00020000#, 4*1024),            -- UART
-      master3_address => (16#00030000#, 0),                 --I2S Transmit
-      master4_address => (16#00040000#, 0),                 --i2c
-      master5_address => (16#80000000#, SCRATCHPAD_SIZE))
-
+      master3_address => (16#00030000#, 0),                 -- I2S Transmit
+      master4_address => (16#00040000#, 0),                 -- I2C
+      master5_address => (16#80000000#, SCRATCHPAD_SIZE),   -- Scratchpad
+      master6_address => (16#00050000#, 1024)               -- SCCB PIO
+      )
     port map(
       clk_i => clk,
       rst_i => reset,
@@ -627,20 +648,20 @@ begin
       master5_ERR_I   => open,
       master5_RTY_I   => open,
 
-      master6_ADR_O   => open,
-      master6_DAT_O   => open,
-      master6_WE_O    => open,
-      master6_CYC_O   => open,
-      master6_STB_O   => open,
-      master6_SEL_O   => open,
-      master6_CTI_O   => open,
-      master6_BTE_O   => open,
-      master6_LOCK_O  => open,
-      master6_STALL_I => open,
-      master6_DAT_I   => open,
-      master6_ACK_I   => open,
-      master6_ERR_I   => open,
-      master6_RTY_I   => open,
+      master6_ADR_O   => sccb_pio_ADR_I,
+      master6_DAT_O   => sccb_pio_DAT_I,
+      master6_WE_O    => sccb_pio_WE_I,
+      master6_CYC_O   => sccb_pio_CYC_I,
+      master6_STB_O   => sccb_pio_STB_I,
+      master6_SEL_O   => sccb_pio_SEL_I,
+      master6_CTI_O   => sccb_pio_CTI_I,
+      master6_BTE_O   => sccb_pio_BTE_I,
+      master6_LOCK_O  => sccb_pio_LOCK_I,
+      master6_STALL_I => sccb_pio_STALL_O,
+      master6_DAT_I   => sccb_pio_DAT_O,
+      master6_ACK_I   => sccb_pio_ACK_O,
+      master6_ERR_I   => sccb_pio_ERR_O,
+      master6_RTY_I   => sccb_pio_RTY_O,
 
       master7_ADR_O   => open,
       master7_DAT_O   => open,
@@ -683,6 +704,34 @@ begin
       );
   spi_dat_o(spi_dat_o'left downto 8) <= (others => '0');
   spi_ss                             <= spi_ss_tmp(0);
+
+  the_sccb_pio : wb_pio
+    generic map (
+      DATA_WIDTH => 2
+      )
+    port map(
+      clk_i => clk,
+      rst_i => reset,
+
+      adr_i   => sccb_pio_adr_i,
+      dat_i   => sccb_pio_dat_i(1 downto 0),
+      we_i    => sccb_pio_we_i,
+      cyc_i   => sccb_pio_cyc_i,
+      stb_i   => sccb_pio_stb_i,
+      sel_i   => sccb_pio_sel_i,
+      cti_i   => sccb_pio_cti_i,
+      bte_i   => sccb_pio_bte_i,
+      lock_i  => sccb_pio_lock_i,
+      ack_o   => sccb_pio_ack_o,
+      stall_o => sccb_pio_stall_o,
+      data_o  => sccb_pio_dat_o(1 downto 0),
+      err_o   => sccb_pio_err_o,
+      rty_o   => sccb_pio_rty_o,
+
+      input_output(1) => sccb_scl,
+      input_output(0) => sccb_sda
+      );
+  sccb_pio_dat_o(sccb_pio_dat_o'left downto 2) <= (others => '0');
 
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
