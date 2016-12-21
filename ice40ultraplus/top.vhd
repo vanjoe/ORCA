@@ -54,17 +54,54 @@ architecture rtl of top is
 
   signal reset : std_logic;
 
-  signal data_ADR_O  : std_logic_vector(31 downto 0);
-  signal data_DAT_O  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_WE_O   : std_logic;
-  signal data_CYC_O  : std_logic;
-  signal data_STB_O  : std_logic;
-  signal data_SEL_O  : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
-  signal data_CTI_O  : std_logic_vector(2 downto 0);
-  signal data_BTE_O  : std_logic_vector(1 downto 0);
-  signal data_LOCK_O : std_logic;
+  signal data_ADR_O   : std_logic_vector(31 downto 0);
+  signal data_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal data_WE_O    : std_logic;
+  signal data_CYC_O   : std_logic;
+  signal data_STB_O   : std_logic;
+  signal data_SEL_O   : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
+  signal data_CTI_O   : std_logic_vector(2 downto 0);
+  signal data_BTE_O   : std_logic_vector(1 downto 0);
+  signal data_LOCK_O  : std_logic;
+  signal data_STALL_I : std_logic;
+  signal data_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal data_ACK_I   : std_logic;
+  signal data_ERR_I   : std_logic;
+  signal data_RTY_I   : std_logic;
 
-  signal sp_ADR32   : std_logic_vector(31 downto 0);
+  signal spi_sp_ADR_O   : std_logic_vector(31 downto 0);
+  signal spi_sp_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal spi_sp_WE_O    : std_logic;
+  signal spi_sp_CYC_O   : std_logic;
+  signal spi_sp_STB_O   : std_logic;
+  signal spi_sp_SEL_O   : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
+  signal spi_sp_CTI_O   : std_logic_vector(2 downto 0);
+  signal spi_sp_BTE_O   : std_logic_vector(1 downto 0);
+  signal spi_sp_LOCK_O  : std_logic;
+  signal spi_sp_STALL_I : std_logic;
+  signal spi_sp_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal spi_sp_ACK_I   : std_logic;
+  signal spi_sp_ERR_I   : std_logic;
+  signal spi_sp_RTY_I   : std_logic;
+
+  signal data_sp_ADR_O   : std_logic_vector(31 downto 0);
+  signal data_sp_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal data_sp_WE_O    : std_logic;
+  signal data_sp_CYC_O   : std_logic;
+  signal data_sp_STB_O   : std_logic;
+  signal data_sp_SEL_O   : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
+  signal data_sp_CTI_O   : std_logic_vector(2 downto 0);
+  signal data_sp_BTE_O   : std_logic_vector(1 downto 0);
+  signal data_sp_LOCK_O  : std_logic;
+  signal data_sp_STALL_I : std_logic;
+  signal data_sp_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal data_sp_ACK_I   : std_logic;
+  signal data_sp_ERR_I   : std_logic;
+  signal data_sp_RTY_I   : std_logic;
+
+
+
+  signal sp_ADR32 : std_logic_vector(31 downto 0);
   signal sp_ADR   : std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
   signal sp_RDAT  : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sp_WDAT  : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -77,11 +114,6 @@ architecture rtl of top is
   signal sp_CTI   : std_logic_vector(2 downto 0);
 
 
-  signal data_STALL_I : std_logic;
-  signal data_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_ACK_I   : std_logic;
-  signal data_ERR_I   : std_logic;
-  signal data_RTY_I   : std_logic;
 
   signal instr_ADR_O : std_logic_vector(31 downto 0);
   signal instr_CYC_O : std_logic;
@@ -470,6 +502,62 @@ begin
 
   end generate SEPERATE_MEM_GEN;
 
+
+
+--arbiter for scratchpad port
+ arbiter : component wb_arbiter
+      port map (
+        CLK_I => clk,
+        RST_I => reset,
+
+        slave1_ADR_I  => spi_sp_ADR_O,
+        slave1_DAT_I  => spi_sp_DAT_O,
+        slave1_WE_I   => spi_sp_WE_O,
+        slave1_CYC_I  => spi_sp_CYC_O,
+        slave1_STB_I  => spi_sp_STB_O,
+        slave1_SEL_I  => spi_sp_SEL_O,
+        slave1_CTI_I  => spi_sp_CTI_O,
+        slave1_BTE_I  => spi_sp_BTE_O,
+        slave1_LOCK_I => spi_sp_LOCK_O,
+
+        slave1_STALL_O => spi_sp_STALL_I,
+        slave1_DAT_O   => spi_sp_DAT_I,
+        slave1_ACK_O   => spi_sp_ack_I,
+--      slave1_ERR_O   => data_ERR_I,
+--      slave1_RTY_O   => data_RTY_I,
+
+        slave2_ADR_I  => data_sp_ADR_O,
+        slave2_DAT_I  => data_sp_DAT_O,
+        slave2_WE_I   => data_sp_WE_O,
+        slave2_CYC_I  => data_sp_CYC_O,
+        slave2_STB_I  => data_sp_STB_O,
+        slave2_SEL_I  => data_sp_SEL_O,
+        slave2_CTI_I  => data_sp_CTI_O,
+        slave2_BTE_I  => (others => '0'),
+        slave2_LOCK_I => '0',
+
+        slave2_STALL_O => data_sp_stall_i,
+        slave2_DAT_O   => data_sp_DAT_I,
+        slave2_ACK_O   => data_sp_ACK_I,
+--        slave2_ERR_O   => data_sp_ERR_I,
+--        slave2_RTY_O   => data_sp_RTY_I,
+
+        master_ADR_O  => sp_ADR32,
+        master_DAT_O  => sp_WDAT,
+        master_WE_O   => sp_WE,
+        master_CYC_O  => sp_CYC,
+        master_STB_O  => sp_STB,
+        master_SEL_O  => sp_SEL,
+        master_CTI_O  => sp_CTI,
+        master_BTE_O  => open,
+        master_LOCK_O => open,
+
+        master_STALL_I => sp_STALL,
+        master_DAT_I   => sp_RDAT,
+        master_ACK_I   => sp_ACK,
+        master_ERR_I   => '0',
+        master_RTY_I   => '0');
+
   rv : component orca
     generic map (
       REGISTER_SIZE        => REGISTER_SIZE,
@@ -532,9 +620,7 @@ begin
       master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE),  -- RAM
       master1_address => (16#00010000#, 1024),              -- SPI
       master2_address => (16#00020000#, 4*1024),            -- UART
-      master3_address => (16#00030000#, 0),                 -- I2S Transmit
-      master4_address => (16#00040000#, 0),                 -- I2C
-      master5_address => (16#80000000#, SCRATCHPAD_SIZE),   -- Scratchpad
+      master3_address => (16#80000000#, SCRATCHPAD_SIZE),
       master6_address => (16#00050000#, 1024)               -- SCCB PIO
       )
     port map(
@@ -602,51 +688,20 @@ begin
       master2_RTY_I   => data_uart_RTY_O,
 
 
-      master3_ADR_O   => open,
-      master3_DAT_O   => open,
-      master3_WE_O    => open,
-      master3_CYC_O   => open,
-      master3_STB_O   => open,
-      master3_SEL_O   => open,
+      master3_ADR_O   => data_sp_ADR_O,
+      master3_DAT_O   => data_sp_DAT_O,
+      master3_WE_O    => data_sp_WE_O,
+      master3_CYC_O   => data_sp_CYC_O,
+      master3_STB_O   => data_sp_STB_O,
+      master3_SEL_O   => data_sp_SEL_O,
       master3_CTI_O   => open,
       master3_BTE_O   => open,
       master3_LOCK_O  => open,
-      master3_STALL_I => open,
-      master3_DAT_I   => open,
-      master3_ACK_I   => open,
+      master3_STALL_I => data_sp_stall_i,
+      master3_DAT_I   => data_sp_DAT_I,
+      master3_ACK_I   => data_sp_ACK_I,
       master3_ERR_I   => open,
       master3_RTY_I   => open,
-
-      master4_ADR_O   => open,
-      master4_DAT_O   => open,
-      master4_WE_O    => open,
-      master4_CYC_O   => open,
-      master4_STB_O   => open,
-      master4_SEL_O   => open,
-      master4_CTI_O   => open,
-      master4_BTE_O   => open,
-      master4_LOCK_O  => open,
-      master4_STALL_I => open,
-      master4_DAT_I   => open,
-      master4_ACK_I   => open,
-      master4_ERR_I   => open,
-      master4_RTY_I   => open,
-
-
-      master5_ADR_O   => sp_ADR32,
-      master5_DAT_O   => sp_WDAT,
-      master5_WE_O    => sp_WE,
-      master5_CYC_O   => sp_CYC,
-      master5_STB_O   => sp_STB,
-      master5_SEL_O   => sp_SEL,
-      master5_CTI_O   => open,
-      master5_BTE_O   => open,
-      master5_LOCK_O  => open,
-      master5_STALL_I => sp_STALL,
-      master5_DAT_I   => sp_RDAT,
-      master5_ACK_I   => sp_ACK,
-      master5_ERR_I   => open,
-      master5_RTY_I   => open,
 
       master6_ADR_O   => sccb_pio_ADR_I,
       master6_DAT_O   => sccb_pio_DAT_I,
@@ -661,49 +716,45 @@ begin
       master6_DAT_I   => sccb_pio_DAT_O,
       master6_ACK_I   => sccb_pio_ACK_O,
       master6_ERR_I   => sccb_pio_ERR_O,
-      master6_RTY_I   => sccb_pio_RTY_O,
-
-      master7_ADR_O   => open,
-      master7_DAT_O   => open,
-      master7_WE_O    => open,
-      master7_CYC_O   => open,
-      master7_STB_O   => open,
-      master7_SEL_O   => open,
-      master7_CTI_O   => open,
-      master7_BTE_O   => open,
-      master7_LOCK_O  => open,
-      master7_STALL_I => open,
-      master7_DAT_I   => open,
-      master7_ACK_I   => open,
-      master7_ERR_I   => open,
-      master7_RTY_I   => open);
+      master6_RTY_I   => sccb_pio_RTY_O);
 
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
 
-  the_spi : wb_spimaster
+  --dma controller for reading blocks of flash
+  the_spi : wb_flash_dma
+    generic map(
+      MAX_LENGTH => 64*1024)
     port map(
-      clk_i => clk,
-      rst_i => reset,
+      clk_i         => clk,
+      rst_i         => reset,
+      slave_ADR_I   => spi_adr_i(3 downto 0),
+      slave_DAT_O   => spi_dat_o,
+      slave_DAT_I   => spi_DAT_I,
+      slave_WE_I    => spi_WE_I,
+      slave_SEL_I   => spi_SEL_I,
+      slave_STB_I   => spi_STB_I,
+      slave_ACK_O   => spi_ACK_O,
+      slave_CYC_I   => spi_CYC_I,
+      slave_CTI_I   => spi_CTI_I,
+      slave_STALL_O => spi_STALL_O,
 
-      adr_i   => spi_adr_i(9 downto 2),
-      dat_i   => spi_dat_i(7 downto 0),
-      dat_o   => spi_dat_o(7 downto 0),
-      cyc_i   => spi_cyc_i,
-      sel_i   => '1',
-      we_i    => spi_we_i,
-      ack_o   => spi_ack_o,
-      stall_o => spi_stall_o,
-      stb_i   => spi_stb_i,
+      master_ADR_O   => spi_sp_ADR_O,
+      master_DAT_I   => spi_sp_DAT_I,
+      master_DAT_O   => spi_sp_DAT_O,
+      master_WE_O    => spi_sp_WE_O,
+      master_SEL_O   => spi_sp_SEL_O,
+      master_STB_O   => spi_sp_STB_O,
+      master_ACK_I   => spi_sp_ACK_I,
+      master_CYC_O   => spi_sp_CYC_O,
+      master_CTI_O   => spi_sp_CTI_O,
+      master_STALL_I => spi_sp_STALL_I,
 
       spi_mosi => spi_mosi,
       spi_miso => spi_miso,
-      spi_ss   => spi_ss_tmp,
+      spi_ss   => spi_ss,
       spi_sclk => spi_sclk
-
       );
-  spi_dat_o(spi_dat_o'left downto 8) <= (others => '0');
-  spi_ss                             <= spi_ss_tmp(0);
 
   the_sccb_pio : wb_pio
     generic map (

@@ -37,7 +37,7 @@ proc com {} {
                      SB_GB_sim.vhd                      \
                      hdl/i2s_interface/i2s_decode.vhd   \
                      hdl/i2s_interface/i2s_wb.vhd       \
-                     top_dma.vhd                            \
+                     top.vhd                            \
                      top_tb.vhd \
 							hdl/i2s_tx/i2s_codec.vhd       \
 							hdl/i2s_tx/tx_i2s_pack.vhd		 \

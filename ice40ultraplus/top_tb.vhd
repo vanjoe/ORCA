@@ -8,17 +8,26 @@ end entity;
 architecture rtl of top_tb is
   component top is
     port(
---    clk       : in std_logic;
-      reset_btn : in  std_logic;
-      spi_miso  : in  std_logic;
-      spi_sclk  : out std_logic;
-      spi_ss    : out std_logic;
+      reset_btn : in std_logic;
+
+      --spi
+      spi_mosi : out std_logic;
+      spi_miso : in  std_logic;
+      spi_ss   : out std_logic;
+      spi_sclk : out std_logic;
 
       --uart
       rxd : in  std_logic;
       txd : out std_logic;
       cts : in  std_logic;
-      rts : out std_logic
+      rts : out std_logic;
+
+      --clk
+      cam_xclk : in std_logic;
+
+      --sccb
+      sccb_scl : inout std_logic;
+      sccb_sda : inout std_logic
 
       );
   end component;
@@ -47,6 +56,7 @@ begin
       spi_miso  => spi_miso,
       spi_ss    => spi_ss,
       spi_sclk  => spi_sclk,
+      cam_xclk  => '0',
       rxd       => rxd,
       txd       => txd,
       cts       => cts,
@@ -68,7 +78,7 @@ begin
   end process;
 
   process(spi_sclk, spi_ss)
-    constant mydata  : std_logic_vector(7 downto 0) := x"13";
+    constant mydata : std_logic_vector(7 downto 0) := x"13";
 
   begin
     if falling_edge(spi_ss) then
