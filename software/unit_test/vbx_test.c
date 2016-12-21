@@ -48,6 +48,7 @@ TEST_ATTR int test_3()
 TEST_ATTR int test_4()
 {
   int vlen=10;
+  vbx_set_vl(vlen);
   vbx_word_t* dest=((vbx_word_t*)SCRATCHPAD_BASE);
   dest[0]=1;
   //TEST a load word right before a vector instruction
@@ -56,7 +57,7 @@ TEST_ATTR int test_4()
 	lw a0,  0(a0)\n										\
    vtype.www	a0,x0\n										\
    vadd.se.1d.sss	%0,%1\n									\
-": : "r"(dest),"r"(vlen) : "a0","memory");
+": : "r"(dest),"r"(vbx_get_vl()) : "a0","memory");
 
   for( int i=0;i<vlen;i++){
 	 if ( dest[i] != (i+1) ){
@@ -136,13 +137,13 @@ TEST_ATTR int test_7()
 
 int main()
 {
-
-  do_test(2);
-  do_test(3);
-  do_test(4);
-  do_test(5);
-  do_test(6);
-  do_test(7);
-  return 0;
+	the_mxp.stride =4;
+	do_test(2);
+	do_test(3);
+	do_test(4);
+	do_test(5);
+	do_test(6);
+	do_test(7);
+	return 0;
 
 }

@@ -1,7 +1,7 @@
 #ifndef MACROS_H
 #define MACROS_H
 
-
+#include "vbx_types.h"
 
 extern vbx_mxp_t the_mxp;
 
@@ -88,13 +88,11 @@ extern vbx_mxp_t the_mxp;
 #define vbx_3D_acc_sync(...) vbx_3D_acc_sync_(__VA_ARGS__)
 #define vbx_3D_sync(...)     vbx_3D_sync_(__VA_ARGS__)
 
-
-__attribute__((always_inline)) static inline void vbx_set_vl(int vl){
-	 the_mxp.current_vl = vl;
+static inline void vbx_set_vl(int vl){
+	 the_mxp.vl = vl;
 }
-__attribute__((always_inline)) static inline int vbx_get_vl(){
-	return the_mxp.current_vl;
+static inline int vbx_get_vl(){
+	return the_mxp.stride_and_vl;
 }
-
 
 #endif //MACROS_H

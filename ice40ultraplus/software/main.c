@@ -1,7 +1,7 @@
 #include "printf.h"
 #include "i2s.h"
 #include "interrupt.h"
-#include "lve_test.h"
+
 
 #define SYS_CLK 8000000
 static inline unsigned get_time()

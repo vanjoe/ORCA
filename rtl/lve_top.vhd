@@ -81,7 +81,7 @@ architecture rtl of lve_top is
       data_out3   : out std_logic_vector(MEM_WIDTH-1 downto 0));
   end component;
 
-  constant POINTER_INCREMENT : natural                      := 4;
+
 --  constant SP_SIZE           : natural                      := 1024;
   constant CUSTOM0           : std_logic_vector(6 downto 0) := "0101011";
 
@@ -121,8 +121,8 @@ architecture rtl of lve_top is
   signal srca_ptr            : unsigned(REGISTER_SIZE-1 downto 0);
   signal srcb_ptr            : unsigned(REGISTER_SIZE-1 downto 0);
   signal dest_ptr            : unsigned(REGISTER_SIZE-1 downto 0);
-  signal read_vector_length  : unsigned(log2(SCRATCHPAD_SIZE) downto 0);
-  signal write_vector_length : unsigned(log2(SCRATCHPAD_SIZE) downto 0);
+  signal read_vector_length  : unsigned(15 downto 0);
+  signal write_vector_length : unsigned(15 downto 0);
   signal writeback_data      : unsigned(REGISTER_SIZE-1 downto 0);
 
   signal waddr2 : std_logic_vector(log2(SCRATCHPAD_SIZE/4)-1 downto 0);
@@ -144,8 +144,10 @@ architecture rtl of lve_top is
   signal accumulation_register : unsigned(REGISTER_SIZE - 1 downto 0);
   signal accumulation_result   : unsigned(REGISTER_SIZE - 1 downto 0);
 
-  signal readdata_valid : std_logic;
-  signal eqz            : std_logic;
+  signal pointer_increment     : unsigned(15 downto 0);
+
+  signal readdata_valid        : std_logic;
+  signal eqz                   : std_logic;
 
   signal enum_enable   : std_logic;
   signal scalar_enable : std_logic;
@@ -171,6 +173,9 @@ begin
                 cmv_result;
 
   valid_lve_instr <= valid_instr when major_op = CUSTOM0 else '0';
+
+  pointer_increment <= unsigned(rs2_data(rs2_data'left downto rs2_data'length - pointer_increment'length));
+
   --instruction parsing process
   address_gen : process(clk)
   begin
@@ -180,7 +185,7 @@ begin
 
         if lve_result_valid = '1' then
           if acc = '0' then
-            dest_ptr <= dest_ptr + POINTER_INCREMENT;
+            dest_ptr <= dest_ptr + pointer_increment;
           end if;
           write_vector_length   <= write_vector_length - 1;
           accumulation_register <= accumulation_result;
@@ -194,8 +199,8 @@ begin
           srca_ptr <= unsigned(rs1_data);
           srcb_ptr <= unsigned(rs2_data);
         else
-          srca_ptr <= srca_ptr+ POINTER_INCREMENT;
-          srcb_ptr <= srcb_ptr+ POINTER_INCREMENT;
+          srca_ptr <= srca_ptr + pointer_increment;
+          srcb_ptr <= srcb_ptr + pointer_increment;
           if first_element = '1' then
             dest_ptr              <= unsigned(rs1_data);
             write_vector_length   <= unsigned(rs2_data(write_vector_length'range));
@@ -233,7 +238,7 @@ begin
     if rising_edge(clk) then
 
       writeback_data <= unsigned(lve_result);
-      waddr2 <= std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2));
+      waddr2         <= std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2));
       if acc = '1' then
         writeback_data <= accumulation_result;
       end if;
@@ -293,7 +298,7 @@ begin
       enum_enable => enum_enable,
 
       ack01     => lve_source_valid,
-      waddr2    =>waddr2,
+      waddr2    => waddr2,
       byte_en2  => (others => '1'),
       wen2      => write_enable,
       data_in2  => std_logic_vector(writeback_data),

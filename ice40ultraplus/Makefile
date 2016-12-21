@@ -22,7 +22,7 @@ BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.hex
 
 IMEM_LIST=imem.list
 DMEM_LIST=dmem.list
-MEM_FILE=software/test.mem
+MEM_FILE?=software/test.mem
 HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) $(wildcard ./*.vhd)
 
 
