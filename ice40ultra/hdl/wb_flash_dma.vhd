@@ -82,7 +82,8 @@ architecture rtl of wb_flash_dma is
 
   signal cur_state       : state_t;
   signal next_state      : state_t;
-  signal xferlen_count   : integer range 0 to MAX_LENGTH;
+  signal xferlen_count   : integer range 0 to MAX_LENGTH/4;
+  signal word_count      : unsigned(1 downto 0) := "00";
   signal init_loop_count : integer range 0 to 10;
   signal start_xfer      : std_logic;
 
@@ -96,8 +97,8 @@ architecture rtl of wb_flash_dma is
   constant CMD_WAKEUP : std_logic_vector(7 downto 0) := x"AB";
   constant CMD_READ   : std_logic_vector(7 downto 0) := x"03";
 
-  signal ss_vec : std_logic_vector(0 downto 0);
-
+  signal ss_vec       : std_logic_vector(0 downto 0);
+  signal first_byte   : std_logic;
   signal slave_select : std_logic;
 
 --  alias init_loop_count is xferlen_count;
@@ -172,7 +173,7 @@ begin  -- architecture rtl
                 cur_state    <= TRANSITION;
                 initializing <= '0';
               else
-                next_state <= WAKE_0;
+                next_state <= RESET;
                 cur_state  <= TRANSITION;
               end if;
             else
@@ -187,7 +188,7 @@ begin  -- architecture rtl
           slave_select <= '1';
           if start_xfer = '1' then
             waddress_counter <= unsigned(waddress_register);
-            xferlen_count <= to_integer(unsigned(length_register));
+            xferlen_count    <= to_integer(unsigned(length_register(length_register'length-2 downto 2)));
             spi_wdat         <= CMD_READ;
             spi_cyc          <= '1';
             cur_state        <= TRANSITION;
@@ -211,25 +212,31 @@ begin  -- architecture rtl
 
         when ADDR_2 =>
           if done_transfer = '1' then
-            spi_wdat      <= raddress_register(7 downto 0);
-            spi_cyc       <= '1';
-            next_state    <= READ_SPI;
-            cur_state     <= TRANSITION;
+            spi_wdat   <= raddress_register(7 downto 0);
+            spi_cyc    <= '1';
+            next_state <= READ_SPI;
+            cur_state  <= TRANSITION;
+            first_byte <= '1';
 
           end if;
         when READ_SPI =>
           if done_transfer = '1' then
 
             data_register <= data_register(data_register'left-8 downto 0) & spi_data_out;
-            xferlen_count <= xferlen_count -1;
+            word_count <= word_count -1;
             --DUMMY BYTE
             spi_cyc       <= '1';
             next_state    <= cur_state;
             cur_state     <= TRANSITION;
-            --every 4 bytes, write via master
-            if to_unsigned(xferlen_count, 32)(1 downto 0) = "01" then
-              next_state <= WRITE_MASTER_0;
+            if first_byte = '0' then
+              --every 4 bytes, write via master
+              if word_count =  "00" then
+                next_state <= WRITE_MASTER_0;
+              end if;
+            else
+              first_byte <= '0';
             end if;
+
           end if;
         when WRITE_MASTER_0 =>
           if master_stall_i = '0' then
@@ -246,8 +253,11 @@ begin  -- architecture rtl
           if master_ack_i = '1' then
             cur_state        <= READ_SPI;
             waddress_counter <= waddress_counter + 4;
-            if xferlen_count = 0 then
+              xferlen_count <= xferlen_count -1;
+            if xferlen_count = 1 then
               cur_state <= IDLE;
+            else
+
             end if;
           end if;
         when TRANSITION =>
@@ -257,7 +267,8 @@ begin  -- architecture rtl
       end case;
 
       if rst_i = '1' then
-        cur_state <= RESET;
+        cur_state     <= RESET;
+        data_register <= (others => '0');
       end if;
     end if;
   end process;
@@ -267,7 +278,8 @@ begin  -- architecture rtl
   master_cyc_o  <= '1' when cur_state = WRITE_MASTER_0 else '0';
   master_we_o   <= '1' when cur_state = WRITE_MASTER_0 else '0';
   master_sel_o  <= (others => '1');
-  master_dat_o  <= data_register;
+  --endian madness
+  master_dat_o  <= data_register(7 downto 0) & data_register(15 downto 8) & data_register(23 downto 16) & data_register(31 downto 24);
   slave_STALL_O <= '0';
   wishbone_proc : process(clk_i)
   begin

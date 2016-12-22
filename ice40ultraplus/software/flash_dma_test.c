@@ -40,7 +40,7 @@ void delayms( unsigned int ms)
 int main()
 {
 	printf("TEST!\r\n");
-	int xfer_size=1024;
+	int xfer_size=1020;
 	volatile char* sp_base=(volatile char*)SCRATCHPAD_BASE;
 	int i;
 	for(i=0;i<xfer_size;i++){
@@ -56,7 +56,7 @@ int main()
 		printf("waiting for initialization\r\n");
 	}
 	int start_tiem=get_time();
-	FLASH_DMA_BASE[FLASH_DMA_RADDR]=0;
+	FLASH_DMA_BASE[FLASH_DMA_RADDR]=4;
 	FLASH_DMA_BASE[FLASH_DMA_WADDR]=(int)sp_base;
 	FLASH_DMA_BASE[FLASH_DMA_LEN]=xfer_size;
 	//wait for transfer done
