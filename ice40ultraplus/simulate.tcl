@@ -47,6 +47,7 @@ proc com {} {
 							hdl/i2s_tx/gen_event_reg.vhd	 \
 							hdl/i2s_tx/tx_i2s_wbd.vhd      \
 							hdl/i2s_tx/tx_i2s_topm.vhd \
+							hdl/wb_flash_dma.vhd \
 							hdl/spi_master/wb_spi_simple.vhd
 
 					 ]
@@ -76,15 +77,12 @@ proc com {} {
 }
 
 proc wave_LVE { } {
-    if {[examine /top_tb/dut/rv/LVE_ENABLE]} {
-	#Following have no signals and so produce an error	
-	#	add wave -noupdate -divider "LVE enable (in execute)"
-	#	add wave -hex /top_tb/dut/rv/core/X/enable_lve/*
-	add wave -noupdate -divider "LVE"
-	add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/*
-	add wave -noupdate -divider "LVE Scratchpad"
-	add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/scratchpad_memory/*
-    }
+    add wave -noupdate -divider "LVE enable (in execute)"
+    add wave -hex /top_tb/dut/rv/core/X/enable_lve/*
+    add wave -noupdate -divider "LVE"
+    add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/*
+    add wave -noupdate -divider "LVE Scratchpad"
+    add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/scratchpad_memory/*
 }
 
 proc wave_X { } {
@@ -107,26 +105,6 @@ proc wave_Top { } {
     add wave -hex /top_tb/dut/rv/core/*
 }
 
-proc wave_SCCB { } {
-    add wave -noupdate -divider "SCCB PIO"
-    add wave -hex /top_tb/dut/the_sccb_pio/*
-}
-
-proc wave_top_top { } {
-    add wave -noupdate -divider "Top level (full)"
-    add wave -hex /top_tb/dut/*
-}
-
-proc wave_all { } {
-    wave_RF
-    wave_Top
-    wave_X
-    wave_ALU
-    wave_LVE
-    wave_SCCB
-    wave_top_top
-}
-
 proc recom { t {extra_waves false} } {
     noview wave
 
@@ -143,26 +121,20 @@ proc recom { t {extra_waves false} } {
     add wave -noupdate /top_tb/dut/rv/core/X/valid_instr
     add wave -hex -noupdate /top_tb/dut/rv/core/X/pc_current
     add wave -hex -noupdate /top_tb/dut/rv/core/X/instruction
-    add wave -noupdate -divider UART
-    add wave -ascii -noupdate sim:/top_tb/dut/the_uart/THR
+
     if { $extra_waves } {
-	wave_all
+		  wave_RF
+		  wave_Top
+		  wave_X
+		  wave_ALU
+		  wave_LVE
     }
 
-    #External pull-up resistors
-    force -drive sim:/top_tb/dut/sccb_scl H 0
-    force -drive sim:/top_tb/dut/sccb_sda H 0
-    
     run $t
 }
 
 proc rerun { t } {
     restart -f;
-
-    #External pull-up resistors
-    force -drive sim:/top_tb/dut/sccb_scl H 0
-    force -drive sim:/top_tb/dut/sccb_sda H 0
-    
     run $t
 }
 
@@ -170,4 +142,5 @@ proc rerun { t } {
 recom 0
 
 radix hex
+
 config wave -signalnamewidth 2

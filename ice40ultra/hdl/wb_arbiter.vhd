@@ -12,14 +12,14 @@ entity wb_arbiter is
     CLK_I : in std_logic;
     RST_I : in std_logic;
 
-    slave1_ADR_I : in std_logic_vector(31 downto 0);
-    slave1_DAT_I : in std_logic_vector(DATA_WIDTH-1 downto 0);
-    slave1_WE_I  : in std_logic;
-    slave1_CYC_I : in std_logic;
-    slave1_STB_I : in std_logic;
-    slave1_SEL_I : in std_logic_vector(DATA_WIDTH/8-1 downto 0);
-    slave1_CTI_I : in std_logic_vector(2 downto 0);
-    slave1_BTE_I : in std_logic_vector(1 downto 0);
+    slave1_ADR_I  : in std_logic_vector(31 downto 0);
+    slave1_DAT_I  : in std_logic_vector(DATA_WIDTH-1 downto 0);
+    slave1_WE_I   : in std_logic;
+    slave1_CYC_I  : in std_logic;
+    slave1_STB_I  : in std_logic;
+    slave1_SEL_I  : in std_logic_vector(DATA_WIDTH/8-1 downto 0);
+    slave1_CTI_I  : in std_logic_vector(2 downto 0);
+    slave1_BTE_I  : in std_logic_vector(1 downto 0);
     slave1_LOCK_I : in std_logic;
 
     slave1_STALL_O : out std_logic;
@@ -67,49 +67,86 @@ end entity wb_arbiter;
 
 architecture rtl of wb_arbiter is
 
-  type pc_t is (CHOICE_SLAVE1, CHOICE_SLAVE2);
 
-  signal port_choice      : pc_t;
-  signal next_port_choice : pc_t;
-  signal curr_port_choice : pc_t;
+
+  type state_t is (IDLE, SLAVE1_0, SLAVE1_1, SLAVE2_0, SLAVE2_1);
+
+  signal state            : state_t;
 
 begin  -- architecture rtl
 
-  PRIORITY_SLAVE_if : if PRIORITY_SLAVE = 1 generate
-    next_port_choice <= CHOICE_SLAVE1 when curr_port_choice = CHOICE_SLAVE2 and slave1_STB_I = '1' else CHOICE_SLAVE2;
 
-    slave2_ACK_O <= '0'          when curr_port_choice = CHOICE_SLAVE1 else master_ACK_I;
-    slave1_ACK_O <= master_ACK_I when curr_port_choice = CHOICE_SLAVE1 else '0';
+  slave1_DAT_O <= master_DAT_I;
+  slave2_DAT_O <= master_DAT_I;
+  slave1_ACK_O <= master_ACK_I when state = slave1_1 else '0';
+  slave2_ACK_O <= master_ACK_I when state = slave2_1 else '0';
 
 
-    --for control signals use different port choices based on ACK
-    port_choice <= next_port_choice when master_ACK_I = '1' else curr_port_choice;
+  choice : process(CLK_I)
+  begin
+    if rising_edge(CLK_I) then
 
-    slave2_STALL_O <= '1' when  port_choice = CHOICE_SLAVE1 else master_STALL_I;
-    slave1_STALL_O <= '1' when  port_choice = CHOICE_SLAVE2 else master_STALL_I;
-    master_ADR_O <= slave1_ADR_I when port_choice = CHOICE_SLAVE1 else slave2_ADR_I;
-    master_DAT_O <= slave1_dat_I when port_choice = CHOICE_SLAVE1 else slave2_dat_I;
-    master_WE_O  <= slave1_WE_I  when port_choice = CHOICE_SLAVE1 else slave2_WE_I;
-    master_SEL_O <= slave1_SEL_I when port_choice = CHOICE_SLAVE1 else slave2_SEL_I;
-    master_STB_O <= slave1_STB_I when port_choice = CHOICE_SLAVE1 else slave2_STB_I;
-    master_CYC_O <= slave1_CYC_I when port_choice = CHOICE_SLAVE1 else slave2_CYC_I;
+      case state is
+        when IDLE =>
+          master_STB_O <= '0';
+          master_CYC_O <= '0';
+          master_WE_O  <= '0';
+          master_SEL_O <= (others => '-');
+          master_ADR_O <= (others => '-');
+          master_DAT_O <= (others => '-');
 
-    slave1_DAT_O  <= master_DAT_I;
-    slave2_DAT_O <= master_DAT_I;
+          if (slave1_CYC_I and slave1_stb_i) = '1' then
+            master_STB_O <= '1';
+            master_CYC_O <= '1';
+            master_WE_O  <= slave1_we_i;
+            master_SEL_O <= slave1_SEL_I;
+            master_ADR_O <= slave1_ADR_I;
+            master_DAT_O <= slave1_DAT_I;
+            state        <= SLAVE1_0;
+          elsif (slave2_CYC_I and slave2_stb_i) = '1' then
+            master_STB_O <= '1';
+            master_CYC_O <= '1';
+            master_WE_O  <= slave2_we_i;
+            master_SEL_O <= slave2_SEL_I;
+            master_ADR_O <= slave2_ADR_I;
+            master_DAT_O <= slave2_DAT_I;
+            state        <= SLAVE2_0;
+          end if;
+        when SLAVE1_0 =>
+          if master_stall_i = '0' then
+            master_STB_O <= '0';
+            master_CYC_O <= '0';
+            master_WE_O  <= '0';
+            state        <= SLAVE1_1;
+          end if;
+        when slave1_1 =>
+          if master_ack_i = '1' then
+            state <= IDLE;
+          end if;
+        when SLAVE2_0 =>
+          if master_stall_i = '0' then
+            master_STB_O <= '0';
+            master_CYC_O <= '0';
+            state        <= SLAVE2_1;
+          end if;
+        when slave2_1 =>
+          if master_ack_i = '1' then
+            state <= IDLE;
+          end if;
 
-    choice : process(CLK_I)
-    begin
-      if rising_edge(CLK_I) then
-        if RST_I = '1' then
-          curr_port_choice <= CHOICE_SLAVE2;
-        end if;
-        if master_ACK_I = '1' then
-          curr_port_choice <= next_port_choice;
-        end if;
+
+        when others => null;
+      end case;
+
+      if rst_i = '1' then
+        state <= IDLE;
       end if;
-    end process;
+    end if;
+  end process;
 
-  end generate PRIORITY_SLAVE_if;
+  slave1_stall_o <= '1' when state = slave2_0 or state = slave2_1 else '0';
+  slave2_stall_o <= '1' when state = slave1_0 or state = slave1_1 else '0';
+
 
   master_CTI_O  <= "000";
   master_LOCK_O <= '0';

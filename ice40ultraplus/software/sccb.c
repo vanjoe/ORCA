@@ -99,7 +99,7 @@ uint8_t sccb_read(void *pioBase, uint8_t slaveAddress, uint8_t subAddress){
 	sccb_stop(pioBase);
 
 	delay_cycles(DELAY_CYCLES*3);
-	
+
 	//Now read
 	sccb_start(pioBase);
 	sccb_write_phase(pioBase, slaveAddress | 0x01); //Set read bit
@@ -107,8 +107,8 @@ uint8_t sccb_read(void *pioBase, uint8_t slaveAddress, uint8_t subAddress){
 	for(bit = 7; bit >= 0; bit--){
 		readData = readData << 1;
 		pio_enable(pioBase, 0);            //clk  <= 1
-		readData = readData | ((pio_read(pioBase) & PIO_SDA_MASK) >> PIO_SDA_BIT);
 		delay_cycles(DELAY_CYCLES);
+		readData = readData | ((pio_read(pioBase) & PIO_SDA_MASK) >> PIO_SDA_BIT);
 		pio_enable(pioBase, PIO_SCL_MASK); //clk  <= 0
 	}
 	pio_enable(pioBase, PIO_SCL_MASK); //data <= 1
@@ -118,6 +118,6 @@ uint8_t sccb_read(void *pioBase, uint8_t slaveAddress, uint8_t subAddress){
 
 	sccb_stop(pioBase);
 	delay_cycles(DELAY_CYCLES*3);
-	
+
 	return readData;
 }
