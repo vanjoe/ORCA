@@ -14,6 +14,7 @@ proc com {} {
                      ../rtl/orca.vhd                    \
                      ../rtl/orca_core.vhd               \
                      ../rtl/sys_call.vhd                \
+                     ../rtl/lve_ci.vhd                 \
                      ../rtl/lve_top.vhd                 \
                      ../rtl/4port_mem_ultraplus.vhd               \
                      hdl/top_util_pkg.vhd               \
@@ -84,6 +85,8 @@ proc wave_LVE { } {
 	add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/*
 	add wave -noupdate -divider "LVE Scratchpad"
 	add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/scratchpad_memory/*
+	add wave -noupdate -divider "LVE CI"
+	add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/the_lve_ci/*
     }
 }
 
@@ -149,20 +152,12 @@ proc recom { t {extra_waves false} } {
 	wave_all
     }
 
-    #External pull-up resistors
-    force -drive sim:/top_tb/dut/sccb_scl H 0
-    force -drive sim:/top_tb/dut/sccb_sda H 0
-    
     run $t
 }
 
 proc rerun { t } {
     restart -f;
 
-    #External pull-up resistors
-    force -drive sim:/top_tb/dut/sccb_scl H 0
-    force -drive sim:/top_tb/dut/sccb_sda H 0
-    
     run $t
 }
 

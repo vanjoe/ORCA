@@ -10,26 +10,20 @@
 #define OVERWRITE_TEST_MASK 0x0008
 #define MULTIPLY_TEST_MASK  0x0010
 #define ACCUM_TEST_MASK     0x0020
+#define CI_TEST_MASK        0x0040
 
-//#define TEST_RUN_MASK       0xFFFF
-#define TEST_RUN_MASK       0x20
+#define TEST_RUN_MASK       CI_TEST_MASK
 
-#define MAX_TOTAL_ERRORS ((1<<15)-1)
+#define VCI0 VCMV_GTZ
+#define VCI1 VCMV_LTZ
+#define VCI2 VCMV_GEZ
 
-#define INCREMENT_TOTAL_ERRORS() do {				\
-	 total_errors =										\
-		(total_errors == MAX_TOTAL_ERRORS) ?		\
-		MAX_TOTAL_ERRORS :								\
-		total_errors + 1;									\
-  } while(0)
+int lve_test(unsigned int *failing_tests_ptr){
+  int errors  = 0;
+  int element;
 
-#define DONE_MASK 0x80000000
-
-int lve_test() {
-  uint16_t failing_tests = 0x0000;
-  uint32_t total_errors  = 0;
-  int      element;
-
+  *failing_tests_ptr = 0;
+	
   //Vectors, manually allocated in scratchpad
   vbx_uword_t *v_a = ((vbx_uword_t *)SCRATCHPAD_BASE) + 0;
   vbx_uword_t *v_b = ((vbx_uword_t *)SCRATCHPAD_BASE) + TEST_LENGTH;
@@ -42,12 +36,12 @@ int lve_test() {
 
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
-	 v_a[element] = 0xDEADBEEF + element;
-	 a[element]   = v_a[element];
-	 v_b[element] = 2;
-	 b[element]   = v_b[element];
-	 v_c[element] = TEST_LENGTH - element;
-	 c[element]   = v_c[element];
+		v_a[element] = 0xDEADBEEF + element;
+		a[element]   = v_a[element];
+		v_b[element] = 2;
+		b[element]   = v_b[element];
+		v_c[element] = TEST_LENGTH - element;
+		c[element]   = v_c[element];
   }
 
   //Should be moved into a different test;
@@ -60,25 +54,25 @@ int lve_test() {
   volatile register uint32_t  add_source0 = 3;
   volatile register uint32_t  add_source1 = 4;
   asm volatile
-	 ("lw  t0, 0(%2)\n"
-	  "add t1, %3, %4\n"
-	  "mv  %0, t0\n"
-	  "mv  %1, t1\n"
-	  : "=r"(lw_result), "=r"(add_result)
-	  : "r"(lw_source), "r"(add_source0), "r"(add_source1)
-	  : "t0", "t1"
-	  );
+		("lw  t0, 0(%2)\n"
+		 "add t1, %3, %4\n"
+		 "mv  %0, t0\n"
+		 "mv  %1, t1\n"
+		 : "=r"(lw_result), "=r"(add_result)
+		 : "r"(lw_source), "r"(add_source0), "r"(add_source1)
+		 : "t0", "t1"
+		 );
   if(lw_result != a[0]){
-	 v_a[0] = lw_result;
-	 a[0]   = v_a[0];
-	 failing_tests |= LW_TEST_MASK;
-	 INCREMENT_TOTAL_ERRORS();
+		v_a[0] = lw_result;
+		a[0]   = v_a[0];
+		*failing_tests_ptr |= LW_TEST_MASK;
+		errors++;
   }
   if(add_result != 7){
-	 v_a[0] = add_result;
-	 a[0]   = v_a[0];
-	 failing_tests |= LW_TEST_MASK;
-	 INCREMENT_TOTAL_ERRORS();
+		v_a[0] = add_result;
+		a[0]   = v_a[0];
+		*failing_tests_ptr |= LW_TEST_MASK;
+		errors++;
   }
 #endif //(TEST_RUN_MASK & LW_TEST_MASK)
 
@@ -88,15 +82,15 @@ int lve_test() {
   vbx(SEWU, VADD, v_a, 0, vbx_ENUM);
 
   for(element = 0; element < TEST_LENGTH; element++){
-	 a[element] = 0 + element;
+		a[element] = 0 + element;
   }
 
   for(element = 0; element < TEST_LENGTH; element++){
-	 if(a[element] != v_a[element]){
-		failing_tests |= ENUM_TEST_MASK;
-		INCREMENT_TOTAL_ERRORS();
-		v_a[element] = a[element];
-	 }
+		if(a[element] != v_a[element]){
+			*failing_tests_ptr |= ENUM_TEST_MASK;
+			errors++;
+			v_a[element] = a[element];
+		}
   }
 #endif //(TEST_RUN_MASK & ENUM_TEST_MASK)
 
@@ -106,15 +100,15 @@ int lve_test() {
   vbx(VVWU, VADD, v_a, v_b, v_c);
 
   for(element = 0; element < TEST_LENGTH-3; element++){
-	 a[element] = b[element] + c[element];
+		a[element] = b[element] + c[element];
   }
 
   for(element = 0; element < TEST_LENGTH; element++){
-	 if(a[element] != v_a[element]){
-		failing_tests |= VL_TEST_MASK;
-		INCREMENT_TOTAL_ERRORS();
-		v_a[element] = a[element];
-	 }
+		if(a[element] != v_a[element]){
+			*failing_tests_ptr |= VL_TEST_MASK;
+			errors++;
+			v_a[element] = a[element];
+		}
   }
 #endif //(TEST_RUN_MASK & VL_TEST_MASK)
 
@@ -124,15 +118,15 @@ int lve_test() {
   vbx(VVWU, VADD, v_a, v_a, v_a);
 
   for(element = 0; element < TEST_LENGTH; element++){
-	 a[element] = a[element] + a[element];
+		a[element] = a[element] + a[element];
   }
 
   for(element = 0; element < TEST_LENGTH; element++){
-	 if(a[element] != v_a[element]){
-		failing_tests |= OVERWRITE_TEST_MASK;
-		INCREMENT_TOTAL_ERRORS();
-		v_a[element] = a[element];
-	 }
+		if(a[element] != v_a[element]){
+			*failing_tests_ptr |= OVERWRITE_TEST_MASK;
+			errors++;
+			v_a[element] = a[element];
+		}
   }
 #endif //(TEST_RUN_MASK & OVERWRITE_TEST_MASK)
 
@@ -142,33 +136,77 @@ int lve_test() {
   vbx(VVWU, VMUL, v_a, v_b, v_c);
 
   for(element = 0; element < TEST_LENGTH; element++){
-	 a[element] = b[element] * c[element];
+		a[element] = b[element] * c[element];
   }
 
   for(element = 0; element < TEST_LENGTH; element++){
-	 if(a[element] != v_a[element]){
-		failing_tests |= MULTIPLY_TEST_MASK;
-		INCREMENT_TOTAL_ERRORS();
-		v_a[element] = a[element];
-	 }
+		if(a[element] != v_a[element]){
+			*failing_tests_ptr |= MULTIPLY_TEST_MASK;
+			errors++;
+			v_a[element] = a[element];
+		}
   }
 #endif //(TEST_RUN_MASK & MULTIPLY_TEST_MASK)
 
 #if (TEST_RUN_MASK & ACCUM_TEST_MASK)
-
   vbx_set_vl(TEST_LENGTH);
   //SET VA to all 1s
   vbx(SVWU,VAND,v_a,0,v_a);
   vbx(SVWU,VOR,v_a,1,v_a);
 
+	int scalar_accum = 0;
   for(element = 0 ; element < TEST_LENGTH; element++){
-	 scalar_accum+=v_a[element];
+		scalar_accum+=v_a[element];
   }
 
   vbx_acc(SVWU,VMUL,v_a,0,v_a);
   if( scalar_accum != v_a[0]){
-	 INCREMENT_TOTAL_ERRORS();
+		*failing_tests_ptr |= ACCUM_TEST_MASK;
+		errors++;
   }
 #endif // (TEST_RUN_MASK & ACCUM_TEST_MASK)
-  return DONE_MASK | (total_errors << 16) | failing_tests;
+
+#if (TEST_RUN_MASK & CI_TEST_MASK)
+  //Initialize data with some known values
+  for(element = 0; element < TEST_LENGTH; element++){
+		v_a[element] = 0xDEADBEEF + element;
+		a[element]   = v_a[element];
+		v_b[element] = 2;
+		b[element]   = v_b[element];
+		v_c[element] = TEST_LENGTH - element;
+		c[element]   = v_c[element];
+  }
+
+  vbx_set_vl(TEST_LENGTH-3);
+  vbx(VVWU, VCI0, v_a, v_b, v_c);
+
+  for(element = 0; element < TEST_LENGTH-3; element++){
+		a[element] = b[element] & (~c[element]);
+  }
+
+  for(element = 0; element < TEST_LENGTH; element++){
+		if(a[element] != v_a[element]){
+			*failing_tests_ptr |= CI_TEST_MASK;
+			errors++;
+			v_a[element] = a[element];
+		}
+  }
+
+  vbx_set_vl(TEST_LENGTH-3);
+  vbx(VVWU, VCI1, v_a, v_b, v_c);
+
+  for(element = 0; element < TEST_LENGTH-3; element++){
+		a[element] = c[element] & (~b[element]);
+  }
+
+  for(element = 0; element < TEST_LENGTH; element++){
+		if(a[element] != v_a[element]){
+			*failing_tests_ptr |= CI_TEST_MASK;
+			errors++;
+			v_a[element] = a[element];
+		}
+  }
+#endif // (TEST_RUN_MASK & CI_TEST_MASK)
+
+  return errors;
 }

@@ -7,46 +7,72 @@ end entity;
 
 architecture rtl of top_tb is
   component top is
+    generic (
+      USE_PLL : boolean := false);
     port(
---    clk       : in std_logic;
-      reset_btn : in  std_logic;
-      spi_miso  : in  std_logic;
-      --uart
-      rxd       : in  std_logic;
-      txd       : out std_logic;
-      cts       : in  std_logic;
-      rts       : out std_logic
+      reset_btn : in std_logic;
 
+      --spi
+      spi_mosi : out std_logic;
+      spi_miso : in  std_logic;
+      spi_ss   : out std_logic;
+      spi_sclk : out std_logic;
+
+      --uart
+      rxd : in  std_logic;
+      txd : out std_logic;
+      cts : in  std_logic;
+      rts : out std_logic;
+
+      --clk
+      cam_xclk : in std_logic;
+
+      --sccb
+      sccb_scl : inout std_logic;
+      sccb_sda : inout std_logic
       );
   end component;
 
-  signal reset     : std_logic;
-  signal clk       : std_logic := '1';
-  signal uart_pmod : std_logic_vector(3 downto 0);
-  signal rxd       : std_logic;
-  signal txd       : std_logic;
-  signal cts       : std_logic;
-  signal rts       : std_logic;
+  signal reset : std_logic;
+
+  signal spi_mosi : std_logic;
+  signal spi_miso : std_logic;
+  signal spi_ss   : std_logic;
+  signal spi_sclk : std_logic;
+
+  signal rxd : std_logic;
+  signal txd : std_logic;
+  signal cts : std_logic;
+  signal rts : std_logic;
+
+  signal sccb_scl : std_logic;
+  signal sccb_sda : std_logic;
 
   constant CLOCK_PERIOD : time := 83.33 ns;
 begin
-
   dut : component top
     port map(
-      --    clk       => clk,
       reset_btn => reset,
-      spi_miso  => '0',
-      rxd       => rxd,
-      txd       => txd,
-      cts       => cts,
-      rts       => rts);
 
-  cts <= '0';
-  process
-  begin
-    clk <= not clk;
-    wait for CLOCK_PERIOD/2;
-  end process;
+      spi_mosi => open,
+      spi_miso => '0',
+      spi_ss   => open,
+      spi_sclk => open,
+
+      rxd => rxd,
+      txd => txd,
+      cts => cts,
+      rts => rts,
+
+      cam_xclk => '0',
+
+      sccb_scl => sccb_scl,
+      sccb_sda => sccb_sda
+      );
+  spi_miso <= '0';
+  cts      <= '0';
+  sccb_scl <= 'H';
+  sccb_sda <= 'H';
 
   process
   begin

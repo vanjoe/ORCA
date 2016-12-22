@@ -177,15 +177,15 @@ package rv_components is
       avm_scratch_readdatavalid : out std_logic;
 
       --wishbone
-      sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0)    := (others => '-');
+      sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '-');
       sp_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)    := (others => '-');
-      sp_WE_I    : in  std_logic                                     := '-';
-      sp_SEL_I   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0) := (others => '-');
-      sp_STB_I   : in  std_logic                                     := '-';
+      sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)        := (others => '-');
+      sp_WE_I    : in  std_logic                                         := '-';
+      sp_SEL_I   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0)     := (others => '-');
+      sp_STB_I   : in  std_logic                                         := '-';
       sp_ACK_O   : out std_logic;
-      sp_CYC_I   : in  std_logic                                     := '-';
-      sp_CTI_I   : in  std_logic_vector(2 downto 0)                  := (others => '-');
+      sp_CYC_I   : in  std_logic                                         := '-';
+      sp_CTI_I   : in  std_logic_vector(2 downto 0)                      := (others => '-');
       sp_STALL_O : out std_logic;
 
 
@@ -505,6 +505,26 @@ package rv_components is
       br_new_pc            : in std_logic_vector(REGISTER_SIZE-1 downto 0)
       );
   end component system_calls;
+
+  component lve_ci is
+    generic (
+      REGISTER_SIZE : positive := 32
+      );
+    port (
+      clk   : in std_logic;
+      reset : in std_logic;
+
+      func3 : in std_logic_vector(2 downto 0);
+
+      valid_in : in std_logic;
+      data1_in : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data2_in : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+      valid_out        : out std_logic;
+      write_enable_out : out std_logic;
+      data_out         : out std_logic_vector(REGISTER_SIZE-1 downto 0)
+      );
+  end component lve_ci;
 
   component lve_top is
     generic(
