@@ -1,6 +1,6 @@
 library ieee;
 use IEEE.std_logic_1164.all;
-
+use ieee.numeric_std.all;
 entity top_tb is
 end entity;
 
@@ -43,10 +43,11 @@ architecture rtl of top_tb is
   signal spi_miso       : std_logic;
   signal spi_ss         : std_logic;
   signal spi_sclk       : std_logic;
-  constant CLOCK_PERIOD : time := 83.33 ns;
-
 
   signal bit_sel : integer := 0;
+  signal  mydata : unsigned(7 downto 0) := x"0E";
+  constant CLOCK_PERIOD : time := 83.33 ns;
+
 begin
 
   dut : component top
@@ -78,13 +79,17 @@ begin
   end process;
 
   process(spi_sclk, spi_ss)
-    constant mydata : std_logic_vector(7 downto 0) := x"13";
+
 
   begin
     if falling_edge(spi_ss) then
+
       bit_sel <= mydata'right+6;
     end if;
     if falling_edge(spi_sclk) then
+      if bit_sel = 0 then
+        mydata <= mydata+1;
+      end if;
       if bit_sel = mydata'right then
         bit_sel <= mydata'left;
       else
