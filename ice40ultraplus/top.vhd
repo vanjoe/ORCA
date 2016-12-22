@@ -218,11 +218,10 @@ architecture rtl of top is
   signal clk             : std_logic;
   signal osc_clk         : std_logic;
   signal clk_count       : unsigned(3 downto 0) := (others => '0');
-  signal clk_int         : std_logic;
-  signal clk_3x_int      : std_logic;
+  signal clk_int         : std_logic := '0';
+  signal clk_3x_int      : std_logic := '0';
   signal clk_3x          : std_logic;
   signal clk_reset_count : signed(3 downto 0)   := (others => '0');
-  signal clk_12          : std_logic;
 
   constant UART_ADDR_DAT         : std_logic_vector(7 downto 0) := "00000000";
   constant UART_ADDR_LSR         : std_logic_vector(7 downto 0) := "00000011";
@@ -239,100 +238,36 @@ architecture rtl of top is
 
 begin
 
-  CLK_LOGIC_DIVIDER : if not USE_PLL generate
+  hf_osc : component osc_48MHz
+    generic map (
+      DIVIDER => "00")                -- 48 MHz
+    port map (
+      CLKOUT => osc_clk);
 
-    hf_osc : component osc_48MHz
-      generic map (
-        DIVIDER => "00")                -- 48 MHz
-      port map (
-        CLKOUT => osc_clk);
 
-    process (osc_clk)
-    begin
-      if rising_edge(osc_clk) then
-        clk_count  <= clk_count + 1;
-        clk_3x_int <= not clk_3x_int;
-        if clk_count = 2 then
-          clk_count <= (others => '0');
-          clk_int   <= not clk_int;
-        end if;
-
-        if clk_reset_count /= -1 then
-          clk_reset_count <= clk_reset_count + 1;
-          clk_3x_int      <= '0';
-          clk_int         <= '0';
-          clk_count       <= (others => '0');
-        end if;
-
-        if reset_btn = '0' then
-          clk_reset_count <= (others => '0');
-        end if;
+  process (osc_clk)
+  begin
+    if rising_edge(osc_clk) then
+      clk_count  <= clk_count + 1;
+      clk_3x_int <= not clk_3x_int;
+      if clk_count = 2  then
+        clk_count <= (others => '0');
+        clk_int   <= not clk_int;
       end if;
-    end process;
+    end if;
+  end process;
 
-    process (clk_3x)
-    begin
-      if rising_edge(clk_3x) then
-        clk_12 <= not clk_12;
-        if reset = '1' then
-          clk_12 <= '0';
-        end if;
-      end if;
-    end process;
+  clk_gb : SB_GB
+    port map (
+      GLOBAL_BUFFER_OUTPUT         => clk,
+      USER_SIGNAL_TO_GLOBAL_BUFFER => clk_int);
 
-    clk_gb : SB_GB
-      port map (
-        GLOBAL_BUFFER_OUTPUT         => clk,
-        USER_SIGNAL_TO_GLOBAL_BUFFER => clk_int);
+  clk3x_gb : SB_GB
+    port map (
+      GLOBAL_BUFFER_OUTPUT         => clk_3x,
+      USER_SIGNAL_TO_GLOBAL_BUFFER => clk_3x_int);
 
-    clk3x_gb : SB_GB
-      port map (
-        GLOBAL_BUFFER_OUTPUT         => clk_3x,
-        USER_SIGNAL_TO_GLOBAL_BUFFER => clk_3x_int);
 
-  end generate;
-
-  CLK_PLL : if USE_PLL generate
-
-    hf_osc : component osc_48MHz
-      generic map (
-        DIVIDER => "10")                -- 12 MHz
-      port map (
-        CLKOUT => clk);
-
-    pll_3x : SB_PLL40_CORE
-      generic map(
-
-                                        -- Entity Parameters
-        FEEDBACK_PATH                  => "PHASE_AND_DELAY",
-        DELAY_ADJUSTMENT_MODE_FEEDBACK => "FIXED",  -- FIXED/DYNAMIC
-        DELAY_ADJUSTMENT_MODE_RELATIVE => "FIXED",  -- FIXED/DYNAMIC
-        SHIFTREG_DIV_MODE              => "00",  -- 00 (div by 4)/ 01 (div by 7)/11 (div by 5)
-        FDA_FEEDBACK                   => "0000",
-        FDA_RELATIVE                   => "0000",
-        PLLOUT_SELECT                  => "SHIFTREG_0deg",
-
-        DIVR         => "0000",
-        DIVF         => "0000010",
-        DIVQ         => "001",
-        FILTER_RANGE => "001",
-
-        ENABLE_ICEGATE => '0')
-      port map (
-        REFERENCECLK => clk,
-
-        PLLOUTGLOBAL    => clk_3x,
-        EXTFEEDBACK     => 'X',
-        DYNAMICDELAY    => (others => 'X'),
-        BYPASS          => '0',
-        RESETB          => nreset,
-        SDI             => 'X',
-        SCLK            => 'X',
-        LATCHINPUTVALUE => 'X');
-
-    clk_12 <= clk;
-
-  end generate;
 
   process(clk)
   begin
