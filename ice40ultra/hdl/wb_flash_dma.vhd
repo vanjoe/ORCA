@@ -187,6 +187,7 @@ begin  -- architecture rtl
           slave_select <= '1';
           if start_xfer = '1' then
             waddress_counter <= unsigned(waddress_register);
+            xferlen_count <= to_integer(unsigned(length_register));
             spi_wdat         <= CMD_READ;
             spi_cyc          <= '1';
             cur_state        <= TRANSITION;
@@ -212,7 +213,6 @@ begin  -- architecture rtl
           if done_transfer = '1' then
             spi_wdat      <= raddress_register(7 downto 0);
             spi_cyc       <= '1';
-            xferlen_count <= to_integer(unsigned(length_register));
             next_state    <= READ_SPI;
             cur_state     <= TRANSITION;
 
