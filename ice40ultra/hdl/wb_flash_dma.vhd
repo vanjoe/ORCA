@@ -83,7 +83,7 @@ architecture rtl of wb_flash_dma is
   signal cur_state       : state_t;
   signal next_state      : state_t;
   signal xferlen_count   : integer range 0 to MAX_LENGTH/4;
-  signal word_count      : unsigned(1 downto 0) := "00";
+  signal word_count      : unsigned(1 downto 0);
   signal init_loop_count : integer range 0 to 10;
   signal start_xfer      : std_logic;
 
@@ -186,9 +186,10 @@ begin  -- architecture rtl
         when IDLE =>
           --wait for signal to start next transfer
           slave_select <= '1';
+          word_count       <= "00";
           if start_xfer = '1' then
-            waddress_counter <= unsigned(waddress_register);
             xferlen_count    <= to_integer(unsigned(length_register(length_register'length-2 downto 2)));
+            waddress_counter <= unsigned(waddress_register);
             spi_wdat         <= CMD_READ;
             spi_cyc          <= '1';
             cur_state        <= TRANSITION;
@@ -223,14 +224,14 @@ begin  -- architecture rtl
           if done_transfer = '1' then
 
             data_register <= data_register(data_register'left-8 downto 0) & spi_data_out;
-            word_count <= word_count -1;
+            word_count    <= word_count -1;
             --DUMMY BYTE
             spi_cyc       <= '1';
             next_state    <= cur_state;
             cur_state     <= TRANSITION;
             if first_byte = '0' then
               --every 4 bytes, write via master
-              if word_count =  "00" then
+              if word_count = "00" then
                 next_state <= WRITE_MASTER_0;
               end if;
             else
@@ -253,7 +254,7 @@ begin  -- architecture rtl
           if master_ack_i = '1' then
             cur_state        <= READ_SPI;
             waddress_counter <= waddress_counter + 4;
-              xferlen_count <= xferlen_count -1;
+            xferlen_count    <= xferlen_count -1;
             if xferlen_count = 1 then
               cur_state <= IDLE;
             else
