@@ -685,6 +685,7 @@ begin
       master_CTI_O   => spi_sp_CTI_O,
       master_STALL_I => spi_sp_STALL_I,
 
+      base_clk => clk_3x,
       spi_mosi => spi_mosi,
       spi_miso => spi_miso,
       spi_ss   => spi_ss,

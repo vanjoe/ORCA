@@ -637,6 +637,7 @@ package top_component_pkg is
       data_out      : out std_logic_vector(dat_sz -1 downto 0);
 
       --spi signals
+      base_clk : in  std_logic;
       spi_mosi : out std_logic;
       spi_miso : in  std_logic;
       spi_ss   : out std_logic_vector(slaves- 1 downto 0);
@@ -644,36 +645,6 @@ package top_component_pkg is
 
       );
   end component wb_spimaster;
-  component myspi is
-    port (
-      SPI2_MISO : inout std_logic;
-      SPI2_MOSI : inout std_logic;
-      SPI2_SCK  : inout std_logic;
-      SPI2_SCSN : in    std_logic;
-      SPI2_MCSN : out   std_logic_vector(3 downto 0);
-      -- Fabric Interface
-      RST       : in    std_logic;
-      -- Asynchronous Reset,      for Init_SSM
-      IPLOAD    : in    std_logic;
-      -- Rising Edge triggers Hard IP configuration
-      IPDONE    : out   std_logic;
-      -- 1   Hard IP configuration is complete
-      SBCLKi    : in    std_logic;
-                                        -- System bus interface to all 4 Hard IP blocks
-      SBWRi     : in    std_logic;
-                                        -- This bus is available when IPDONE = 1
-      SBSTBi    : in    std_logic;
-      SBADRi    : in    std_logic_vector(7 downto 0);
-      SBDATi    : in    std_logic_vector(7 downto 0);
-      SBDATo    : out   std_logic_vector(7 downto 0);
-      SBACKo    : out   std_logic;
-
-      I2CPIRQ  : out std_logic_vector(1 downto 0);
-      I2CPWKUP : out std_logic_vector(1 downto 0);
-      SPIPIRQ  : out std_logic_vector(1 downto 0);
-      SPIPWKUP : out std_logic_vector(1 downto 0));
-  end component myspi;
-
 
   component wb_flash_dma is
     generic (
@@ -706,6 +677,7 @@ package top_component_pkg is
       slave_STALL_O : out std_logic;
 
       --spi signals
+      base_clk : in  std_logic;
       spi_mosi : out std_logic;
       spi_miso : in  std_logic;
       spi_ss   : out std_logic;

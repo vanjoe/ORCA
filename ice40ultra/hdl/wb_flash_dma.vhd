@@ -38,6 +38,7 @@ entity wb_flash_dma is
     slave_STALL_O : out std_logic;
 
     --spi signals
+    base_clk : in std_logic;
     spi_mosi : out std_logic;
     spi_miso : in  std_logic;
     spi_ss   : out std_logic;
@@ -77,7 +78,7 @@ architecture rtl of wb_flash_dma is
   signal spi_data_out  : std_logic_vector(7 downto 0);
   signal initializing  : std_logic;
 
-  type state_t is (RESET, WAKE_0, WAKE_1, IDLE, ADDR_0, ADDR_1, ADDR_2,
+  type state_t is (RESET, WAKE_0, WAKE_1, IDLE, ADDR_0, ADDR_1, ADDR_2,DUMMY,
                    READ_SPI, WRITE_MASTER_0, WRITE_MASTER_1, TRANSITION);
 
   signal cur_state       : state_t;
@@ -95,7 +96,7 @@ architecture rtl of wb_flash_dma is
   signal data_register : std_logic_vector(master_dat_o'range);
 
   constant CMD_WAKEUP : std_logic_vector(7 downto 0) := x"AB";
-  constant CMD_READ   : std_logic_vector(7 downto 0) := x"03";
+  constant CMD_READ   : std_logic_vector(7 downto 0) := x"0B";
 
   signal ss_vec       : std_logic_vector(0 downto 0);
   signal first_byte   : std_logic;
@@ -121,6 +122,7 @@ begin  -- architecture rtl
       done_transfer => done_transfer,
       data_out      => spi_data_out,
 
+      base_clk => base_clk,
       spi_miso => spi_miso,
       spi_mosi => spi_mosi,
       spi_sclk => spi_sclk,
@@ -215,11 +217,20 @@ begin  -- architecture rtl
           if done_transfer = '1' then
             spi_wdat   <= raddress_register(7 downto 0);
             spi_cyc    <= '1';
+            next_state <= DUMMY;
+            cur_state  <= TRANSITION;
+            first_byte <= '1';
+
+          end if;
+        when DUMMY =>
+          if done_transfer = '1' then
+            spi_cyc    <= '1';
             next_state <= READ_SPI;
             cur_state  <= TRANSITION;
             first_byte <= '1';
 
           end if;
+
         when READ_SPI =>
           if done_transfer = '1' then
 
