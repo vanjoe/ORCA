@@ -61,8 +61,7 @@ proc com {} {
 	 lappend fileset $icecube2_dir/verilog/sb_ice_syn.v
 
     ##If you want to view the ram contents of the scratchpad use this file, otherwise the Toolchain files above should work
-	 #
-	 lappend fileset SB_SPRAM256KA.vhd
+	 #	 lappend fileset SB_SPRAM256KA.vhd
 
 
     vlib work
