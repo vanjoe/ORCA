@@ -1,4 +1,4 @@
-#include "vbx_macros.h"
+#include "vbx.h"
 
 vbx_mxp_t the_mxp;
 

@@ -218,6 +218,10 @@ begin
         write_vector_length <= to_unsigned(0, write_vector_length'length);
       end if;
       if reset = '1' then
+        srca_ptr <= (others => '0');
+        srcb_ptr <= (others => '0');
+        dest_ptr <= (others => '0');
+
         first_element      <= '0';
         read_vector_length <= to_unsigned(0, read_vector_length'length);
       end if;
