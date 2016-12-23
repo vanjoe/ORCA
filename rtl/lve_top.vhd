@@ -213,6 +213,10 @@ begin
         write_vector_length <= to_unsigned(0, write_vector_length'length);
       end if;
       if reset = '1' then
+        srca_ptr <= (others => '0');
+        srcb_ptr <= (others => '0');
+        dest_ptr <= (others => '0');
+
         first_element      <= '0';
         read_vector_length <= to_unsigned(0, read_vector_length'length);
       end if;
@@ -233,7 +237,7 @@ begin
     if rising_edge(clk) then
 
       writeback_data <= unsigned(lve_result);
-      waddr2 <= std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2));
+      waddr2         <= std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2));
       if acc = '1' then
         writeback_data <= accumulation_result;
       end if;
@@ -293,7 +297,7 @@ begin
       enum_enable => enum_enable,
 
       ack01     => lve_source_valid,
-      waddr2    =>waddr2,
+      waddr2    => waddr2,
       byte_en2  => (others => '1'),
       wen2      => write_enable,
       data_in2  => std_logic_vector(writeback_data),

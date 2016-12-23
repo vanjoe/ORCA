@@ -249,7 +249,7 @@ architecture rtl of ram_4port is
 
   signal ren0_0 : std_logic;
 begin  -- architecture rtl
-  port_sel <= LVE_ACCESS when (ren0 or ren1 or wen2) = '1' else SLAVE_ACCESS;
+  port_sel <= SLAVE_ACCESS when (ren3 or wen3) = '1' else LVE_ACCESS;
 
   process(clk)
   begin
