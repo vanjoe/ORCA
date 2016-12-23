@@ -145,7 +145,7 @@ begin  -- architecture rtl
   end process;
 
   slave1_stall_o <= '1' when state = slave2_0 or state = slave2_1 else '0';
-  slave2_stall_o <= '1' when state = slave1_0 or state = slave1_1 else '0';
+  slave2_stall_o <= '1' when state = slave1_0 or state = slave1_1 or (slave1_CYC_I= '1' and slave1_stb_i = '1' and state = IDLE) else '0';
 
 
   master_CTI_O  <= "000";

@@ -7,6 +7,6 @@
 
 #include "vbx_macros.h"
 
-#define  SCRATCHPAD_BASE ((void*)0x80000000);
+#define  SCRATCHPAD_BASE ((void*)0x80000000)
 
 #endif //VBX_H

@@ -1,6 +1,5 @@
 #include "lve_test.h"
 
-#define SCRATCHPAD_BASE 0x80000000
 
 #define TEST_LENGTH 16
 
@@ -165,7 +164,7 @@ int lve_test() {
 	 scalar_accum+=v_a[element];
   }
 
-  vbx_acc(SVWU,VMUL,v_a,0,v_a);
+  vbx_acc(SVWU,VADD,v_a,0,v_a);
   if( scalar_accum != v_a[0]){
 	 INCREMENT_TOTAL_ERRORS();
   }
