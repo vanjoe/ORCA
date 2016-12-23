@@ -282,15 +282,15 @@ begin  -- architecture rtl
 
 
   actual_byte_en <= byte_en3 when port_sel = SLAVE_ACCESS else byte_en2;
-  actual_wr_en   <= wen3     when port_sel = SLAVE_ACCESS else
-                    wen2 when cycle_count = FIRST_WRITE else
+  actual_wr_en   <= wen2 when cycle_count = FIRST_WRITE else
+                    wen3 when port_sel = SLAVE_ACCESS else
                     '0';
-  actual_addr <= rwaddr3 when port_sel = SLAVE_ACCESS else
+  actual_addr <= waddr2 when cycle_count = FIRST_WRITE else
+                 rwaddr3 when port_sel = SLAVE_ACCESS else
                  raddr0 when cycle_count = FIRST_READ else
-                 raddr1 when cycle_count = SECOND_READ else
-                 waddr2;
+                 raddr1;
 
-  actual_data_in <= data_in2 when port_sel = LVE_ACCESS else
+  actual_data_in <= data_in2 when cycle_count = FIRST_WRITE else
                     data_in3;
 
   process(scratchpad_clk)

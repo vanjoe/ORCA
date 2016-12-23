@@ -149,9 +149,10 @@ architecture rtl of lve_top is
   signal readdata_valid        : std_logic;
   signal eqz                   : std_logic;
 
-  signal enum_enable   : std_logic;
-  signal scalar_enable : std_logic;
-  signal lve_ack       : std_logic;
+  signal enum_enable         : std_logic;
+  signal scalar_enable       : std_logic;
+  signal lve_ack             : std_logic;
+  signal extenal_port_enable : std_logic;
 
   function align_input (
     sign  : std_logic;
@@ -162,6 +163,7 @@ architecture rtl of lve_top is
   begin  -- function select_byte
     return data;
   end function align_input;
+
 begin
 
   lve_alu_data1        <= lve_data1;
@@ -175,6 +177,7 @@ begin
   valid_lve_instr <= valid_instr when major_op = CUSTOM0 else '0';
 
   pointer_increment <= unsigned(rs2_data(rs2_data'left downto rs2_data'length - pointer_increment'length));
+  extenal_port_enable <= slave_read_en or slave_write_en;
 
   --instruction parsing process
   address_gen : process(clk)
@@ -199,18 +202,24 @@ begin
           srca_ptr <= unsigned(rs1_data);
           srcb_ptr <= unsigned(rs2_data);
         else
-          srca_ptr <= srca_ptr + pointer_increment;
-          srcb_ptr <= srcb_ptr + pointer_increment;
+          if extenal_port_enable = '0' then
+            srca_ptr <= srca_ptr+ pointer_increment;
+            srcb_ptr <= srcb_ptr+ pointer_increment;
+          end if;
+
           if first_element = '1' then
             dest_ptr              <= unsigned(rs1_data);
             write_vector_length   <= unsigned(rs2_data(write_vector_length'range));
             read_vector_length    <= unsigned(rs2_data(write_vector_length'range));
             accumulation_register <= to_unsigned(0, accumulation_register'length);
           else
-            enum_count <= enum_count +1;
-            if read_vector_length /= 0 then
-              read_vector_length <= read_vector_length - 1;
+            if extenal_port_enable = '0' then
+              enum_count <= enum_count +1;
+              if read_vector_length /= 0 then
+                read_vector_length <= read_vector_length - 1;
+              end if;
             end if;
+
           end if;
           first_element <= '0';
         end if;
@@ -231,7 +240,7 @@ begin
 
   stall_from_lve <= valid_lve_instr and not is_prefix when first_element = '1' or (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
 
-  rd_en <= valid_lve_instr when read_vector_length > 1 or first_element = '1' else '0';
+  rd_en <= valid_lve_instr when extenal_port_enable = '0' and (read_vector_length > 1 or first_element = '1') else '0';
 
 
   lve_data1 <= std_logic_vector(srca_data_read);

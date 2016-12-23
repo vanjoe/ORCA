@@ -37,6 +37,7 @@ void delayms( unsigned int ms)
 #define FLASH_DMA_LEN   (0x8 >>2)
 #define FLASH_DMA_STATUS (0xC >>2)
 void do_lve(void* base){
+	init_mxp();
 	int vlen=200;
 	int i;
 
