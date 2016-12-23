@@ -111,7 +111,7 @@ proc recom { t {extra_waves false} } {
 
     vsim -t 1ns work.top_tb
     add log -r *
-
+    add wave -noupdate -radix ascii /top_tb/dut/the_uart/THR
     add wave -noupdate /top_tb/dut/rv/core/clk
     add wave -noupdate /top_tb/dut/rv/core/reset
     add wave -noupdate -divider Decode
