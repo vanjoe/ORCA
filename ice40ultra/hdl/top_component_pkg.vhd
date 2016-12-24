@@ -98,66 +98,54 @@ package top_component_pkg is
   end component wb_ram;
 
   component wb_arbiter is
-    generic (
-      PRIORITY_SLAVE : integer := 1;    --slave which always gets priority
-      DATA_WIDTH     : integer := 32
-      );
-    port (
-      CLK_I : in std_logic;
-      RST_I : in std_logic;
+  generic (
+    DATA_WIDTH     : integer := 32
+    );
+  port (
+    CLK_I : in std_logic;
+    RST_I : in std_logic;
 
-      slave1_ADR_I : in std_logic_vector(31 downto 0);
-      slave1_DAT_I : in std_logic_vector(DATA_WIDTH-1 downto 0);
-      slave1_WE_I  : in std_logic;
-      slave1_CYC_I : in std_logic;
-      slave1_STB_I : in std_logic;
-      slave1_SEL_I : in std_logic_vector(DATA_WIDTH/8-1 downto 0);
-      slave1_CTI_I : in std_logic_vector(2 downto 0);
-      slave1_BTE_I : in std_logic_vector(1 downto 0);
+    slave0_ADR_I   : in  std_logic_vector(31 downto 0);
+    slave0_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+    slave0_WE_I    : in  std_logic;
+    slave0_CYC_I   : in  std_logic;
+    slave0_STB_I   : in  std_logic;
+    slave0_SEL_I   : in  std_logic_vector(DATA_WIDTH/8-1 downto 0);
+    slave0_STALL_O : out std_logic;
 
-      slave1_LOCK_I : in std_logic;
+    slave1_ADR_I   : in  std_logic_vector(31 downto 0);
+    slave1_DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+    slave1_WE_I    : in  std_logic;
+    slave1_CYC_I   : in  std_logic;
+    slave1_STB_I   : in  std_logic;
+    slave1_SEL_I   : in  std_logic_vector(DATA_WIDTH/8-1 downto 0);
+    slave1_STALL_O : out std_logic;
 
-      slave1_STALL_O : out std_logic;
-      slave1_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
-      slave1_ACK_O   : out std_logic;
-      slave1_ERR_O   : out std_logic;
-      slave1_RTY_O   : out std_logic;
-
-      slave2_ADR_I : in std_logic_vector(31 downto 0);
-      slave2_DAT_I : in std_logic_vector(DATA_WIDTH-1 downto 0);
-      slave2_WE_I  : in std_logic;
-      slave2_CYC_I : in std_logic;
-      slave2_STB_I : in std_logic;
-      slave2_SEL_I : in std_logic_vector(DATA_WIDTH/8-1 downto 0);
-      slave2_CTI_I : in std_logic_vector(2 downto 0);
-      slave2_BTE_I : in std_logic_vector(1 downto 0);
-
-      slave2_LOCK_I : in std_logic;
-
-      slave2_STALL_O : out std_logic;
-      slave2_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
-      slave2_ACK_O   : out std_logic;
-      slave2_ERR_O   : out std_logic;
-      slave2_RTY_O   : out std_logic;
-
-      master_ADR_O  : out std_logic_vector(31 downto 0);
-      master_DAT_O  : out std_logic_vector(DATA_WIDTH-1 downto 0);
-      master_WE_O   : out std_logic;
-      master_CYC_O  : out std_logic;
-      master_STB_O  : out std_logic;
-      master_SEL_O  : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
-      master_CTI_O  : out std_logic_vector(2 downto 0);
-      master_BTE_O  : out std_logic_vector(1 downto 0);
-      master_LOCK_O : out std_logic;
-
-      master_STALL_I : in std_logic;
-      master_DAT_I   : in std_logic_vector(DATA_WIDTH-1 downto 0);
-      master_ACK_I   : in std_logic;
-      master_ERR_I   : in std_logic;
-      master_RTY_I   : in std_logic
+    slave2_ADR_I : in std_logic_vector(31 downto 0);
+    slave2_DAT_I : in std_logic_vector(DATA_WIDTH-1 downto 0);
+    slave2_WE_I  : in std_logic;
+    slave2_CYC_I : in std_logic;
+    slave2_STB_I : in std_logic;
+    slave2_SEL_I : in std_logic_vector(DATA_WIDTH/8-1 downto 0);
 
 
-      );
+    slave2_STALL_O : out std_logic;
+    slave2_DAT_O   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    slave2_ACK_O   : out std_logic;
+
+    master_ADR_O : out std_logic_vector(31 downto 0);
+    master_DAT_O : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    master_WE_O  : out std_logic;
+    master_CYC_O : out std_logic;
+    master_STB_O : out std_logic;
+    master_SEL_O : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
+
+
+    master_STALL_I : in std_logic;
+    master_DAT_I   : in std_logic_vector(DATA_WIDTH-1 downto 0);
+    master_ACK_I   : in std_logic
+
+    );
   end component;
 
   component wb_pio is

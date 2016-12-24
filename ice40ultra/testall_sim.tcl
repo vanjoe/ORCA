@@ -14,7 +14,7 @@ foreach f $files {
 foreach f $files {
 	 file copy -force $f test.mem
 	 exec touch test.mem
-	 exec make imem.mem dmem.mem
+	 exec make MEM_FILE=test.mem imem.mem dmem.mem
 	 restart -f
 	 onbreak {resume}
 	 when {/top_tb/dut/rv/core/X/instruction == x"00000073" && /top_tb/dut/rv/core/X/valid_input == "1" } {stop}

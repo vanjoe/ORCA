@@ -241,24 +241,11 @@ begin  -- architecture rtl
           end if;
         when WRITE_MASTER_0 =>
           if master_stall_i = '0' then
-            --if master_ack_i = '1' then
-            --  cur_state <= READ_SPI;
-            --  if xferlen_count = 0 then
-            --    cur_state <= IDLE;
-            --  end if;
-            --else
-            cur_state <= WRITE_MASTER_1;
-          --end if;
-          end if;
-        when WRITE_MASTER_1 =>
-          if master_ack_i = '1' then
             cur_state        <= READ_SPI;
             waddress_counter <= waddress_counter + 4;
             xferlen_count    <= xferlen_count -1;
             if xferlen_count = 1 then
               cur_state <= IDLE;
-            else
-
             end if;
           end if;
         when TRANSITION =>
