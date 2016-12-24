@@ -37,7 +37,10 @@ void delayms( unsigned int ms)
 #define FLASH_DMA_LEN   (0x8 >>2)
 #define FLASH_DMA_STATUS (0xC >>2)
 void do_lve(void* base){
-	init_mxp();
+	//initialize the unit stide to be 4 (1 word)
+	//note this does not mean you can do un-aligned aaccesses
+
+	the_mxp.stride=4;
 	int vlen=200;
 	int i;
 
@@ -93,6 +96,10 @@ int main()
 	//wait for transfer done
 	do_lve(SCRATCHPAD_BASE+xfer_size);
 	while(	FLASH_DMA_BASE[FLASH_DMA_STATUS] );
+
+	//since the LVE does some printing that can take longer than the
+	//dma transfer, the cycle count might not be strictly correct.
+	//it should be about 19 cycles per byte, + interference
 	printf("%d bytes read in %d cycles\r\n",xfer_size,get_time()-start_tiem);
 	for(i=0;i<xfer_size;i++){
 		printf("%02X ",sp_base[i]);
