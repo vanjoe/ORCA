@@ -443,7 +443,7 @@ begin
       master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE),  -- RAM
       master1_address => (16#00010000#, 1024),              -- SPI
       master2_address => (16#00020000#, 4*1024),            -- UART
-      master3_address => (16#08000000#, SCRATCHPAD_SIZE),
+      master3_address => (16#80000000#, SCRATCHPAD_SIZE),
       master6_address => (16#00050000#, 1024)               -- SCCB PIO
       )
     port map(

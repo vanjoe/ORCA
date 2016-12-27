@@ -333,7 +333,7 @@ begin
       cmv_result_valid <= '0';
       cmv_write_en     <= '0';
       cmv_result       <= lve_data1;
-      if valid_lve_instr = '1' then
+      if valid_lve_instr = '1' and cmv_instr = '1' then
         if func3 = LVE_VCMV_Z_FUNC3 then
           if lve_source_valid = '1' then
             cmv_result_valid <= '1';
