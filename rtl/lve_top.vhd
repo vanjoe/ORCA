@@ -7,6 +7,7 @@ use STD.TEXTIO.all;
 library work;
 use work.utils.all;
 use work.constants_pkg.all;
+use work.rv_components.all;
 
 entity lve_top is
   generic(
@@ -163,7 +164,7 @@ architecture rtl of lve_top is
     sign  : std_logic;
     size  : std_logic_vector(1 downto 0);
     align : std_logic_vector(1 downto 0);
-    data  : std_logic_vector(REGISTER_SIZE -1 downto 0))
+    data  : std_logic_vector(REGISTER_SIZE-1 downto 0))
     return std_logic_vector is
     variable data_8bit  : std_logic_vector(7 downto 0);
     variable data_9bit  : signed(8 downto 0);
@@ -187,6 +188,11 @@ architecture rtl of lve_top is
     return data;
   end function align_input;
 
+  --Custom instruction
+  signal ci_valid_in     : std_logic;
+  signal ci_result_valid : std_logic;
+  signal ci_write_en     : std_logic;
+  signal ci_result       : std_logic_vector(REGISTER_SIZE-1 downto 0);
 begin
 
   lve_alu_data1        <= lve_data1;
@@ -326,18 +332,54 @@ begin
     if rising_edge(clk) then
       cmv_result_valid <= '0';
       cmv_write_en     <= '0';
-      if (valid_lve_instr and lve_source_valid) = '1' then
-        cmv_result   <= (others => '0');
-        cmv_write_en <= '0';
-        if ((func3 = LVE_VCMV_Z_FUNC3 and eqz = '1') or
-            (func3 = LVE_VCMV_NZ_FUNC3 and eqz = '0'))then
-          cmv_write_en <= '1';
-          cmv_result   <= lve_data1;
+      cmv_result       <= lve_data1;
+      if valid_lve_instr = '1' then
+        if func3 = LVE_VCMV_Z_FUNC3 then
+          if lve_source_valid = '1' then
+            cmv_result_valid <= '1';
+            if eqz = '1' then
+              cmv_write_en <= '1';
+            end if;
+          end if;
+        elsif func3 = LVE_VCMV_NZ_FUNC3 then
+          if lve_source_valid = '1' then
+            cmv_result_valid <= '1';
+            if eqz = '0' then
+              cmv_write_en <= '1';
+            end if;
+          end if;
+        else
+          cmv_result_valid <= ci_result_valid;
+          cmv_result       <= ci_result;
+          cmv_write_en     <= ci_write_en;
         end if;
-        cmv_result_valid <= '1';
       end if;
     end if;
   end process;
+
+  ci_valid_in <= '1' when ((valid_lve_instr and lve_source_valid) = '1' and
+                           func3 /= LVE_VCMV_Z_FUNC3 and
+                           func3 /= LVE_VCMV_NZ_FUNC3) else
+                 '0';
+  the_lve_ci : component lve_ci
+    generic map (
+      REGISTER_SIZE => REGISTER_SIZE
+      )
+    port map (
+      clk   => clk,
+      reset => reset,
+
+      func3 => func3,
+
+      valid_in => ci_valid_in,
+      data1_in => lve_data1,
+      data2_in => lve_data2,
+
+      valid_out        => ci_result_valid,
+      write_enable_out => ci_write_en,
+      data_out         => ci_result
+      );
+
 
   scalar_enable <= srca_s;
   enum_enable   <= srcb_e;

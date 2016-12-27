@@ -4,8 +4,6 @@
 #include "vbx.h"
 
 
+int lve_test(unsigned int *failing_tests_ptr);
 
-
-int lve_test();
-
-#endif
+#endif //def LVE_TEST_H

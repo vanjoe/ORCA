@@ -14,6 +14,7 @@ proc com {} {
                      ../rtl/orca.vhd                    \
                      ../rtl/orca_core.vhd               \
                      ../rtl/sys_call.vhd                \
+                     ../rtl/lve_ci.vhd                 \
                      ../rtl/lve_top.vhd                 \
                      ../rtl/4port_mem_ultraplus.vhd               \
                      hdl/top_util_pkg.vhd               \
@@ -76,12 +77,14 @@ proc com {} {
 }
 
 proc wave_LVE { } {
-    add wave -noupdate -divider "LVE enable (in execute)"
-    add wave -hex /top_tb/dut/rv/core/X/enable_lve/*
-    add wave -noupdate -divider "LVE"
-    add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/*
-    add wave -noupdate -divider "LVE Scratchpad"
-    add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/scratchpad_memory/*
+    if {[examine /top_tb/dut/rv/LVE_ENABLE]} {
+	add wave -noupdate -divider "LVE"
+	add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/*
+	add wave -noupdate -divider "LVE Scratchpad"
+	add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/scratchpad_memory/*
+	add wave -noupdate -divider "LVE CI"
+	add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/the_lve_ci/*
+    }
 }
 
 proc wave_X { } {

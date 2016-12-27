@@ -7,6 +7,8 @@ end entity;
 
 architecture rtl of top_tb is
   component top is
+    generic (
+      USE_PLL : boolean := false);
     port(
       reset_btn : in std_logic;
 
@@ -28,21 +30,24 @@ architecture rtl of top_tb is
       --sccb
       sccb_scl : inout std_logic;
       sccb_sda : inout std_logic
-
       );
   end component;
 
-  signal reset     : std_logic;
-  signal clk       : std_logic := '1';
-  signal uart_pmod : std_logic_vector(3 downto 0);
-  signal rxd       : std_logic;
-  signal txd       : std_logic;
-  signal cts       : std_logic;
-  signal rts       : std_logic;
+  signal reset : std_logic;
 
-  signal spi_miso       : std_logic;
-  signal spi_ss         : std_logic;
-  signal spi_sclk       : std_logic;
+  signal spi_mosi : std_logic;
+  signal spi_miso : std_logic;
+  signal spi_ss   : std_logic;
+  signal spi_sclk : std_logic;
+
+  signal rxd : std_logic;
+  signal txd : std_logic;
+  signal cts : std_logic;
+  signal rts : std_logic;
+
+  signal sccb_scl : std_logic;
+  signal sccb_sda : std_logic;
+
 
   signal bit_sel : integer := 0;
   signal  mydata : unsigned(7 downto 0) := x"0E";
@@ -51,7 +56,6 @@ architecture rtl of top_tb is
 begin
   dut : component top
     port map(
-      --    clk       => clk,
       reset_btn => reset,
       spi_miso  => spi_miso,
       spi_ss    => spi_ss,
@@ -61,14 +65,15 @@ begin
       rxd       => rxd,
       txd       => txd,
       cts       => cts,
-      rts       => rts);
+      rts       => rts,
 
-  cts <= '0';
-  process
-  begin
-    clk <= not clk;
-    wait for CLOCK_PERIOD/2;
-  end process;
+      sccb_scl => sccb_scl,
+      sccb_sda => sccb_sda
+      );
+  spi_miso <= '0';
+  cts      <= '0';
+  sccb_scl <= 'H';
+  sccb_sda <= 'H';
 
   process
   begin
