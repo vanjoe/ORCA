@@ -156,4 +156,10 @@ package constants_pkg is
 
   constant LVE_VCMV_Z_FUNC3  : std_logic_vector(2 downto 0) := "011";
   constant LVE_VCMV_NZ_FUNC3 : std_logic_vector(2 downto 0) := "100";
+
+  constant LVE_BYTE_SIZE : std_logic_vector(1 downto 0) := "01";
+  constant LVE_HALF_SIZE : std_logic_vector(1 downto 0) := "10";
+  constant LVE_WORD_SIZE : std_logic_vector(1 downto 0) := "11";
+
+
 end package constants_pkg;

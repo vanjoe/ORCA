@@ -82,8 +82,8 @@ architecture rtl of lve_top is
   end component;
 
 
---  constant SP_SIZE           : natural                      := 1024;
-  constant CUSTOM0           : std_logic_vector(6 downto 0) := "0101011";
+
+  constant CUSTOM0 : std_logic_vector(6 downto 0) := "0101011";
 
   alias is_prefix : std_logic is instruction(27);
   alias major_op  : std_logic_vector(6 downto 0) is instruction(6 downto 0);
@@ -125,7 +125,8 @@ architecture rtl of lve_top is
   signal write_vector_length : unsigned(15 downto 0);
   signal writeback_data      : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal waddr2 : std_logic_vector(log2(SCRATCHPAD_SIZE/4)-1 downto 0);
+  signal waddr2   : std_logic_vector(log2(SCRATCHPAD_SIZE/4)-1 downto 0);
+  signal byte_en2 : std_logic_vector(3 downto 0);
 
   signal scalar_value : unsigned(REGISTER_SIZE-1 downto 0);
 
@@ -144,15 +145,19 @@ architecture rtl of lve_top is
   signal accumulation_register : unsigned(REGISTER_SIZE - 1 downto 0);
   signal accumulation_result   : unsigned(REGISTER_SIZE - 1 downto 0);
 
-  signal pointer_increment     : unsigned(15 downto 0);
+  signal pointer_increment : unsigned(15 downto 0);
+  signal dest_incr         : unsigned(15 downto 0);
+  signal src_incr          : unsigned(15 downto 0);
 
-  signal readdata_valid        : std_logic;
-  signal eqz                   : std_logic;
+  signal dest_size, src_size : std_logic_vector(1 downto 0);
+  signal readdata_valid      : std_logic;
+  signal eqz                 : std_logic;
 
   signal enum_enable         : std_logic;
   signal scalar_enable       : std_logic;
   signal lve_ack             : std_logic;
   signal extenal_port_enable : std_logic;
+
 
   function align_input (
     sign  : std_logic;
@@ -160,7 +165,25 @@ architecture rtl of lve_top is
     align : std_logic_vector(1 downto 0);
     data  : std_logic_vector(REGISTER_SIZE -1 downto 0))
     return std_logic_vector is
+    variable data_8bit  : std_logic_vector(7 downto 0);
+    variable data_9bit  : signed(8 downto 0);
+    variable data_32bit : signed(8 downto 0);
   begin  -- function select_byte
+
+    if size = LVE_BYTE_SIZE then
+      if align = "00" then
+        data_8bit := data(REGISTER_SIZE-1 downto REGISTER_SIZE-8);
+      elsif align = "01" then
+        data_8bit := data(REGISTER_SIZE-1-8 downto REGISTER_SIZE-8-8);
+      elsif align = "10" then
+        data_8bit := data(REGISTER_SIZE-1-16 downto REGISTER_SIZE-8-16);
+      else
+        data_8bit := data(REGISTER_SIZE-1-24 downto REGISTER_SIZE-8-24);
+      end if;
+      data_9bit := signed((data_8bit(7) and sign) & data_8bit);
+
+      return std_logic_vector(RESIZE(data_9bit, 32));
+    end if;
     return data;
   end function align_input;
 
@@ -177,6 +200,15 @@ begin
   valid_lve_instr <= valid_instr when major_op = CUSTOM0 else '0';
 
   pointer_increment <= unsigned(rs2_data(rs2_data'left downto rs2_data'length - pointer_increment'length));
+  with dest_size select
+    dest_incr <=
+    SHIFT_LEFT(pointer_increment, 2) when LVE_WORD_SIZE,
+    --Don't enable halfe words
+    pointer_increment                when others;
+
+  --source bust be aways word
+  src_incr <= SHIFT_LEFT(pointer_increment, 2);
+
   extenal_port_enable <= slave_read_en or slave_write_en;
 
   --instruction parsing process
@@ -188,7 +220,7 @@ begin
 
         if lve_result_valid = '1' then
           if acc = '0' then
-            dest_ptr <= dest_ptr + pointer_increment;
+            dest_ptr <= dest_ptr + dest_incr;
           end if;
           write_vector_length   <= write_vector_length - 1;
           accumulation_register <= accumulation_result;
@@ -199,12 +231,14 @@ begin
           scalar_value  <= unsigned(rs1_data);
           enum_count    <= to_unsigned(0, enum_count'length);
 
-          srca_ptr <= unsigned(rs1_data);
-          srcb_ptr <= unsigned(rs2_data);
+          srca_ptr  <= unsigned(rs1_data);
+          srcb_ptr  <= unsigned(rs2_data);
+          dest_size <= instruction(14 downto 13);
+          src_size  <= instruction(12 downto 11);
         else
           if extenal_port_enable = '0' then
-            srca_ptr <= srca_ptr+ pointer_increment;
-            srcb_ptr <= srcb_ptr+ pointer_increment;
+            srca_ptr <= srca_ptr+ src_incr;
+            srcb_ptr <= srcb_ptr+ src_incr;
           end if;
 
           if first_element = '1' then
@@ -243,17 +277,35 @@ begin
   rd_en <= valid_lve_instr when extenal_port_enable = '0' and (read_vector_length > 1 or first_element = '1') else '0';
 
 
-  lve_data1 <= std_logic_vector(srca_data_read);
-  lve_data2 <= std_logic_vector(srcb_data_read);
+  --lve_data1 <= align_input(sign_a, src_size, s_align, srca_data_read);
+  --lve_data2 <= align_input(sign_b, src_size, s_align, srcb_data_read);
+  lve_data1 <= srca_data_read;
+  lve_data2 <= srcb_data_read;
 
-  wb_proc : process(clk)
+  writeback_proc : process(clk)
+    variable tmp_data : unsigned(lve_result'range);
   begin
     if rising_edge(clk) then
-
-      writeback_data <= unsigned(lve_result);
-      waddr2         <= std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2));
+      tmp_data := unsigned(lve_result);
+      waddr2   <= std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2));
       if acc = '1' then
-        writeback_data <= accumulation_result;
+        tmp_data := accumulation_result;
+      end if;
+      byte_en2       <= "1111";
+      writeback_data <= tmp_data;
+      if dest_size = LVE_BYTE_SIZE then
+        writeback_data <= tmp_data(7 downto 0) &tmp_data(7 downto 0)&tmp_data(7 downto 0) &tmp_data(7 downto 0);
+        case dest_ptr(1 downto 0) is
+          when "00" =>
+            byte_en2 <= "0001";
+          when "01" =>
+            byte_en2 <= "0010";
+          when "10" =>
+            byte_en2 <= "0100";
+          when "11" =>
+            byte_en2 <= "1000";
+          when others => null;
+        end case;
       end if;
       write_enable <= (lve_alu_result_valid or cmv_write_en) and (valid_lve_instr and not is_prefix);
     end if;
@@ -289,6 +341,8 @@ begin
 
   scalar_enable <= srca_s;
   enum_enable   <= srcb_e;
+
+
   scratchpad_memory : component ram_4port
     generic map (
       MEM_WIDTH => 32,
@@ -312,7 +366,7 @@ begin
 
       ack01     => lve_source_valid,
       waddr2    => waddr2,
-      byte_en2  => (others => '1'),
+      byte_en2  => byte_en2,
       wen2      => write_enable,
       data_in2  => std_logic_vector(writeback_data),
       rwaddr3   => slave_address(log2(SCRATCHPAD_SIZE)-1 downto 2),
