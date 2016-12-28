@@ -53,7 +53,7 @@ TEST_ATTR int test_4()
   dest[0]=1;
   //TEST a load word right before a vector instruction
   asm volatile("\n\
-   li a0,0x80000000\n									\
+   mv a0,%0\n									\
 	lw a0,  0(a0)\n										\
    vtype.www	a0,x0\n										\
    vadd.se.1d.sss	%0,%1\n									\

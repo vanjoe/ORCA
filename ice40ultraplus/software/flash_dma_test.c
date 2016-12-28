@@ -107,7 +107,7 @@ int main()
 	int flash_address=4;
 
 	flash_dma_trans(flash_address,(void*)sp_base,xfer_size);
-	//do_lve(SCRATCHPAD_BASE+xfer_size);
+	do_lve(SCRATCHPAD_BASE+xfer_size);
 	//wait for transfer done
 	while(!flash_dma_done());
 
