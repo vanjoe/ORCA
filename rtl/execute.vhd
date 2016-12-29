@@ -281,7 +281,7 @@ begin
       end if;
 
       rd_latch_var := rd_latch;
-      if (ls_unit_waiting or stall_from_alu) = '0' then
+      if (ls_unit_waiting or stall_from_alu) = '0' and valid_input = '1' then
         rd_latch_var := rd;
         --load, csr_read, jal[r] are the only instructions that writeback but
         --don't forward. Of these only csr_read and loads don't flush the
