@@ -235,6 +235,8 @@ architecture rtl of top is
   signal auto_reset_count : unsigned(3 downto 0) := (others => '0');
   signal auto_reset       : std_logic;
 
+  signal ovm_dma_start : std_logic;
+  signal ovm_dma_busy  : std_logic;
 
 begin
 
@@ -370,12 +372,12 @@ begin
       slave2_dat_o   => data_sp_dat_i,
       slave2_ack_o   => data_sp_ACK_I,
 
-      master_ADR_O   => sp_ADR32,
-      master_DAT_O   => sp_WDAT,
-      master_WE_O    => sp_WE,
-      master_CYC_O   => sp_CYC,
-      master_STB_O   => sp_STB,
-      master_SEL_O   => sp_SEL,
+      master_ADR_O => sp_ADR32,
+      master_DAT_O => sp_WDAT,
+      master_WE_O  => sp_WE,
+      master_CYC_O => sp_CYC,
+      master_STB_O => sp_STB,
+      master_SEL_O => sp_SEL,
 
       master_STALL_I => sp_STALL,
       master_DAT_I   => sp_RDAT,
@@ -581,14 +583,14 @@ begin
 
   the_sccb_pio : wb_pio
     generic map (
-      DATA_WIDTH => 2
+      DATA_WIDTH => 4
       )
     port map(
       clk_i => clk,
       rst_i => reset,
 
       adr_i   => sccb_pio_adr_i,
-      dat_i   => sccb_pio_dat_i(1 downto 0),
+      dat_i   => sccb_pio_dat_i(3 downto 0),
       we_i    => sccb_pio_we_i,
       cyc_i   => sccb_pio_cyc_i,
       stb_i   => sccb_pio_stb_i,
@@ -598,15 +600,18 @@ begin
       lock_i  => sccb_pio_lock_i,
       ack_o   => sccb_pio_ack_o,
       stall_o => sccb_pio_stall_o,
-      data_o  => sccb_pio_dat_o(1 downto 0),
+      data_o  => sccb_pio_dat_o(3 downto 0),
       err_o   => sccb_pio_err_o,
       rty_o   => sccb_pio_rty_o,
 
+      input_output(3) => ovm_dma_busy,
+      input_output(2) => ovm_dma_start,
       input_output(1) => sccb_scl,
       input_output(0) => sccb_sda
-      );
-  sccb_pio_dat_o(sccb_pio_dat_o'left downto 2) <= (others => '0');
 
+      );
+  sccb_pio_dat_o(sccb_pio_dat_o'left downto 4) <= (others => '0');
+  ovm_dma_busy <= '1' when ovm_dma_start = '1' else '0';
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
 -- This is useful if we can't figure out why
