@@ -269,12 +269,14 @@ begin  -- architecture rtl
   --endian madness
   master_dat_o  <= data_register(7 downto 0) & data_register(15 downto 8) & data_register(23 downto 16) & data_register(31 downto 24);
   slave_STALL_O <= '0';
+
+  slave_dat_o <= initializing & std_logic_vector(to_unsigned(xferlen_count, slave_dat_o'length-1));
   wishbone_proc : process(clk_i)
   begin
     if rising_edge(clk_i) then
       start_xfer  <= '0';
       slave_ack_o <= '0';
-      slave_dat_o <= initializing & std_logic_vector(to_unsigned(xferlen_count, slave_dat_o'length-1));
+
       --write
       if (slave_stb_i and slave_cyc_i) = '1' then
         if slave_adr_i = REG_RADDRESS then
