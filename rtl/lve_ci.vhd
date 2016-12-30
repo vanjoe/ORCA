@@ -37,9 +37,25 @@ architecture rtl of lve_ci is
 
   --Delay the valid out to match data
   signal valid_out_d : std_logic_vector(PIPELINE_DEPTH downto 0);
+
+  constant VCUSTOM0_FUNC3 : std_logic_vector(2 downto 0) := "101";
+  constant VCUSTOM1_FUNC3 : std_logic_vector(2 downto 0) := "110";
+  constant VCUSTOM2_FUNC3 : std_logic_vector(2 downto 0) := "111";
+  constant VCUSTOM3_FUNC3 : std_logic_vector(2 downto 0) := "000";
+  constant VCUSTOM4_FUNC3 : std_logic_vector(2 downto 0) := "001";
+  constant VCUSTOM5_FUNC3 : std_logic_vector(2 downto 0) := "010";
+
+  signal cust0_out_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+
 begin
+
+  cust0_out_data <= x"0000007F" when signed(data1_in) > 127 else
+                    x"00000080" when signed(data1_in) < -128 else
+                    x"000000" & data1_in(7 downto 0);
+
   valid_out_d(0) <= valid_in;
-  data_out_d(0)  <= data1_in and (not data2_in) when func3 = "000" else data2_in and (not data1_in);
+  data_out_d(0)  <= cust0_out_data when func3 = VCUSTOM0_FUNC3 else (others => '-');
 
   process (clk) is
   begin  -- process

@@ -10,8 +10,8 @@
 #define MULTIPLY_TEST_MASK  0x0010
 #define ACCUM_TEST_MASK     0x0020
 #define CI_TEST_MASK        0x0040
-
-#define TEST_RUN_MASK       CI_TEST_MASK
+#define CI_WB_MASK          0x0080
+#define TEST_RUN_MASK       CI_WB_MASK
 
 #define VCI0 VCMV_GTZ
 #define VCI1 VCMV_LTZ
@@ -23,15 +23,17 @@ int lve_test(unsigned int *failing_tests_ptr){
 
   *failing_tests_ptr = 0;
 	
-  //Vectors, manually allocated in scratchpad
-  vbx_uword_t *v_a = ((vbx_uword_t *)SCRATCHPAD_BASE) + 0;
-  vbx_uword_t *v_b = ((vbx_uword_t *)SCRATCHPAD_BASE) + TEST_LENGTH;
-  vbx_uword_t *v_c = ((vbx_uword_t *)SCRATCHPAD_BASE) + (2*TEST_LENGTH);
+	//Vectors, manually allocated in scratchpad
+	vbx_uword_t *v_a = ((vbx_uword_t *)SCRATCHPAD_BASE) + 0;
+	vbx_uword_t *v_b = ((vbx_uword_t *)SCRATCHPAD_BASE) + TEST_LENGTH;
+	vbx_uword_t *v_c = ((vbx_uword_t *)SCRATCHPAD_BASE) + (2*TEST_LENGTH);
+	vbx_ubyte_t *v_c_byte = (vbx_ubyte_t *)v_c;
 
-  //Scalar data, will keep up to data with vector
-  vbx_uword_t a[TEST_LENGTH];
-  vbx_uword_t b[TEST_LENGTH];
-  vbx_uword_t c[TEST_LENGTH];
+	//Scalar data, will keep up to data with vector
+	vbx_uword_t a[TEST_LENGTH];
+	vbx_uword_t b[TEST_LENGTH];
+	vbx_uword_t c[TEST_LENGTH];
+	vbx_ubyte_t c_byte[TEST_LENGTH];
 
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
@@ -207,5 +209,35 @@ int lve_test(unsigned int *failing_tests_ptr){
   }
 #endif // (TEST_RUN_MASK & CI_TEST_MASK)
 
-  return errors;
+
+#if (TEST_RUN_MASK & CI_WB_MASK)
+	//Initialize data with some known values
+	for(element = 0; element < TEST_LENGTH; element++){
+		v_a[element] = ((element&1)?element: -element)<<5;
+
+		a[element]   = v_a[element];
+
+		if(((signed)a[element]) > 127){
+			c_byte[element] = 127;
+		}else if(((signed)a[element]) < -128 ){
+			c_byte[element] = -128;
+		}else{
+			c_byte[element] = a[element];
+		}
+
+	}
+	vbx_set_vl(TEST_LENGTH);
+	vbx(VVBWU,VCUSTOM0,v_c_byte,v_a,0);
+	for(element = 0; element < TEST_LENGTH; element++){
+		if(v_c_byte[element]!= c_byte[element]){
+			*failing_tests_ptr |= CI_WB_MASK;
+			errors ++;
+
+		}
+
+	}
+#endif // (TEST_RUN_MASK & CI_WB_MASK)
+
+
+	return errors;
 }
