@@ -75,10 +75,11 @@ begin
     end process;
 
 
-    in_or_out : for i in control'range generate
+    in_or_out : for i in 0 to 1 generate
       input_output(i) <= out_reg(i) when control(i) = '1' else 'Z';
     end generate in_or_out;
-
+    input_output(2) <= out_reg(2);
+    input_output(3) <= 'Z';
   end generate ALLOW_INPUT_OUTPUT_GEN;
 
   ALLOW_INPUT_GEN : if ALLOW_INPUT and not ALLOW_OUTPUT generate

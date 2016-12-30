@@ -6,6 +6,7 @@
 
 
 
+add_file -vhdl -lib work "top.vhd" 
 add_file -vhdl -lib work "osc_hf.vhd" 
 add_file -vhdl -lib work "../rtl/constants_pkg.vhd" 
 add_file -vhdl -lib work "../rtl/alu.vhd" 
@@ -40,7 +41,7 @@ add_file -vhdl -lib work "../rtl/lve_top.vhd"
 add_file -vhdl -lib work "../rtl/orca_core.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/spi_master/wb_spi_simple.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/wb_flash_dma.vhd" 
-add_file -vhdl -lib work "top.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/wb_cam.vhd" 
 #implementation: "ultraplus_Implmnt"
 impl -add ultraplus_Implmnt -type fpga
 

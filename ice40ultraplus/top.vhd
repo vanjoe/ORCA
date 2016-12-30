@@ -9,10 +9,12 @@ use work.rv_components.all;
 
 entity top is
   generic (
-    USE_PLL : boolean := false);
+    USE_PLL      : boolean := false;
+    CAM_NUM_COLS : integer := 48;
+    CAM_NUM_ROWS : integer := 16);
   port(
-    reset_btn : in std_logic;
 
+    reset_btn : in  std_logic;
     --spi
     spi_mosi : out std_logic;
     spi_miso : in  std_logic;
@@ -20,13 +22,16 @@ entity top is
     spi_sclk : out std_logic;
 
     --uart
-    rxd : in  std_logic;
+
     txd : out std_logic;
     cts : in  std_logic;
     rts : out std_logic;
 
     --clk
-    cam_xclk : in std_logic;
+    cam_xclk  : in std_logic;
+    cam_vsync : in std_logic;
+    cam_href  : in std_logic;
+    cam_dat   : in std_logic_vector(7 downto 0);
 
     --sccb
     sccb_scl : inout std_logic;
@@ -83,6 +88,20 @@ architecture rtl of top is
   signal spi_sp_ACK_I   : std_logic;
   signal spi_sp_ERR_I   : std_logic;
   signal spi_sp_RTY_I   : std_logic;
+
+  signal cam_sp_ADR_O   : std_logic_vector(31 downto 0);
+  signal cam_sp_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal cam_sp_WE_O    : std_logic;
+  signal cam_sp_CYC_O   : std_logic;
+  signal cam_sp_STB_O   : std_logic;
+  signal cam_sp_SEL_O   : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
+  signal cam_sp_CTI_O   : std_logic_vector(2 downto 0);
+  signal cam_sp_BTE_O   : std_logic_vector(1 downto 0);
+  signal cam_sp_LOCK_O  : std_logic;
+  signal cam_sp_STALL_I : std_logic;
+
+
+
 
   signal data_sp_ADR_O   : std_logic_vector(31 downto 0);
   signal data_sp_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -236,6 +255,7 @@ architecture rtl of top is
   signal auto_reset       : std_logic;
 
   signal ovm_dma_start : std_logic;
+  signal ovm_dma_done  : std_logic;
   signal ovm_dma_busy  : std_logic;
 
 begin
@@ -283,7 +303,7 @@ begin
     end if;
   end process;
 
-  reset  <= not reset_btn or auto_reset;
+  reset  <= not reset_btn or auto_reset ;
   nreset <= not reset;
 
   imem : component wb_ram
@@ -346,13 +366,13 @@ begin
       RST_I => reset,
 
       --reserved for camera
-      slave0_ADR_I   => (others => '-'),
-      slave0_DAT_I   => (others => '-'),
-      slave0_WE_I    => '0',
-      slave0_CYC_I   => '0',
-      slave0_STB_I   => '0',
-      slave0_SEL_I   => (others => '-'),
-      slave0_STALL_O => open,
+      slave0_ADR_I   => cam_sp_ADR_O,
+      slave0_DAT_I   => cam_sp_DAT_O,
+      slave0_WE_I    => cam_sp_WE_O,
+      slave0_CYC_I   => cam_sp_CYC_O,
+      slave0_STB_I   => cam_sp_STB_O,
+      slave0_SEL_I   => cam_sp_SEL_O,
+      slave0_STALL_O => cam_sp_STALL_I,
 
       slave1_ADR_I   => spi_sp_ADR_O,
       slave1_DAT_I   => spi_sp_DAT_O,
@@ -611,7 +631,40 @@ begin
 
       );
   sccb_pio_dat_o(sccb_pio_dat_o'left downto 4) <= (others => '0');
-  ovm_dma_busy <= '1' when ovm_dma_start = '1' else '0';
+
+  ovm_dma_busy <= '1' when ovm_dma_done = '0' else '0';
+
+  cam_ctrl : wb_cam
+    generic map(
+      CAM_NUM_COLS => CAM_NUM_COLS,
+      CAM_NUM_ROWS => CAM_NUM_ROWS)
+
+    port map(
+      clk_i => clk,
+      rst_i => reset,
+
+      master_ADR_O   => cam_sp_ADR_O,
+      master_DAT_O   => cam_sp_DAT_O,
+      master_WE_O    => cam_sp_WE_O,
+      master_SEL_O   => cam_sp_SEL_O,
+      master_STB_O   => cam_sp_STB_O,
+      master_CYC_O   => cam_sp_CYC_O,
+      master_CTI_O   => cam_sp_CTI_O,
+      master_STALL_I => cam_sp_STALL_I,
+
+      --pio control signals
+      cam_start => ovm_dma_start,
+      cam_done  => ovm_dma_done,
+
+      --camera signals
+      ovm_pclk  => cam_xclk,
+      ovm_vsync => cam_vsync,
+      ovm_href  => cam_href,
+      ovm_dat   => cam_dat
+
+      );
+
+
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
 -- This is useful if we can't figure out why
@@ -732,7 +785,7 @@ begin
                                         -----------------------------------------------------------------------------
   cts_n     <= cts;
   txd       <= serial_out;
-  serial_in <= rxd;
+  serial_in <= '0';
   rts       <= rts_n;
 
   the_uart : uart_core

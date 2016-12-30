@@ -20,6 +20,7 @@ proc com {} {
                      hdl/top_util_pkg.vhd               \
                      hdl/top_component_pkg.vhd          \
                      hdl/wb_ram.vhd                     \
+							hdl/wb_cam.vhd                     \
                      hdl/wb_arbiter.vhd                 \
                      hdl/wb_splitter.vhd                \
                      hdl/wb_pio.vhd                     \
