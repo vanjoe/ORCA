@@ -27,19 +27,19 @@ module verilog_top
 	input 		cam_xclk;
 	input 		cam_vsync;
 	input 		cam_href;
-	input 		spi_mosi;
-	output 		spi_miso;
+	output 		spi_mosi;
+	input 		spi_miso;
 	output 		spi_ss  ;
 	output 		spi_sclk;
 	inout 		sccb_scl;
 	inout 		sccb_sda;
 	output 		txd    ;
 
-	wire [7:0]	cma_dat_internal;
+	wire [7:0]	cam_dat_internal;
 	wire 			cam_xclk_internal;
 
 
-	top vhdl_top
+	vhdl_top sub_top
 	  (
 		.cam_dat (cam_dat_internal ),
 		.cam_xclk(cam_xclk_internal),
@@ -53,10 +53,62 @@ module verilog_top
 		.sccb_sda(sccb_sda)
 		);
 
+   SB_IO_OD
+     od0(
+        .PACKAGEPIN (cam_xclk),
+        .LATCHINPUTVALUE (0),
+        .CLOCKENABLE (0),
+        .INPUTCLK (0),
+        .OUTPUTCLK (0),
+        .OUTPUTENABLE (0),
+        .DOUT0 (),
+        .DOUT1 (),
+        .DIN0 (cam_xclk_internal),
+        .DIN1 ()
+
+        );
+   defparam od0.PIN_TYPE = 6'b000001;
+   defparam od0.NEG_TRIGGER = 1'b0;
 
 
-	assign cam_dat_internal = cam_dat;
-	assign cam_xclk = cam_xclk;
+	SB_IO_OD
+     od1(
+        .PACKAGEPIN (cam_dat[0]),
+        .LATCHINPUTVALUE (0),
+        .CLOCKENABLE (0),
+        .INPUTCLK (0),
+        .OUTPUTCLK (0),
+        .OUTPUTENABLE (0),
+        .DOUT0 (),
+        .DOUT1 (),
+        .DIN0 (cam_dat_internal[0]),
+        .DIN1 ()
+
+        );
+   defparam od1.PIN_TYPE = 6'b000001;
+   defparam od1.NEG_TRIGGER = 1'b0;
+
+
+	SB_IO_OD
+     od2(
+        .PACKAGEPIN (cam_dat[1]),
+        .LATCHINPUTVALUE (0),
+        .CLOCKENABLE (0),
+        .INPUTCLK (0),
+        .OUTPUTCLK (0),
+        .OUTPUTENABLE (0),
+        .DOUT0 (),
+        .DOUT1 (),
+        .DIN0 (cam_dat_internal[1]),
+        .DIN1 ()
+
+        );
+   defparam od2.PIN_TYPE = 6'b000001;
+   defparam od2.NEG_TRIGGER = 1'b0;
+
+
+//	assign cam_dat_internal = cam_dat;
+//	assign cam_xclk_internal = cam_xclk;
 
 endmodule // verilog_top
 

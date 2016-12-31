@@ -7,7 +7,7 @@ use work.top_component_pkg.all;
 use work.top_util_pkg.all;
 use work.rv_components.all;
 
-entity top is
+entity vhdl_top is
   generic (
     USE_PLL      : boolean := false;
     CAM_NUM_COLS : integer := 48;
@@ -36,7 +36,7 @@ entity top is
     );
 end entity;
 
-architecture rtl of top is
+architecture rtl of vhdl_top is
 
   constant SCRATCHPAD_SIZE : integer := 128*1024;
   constant SYSCLK_FREQ_HZ  : natural := 8000000;
@@ -257,7 +257,6 @@ architecture rtl of top is
   signal ovm_dma_done  : std_logic;
   signal ovm_dma_busy  : std_logic;
 
-  signal cam_xclk_internal : std_logic;
   signal cam_pclk          : std_logic;
 
   signal cam_dat_internal : std_logic_vector(7 downto 0);
