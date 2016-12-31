@@ -107,8 +107,8 @@ module verilog_top
    defparam od2.NEG_TRIGGER = 1'b0;
 
 
-//	assign cam_dat_internal = cam_dat;
-//	assign cam_xclk_internal = cam_xclk;
+	assign cam_dat_internal[7:2] = cam_dat[7:2];
+
 
 endmodule // verilog_top
 

@@ -9,14 +9,14 @@ $(error Variable $$ICECUBE2 not defined )
 endif
 endif
 
-PROJECT=ultraplus
+PROJECT=ice40ultraplus
 SBT_PROJECT=$(PROJECT)_sbt.project
 SYN_PRJ=$(PROJECT)_syn.prj
 LSE_PRJ=$(PROJECT)_lse.prj
 OUTPUT_DIR=$(PROJECT)_Implmnt
-TOP_LEVEL_ENTITY=top
+TOP_LEVEL_ENTITY=verilog_top
 COMPILER_LOG=$(OUTPUT_DIR)/synlog/$(PROJECT)_compiler.srr
-TIMING_REPORT=$(OUTPUT_DIR)/sbt/outputs/router/top_timing.rpt
+TIMING_REPORT=$(OUTPUT_DIR)/sbt/outputs/router/$(TOP_LEVEL_ENTITY)_timing.rpt
 EDF=$(OUTPUT_DIR)/$(PROJECT).edf
 BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.hex
 
@@ -49,7 +49,7 @@ ICECUBE2=$(ICECUBE2) tclsh
 endef
 
 define mem-init
-LD_LIBRARY_PATH=$(ICECUBE2)/sbt_backend/lib/linux/opt:$${LD_LIBRARY_PATH} $(ICECUBE2)/sbt_backend/bin/linux/opt/meminitializer --des-lib $(OUTPUT_DIR)/sbt/netlist/oadb-top --mem-list-file
+LD_LIBRARY_PATH=$(ICECUBE2)/sbt_backend/lib/linux/opt:$${LD_LIBRARY_PATH} $(ICECUBE2)/sbt_backend/bin/linux/opt/meminitializer --des-lib $(OUTPUT_DIR)/sbt/netlist/oadb-$(TOP_LEVEL_ENTITY) --mem-list-file
 endef
 $(BITFILE): $(TIMING_REPORT) dmem.mem imem.mem $(DMEM_LIST) $(IMEM_LIST)
 	$(ice-tcl) iCEcube2_flow.tcl dmem.mem $(DMEM_LIST)
