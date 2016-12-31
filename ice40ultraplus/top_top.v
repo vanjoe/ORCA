@@ -50,7 +50,8 @@ module verilog_top
 		.spi_ss  (spi_ss  ),
 		.spi_sclk(spi_sclk),
 		.sccb_scl(sccb_scl),
-		.sccb_sda(sccb_sda)
+		.sccb_sda(sccb_sda),
+		.txd(txd)
 		);
 
    SB_IO_OD

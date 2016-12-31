@@ -31,10 +31,11 @@ void delayms( unsigned int ms)
 
 int main()
 {
-	int i=lve_test();
-
-	printf("LVE_TEST=%X\r\n",i);
-
+	int i=0;
+	while(1){
+		printf(" HELLO ORCA %X\r\n",i++);
+		delayms(1000);
+	}
 	return 0;
 }
 
