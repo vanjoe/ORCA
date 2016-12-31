@@ -30,10 +30,10 @@ entity wb_cam is
     cam_done  : out std_logic;
 
     --camera signals
-    ovm_pclk  : in std_logic;
-    ovm_vsync : in std_logic;
-    ovm_href  : in std_logic;
-    ovm_dat   : in std_logic_vector(7 downto 0);
+    ovm_pclk_pin : inout std_logic;
+    ovm_vsync    : in    std_logic;
+    ovm_href     : in    std_logic;
+    ovm_dat_pin  : inout std_logic_vector(7 downto 0);
 
     cam_rgb_out     : out std_logic_vector(31 downto 0);
     cam_rgb_valid   : out std_logic;
@@ -43,6 +43,8 @@ end entity wb_cam;
 
 architecture rtl of wb_cam is
 
+  signal ovm_pclk : std_logic;
+  signal ovm_dat  : std_logic_vector(7 downto 0);
 
   type row_buf_t is array (0 to 63) of std_logic_vector(29 downto 0);
   type pixel_state_t is (PIXEL_FIRST, PIXEL_SECOND);
@@ -116,8 +118,12 @@ architecture rtl of wb_cam is
 
   signal ff1, ff0, ff0_pclk : std_logic;
 
+
 begin  -- architecture rtl
 
+
+  ovm_pclk <= ovm_pclk_pin;
+  ovm_dat  <= ovm_dat_pin;
 
   -- CAMERA START synchronizer
   cam_start_process : process(ovm_pclk)
@@ -393,7 +399,7 @@ begin  -- architecture rtl
       master_CYC_O <= ff1;
       master_WE_O  <= ff1;
       if ff1 = '1' then
-        master_ADR_O(12 downto 0) <= v_rgb_out_row&v_rgb_out_col&"00";
+        master_ADR_O(12 downto 0)                 <= v_rgb_out_row&v_rgb_out_col&"00";
         master_ADR_O(master_ADR_O'left downto 13) <= (others => '0');
       end if;
 

@@ -150,28 +150,30 @@ package top_component_pkg is
 
   component wb_pio is
     generic (
-      DATA_WIDTH   : integer := 32;
-      ALLOW_INPUT  : boolean := true;
-      ALLOW_OUTPUT : boolean := true);
+      DATA_WIDTH : integer := 32);
     port (
       CLK_I : in std_logic;
       RST_I : in std_logic;
 
-      ADR_I        : in    std_logic_vector(31 downto 0);
-      DAT_I        : in    std_logic_vector(DATA_WIDTH-1 downto 0);
-      WE_I         : in    std_logic;
-      CYC_I        : in    std_logic;
-      STB_I        : in    std_logic;
-      SEL_I        : in    std_logic_vector(3 downto 0);
-      CTI_I        : in    std_logic_vector(2 downto 0);
-      BTE_I        : in    std_logic_vector(1 downto 0);
-      LOCK_I       : in    std_logic;
-      ACK_O        : out   std_logic;
-      STALL_O      : out   std_logic;
-      DATA_O       : out   std_logic_vector(DATA_WIDTH -1 downto 0);
-      ERR_O        : out   std_logic;
-      RTY_O        : out   std_logic;
-      input_output : inout std_logic_vector(DATA_WIDTH -1 downto 0)
+      ADR_I   : in  std_logic_vector(31 downto 0);
+      DAT_I   : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+      WE_I    : in  std_logic;
+      CYC_I   : in  std_logic;
+      STB_I   : in  std_logic;
+      SEL_I   : in  std_logic_vector(3 downto 0);
+      CTI_I   : in  std_logic_vector(2 downto 0);
+      BTE_I   : in  std_logic_vector(1 downto 0);
+      LOCK_I  : in  std_logic;
+      ACK_O   : out std_logic;
+      STALL_O : out std_logic;
+      DATA_O  : out std_logic_vector(DATA_WIDTH -1 downto 0);
+      ERR_O   : out std_logic;
+      RTY_O   : out std_logic;
+
+      input     : in  std_logic_vector(DATA_WIDTH -1 downto 0);
+      output_en : out std_logic_vector(DATA_WIDTH -1 downto 0);
+      output    : out std_logic_vector(DATA_WIDTH -1 downto 0)
+
       );
   end component;
 
@@ -704,9 +706,9 @@ package top_component_pkg is
 
 
   component wb_cam is
-  generic (
-    CAM_NUM_COLS : integer := 48;
-    CAM_NUM_ROWS : integer := 16);
+    generic (
+      CAM_NUM_COLS : integer := 48;
+      CAM_NUM_ROWS : integer := 16);
 
 
     port (
@@ -728,16 +730,17 @@ package top_component_pkg is
       cam_done  : out std_logic;
 
       --camera signals
-      ovm_pclk  : in std_logic;
-      ovm_vsync : in std_logic;
-      ovm_href  : in std_logic;
-      ovm_dat   : in std_logic_vector(7 downto 0);
+      ovm_pclk_pin : inout std_logic;
+      ovm_vsync    : in std_logic;
+      ovm_href     : in std_logic;
+      ovm_dat_pin  : inout std_logic_vector(7 downto 0);
 
       cam_rgb_out     : out std_logic_vector(31 downto 0);
       cam_rgb_valid   : out std_logic;
       cam_rgb_address : out std_logic_vector(10 downto 0)
       );
   end component wb_cam;
+
 
 end package;
 

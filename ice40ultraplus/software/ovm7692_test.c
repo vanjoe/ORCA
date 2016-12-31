@@ -152,7 +152,7 @@ int ovm_isdone()
 int main(){
 	int errors = 0;
 	printf("\r\nTesting SCCB\r\n");
-
+#if 0
 	sccb_init(SCCB_PIO_BASE);
 
 	//Read product ID
@@ -203,7 +203,7 @@ int i;
 #endif
 
 	//Add frame reading logic here
-
+#endif
 	//set start bit
 	ovm_start();
 	//wait for done bit

@@ -12,8 +12,6 @@ architecture rtl of top_tb is
       CAM_NUM_COLS : integer := 640;
       CAM_NUM_ROWS : integer := 480);
     port(
-      reset_btn : in std_logic;
-
       --spi
       spi_mosi : out std_logic;
       spi_miso : in  std_logic;
@@ -21,10 +19,7 @@ architecture rtl of top_tb is
       spi_sclk : out std_logic;
 
       --uart
-      rxd : in  std_logic;
       txd : out std_logic;
-      cts : in  std_logic;
-      rts : out std_logic;
 
       --clk
       cam_xclk  : in std_logic;
@@ -48,10 +43,8 @@ architecture rtl of top_tb is
   signal spi_ss   : std_logic;
   signal spi_sclk : std_logic;
 
-  signal rxd : std_logic;
+
   signal txd : std_logic;
-  signal cts : std_logic;
-  signal rts : std_logic;
 
   signal sccb_scl : std_logic;
   signal sccb_sda : std_logic;
@@ -80,7 +73,6 @@ begin
       CAM_NUM_COLS => CAM_NUM_COLS,
       CAM_NUM_ROWS => CAM_NUM_ROWS)
     port map(
-      reset_btn => reset,
       spi_miso  => spi_miso,
       spi_ss    => spi_ss,
       spi_sclk  => spi_sclk,
@@ -90,16 +82,15 @@ begin
       cam_href  => ovm_href,
       cam_dat   => ovm_dat,
 
-      rxd => rxd,
+
       txd => txd,
-      cts => cts,
-      rts => rts,
+
 
       sccb_scl => sccb_scl,
       sccb_sda => sccb_sda
       );
   spi_miso <= '0';
-  cts      <= '0';
+
   sccb_scl <= 'H';
   sccb_sda <= 'H';
 

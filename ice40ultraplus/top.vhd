@@ -14,7 +14,6 @@ entity top is
     CAM_NUM_ROWS : integer := 16);
   port(
 
-    reset_btn : in  std_logic;
     --spi
     spi_mosi : out std_logic;
     spi_miso : in  std_logic;
@@ -24,13 +23,11 @@ entity top is
     --uart
 
     txd : out std_logic;
-    cts : in  std_logic;
-    rts : out std_logic;
 
     --clk
     cam_xclk  : in std_logic;
-    cam_vsync : in std_logic;
-    cam_href  : in std_logic;
+    cam_vsync : in    std_logic;
+    cam_href  : in    std_logic;
     cam_dat   : in std_logic_vector(7 downto 0);
 
     --sccb
@@ -175,6 +172,8 @@ architecture rtl of top is
   signal sccb_pio_err_o   : std_logic;
   signal sccb_pio_rty_o   : std_logic;
 
+  signal sccb_scl_en, sccb_sda_en : std_logic;
+
   signal data_ram_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_ram_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_ram_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -258,6 +257,15 @@ architecture rtl of top is
   signal ovm_dma_done  : std_logic;
   signal ovm_dma_busy  : std_logic;
 
+  signal cam_xclk_internal : std_logic;
+  signal cam_pclk          : std_logic;
+
+  signal cam_dat_internal : std_logic_vector(7 downto 0);
+
+  signal pio_in  : std_logic_vector(3 downto 0);
+  signal pio_out : std_logic_vector(3 downto 0);
+  signal pio_oe  : std_logic_vector(3 downto 0);
+
 begin
 
   hf_osc : component osc_48MHz
@@ -290,6 +298,12 @@ begin
       USER_SIGNAL_TO_GLOBAL_BUFFER => clk_3x_int);
 
 
+  cam_dat_internal <= cam_dat;
+  cam_pclk         <= cam_xclk;
+  --REPLACE the previous SB_IO_OD with the following lines during simulation
+  --cam_dat_internal <= cam_dat;
+  --cam_xclk_internal <= cam_xclk;
+
 
   process(clk)
   begin
@@ -303,7 +317,7 @@ begin
     end if;
   end process;
 
-  reset  <= not reset_btn or auto_reset ;
+  reset  <= auto_reset;
   nreset <= not reset;
 
   imem : component wb_ram
@@ -365,7 +379,7 @@ begin
       CLK_I => clk,
       RST_I => reset,
 
-      --reserved for camera
+                                        --reserved for camera
       slave0_ADR_I   => cam_sp_ADR_O,
       slave0_DAT_I   => cam_sp_DAT_O,
       slave0_WE_I    => cam_sp_WE_O,
@@ -566,7 +580,7 @@ begin
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
 
-  --dma controller for reading blocks of flash
+                                        --dma controller for reading blocks of flash
   the_spi : wb_flash_dma
     generic map(
       MAX_LENGTH => 64*1024)
@@ -624,15 +638,18 @@ begin
       err_o   => sccb_pio_err_o,
       rty_o   => sccb_pio_rty_o,
 
-      input_output(3) => ovm_dma_busy,
-      input_output(2) => ovm_dma_start,
-      input_output(1) => sccb_scl,
-      input_output(0) => sccb_sda
+      output    => pio_out,
+      output_en => pio_oe,
+      input     => pio_in
 
       );
-  sccb_pio_dat_o(sccb_pio_dat_o'left downto 4) <= (others => '0');
-
-  ovm_dma_busy <= '1' when ovm_dma_done = '0' else '0';
+  sccb_scl      <= pio_out(1) when pio_oe(1) = '1'    else 'Z';
+  sccb_sda      <= pio_out(0) when pio_oe(0) = '1'    else 'Z';
+  pio_in(0)     <= sccb_sda;
+  pio_in(1)     <= sccb_scl;
+  ovm_dma_start <= pio_out(2);
+  pio_in(3)     <= ovm_dma_busy;
+  ovm_dma_busy  <= '1'        when ovm_dma_done = '0' else '0';
 
   cam_ctrl : wb_cam
     generic map(
@@ -652,15 +669,15 @@ begin
       master_CTI_O   => cam_sp_CTI_O,
       master_STALL_I => cam_sp_STALL_I,
 
-      --pio control signals
+                                        --pio control signals
       cam_start => ovm_dma_start,
       cam_done  => ovm_dma_done,
 
-      --camera signals
-      ovm_pclk  => cam_xclk,
-      ovm_vsync => cam_vsync,
-      ovm_href  => cam_href,
-      ovm_dat   => cam_dat
+                                        --camera signals
+      ovm_pclk_pin => cam_pclk,
+      ovm_vsync    => cam_vsync,
+      ovm_href     => cam_href,
+      ovm_dat_pin  => cam_dat_internal
 
       );
 
@@ -783,10 +800,10 @@ begin
                                         -----------------------------------------------------------------------------
                                         -- UART signals and interface
                                         -----------------------------------------------------------------------------
-  cts_n     <= cts;
+                                        --cts_n     <= cts;
   txd       <= serial_out;
   serial_in <= '0';
-  rts       <= rts_n;
+                                        --rts       <= rts_n;
 
   the_uart : uart_core
     generic map (
