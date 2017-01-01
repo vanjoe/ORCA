@@ -375,6 +375,10 @@ begin
       data1_in => lve_data1,
       data2_in => lve_data2,
 
+      align1_in => std_logic_vector(srca_ptr(1 downto 0)),
+      align2_in => std_logic_vector(srcb_ptr(1 downto 0)),
+
+
       valid_out        => ci_result_valid,
       write_enable_out => ci_write_en,
       data_out         => ci_result

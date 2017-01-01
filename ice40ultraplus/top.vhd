@@ -11,7 +11,6 @@ entity top is
   generic (
     USE_PLL : boolean := false);
   port(
-    reset_btn : in std_logic;
 
     --spi
     spi_mosi : out std_logic;
@@ -283,7 +282,7 @@ begin
     end if;
   end process;
 
-  reset  <= not reset_btn or auto_reset;
+  reset  <= auto_reset;
   nreset <= not reset;
 
   imem : component wb_ram
@@ -611,7 +610,7 @@ begin
 
       );
   sccb_pio_dat_o(sccb_pio_dat_o'left downto 4) <= (others => '0');
-  ovm_dma_busy <= '1' when ovm_dma_start = '1' else '0';
+  ovm_dma_busy                                 <= '1' when ovm_dma_start = '1' else '0';
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
 -- This is useful if we can't figure out why

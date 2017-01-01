@@ -1,5 +1,5 @@
 #include "lve_test.h"
-
+#include "printf.h"
 
 #define TEST_LENGTH 16
 
@@ -11,7 +11,8 @@
 #define ACCUM_TEST_MASK     0x0020
 #define CI_TEST_MASK        0x0040
 #define CI_WB_MASK          0x0080
-#define TEST_RUN_MASK       CI_WB_MASK
+#define CI_CONV_MASK        0x0100
+#define TEST_RUN_MASK       CI_CONV_MASK
 
 #define VCI0 VCMV_GTZ
 #define VCI1 VCMV_LTZ
@@ -22,7 +23,7 @@ int lve_test(unsigned int *failing_tests_ptr){
   int element;
 
   *failing_tests_ptr = 0;
-	
+
 	//Vectors, manually allocated in scratchpad
 	vbx_uword_t *v_a = ((vbx_uword_t *)SCRATCHPAD_BASE) + 0;
 	vbx_uword_t *v_b = ((vbx_uword_t *)SCRATCHPAD_BASE) + TEST_LENGTH;
@@ -237,6 +238,52 @@ int lve_test(unsigned int *failing_tests_ptr){
 
 	}
 #endif // (TEST_RUN_MASK & CI_WB_MASK)
+
+#if (TEST_RUN_MASK & CI_WB_MASK)
+	//Initialize data with some known values
+	for(element = 0; element < TEST_LENGTH; element++){
+		v_a[element] = ((element&1)?element: -element)<<5;
+
+		a[element]   = v_a[element];
+
+		if(((signed)a[element]) > 127){
+			c_byte[element] = 127;
+		}else if(((signed)a[element]) < -128 ){
+			c_byte[element] = -128;
+		}else{
+			c_byte[element] = a[element];
+		}
+
+	}
+	vbx_set_vl(TEST_LENGTH);
+	vbx(VVBWU,VCUSTOM0,v_c_byte,v_a,0);
+	for(element = 0; element < TEST_LENGTH; element++){
+		if(v_c_byte[element]!= c_byte[element]){
+			*failing_tests_ptr |= CI_WB_MASK;
+			errors ++;
+
+		}
+
+	}
+#endif // (TEST_RUN_MASK & CI_WB_MASK)
+
+#if (TEST_RUN_MASK & CI_CONV_MASK)
+	//Initialize data with some known values
+
+	for(element = 0; element < TEST_LENGTH; element++){
+		v_c[element]=0x01010101;
+
+	}
+	vbx_set_vl(1);
+	vbx(SEW,VCUSTOM1,0,0x2,vbx_ENUM);
+	vbx_set_vl(3);
+	the_mxp.stride=2;
+	vbx(VVWWU,VCUSTOM2,v_a,v_c,v_c+1);
+	debugx(v_a[2]);
+
+#endif // (TEST_RUN_MASK & CI_CONV_MASK)
+
+
 
 
 	return errors;

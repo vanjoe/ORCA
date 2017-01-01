@@ -520,6 +520,9 @@ package rv_components is
       data1_in : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       data2_in : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
+      align1_in : in std_logic_vector(1 downto 0);
+      align2_in : in std_logic_vector(1 downto 0);
+
       valid_out        : out std_logic;
       write_enable_out : out std_logic;
       data_out         : out std_logic_vector(REGISTER_SIZE-1 downto 0)

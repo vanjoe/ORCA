@@ -66,7 +66,7 @@ NetlistFile=ultraplus_Implmnt/ultraplus.edf
 AdditionalEDIFFile=
 IPEDIFFile=
 DesignLib=ultraplus_Implmnt/sbt/netlist/oadb-top
-DesignView=
+DesignView=_pl
 DesignCell=top
 SynthesisSDCFile=ultraplus_Implmnt/ultraplus.scf
 UserPinConstraintFile=
@@ -84,3 +84,4 @@ BestCustomTemperature=0
 IOBankVoltages=topBank,2.5 bottomBank,2.5
 derValue=1.32445
 TimingPathNumberStick=0
+
