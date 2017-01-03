@@ -8,9 +8,6 @@ library work;
 
 
 entity wb_cam is
-  generic (
-    CAM_NUM_COLS : integer := 48;
-    CAM_NUM_ROWS : integer := 16);
   port (
 
     clk_i : in std_logic;
@@ -30,21 +27,21 @@ entity wb_cam is
     cam_done  : out std_logic;
 
     --camera signals
-    ovm_pclk_pin : inout std_logic;
-    ovm_vsync    : in    std_logic;
-    ovm_href     : in    std_logic;
-    ovm_dat_pin  : inout std_logic_vector(7 downto 0);
+    ovm_pclk  : in std_logic;
+    ovm_vsync : in std_logic;
+    ovm_href  : in std_logic;
+    ovm_dat   : in std_logic_vector(7 downto 0);
 
-    cam_rgb_out     : out std_logic_vector(31 downto 0);
-    cam_rgb_valid   : out std_logic;
-    cam_rgb_address : out std_logic_vector(10 downto 0)
+    cam_aux_out : out std_logic_vector(7 downto 0)
     );
 end entity wb_cam;
 
 architecture rtl of wb_cam is
 
-  signal ovm_pclk : std_logic;
-  signal ovm_dat  : std_logic_vector(7 downto 0);
+
+  constant CAM_NUM_COLS : integer := 640;
+  constant CAM_NUM_ROWS : integer := 480;
+
 
   type row_buf_t is array (0 to 63) of std_logic_vector(29 downto 0);
   type pixel_state_t is (PIXEL_FIRST, PIXEL_SECOND);
@@ -121,10 +118,6 @@ architecture rtl of wb_cam is
 
 begin  -- architecture rtl
 
-
-  ovm_pclk <= ovm_pclk_pin;
-  ovm_dat  <= ovm_dat_pin;
-
   -- CAMERA START synchronizer
   cam_start_process : process(ovm_pclk)
   begin
@@ -197,19 +190,19 @@ begin  -- architecture rtl
         ovm_col_count <= 0;
       end if;
 
-      if rst_i = '1' then
-        pixel_state   <= PIXEL_FIRST;
-        ovm_col_count <= 0;
-      end if;
+      --if rst_i = '1' then
+      --  pixel_state   <= PIXEL_FIRST;
+      --  ovm_col_count <= 0;
+      --end if;
     end if;
   end process;
 
   -- HORIZONTAL RGB ACCUMULATOR
 
   -- combinational logic: input bit width extension
-  h_red_in <= resize(unsigned(ovm_pixel_rgb(15 downto 11)), h_red_in'length);  --  5 bits
+  h_red_in <= resize(unsigned(ovm_pixel_rgb(15 downto 11)&"0"), h_red_in'length);  --  5 bits
   h_grn_in <= resize(unsigned(ovm_pixel_rgb(10 downto 5)), h_grn_in'length);  --  6 bits
-  h_blu_in <= resize(unsigned(ovm_pixel_rgb(4 downto 0)), h_blu_in'length);  --  5 bits
+  h_blu_in <= resize(unsigned(ovm_pixel_rgb(4 downto 0)&"0"), h_blu_in'length);  --  5 bits
 
                                         -- combinational logic: mux to initialize accumulator
   h_pixel_mux : process(h_load_pixel, h_accum_red, h_accum_grn, h_accum_blu)
@@ -237,12 +230,12 @@ begin  -- architecture rtl
       if h_load_pixel = '1' then
         h_rgb_out_idx <= h_tile_idx;
       end if;
-      if rst_i = '1' then
-        h_accum_red   <= (others => '0');
-        h_accum_grn   <= (others => '0');
-        h_accum_blu   <= (others => '0');
-        h_rgb_out_idx <= (others => '0');
-      end if;
+      --if rst_i = '1' then
+      --  h_accum_red   <= (others => '0');
+      --  h_accum_grn   <= (others => '0');
+      --  h_accum_blu   <= (others => '0');
+      --  h_rgb_out_idx <= (others => '0');
+      --end if;
     end if;
   end process;
 
@@ -376,24 +369,29 @@ begin  -- architecture rtl
         v_rgb_out(15 downto 8)  <= v_rdata(19 downto 12);  -- extract grn 8 MSB
         v_rgb_out(7 downto 0)   <= v_rdata(9 downto 2);    -- extract blu 8 MSB
       end if;
-      if rst_i = '1' then
-        v_rgb_out_valid <= '0';
-      end if;
+      --if rst_i = '1' then
+      --  v_rgb_out_valid <= '0';
+      --end if;
     end if;
   end process;
 
 
-  cam_rgb_out     <= v_rgb_out;
-  cam_rgb_address <= v_rgb_out_row & v_rgb_out_col;
+  cam_aux_out(0) <= v_load_pixel;
+  cam_aux_out(1) <= h_load_pixel;
+  cam_aux_out(2) <= ovm_pclk;
+  cam_aux_out(3) <= ovm_pixel_valid;
+  cam_aux_out(4) <= v_load_row;
+  cam_aux_out(5) <= extra_href;
+  cam_aux_out(6) <= ff0;
+  cam_aux_out(7) <= v_rgb_out_valid;
 
 
   output_latch_lve : process(clk_i)
   begin
     if rising_edge(clk_i) then
       -- synchronizer
-      cam_rgb_valid <= ff1;
-      ff1           <= ff0;
-      ff0           <= v_rgb_out_valid;
+      ff1 <= ff0;
+      ff0 <= v_rgb_out_valid;
 
       master_STB_O <= ff1;
       master_CYC_O <= ff1;

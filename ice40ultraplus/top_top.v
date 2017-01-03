@@ -8,10 +8,10 @@ module verilog_top
 	spi_miso  ,
 	spi_ss    ,
 	spi_sclk  ,
-
+	cdone_led ,
 	//uart
 	txd ,
-
+	rxd ,
 	//clk
 	cam_xclk  ,
 	cam_vsync  ,
@@ -34,9 +34,13 @@ module verilog_top
 	inout 		sccb_scl;
 	inout 		sccb_sda;
 	output 		txd    ;
+	output 		rxd;
+	output 		cdone_led;
 
 	wire [7:0]	cam_dat_internal;
 	wire 			cam_xclk_internal;
+
+	assign cdone_led = 0;
 
 
 	vhdl_top sub_top
@@ -51,7 +55,8 @@ module verilog_top
 		.spi_sclk(spi_sclk),
 		.sccb_scl(sccb_scl),
 		.sccb_sda(sccb_sda),
-		.txd(txd)
+		.txd(txd),
+		.rxd(rxd)
 		);
 
    SB_IO_OD
@@ -70,6 +75,8 @@ module verilog_top
         );
    defparam od0.PIN_TYPE = 6'b000001;
    defparam od0.NEG_TRIGGER = 1'b0;
+
+	//assign cam_xclk_internal = cam_xclk;
 
 
 	SB_IO_OD

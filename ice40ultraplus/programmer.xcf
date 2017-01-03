@@ -19,7 +19,7 @@
 				<BScanLen>1</BScanLen>
 				<BScanVal>0</BScanVal>
 			</Bypass>
-			<File>/nfs/home/joel/Documents/orca-cam/ice40ultraplus/ice40ultraplus_Implmnt/sbt/outputs/bitmap/verilog_top_bitmap.bin</File>
+			<File>ice40ultraplus_Implmnt/sbt/outputs/bitmap/verilog_top_bitmap.bin</File>
 			<FileTime>12/31/16 10:07:26</FileTime>
 			<Operation>Fast Program</Operation>
 			<Option>

@@ -29,8 +29,8 @@ architecture rtl of top_tb is
       );
   end component;
 
-  constant CAM_NUM_COLS : integer := 48;
-  constant CAM_NUM_ROWS : integer := 16;
+  constant CAM_NUM_COLS : integer := 640;
+  constant CAM_NUM_ROWS : integer := 480;
 
   signal reset : std_logic;
 
@@ -49,6 +49,7 @@ architecture rtl of top_tb is
   signal bit_sel        : integer              := 0;
   signal mydata         : unsigned(7 downto 0) := x"0E";
   constant CLOCK_PERIOD : time                 := 83.33 ns;
+  constant PCLK_PERIOD : time                 := 37.037 ns;
 
   signal ovm_pclk  : std_logic := '0';
   signal ovm_vsync : std_logic;
@@ -61,7 +62,7 @@ begin
   process
   begin
     ovm_pclk <= not ovm_pclk;
-    wait for (18.518 ns /2)*4;
+    wait for (PCLK_PERIOD/2);
   end process;
 
   dut : component verilog_top
@@ -124,7 +125,8 @@ begin
   ovm_dat <= x"A3";
 
   process(ovm_pclk)
-    constant pclk_interval : integer := CAM_NUM_COLS*2;
+    constant BYTES_PER_PIXEL : integer := 1;
+    constant PCLK_INTERVAL : integer := CAM_NUM_COLS*BYTES_PER_PIXEL;
   begin
     if rising_edge(ovm_pclk) then
       pclk_count <= pclk_count +1;

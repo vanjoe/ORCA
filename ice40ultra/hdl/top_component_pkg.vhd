@@ -706,10 +706,6 @@ package top_component_pkg is
 
 
   component wb_cam is
-    generic (
-      CAM_NUM_COLS : integer := 48;
-      CAM_NUM_ROWS : integer := 16);
-
 
     port (
 
@@ -730,14 +726,12 @@ package top_component_pkg is
       cam_done  : out std_logic;
 
       --camera signals
-      ovm_pclk_pin : inout std_logic;
-      ovm_vsync    : in std_logic;
-      ovm_href     : in std_logic;
-      ovm_dat_pin  : inout std_logic_vector(7 downto 0);
+      ovm_pclk  : in std_logic;
+      ovm_vsync : in std_logic;
+      ovm_href  : in std_logic;
+      ovm_dat   : in std_logic_vector(7 downto 0);
 
-      cam_rgb_out     : out std_logic_vector(31 downto 0);
-      cam_rgb_valid   : out std_logic;
-      cam_rgb_address : out std_logic_vector(10 downto 0)
+      cam_aux_out :out std_logic_vector(7 downto 0)
       );
   end component wb_cam;
 

@@ -22,13 +22,13 @@ entity vhdl_top is
 
     --uart
 
-    txd : out std_logic;
-
+    txd       : out std_logic;
+    rxd       : out std_logic;
     --clk
-    cam_xclk  : in std_logic;
-    cam_vsync : in    std_logic;
-    cam_href  : in    std_logic;
-    cam_dat   : in std_logic_vector(7 downto 0);
+    cam_xclk  : in  std_logic;
+    cam_vsync : in  std_logic;
+    cam_href  : in  std_logic;
+    cam_dat   : in  std_logic_vector(7 downto 0);
 
     --sccb
     sccb_scl : inout std_logic;
@@ -257,14 +257,15 @@ architecture rtl of vhdl_top is
   signal ovm_dma_done  : std_logic;
   signal ovm_dma_busy  : std_logic;
 
-  signal cam_pclk          : std_logic;
+  signal cam_pclk : std_logic;
 
   signal cam_dat_internal : std_logic_vector(7 downto 0);
 
-  signal pio_in  : std_logic_vector(3 downto 0);
-  signal pio_out : std_logic_vector(3 downto 0);
-  signal pio_oe  : std_logic_vector(3 downto 0);
+  signal pio_in  : std_logic_vector(7 downto 0);
+  signal pio_out : std_logic_vector(7 downto 0);
+  signal pio_oe  : std_logic_vector(7 downto 0);
 
+  signal cam_aux_out : std_logic_vector(7 downto 0);
 begin
 
   hf_osc : component osc_48MHz
@@ -616,14 +617,14 @@ begin
 
   the_sccb_pio : wb_pio
     generic map (
-      DATA_WIDTH => 4
+      DATA_WIDTH => 8
       )
     port map(
       clk_i => clk,
       rst_i => reset,
 
       adr_i   => sccb_pio_adr_i,
-      dat_i   => sccb_pio_dat_i(3 downto 0),
+      dat_i   => sccb_pio_dat_i(7 downto 0),
       we_i    => sccb_pio_we_i,
       cyc_i   => sccb_pio_cyc_i,
       stb_i   => sccb_pio_stb_i,
@@ -633,7 +634,7 @@ begin
       lock_i  => sccb_pio_lock_i,
       ack_o   => sccb_pio_ack_o,
       stall_o => sccb_pio_stall_o,
-      data_o  => sccb_pio_dat_o(3 downto 0),
+      data_o  => sccb_pio_dat_o(7 downto 0),
       err_o   => sccb_pio_err_o,
       rty_o   => sccb_pio_rty_o,
 
@@ -649,11 +650,24 @@ begin
   ovm_dma_start <= pio_out(2);
   pio_in(3)     <= ovm_dma_busy;
   ovm_dma_busy  <= '1'        when ovm_dma_done = '0' else '0';
+  pio_in(7 downto 4) <= pio_out(7 downto 4);
+  pio_in(2) <= pio_out(2);
+  with pio_out(7 downto 5) select
+    rxd <=
+    cam_aux_out(0) when "000",
+    cam_aux_out(1) when "001",
+    cam_aux_out(2) when "010",
+    cam_aux_out(3) when "011",
+    cam_aux_out(4) when "100",
+    cam_aux_out(5) when "101",
+    cam_aux_out(6) when "110",
+    cam_aux_out(7) when others;
+
+
+
+
 
   cam_ctrl : wb_cam
-    generic map(
-      CAM_NUM_COLS => CAM_NUM_COLS,
-      CAM_NUM_ROWS => CAM_NUM_ROWS)
 
     port map(
       clk_i => clk,
@@ -673,13 +687,13 @@ begin
       cam_done  => ovm_dma_done,
 
                                         --camera signals
-      ovm_pclk_pin => cam_pclk,
-      ovm_vsync    => cam_vsync,
-      ovm_href     => cam_href,
-      ovm_dat_pin  => cam_dat_internal
+      ovm_pclk      => cam_pclk,
+      ovm_vsync     => cam_vsync,
+      ovm_href      => cam_href,
+      ovm_dat       => cam_dat_internal,
+      cam_aux_out => cam_aux_out
 
       );
-
 
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
