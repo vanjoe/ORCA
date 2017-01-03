@@ -31,10 +31,10 @@ void delayms( unsigned int ms)
 
 int main()
 {
-	int i;
+	int i=0;
 	while(1){
-		printf("Hello world %X\r\n",i++);
-		delayms(500);
+		printf(" HELLO ORCA %X\r\n",i++);
+		delayms(1000);
 	}
 	return 0;
 }

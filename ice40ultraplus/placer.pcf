@@ -4,7 +4,7 @@
 
 # Version:            2016.02.27810
 
-# File Generated:     Dec 20 2016 12:53:36
+# File Generated:     Jan 3 2017 00:20:53
 
 # Family & Device:    iCE40UP5K
 
@@ -12,15 +12,29 @@
 
 # ##############################################################################
 
-###IOSet List 7
-set_io reset_btn A4 -pullup yes
-set_io rxd A2 -pullup yes
+###MergeFF List 2
+set_io_ff sccb_scl -in ON
+set_io_ff sccb_sda -in ON
+
+###IOSet List 19
+set_io cam_dat[0] B5
+set_io cam_dat[1] C5
+set_io cam_dat[2] D5
+set_io cam_dat[3] F5
+set_io cam_dat[4] C3
+set_io cam_dat[5] F4
+set_io cam_dat[6] B1
+set_io cam_dat[7] F2
+set_io cam_href E3
+set_io cam_vsync A4
+set_io cam_xclk A5
+set_io rxd A2
+set_io sccb_scl E5
+set_io sccb_sda E4
 set_io spi_miso F1
 set_io spi_mosi E1 -pullup yes
 set_io spi_sclk D1
 set_io spi_ss C1
 set_io txd A1
 
-set_io sccb_scl E5
-set_io sccb_sda E4
-set_io cam_xclk B3
+set_io cdone_led D3

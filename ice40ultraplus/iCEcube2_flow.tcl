@@ -5,10 +5,10 @@
 # User Configurable section
 #############################################
 set device iCE40UP5K-UWG30
-set top_module top
+set top_module verilog_top
 set proj_dir [pwd]
-set output_dir "ultraplus_Implmnt"
-set edif_file "ultraplus"
+set output_dir "ice40ultraplus_Implmnt"
+set edif_file  "ice40ultraplus"
 #set sdc_constraints "constraints/lve_timing.sdc"
 set pcf_constraints "placer.pcf"
 #set scf_constraints "$output_dir/ice40ultra.scf"

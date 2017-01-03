@@ -7,9 +7,11 @@ use work.top_component_pkg.all;
 use work.top_util_pkg.all;
 use work.rv_components.all;
 
-entity top is
+entity vhdl_top is
   generic (
-    USE_PLL : boolean := false);
+    USE_PLL      : boolean := false;
+    CAM_NUM_COLS : integer := 48;
+    CAM_NUM_ROWS : integer := 16);
   port(
 
     --spi
@@ -19,13 +21,14 @@ entity top is
     spi_sclk : out std_logic;
 
     --uart
-    rxd : in  std_logic;
-    txd : out std_logic;
-    cts : in  std_logic;
-    rts : out std_logic;
 
+    txd       : out std_logic;
+    rxd       : out std_logic;
     --clk
-    cam_xclk : in std_logic;
+    cam_xclk  : in  std_logic;
+    cam_vsync : in  std_logic;
+    cam_href  : in  std_logic;
+    cam_dat   : in  std_logic_vector(7 downto 0);
 
     --sccb
     sccb_scl : inout std_logic;
@@ -33,7 +36,7 @@ entity top is
     );
 end entity;
 
-architecture rtl of top is
+architecture rtl of vhdl_top is
 
   constant SCRATCHPAD_SIZE : integer := 128*1024;
   constant SYSCLK_FREQ_HZ  : natural := 8000000;
@@ -82,6 +85,20 @@ architecture rtl of top is
   signal spi_sp_ACK_I   : std_logic;
   signal spi_sp_ERR_I   : std_logic;
   signal spi_sp_RTY_I   : std_logic;
+
+  signal cam_sp_ADR_O   : std_logic_vector(31 downto 0);
+  signal cam_sp_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal cam_sp_WE_O    : std_logic;
+  signal cam_sp_CYC_O   : std_logic;
+  signal cam_sp_STB_O   : std_logic;
+  signal cam_sp_SEL_O   : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
+  signal cam_sp_CTI_O   : std_logic_vector(2 downto 0);
+  signal cam_sp_BTE_O   : std_logic_vector(1 downto 0);
+  signal cam_sp_LOCK_O  : std_logic;
+  signal cam_sp_STALL_I : std_logic;
+
+
+
 
   signal data_sp_ADR_O   : std_logic_vector(31 downto 0);
   signal data_sp_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -154,6 +171,8 @@ architecture rtl of top is
   signal sccb_pio_lock_i  : std_logic;
   signal sccb_pio_err_o   : std_logic;
   signal sccb_pio_rty_o   : std_logic;
+
+  signal sccb_scl_en, sccb_sda_en : std_logic;
 
   signal data_ram_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_ram_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -235,8 +254,18 @@ architecture rtl of top is
   signal auto_reset       : std_logic;
 
   signal ovm_dma_start : std_logic;
+  signal ovm_dma_done  : std_logic;
   signal ovm_dma_busy  : std_logic;
 
+  signal cam_pclk : std_logic;
+
+  signal cam_dat_internal : std_logic_vector(7 downto 0);
+
+  signal pio_in  : std_logic_vector(7 downto 0);
+  signal pio_out : std_logic_vector(7 downto 0);
+  signal pio_oe  : std_logic_vector(7 downto 0);
+
+  signal cam_aux_out : std_logic_vector(7 downto 0);
 begin
 
   hf_osc : component osc_48MHz
@@ -268,6 +297,12 @@ begin
       GLOBAL_BUFFER_OUTPUT         => clk_3x,
       USER_SIGNAL_TO_GLOBAL_BUFFER => clk_3x_int);
 
+
+  cam_dat_internal <= cam_dat;
+  cam_pclk         <= cam_xclk;
+  --REPLACE the previous SB_IO_OD with the following lines during simulation
+  --cam_dat_internal <= cam_dat;
+  --cam_xclk_internal <= cam_xclk;
 
 
   process(clk)
@@ -344,14 +379,14 @@ begin
       CLK_I => clk,
       RST_I => reset,
 
-      --reserved for camera
-      slave0_ADR_I   => (others => '-'),
-      slave0_DAT_I   => (others => '-'),
-      slave0_WE_I    => '0',
-      slave0_CYC_I   => '0',
-      slave0_STB_I   => '0',
-      slave0_SEL_I   => (others => '-'),
-      slave0_STALL_O => open,
+                                        --reserved for camera
+      slave0_ADR_I   => cam_sp_ADR_O,
+      slave0_DAT_I   => cam_sp_DAT_O,
+      slave0_WE_I    => cam_sp_WE_O,
+      slave0_CYC_I   => cam_sp_CYC_O,
+      slave0_STB_I   => cam_sp_STB_O,
+      slave0_SEL_I   => cam_sp_SEL_O,
+      slave0_STALL_O => cam_sp_STALL_I,
 
       slave1_ADR_I   => spi_sp_ADR_O,
       slave1_DAT_I   => spi_sp_DAT_O,
@@ -545,7 +580,7 @@ begin
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
 
-  --dma controller for reading blocks of flash
+                                        --dma controller for reading blocks of flash
   the_spi : wb_flash_dma
     generic map(
       MAX_LENGTH => 64*1024)
@@ -582,14 +617,14 @@ begin
 
   the_sccb_pio : wb_pio
     generic map (
-      DATA_WIDTH => 4
+      DATA_WIDTH => 8
       )
     port map(
       clk_i => clk,
       rst_i => reset,
 
       adr_i   => sccb_pio_adr_i,
-      dat_i   => sccb_pio_dat_i(3 downto 0),
+      dat_i   => sccb_pio_dat_i(7 downto 0),
       we_i    => sccb_pio_we_i,
       cyc_i   => sccb_pio_cyc_i,
       stb_i   => sccb_pio_stb_i,
@@ -599,18 +634,67 @@ begin
       lock_i  => sccb_pio_lock_i,
       ack_o   => sccb_pio_ack_o,
       stall_o => sccb_pio_stall_o,
-      data_o  => sccb_pio_dat_o(3 downto 0),
+      data_o  => sccb_pio_dat_o(7 downto 0),
       err_o   => sccb_pio_err_o,
       rty_o   => sccb_pio_rty_o,
 
-      input_output(3) => ovm_dma_busy,
-      input_output(2) => ovm_dma_start,
-      input_output(1) => sccb_scl,
-      input_output(0) => sccb_sda
+      output    => pio_out,
+      output_en => pio_oe,
+      input     => pio_in
 
       );
-  sccb_pio_dat_o(sccb_pio_dat_o'left downto 4) <= (others => '0');
-  ovm_dma_busy                                 <= '1' when ovm_dma_start = '1' else '0';
+  sccb_scl      <= pio_out(1) when pio_oe(1) = '1'    else 'Z';
+  sccb_sda      <= pio_out(0) when pio_oe(0) = '1'    else 'Z';
+  pio_in(0)     <= sccb_sda;
+  pio_in(1)     <= sccb_scl;
+  ovm_dma_start <= pio_out(2);
+  pio_in(3)     <= ovm_dma_busy;
+  ovm_dma_busy  <= '1'        when ovm_dma_done = '0' else '0';
+  pio_in(7 downto 4) <= pio_out(7 downto 4);
+  pio_in(2) <= pio_out(2);
+  with pio_out(7 downto 5) select
+    rxd <=
+    cam_aux_out(0) when "000",
+    cam_aux_out(1) when "001",
+    cam_aux_out(2) when "010",
+    cam_aux_out(3) when "011",
+    cam_aux_out(4) when "100",
+    cam_aux_out(5) when "101",
+    cam_aux_out(6) when "110",
+    cam_aux_out(7) when others;
+
+
+
+
+
+  cam_ctrl : wb_cam
+
+    port map(
+      clk_i => clk,
+      rst_i => reset,
+
+      master_ADR_O   => cam_sp_ADR_O,
+      master_DAT_O   => cam_sp_DAT_O,
+      master_WE_O    => cam_sp_WE_O,
+      master_SEL_O   => cam_sp_SEL_O,
+      master_STB_O   => cam_sp_STB_O,
+      master_CYC_O   => cam_sp_CYC_O,
+      master_CTI_O   => cam_sp_CTI_O,
+      master_STALL_I => cam_sp_STALL_I,
+
+                                        --pio control signals
+      cam_start => ovm_dma_start,
+      cam_done  => ovm_dma_done,
+
+                                        --camera signals
+      ovm_pclk      => cam_pclk,
+      ovm_vsync     => cam_vsync,
+      ovm_href      => cam_href,
+      ovm_dat       => cam_dat_internal,
+      cam_aux_out => cam_aux_out
+
+      );
+
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
 -- This is useful if we can't figure out why
@@ -729,10 +813,10 @@ begin
                                         -----------------------------------------------------------------------------
                                         -- UART signals and interface
                                         -----------------------------------------------------------------------------
-  cts_n     <= cts;
+                                        --cts_n     <= cts;
   txd       <= serial_out;
-  serial_in <= rxd;
-  rts       <= rts_n;
+  serial_in <= '0';
+                                        --rts       <= rts_n;
 
   the_uart : uart_core
     generic map (
