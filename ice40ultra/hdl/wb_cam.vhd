@@ -47,6 +47,8 @@ architecture rtl of wb_cam is
   type pixel_state_t is (PIXEL_FIRST, PIXEL_SECOND);
   type ovm_state_t is (OVM_DONE, OVM_PREGAP, OVM_GAP, OVM_ROW, OVM_FLUSH);
 
+  signal ovm_dat_ff: std_logic_vector(7 downto 0);
+
   signal ovm_state   : ovm_state_t;
   signal pixel_state : pixel_state_t;
 
@@ -97,6 +99,7 @@ architecture rtl of wb_cam is
   signal v_red_mux : unsigned(9 downto 0);
   signal v_grn_mux : unsigned(9 downto 0);
   signal v_blu_mux : unsigned(9 downto 0);
+  signal v_rgb_ff  : std_logic_vector(31 downto 0);
   signal v_rgb_out : std_logic_vector(31 downto 0);
 
   signal v_address  : std_logic_vector(5 downto 0);
@@ -161,6 +164,9 @@ begin  -- architecture rtl
 
   pixel_fsm : process(ovm_pclk)
   begin
+    if falling_edge(ovm_pclk) then
+      ovm_dat_ff <= ovm_dat;
+    end if;
     if rising_edge(ovm_pclk) then
 
       h_tile_start <= '0';
@@ -201,8 +207,8 @@ begin  -- architecture rtl
 
   -- combinational logic: input bit width extension
   h_red_in <= resize(unsigned(ovm_pixel_rgb(15 downto 11)&"0"), h_red_in'length);  --  5 bits
-  h_grn_in <= resize(unsigned(ovm_pixel_rgb(10 downto 5)), h_grn_in'length);  --  6 bits
-  h_blu_in <= resize(unsigned(ovm_pixel_rgb(4 downto 0)&"0"), h_blu_in'length);  --  5 bits
+  h_grn_in <= resize(unsigned(ovm_pixel_rgb(10 downto  5)    ), h_grn_in'length);  --  6 bits
+  h_blu_in <= resize(unsigned(ovm_pixel_rgb( 4 downto  0)&"0"), h_blu_in'length);  --  5 bits
 
                                         -- combinational logic: mux to initialize accumulator
   h_pixel_mux : process(h_load_pixel, h_accum_red, h_accum_grn, h_accum_blu)
@@ -355,6 +361,12 @@ begin  -- architecture rtl
   begin
     if rising_edge(ovm_pclk) then
       ff0_pclk <= ff0;
+      --v_rgb_ff(23 downto 16) <= std_logic_vector(h_red_in(5 downto 0)) & "00";
+      --v_rgb_ff(15 downto  8) <= std_logic_vector(h_grn_in(5 downto 0)) & "00";
+      --v_rgb_ff( 7 downto  0) <= std_logic_vector(h_blu_in(5 downto 0)) & "00";
+      v_rgb_ff(31 downto 24) <= std_logic_vector(h_grn_in(5 downto 0)) & "00";
+      v_rgb_ff(23 downto 16) <= std_logic_vector(h_blu_in(5 downto 0)) & "00";
+      v_rgb_ff(15 downto  0) <= ovm_pixel_rgb;
       if v_load_pixel = '1' then
         v_rgb_out_valid <= '1';
       elsif ff0_pclk = '1' then
@@ -368,6 +380,7 @@ begin  -- architecture rtl
         v_rgb_out(23 downto 16) <= v_rdata(29 downto 22);  -- extract red 8 MSB
         v_rgb_out(15 downto 8)  <= v_rdata(19 downto 12);  -- extract grn 8 MSB
         v_rgb_out(7 downto 0)   <= v_rdata(9 downto 2);    -- extract blu 8 MSB
+        -- v_rgb_out <= v_rgb_ff; -- UNCOMMENT THIS LINE TO DO SUBSAMPLING INSTEAD OF AVERAGING
       end if;
       --if rst_i = '1' then
       --  v_rgb_out_valid <= '0';
@@ -397,14 +410,13 @@ begin  -- architecture rtl
       master_CYC_O <= ff1;
       master_WE_O  <= ff1;
       if ff1 = '1' then
+        master_dat_O <= v_rgb_out;
         master_ADR_O(12 downto 0)                 <= v_rgb_out_row&v_rgb_out_col&"00";
         master_ADR_O(master_ADR_O'left downto 13) <= (others => '0');
       end if;
 
-
     end if;
   end process;
-  master_dat_O <= v_rgb_out;
   master_SEL_O <= (others => '1');
 
 end architecture rtl;

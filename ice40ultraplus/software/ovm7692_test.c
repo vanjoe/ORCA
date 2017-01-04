@@ -8,6 +8,9 @@
 #include "base64.h"
 #define SCCB_PIO_BASE   ((void *)0x00050000)
 
+typedef unsigned char uchar;
+typedef unsigned int  uint;
+
 void ovm_write_reg(int reg_addr,int reg_val)
 {
 	sccb_write(SCCB_PIO_BASE, OVM7692_ADDRESS, reg_addr, reg_val);
@@ -27,6 +30,7 @@ void ovm_set_start()
 {
 	((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]|=(1<<2);
 }
+
 void ovm_clear_start()
 {
 	((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]&=(~(1<<2));
@@ -39,130 +43,11 @@ int ovm_isdone()
 
 }
 
+#if 0
 static const regval_t regval_list[] ={
-
-
 	// STARTUP
 	{ 0x12, 0x00}, // end RESET
 	{ 0x12, 0x80}, //  start RESET
-#if 0
-	////////////////////////////////////////////////////////////
-	{0x12, 0x80},															 //
-	{0x0e, 0x08},															 //
-	{0x69, 0x52},															 //
-	{0x1e, 0xb3},															 //
-	{0x48, 0x42},															 //
-	{0xff, 0x01},															 //
-	{0xb5, 0x30},															 //
-	{0xff, 0x00},															 //
-	{0x16, 0x03},															 //
-	{0x62, 0x10}, /* YUV */												 //
-	{0x12, 0x00},															 //
-	{0x17, 0x65},															 //
-	{0x18, 0xa4},															 //
-	{0x19, 0x0a},															 //
-	{0x1a, 0xf6},															 //
-	/*{0x3e, 0x20}, part of ovm7692_device_init_regs */		 //
-	{0x64, 0x11},															 //
-	{0x67, 0x20},															 //
-	{0x81, 0x3f},															 //
-	{0xcc, 0x02},															 //
-	{0xcd, 0x80},															 //
-	{0xce, 0x01},															 //
-	{0xcf, 0xe0},															 //
-	{0xc8, 0x02},															 //
-	{0xc9, 0x80},															 //
-	{0xca, 0x01},															 //
-	{0xcb, 0xe0},															 //
-	{0xd0, 0x48},															 //
-	{0x82, 0x03},															 //
-	{0x70, 0x00},															 //
-	{0x71, 0x34},															 //
-	{0x74, 0x28},															 //
-	{0x75, 0x98},															 //
-	{0x76, 0x00},															 //
-	{0x77, 0x64},															 //
-	{0x78, 0x01},															 //
-	{0x79, 0xc2},															 //
-	{0x7a, 0x4e},															 //
-	{0x7b, 0x1f},															 //
-	{0x7c, 0x00},															 //
-	/*{0x11, 0x01}, ovm7692_device_init_regs */					 //
-	{0x20, 0x00},															 //
-	{0x21, 0x57},															 //
-	{0x50, 0x4d},															 //
-	{0x51, 0x40},															 //
-	{0x4c, 0x7d},															 //
-	{0x0e, 0x00},															 //
-	{0x80, 0x7f},															 //
-	{0x85, 0x00}, /*OVT default 0x10*/								 //
-	{0x86, 0x00},															 //
-	{0x87, 0x00},															 //
-	{0x88, 0x00},															 //
-	{0x89, 0x2a}, /*OVT default 0x2f*/								 //
-	{0x8a, 0x22}, /*OVT default 0x20*/								 //
-	{0x8b, 0x20}, /*OVT default 0x23*/								 //
-	{0xbb, 0xab}, /*OVT default 0x7a*/								 //
-	{0xbc, 0x84}, /*OVT default 0x69*/								 //
-	{0xbd, 0x27}, /*OVT default 0x11*/								 //
-	{0xbe, 0x0e}, /*OVT default 0x13*/								 //
-	{0xbf, 0xb8}, /*OVT default 0x81*/								 //
-	{0xc0, 0xc5}, /*OVT default 0x96*/								 //
-	{0xc1, 0x1e},															 //
-	{0xb7, 0x05},															 //
-	{0xb8, 0x09},															 //
-	{0xb9, 0x00},															 //
-	{0xba, 0x18},															 //
-	{0x5a, 0x1f}, /*OVT default 0x29*/								 //
-	{0x5b, 0x9f},															 //
-	{0x5c, 0x69}, /*OVT default 0x68*/								 //
-	{0x5d, 0x62}, /*exp set to center 1/4 average*/				 //
-	{0x24, 0x78},															 //
-	{0x25, 0x68},															 //
-	{0x26, 0xb3},															 //
-	{0xa3, 0x0b},															 //
-	{0xa4, 0x15},															 //
-	{0xa5, 0x29}, /*OVT default 0x2a*/								 //
-	{0xa6, 0x4a}, /*OVT default 0x51*/								 //
-	{0xa7, 0x58}, /*OVT default 0x63*/								 //
-	{0xa8, 0x65}, /*OVT default 0x74*/								 //
-	{0xa9, 0x70}, /*OVT default 0x83*/								 //
-	{0xaa, 0x7b}, /*OVT default 0x91*/								 //
-	{0xab, 0x85}, /*OVT default 0x9e*/								 //
-	{0xac, 0x8e}, /*OVT default 0xaa*/								 //
-	{0xad, 0xa0}, /*OVT default 0xbe*/								 //
-	{0xae, 0xb0}, /*OVT default 0xce*/								 //
-	{0xaf, 0xcb}, /*OVT default 0xe5*/								 //
-	{0xb0, 0xe1}, /*OVT default 0xf3*/								 //
-	{0xb1, 0xf1}, /*OVT default 0xfb*/								 //
-	{0xb2, 0x14}, /*OVT default 0x06*/								 //
-	{0x8c, 0x56}, /*OVT default 0x5c*/								 //
-	{0x8d, 0x11},															 //
-	{0x8e, 0x12},															 //
-	{0x8f, 0x19},															 //
-	{0x90, 0x50},															 //
-	{0x91, 0x22}, /*OVT default 0x20*/								 //
-	{0x92, 0x99}, /*OVT default 0x96*/								 //
-	{0x93, 0x8f}, /*OVT default 0x80*/								 //
-	{0x94, 0x11}, /*OVT default 0x13*/								 //
-	{0x95, 0x1f}, /*OVT default 0x1b*/								 //
-	{0x96, 0xff},															 //
-	{0x97, 0x00},															 //
-	{0x98, 0x33}, /*OVT default 0x3d*/								 //
-	{0x99, 0x2a}, /*OVT default 0x36*/								 //
-	{0x9a, 0x54}, /*OVT default 0x51*/								 //
-	{0x9b, 0x50}, /*OVT default 0x43*/								 //
-	{0x9c, 0xf0},															 //
-	{0x9d, 0xf0},															 //
-	{0x9e, 0xf0},															 //
-	{0x9f, 0xff},															 //
-	{0xa0, 0x61}, /*OVT default 0x68*/								 //
-	{0xa1, 0x5c}, /*OVT default 0x62*/								 //
-	{0xa2, 0x0c}, /*OVT default 0x0e*/								 //
-																				 //
-	////////////////////////////////////////////////////////////
-
-#endif
 
 	{0x3e, 0x30},
 	{0x28, 0x00}, /* VSYNC NEG */
@@ -181,14 +66,17 @@ static const regval_t regval_list[] ={
 	// { 0x28, 0x04 }, // VSYNG active on rising PCLK
 	{ 0x11, 0x00}, // set 30fps
 	// { 0x0C, 0x36}, // swap Blue and Red in RGB565
-	// { 0x0C, 0x16}, // original Blue and Red in RGB565
+	{ 0x0C, 0x16}, // original Blue and Red in RGB565
+	{ 0x0C, 0xD6}, // horizontal and vertical mirror
 	// { 0x5e 0x10}, // divided PCLK
 	// { 0x37 0x14}, // output PCLK/2
-	{ 0x61, 0x00}, // or 0x70, to generate one of two test patterns
+	{ 0x61, 0x00}, // no test pattern
+	// { 0x61, 0x60}, // 8b test pattern
+	//	{ 0x61, 0x70}, // 8b test pattern (model2)
 	// { 0x64, 0x11}, // set PCLK to SCLK
 	// { 0x64, 0x21}, // set PCLK to SCLK/2
 	//{ 0x37, 0x1c},
-	{0x30, 0x06},
+	{ 0x30, 0x06 }, // sets PCLK to SCLK/2 using PLL /2 prescaler
 	{ 0x12, 0x00}, // end RESET
 	{ 0x12, 0x06}, // set RGB565
 
@@ -197,6 +85,9 @@ static const regval_t regval_list[] ={
 	// FRAMERATE (30fps)
 	// set it again?
 };
+#else
+#include "ovm7692_reg.c"
+#endif
 
 
 int ovm_configure()
@@ -225,6 +116,7 @@ int ovm_configure()
 		ovm_write_reg(regval_list[i].addr,regval_list[i].val);
 		delayms(2);
 	}
+
 #if 1 /* dump configuration registers*/
 	printf("\r\n");
 	for(i=0;i<256;i++){
@@ -233,19 +125,79 @@ int ovm_configure()
 			printf("\r\n");
 		}
 	}
-
 #endif
+
 	printf("Done\r\n");
 	return 0;
 }
 
+#if 0
+char gray2txt[]=" .'`,^:\";~-_+<>i!lI? /\\|()1{}[]rcvunxzjftLCJUYXZO0Qoahkbdpqwm*WMB8&%$#@";
+void print_pic( uchar* pix,int cols,int rows,int stride)
+{
+	int  num_gray=sizeof(gray2txt);
+	int i,j;
+	for(i=0;i<rows;i++) {
+		for(j=0;j<cols;j++) {
+			int r = pix[i*stride*3 + j*3];
+			int g = pix[i*stride*3 + j*3];
+			int b = pix[i*stride*3 + j*3];
+			int gray = (213*r + 715*g + 72*b)*num_gray/(255*1000);
+			char txt = gray2txt[gray];
+			mputc(0,txt);mputc(0,txt);
+		}
+		mputc(0,'\r');		mputc(0,'\n');
+	}
 
+}
+#endif
 
+void clear_frame( uchar *pixmap, int num_bytes )
+{
+	int i;
+	for( i=0; i<num_bytes; i++ ) {
+		pixmap[i] =0;
+	}
+}
 
-int main(){
+void print_reg( int reg, char *description )
+{
+	int val = ovm_read_reg( reg );
+	printf("reg(0x%02x) = 0x%02x <--  %s", reg, val, description );
+}
+
+void printf_rgb( uchar red, uchar grn, uchar blu )
+{
+	int i,b;
+	printf("r");
+	for( i=0x80; i; i>>=1 ) { b = red & i; mputc(0, b?'1':'0' ); }
+	printf("_g");
+	for( i=0x80; i; i>>=1 ) { b = grn & i; mputc(0, b?'1':'0' ); }
+	printf("_b");
+	for( i=0x80; i; i>>=1 ) { b = blu & i; mputc(0, b?'1':'0' ); }
+	printf(" | ");
+}
+
+void printf_bin(uint rgb565)
+{
+	int i,b;
+	for( i=0x8000; i; i>>=1 ) {
+		if(i==0x8000) printf("r");
+		if(i==0x0400) printf("_g");
+		if(i==0x0010) printf("_b");
+		if(i==0x0080) printf(":");
+		b = rgb565 & i;
+		mputc(0, b?'1':'0' );
+	}
+	mputc(0,' ');
+}
+
+int main()
+{
 
 	printf("\r\nTESTING OVM\r\n");
 
+	//ovm_set_start();while(1);
 	//choose bit
 
 	/* cam_aux_out(0) <= v_load_pixel; */
@@ -262,19 +214,16 @@ int main(){
 	(((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]) &=0x1F;
 	(((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]) |=(select << 5);
 
-#if 1
+
 	if(ovm_configure()){
 		printf("FAILED configuration\r\n");
 		while(1);
 	}
-#endif
-	volatile char* cam_address=SCRATCHPAD_BASE;
-	int num_pixels=64*32;
-	int i;
 
-	for(i=0;i<num_pixels*4;i++){
-		cam_address[i]=0;
-	}
+	volatile uchar* cam_address=SCRATCHPAD_BASE;
+	int num_pixels=64*32;
+
+	clear_frame((uchar*) cam_address, num_pixels*4 );
 
 	//Add frame reading logic here
 
@@ -301,42 +250,79 @@ int main(){
 
 	printf("SECOND FRAME\r\n");
 	//get second frame
+	int frame_counter=0;
+	int 	start_time,end_time;
 	while(1){
-		for(i=0;i<num_pixels*4;i++){
-			cam_address[i]=0;
-		}
 
+		clear_frame( (uchar*)cam_address, num_pixels*4 );
 
+		start_time=get_time();
 		ovm_set_start();
 		while(ovm_isdone());
 		ovm_clear_start();
 
 		//wait for done bit
-		while(!ovm_isdone());
+		while(ovm_isdone()==0);
+		end_time=get_time();
 
+#if 1
+		print_reg( 0x04, "average Y " );
+		print_reg( 0x05, "average B " );
+		print_reg( 0x06, "average R " );
+		print_reg( 0x07, "average G\r\n" );
+#endif
 
-		//remove alpha channel
-		for(i=0;i<num_pixels;i++){
-			cam_address[i*3+2]=cam_address[i*4+0];
-			cam_address[i*3+1]=cam_address[i*4+1];
-			cam_address[i*3+0]=cam_address[i*4+2];
-		}
-		//swap red/blow
+		//remove alpha channel, swap Red/Blue for OpenCV display
+		int r,c;
+		for(r=0;r<30;r++){
+			for(c=0;c<40;c++){
+#if 0 /* RGB565 */
+				const uint lsb = cam_address[(r*64+c)*4+0];
+				const uint msb = cam_address[(r*64+c)*4+1];
+				const uint rgb565 = (msb<<8) + lsb;
+#define CLIM 10
+#define RLIM 30
+				//if( c<CLIM && r<RLIM ) { printf_bin(rgb565); }
+				//if( c==39  && r<RLIM ) { printf("...\r\n"); }
+				uchar red = (((rgb565 >> 11) & 0x1f) << 3); //cam_address[i*4+2];
+				uchar grn = (((rgb565 >>  6) & 0x1f) << 3); //cam_address[i*4+1];
+				uchar blu = (((rgb565 >>  0) & 0x1f) << 3); //cam_address[i*4+0];
+				/* extend LSBs */
+				red = red | ((red&0x8)?0x7:0x0) ;
+				grn = grn | ((grn&0x4)?0x7:0x0) ;
+				blu = blu | ((blu&0x8)?0x7:0x0) ;
+				cam_address[(r*40+c)*3+2]/*CV_FRAME0: B*/ = (blu)/1; // 1011 1...
+				cam_address[(r*40+c)*3+1]/*CV_FRAME1: G*/ = (grn)/1; // 1101 11..
+				cam_address[(r*40+c)*3+0]/*CV_FRAME2: R*/ = (red)/1; // 1111 1...
+#else /* RGB888 */
+				uchar red = cam_address[(r*64+c)*4+2];
+				uchar grn = cam_address[(r*64+c)*4+1];
+				uchar blu = cam_address[(r*64+c)*4+0];
+#define CLIM 10
+#define RLIM 30
+				//if( c<CLIM && r<RLIM ) { printf_rgb(red,grn,blu); }
+				//if( c==39  && r<RLIM ) { printf("...\r\n"); }
+#if 0
+				/* extend LSBs */
+				red = red | ((red&0x8)?0x7:0x0) ;
+				grn = grn | ((grn&0x4)?0x7:0x0) ;
+				blu = blu | ((blu&0x8)?0x7:0x0) ;
+#endif
+				cam_address[(r*40+c)*3+2]/*CV_FRAME0: B*/ = (blu)/1; // 1011 1...
+				cam_address[(r*40+c)*3+1]/*CV_FRAME1: G*/ = (grn)/1; // 1101 11..
+				cam_address[(r*40+c)*3+0]/*CV_FRAME2: R*/ = (red)/1; // 1111 1...
+#endif /* RGB565 or RGB888 */
 
-		for(i=0;i<32;i++){
-			int j;
-			for(j=0;j<40;j++){
-				printf("%02X%02X%02x ",
-				       cam_address[i*64*3+0+j*3],
-				       cam_address[i*64*3+1+j*3],
-				       cam_address[i*64*3+2+j*3]);
 			}
-			printf("\r\n");
 		}
 
-		print_base64((char*)cam_address,3*64*32);
-		printf("\n\n\n\r");
-		delayms(2000);
+		//print_pic((char*)cam_address,40,30,64);
+
+		printf("base64:");
+		print_base64((char*)cam_address,3*40*30);
+		printf("\r\n frame %d %d cycles\r\n",frame_counter++,end_time-start_time);
+
+		//delayms(2000);
 	}
 	//always writing
 	ovm_set_start();
