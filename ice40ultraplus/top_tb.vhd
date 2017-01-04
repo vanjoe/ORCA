@@ -29,8 +29,8 @@ architecture rtl of top_tb is
       );
   end component;
 
-  constant CAM_NUM_COLS : integer := 640;
-  constant CAM_NUM_ROWS : integer := 480;
+  constant CAM_NUM_COLS : integer := 40;
+  constant CAM_NUM_ROWS : integer := 30;
 
   signal reset : std_logic;
 
@@ -49,14 +49,14 @@ architecture rtl of top_tb is
   signal bit_sel        : integer              := 0;
   signal mydata         : unsigned(7 downto 0) := x"0E";
   constant CLOCK_PERIOD : time                 := 83.33 ns;
-  constant PCLK_PERIOD : time                 := 37.037 ns;
+  constant PCLK_PERIOD : time                 := 74.074 ns;
 
   signal ovm_pclk  : std_logic := '0';
   signal ovm_vsync : std_logic;
   signal ovm_href  : std_logic;
   signal ovm_dat   : std_logic_vector(7 downto 0);
 
-  signal pclk_count : integer := 0;
+  signal pclk_count : integer := -35000;
 
 begin
   process
@@ -122,10 +122,10 @@ begin
 
 
 
-  ovm_dat <= x"A3";
+  ovm_dat <= x"F0" when (pclk_count mod 2) /= 0 else x"0F";
 
   process(ovm_pclk)
-    constant BYTES_PER_PIXEL : integer := 1;
+    constant BYTES_PER_PIXEL : integer := 2;
     constant PCLK_INTERVAL : integer := CAM_NUM_COLS*BYTES_PER_PIXEL;
   begin
     if rising_edge(ovm_pclk) then
