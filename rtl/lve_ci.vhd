@@ -47,7 +47,7 @@ architecture rtl of lve_ci is
   signal cust0_out_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal conv_weights : std_logic_vector(8 downto 0);
-  type row_t is array(0 to 2) of signed(7 downto 0);
+  type row_t is array(0 to 2) of signed(8 downto 0);
   type rows_t is array(0 to 2) of row_t;
 
   signal rows   : rows_t;
@@ -56,7 +56,7 @@ architecture rtl of lve_ci is
 
   constant CONV_ADDER_WIDTH : integer := 12;
   function addsub_pix (
-    in_pix : signed(7 downto 0);
+    in_pix : signed(8 downto 0);
     weight : std_logic)
     return signed is
   begin  -- function addsub_pix
@@ -76,9 +76,10 @@ begin
   -----------------------------------------------------------------------------
   -- WORD to byte saturation conversion
   -----------------------------------------------------------------------------
-  cust0_out_data(7 downto 0) <= x"7F" when signed(data1_in) > 127 else
-                                x"80" when signed(data1_in) < -128 else
+  cust0_out_data(7 downto 0) <= x"FF" when signed(data1_in) > 255 else
+                                x"00" when signed(data1_in) < 0 else
                                 data1_in(7 downto 0);
+
   cust0_out_data(31 downto 8) <= data1_in(31 downto 8);
 
 
@@ -97,35 +98,35 @@ begin
 
   with align1_in select
     in_row(0) <=
-    signed(data1_in(31 downto 24)) when "00",
-    signed(data1_in(23 downto 16)) when "01",
-    signed(data1_in(15 downto 8))  when "10",
-    signed(data1_in(7 downto 0))   when others;
+    signed("0"&data1_in(31 downto 24)) when "11",
+    signed("0"&data1_in(23 downto 16)) when "10",
+    signed("0"&data1_in(15 downto 8))  when "01",
+    signed("0"&data1_in(7 downto 0))   when others;
   with align1_in select
     in_row(1) <=
-    signed(data1_in(23 downto 16)) when "00",
-    signed(data1_in(15 downto 8))  when "01",
-    signed(data1_in(7 downto 0))   when "10",
-    signed(data2_in(31 downto 24)) when others;
+    signed("0"&data1_in(15 downto 8))  when "00",
+    signed("0"&data1_in(23 downto 16)) when "01",
+    signed("0"&data1_in(31 downto 24)) when "10",
+    signed("0"&data2_in(7 downto 0))   when others;
 
   with align1_in select
     in_row(2) <=
-    signed(data1_in(15 downto 8))  when "00",
-    signed(data1_in(7 downto 0))   when "01",
-    signed(data2_in(31 downto 24)) when "10",
-    signed(data2_in(23 downto 16)) when others;
+    signed("0"&data1_in(23 downto 16)) when "00",
+    signed("0"&data1_in(31 downto 24)) when "01",
+    signed("0"&data2_in(7 downto 0))   when "10",
+    signed("0"&data2_in(15 downto 8))  when others;
 
   --latch some of these if we want better timing
   --Layer 0 ( with 1 extra add)
-  conv_sum(0) <= addsub_pix(rows(0)(0), conv_weights(0))+
-                 addsub_pix(rows(0)(1), conv_weights(1));
-  conv_sum(1) <= addsub_pix(rows(0)(2), conv_weights(2))+
-                 addsub_pix(rows(1)(0), conv_weights(3));
+  conv_sum(0) <= addsub_pix(rows(0)(0), conv_weights(8))+
+                 addsub_pix(rows(0)(1), conv_weights(7));
+  conv_sum(1) <= addsub_pix(rows(0)(2), conv_weights(6))+
+                 addsub_pix(rows(1)(0), conv_weights(5));
   conv_sum(2) <= addsub_pix(rows(1)(1), conv_weights(4))+
-                 addsub_pix(rows(1)(2), conv_weights(5));
-  conv_sum(3) <= addsub_pix(rows(2)(0), conv_weights(6))+
-                 addsub_pix(rows(2)(1), conv_weights(7));
-  conv_sum(4) <= addsub_pix(rows(2)(2), conv_weights(8)) +
+                 addsub_pix(rows(1)(2), conv_weights(3));
+  conv_sum(3) <= addsub_pix(rows(2)(0), conv_weights(2))+
+                 addsub_pix(rows(2)(1), conv_weights(1));
+  conv_sum(4) <= addsub_pix(rows(2)(2), conv_weights(0)) +
                  conv_sum(3);
   --layer 1
   conv_sum(5) <= conv_sum(0) + conv_sum(1);
@@ -137,14 +138,15 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
+
       --rotatie rows
       conv_valid_data <= conv_valid_data(1 downto 0) & valid_in;
-      rows(0)         <= in_row;
-      rows(1)         <= rows(0);
-      rows(2)         <= rows(1);
+      rows(2)         <= in_row;
+      rows(1)         <= rows(2);
+      rows(0)         <= rows(1);
       conv_data_out   <= std_logic_vector(RESIZE(conv_sum(7), conv_data_out'length));
       conv_we         <= bool_to_sl(conv_valid_data = "111");
-      conv_done       <= conv_valid_data(1);
+      conv_done       <= conv_valid_data(2);
     end if;
   end process;
 

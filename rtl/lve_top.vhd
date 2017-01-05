@@ -213,7 +213,13 @@ begin
     pointer_increment                when others;
 
   --source bust be aways word
-  src_incr <= SHIFT_LEFT(pointer_increment, 2);
+  with src_size select
+    src_incr <=
+    SHIFT_LEFT(pointer_increment, 2) when LVE_WORD_SIZE,
+    --Don't enable halfe words
+    pointer_increment                when others;
+
+  --src_incr <= SHIFT_LEFT(pointer_increment, 2);
 
   extenal_port_enable <= slave_read_en or slave_write_en;
 

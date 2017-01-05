@@ -3,7 +3,6 @@
 #project files
 
 add_file -vhdl -lib work "top.vhd" 
-add_file -vhdl -lib work "osc_hf.vhd" 
 add_file -verilog -lib work "top_top.v" 
 add_file -vhdl -lib work "../ice40ultra/hdl/top_component_pkg.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/top_util_pkg.vhd" 
@@ -37,8 +36,6 @@ add_file -vhdl -lib work "../rtl/lve_ci.vhd"
 add_file -vhdl -lib work "../rtl/lve_top.vhd" 
 add_file -vhdl -lib work "../rtl/orca.vhd" 
 add_file -vhdl -lib work "../rtl/orca_core.vhd" 
-add_file -vhdl -lib work "../ice40ultra/hdl/spi_master/wb_spi_simple.vhd" 
-add_file -vhdl -lib work "../ice40ultra/hdl/wb_flash_dma.vhd" 
 add_file -vhdl -lib work "../rtl/register_file.vhd" 
 add_file -vhdl -lib work "../rtl/sys_call.vhd" 
 add_file -constraint -lib work "timing.sdc"
