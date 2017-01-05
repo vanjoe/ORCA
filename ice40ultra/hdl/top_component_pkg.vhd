@@ -424,6 +424,40 @@ package top_component_pkg is
       );
   end component SB_PLL40_CORE;
 
+  component SB_PLL40_CORE_wrapper_div3 is
+    port (
+      REFERENCECLK    : in  std_logic;  -- PLL ref clock, driven by core logic
+      PLLOUTCORE      : out std_logic;  -- PLL output to core logic through local routings.
+      PLLOUTGLOBAL    : out std_logic;  -- PLL output to dedicated global clock network
+      EXTFEEDBACK     : in  std_logic;  -- FB driven by core logic
+      DYNAMICDELAY    : in  std_logic_vector(7 downto 0);  -- driven by core logic
+      LOCK            : out std_logic;  -- PLL Lock signal output
+      BYPASS          : in  std_logic;  -- REFCLK passed to PLLOUT when bypass is '1'.Driven by core logic
+      RESETB          : in  std_logic;  -- Active low reset,Driven by core logic
+      SDI             : in  std_logic;  -- Test Input. Driven by core logic.
+      SDO             : out std_logic;  -- Test output to RB Logic Tile.
+      SCLK            : in  std_logic;  -- Test Clk input.Driven by core logic.
+      LATCHINPUTVALUE : in  std_logic   -- iCEGate signal
+      );
+  end component SB_PLL40_CORE_wrapper_div3;
+
+  component SB_PLL40_CORE_wrapper_x3 is
+    port (
+      REFERENCECLK    : in  std_logic;  -- PLL ref clock, driven by core logic
+      PLLOUTCORE      : out std_logic;  -- PLL output to core logic through local routings.
+      PLLOUTGLOBAL    : out std_logic;  -- PLL output to dedicated global clock network
+      EXTFEEDBACK     : in  std_logic;  -- FB driven by core logic
+      DYNAMICDELAY    : in  std_logic_vector(7 downto 0);  -- driven by core logic
+      LOCK            : out std_logic;  -- PLL Lock signal output
+      BYPASS          : in  std_logic;  -- REFCLK passed to PLLOUT when bypass is '1'.Driven by core logic
+      RESETB          : in  std_logic;  -- Active low reset,Driven by core logic
+      SDI             : in  std_logic;  -- Test Input. Driven by core logic.
+      SDO             : out std_logic;  -- Test output to RB Logic Tile.
+      SCLK            : in  std_logic;  -- Test Clk input.Driven by core logic.
+      LATCHINPUTVALUE : in  std_logic   -- iCEGate signal
+      );
+  end component SB_PLL40_CORE_wrapper_x3;
+
   component SB_GB is
     port (
       GLOBAL_BUFFER_OUTPUT         : out std_logic;

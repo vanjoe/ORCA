@@ -4,6 +4,8 @@
 
 add_file -vhdl -lib work "top.vhd" 
 add_file -verilog -lib work "top_top.v" 
+add_file -verilog -lib work "SB_PLL40_CORE_wrapper_div3.v" 
+add_file -verilog -lib work "SB_PLL40_CORE_wrapper_x3.v" 
 add_file -vhdl -lib work "../ice40ultra/hdl/top_component_pkg.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/top_util_pkg.vhd" 
 add_file -vhdl -lib work "../rtl/components.vhd" 

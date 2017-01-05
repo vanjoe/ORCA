@@ -43,7 +43,12 @@ module verilog_top
 	assign cdone_led = 0;
 
 
-	vhdl_top sub_top
+	vhdl_top
+	  #(
+	    .USE_PLL(1),
+	    .USE_CAM(1)
+	    )
+	sub_top
 	  (
 		.cam_dat (cam_dat_internal ),
 		.cam_xclk(cam_xclk_internal),
