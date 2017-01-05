@@ -12,7 +12,7 @@
 #define CI_TEST_MASK        0x0040
 #define CI_WB_MASK          0x0080
 #define CI_CONV_MASK        0x0100
-#define TEST_RUN_MASK       CI_CONV_MASK
+#define TEST_RUN_MASK       0x003F
 
 #define VCI0 VCMV_GTZ
 #define VCI1 VCMV_LTZ
@@ -23,12 +23,12 @@ int lve_test(unsigned int *failing_tests_ptr){
   int element;
 
   *failing_tests_ptr = 0;
-
+ 
 	//Vectors, manually allocated in scratchpad
-	vbx_uword_t *v_a = ((vbx_uword_t *)SCRATCHPAD_BASE) + 0;
-	vbx_uword_t *v_b = ((vbx_uword_t *)SCRATCHPAD_BASE) + TEST_LENGTH;
-	vbx_uword_t *v_c = ((vbx_uword_t *)SCRATCHPAD_BASE) + (2*TEST_LENGTH);
-	vbx_ubyte_t *v_c_byte = (vbx_ubyte_t *)v_c;
+	volatile vbx_uword_t *v_a = ((vbx_uword_t *)SCRATCHPAD_BASE) + 0;
+	volatile vbx_uword_t *v_b = ((vbx_uword_t *)SCRATCHPAD_BASE) + TEST_LENGTH;
+	volatile vbx_uword_t *v_c = ((vbx_uword_t *)SCRATCHPAD_BASE) + (2*TEST_LENGTH);
+	volatile vbx_ubyte_t *v_c_byte = (vbx_ubyte_t *)v_c;
 
 	//Scalar data, will keep up to data with vector
 	vbx_uword_t a[TEST_LENGTH];
@@ -36,6 +36,11 @@ int lve_test(unsigned int *failing_tests_ptr){
 	vbx_uword_t c[TEST_LENGTH];
 	vbx_ubyte_t c_byte[TEST_LENGTH];
 
+  //Should be moved into a different test;
+  //just running here to make sure I'm not breaking the LSU
+  //with my LVE changes. -Aaron
+#if (TEST_RUN_MASK & LW_TEST_MASK)
+	the_mxp.stride=1;
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = 0xDEADBEEF + element;
@@ -46,10 +51,6 @@ int lve_test(unsigned int *failing_tests_ptr){
 		c[element]   = v_c[element];
   }
 
-  //Should be moved into a different test;
-  //just running here to make sure I'm not breaking the LSU
-  //with my LVE changes. -Aaron
-#if (TEST_RUN_MASK & LW_TEST_MASK)
   volatile register uint32_t  lw_result   = 1;
   volatile register uint32_t *lw_source   = (uint32_t *)a;
   volatile register uint32_t  add_result  = 2;
@@ -79,6 +80,17 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif //(TEST_RUN_MASK & LW_TEST_MASK)
 
 #if (TEST_RUN_MASK & ENUM_TEST_MASK)
+	the_mxp.stride=1;
+  //Initialize data with some known values
+  for(element = 0; element < TEST_LENGTH; element++){
+		v_a[element] = 0xDEADBEEF + element;
+		a[element]   = v_a[element];
+		v_b[element] = 2;
+		b[element]   = v_b[element];
+		v_c[element] = TEST_LENGTH - element;
+		c[element]   = v_c[element];
+  }
+
   //Initialize an enumerated vector
   vbx_set_vl(TEST_LENGTH);
   vbx(SEWU, VADD, v_a, 0, vbx_ENUM);
@@ -97,6 +109,17 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif //(TEST_RUN_MASK & ENUM_TEST_MASK)
 
 #if (TEST_RUN_MASK & VL_TEST_MASK)
+	the_mxp.stride=1;
+  //Initialize data with some known values
+  for(element = 0; element < TEST_LENGTH; element++){
+		v_a[element] = 0xDEADBEEF + element;
+		a[element]   = v_a[element];
+		v_b[element] = 2;
+		b[element]   = v_b[element];
+		v_c[element] = TEST_LENGTH - element;
+		c[element]   = v_c[element];
+  }
+
   //Make sure VL is respected properly
   vbx_set_vl(TEST_LENGTH-3);
   vbx(VVWU, VADD, v_a, v_b, v_c);
@@ -115,6 +138,17 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif //(TEST_RUN_MASK & VL_TEST_MASK)
 
 #if (TEST_RUN_MASK & OVERWRITE_TEST_MASK)
+	the_mxp.stride=1;
+  //Initialize data with some known values
+  for(element = 0; element < TEST_LENGTH; element++){
+		v_a[element] = 0xDEADBEEF + element;
+		a[element]   = v_a[element];
+		v_b[element] = 2;
+		b[element]   = v_b[element];
+		v_c[element] = TEST_LENGTH - element;
+		c[element]   = v_c[element];
+  }
+
   //Overwrite source location
   vbx_set_vl(TEST_LENGTH);
   vbx(VVWU, VADD, v_a, v_a, v_a);
@@ -133,6 +167,17 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif //(TEST_RUN_MASK & OVERWRITE_TEST_MASK)
 
 #if (TEST_RUN_MASK & MULTIPLY_TEST_MASK)
+	the_mxp.stride=1;
+  //Initialize data with some known values
+  for(element = 0; element < TEST_LENGTH; element++){
+		v_a[element] = 0xDEADBEEF + element;
+		a[element]   = v_a[element];
+		v_b[element] = 2;
+		b[element]   = v_b[element];
+		v_c[element] = TEST_LENGTH - element;
+		c[element]   = v_c[element];
+  }
+
   //Overwrite source location
   vbx_set_vl(TEST_LENGTH);
   vbx(VVWU, VMUL, v_a, v_b, v_c);
@@ -151,6 +196,17 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif //(TEST_RUN_MASK & MULTIPLY_TEST_MASK)
 
 #if (TEST_RUN_MASK & ACCUM_TEST_MASK)
+	the_mxp.stride=1;
+  //Initialize data with some known values
+  for(element = 0; element < TEST_LENGTH; element++){
+		v_a[element] = 0xDEADBEEF + element;
+		a[element]   = v_a[element];
+		v_b[element] = 2;
+		b[element]   = v_b[element];
+		v_c[element] = TEST_LENGTH - element;
+		c[element]   = v_c[element];
+  }
+
   vbx_set_vl(TEST_LENGTH);
   //SET VA to all 1s
   vbx(SVWU,VAND,v_a,0,v_a);
@@ -169,6 +225,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif // (TEST_RUN_MASK & ACCUM_TEST_MASK)
 
 #if (TEST_RUN_MASK & CI_TEST_MASK)
+	the_mxp.stride=1;
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = 0xDEADBEEF + element;
@@ -212,6 +269,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 
 
 #if (TEST_RUN_MASK & CI_WB_MASK)
+	the_mxp.stride=1;
 	//Initialize data with some known values
 	for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = ((element&1)?element: -element)<<5;
@@ -240,6 +298,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif // (TEST_RUN_MASK & CI_WB_MASK)
 
 #if (TEST_RUN_MASK & CI_WB_MASK)
+	the_mxp.stride=1;
 	//Initialize data with some known values
 	for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = ((element&1)?element: -element)<<5;
@@ -268,7 +327,16 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif // (TEST_RUN_MASK & CI_WB_MASK)
 
 #if (TEST_RUN_MASK & CI_CONV_MASK)
-	//Initialize data with some known values
+	the_mxp.stride=1;
+  //Initialize data with some known values
+  for(element = 0; element < TEST_LENGTH; element++){
+		v_a[element] = 0xDEADBEEF + element;
+		a[element]   = v_a[element];
+		v_b[element] = 2;
+		b[element]   = v_b[element];
+		v_c[element] = TEST_LENGTH - element;
+		c[element]   = v_c[element];
+  }
 
 	for(element = 0; element < TEST_LENGTH; element++){
 		v_c[element]=0x01010101;
@@ -280,10 +348,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 	the_mxp.stride=2;
 	vbx(VVWWU,VCUSTOM2,v_a,v_c,v_c+1);
 	debugx(v_a[2]);
-
 #endif // (TEST_RUN_MASK & CI_CONV_MASK)
-
-
 
 
 	return errors;

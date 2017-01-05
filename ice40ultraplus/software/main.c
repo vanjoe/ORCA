@@ -34,6 +34,7 @@ void delayms( unsigned int ms)
 int main()
 {
 	int i=0;
+<<<<<<< HEAD
 #if 0
 	printf("Hello world %X\r\n",i++);
 	//delayms(500);
@@ -61,10 +62,10 @@ int main()
 
 	for(i=0;i<vlen;i++){
 		printf("vc[%d] = %d\r\n", i, vc[i]);
-	}
-#else
+
+
 	cifar_lve();
-#endif
+
 
 
 	return 0;

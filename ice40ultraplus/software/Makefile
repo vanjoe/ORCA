@@ -24,7 +24,7 @@ CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
-CFLAGS=-m32 -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS)
+CFLAGS=-m32 -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation
 LD_FLAGS=-m32 -march=$(ARCH) -static -nostartfiles
 
 TARGET=test
