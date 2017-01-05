@@ -11,7 +11,7 @@ RISCV_CFLAGS?=
 all:
 AS_SRCS=crt.S
 
-C_SRCS=
+C_SRCS= cifar10_lve.c net.c
 C_SRCS+=$(C_MAIN)
 C_SRCS+=$(C_LINK)
 C_SRCS+= vbx_api.c printf.c
