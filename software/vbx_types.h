@@ -111,7 +111,7 @@ typedef struct {
 		int stride_and_vl;
 		struct {
 			int vl :16;
-			int stride: 4;
+			int stride: 16;
 		};
 	};
 	/* MXP flags */

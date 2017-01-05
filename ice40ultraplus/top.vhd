@@ -283,7 +283,7 @@ begin
         clk_int <= not clk_int;
       end if;
     end process;
-    
+
     pll_x3 : SB_PLL40_CORE_wrapper_x3
       port map (
         REFERENCECLK => clk,
@@ -482,7 +482,7 @@ begin
       COUNTER_LENGTH       => 32,
       PIPELINE_STAGES      => 4,
       LVE_ENABLE           => 1,
-      ENABLE_EXCEPTIONS    => 1,
+      ENABLE_EXCEPTIONS    => 0,
       NUM_EXT_INTERRUPTS   => 2,
       SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
       FAMILY               => "LATTICE")
