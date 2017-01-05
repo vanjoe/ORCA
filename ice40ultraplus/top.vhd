@@ -9,9 +9,10 @@ use work.rv_components.all;
 
 entity vhdl_top is
   generic (
-    USE_PLL      : boolean := false;
-    CAM_NUM_COLS : integer := 48;
-    CAM_NUM_ROWS : integer := 16);
+    USE_PLL      : natural range 0 to 2 := 0;
+    USE_CAM      : natural range 0 to 1 := 1;
+    CAM_NUM_COLS : integer              := 48;
+    CAM_NUM_ROWS : integer              := 16);
   port(
 
     --spi
@@ -39,7 +40,7 @@ end entity;
 architecture rtl of vhdl_top is
 
   constant SCRATCHPAD_SIZE : integer := 128*1024;
-  constant SYSCLK_FREQ_HZ  : natural := 8000000;
+  constant SYSCLK_FREQ_HZ  : natural := 8000000 + (8000000*USE_PLL);
 
   constant REGISTER_SIZE : integer := 32;
 
@@ -189,6 +190,7 @@ architecture rtl of vhdl_top is
   signal data_ram_err_o   : std_logic;
   signal data_ram_rty_o   : std_logic;
 
+  signal pll_lock : std_logic;
 
   constant DEBUG_ENABLE  : boolean := false;
   signal debug_en        : std_logic;
@@ -235,7 +237,6 @@ architecture rtl of vhdl_top is
 
   signal clk             : std_logic;
   signal osc_clk         : std_logic;
-  signal clk_count       : unsigned(3 downto 0) := (others => '0');
   signal clk_int         : std_logic            := '0';
   signal clk_3x_int      : std_logic            := '0';
   signal clk_3x          : std_logic;
@@ -249,9 +250,10 @@ architecture rtl of vhdl_top is
   signal mem_instr_ack           : std_logic;
 
 
-  signal nreset           : std_logic;
-  signal auto_reset_count : unsigned(3 downto 0) := (others => '0');
-  signal auto_reset       : std_logic;
+  signal nreset            : std_logic;
+  signal auto_reset_count  : unsigned(3 downto 0) := (others => '0');
+  signal auto_reset        : std_logic;
+  signal auto_reset_on_clk : std_logic;
 
   signal ovm_dma_start : std_logic;
   signal ovm_dma_done  : std_logic;
@@ -274,18 +276,67 @@ begin
     port map (
       CLKOUT => osc_clk);
 
-
-  process (osc_clk)
-  begin
-    if rising_edge(osc_clk) then
-      clk_count  <= clk_count + 1;
-      clk_3x_int <= not clk_3x_int;
-      if clk_count = 2 then
-        clk_count <= (others => '0');
-        clk_int   <= not clk_int;
+  pll_3x_gen : if USE_PLL = 2 generate
+    process (osc_clk) is
+    begin  -- process
+      if osc_clk'event and osc_clk = '1' then  -- rising clock edge
+        clk_int <= not clk_int;
       end if;
-    end if;
-  end process;
+    end process;
+
+    pll_x3 : SB_PLL40_CORE_wrapper_x3
+      port map (
+        REFERENCECLK => clk,
+
+        PLLOUTCORE      => clk_3x_int,
+        PLLOUTGLOBAL    => open,
+        EXTFEEDBACK     => 'X',
+        DYNAMICDELAY    => (others => 'X'),
+        LOCK            => pll_lock,
+        BYPASS          => '0',
+        RESETB          => nreset,
+        SDO             => open,
+        SDI             => 'X',
+        SCLK            => 'X',
+        LATCHINPUTVALUE => 'X');
+  end generate pll_3x_gen;
+
+  pll_2x_gen : if USE_PLL = 1 generate
+    pll_div3 : SB_PLL40_CORE_wrapper_div3
+      port map (
+        REFERENCECLK => clk_3x,
+
+        PLLOUTCORE      => clk_int,
+        PLLOUTGLOBAL    => open,
+        EXTFEEDBACK     => 'X',
+        DYNAMICDELAY    => (others => 'X'),
+        LOCK            => pll_lock,
+        BYPASS          => '0',
+        RESETB          => nreset,
+        SDO             => open,
+        SDI             => 'X',
+        SCLK            => 'X',
+        LATCHINPUTVALUE => 'X');
+
+    clk_3x_int <= osc_clk;
+  end generate pll_2x_gen;
+
+  no_pll_gen : if USE_PLL = 0 generate
+    signal clk_count       : unsigned(3 downto 0) := (others => '0');
+  begin
+    process (osc_clk)
+    begin
+      if rising_edge(osc_clk) then
+        clk_count  <= clk_count + 1;
+        clk_3x_int <= not clk_3x_int;
+        if clk_count = 2 then
+          clk_count <= (others => '0');
+          clk_int   <= not clk_int;
+        end if;
+      end if;
+    end process;
+    pll_lock <= '0';
+  end generate no_pll_gen;
 
   clk_gb : SB_GB
     port map (
@@ -305,9 +356,9 @@ begin
   --cam_xclk_internal <= cam_xclk;
 
 
-  process(clk)
+  process(osc_clk)
   begin
-    if rising_edge(clk) then
+    if rising_edge(osc_clk) then
       if auto_reset_count /= "1111" then
         auto_reset_count <= auto_reset_count +1;
         auto_reset       <= '1';
@@ -317,8 +368,12 @@ begin
     end if;
   end process;
 
-  reset  <= auto_reset;
-  nreset <= not reset;
+  process(clk)
+  begin
+    auto_reset_on_clk <= auto_reset;
+    reset  <= auto_reset_on_clk;
+    nreset <= not auto_reset_on_clk;
+  end process;
 
   imem : component wb_ram
     generic map(
@@ -427,7 +482,7 @@ begin
       COUNTER_LENGTH       => 32,
       PIPELINE_STAGES      => 4,
       LVE_ENABLE           => 1,
-      ENABLE_EXCEPTIONS    => 1,
+      ENABLE_EXCEPTIONS    => 0,
       NUM_EXT_INTERRUPTS   => 2,
       SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
       FAMILY               => "LATTICE")
@@ -643,57 +698,65 @@ begin
       input     => pio_in
 
       );
-  sccb_scl      <= pio_out(1) when pio_oe(1) = '1'    else 'Z';
-  sccb_sda      <= pio_out(0) when pio_oe(0) = '1'    else 'Z';
-  pio_in(0)     <= sccb_sda;
-  pio_in(1)     <= sccb_scl;
-  ovm_dma_start <= pio_out(2);
-  pio_in(3)     <= ovm_dma_busy;
-  ovm_dma_busy  <= '1'        when ovm_dma_done = '0' else '0';
+  sccb_scl           <= pio_out(1) when pio_oe(1) = '1'    else 'Z';
+  sccb_sda           <= pio_out(0) when pio_oe(0) = '1'    else 'Z';
+  pio_in(0)          <= sccb_sda;
+  pio_in(1)          <= sccb_scl;
+  ovm_dma_start      <= pio_out(2);
+  pio_in(3)          <= ovm_dma_busy;
+  ovm_dma_busy       <= '1'        when ovm_dma_done = '0' else '0';
   pio_in(7 downto 4) <= pio_out(7 downto 4);
-  pio_in(2) <= pio_out(2);
-  with pio_out(7 downto 5) select
-    rxd <=
-    cam_aux_out(0) when "000",
-    cam_aux_out(1) when "001",
-    cam_aux_out(2) when "010",
-    cam_aux_out(3) when "011",
-    cam_aux_out(4) when "100",
-    cam_aux_out(5) when "101",
-    cam_aux_out(6) when "110",
-    cam_aux_out(7) when others;
+  pio_in(2)          <= pio_out(2);
 
+  no_cam_gen : if USE_CAM = 0 generate
+    rxd          <= pll_lock;
+    cam_sp_ADR_O <= (others => '0');
+    cam_sp_DAT_O <= (others => '0');
+    cam_sp_WE_O  <= '0';
+    cam_sp_SEL_O <= (others => '0');
+    cam_sp_STB_O <= '0';
+    cam_sp_CYC_O <= '0';
+    cam_sp_CTI_O <= (others => '0');
+    ovm_dma_done <= '1';
+    cam_aux_out  <= (others => '0');
+  end generate no_cam_gen;
+  cam_gen : if USE_CAM /= 0 generate
+    with pio_out(7 downto 5) select
+      rxd <=
+      cam_aux_out(0) when "000",
+      cam_aux_out(1) when "001",
+      cam_aux_out(2) when "010",
+      cam_aux_out(3) when "011",
+      cam_aux_out(4) when "100",
+      cam_aux_out(5) when "101",
+      cam_aux_out(6) when "110",
+      cam_aux_out(7) when others;
+    cam_ctrl : wb_cam
+      port map(
+        clk_i => clk,
+        rst_i => reset,
 
+        master_ADR_O   => cam_sp_ADR_O,
+        master_DAT_O   => cam_sp_DAT_O,
+        master_WE_O    => cam_sp_WE_O,
+        master_SEL_O   => cam_sp_SEL_O,
+        master_STB_O   => cam_sp_STB_O,
+        master_CYC_O   => cam_sp_CYC_O,
+        master_CTI_O   => cam_sp_CTI_O,
+        master_STALL_I => cam_sp_STALL_I,
 
+        --pio control signals
+        cam_start => ovm_dma_start,
+        cam_done  => ovm_dma_done,
 
-
-  cam_ctrl : wb_cam
-
-    port map(
-      clk_i => clk,
-      rst_i => reset,
-
-      master_ADR_O   => cam_sp_ADR_O,
-      master_DAT_O   => cam_sp_DAT_O,
-      master_WE_O    => cam_sp_WE_O,
-      master_SEL_O   => cam_sp_SEL_O,
-      master_STB_O   => cam_sp_STB_O,
-      master_CYC_O   => cam_sp_CYC_O,
-      master_CTI_O   => cam_sp_CTI_O,
-      master_STALL_I => cam_sp_STALL_I,
-
-                                        --pio control signals
-      cam_start => ovm_dma_start,
-      cam_done  => ovm_dma_done,
-
-                                        --camera signals
-      ovm_pclk      => cam_pclk,
-      ovm_vsync     => cam_vsync,
-      ovm_href      => cam_href,
-      ovm_dat       => cam_dat_internal,
-      cam_aux_out => cam_aux_out
-
-      );
+        --camera signals
+        ovm_pclk    => cam_pclk,
+        ovm_vsync   => cam_vsync,
+        ovm_href    => cam_href,
+        ovm_dat     => cam_dat_internal,
+        cam_aux_out => cam_aux_out
+        );
+  end generate cam_gen;
 
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)

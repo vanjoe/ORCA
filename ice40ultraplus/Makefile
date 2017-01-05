@@ -1,6 +1,7 @@
 all:
 .SUFFIXES:
 
+ICECUBE2=/nfs/opt/lattice/iCEcube2/2016.02
 ifndef ICECUBE2
 ifeq ($(findstring Vectorblox,$(ORGANIZATION)),Vectorblox)
 ICECUBE2=/nfs/opt/lattice/iCEcube2/2016.02
@@ -23,7 +24,10 @@ BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.hex
 IMEM_LIST=imem.list
 DMEM_LIST=dmem.list
 MEM_FILE?=software/test.mem
+
 HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) ./top.vhd ./top_top.v
+
+
 
 
 
@@ -91,6 +95,9 @@ $(MEM_FILE)::
 PGM_CMD=$(ICECUBE2)/../../diamond/3.8_x64/bin/lin64/pgrcmd -infile
 pgm : $(BITFILE)
 	$(PGM_CMD) programmer.xcf
+
+flash :
+	$(PGM_CMD) program_flash.xcf
 
 .PHONY: syn all clean clean-all build-software bit pgm sim run_sim
 

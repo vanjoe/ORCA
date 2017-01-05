@@ -67,4 +67,6 @@ SECTIONS
   _end = .;
 
   _end_of_memory = 12K;
+
+  _scratchpad_base = 0x08000000;
 }
