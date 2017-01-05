@@ -1,15 +1,12 @@
 #include "sccb.h"
+#include "time.h"
 
 //Note that though the SCCB spec has a totem-pole drive scheme with conflict
 //protection resistors the board is layed out as I2C style open collector
 //with pull-ups.  This code does not drive 1's, and there is no difference
 //between 1 and a high-Z.
 
-const unsigned int DELAY_CYCLES = 20;//Too high and writes fail...
-static inline unsigned get_time()
-{int tmp;       asm volatile("csrr %0,time":"=r"(tmp));return tmp;}
-
-int bob = 0;
+const unsigned int DELAY_CYCLES = (SYS_CLK/8000000)*20;//Too high and writes fail...
 
 static inline void delay_cycles(unsigned int cycles)
 {
@@ -42,19 +39,19 @@ void sccb_init(void *pioBase){
 	pio_write(pioBase, 0);
 }
 
-static inline void sccb_start(void *pioBase){
+static void sccb_start(void *pioBase){
 	pio_enable(pioBase, PIO_SDA_MASK);                //data <= 0
 	pio_enable(pioBase, PIO_SDA_MASK | PIO_SCL_MASK); //clk  <= 0
 }
 
-static inline void sccb_stop(void *pioBase){
+static void sccb_stop(void *pioBase){
 	pio_enable(pioBase, PIO_SDA_MASK | PIO_SCL_MASK); //data <= 0 (clk already 0)
 	pio_enable(pioBase, PIO_SDA_MASK);                //clk  <= 1
 	delay_cycles(DELAY_CYCLES);
 	pio_enable(pioBase, 0);                           //data <= 1
 }
 
-static inline void sccb_write_phase(void *pioBase, uint8_t data){
+static void sccb_write_phase(void *pioBase, uint8_t data){
 	int bit;
 	for(bit = 7; bit >= 0; bit--){
 		if(data & (1 << bit)){
