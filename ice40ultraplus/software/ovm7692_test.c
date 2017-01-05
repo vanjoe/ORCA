@@ -6,10 +6,21 @@
 #include "time.h"
 #include "vbx.h"
 #include "base64.h"
-#define SCCB_PIO_BASE   ((void *)0x00050000)
+
+
+
+#define RGB565      0
+#define UART        1
+#define OPEN_CV     1
+#define PRINT_PIC   0
+
+
+
 
 typedef unsigned char uchar;
 typedef unsigned int  uint;
+
+#define SCCB_PIO_BASE   ((uint *)0x00050000)
 
 void ovm_write_reg(int reg_addr,int reg_val)
 {
@@ -25,23 +36,38 @@ typedef struct{
 	uint8_t addr,val;
 } regval_t;
 
+#define PIO_BIT_START 2
+#define PIO_BIT_DONE  3
+#define PIO_BIT_LED   4
 
-void ovm_set_start()
+
+void ovm_set_bit( int bitpos )
 {
-	((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]|=(1<<2);
+	volatile uint *p = &( SCCB_PIO_BASE[PIO_DATA_REGISTER] );
+        *p |= (1<<bitpos);
+	//((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]|=(1<<bitpos);
 }
 
-void ovm_clear_start()
+void ovm_clear_bit( int bitpos )
 {
-	((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]&=(~(1<<2));
+	volatile uint *p = &( SCCB_PIO_BASE[PIO_DATA_REGISTER] );
+        *p &= (~(1<<bitpos));
+	//((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]&=(~(1<<bitpos));
+}
+
+int ovm_get_bit( int bitpos )
+{
+	volatile uint *p = &( SCCB_PIO_BASE[PIO_DATA_REGISTER] );
+        return (*p & (1<<bitpos)) ? 1 : 0 ;
 }
 
 
 int ovm_isdone()
 {
-	return !(((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER] & (1<<3));
-
+	return !ovm_get_bit( PIO_BIT_DONE );
+	//return !(((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER] & (1<<PIO_BIT_DONE));
 }
+
 
 #if 0
 static const regval_t regval_list[] ={
@@ -131,17 +157,19 @@ int ovm_configure()
 	return 0;
 }
 
-#if 0
-char gray2txt[]=" .'`,^:\";~-_+<>i!lI? /\\|()1{}[]rcvunxzjftLCJUYXZO0Qoahkbdpqwm*WMB8&%$#@";
+#if PRINT_PIC
+static char gray2txt[]="   ...'`,^:\";~-_+<>i!lI? /\\|()1{}[]rcvunxzjftLCJUYXZO0Qoahkbdpqwm*WMB8&%$#@";
+//static char gray2txt[]=" .:;+oi?j{}[]CUO0QWMB8@";
 void print_pic( uchar* pix,int cols,int rows,int stride)
 {
-	int  num_gray=sizeof(gray2txt);
+	int num_gray=sizeof(gray2txt);
 	int i,j;
+	// printf("\033 [2J"); // clear terminal screen
 	for(i=0;i<rows;i++) {
 		for(j=0;j<cols;j++) {
-			int r = pix[i*stride*3 + j*3];
-			int g = pix[i*stride*3 + j*3];
-			int b = pix[i*stride*3 + j*3];
+			int r = pix[i*stride*3 + j*3+0];
+			int g = pix[i*stride*3 + j*3+1];
+			int b = pix[i*stride*3 + j*3+2];
 			int gray = (213*r + 715*g + 72*b)*num_gray/(255*1000);
 			char txt = gray2txt[gray];
 			mputc(0,txt);mputc(0,txt);
@@ -150,6 +178,9 @@ void print_pic( uchar* pix,int cols,int rows,int stride)
 	}
 
 }
+#else
+// avoid compiler warning
+void print_pic( uchar* pix,int cols,int rows,int stride);
 #endif
 
 void clear_frame( uchar *pixmap, int num_bytes )
@@ -163,7 +194,7 @@ void clear_frame( uchar *pixmap, int num_bytes )
 void print_reg( int reg, char *description )
 {
 	int val = ovm_read_reg( reg );
-	printf("reg(0x%02x) = 0x%02x <--  %s", reg, val, description );
+	printf("reg(0x%02x) = 0x%02x %s", reg, val, description );
 }
 
 void printf_rgb( uchar red, uchar grn, uchar blu )
@@ -192,12 +223,144 @@ void printf_bin(uint rgb565)
 	mputc(0,' ');
 }
 
+void ovm_get_first_frame()
+{
+	//Add frame reading logic here
+
+	printf("FIRST FRAME\r\n");
+	printf("wait for done\r\n");
+	ovm_clear_bit( PIO_BIT_START );
+	//wait for done bit
+	while(!ovm_isdone()){
+		debugx(((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]);
+	}
+	//set start bit
+	printf("set start\r\n");
+	ovm_set_bit( PIO_BIT_START );
+	printf("wait for not DONE\r\n");
+	while(ovm_isdone()){
+		//debugx(((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]);
+	}
+	ovm_clear_bit( PIO_BIT_START );
+	printf("wait for done\r\n");
+	//wait for done bit
+	while(!ovm_isdone());
+	printf("DONE!\r\n");
+}
+
+
+void ovm_get_frame()
+{
+		// tell camera to capture a frame
+		ovm_set_bit( PIO_BIT_START );
+
+		// wait until FSM actually starts
+		while( ovm_isdone() );
+
+		// clear the start bit
+		ovm_clear_bit( PIO_BIT_START );
+
+		// wait until DMA is DONE
+		while( ovm_isdone()==0 );
+}
+
+
+static int rgb_pad_l;
+static int rgb_pad_r;
+static int rgb_pad_t;
+static int rgb_pad_b;
+static int rgb_h;
+static int rgb_v;
+static int rgb_pad_h;
+static int rgb_pad_v;
+
+
+void h_denoise( uchar* buf )
+{
+	uchar out, t;
+	int off, r, c;
+	for(r=0;r<rgb_v;r++){
+		c=0;
+		off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-0);
+		out = buf[off];
+		for(c=1;c<rgb_h-1;c++){
+			off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-0);
+			uchar pl = buf[off-1];
+
+#if 1
+			printf("%02x", buf[off-1] );
+			const uint diff = (buf[off-1] - out) & 0xff;
+			if( diff==0 ) printf("  ");
+			else if( diff <  8 || diff > 0xff- 8 ) printf(". ");
+			else if( diff < 16 || diff > 0xff-16 ) printf("+ ");
+			else                                   printf("# ");
+#endif
+			buf[off-1] = out;
+			
+			uchar pc = buf[off-0];
+			uchar pr = buf[off+1];
+			if( pl > pc ) { t=pl; pl=pc; pc=t; }
+			if( pc > pr ) { t=pc; pc=pr; pr=t; }
+			if( pl > pc ) { t=pl; pl=pc; pc=t; }
+			out = pc;
+		}
+		buf[off]=out;
+		printf("\r\n");
+	}
+	printf("\r\n");
+}
+
+void v_denoise( uchar* buf )
+{
+	uchar out, t;
+	int off, r, c;
+	for(c=0;c<rgb_h;c++){
+		r=0;
+		off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-0);
+		out = buf[off];
+		for(r=1;r<rgb_v-1;r++){
+			off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-0);
+			uchar pl = buf[off-rgb_pad_h];
+			uchar pc = buf[off-0];
+			uchar pr = buf[off+rgb_pad_h];
+			if( pl > pc ) { t=pl; pl=pc; pc=t; }
+			if( pc > pr ) { t=pc; pc=pr; pr=t; }
+			if( pl > pc ) { t=pl; pl=pc; pc=t; }
+			buf[off-rgb_pad_h] = out;
+			out = pc;
+		}
+		buf[off]=out;
+	}
+}
+
+
 int main()
 {
 
+	int dma_num_pixels;
+	int rgb_num_pixels;
+	uchar* red_buf;
+	uchar* grn_buf;
+	uchar* blu_buf;
+	volatile uchar* cam_dma_buf;
+
+	dma_num_pixels=64*32;
+	rgb_pad_l = 4;
+	rgb_pad_r = 4;
+	rgb_pad_t = 2;
+	rgb_pad_b = 0;
+	rgb_h = 32;
+	rgb_v = 32;
+	rgb_pad_h = (rgb_pad_l + rgb_h + rgb_pad_r);
+	rgb_pad_v = (rgb_pad_t + rgb_v + rgb_pad_b);
+	rgb_num_pixels = (rgb_pad_h*rgb_pad_v);
+	cam_dma_buf=SCRATCHPAD_BASE;
+	red_buf = (uchar*)SCRATCHPAD_BASE + dma_num_pixels*4;
+	grn_buf = red_buf     + rgb_num_pixels*1;
+	blu_buf = red_buf     + rgb_num_pixels*2;
+
 	printf("\r\nTESTING OVM\r\n");
 
-	//ovm_set_start();while(1);
 	//choose bit
 
 	/* cam_aux_out(0) <= v_load_pixel; */
@@ -220,111 +383,138 @@ int main()
 		while(1);
 	}
 
-	volatile uchar* cam_address=SCRATCHPAD_BASE;
-	int num_pixels=64*32;
 
-	clear_frame((uchar*) cam_address, num_pixels*4 );
-
-	//Add frame reading logic here
-
-	printf("FIRST FRAME\r\n");
-	printf("wait for done\r\n");
-	ovm_clear_start();
-	//wait for done bit
-	while(!ovm_isdone()){
-		debugx(((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]);
-	}
-	//set start bit
-	printf("set start\r\n");
-	ovm_set_start();
-	printf("wait for not DONE\r\n");
-	while(ovm_isdone()){
-		//debugx(((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]);
-	}
-	ovm_clear_start();
-	printf("wait for done\r\n");
-	//wait for done bit
-	while(!ovm_isdone());
-	printf("DONE!\r\n");
-
+	ovm_get_first_frame();
 
 	printf("SECOND FRAME\r\n");
 	//get second frame
 	int frame_counter=0;
-	int 	start_time,end_time;
+	int start_time,end_time;
+
+	/* turn on LED */
+	ovm_set_bit( PIO_BIT_LED );
+
 	while(1){
 
-		clear_frame( (uchar*)cam_address, num_pixels*4 );
+		//if( toggle==0 ) ovm_set_bit( PIO_BIT_LED );
+		//if( toggle==4 ) ovm_clear_bit( PIO_BIT_LED );
+		//toggle++; if( toggle==8 ) toggle=0;
+
+		clear_frame( (uchar*)cam_dma_buf, dma_num_pixels*4 );
+		clear_frame( red_buf, rgb_num_pixels );
+		clear_frame( grn_buf, rgb_num_pixels );
+		clear_frame( blu_buf, rgb_num_pixels );
+		//printf("LED2: %d\r\n", ovm_get_bit(PIO_BIT_LED) );
 
 		start_time=get_time();
-		ovm_set_start();
-		while(ovm_isdone());
-		ovm_clear_start();
-
-		//wait for done bit
-		while(ovm_isdone()==0);
+		ovm_get_frame();
 		end_time=get_time();
+		//printf("LED3: %d\r\n", ovm_get_bit(PIO_BIT_LED) );
 
-#if 1
+#if (0 && UART)
+// for some reason this turns off the pio (PIO_BIT_LED)
 		print_reg( 0x04, "average Y " );
 		print_reg( 0x05, "average B " );
 		print_reg( 0x06, "average R " );
 		print_reg( 0x07, "average G\r\n" );
 #endif
+		//printf("LED4: %d\r\n", ovm_get_bit(PIO_BIT_LED) );
 
 		//remove alpha channel, swap Red/Blue for OpenCV display
 		int r,c;
 		for(r=0;r<30;r++){
 			for(c=0;c<40;c++){
-#if 0 /* RGB565 */
-				const uint lsb = cam_address[(r*64+c)*4+0];
-				const uint msb = cam_address[(r*64+c)*4+1];
-				const uint rgb565 = (msb<<8) + lsb;
 #define CLIM 10
 #define RLIM 30
+
+#if RGB565  /* treat GREEN channel fairly, as if only 5 bits */
+				const volatile uchar *p = &(cam_dma_buf[(r*64+c)*4]);
+				const unsigned short rgb565 = *((unsigned short*)p);
+				uchar red = (((rgb565 >> 11) & 0x1f) << 3);
+				uchar grn = (((rgb565 >>  6) & 0x1f) << 3);
+				uchar blu = (((rgb565 >>  0) & 0x1f) << 3);
 				//if( c<CLIM && r<RLIM ) { printf_bin(rgb565); }
 				//if( c==39  && r<RLIM ) { printf("...\r\n"); }
-				uchar red = (((rgb565 >> 11) & 0x1f) << 3); //cam_address[i*4+2];
-				uchar grn = (((rgb565 >>  6) & 0x1f) << 3); //cam_address[i*4+1];
-				uchar blu = (((rgb565 >>  0) & 0x1f) << 3); //cam_address[i*4+0];
-				/* extend LSBs */
-				red = red | ((red&0x8)?0x7:0x0) ;
-				grn = grn | ((grn&0x4)?0x7:0x0) ;
-				blu = blu | ((blu&0x8)?0x7:0x0) ;
-				cam_address[(r*40+c)*3+2]/*CV_FRAME0: B*/ = (blu)/1; // 1011 1...
-				cam_address[(r*40+c)*3+1]/*CV_FRAME1: G*/ = (grn)/1; // 1101 11..
-				cam_address[(r*40+c)*3+0]/*CV_FRAME2: R*/ = (red)/1; // 1111 1...
 #else /* RGB888 */
-				uchar red = cam_address[(r*64+c)*4+2];
-				uchar grn = cam_address[(r*64+c)*4+1];
-				uchar blu = cam_address[(r*64+c)*4+0];
-#define CLIM 10
-#define RLIM 30
+				const int idx = (r*64+c)*4;
+				uchar red = cam_dma_buf[idx+2];
+				uchar grn = cam_dma_buf[idx+1];
+				uchar blu = cam_dma_buf[idx+0];
 				//if( c<CLIM && r<RLIM ) { printf_rgb(red,grn,blu); }
 				//if( c==39  && r<RLIM ) { printf("...\r\n"); }
-#if 0
-				/* extend LSBs */
-				red = red | ((red&0x8)?0x7:0x0) ;
-				grn = grn | ((grn&0x4)?0x7:0x0) ;
-				blu = blu | ((blu&0x8)?0x7:0x0) ;
-#endif
-				cam_address[(r*40+c)*3+2]/*CV_FRAME0: B*/ = (blu)/1; // 1011 1...
-				cam_address[(r*40+c)*3+1]/*CV_FRAME1: G*/ = (grn)/1; // 1101 11..
-				cam_address[(r*40+c)*3+0]/*CV_FRAME2: R*/ = (red)/1; // 1111 1...
 #endif /* RGB565 or RGB888 */
 
+#if 0
+				/* extend LSBs for better colour definition */
+				const uchar EXTRA_LSB = 0x04;
+				red = red | ((red&0x8)? EXTRA_LSB : 0x0) ;
+				grn = grn | ((grn&0x8)? EXTRA_LSB : 0x0) ;
+				blu = blu | ((blu&0x8)? EXTRA_LSB : 0x0) ;
+#endif
+
+#if OPEN_CV
+				cam_dma_buf[(r*40+c)*3+2]/*CV_FRAME0: B*/ = (blu)/1; // 1011 1...
+				cam_dma_buf[(r*40+c)*3+1]/*CV_FRAME1: G*/ = (grn)/1; // 1101 11..
+				cam_dma_buf[(r*40+c)*3+0]/*CV_FRAME2: R*/ = (red)/1; // 1111 1...
+#endif
+				if( c>=4 && c<36 ) {
+					const int off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-4);
+					red_buf[ off ] = red;
+					grn_buf[ off ] = grn;
+					blu_buf[ off ] = blu;
+				}
 			}
 		}
+		const int deinterleave_time = get_time() - end_time;
 
-		//print_pic((char*)cam_address,40,30,64);
+#if 1
+		const int start_denoise = get_time();
+		//h_denoise( red_buf ); v_denoise( red_buf );
+		//h_denoise( grn_buf ); v_denoise( grn_buf );
+		//h_denoise( blu_buf ); v_denoise( blu_buf );
+		for(r=0;r<rgb_v;r++){
+			for(c=0;c<rgb_h;c++){
+				const int off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-0);
+#if 1 /* colour bars */
+				cam_dma_buf[(r*40+c+rgb_pad_l)*3+2]/*CV_FRAME0: B*/ = off&0xff;
+				cam_dma_buf[(r*40+c+rgb_pad_l)*3+1]/*CV_FRAME1: G*/ = off&0xff;
+				cam_dma_buf[(r*40+c+rgb_pad_l)*3+0]/*CV_FRAME2: R*/ = off&0xff;
+#else /* denoised data */
+				cam_dma_buf[(r*40+c+rgb_pad_l)*3+2]/*CV_FRAME0: B*/ = blu_buf[off];
+				cam_dma_buf[(r*40+c+rgb_pad_l)*3+1]/*CV_FRAME1: G*/ = grn_buf[off];
+				cam_dma_buf[(r*40+c+rgb_pad_l)*3+0]/*CV_FRAME2: R*/ = red_buf[off];
+#endif
+			}
+		}
+		const int end_denoise = get_time();
+#endif
 
+#if 0
+/* verify the red_buf, etc */
+		int i=0;
+		for(r=0;r<rgb_pad_v;r++){
+			printf("%02d ", r );
+			for(c=0;c<rgb_pad_h;c++){
+				printf("%02x ", red_buf[ i++ ] );
+				//printf("%02x ", grn_buf[ i++ ] );
+				//printf("%02x ", blu_buf[ i++ ] );
+			}
+			printf("\r\n");
+		}
+#endif
+
+		if( PRINT_PIC ) print_pic((uchar*)cam_dma_buf,40,30,40);
+
+#if OPEN_CV
 		printf("base64:");
-		print_base64((char*)cam_address,3*40*30);
-		printf("\r\n frame %d %d cycles\r\n",frame_counter++,end_time-start_time);
+		print_base64((char*)cam_dma_buf,3*40*30);
+#endif
+
+		if( UART ) printf("\r\n frame %d %d cycles DMA, %d cycles de-interleave %d cycles de-noise\r\n",
+			frame_counter++, end_time-start_time, deinterleave_time, end_denoise-start_denoise );
 
 		//delayms(2000);
 	}
-	//always writing
-	ovm_set_start();
+
 	return 0;
 }

@@ -14,7 +14,7 @@ union base64_t{
 	 unsigned int index_a : 6;
   };
 };
-const char base_64_table[]="ABCDEFGHIJKLMNOPQRSTUVWZYZabcdefghijklmnopqrstuvwzyz0123456789+/";
+const char base_64_table[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 void print_base64(char* in_str, int in_len)
 {

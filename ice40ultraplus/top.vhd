@@ -22,9 +22,12 @@ entity vhdl_top is
     spi_sclk : out std_logic;
 
     --uart
-
     txd       : out std_logic;
     rxd       : out std_logic;
+
+    --led
+    led       : out std_logic;
+
     --clk
     cam_xclk  : in  std_logic;
     cam_vsync : in  std_logic;
@@ -206,6 +209,8 @@ architecture rtl of vhdl_top is
   signal rts_n      : std_logic;
   signal dir_n      : std_logic;
 
+  signal led_counter : unsigned(15 downto 0);
+
   signal spi_adr_i   : std_logic_vector(31 downto 0);
   signal spi_dat_i   : std_logic_vector(31 downto 0);
   signal spi_dat_o   : std_logic_vector(31 downto 0);
@@ -275,6 +280,13 @@ begin
       DIVIDER => "00")                  -- 48 MHz
     port map (
       CLKOUT => osc_clk);
+
+  pwm_counter:  process (osc_clk) is
+    begin
+      if rising_edge(osc_clk) then
+        led_counter <= led_counter + 1;
+      end if;
+    end process;
 
   pll_3x_gen : if USE_PLL = 2 generate
     process (osc_clk) is
@@ -698,15 +710,22 @@ begin
       input     => pio_in
 
       );
-  sccb_scl           <= pio_out(1) when pio_oe(1) = '1'    else 'Z';
   sccb_sda           <= pio_out(0) when pio_oe(0) = '1'    else 'Z';
   pio_in(0)          <= sccb_sda;
+
+  sccb_scl           <= pio_out(1) when pio_oe(1) = '1'    else 'Z';
   pio_in(1)          <= sccb_scl;
+
   ovm_dma_start      <= pio_out(2);
+  pio_in(2)          <= pio_out(2);
+
   pio_in(3)          <= ovm_dma_busy;
   ovm_dma_busy       <= '1'        when ovm_dma_done = '0' else '0';
-  pio_in(7 downto 4) <= pio_out(7 downto 4);
-  pio_in(2)          <= pio_out(2);
+
+  led                <= pio_out(4) AND std_logic_vector(led_counter)(15) AND std_logic_vector(led_counter)(14);
+  pio_in(4)          <= pio_out(4);
+
+  pio_in(7 downto 5) <= pio_out(7 downto 5);
 
   no_cam_gen : if USE_CAM = 0 generate
     rxd          <= pll_lock;

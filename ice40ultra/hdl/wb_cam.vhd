@@ -92,7 +92,8 @@ architecture rtl of wb_cam is
   signal v_load_row    : std_logic;
   signal v_tile_idx    : std_logic_vector(4 downto 0);
   signal v_tile_sidx   : std_logic_vector(3 downto 0);
-  signal v_rowbuf_row  : std_logic_vector(4 downto 0);
+  signal v_rowbuf_row     :  std_logic_vector(4 downto 0);
+  signal v_rowbuf_row_ff  : std_logic_vector(4 downto 0);
   signal v_rgb_out_col : std_logic_vector(5 downto 0);
   signal v_rgb_out_row : std_logic_vector(4 downto 0);
 
@@ -270,11 +271,12 @@ begin  -- architecture rtl
 
       extra_href <= '0';
       v_load_row <= '0';
+      v_rowbuf_row     <= v_rowbuf_row_ff;
       case ovm_state is
 
         when OVM_DONE =>
           -- row0 is written twice (first: dummy values, then: valid values)
-          v_rowbuf_row  <= (others => '0');
+          v_rowbuf_row_ff  <= (others => '0');
           ovm_row_count <= 0;
           if cam_start_sync = '1' then
             ovm_state <= OVM_PREGAP;
@@ -294,7 +296,7 @@ begin  -- architecture rtl
         when OVM_ROW =>
           v_load_row <= v_tile_start;
           if ovm_href = '0' then
-            v_rowbuf_row  <= v_tile_idx;  -- update row# that we just accumulated
+            v_rowbuf_row_ff  <= v_tile_idx;  -- update row# that we just accumulated
             ovm_row_count <= ovm_row_count + 1;  -- data is rows 0 to 479
             ovm_state     <= OVM_PREGAP;
           end if;
@@ -311,7 +313,7 @@ begin  -- architecture rtl
 
       if rst_i = '1' then
         ovm_state    <= OVM_DONE;
-        v_rowbuf_row <= (others => '0');  -- update row# that we just accumulated
+        v_rowbuf_row_ff <= (others => '0');  -- update row# that we just accumulated
       end if;
     end if;
 
@@ -380,7 +382,7 @@ begin  -- architecture rtl
         v_rgb_out(23 downto 16) <= v_rdata(29 downto 22);  -- extract red 8 MSB
         v_rgb_out(15 downto  8) <= v_rdata(19 downto 12);  -- extract grn 8 MSB
         v_rgb_out( 7 downto  0) <= v_rdata( 9 downto  2);  -- extract blu 8 MSB
-        v_rgb_out <= v_rgb_ff; -- UNCOMMENT THIS LINE TO DO RGB565 SUBSAMPLING INSTEAD OF AVERAGING
+        --v_rgb_out <= v_rgb_ff; -- UNCOMMENT THIS LINE TO DO RGB565 SUBSAMPLING INSTEAD OF AVERAGING
       end if;
       --if rst_i = '1' then
       --  v_rgb_out_valid <= '0';
