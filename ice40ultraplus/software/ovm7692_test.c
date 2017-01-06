@@ -22,6 +22,20 @@ typedef unsigned int  uint;
 
 #define SCCB_PIO_BASE   ((uint *)0x00050000)
 
+
+
+
+static int rgb_pad_l;
+static int rgb_pad_r;
+static int rgb_pad_t;
+static int rgb_pad_b;
+static int rgb_h;
+static int rgb_v;
+static int rgb_pad_h;
+static int rgb_pad_v;
+
+
+
 void ovm_write_reg(int reg_addr,int reg_val)
 {
 	sccb_write(SCCB_PIO_BASE, OVM7692_ADDRESS, reg_addr, reg_val);
@@ -222,6 +236,20 @@ void printf_bin(uint rgb565)
 	}
 	mputc(0,' ');
 }
+void print_buf( uchar *buf )
+{
+	/* verify the red_buf, etc */
+	int i=0,r,c,max=buf[0];
+	for(r=0;r<rgb_pad_v;r++){
+		printf("%02d ", r );
+		for(c=0;c<rgb_pad_h;c++){
+			if(buf[i]>max) max=buf[i];
+			printf("%02x ", buf[ i++ ] );
+		}
+		printf("\r\n");
+	}
+	printf("max: %d\r\n", max);
+}
 
 void ovm_get_first_frame()
 {
@@ -265,15 +293,6 @@ void ovm_get_frame()
 }
 
 
-static int rgb_pad_l;
-static int rgb_pad_r;
-static int rgb_pad_t;
-static int rgb_pad_b;
-static int rgb_h;
-static int rgb_v;
-static int rgb_pad_h;
-static int rgb_pad_v;
-
 
 void h_denoise( uchar* buf )
 {
@@ -287,7 +306,7 @@ void h_denoise( uchar* buf )
 			off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-0);
 			uchar pl = buf[off-1];
 
-#if 1
+#if 0
 			printf("%02x", buf[off-1] );
 			const uint diff = (buf[off-1] - out) & 0xff;
 			if( diff==0 ) printf("  ");
@@ -296,7 +315,7 @@ void h_denoise( uchar* buf )
 			else                                   printf("# ");
 #endif
 			buf[off-1] = out;
-			
+
 			uchar pc = buf[off-0];
 			uchar pr = buf[off+1];
 			if( pl > pc ) { t=pl; pl=pc; pc=t; }
@@ -305,9 +324,9 @@ void h_denoise( uchar* buf )
 			out = pc;
 		}
 		buf[off]=out;
-		printf("\r\n");
+		//printf("\r\n");
 	}
-	printf("\r\n");
+	//printf("\r\n");
 }
 
 void v_denoise( uchar* buf )
@@ -433,8 +452,13 @@ int main()
 				uchar red = (((rgb565 >> 11) & 0x1f) << 3);
 				uchar grn = (((rgb565 >>  6) & 0x1f) << 3);
 				uchar blu = (((rgb565 >>  0) & 0x1f) << 3);
-				//if( c<CLIM && r<RLIM ) { printf_bin(rgb565); }
-				//if( c==39  && r<RLIM ) { printf("...\r\n"); }
+				/* extend LSBs for better colour definition */
+				const uchar EXTRA_LSB = 0x04;
+				red = red | ((red&0x8)? EXTRA_LSB : 0x0) ;
+				grn = grn | ((grn&0x8)? EXTRA_LSB : 0x0) ;
+				blu = blu | ((blu&0x8)? EXTRA_LSB : 0x0) ;
+				if( c<CLIM && r<RLIM ) { printf_bin(rgb565); }
+				if( c==39  && r<RLIM ) { printf("...\r\n"); }
 #else /* RGB888 */
 				const int idx = (r*64+c)*4;
 				uchar red = cam_dma_buf[idx+2];
@@ -443,14 +467,6 @@ int main()
 				//if( c<CLIM && r<RLIM ) { printf_rgb(red,grn,blu); }
 				//if( c==39  && r<RLIM ) { printf("...\r\n"); }
 #endif /* RGB565 or RGB888 */
-
-#if 0
-				/* extend LSBs for better colour definition */
-				const uchar EXTRA_LSB = 0x04;
-				red = red | ((red&0x8)? EXTRA_LSB : 0x0) ;
-				grn = grn | ((grn&0x8)? EXTRA_LSB : 0x0) ;
-				blu = blu | ((blu&0x8)? EXTRA_LSB : 0x0) ;
-#endif
 
 #if OPEN_CV
 				cam_dma_buf[(r*40+c)*3+2]/*CV_FRAME0: B*/ = (blu)/1; // 1011 1...
@@ -475,11 +491,11 @@ int main()
 		for(r=0;r<rgb_v;r++){
 			for(c=0;c<rgb_h;c++){
 				const int off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-0);
-#if 1 /* colour bars */
+#if 0 /* colour bars */
 				cam_dma_buf[(r*40+c+rgb_pad_l)*3+2]/*CV_FRAME0: B*/ = off&0xff;
 				cam_dma_buf[(r*40+c+rgb_pad_l)*3+1]/*CV_FRAME1: G*/ = off&0xff;
 				cam_dma_buf[(r*40+c+rgb_pad_l)*3+0]/*CV_FRAME2: R*/ = off&0xff;
-#else /* denoised data */
+#elif 0 /* denoised data */
 				cam_dma_buf[(r*40+c+rgb_pad_l)*3+2]/*CV_FRAME0: B*/ = blu_buf[off];
 				cam_dma_buf[(r*40+c+rgb_pad_l)*3+1]/*CV_FRAME1: G*/ = grn_buf[off];
 				cam_dma_buf[(r*40+c+rgb_pad_l)*3+0]/*CV_FRAME2: R*/ = red_buf[off];
@@ -490,17 +506,9 @@ int main()
 #endif
 
 #if 0
-/* verify the red_buf, etc */
-		int i=0;
-		for(r=0;r<rgb_pad_v;r++){
-			printf("%02d ", r );
-			for(c=0;c<rgb_pad_h;c++){
-				printf("%02x ", red_buf[ i++ ] );
-				//printf("%02x ", grn_buf[ i++ ] );
-				//printf("%02x ", blu_buf[ i++ ] );
-			}
-			printf("\r\n");
-		}
+		printf("red   \r\n"); print_buf( red_buf );
+		printf("green \r\n"); print_buf( grn_buf );
+		printf("blue  \r\n"); print_buf( blu_buf );
 #endif
 
 		if( PRINT_PIC ) print_pic((uchar*)cam_dma_buf,40,30,40);
