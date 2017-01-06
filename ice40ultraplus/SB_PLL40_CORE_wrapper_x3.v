@@ -38,8 +38,8 @@ module SB_PLL40_CORE_wrapper_x3
        .FDA_RELATIVE(4'b0000),
        .DIVR(4'b0000),
        .DIVF(7'b0000010),
-       .DIVQ(3'b010),
-       .FILTER_RANGE(3'b010),
+       .DIVQ(3'b001),
+       .FILTER_RANGE(3'b100),
        .ENABLE_ICEGATE(1'b0),
        .TEST_MODE(1'b0)
        ) 

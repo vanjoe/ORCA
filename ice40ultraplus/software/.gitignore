@@ -3,3 +3,5 @@ test.elf
 test.mem
 test.dump
 test.bin
+*.temp
+sys_clk.h

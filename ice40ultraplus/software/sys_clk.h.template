@@ -1,0 +1,6 @@
+#ifndef SYS_CLK_H
+#define SYS_CLK_H
+
+#define SYS_CLK YOUR_SYS_CLK_HERE
+
+#endif //SYS_CLK_H

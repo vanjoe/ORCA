@@ -424,7 +424,7 @@ package top_component_pkg is
       );
   end component SB_PLL40_CORE;
 
-  component SB_PLL40_CORE_wrapper_div3 is
+  component SB_PLL40_CORE_wrapper_x2 is
     port (
       REFERENCECLK    : in  std_logic;  -- PLL ref clock, driven by core logic
       PLLOUTCORE      : out std_logic;  -- PLL output to core logic through local routings.
@@ -439,7 +439,7 @@ package top_component_pkg is
       SCLK            : in  std_logic;  -- Test Clk input.Driven by core logic.
       LATCHINPUTVALUE : in  std_logic   -- iCEGate signal
       );
-  end component SB_PLL40_CORE_wrapper_div3;
+  end component SB_PLL40_CORE_wrapper_x2;
 
   component SB_PLL40_CORE_wrapper_x3 is
     port (

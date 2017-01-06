@@ -1,9 +1,10 @@
 #-- Synopsys, Inc.
-#-- Project file /nfs/home/joel/Documents/orca-cam/ice40ultraplus/ice40ultraplus_syn.prj
+#-- Project file /nfs/home/joel/Documents/orca-cam/ice40up_mdp_24MHz/ice40up_mdp_24MHz_syn.prj
 #project files
 
 add_file -vhdl -lib work "top.vhd" 
-add_file -verilog -lib work "top_top.v" 
+add_file -verilog -lib work "top_top_ice40up_mdp_24MHz.v" 
+add_file -verilog -lib work "SB_PLL40_CORE_wrapper_x3.v" 
 add_file -vhdl -lib work "../ice40ultra/hdl/top_component_pkg.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/top_util_pkg.vhd" 
 add_file -vhdl -lib work "../rtl/components.vhd" 
@@ -38,9 +39,9 @@ add_file -vhdl -lib work "../rtl/orca.vhd"
 add_file -vhdl -lib work "../rtl/orca_core.vhd" 
 add_file -vhdl -lib work "../rtl/register_file.vhd" 
 add_file -vhdl -lib work "../rtl/sys_call.vhd" 
-add_file -constraint -lib work "constr_8MHz.sdc"
-#implementation: "ice40ultraplus_Implmnt"
-impl -add ice40ultraplus_Implmnt -type fpga
+add_file -constraint -lib work "constr_24MHz.sdc"
+#implementation: "ice40up_mdp_24MHz_Implmnt"
+impl -add ice40up_mdp_24MHz_Implmnt -type fpga
 
 #implementation attributes
 set_option -vlog_std v2001
@@ -86,7 +87,7 @@ set_option -write_apr_constraint 1
 
 #set result format/file last
 project -result_format "edif"
-project -result_file ./ice40ultraplus_Implmnt/ice40ultraplus.edf
-project -log_file "./ice40ultraplus_Implmnt/ice40ultraplus.srr"
-impl -active ice40ultraplus_Implmnt
+project -result_file ./ice40up_mdp_24MHz_Implmnt/ice40up_mdp_24MHz.edf
+project -log_file "./ice40up_mdp_24MHz_Implmnt/ice40up_mdp_24MHz.srr"
+impl -active ice40up_mdp_24MHz_Implmnt
 project -run synthesis -clean

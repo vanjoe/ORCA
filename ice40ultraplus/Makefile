@@ -1,3 +1,5 @@
+-include config.mk
+
 all:
 .SUFFIXES:
 
@@ -10,7 +12,7 @@ $(error Variable $$ICECUBE2 not defined )
 endif
 endif
 
-PROJECT=ice40ultraplus
+PROJECT ?= ice40ultraplus
 SBT_PROJECT=$(PROJECT)_sbt.project
 SYN_PRJ=$(PROJECT)_syn.prj
 LSE_PRJ=$(PROJECT)_lse.prj
@@ -31,7 +33,7 @@ HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) ./t
 
 
 
-all: build-software bit
+all: build-software bit programmer.xcf program_flash.xcf
 bit: $(BITFILE)
 
 IMEM_BASE=0
@@ -56,18 +58,18 @@ define mem-init
 LD_LIBRARY_PATH=$(ICECUBE2)/sbt_backend/lib/linux/opt:$${LD_LIBRARY_PATH} $(ICECUBE2)/sbt_backend/bin/linux/opt/meminitializer --des-lib $(OUTPUT_DIR)/sbt/netlist/oadb-$(TOP_LEVEL_ENTITY) --mem-list-file
 endef
 $(BITFILE): $(TIMING_REPORT) dmem.mem imem.mem $(DMEM_LIST) $(IMEM_LIST)
-	$(ice-tcl) iCEcube2_flow.tcl dmem.mem $(DMEM_LIST)
-	$(ice-tcl) iCEcube2_flow.tcl imem.mem $(IMEM_LIST)
+	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) dmem.mem $(DMEM_LIST)
+	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) imem.mem $(IMEM_LIST)
 
 	$(mem-init) $(IMEM_LIST)
 	$(mem-init) $(DMEM_LIST)
 
-	$(ice-tcl) iCEcube2_flow.tcl $(DMEM_LIST)
-	$(ice-tcl) iCEcube2_flow.tcl $(IMEM_LIST)
+	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) $(DMEM_LIST)
+	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) $(IMEM_LIST)
 
 
 $(TIMING_REPORT): $(EDF)
-	ICECUBE2=$(ICECUBE2) tclsh iCEcube2_flow.tcl
+	ICECUBE2=$(ICECUBE2) tclsh iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR)
 $(EDF): $(HDL_FILES)
 #run the compiler, output the log if compiler fails
 	SYNPLIFY_PATH=$(ICECUBE2)/synpbase \
@@ -83,7 +85,7 @@ syn: $(EDF)
 
 
 clean:
-	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem
+	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem *_Implmnt
 
 clean-all: clean
 	make -C software clean
@@ -93,10 +95,14 @@ $(MEM_FILE)::
 	make -C software FORMAT=mem
 
 PGM_CMD=$(ICECUBE2)/../../diamond/3.8_x64/bin/lin64/pgrcmd -infile
-pgm : $(BITFILE)
+programmer.xcf: programmer.xcf.template
+	sed "s/ice40ultraplus/$(PROJECT)/g" $< > $@
+pgm : $(BITFILE) programmer.xcf
 	$(PGM_CMD) programmer.xcf
 
-flash :
+program_flash.xcf: program_flash.xcf.template
+	sed "s/ice40ultraplus/$(PROJECT)/g" $< > $@
+flash: program_flash.xcf.template
 	$(PGM_CMD) program_flash.xcf
 
 .PHONY: syn all clean clean-all build-software bit pgm sim run_sim

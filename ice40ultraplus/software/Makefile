@@ -29,11 +29,29 @@ LD_FLAGS=-m32 -march=$(ARCH) -static -nostartfiles
 
 TARGET=test
 
+#For including the system clock time
+-include ../config.mk
+ifeq ($(PROJECT), ice40up_mdp_16MHz)
+SYS_CLK_FREQ := 16000000
+else ifeq ($(PROJECT), ice40up_mdp_24MHz)
+SYS_CLK_FREQ := 24000000
+else
+SYS_CLK_FREQ := 8000000
+endif
+SYS_CLK_TEMPLATE := sys_clk.h.template
+SYS_CLK_TEMP     := sys_clk.h.temp
+sys_clk.h::
+	@if [ ! -e $@ ]; then touch $@; fi
+	@sed "s/YOUR_SYS_CLK_HERE/$(SYS_CLK_FREQ)/g" $(SYS_CLK_TEMPLATE) > $(SYS_CLK_TEMP)
+	@diff -q $(SYS_CLK_TEMP) $@; if [ $$? != 0 ]; then cp $(SYS_CLK_TEMP) $@; echo "New key file $@ created.  Contents:"; cat $@; fi
+	@rm -f $(SYS_CLK_TEMP)
+
+
 $(C_OBJ_FILES) $(S_OBJ_FILES) : | obj/
 obj/:
 	mkdir -p obj/
 
-$(C_OBJ_FILES): obj/%.c.o : %.c
+$(C_OBJ_FILES): obj/%.c.o : %.c sys_clk.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(S_OBJ_FILES): obj/%.S.o : %.S
@@ -58,6 +76,6 @@ endif
 all: $(TARGET).$(FORMAT)
 
 clean:
-	rm -rf obj test.elf test.dump test.bin test.hex test.mif test.mem
+	rm -rf obj test.elf test.dump test.bin test.hex test.mif test.mem sys_clk.h
 
 -include $(wildcard obj/*.d)

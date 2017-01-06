@@ -7,8 +7,6 @@
 set device iCE40UP5K-UWG30
 set top_module verilog_top
 set proj_dir [pwd]
-set output_dir "ice40ultraplus_Implmnt"
-set edif_file  "ice40ultraplus"
 #set sdc_constraints "constraints/lve_timing.sdc"
 set pcf_constraints "placer.pcf"
 #set scf_constraints "$output_dir/ice40ultra.scf"
@@ -29,15 +27,17 @@ source $sbt_tcl
 
 
 #Parse command line arguments, currently if non-zero then run interactive
-if {$::argc == 2} {
-    set mem_file_name [lindex $::argv 0]
-    set list_file_name [lindex $::argv 1]
-    set sp_list_file_name [lindex $::argv 1]
+if {$::argc == 4} {
+    set edif_file [lindex $::argv 0] 
+    set output_dir [lindex $::argv 1]
+    set mem_file_name [lindex $::argv 2]
+    set list_file_name [lindex $::argv 3]
+    set sp_list_file_name [lindex $::argv 3]
     if {![file exists $mem_file_name]} {
-		  puts "Argument 0 should be memory file to initialize from; \"$mem_file_name\" doesn't exist."
+		  puts "Argument 2 should be memory file to initialize from; \"$mem_file_name\" doesn't exist."
 		  exit -1
     } elseif {![file exists $list_file_name]} {
-		  puts "Argument 1 should be memory list file; \"$list_file_name\" doesn't exist."
+		  puts "Argument 3 should be memory list file; \"$list_file_name\" doesn't exist."
 		  exit -1
     } else {
 		  puts "Initializing memory from memory file $mem_file_name and list file $list_file_name."
@@ -95,15 +95,19 @@ if {$::argc == 2} {
 		  }
 
     }
-} elseif {$::argc == 1} {
-    puts "One arguments passed, regenerating bits."
+} elseif {$::argc == 3} {
+    set edif_file [lindex $::argv 0] 
+    set output_dir [lindex $::argv 1]
+    puts "Three arguments passed, regenerating bits."
     sbt_init_env
     sbt_run_bitmap $top_module $device $output_dir $tool_options
-} elseif {$::argc == 0} {
-    puts "No arguments passed, running full backend."
+} elseif {$::argc == 2} {
+    set edif_file [lindex $::argv 0] 
+    set output_dir [lindex $::argv 1]
+    puts "Two arguments passed, running full backend."
     run_sbt_backend_auto $device $top_module $proj_dir $output_dir $tool_options $edif_file
 } else {
-    puts "Run with no arguments for full backend, 1 to regenerate ibts, 2 arguments for memory initialization."
+    puts "Run with 2 arguments for full backend, 3 to regenerate ibts, 4 arguments for memory initialization."
     exit -1
 }
 

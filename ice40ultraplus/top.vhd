@@ -22,17 +22,17 @@ entity vhdl_top is
     spi_sclk : out std_logic;
 
     --uart
-    txd       : out std_logic;
-    rxd       : out std_logic;
+    txd : out std_logic;
+    rxd : out std_logic;
 
     --led
-    led       : out std_logic;
+    led : out std_logic;
 
     --clk
-    cam_xclk  : in  std_logic;
-    cam_vsync : in  std_logic;
-    cam_href  : in  std_logic;
-    cam_dat   : in  std_logic_vector(7 downto 0);
+    cam_xclk  : in std_logic;
+    cam_vsync : in std_logic;
+    cam_href  : in std_logic;
+    cam_dat   : in std_logic_vector(7 downto 0);
 
     --sccb
     sccb_scl : inout std_logic;
@@ -58,7 +58,7 @@ architecture rtl of vhdl_top is
 
 --  constant reset_btn: std_logic := '1';
 
-  signal reset : std_logic;
+  signal reset : std_logic := '1';
 
   signal data_ADR_O   : std_logic_vector(31 downto 0);
   signal data_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -240,12 +240,13 @@ architecture rtl of vhdl_top is
   signal uart_debug_ack : std_logic;
 
 
-  signal clk             : std_logic;
-  signal osc_clk         : std_logic;
-  signal clk_int         : std_logic            := '0';
-  signal clk_3x_int      : std_logic            := '0';
-  signal clk_3x          : std_logic;
-  signal clk_reset_count : signed(3 downto 0)   := (others => '0');
+  signal clk        : std_logic;
+  signal osc_clk    : std_logic;
+  signal clk_6x_int : std_logic;
+  signal clk_int    : std_logic            := '0';
+  signal clk_3x_int : std_logic            := '0';
+  signal clk_3x     : std_logic;
+  signal clk_count  : unsigned(1 downto 0) := (others => '0');
 
   constant UART_ADDR_DAT         : std_logic_vector(7 downto 0) := "00000000";
   constant UART_ADDR_LSR         : std_logic_vector(7 downto 0) := "00000011";
@@ -255,10 +256,11 @@ architecture rtl of vhdl_top is
   signal mem_instr_ack           : std_logic;
 
 
-  signal nreset            : std_logic;
+  signal pll_resetn        : std_logic            := '0';
   signal auto_reset_count  : unsigned(3 downto 0) := (others => '0');
-  signal auto_reset        : std_logic;
-  signal auto_reset_on_clk : std_logic;
+  signal auto_reset        : std_logic            := '1';
+  signal auto_reset_on_clk : std_logic            := '1';
+  signal reset_count       : unsigned(3 downto 0) := (others => '0');
 
   signal ovm_dma_start : std_logic;
   signal ovm_dma_done  : std_logic;
@@ -281,32 +283,25 @@ begin
     port map (
       CLKOUT => osc_clk);
 
-  pwm_counter:  process (osc_clk) is
-    begin
-      if rising_edge(osc_clk) then
-        led_counter <= led_counter + 1;
-      end if;
-    end process;
+  pwm_counter : process (osc_clk) is
+  begin
+    if rising_edge(osc_clk) then
+      led_counter <= led_counter + 1;
+    end if;
+  end process;
 
   pll_3x_gen : if USE_PLL = 2 generate
-    process (osc_clk) is
-    begin  -- process
-      if osc_clk'event and osc_clk = '1' then  -- rising clock edge
-        clk_int <= not clk_int;
-      end if;
-    end process;
-
     pll_x3 : SB_PLL40_CORE_wrapper_x3
       port map (
-        REFERENCECLK => clk,
+        REFERENCECLK => osc_clk,
 
-        PLLOUTCORE      => clk_3x_int,
+        PLLOUTCORE      => clk_6x_int,
         PLLOUTGLOBAL    => open,
         EXTFEEDBACK     => 'X',
         DYNAMICDELAY    => (others => 'X'),
         LOCK            => pll_lock,
         BYPASS          => '0',
-        RESETB          => nreset,
+        RESETB          => pll_resetn,
         SDO             => open,
         SDI             => 'X',
         SCLK            => 'X',
@@ -314,41 +309,39 @@ begin
   end generate pll_3x_gen;
 
   pll_2x_gen : if USE_PLL = 1 generate
-    pll_div3 : SB_PLL40_CORE_wrapper_div3
+    pll_x2 : SB_PLL40_CORE_wrapper_x2
       port map (
-        REFERENCECLK => clk_3x,
+        REFERENCECLK => osc_clk,
 
-        PLLOUTCORE      => clk_int,
+        PLLOUTCORE      => clk_6x_int,
         PLLOUTGLOBAL    => open,
         EXTFEEDBACK     => 'X',
         DYNAMICDELAY    => (others => 'X'),
         LOCK            => pll_lock,
         BYPASS          => '0',
-        RESETB          => nreset,
+        RESETB          => pll_resetn,
         SDO             => open,
         SDI             => 'X',
         SCLK            => 'X',
         LATCHINPUTVALUE => 'X');
-
-    clk_3x_int <= osc_clk;
   end generate pll_2x_gen;
 
   no_pll_gen : if USE_PLL = 0 generate
-    signal clk_count       : unsigned(3 downto 0) := (others => '0');
-  begin
-    process (osc_clk)
-    begin
-      if rising_edge(osc_clk) then
-        clk_count  <= clk_count + 1;
-        clk_3x_int <= not clk_3x_int;
-        if clk_count = 2 then
-          clk_count <= (others => '0');
-          clk_int   <= not clk_int;
-        end if;
-      end if;
-    end process;
-    pll_lock <= '0';
+    clk_6x_int <= osc_clk;
+    pll_lock   <= '1';
   end generate no_pll_gen;
+
+  process (clk_6x_int)
+  begin
+    if rising_edge(clk_6x_int) then
+      clk_count  <= clk_count + 1;
+      clk_3x_int <= not clk_3x_int;
+      if clk_count = to_unsigned(2, clk_count'length) then
+        clk_count <= (others => '0');
+        clk_int   <= not clk_int;
+      end if;
+    end if;
+  end process;
 
   clk_gb : SB_GB
     port map (
@@ -368,6 +361,7 @@ begin
   --cam_xclk_internal <= cam_xclk;
 
 
+  --Reset the PLL's on startup
   process(osc_clk)
   begin
     if rising_edge(osc_clk) then
@@ -377,14 +371,24 @@ begin
       else
         auto_reset <= '0';
       end if;
+      pll_resetn <= not auto_reset;
     end if;
   end process;
 
   process(clk)
   begin
-    auto_reset_on_clk <= auto_reset;
-    reset  <= auto_reset_on_clk;
-    nreset <= not auto_reset_on_clk;
+    if rising_edge(clk) then
+      auto_reset_on_clk <= auto_reset or (not pll_lock);
+      if auto_reset_on_clk = '1' then
+        reset_count <= to_unsigned(0, reset_count'length);
+        reset       <= '1';
+      elsif reset_count /= "1111" then
+        reset_count <= reset_count + to_unsigned(1, reset_count'length);
+        reset       <= '1';
+      else
+        reset <= '0';
+      end if;
+    end if;
   end process;
 
   imem : component wb_ram
@@ -710,20 +714,20 @@ begin
       input     => pio_in
 
       );
-  sccb_sda           <= pio_out(0) when pio_oe(0) = '1'    else 'Z';
-  pio_in(0)          <= sccb_sda;
+  sccb_sda  <= pio_out(0) when pio_oe(0) = '1' else 'Z';
+  pio_in(0) <= sccb_sda;
 
-  sccb_scl           <= pio_out(1) when pio_oe(1) = '1'    else 'Z';
-  pio_in(1)          <= sccb_scl;
+  sccb_scl  <= pio_out(1) when pio_oe(1) = '1' else 'Z';
+  pio_in(1) <= sccb_scl;
 
-  ovm_dma_start      <= pio_out(2);
-  pio_in(2)          <= pio_out(2);
+  ovm_dma_start <= pio_out(2);
+  pio_in(2)     <= pio_out(2);
 
-  pio_in(3)          <= ovm_dma_busy;
-  ovm_dma_busy       <= '1'        when ovm_dma_done = '0' else '0';
+  pio_in(3)    <= ovm_dma_busy;
+  ovm_dma_busy <= '1' when ovm_dma_done = '0' else '0';
 
-  led                <= pio_out(4) AND std_logic_vector(led_counter)(15) AND std_logic_vector(led_counter)(14);
-  pio_in(4)          <= pio_out(4);
+  led       <= pio_out(4) and std_logic_vector(led_counter)(15) and std_logic_vector(led_counter)(14);
+  pio_in(4) <= pio_out(4);
 
   pio_in(7 downto 5) <= pio_out(7 downto 5);
 

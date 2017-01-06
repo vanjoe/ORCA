@@ -1,7 +1,7 @@
 #ifndef TIME_H
 #define TIME_H
 
-#define SYS_CLK 8000000
+#include "sys_clk.h"
 
 static inline unsigned get_time()
 {

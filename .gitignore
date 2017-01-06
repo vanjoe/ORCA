@@ -5,6 +5,7 @@ tags
 *.nfs*
 *~
 \#*
+.#*
 
 de2-115/system/*
 de2-115/system.qsys.log
