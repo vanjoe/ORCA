@@ -40,7 +40,7 @@ add_file -vhdl -lib work "../rtl/orca.vhd"
 add_file -vhdl -lib work "../rtl/orca_core.vhd" 
 add_file -vhdl -lib work "../rtl/register_file.vhd" 
 add_file -vhdl -lib work "../rtl/sys_call.vhd" 
-add_file -constraint -lib work "timing.sdc"
+add_file -constraint -lib work "constr_8MHz.sdc"
 #implementation: "ice40ultraplus_Implmnt"
 impl -add ice40ultraplus_Implmnt -type fpga
 
