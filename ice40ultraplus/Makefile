@@ -85,7 +85,7 @@ syn: $(EDF)
 
 
 clean:
-	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem *_Implmnt
+	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem *_Implmnt program_flash.xcf programmer.xcf
 
 clean-all: clean
 	make -C software clean
@@ -95,13 +95,19 @@ $(MEM_FILE)::
 	make -C software FORMAT=mem
 
 PGM_CMD=$(ICECUBE2)/../../diamond/3.8_x64/bin/lin64/pgrcmd -infile
-programmer.xcf: programmer.xcf.template
-	sed "s/ice40ultraplus/$(PROJECT)/g" $< > $@
+programmer.xcf::
+	@if [ ! -e $@ ]; then touch $@; fi
+	@sed "s/ice40ultraplus/$(PROJECT)/g" programmer.xcf.template > programmer.xcf.temp
+	@diff -q programmer.xcf.temp $@; if [ $$? != 0 ]; then cp programmer.xcf.temp $@; echo "New key file $@ created."; fi
+	@rm -f programmer.xcf.temp
 pgm : $(BITFILE) programmer.xcf
 	$(PGM_CMD) programmer.xcf
 
-program_flash.xcf: program_flash.xcf.template
-	sed "s/ice40ultraplus/$(PROJECT)/g" $< > $@
+program_flash.xcf::
+	@if [ ! -e $@ ]; then touch $@; fi
+	@sed "s/ice40ultraplus/$(PROJECT)/g" program_flash.xcf.template > program_flash.xcf.temp
+	@diff -q program_flash.xcf.temp $@; if [ $$? != 0 ]; then cp program_flash.xcf.temp $@; echo "New key file $@ created."; fi
+	@rm -f program_flash.xcf.temp
 flash: program_flash.xcf.template
 	$(PGM_CMD) program_flash.xcf
 
