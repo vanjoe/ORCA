@@ -33,37 +33,6 @@ void delayms( unsigned int ms)
 
 int main()
 {
-	int i=0;
-<<<<<<< HEAD
-#if 0
-	printf("Hello world %X\r\n",i++);
-	//delayms(500);
-
-	//initialize the mxp
-	init_mxp();
-
-	int vlen=10;
-	vbx_word_t *va=SCRATCHPAD_BASE;
-	vbx_word_t *vb=va+vlen;
-	vbx_word_t *vc=va+vlen;
-
-	//set va to enum values
-	vbx_set_vl(vlen);
-	vbx(SEW,VMUL,va,1,vbx_ENUM);
-
-
-	vbx(SVW,VAND,vb,0,vb);
-	vbx(SVW,VOR,vb,5,vb);
-
-	for(i=0;i<vlen;i++){
-		vb[i]=5;
-	}
-	vbx_acc(VVW,VADD,vc,va,vb);
-
-	for(i=0;i<vlen;i++){
-		printf("vc[%d] = %d\r\n", i, vc[i]);
-
-
 	cifar_lve();
 
 

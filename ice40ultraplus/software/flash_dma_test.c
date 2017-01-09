@@ -5,7 +5,7 @@
 #include "vbx.h"
 #include "flash_dma.h"
 #include "time.h"
-
+#include "base64.h"
 void do_lve(void* base){
 	//initialize the unit stide to be 4 (1 word)
 	//note this does not mean you can do un-aligned aaccesses
@@ -47,7 +47,7 @@ int main()
 
 	printf("TEST!\r\n");
 
-	int xfer_size=1020;
+	int xfer_size=1024;
 	volatile char* sp_base=(volatile char*)SCRATCHPAD_BASE;
 	int i;
 
@@ -59,28 +59,37 @@ int main()
 
 
 
+	while(1){
+		for(i=0;i<xfer_size;i++){
+			sp_base[i]=0;
+		}
 
 
+		int start_tiem=get_time();
+		int flash_address=0;
 
-	int start_tiem=get_time();
-	int flash_address=4;
+		flash_dma_trans(flash_address,(void*)sp_base,xfer_size);
+		do_lve(SCRATCHPAD_BASE+xfer_size);
+		//wait for transfer done
+		while(!flash_dma_done());
 
-	flash_dma_trans(flash_address,(void*)sp_base,xfer_size);
-	do_lve(SCRATCHPAD_BASE+xfer_size);
-	//wait for transfer done
-	while(!flash_dma_done());
+		//since the LVE does some printing that can take longer than the
+		//dma transfer, the cycle count might not be strictly correct.
+		//it should be about 19 cycles per byte, + interference
+		printf("%d bytes read in %d cycles\r\n",xfer_size,get_time()-start_tiem);
+		for(i=0;i<xfer_size;i++){
+			printf("%02X ",sp_base[i]);
+		}
+		printf("\r\n");
 
-	//since the LVE does some printing that can take longer than the
-	//dma transfer, the cycle count might not be strictly correct.
-	//it should be about 19 cycles per byte, + interference
-	printf("%d bytes read in %d cycles\r\n",xfer_size,get_time()-start_tiem);
-	for(i=0;i<xfer_size;i++){
-		printf("%02X ",sp_base[i]);
+		print_base64(sp_base,xfer_size);
+		int checksum=0;
+		for(i=0;i<xfer_size;i++){
+		  checksum+=sp_base[i];
+		}
+		printf("DONE!!\r\n");
+		delayms(3000);
 	}
-	printf("\r\n");
-
-	printf("DONE!!\r\n");
-
 	return 0;
 
 
