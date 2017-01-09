@@ -94,7 +94,7 @@ build-software: $(MEM_FILE)
 $(MEM_FILE)::
 	make -C software FORMAT=mem
 
-PGM_CMD=$(ICECUBE2)/../../diamond/3.8_x64/bin/lin64/pgrcmd -infile
+PGM_CMD=$(ICECUBE2)/../../programmer/3.8_x64/bin/lin64/pgrcmd -infile
 programmer.xcf::
 	@if [ ! -e $@ ]; then touch $@; fi
 	@sed "s/ice40ultraplus/$(PROJECT)/g" programmer.xcf.template > programmer.xcf.temp
