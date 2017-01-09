@@ -168,7 +168,7 @@ begin  -- architecture rtl
           -- if not done transfer do nothing
           if done_transfer = '1' then
             if init_loop_count = 0 then
-              if spi_data_out = x"13" then
+              if spi_data_out = x"13" or spi_data_out = x"15" then
                 next_state   <= IDLE;
                 cur_state    <= TRANSITION;
                 initializing <= '0';
