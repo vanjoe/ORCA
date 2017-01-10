@@ -12,7 +12,7 @@ $(error Variable $$ICECUBE2 not defined )
 endif
 endif
 
-PROJECT ?= ice40ultraplus
+PROJECT ?= ice40up_mdp_16MHz
 SBT_PROJECT=$(PROJECT)_sbt.project
 SYN_PRJ=$(PROJECT)_syn.prj
 LSE_PRJ=$(PROJECT)_lse.prj

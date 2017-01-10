@@ -309,13 +309,13 @@ begin
   end generate pll_3x_gen;
 
   pll_2x_gen : if USE_PLL = 1 generate
-    pll_x2 : SB_PLL40_CORE_wrapper_x2
+    pll_div3 : SB_PLL40_CORE_wrapper_div3
       port map (
-        REFERENCECLK => osc_clk,
+        REFERENCECLK => clk_3x,
 
-        PLLOUTCORE      => clk_6x_int,
-        PLLOUTGLOBAL    => open,
-        EXTFEEDBACK     => 'X',
+        PLLOUTCORE      => open,
+        PLLOUTGLOBAL    => clk,
+        EXTFEEDBACK     => clk,
         DYNAMICDELAY    => (others => 'X'),
         LOCK            => pll_lock,
         BYPASS          => '0',
@@ -324,6 +324,11 @@ begin
         SDI             => 'X',
         SCLK            => 'X',
         LATCHINPUTVALUE => 'X');
+
+    clk_gb : SB_GB
+      port map (
+        GLOBAL_BUFFER_OUTPUT         => clk_3x,
+        USER_SIGNAL_TO_GLOBAL_BUFFER => osc_clk);
   end generate pll_2x_gen;
 
   no_pll_gen : if USE_PLL = 0 generate
@@ -331,27 +336,29 @@ begin
     pll_lock   <= '1';
   end generate no_pll_gen;
 
-  process (clk_6x_int)
-  begin
-    if rising_edge(clk_6x_int) then
-      clk_count  <= clk_count + 1;
-      clk_3x_int <= not clk_3x_int;
-      if clk_count = to_unsigned(2, clk_count'length) then
-        clk_count <= (others => '0');
-        clk_int   <= not clk_int;
+  logic_clock_divider_gen : if USE_PLL /= 1 generate
+    process (clk_6x_int)
+    begin
+      if rising_edge(clk_6x_int) then
+        clk_count  <= clk_count + 1;
+        clk_3x_int <= not clk_3x_int;
+        if clk_count = to_unsigned(2, clk_count'length) then
+          clk_count <= (others => '0');
+          clk_int   <= not clk_int;
+        end if;
       end if;
-    end if;
-  end process;
+    end process;
 
-  clk_gb : SB_GB
-    port map (
-      GLOBAL_BUFFER_OUTPUT         => clk,
-      USER_SIGNAL_TO_GLOBAL_BUFFER => clk_int);
+    clk_gb : SB_GB
+      port map (
+        GLOBAL_BUFFER_OUTPUT         => clk,
+        USER_SIGNAL_TO_GLOBAL_BUFFER => clk_int);
 
-  clk3x_gb : SB_GB
-    port map (
-      GLOBAL_BUFFER_OUTPUT         => clk_3x,
-      USER_SIGNAL_TO_GLOBAL_BUFFER => clk_3x_int);
+    clk3x_gb : SB_GB
+      port map (
+        GLOBAL_BUFFER_OUTPUT         => clk_3x,
+        USER_SIGNAL_TO_GLOBAL_BUFFER => clk_3x_int);
+  end generate logic_clock_divider_gen;
 
 
   cam_dat_internal <= cam_dat;

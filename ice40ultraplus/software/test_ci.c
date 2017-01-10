@@ -9,7 +9,7 @@ int main(){
 	errors += lve_test(&failed_tests);
 
 	if(errors){
-		printf("Failed CI test with %d errors %04X mask:(\r\n", errors, failed_tests);
+		printf("Failed CI test with %d errors %04X mask :(\r\n", errors, failed_tests);
 	} else {
 		printf("Passed CI test :)\r\n");
 	}

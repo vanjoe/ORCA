@@ -154,10 +154,16 @@ architecture rtl of lve_top is
   signal readdata_valid      : std_logic;
   signal eqz                 : std_logic;
 
-  signal enum_enable         : std_logic;
-  signal scalar_enable       : std_logic;
-  signal lve_ack             : std_logic;
-  signal extenal_port_enable : std_logic;
+  signal enum_enable          : std_logic;
+  signal scalar_enable        : std_logic;
+  signal lve_ack              : std_logic;
+  signal external_port_enable : std_logic;
+
+  signal slave_address_reg    : std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+  signal slave_read_en_reg    : std_logic;
+  signal slave_write_en_reg   : std_logic;
+  signal slave_byte_en_reg    : std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
+  signal slave_data_in_reg    : std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
 
 
   function align_input (
@@ -221,7 +227,18 @@ begin
 
   --src_incr <= SHIFT_LEFT(pointer_increment, 2);
 
-  extenal_port_enable <= slave_read_en or slave_write_en;
+  process (clk) is
+  begin  -- process
+    if rising_edge(clk) then
+      slave_address_reg  <= slave_address;
+      slave_read_en_reg  <= slave_read_en;
+      slave_write_en_reg <= slave_write_en;
+      slave_byte_en_reg  <= slave_byte_en;
+      slave_data_in_reg  <= slave_data_in;
+    end if;
+  end process;
+
+  external_port_enable <= slave_read_en_reg or slave_write_en_reg;
 
   --instruction parsing process
   address_gen : process(clk)
@@ -248,7 +265,7 @@ begin
           dest_size <= instruction(14 downto 13);
           src_size  <= instruction(12 downto 11);
         else
-          if extenal_port_enable = '0' then
+          if external_port_enable = '0' then
             srca_ptr <= srca_ptr+ src_incr;
             srcb_ptr <= srcb_ptr+ src_incr;
           end if;
@@ -259,7 +276,7 @@ begin
             read_vector_length    <= unsigned(rs2_data(write_vector_length'range));
             accumulation_register <= to_unsigned(0, accumulation_register'length);
           else
-            if extenal_port_enable = '0' then
+            if external_port_enable = '0' then
               enum_count <= enum_count +1;
               if read_vector_length /= 0 then
                 read_vector_length <= read_vector_length - 1;
@@ -286,7 +303,7 @@ begin
 
   stall_from_lve <= valid_lve_instr and not is_prefix when first_element = '1' or (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
 
-  rd_en <= valid_lve_instr when extenal_port_enable = '0' and (read_vector_length > 1 or first_element = '1') else '0';
+  rd_en <= valid_lve_instr when external_port_enable = '0' and (read_vector_length > 1 or first_element = '1') else '0';
 
 
   --lve_data1 <= align_input(sign_a, src_size, s_align, srca_data_read);
@@ -421,12 +438,12 @@ begin
       byte_en2  => byte_en2,
       wen2      => write_enable,
       data_in2  => std_logic_vector(writeback_data),
-      rwaddr3   => slave_address(log2(SCRATCHPAD_SIZE)-1 downto 2),
-      ren3      => slave_read_en,
-      wen3      => slave_write_en,
-      byte_en3  => slave_byte_en,
+      rwaddr3   => slave_address_reg(log2(SCRATCHPAD_SIZE)-1 downto 2),
+      ren3      => slave_read_en_reg,
+      wen3      => slave_write_en_reg,
+      byte_en3  => slave_byte_en_reg,
       data_out3 => slave_data_out,
       ack3      => slave_ack,
-      data_in3  => slave_data_in);
+      data_in3  => slave_data_in_reg);
 
 end architecture;
