@@ -94,10 +94,10 @@ module verilog_top
         .OUTPUTENABLE (0),
         .DOUT0 (),
         .DOUT1 (),
-//        .DIN0 (cam_dat_internal[0]),
-//        .DIN1 ()
-        .DIN0 (),
-        .DIN1 (cam_dat_internal[0])
+        .DIN0 (cam_dat_internal[0]),
+        .DIN1 ()
+//        .DIN0 (),
+//        .DIN1 (cam_dat_internal[0])
         );
    defparam od0.PIN_TYPE = 6'b000000;
    defparam od0.NEG_TRIGGER = 1'b0;
@@ -113,10 +113,10 @@ module verilog_top
         .OUTPUTENABLE (0),
         .DOUT0 (),
         .DOUT1 (),
-//        .DIN0 (cam_dat_internal[1]),
-//        .DIN1 ()
-        .DIN0 (),
-        .DIN1 (cam_dat_internal[1])
+        .DIN0 (cam_dat_internal[1]),
+        .DIN1 ()
+//        .DIN0 (),
+//        .DIN1 (cam_dat_internal[1])
         );
    defparam od1.PIN_TYPE = 6'b000000;
    defparam od1.NEG_TRIGGER = 1'b0;
@@ -131,10 +131,10 @@ module verilog_top
         .OUTPUT_ENABLE (0),
         .D_OUT_0 (),
         .D_OUT_1 (),
-//        .D_IN_0 (cam_dat_internal[2]),
-//        .D_IN_1 ()
-        .D_IN_0 (),
-        .D_IN_1 (cam_dat_internal[2])
+        .D_IN_0 (cam_dat_internal[2]),
+        .D_IN_1 ()
+//        .D_IN_0 (),
+//        .D_IN_1 (cam_dat_internal[2])
         );
    defparam od2.PIN_TYPE = 6'b000000;
    defparam od2.NEG_TRIGGER = 1'b0;
@@ -149,13 +149,31 @@ module verilog_top
         .OUTPUT_ENABLE (0),
         .D_OUT_0 (),
         .D_OUT_1 (),
-//        .D_IN_0 (cam_dat_internal[3]),
-//        .D_IN_1 ()
-        .D_IN_0 (),
-        .D_IN_1 (cam_dat_internal[3])
+        .D_IN_0 (cam_dat_internal[3]),
+        .D_IN_1 ()
+//        .D_IN_0 (),
+//        .D_IN_1 (cam_dat_internal[3])
         );
    defparam od3.PIN_TYPE = 6'b000000;
    defparam od3.NEG_TRIGGER = 1'b0;
+
+	SB_IO
+     od4(
+        .PACKAGE_PIN (cam_dat[4]),
+        .LATCH_INPUT_VALUE (0),
+        .CLOCK_ENABLE (1),
+        .INPUT_CLK (cam_xclk_internal_buf),
+        .OUTPUT_CLK (0),
+        .OUTPUT_ENABLE (0),
+        .D_OUT_0 (),
+        .D_OUT_1 (),
+        .D_IN_0 (cam_dat_internal[4]),
+        .D_IN_1 ()
+//        .D_IN_0 (),
+//        .D_IN_1 (cam_dat_internal[4])
+        );
+   defparam od4.PIN_TYPE = 6'b000000;
+   defparam od4.NEG_TRIGGER = 1'b0;
 
 	SB_IO
      od5(
@@ -167,10 +185,10 @@ module verilog_top
         .OUTPUT_ENABLE (0),
         .D_OUT_0 (),
         .D_OUT_1 (),
-//        .D_IN_0 (cam_dat_internal[5]),
-//        .D_IN_1 ()
-        .D_IN_0 (),
-        .D_IN_1 (cam_dat_internal[5])
+        .D_IN_0 (cam_dat_internal[5]),
+        .D_IN_1 ()
+//        .D_IN_0 (),
+//        .D_IN_1 (cam_dat_internal[5])
         );
    defparam od5.PIN_TYPE = 6'b000000;
    defparam od5.NEG_TRIGGER = 1'b0;
@@ -185,10 +203,10 @@ module verilog_top
         .OUTPUT_ENABLE (0),
         .D_OUT_0 (),
         .D_OUT_1 (),
-//        .D_IN_0 (cam_dat_internal[6]),
-//        .D_IN_1 ()
-        .D_IN_0 (),
-        .D_IN_1 (cam_dat_internal[6])
+        .D_IN_0 (cam_dat_internal[6]),
+        .D_IN_1 ()
+//        .D_IN_0 (),
+//        .D_IN_1 (cam_dat_internal[6])
         );
    defparam od6.PIN_TYPE = 6'b000000;
    defparam od6.NEG_TRIGGER = 1'b0;
@@ -203,10 +221,10 @@ module verilog_top
         .OUTPUT_ENABLE (0),
         .D_OUT_0 (),
         .D_OUT_1 (),
-//        .D_IN_0 (cam_dat_internal[7]),
-//        .D_IN_1 ()
-        .D_IN_0 (),
-        .D_IN_1 (cam_dat_internal[7])
+        .D_IN_0 (cam_dat_internal[7]),
+        .D_IN_1 ()
+//        .D_IN_0 (),
+//        .D_IN_1 (cam_dat_internal[7])
         );
    defparam od7.PIN_TYPE = 6'b000000;
    defparam od7.NEG_TRIGGER = 1'b0;
@@ -221,10 +239,10 @@ module verilog_top
         .OUTPUT_ENABLE (0),
         .D_OUT_0 (),
         .D_OUT_1 (),
-//        .D_IN_0 (cam_href_internal),
-//        .D_IN_1 ()
-        .D_IN_0 (),
-        .D_IN_1 (cam_href_internal)
+        .D_IN_0 (cam_href_internal),
+        .D_IN_1 ()
+//        .D_IN_0 (),
+//        .D_IN_1 (cam_href_internal)
         );
    defparam odhref.PIN_TYPE = 6'b000000;
    defparam odhref.NEG_TRIGGER = 1'b0;
@@ -239,10 +257,10 @@ module verilog_top
         .OUTPUT_ENABLE (0),
         .D_OUT_0 (),
         .D_OUT_1 (),
-//        .D_IN_0 (cam_vsync_internal),
-//        .D_IN_1 ()
-        .D_IN_0 (),
-        .D_IN_1 (cam_vsync_internal)
+        .D_IN_0 (cam_vsync_internal),
+        .D_IN_1 ()
+//        .D_IN_0 (),
+//        .D_IN_1 (cam_vsync_internal)
         );
    defparam odvsync.PIN_TYPE = 6'b000000;
    defparam odvsync.NEG_TRIGGER = 1'b0;
