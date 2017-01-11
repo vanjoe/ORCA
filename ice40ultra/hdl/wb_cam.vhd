@@ -378,11 +378,15 @@ begin  -- architecture rtl
       if v_load_pixel = '1' then
         v_rgb_out_row           <= v_rowbuf_row;           -- 5 bits (0..31)
         v_rgb_out_col           <= v_address;              -- 6 bits (0..63)
+-- RGBA8888, using 16x16 averages
+-- NOTE: Be sure the software has appropriate settings
         v_rgb_out(31 downto 24) <= (others => '0');
         v_rgb_out(23 downto 16) <= v_rdata(29 downto 22);  -- extract red 8 MSB
         v_rgb_out(15 downto  8) <= v_rdata(19 downto 12);  -- extract grn 8 MSB
         v_rgb_out( 7 downto  0) <= v_rdata( 9 downto  2);  -- extract blu 8 MSB
-        --v_rgb_out <= v_rgb_ff; -- COMMENTED:RGB888_AVERAGING UNCOMMENTED: RGB565_SUBSAMPLING
+-- RGB565, using 16:1 subsampling
+-- NOTE: Be sure the software has appropriate settings
+        --v_rgb_out <= v_rgb_ff;
       end if;
       --if rst_i = '1' then
       --  v_rgb_out_valid <= '0';

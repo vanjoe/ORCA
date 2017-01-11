@@ -1,5 +1,5 @@
 
-/* Based on:
+/* Based on code sent by Omnivision with the following header:
  *
  * ;OmniVision Technologies Inc.
  * ;Sensor Setting Release Log
@@ -18,6 +18,10 @@
 
 
 static const regval_t regval_list[] = {
+
+// pairs of values below are <reg, value>
+// value in comments in (parentheses) are camera defaults listed in datasheet
+// actual camera defaults may be different than values listed below
 
  {0x12, 0x80}, // enable RESET
  {0x0e, 0x08}, // enable SLEEP
@@ -53,6 +57,7 @@ static const regval_t regval_list[] = {
 #if 1
  // TO SCALE DOWN, set output size appropriately
  // eg 640x480: 640 = 0x02 0x80, 480 = 0x01 0xe0
+ // Omnivision defaults
  {0xcc, 0x02}, // (0x02) b1:0=oh[9:8] MSB of horiz output size \ 640 pixels output size
  {0xcd, 0x80}, // (0x80) b7:0=oh[7:0] LSB of horiz output size /
  {0xce, 0x01}, // (0x01)   b0=ov[8]   MSB of vert output size  \ 480 pixels output size
@@ -60,6 +65,7 @@ static const regval_t regval_list[] = {
 #else
  // TO SCALE DOWN, set output size appropriately
  // eg 40x30: 40 = 0x00 0x28, 30 = 0x00 0x1e
+ // VectorBlox version (Tested to work, but unsure of PCLK timing)
  {0xcc, 0x00}, // (0x02) b1:0=oh[9:8] MSB of horiz output size \ 40 pixels output size
  {0xcd, 0x28}, // (0x80) b7:0=oh[7:0] LSB of horiz output size /
  {0xce, 0x00}, // (0x01)   b0=ov[8]   MSB of vert output size  \ 30 pixels output size
@@ -161,93 +167,37 @@ static const regval_t regval_list[] = {
  {0x14, 0x3b}, // (0x12) 0011.1011, b654=maxAGC_of_16x, b3=reserved, b1=manual_50/60_mode, b0=50Hz
 #endif
 
- ///////
- /// VectorBlox added
- /////////
+ ////////////////////////////
+ // VectorBlox code
+ ////////////////////////////
 
-#if 1
-// {0x89, 0x80}, // lc_rgain
-// {0x8a, 0x80}, // lc_ggain
-// {0x8b, 0x80}, // lc_bgain
-// {0x01, 0x40}, // AWB Blue gain
-// {0x02, 0x40}, // AWB Red gain
-// {0x03, 0x40}, // AWB Green gain
-#endif
-
- //{0x14, 0x3b},  // 50Hz
  //{0x14, 0x3a},  // 60Hz
  {0x5e, 0x00},   // restore divided PCLK
  {0x0c, 0x96},   //              vertical mirror  9=8+1
  {0x0c, 0xd6},   // horizontal & vertical mirror  d=8+4+1=13
- // {0x11, 0x00},   // Internal clock dividers
-
- // experimental
-// {0xd2, 0x40}, // negate image
-// {0xd2, 0x20}, // grayscale image
-// {0xd2, 0x00}, // default
-
-// {0x3f, 0x04}, // HREF goes on PCLK rising edge
-// {0x3f, 0x44}, // HREF goes on PCLK falling edge (default)
-
-// {0x28, 0x80}, // output negative data
-// {0x28, 0x00}, // default
-
-//    #if AUTO_WHITE_BALANCE
-//    // turn on AWB ??
-//     {0x80, 0x7f}, // (0x7e) b6=cip_en, b5=bc_en, b4=wc_en, b3=gamma_en, b2=awb_gain_en, b1=awb_en, b0=lenc_en
-//    #else
-//    // turn off AWB ??
-//     {0x80, 0x7b}, // (0x7e) b6=cip_en, b5=bc_en, b4=wc_en, b3=gamma_en, b2=awb_gain_en, b1=awb_en, b0=lenc_en
-//     {0x8e, 0x12}, // (0x12) 1001.0010, b7=*awb_simple, b654=stable_range, b3=awb_bias_stat, b210=local_limit
-//    #endif
-
-#if 0
-//                datasht actul
- {0x8e, 0x92}, // (0x12) 0x92 awb_settings
-// {0x8f, 0x19}, // (0x  )
- {0x90, 0x50}, // (0x50) 0x50 awb_settings
- {0x91, 0x20}, // (0x01) 0x20 awb_settings
- {0x92, 0xf0}, // (0x00) 0xf0 awb_ky
- {0x93, 0xff}, // (0x00) 0xff awb_kx
- {0x94, 0x0c}, // (0x0f) 0x0c awb_ec
- {0x95, 0x0c}, // (0x0f) 0x0c awb_fc
- {0x96, 0xff}, // (0xf0) 0xff value_top_limit
- {0x97, 0x00}, // (0x10) 0x00 value_bot_limit
- {0x98, 0x81}, // (0x00) 0x81 day_limit
- {0x99, 0x8b}, // (0x00) 0x8b a_limit
- {0x9a, 0x95}, // (0x30) 0x95 day_split
- {0x9b, 0x8d}, // (0x30) 0x8d a_split
- {0x9c, 0xf0}, // (0xf0) 0xf0 red_limit
- {0x9d, 0xf0}, // (0xf0) 0xf0 green_limit
- {0x9e, 0xf0}, // (0xf0) 0xf0 blue_limit
- {0x9f, 0xff}, // (0xff) 0xff awb_b_block
- {0xa0, 0xa0}, // (0x40) 0xa0 awb_x0
- {0xa1, 0x94}, // (0x40) 0x94 awb_y0
- {0xa2, 0x0f}, // (0x0f) 0x0f awb_s
-#endif
-
-
-
 #if 0
 // test pattern
 // {0x61, 0x60}, // 8b pattern
 // {0x61, 0x70}, // 8b pattern (model 2)
  {0x61, 0x00}, // default
-
-// try delaying PCLK
- {0x5e, 0x00},   // delay pclk 00, 01, 10, 11
 #endif
 
 // PCLK DIVIDER: METHOD 1
 // {0x30, 0x07},   // PCLK divide by 3
 // {0x30, 0x06},   // PCLK divide by 2
 // {0x30, 0x04},   // PCLK divide by 1 (default)
-// PCLK DIVIDER: METHOD 2
+
+// PCLK DIVIDER: METHOD 2, recomnmended by Omnivision, used by Sony
 // {0x11, 0x00},   // PCLK divider, data=N=0, divide by (N+1)=1
 // {0x11, 0x02},   // PCLK divider, data=N=1, divide by (N+1)=3
  {0x11, 0x01},   // PCLK divider, data=N=1, divide by (N+1)=2
 
+
+
+ ////////////////////////////
  // Finish up Omnivision code
+ ////////////////////////////
+
  {0x0e, 0x00}, // (0x00) disable SLEEP
 
 };

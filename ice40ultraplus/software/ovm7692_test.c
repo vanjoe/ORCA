@@ -13,6 +13,8 @@
 #define UART        1
 #define OPEN_CV     1
 #define PRINT_PIC   0
+#define IMAGE_DENOISE_H 0
+#define IMAGE_DENOISE_V 0
 
 
 
@@ -58,76 +60,29 @@ typedef struct{
 void ovm_set_bit( int bitpos )
 {
 	volatile uint *p = &( SCCB_PIO_BASE[PIO_DATA_REGISTER] );
-        *p |= (1<<bitpos);
-	//((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]|=(1<<bitpos);
+	*p |= (1<<bitpos);
 }
 
 void ovm_clear_bit( int bitpos )
 {
 	volatile uint *p = &( SCCB_PIO_BASE[PIO_DATA_REGISTER] );
-        *p &= (~(1<<bitpos));
-	//((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER]&=(~(1<<bitpos));
+	*p &= (~(1<<bitpos));
 }
 
 int ovm_get_bit( int bitpos )
 {
 	volatile uint *p = &( SCCB_PIO_BASE[PIO_DATA_REGISTER] );
-        return (*p & (1<<bitpos)) ? 1 : 0 ;
+	return (*p & (1<<bitpos)) ? 1 : 0 ;
 }
 
 
 int ovm_isdone()
 {
 	return !ovm_get_bit( PIO_BIT_DONE );
-	//return !(((volatile int*)SCCB_PIO_BASE)[PIO_DATA_REGISTER] & (1<<PIO_BIT_DONE));
 }
 
 
-#if 0
-static const regval_t regval_list[] ={
-	// STARTUP
-	{ 0x12, 0x00}, // end RESET
-	{ 0x12, 0x80}, //  start RESET
-
-	{0x3e, 0x30},
-	{0x28, 0x00}, /* VSYNC NEG */
-	{0x11, 0x00}, /* Internal clock dividers, 30 fps default */
-	{0x5e, 0x10}, /* Divided PCLK */
-	{0x0e, 0x00},/* Exit sleep mode necessary */
-	// VGA ARRAY
-#if 0
-	{ 0x12, 0x80}, // start RESET
-	{ 0x0e, 0x08}, // enable sleep mode
-#endif
-	// ...other init stuff...
-
-	// DEVICE INIT
-	// { 0x3e, 0x30}, //1/2 of regular PCLK, MIPI clk in YUV/RGB
-	// { 0x28, 0x04 }, // VSYNG active on rising PCLK
-	{ 0x11, 0x00}, // set 30fps
-	// { 0x0C, 0x36}, // swap Blue and Red in RGB565
-	{ 0x0C, 0x16}, // original Blue and Red in RGB565
-	{ 0x0C, 0xD6}, // horizontal and vertical mirror
-	// { 0x5e 0x10}, // divided PCLK
-	// { 0x37 0x14}, // output PCLK/2
-	{ 0x61, 0x00}, // no test pattern
-	// { 0x61, 0x60}, // 8b test pattern
-	//	{ 0x61, 0x70}, // 8b test pattern (model2)
-	// { 0x64, 0x11}, // set PCLK to SCLK
-	// { 0x64, 0x21}, // set PCLK to SCLK/2
-	//{ 0x37, 0x1c},
-	{ 0x30, 0x06 }, // sets PCLK to SCLK/2 using PLL /2 prescaler
-	{ 0x12, 0x00}, // end RESET
-	{ 0x12, 0x06}, // set RGB565
-
-	{ 0x0e, 0x00}, // exit sleep mode
-
-	// FRAMERATE (30fps)
-	// set it again?
-};
-#else
 #include "ovm7692_reg.c"
-#endif
 
 
 int ovm_configure()
@@ -172,6 +127,7 @@ int ovm_configure()
 }
 
 #if PRINT_PIC
+// print ASCII art version of image using grayscale
 static char gray2txt[]="   ...'`,^:\";~-_+<>i!lI? /\\|()1{}[]rcvunxzjftLCJUYXZO0Qoahkbdpqwm*WMB8&%$#@";
 //static char gray2txt[]=" .:;+oi?j{}[]CUO0QWMB8@";
 void print_pic( uchar* pix,int cols,int rows,int stride)
@@ -294,6 +250,8 @@ void ovm_get_frame()
 
 
 
+// image speckle removing, based on median filter
+// compare 3 horizontal pixels, replace center with median value
 void h_denoise( uchar* buf )
 {
 	uchar out, t;
@@ -305,30 +263,20 @@ void h_denoise( uchar* buf )
 		for(c=1;c<rgb_h-1;c++){
 			off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-0);
 			uchar pl = buf[off-1];
-
-#if 0
-			printf("%02x", buf[off-1] );
-			const uint diff = (buf[off-1] - out) & 0xff;
-			if( diff==0 ) printf("  ");
-			else if( diff <  8 || diff > 0xff- 8 ) printf(". ");
-			else if( diff < 16 || diff > 0xff-16 ) printf("+ ");
-			else                                   printf("# ");
-#endif
-			buf[off-1] = out;
-
 			uchar pc = buf[off-0];
 			uchar pr = buf[off+1];
 			if( pl > pc ) { t=pl; pl=pc; pc=t; }
 			if( pc > pr ) { t=pc; pc=pr; pr=t; }
 			if( pl > pc ) { t=pl; pl=pc; pc=t; }
+			buf[off-1] = out;
 			out = pc;
 		}
 		buf[off]=out;
-		//printf("\r\n");
 	}
-	//printf("\r\n");
 }
 
+// image speckle removing, based on median filter
+// compare 3 vertical pixels, replace center with median value
 void v_denoise( uchar* buf )
 {
 	uchar out, t;
@@ -380,8 +328,7 @@ int main()
 
 	printf("\r\nTESTING OVM\r\n");
 
-	//choose bit
-
+    //debug pin select:
 	/* cam_aux_out(0) <= v_load_pixel; */
 	/* cam_aux_out(1) <= h_load_pixel; */
 	/* cam_aux_out(2) <= ovm_pclk */
@@ -415,20 +362,14 @@ int main()
 
 	while(1){
 
-		//if( toggle==0 ) ovm_set_bit( PIO_BIT_LED );
-		//if( toggle==4 ) ovm_clear_bit( PIO_BIT_LED );
-		//toggle++; if( toggle==8 ) toggle=0;
-
 		clear_frame( (uchar*)cam_dma_buf, dma_num_pixels*4 );
 		clear_frame( red_buf, rgb_num_pixels );
 		clear_frame( grn_buf, rgb_num_pixels );
 		clear_frame( blu_buf, rgb_num_pixels );
-		//printf("LED2: %d\r\n", ovm_get_bit(PIO_BIT_LED) );
 
 		start_time=get_time();
 		ovm_get_frame();
 		end_time=get_time();
-		//printf("LED3: %d\r\n", ovm_get_bit(PIO_BIT_LED) );
 
 #if (0 && UART)
 // for some reason this turns off the pio (PIO_BIT_LED)
@@ -437,12 +378,14 @@ int main()
 		print_reg( 0x06, "average R " );
 		print_reg( 0x07, "average G\r\n" );
 #endif
-		//printf("LED4: %d\r\n", ovm_get_bit(PIO_BIT_LED) );
 
 		//remove alpha channel, swap Red/Blue for OpenCV display
 		int r,c;
 		for(r=0;r<30;r++){
 			for(c=0;c<40;c++){
+
+
+// when printing array values to screen, limit to just CLIM columns and RLIM rows
 #define CLIM 10
 #define RLIM 30
 
@@ -468,11 +411,6 @@ int main()
 				//if( c==39  && r<RLIM ) { printf("...\r\n"); }
 #endif /* RGB565 or RGB888 */
 
-#if OPEN_CV
-				cam_dma_buf[(r*40+c)*3+2]/*CV_FRAME0: B*/ = (blu)/1; // 1011 1...
-				cam_dma_buf[(r*40+c)*3+1]/*CV_FRAME1: G*/ = (grn)/1; // 1101 11..
-				cam_dma_buf[(r*40+c)*3+0]/*CV_FRAME2: R*/ = (red)/1; // 1111 1...
-#endif
 				if( c>=4 && c<36 ) {
 					const int off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-4);
 					red_buf[ off ] = red;
@@ -483,27 +421,18 @@ int main()
 		}
 		const int deinterleave_time = get_time() - end_time;
 
-#if 1
 		const int start_denoise = get_time();
-		//h_denoise( red_buf ); v_denoise( red_buf );
-		//h_denoise( grn_buf ); v_denoise( grn_buf );
-		//h_denoise( blu_buf ); v_denoise( blu_buf );
-		for(r=0;r<rgb_v;r++){
-			for(c=0;c<rgb_h;c++){
-				const int off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-0);
-#if 0 /* colour bars */
-				cam_dma_buf[(r*40+c+rgb_pad_l)*3+2]/*CV_FRAME0: B*/ = off&0xff;
-				cam_dma_buf[(r*40+c+rgb_pad_l)*3+1]/*CV_FRAME1: G*/ = off&0xff;
-				cam_dma_buf[(r*40+c+rgb_pad_l)*3+0]/*CV_FRAME2: R*/ = off&0xff;
-#elif 0 /* denoised data */
-				cam_dma_buf[(r*40+c+rgb_pad_l)*3+2]/*CV_FRAME0: B*/ = blu_buf[off];
-				cam_dma_buf[(r*40+c+rgb_pad_l)*3+1]/*CV_FRAME1: G*/ = grn_buf[off];
-				cam_dma_buf[(r*40+c+rgb_pad_l)*3+0]/*CV_FRAME2: R*/ = red_buf[off];
-#endif
-			}
-		}
+#if IMAGE_DENOISE_H
+		h_denoise( red_buf ); v_denoise( red_buf );
+		h_denoise( grn_buf ); v_denoise( grn_buf );
+		h_denoise( blu_buf ); v_denoise( blu_buf );
+#endif // IMAGE_DENOISE_H
+#if IMAGE_DENOISE_V
+		v_denoise( red_buf ); v_denoise( red_buf );
+		v_denoise( grn_buf ); v_denoise( grn_buf );
+		v_denoise( blu_buf ); v_denoise( blu_buf );
+#endif // IMAGE_DENOISE_V
 		const int end_denoise = get_time();
-#endif
 
 #if 0
 		printf("red   \r\n"); print_buf( red_buf );
@@ -511,7 +440,21 @@ int main()
 		printf("blue  \r\n"); print_buf( blu_buf );
 #endif
 
-		if( PRINT_PIC ) print_pic((uchar*)cam_dma_buf,40,30,40);
+#if (OPEN_CV | PRINT_PIC)
+		// used by OPEN_CV and PRINT_PIC
+		for(r=0;r<rgb_v;r++){
+			for(c=0;c<rgb_h;c++){
+				const int off = (rgb_pad_t+r)*rgb_pad_h + rgb_pad_l + (c-0);
+				cam_dma_buf[(r*40+c+rgb_pad_l)*3+2]/*CV_FRAME0: B*/ = blu_buf[off];
+				cam_dma_buf[(r*40+c+rgb_pad_l)*3+1]/*CV_FRAME1: G*/ = grn_buf[off];
+				cam_dma_buf[(r*40+c+rgb_pad_l)*3+0]/*CV_FRAME2: R*/ = red_buf[off];
+			}
+		}
+#endif
+
+#if PRINT_PIC
+		print_pic((uchar*)cam_dma_buf,40,30,40);
+#endif
 
 #if OPEN_CV
 		printf("base64:");
