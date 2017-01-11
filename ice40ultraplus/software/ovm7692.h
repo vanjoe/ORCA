@@ -16,4 +16,14 @@
 #define OVM7692_DEFAULT_PIDH  0x76
 #define OVM7692_DEFAULT_PIDL  0x92
 
+typedef struct{
+	uint8_t addr,val;
+} regval_t;
+#include "ovm7692_reg.c"
+
+int ovm_initialize(char* red_plane,char* green_plane,char*blue_plane);
+
+int ovm_get_frame();
+
+
 #endif //def __OVM7692_H_

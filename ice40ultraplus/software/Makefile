@@ -36,7 +36,7 @@ SYS_CLK_FREQ := 16000000
 else ifeq ($(PROJECT), ice40up_mdp_24MHz)
 SYS_CLK_FREQ := 24000000
 else
-SYS_CLK_FREQ := 8000000
+SYS_CLK_FREQ := 16000000
 endif
 SYS_CLK_TEMPLATE := sys_clk.h.template
 SYS_CLK_TEMP     := sys_clk.h.temp

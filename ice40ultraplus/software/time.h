@@ -18,4 +18,6 @@ static inline void delayus(unsigned int us)
 }
 void delayms( unsigned int ms);
 
+#define cycle2ms(cyc) ((cyc)/(SYS_CLK/1000))
+
 #endif //TIME_H

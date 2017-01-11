@@ -115,8 +115,9 @@ typedef struct {
 		};
 	};
 	/* MXP flags */
-	char        init;
-
+	char  init;
+	char* sp_ptr;
+	char* sp_base;
 	/* MXP run-time state */
 /* 	vbx_void_t  *sp; ///< Current location of scratchpad pointer */
 /* #if VBX_STATIC_ALLOCATE_SP */
