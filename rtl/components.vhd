@@ -27,7 +27,7 @@ package rv_components is
       LVE_ENABLE            : natural range 0 to 1  := 0;
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1  := 0;
       NUM_EXT_INTERRUPTS    : integer range 0 to 32 := 1;
-      SCRATCHPAD_ADDR_BITS  : integer               := 1024;
+      SCRATCHPAD_ADDR_BITS  : integer               := 10;
       FAMILY                : string                := "ALTERA");
     port(
       clk            : in std_logic;

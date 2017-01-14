@@ -207,9 +207,9 @@ begin  -- architecture rtl
   -- HORIZONTAL RGB ACCUMULATOR
 
   -- combinational logic: input bit width extension
-  h_red_in <= resize(unsigned(ovm_pixel_rgb(15 downto 11)&"0"), h_red_in'length);  --  5 bits
+  h_red_in <= resize(unsigned(ovm_pixel_rgb(15 downto 11))&"0", h_red_in'length);  --  5 bits
   h_grn_in <= resize(unsigned(ovm_pixel_rgb(10 downto  5)    ), h_grn_in'length);  --  6 bits
-  h_blu_in <= resize(unsigned(ovm_pixel_rgb( 4 downto  0)&"0"), h_blu_in'length);  --  5 bits
+  h_blu_in <= resize(unsigned(ovm_pixel_rgb( 4 downto  0))&"0", h_blu_in'length);  --  5 bits
 
   -- combinational logic: mux to initialize accumulator
   h_pixel_mux : process(h_load_pixel, h_accum_red, h_accum_grn, h_accum_blu)
@@ -388,9 +388,9 @@ begin  -- architecture rtl
 -- NOTE: Be sure the software has appropriate settings
         --v_rgb_out <= v_rgb_ff;
       end if;
-      --if rst_i = '1' then
-      --  v_rgb_out_valid <= '0';
-      --end if;
+      if rst_i = '1' then
+        v_rgb_out_valid <= '0';
+      end if;
     end if;
   end process;
 

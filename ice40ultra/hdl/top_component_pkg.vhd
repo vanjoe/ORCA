@@ -71,7 +71,7 @@ package top_component_pkg is
 
   component wb_ram is
     generic (
-      size             : integer := 4096;
+      MEM_SIZE        : integer := 4096;
       DATA_WIDTH       : integer := 32;
       INIT_FILE_FORMAT : string  := "hex";
       INIT_FILE_NAME   : string  := "none";
@@ -80,7 +80,7 @@ package top_component_pkg is
       CLK_I : in std_logic;
       RST_I : in std_logic;
 
-      ADR_I  : in std_logic_vector(31 downto 0);
+      ADR_I  : in std_logic_vector(log2(MEM_SIZE)-1 downto 0);
       DAT_I  : in std_logic_vector(DATA_WIDTH-1 downto 0);
       WE_I   : in std_logic;
       CYC_I  : in std_logic;
@@ -782,7 +782,7 @@ package top_component_pkg is
       ovm_href  : in std_logic;
       ovm_dat   : in std_logic_vector(7 downto 0);
 
-      cam_aux_out :out std_logic_vector(7 downto 0)
+      cam_aux_out : out std_logic_vector(7 downto 0)
       );
   end component wb_cam;
 
