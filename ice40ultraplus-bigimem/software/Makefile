@@ -2,7 +2,7 @@
 #define C_LINK as env or in config.mk to add additional sources to
 #link against
 -include config.mk
-C_MAIN?=main.c
+C_MAIN?=flash_dma_test.c
 OBJDUMP_STYLE?=--disassemble-all
 ARCH?=RV32IXmxp
 RISCV_OLEVEL?=-Os
@@ -14,7 +14,7 @@ AS_SRCS=crt.S
 C_SRCS=
 C_SRCS+=$(C_MAIN)
 C_SRCS+=$(C_LINK)
-C_SRCS+= vbx_api.c printf.c time.c uart.c
+C_SRCS+= printf.c time.c uart.c
 
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))

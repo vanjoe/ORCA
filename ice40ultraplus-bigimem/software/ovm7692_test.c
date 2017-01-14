@@ -4,8 +4,9 @@
 #include "sccb.h"
 #include "ovm7692.h"
 #include "time.h"
-#include "vbx.h"
 #include "base64.h"
+
+#define DMEM_SPRAM 0x08000000
 
 
 
@@ -64,18 +65,15 @@
 int main()
 {
 	printf("\r\nTESTING OVM\r\n");
-	init_mxp();
 
 	//set the bottom of the scratchpad to skip the camera dma buffer
-	the_mxp.sp_base = ((char*)SCRATCHPAD_BASE)+( 64*32*4);
-	the_mxp.sp_ptr = ((char*)SCRATCHPAD_BASE)+( 64*32*4);
 
-	char* r_plane = (char*)vbx_sp_alloc(34*40);
-	char* g_plane=	 (char*)vbx_sp_alloc(34*40);
-	char* b_plane=  (char*)vbx_sp_alloc(34*40);
+	char* r_plane = (char*)DMEM_SPRAM;
+	char* g_plane=	 r_plane+34*40;
+	char* b_plane=  g_plane+34*40;
 
 	//EXTRA,just used for opencv display
-	char* rgb_plane=(char*)vbx_sp_alloc(34*40*3);
+	char* rgb_plane=b_plane+34*40*3;
 
 	int rgb_rows=34,rgb_cols=40;
 

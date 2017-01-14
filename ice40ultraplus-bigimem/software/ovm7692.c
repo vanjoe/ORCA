@@ -3,7 +3,7 @@
 #include "sccb.h"
 #include "ovm7692.h"
 #include "time.h"
-#include "vbx.h"
+#define DMEM_SPRAM 0x08000000
 
 #define OVM_VERBOSE 0
 #if OVM_VERBOSE
@@ -97,7 +97,7 @@ static int initialized=0;
 #define OUT_PAD_ROWS_TOP 1
 #define OUT_PAD_ROWS_BOT 1
 
-#define OVM_DMA_BUFFER SCRATCHPAD_BASE
+#define OVM_DMA_BUFFER DMEM_SPRAM
 
 
 int ovm_initialize(char* red_plane,char* green_plane,char*blue_plane)
