@@ -188,7 +188,7 @@ begin  -- architecture rtl
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
       COUNTER_LENGTH      => COUNTER_LENGTH,
       ENABLE_EXCEPTIONS   => ENABLE_EXCEPTIONS = 1,
-      SCRATCHPAD_SIZE     => e_sp_addr'length,
+      SCRATCHPAD_SIZE     => SCRATCHPAD_SIZE,
       FAMILY              => FAMILY)
     port map (
       clk                => clk,
