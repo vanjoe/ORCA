@@ -62,157 +62,56 @@ architecture rtl of vhdl_top is
 
   signal reset : std_logic := '1';
 
-  signal data_ADR_O   : std_logic_vector(31 downto 0);
-  signal data_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_WE_O    : std_logic;
-  signal data_CYC_O   : std_logic;
-  signal data_STB_O   : std_logic;
-  signal data_SEL_O   : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
-  signal data_CTI_O   : std_logic_vector(2 downto 0);
-  signal data_BTE_O   : std_logic_vector(1 downto 0);
-  signal data_LOCK_O  : std_logic;
-  signal data_STALL_I : std_logic;
-  signal data_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_ACK_I   : std_logic;
-  signal data_ERR_I   : std_logic;
-  signal data_RTY_I   : std_logic;
 
-  signal spi_sp_ADR_O   : std_logic_vector(31 downto 0);
-  signal spi_sp_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal spi_sp_WE_O    : std_logic;
-  signal spi_sp_CYC_O   : std_logic;
-  signal spi_sp_STB_O   : std_logic;
-  signal spi_sp_SEL_O   : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
-  signal spi_sp_CTI_O   : std_logic_vector(2 downto 0);
-  signal spi_sp_BTE_O   : std_logic_vector(1 downto 0);
-  signal spi_sp_LOCK_O  : std_logic;
-  signal spi_sp_STALL_I : std_logic;
-  signal spi_sp_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal spi_sp_ACK_I   : std_logic;
-  signal spi_sp_ERR_I   : std_logic;
-  signal spi_sp_RTY_I   : std_logic;
+  -----------------------------------------------------------------------------
+  --  Connection Summary
+  --
+  --        |                  MASTER              |                |
+  --        | cam  | flash | orca-data | orca-instr| Address        |
+  -- SLAVE  |------|-------|-----------|-----------|----------------|
+  -- boot   |      |       |           |     X     | 0 -0x3FF       | (bitstream-initialized)
+  -- imem   |      |   X   |      X    |     X     | 0x10000-0x1FFFF|
+  -- dmem   |  X   |   X   |      X    |           | 0x20000-0x2FFFF|
+  -- uart   |      |       |      X    |           |                |
+  -- pio    |      |       |      X    |           |                |
+  -- flash  |      |       |      X    |           |                |
+  -----------------------------------------------------------------------------
 
-  signal cam_sp_ADR_O   : std_logic_vector(31 downto 0);
-  signal cam_sp_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal cam_sp_WE_O    : std_logic;
-  signal cam_sp_CYC_O   : std_logic;
-  signal cam_sp_STB_O   : std_logic;
-  signal cam_sp_SEL_O   : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
-  signal cam_sp_CTI_O   : std_logic_vector(2 downto 0);
-  signal cam_sp_BTE_O   : std_logic_vector(1 downto 0);
-  signal cam_sp_LOCK_O  : std_logic;
-  signal cam_sp_STALL_I : std_logic;
+  constant BOOTMEM_ADDR    : integer := 0;
+  constant BOOTMEM_SIZE    : integer := 1024;
+  constant IMEM_ADDR       : integer := 16#10000;
+  constant IMEM_SIZE       : integer := 64*1024;
+  constant DMEM_ADDR       : integer := 16#20000;
+  constant DMEM_SIZE       : integer := 64*1024;
+  constant UART_ADDR       : integer := 16#100000;
+  constant UART_SIZE       : integer := 1024;
+  constant PIO_ADDR        : integer := 16#110000;
+  constant PIO_SIZE        : integer := 1024;
+  constant FLASH_CTRL_ADDR : integer := 16#120000;
+  constant FLASH_CTRL_SIZE : integer := 1024;
 
+  signal instr_wb      : wishbone_bus;
+  signal instr_imem_wb : wishbone_bus;
+  signal boot_wb       : wishbone_bus;
 
-  signal data_sp_ADR_O   : std_logic_vector(31 downto 0);
-  signal data_sp_DAT_O   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_sp_WE_O    : std_logic;
-  signal data_sp_CYC_O   : std_logic;
-  signal data_sp_STB_O   : std_logic;
-  signal data_sp_SEL_O   : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
-  signal data_sp_CTI_O   : std_logic_vector(2 downto 0);
-  signal data_sp_BTE_O   : std_logic_vector(1 downto 0);
-  signal data_sp_LOCK_O  : std_logic;
-  signal data_sp_STALL_I : std_logic;
-  signal data_sp_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_sp_ACK_I   : std_logic;
-  signal data_sp_ERR_I   : std_logic;
-  signal data_sp_RTY_I   : std_logic;
+  signal spi_dmem_wb : wishbone_bus;
+  signal spi_imem_wb : wishbone_bus;
+  signal spi_wb      : wishbone_bus;
+
+  signal data_wb       : wishbone_bus;
+  signal data_imem_wb  : wishbone_bus;
+  signal data_dmem_wb  : wishbone_bus;
+  signal pio_wb        : wishbone_bus;
+  signal uart_wb       : wishbone_bus;
+  signal flash_ctrl_wb : wishbone_bus;
+
+  signal cam_wb : wishbone_bus;
+
+  signal dmem_wb : wishbone_bus;
+  signal boot_wb : wishbone_bus;
+  signal imem_wb : wishbone_bus;
 
 
-
-  signal sp_ADR32 : std_logic_vector(31 downto 0);
-  signal sp_ADR   : std_logic_vector(log2(SPRAM_SIZE)-1 downto 0);
-  signal sp_RDAT  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sp_WDAT  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sp_WE    : std_logic;
-  signal sp_ACK   : std_logic;
-  signal sp_STALL : std_logic;
-  signal sp_CYC   : std_logic;
-  signal sp_STB   : std_logic;
-  signal sp_SEL   : std_logic_vector(REGISTER_SIZE/8-1 downto 0);
-  signal sp_CTI   : std_logic_vector(2 downto 0);
-
-
-
-  signal instr_ADR_O   : std_logic_vector(31 downto 0);
-  signal instr_CYC_O   : std_logic;
-  signal instr_STB_O   : std_logic;
-  signal instr_CTI_O   : std_logic_vector(2 downto 0);
-  signal instr_STALL_I : std_logic;
-  signal instr_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal instr_ACK_I   : std_logic;
-  signal instr_ERR_I   : std_logic;
-  signal instr_RTY_I   : std_logic;
-
-
-  signal instr_bram_ADR_O   : std_logic_vector(31 downto 0);
-  signal instr_bram_CYC_O   : std_logic;
-  signal instr_bram_STB_O   : std_logic;
-  signal instr_bram_CTI_O   : std_logic_vector(2 downto 0);
-  signal instr_bram_STALL_I : std_logic;
-  signal instr_bram_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal instr_bram_ACK_I   : std_logic;
-  signal instr_bram_ERR_I   : std_logic;
-  signal instr_bram_RTY_I   : std_logic;
-
-  signal instr_spram_ADR_O   : std_logic_vector(31 downto 0);
-  signal instr_spram_CYC_O   : std_logic;
-  signal instr_spram_STB_O   : std_logic;
-  signal instr_spram_CTI_O   : std_logic_vector(2 downto 0);
-  signal instr_spram_STALL_I : std_logic;
-  signal instr_spram_DAT_I   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal instr_spram_ACK_I   : std_logic;
-  signal instr_spram_ERR_I   : std_logic;
-  signal instr_spram_RTY_I   : std_logic;
-
-
-  signal data_uart_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_uart_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_uart_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_uart_stb_i   : std_logic;
-  signal data_uart_cyc_i   : std_logic;
-  signal data_uart_we_i    : std_logic;
-  signal data_uart_sel_i   : std_logic_vector(3 downto 0);
-  signal data_uart_cti_i   : std_logic_vector(2 downto 0);
-  signal data_uart_bte_i   : std_logic_vector(1 downto 0);
-  signal data_uart_ack_o   : std_logic;
-  signal data_uart_stall_o : std_logic;
-  signal data_uart_lock_i  : std_logic;
-  signal data_uart_err_o   : std_logic;
-  signal data_uart_rty_o   : std_logic;
-
-  signal sccb_pio_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sccb_pio_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sccb_pio_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sccb_pio_stb_i   : std_logic;
-  signal sccb_pio_cyc_i   : std_logic;
-  signal sccb_pio_we_i    : std_logic;
-  signal sccb_pio_sel_i   : std_logic_vector(3 downto 0);
-  signal sccb_pio_cti_i   : std_logic_vector(2 downto 0);
-  signal sccb_pio_bte_i   : std_logic_vector(1 downto 0);
-  signal sccb_pio_ack_o   : std_logic;
-  signal sccb_pio_stall_o : std_logic;
-  signal sccb_pio_lock_i  : std_logic;
-  signal sccb_pio_err_o   : std_logic;
-  signal sccb_pio_rty_o   : std_logic;
-
-  signal sccb_scl_en, sccb_sda_en : std_logic;
-
-  signal data_ram_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_ram_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_ram_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_ram_stb_i   : std_logic;
-  signal data_ram_cyc_i   : std_logic;
-  signal data_ram_we_i    : std_logic;
-  signal data_ram_sel_i   : std_logic_vector(3 downto 0);
-  signal data_ram_cti_i   : std_logic_vector(2 downto 0);
-  signal data_ram_bte_i   : std_logic_vector(1 downto 0);
-  signal data_ram_ack_o   : std_logic;
-  signal data_ram_lock_i  : std_logic;
-  signal data_ram_stall_o : std_logic;
-  signal data_ram_err_o   : std_logic;
-  signal data_ram_rty_o   : std_logic;
 
   signal pll_lock : std_logic;
 
@@ -231,35 +130,6 @@ architecture rtl of vhdl_top is
   signal dir_n      : std_logic;
 
   signal led_counter : unsigned(15 downto 0);
-
-  signal spi_adr_i   : std_logic_vector(31 downto 0);
-  signal spi_dat_i   : std_logic_vector(31 downto 0);
-  signal spi_dat_o   : std_logic_vector(31 downto 0);
-  signal spi_stb_i   : std_logic;
-  signal spi_cyc_i   : std_logic;
-  signal spi_we_i    : std_logic;
-  signal spi_sel_i   : std_logic_vector(3 downto 0);
-  signal spi_cti_i   : std_logic_vector(2 downto 0);
-  signal spi_bte_i   : std_logic_vector(1 downto 0);
-  signal spi_ack_o   : std_logic;
-  signal spi_stall_o : std_logic;
-
-  signal spi_ss_tmp : std_logic_vector(0 downto 0);
-
-  signal uart_adr_i     : std_logic_vector(7 downto 0);
-  signal uart_dat_i     : std_logic_vector(15 downto 0);
-  signal uart_dat_o     : std_logic_vector(15 downto 0);
-  signal uart_data_32   : std_logic_vector(31 downto 0);
-  signal uart_stb_i     : std_logic;
-  signal uart_cyc_i     : std_logic;
-  signal uart_we_i      : std_logic;
-  signal uart_sel_i     : std_logic_vector(3 downto 0);
-  signal uart_cti_i     : std_logic_vector(2 downto 0);
-  signal uart_bte_i     : std_logic_vector(1 downto 0);
-  signal uart_ack_o     : std_logic;
-  signal uart_interrupt : std_logic;
-  signal uart_debug_ack : std_logic;
-
 
   signal clk        : std_logic;
   signal osc_clk    : std_logic;
@@ -297,11 +167,9 @@ architecture rtl of vhdl_top is
 
   signal cam_aux_out : std_logic_vector(7 downto 0);
 
-  for imem : wb_ram
+  for boot : wb_ram
     use entity work.wb_ram(bram);
-  for dmem : wb_ram
-    use entity work.wb_ram(bram);
-  for dmem_spram : wb_ram
+  for dmem, imem : wb_ram
     use entity work.wb_ram(spram);
 
 
@@ -429,6 +297,32 @@ begin
     end if;
   end process;
 
+  boot : wb_ram
+    generic map(
+      MEM_SIZE         => INST_RAM_SIZE,
+      INIT_FILE_FORMAT => "hex",
+      INIT_FILE_NAME   => "imem.mem",
+      LATTICE_FAMILY   => "iCE5LP")
+    port map(
+      CLK_I => clk,
+      RST_I => reset,
+
+      ADR_I  => boot_wb.ADR(log2(INST_RAM_SIZE)-1 downto 0),
+      DAT_I  => boot_wb.wdat,
+      WE_I   => '0',
+      CYC_I  => boot_wb.CYC,
+      STB_I  => boot_wb.STB,
+      SEL_I  => boot_wb.sel,
+      CTI_I  => boot_wb.CTI,
+      BTE_I  => boot_wb.btd,
+      LOCK_I => boot_wb.lock,
+
+      STALL_O => boot_wb.stall,
+      DAT_O   => boot_wb.RDAT,
+      ACK_O   => boot_wb.ACK,
+      ERR_O   => boot_wb.ERR,
+      RTY_O   => boot_wb.RTY);
+
   imem : wb_ram
     generic map(
       MEM_SIZE         => INST_RAM_SIZE,
@@ -439,21 +333,22 @@ begin
       CLK_I => clk,
       RST_I => reset,
 
-      ADR_I  => instr_ADR_O(log2(INST_RAM_SIZE)-1 downto 0),
-      DAT_I  => (others => '0'),
-      WE_I   => '0',
-      CYC_I  => instr_CYC_O,
-      STB_I  => instr_STB_O,
-      SEL_I  => (others => '0'),
-      CTI_I  => instr_CTI_O,
-      BTE_I  => (others => '0'),
-      LOCK_I => '0',
+      ADR_I  => imem_wb.ADR(log2(INST_RAM_SIZE)-1 downto 0),
+      DAT_I  => imem_wb.WDAT,
+      WE_I   => imem_wb.WE,
+      CYC_I  => imem_wb.CYC,
+      STB_I  => imem_wb.STB,
+      SEL_I  => imem_wb.SEL,
+      CTI_I  => imem_wb.CTI,
+      BTE_I  => imem_wb.BTE,
+      LOCK_I => imem_wb.LOCK,
 
-      STALL_O => mem_instr_stall,
-      DAT_O   => instr_DAT_I,
-      ACK_O   => mem_instr_ACK,
-      ERR_O   => instr_ERR_I,
-      RTY_O   => instr_RTY_I);
+      STALL_O => imem_wb.STALL,
+      DAT_O   => imem_wb.RDAT,
+      ACK_O   => imem_wb.ACK,
+      ERR_O   => imem_wb.ERR,
+      RTY_O   => imem_wb.RTY);
+
 
   dmem : wb_ram
     generic map(
@@ -465,87 +360,167 @@ begin
       CLK_I => clk,
       RST_I => reset,
 
-      ADR_I   => data_ram_ADR_I(log2(DATA_RAM_SIZE)-1 downto 0),
-      DAT_I   => data_ram_DAT_I,
-      WE_I    => data_ram_WE_I,
-      CYC_I   => data_ram_CYC_I,
-      STB_I   => data_ram_STB_I,
-      SEL_I   => data_ram_SEL_I,
-      CTI_I   => data_ram_CTI_I,
-      BTE_I   => data_ram_BTE_I,
-      LOCK_I  => data_ram_LOCK_I,
-      STALL_O => data_ram_STALL_O,
-      DAT_O   => data_ram_DAT_O,
-      ACK_O   => data_ram_ack_O,
-      ERR_O   => data_ram_ERR_O,
-      RTY_O   => data_ram_RTY_O);
+      ADR_I   => dmem_wb.ADR_I(log2(DATA_RAM_SIZE)-1 downto 0),
+      DAT_I   => dmem_wb.WDAT,
+      WE_I    => dmem_wb.WE,
+      CYC_I   => dmem_wb.CYC,
+      STB_I   => dmem_wb.STB,
+      SEL_I   => dmem_wb.SEL,
+      CTI_I   => dmem_wb.CTI,
+      BTE_I   => dmem_wb.BTE,
+      LOCK_I  => dmem_wb.LOCK,
+      STALL_O => dmem_wb.STALL,
+      DAT_O   => dmem_wb.RDAT,
+      ACK_O   => dmem_wb.ack,
+      ERR_O   => dmem_wb.ERR,
+      RTY_O   => dmem_wb.RTY);
 
-  dmem_spram : wb_ram
-    generic map(
-      MEM_SIZE         => SPRAM_SIZE,
-      INIT_FILE_FORMAT => "mem",
---      INIT_FILE_NAME   => "none",
-      LATTICE_FAMILY   => "iCE5LP")
+  imem_arbiter : wb_arbiter
     port map(
-      CLK_I => clk,
-      RST_I => reset,
+      clk_i => clk,
+      rst_i => reset,
 
-      ADR_I   => sp_ADR,
-      DAT_I   => sp_WDAT,
-      WE_I    => sp_WE,
-      CYC_I   => sp_CYC,
-      STB_I   => sp_STB,
-      SEL_I   => sp_SEL,
-      CTI_I   => sp_CTI,
-      LOCK_I  => '0',
-      BTE_I   => (others => '0'),
-      STALL_O => sp_STALL,
-      DAT_O   => sp_RDAT,
-      ACK_O   => sp_ack);
+      slave0_ADR_I   => spi_imem_wb.ADR,
+      slave0_DAT_I   => spi_imem_wb.WDAT,
+      slave0_DAT_O   => spi_imem_wb.RDAT,
+      slave0_WE_I    => spi_imem_wb.WE,
+      slave0_CYC_I   => spi_imem_wb.CYC,
+      slave0_STB_I   => spi_imem_wb.STB,
+      slave0_SEL_I   => spi_imem_wb.SEL,
+      slave0_STALL_I => spi_imem_wb.STALL,
+      slave0_ACK_O   => spi_imem_wb.ACK,
 
---arbiter for scratchpad port
-  arbiter : component wb_arbiter
-    port map (
-      CLK_I => clk,
-      RST_I => reset,
+      slave1_ADR_I   => data_imem_wb.ADR,
+      slave1_DAT_I   => data_imem_wb.WDAT,
+      slave1_DAT_O   => data_imem_wb.RDAT,
+      slave1_WE_I    => data_imem_wb.WE,
+      slave1_CYC_I   => data_imem_wb.CYC,
+      slave1_STB_I   => data_imem_wb.STB,
+      slave1_SEL_I   => data_imem_wb.SEL,
+      slave1_STALL_I => data_imem_wb.STALL,
+      slave1_ACK_O   => data_imem_wb.ACK,
 
-                                        --reserved for camera
-      slave0_ADR_I   => cam_sp_ADR_O,
-      slave0_DAT_I   => cam_sp_DAT_O,
-      slave0_WE_I    => cam_sp_WE_O,
-      slave0_CYC_I   => cam_sp_CYC_O,
-      slave0_STB_I   => cam_sp_STB_O,
-      slave0_SEL_I   => cam_sp_SEL_O,
-      slave0_STALL_O => cam_sp_STALL_I,
+      slave2_ADR_I   => instr_imem_wb.ADR,
+      slave2_DAT_I   => instr_imem_wb.WDAT,
+      slave2_DAT_O   => instr_imem_wb.RDAT,
+      slave2_WE_I    => instr_imem_wb.WE,
+      slave2_CYC_I   => instr_imem_wb.CYC,
+      slave2_STB_I   => instr_imem_wb.STB,
+      slave2_SEL_I   => instr_imem_wb.SEL,
+      slave2_STALL_I => instr_imem_wb.STALL,
+      slave2_ACK_O   => instr_imem_wb.ACK,
 
-      slave1_ADR_I   => spi_sp_ADR_O,
-      slave1_DAT_I   => spi_sp_DAT_O,
-      slave1_WE_I    => spi_sp_WE_O,
-      slave1_CYC_I   => spi_sp_CYC_O,
-      slave1_STB_I   => spi_sp_STB_O,
-      slave1_SEL_I   => spi_sp_SEL_O,
-      slave1_STALL_O => spi_sp_STALL_I,
+      master_ADR_O   => imem_wb.ADR,
+      master_DAT_O   => imem_wb.WDAT,
+      master_WE_O    => imem_wb.WE,
+      master_CYC_O   => imem_wb.CYC,
+      master_STB_O   => imem_wb.STB,
+      master_SEL_O   => imem_wb.SEL,
+      master_STALL_I => imem_wb.STALL,
+      master_DAT_I   => imem_wb.RDAT,
+      master_ACK_I   => imem_wb.ACK);
 
-      slave2_ADR_I   => data_sp_ADR_O,
-      slave2_DAT_I   => data_sp_DAT_O,
-      slave2_WE_I    => data_sp_WE_O,
-      slave2_CYC_I   => data_sp_CYC_O,
-      slave2_STB_I   => data_sp_STB_O,
-      slave2_SEL_I   => data_sp_SEL_O,
-      slave2_STALL_O => data_sp_stall_i,
-      slave2_dat_o   => data_sp_dat_i,
-      slave2_ack_o   => data_sp_ACK_I,
+  dmem_arbiter : wb_arbiter
+    port map(
 
-      master_ADR_O => sp_ADR32,
-      master_DAT_O => sp_WDAT,
-      master_WE_O  => sp_WE,
-      master_CYC_O => sp_CYC,
-      master_STB_O => sp_STB,
-      master_SEL_O => sp_SEL,
+      clk_i => clk,
+      rst_i => reset,
 
-      master_STALL_I => sp_STALL,
-      master_DAT_I   => sp_RDAT,
-      master_ACK_I   => sp_ACK);
+      slave0_ADR_I   => cam_wb.ADR,
+      slave0_DAT_I   => cam_wb.WDAT,
+      slave0_DAT_O   => cam_wb.RDAT,
+      slave0_WE_I    => cam_wb.WE,
+      slave0_CYC_I   => cam_wb.CYC,
+      slave0_STB_I   => cam_wb.STB,
+      slave0_SEL_I   => cam_wb.SEL,
+      slave0_STALL_I => cam_wb.STALL,
+      slave0_ACK_O   => cam_wb.ACK,
+
+      slave1_ADR_I   => spi_dmem_wb.ADR,
+      slave1_DAT_I   => spi_dmem_wb.WDAT,
+      slave1_DAT_O   => spi_dmem_wb.RDAT,
+      slave1_WE_I    => spi_dmem_wb.WE,
+      slave1_CYC_I   => spi_dmem_wb.CYC,
+      slave1_STB_I   => spi_dmem_wb.STB,
+      slave1_SEL_I   => spi_dmem_wb.SEL,
+      slave1_STALL_I => spi_dmem_wb.STALL,
+      slave1_ACK_O   => spi_dmem_wb.ACK,
+
+      slave2_ADR_I   => data_dmem_wb.ADR,
+      slave2_DAT_I   => data_dmem_wb.WDAT,
+      slave2_DAT_O   => data_dmem_wb.RDAT,
+      slave2_WE_I    => data_dmem_wb.WE,
+      slave2_CYC_I   => data_dmem_wb.CYC,
+      slave2_STB_I   => data_dmem_wb.STB,
+      slave2_SEL_I   => data_dmem_wb.SEL,
+      slave2_STALL_I => data_dmem_wb.STALL,
+      slave2_ACK_O   => data_dmem_wb.ACK,
+
+      master_ADR_O   => dmem_wb.ADR,
+      master_DAT_O   => dmem_wb.WDAT,
+      master_WE_O    => dmem_wb.WE,
+      master_CYC_O   => dmem_wb.CYC,
+      master_STB_O   => dmem_wb.STB,
+      master_SEL_O   => dmem_wb.SEL,
+      master_STALL_I => dmem_wb.STALL,
+      master_DAT_I   => dmem_wb.RDAT,
+      master_ACK_I   => dmem_wb.ACK);
+
+  flash_splitter : wb_splitter
+    generic map (
+      --imem
+      master0_address => (16#10000, 64*1024),
+      --dmem
+      master1_address => (16#20000, 64*1024))
+    port map(
+      clk_i => clk,
+      rst_i => reset,
+
+      slave_ADR_I   => spi_wb.ADR,
+      slave_DAT_I   => spi_wb.WDAT,
+      slave_WE_I    => spi_wb.WE,
+      slave_CYC_I   => spi_wb.CYC,
+      slave_STB_I   => spi_wb.STB,
+      slave_SEL_I   => spi_wb.SEL,
+      slave_CTI_I   => spi_wb.CTI,
+      slave_BTE_I   => spi_wb.BTE,
+      slave_LOCK_I  => spi_wb.LOCK,
+      slave_STALL_O => spi_wb.STALL,
+      slave_DAT_O   => spi_wb.RDAT,
+      slave_ACK_O   => spi_wb.ACK,
+      slave_ERR_O   => spi_wb.ERR,
+      slave_RTY_O   => spi_wb.RTY,
+
+      master0_ADR_O   => spi_imem_wb.ADR,
+      master0_DAT_O   => spi_imem_wb.WDAT,
+      master0_WE_O    => spi_imem_wb.WE,
+      master0_CYC_O   => spi_imem_wb.CYC,
+      master0_STB_O   => spi_imem_wb.STB_I,
+      master0_SEL_O   => spi_imem_wb.SEL,
+      master0_CTI_O   => spi_imem_wb.CTI,
+      master0_BTE_O   => spi_imem_wb.BTE,
+      master0_LOCK_O  => spi_imem_wb.LOCK_I,
+      master0_STALL_I => spi_imem_wb.STALL,
+      master0_DAT_I   => spi_imem_wb.RDAT,
+      master0_ACK_I   => spi_imem_wb.ACK,
+      master0_ERR_I   => spi_imem_wb.ERR,
+      master0_RTY_I   => spi_imem_wb.RTY,
+
+      master0_ADR_O   => spi_dmem_wb.ADR,
+      master0_DAT_O   => spi_dmem_wb.WDAT,
+      master0_WE_O    => spi_dmem_wb.WE,
+      master0_CYC_O   => spi_dmem_wb.CYC,
+      master0_STB_O   => spi_dmem_wb.STB_I,
+      master0_SEL_O   => spi_dmem_wb.SEL,
+      master0_CTI_O   => spi_dmem_wb.CTI,
+      master0_BTE_O   => spi_dmem_wb.BTE,
+      master0_LOCK_O  => spi_dmem_wb.LOCK_I,
+      master0_STALL_I => spi_dmem_wb.STALL,
+      master0_DAT_I   => spi_dmem_wb.RDAT,
+      master0_ACK_I   => spi_dmem_wb.ACK,
+      master0_ERR_I   => spi_dmem_wb.ERR,
+      master0_RTY_I   => spi_dmem_wb.RTY);
+
 
   rv : component orca
     generic map (
@@ -566,16 +541,16 @@ begin
       scratchpad_clk => clk_3x,
       reset          => reset,
 
-      data_ADR_O   => data_ADR_O,
-      data_DAT_I   => data_DAT_I,
-      data_DAT_O   => data_DAT_O,
-      data_WE_O    => data_WE_O,
-      data_SEL_O   => data_SEL_O,
-      data_STB_O   => data_STB_O,
-      data_ACK_I   => data_ACK_I,
-      data_CYC_O   => data_CYC_O,
-      data_STALL_I => data_STALL_I,
-      data_CTI_O   => data_CTI_O,
+      data_ADR_O   => data_wb.adr,
+      data_DAT_I   => data_wb.rdat,
+      data_DAT_O   => data_wb.wdat,
+      data_WE_O    => data_wb.WE,
+      data_SEL_O   => data_wb.SEL,
+      data_STB_O   => data_wb.STB,
+      data_ACK_I   => data_wb.ACK,
+      data_CYC_O   => data_wb.CYC,
+      data_STALL_I => data_wb.STALL,
+      data_CTI_O   => data_wb.CTI,
 
       instr_ADR_O   => instr_ADR_O,
       instr_DAT_I   => instr_DAT_I,
@@ -585,158 +560,137 @@ begin
       instr_CTI_O   => instr_CTI_O,
       instr_STALL_I => instr_STALL_I,
 
-      --sp_ADR_I   => sp_ADR,
-      --sp_DAT_O   => sp_RDAT,
-      --sp_DAT_I   => sp_WDAT,
-      --sp_WE_I    => sp_WE,
-      --sp_SEL_I   => sp_SEL,
-      --sp_STB_I   => sp_STB,
-      --sp_ACK_O   => sp_ACK,
-      --sp_CYC_I   => sp_CYC,
-      --sp_CTI_I   => sp_CTI,
-      --sp_STALL_O => sp_STALL,
-
       global_interrupts => (others => '0'));
 
-  sp_ADR <= sp_ADR32(sp_ADR'range);
-
-  data_BTE_O  <= "00";
-  data_LOCK_O <= '0';
-
-  split_wb_data : component wb_splitter
+  orca_data_splitter : component wb_splitter
     generic map(
-      master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE),  -- RAM
-      master1_address => (16#00010000#, 1024),              -- SPI
-      master2_address => (16#00020000#, 4*1024),            -- UART
-      master3_address => (16#08000000#, SPRAM_SIZE),
-      master6_address => (16#00050000#, 1024)               -- SCCB PIO
+      master0_address => (IMEM_ADDR, IMEM_SIZE),
+      master1_address => (DMEM_ADDR, DMEM_SIZE),
+      master2_address => (UART_ADDR, UART_SIZE),
+      master3_address => (PIO_ADDR, PIO_SIZE),
+      master4_address => (FLASH_CTRL_ADDR, FLASH_CTRL_SIZE)
       )
     port map(
       clk_i => clk,
       rst_i => reset,
 
-      slave_ADR_I   => data_ADR_O,
-      slave_DAT_I   => data_DAT_O,
-      slave_WE_I    => data_WE_O,
-      slave_CYC_I   => data_CYC_O,
-      slave_STB_I   => data_STB_O,
-      slave_SEL_I   => data_SEL_O,
-      slave_CTI_I   => data_CTI_O,
-      slave_BTE_I   => data_BTE_O,
-      slave_LOCK_I  => data_LOCK_O,
-      slave_STALL_O => data_STALL_I,
-      slave_DAT_O   => data_DAT_I,
-      slave_ACK_O   => data_ACK_I,
-      slave_ERR_O   => data_ERR_I,
-      slave_RTY_O   => data_RTY_I,
+      slave_ADR_I   => data_wb.ADR,
+      slave_DAT_I   => data_wb.WDAT,
+      slave_WE_I    => data_wb.WE,
+      slave_CYC_I   => data_wb.CYC,
+      slave_STB_I   => data_wb.STB,
+      slave_SEL_I   => data_wb.SEL,
+      slave_CTI_I   => data_wb.CTI,
+      slave_BTE_I   => data_wb.BTE,
+      slave_LOCK_I  => data_wb.LOCK,
+      slave_STALL_O => data_wb.STALL,
+      slave_DAT_O   => data_wb.RDAT,
+      slave_ACK_O   => data_wb.ACK,
+      slave_ERR_O   => data_wb.ERR,
+      slave_RTY_O   => data_wb.RTY,
 
-      master0_ADR_O   => data_ram_ADR_I,
-      master0_DAT_O   => data_ram_DAT_I,
-      master0_WE_O    => data_ram_WE_I,
-      master0_CYC_O   => data_ram_CYC_I,
-      master0_STB_O   => data_ram_STB_I,
-      master0_SEL_O   => data_ram_SEL_I,
-      master0_CTI_O   => data_ram_CTI_I,
-      master0_BTE_O   => data_ram_BTE_I,
-      master0_LOCK_O  => data_ram_LOCK_I,
-      master0_STALL_I => data_ram_STALL_O,
-      master0_DAT_I   => data_ram_DAT_O,
-      master0_ACK_I   => data_ram_ACK_O,
-      master0_ERR_I   => data_ram_ERR_O,
-      master0_RTY_I   => data_ram_RTY_O,
+      master0_ADR_O   => data_imem_wb.ADR,
+      master0_DAT_O   => data_imem_wb.WDAT,
+      master0_WE_O    => data_imem_wb.WE,
+      master0_CYC_O   => data_imem_wb.CYC,
+      master0_STB_O   => data_imem_wb.STB,
+      master0_SEL_O   => data_imem_wb.SEL,
+      master0_CTI_O   => data_imem_wb.CTI,
+      master0_BTE_O   => data_imem_wb.BTE,
+      master0_LOCK_O  => data_imem_wb.LOCK,
+      master0_STALL_I => data_imem_wb.STALL,
+      master0_DAT_I   => data_imem_wb.RDAT,
+      master0_ACK_I   => data_imem_wb.ACK,
+      master0_ERR_I   => data_imem_wb.ERR,
+      master0_RTY_I   => data_imem_wb.RTY,
 
-      master1_ADR_O   => spi_ADR_I,
-      master1_DAT_O   => spi_DAT_I,
-      master1_WE_O    => spi_WE_I,
-      master1_CYC_O   => spi_CYC_I,
-      master1_STB_O   => spi_STB_I,
-      master1_SEL_O   => spi_SEL_I,
-      master1_CTI_O   => spi_CTI_I,
-      master1_BTE_O   => spi_BTE_I,
-      master1_LOCK_O  => open,
-      master1_STALL_I => spi_STALL_O,
-      master1_DAT_I   => spi_DAT_O,
-      master1_ACK_I   => spi_ACK_O,
-      master1_ERR_I   => open,
-      master1_RTY_I   => open,
+      master1_ADR_O   => data_dmem_wb.ADR,
+      master1_DAT_O   => data_dmem_wb.WDAT,
+      master1_WE_O    => data_dmem_wb.WE,
+      master1_CYC_O   => data_dmem_wb.CYC,
+      master1_STB_O   => data_dmem_wb.STB,
+      master1_SEL_O   => data_dmem_wb.SEL,
+      master1_CTI_O   => data_dmem_wb.CTI,
+      master1_BTE_O   => data_dmem_wb.BTE,
+      master1_LOCK_O  => data_dmem_wb.LOCK,
+      master1_STALL_I => data_dmem_wb.STALL,
+      master1_DAT_I   => data_dmem_wb.RDAT,
+      master1_ACK_I   => data_dmem_wb.ACK,
+      master1_ERR_I   => data_dmem_wb.ERR,
+      master1_RTY_I   => data_dmem_wb.RTY,
 
-      master2_ADR_O   => data_uart_ADR_I,
-      master2_DAT_O   => data_uart_DAT_I,
-      master2_WE_O    => data_uart_WE_I,
-      master2_CYC_O   => data_uart_CYC_I,
-      master2_STB_O   => data_uart_STB_I,
-      master2_SEL_O   => data_uart_SEL_I,
-      master2_CTI_O   => data_uart_CTI_I,
-      master2_BTE_O   => data_uart_BTE_I,
-      master2_LOCK_O  => data_uart_LOCK_I,
-      master2_STALL_I => data_uart_STALL_O,
-      master2_DAT_I   => data_uart_DAT_O,
-      master2_ACK_I   => data_uart_ACK_O,
-      master2_ERR_I   => data_uart_ERR_O,
-      master2_RTY_I   => data_uart_RTY_O,
+      master2_ADR_O   => uart_wb.ADR,
+      master2_DAT_O   => uart_wb.WDAT,
+      master2_WE_O    => uart_wb.WE,
+      master2_CYC_O   => uart_wb.CYC,
+      master2_STB_O   => uart_wb.STB,
+      master2_SEL_O   => uart_wb.SEL,
+      master2_CTI_O   => uart_wb.CTI,
+      master2_BTE_O   => uart_wb.BTE,
+      master2_LOCK_O  => uart_wb.LOCK,
+      master2_STALL_I => uart_wb.STALL,
+      master2_DAT_I   => uart_wb.RDAT,
+      master2_ACK_I   => uart_wb.ACK,
+      master2_ERR_I   => uart_wb.ERR,
+      master2_RTY_I   => uart_wb.RTY,
 
+      master3_ADR_O   => pio_wb.ADR,
+      master3_DAT_O   => pio_wb.WDAT,
+      master3_WE_O    => pio_wb.WE,
+      master3_CYC_O   => pio_wb.CYC,
+      master3_STB_O   => pio_wb.STB,
+      master3_SEL_O   => pio_wb.SEL,
+      master3_CTI_O   => pio_wb.CTI,
+      master3_BTE_O   => pio_wb.BTE,
+      master3_LOCK_O  => pio_wb.LOCK,
+      master3_STALL_I => pio_wb.STALL,
+      master3_DAT_I   => pio_wb.RDAT,
+      master3_ACK_I   => pio_wb.ACK,
+      master3_ERR_I   => pio_wb.ERR,
+      master3_RTY_I   => pio_wb.RTY,
 
-      master3_ADR_O   => data_sp_ADR_O,
-      master3_DAT_O   => data_sp_DAT_O,
-      master3_WE_O    => data_sp_WE_O,
-      master3_CYC_O   => data_sp_CYC_O,
-      master3_STB_O   => data_sp_STB_O,
-      master3_SEL_O   => data_sp_SEL_O,
-      master3_CTI_O   => open,
-      master3_BTE_O   => open,
-      master3_LOCK_O  => open,
-      master3_STALL_I => data_sp_stall_i,
-      master3_DAT_I   => data_sp_DAT_I,
-      master3_ACK_I   => data_sp_ACK_I,
-      master3_ERR_I   => open,
-      master3_RTY_I   => open,
+      master4_ADR_O   => flash_ctrl_wb.ADR,
+      master4_DAT_O   => flash_ctrl_wb.WDAT,
+      master4_WE_O    => flash_ctrl_wb.WE,
+      master4_CYC_O   => flash_ctrl_wb.CYC,
+      master4_STB_O   => flash_ctrl_wb.STB,
+      master4_SEL_O   => flash_ctrl_wb.SEL,
+      master4_CTI_O   => flash_ctrl_wb.CTI,
+      master4_BTE_O   => flash_ctrl_wb.BTE,
+      master4_LOCK_O  => flash_ctrl_wb.LOCK,
+      master4_STALL_I => flash_ctrl_wb.STALL,
+      master4_DAT_I   => flash_ctrl_wb.RDAT,
+      master4_ACK_I   => flash_ctrl_wb.ACK,
+      master4_ERR_I   => flash_ctrl_wb.ERR,
+      master4_RTY_I   => flash_ctrl_wb.RTY);
 
-      master6_ADR_O   => sccb_pio_ADR_I,
-      master6_DAT_O   => sccb_pio_DAT_I,
-      master6_WE_O    => sccb_pio_WE_I,
-      master6_CYC_O   => sccb_pio_CYC_I,
-      master6_STB_O   => sccb_pio_STB_I,
-      master6_SEL_O   => sccb_pio_SEL_I,
-      master6_CTI_O   => sccb_pio_CTI_I,
-      master6_BTE_O   => sccb_pio_BTE_I,
-      master6_LOCK_O  => sccb_pio_LOCK_I,
-      master6_STALL_I => sccb_pio_STALL_O,
-      master6_DAT_I   => sccb_pio_DAT_O,
-      master6_ACK_I   => sccb_pio_ACK_O,
-      master6_ERR_I   => sccb_pio_ERR_O,
-      master6_RTY_I   => sccb_pio_RTY_O);
-
-  instr_stall_i <= uart_stall or mem_instr_stall;
-  instr_ack_i   <= not uart_stall and mem_instr_ack;
-
-                                        --dma controller for reading blocks of flash
   the_spi : wb_flash_dma
     generic map(
       MAX_LENGTH => 64*1024)
     port map(
       clk_i         => clk,
       rst_i         => reset,
-      slave_ADR_I   => spi_adr_i(3 downto 0),
-      slave_DAT_O   => spi_dat_o,
-      slave_DAT_I   => spi_DAT_I,
-      slave_WE_I    => spi_WE_I,
-      slave_SEL_I   => spi_SEL_I,
-      slave_STB_I   => spi_STB_I,
-      slave_ACK_O   => spi_ACK_O,
-      slave_CYC_I   => spi_CYC_I,
-      slave_CTI_I   => spi_CTI_I,
-      slave_STALL_O => spi_STALL_O,
+      slave_ADR_I   => flash_ctrl_wb.ADR(3 downto 0),
+      slave_DAT_O   => flash_ctrl_wb.RDAT,
+      slave_DAT_I   => flash_ctrl_wb.wDAT,
+      slave_WE_I    => flash_ctrl_wb.WE,
+      slave_SEL_I   => flash_ctrl_wb.SEL,
+      slave_STB_I   => flash_ctrl_wb.STB,
+      slave_ACK_O   => flash_ctrl_wb.ACK,
+      slave_CYC_I   => flash_ctrl_wb.CYC,
+      slave_CTI_I   => flash_ctrl_wb.CTI,
+      slave_STALL_O => flash_ctrl_wb.STALL,
 
-      master_ADR_O   => spi_sp_ADR_O,
-      master_DAT_I   => spi_sp_DAT_I,
-      master_DAT_O   => spi_sp_DAT_O,
-      master_WE_O    => spi_sp_WE_O,
-      master_SEL_O   => spi_sp_SEL_O,
-      master_STB_O   => spi_sp_STB_O,
-      master_ACK_I   => spi_sp_ACK_I,
-      master_CYC_O   => spi_sp_CYC_O,
-      master_CTI_O   => spi_sp_CTI_O,
-      master_STALL_I => spi_sp_STALL_I,
+      master_ADR_O   => spi_wb.ADR,
+      master_DAT_I   => spi_wb.RDAT,
+      master_DAT_O   => spi_wb.WDAT,
+      master_WE_O    => spi_wb.WE,
+      master_SEL_O   => spi_wb.SEL,
+      master_STB_O   => spi_wb.STB,
+      master_ACK_I   => spi_wb.ACK,
+      master_CYC_O   => spi_wb.CYC,
+      master_CTI_O   => spi_wb.CTI,
+      master_STALL_I => spi_wb.STALL,
 
       spi_mosi => spi_mosi,
       spi_miso => spi_miso,
@@ -744,7 +698,7 @@ begin
       spi_sclk => spi_sclk
       );
 
-  the_sccb_pio : wb_pio
+  the_pio : wb_pio
     generic map (
       DATA_WIDTH => 8
       )
@@ -752,26 +706,28 @@ begin
       clk_i => clk,
       rst_i => reset,
 
-      adr_i   => sccb_pio_adr_i,
-      dat_i   => sccb_pio_dat_i(7 downto 0),
-      we_i    => sccb_pio_we_i,
-      cyc_i   => sccb_pio_cyc_i,
-      stb_i   => sccb_pio_stb_i,
-      sel_i   => sccb_pio_sel_i,
-      cti_i   => sccb_pio_cti_i,
-      bte_i   => sccb_pio_bte_i,
-      lock_i  => sccb_pio_lock_i,
-      ack_o   => sccb_pio_ack_o,
-      stall_o => sccb_pio_stall_o,
-      data_o  => sccb_pio_dat_o(7 downto 0),
-      err_o   => sccb_pio_err_o,
-      rty_o   => sccb_pio_rty_o,
+      adr_i   => pio_wb.adr,
+      dat_i   => pio_wb.wdat_i(7 downto 0),
+      we_i    => pio_wb.we,
+      cyc_i   => pio_wb.cyc,
+      stb_i   => pio_wb.stb,
+      sel_i   => pio_wb.sel,
+      cti_i   => pio_wb.cti,
+      bte_i   => pio_wb.bte,
+      lock_i  => pio_wb.lock,
+      ack_o   => pio_wb.ack,
+      stall_o => pio_wb.stall,
+      data_o  => pio_wb.rdat(7 downto 0),
+      err_o   => pio_wb.err,
+      rty_o   => pio_wb.rty,
 
       output    => pio_out,
       output_en => pio_oe,
       input     => pio_in
 
       );
+  pio_wb.rdat(pio_wb.rdat'left downto 8) <= (others => '0');
+
   sccb_sda  <= pio_out(0) when pio_oe(0) = '1' else 'Z';
   pio_in(0) <= sccb_sda;
 
@@ -838,129 +794,13 @@ begin
         cam_aux_out => cam_aux_out
         );
   end generate cam_gen;
-
------------------------------------------------------------------------------
--- Debugging logic (PC over UART)
--- This is useful if we can't figure out why
--- the program isn't running.
------------------------------------------------------------------------------
-  debug_gen : if DEBUG_ENABLE generate
-    signal last_valid_address : std_logic_vector(31 downto 0);
-    signal last_valid_data    : std_logic_vector(31 downto 0);
-    type debug_state_type is (INIT, IDLE, SPACE, ADR, DAT, CR, LF);
-    signal debug_state        : debug_state_type;
-    signal debug_count        : unsigned(log2((last_valid_data'length+3)/4)-1 downto 0);
-    signal debug_wait         : std_logic;
-
-                                        --Convert a hex digit to ASCII for outputting on the UART
-    function to_ascii_hex (
-      signal hex_in : std_logic_vector)
-      return std_logic_vector is
-    begin
-      if unsigned(hex_in) > to_unsigned(9, hex_in'length) then
-                                        --value + 'A' - 10
-        return std_logic_vector(resize(unsigned(hex_in), 8) + to_unsigned(55, 8));
-      end if;
-
-                                        --value + '0'
-      return std_logic_vector(resize(unsigned(hex_in), 8) + to_unsigned(48, 8));
-    end to_ascii_hex;
-
-
-  begin
-    process (clk)
-    begin  -- process
-      if clk'event and clk = '1' then   -- rising clock edge
-        case debug_state is
-          when INIT =>
-            debug_address   <= UART_ADDR_LSR;
-            debug_writedata <= UART_LSR_8BIT_DEFAULT;
-            debug_write     <= '1';
-            if debug_write = '1' and debug_wait = '0' then
-              debug_state   <= IDLE;
-              debug_address <= UART_ADDR_DAT;
-              debug_write   <= '0';
-            end if;
-          when IDLE =>
-            uart_stall <= '1';
-            if instr_CYC_O = '1' then
-              debug_write        <= '1';
-              last_valid_address <= instr_ADR_O(instr_ADR_O'left-4 downto 0) & "0000";
-              debug_writedata    <= to_ascii_hex(instr_ADR_O(last_valid_address'left downto last_valid_address'left-3));
-              debug_state        <= ADR;
-              debug_count        <= to_unsigned(0, debug_count'length);
-            end if;
-          when ADR =>
-            if debug_wait = '0' then
-              if debug_count = to_unsigned(((last_valid_address'length+3)/4)-1, debug_count'length) then
-                debug_writedata <= std_logic_vector(to_unsigned(32, 8));
-                debug_count     <= to_unsigned(0, debug_count'length);
-                debug_state     <= SPACE;
-                last_valid_data <= instr_DAT_I;
-              else
-                debug_writedata    <= to_ascii_hex(last_valid_address(last_valid_address'left downto last_valid_address'left-3));
-                last_valid_address <= last_valid_address(last_valid_address'left-4 downto 0) & "0000";
-                debug_count        <= debug_count + to_unsigned(1, debug_count'length);
-              end if;
-            end if;
-          when SPACE =>
-            if debug_wait = '0' then
-              debug_writedata <= to_ascii_hex(last_valid_data(last_valid_data'left downto last_valid_data'left-3));
-              last_valid_data <= last_valid_data(last_valid_data'left-4 downto 0) & "0000";
-              debug_state     <= DAT;
-            end if;
-          when DAT =>
-            if debug_wait = '0' then
-              if debug_count = to_unsigned(((last_valid_data'length+3)/4)-1, debug_count'length) then
-                debug_writedata <= std_logic_vector(to_unsigned(13, 8));
-                debug_count     <= to_unsigned(0, debug_count'length);
-                debug_state     <= CR;
-              else
-                debug_writedata <= to_ascii_hex(last_valid_data(last_valid_data'left downto last_valid_data'left-3));
-                last_valid_data <= last_valid_data(last_valid_data'left-4 downto 0) & "0000";
-                debug_count     <= debug_count + to_unsigned(1, debug_count'length);
-              end if;
-            end if;
-
-          when CR =>
-            if debug_wait = '0' then
-              debug_writedata <= std_logic_vector(to_unsigned(10, 8));
-              debug_state     <= LF;
-            end if;
-          when LF =>
-            if debug_wait = '0' then
-              debug_write <= '0';
-              debug_state <= IDLE;
-              uart_stall  <= '0';
-            end if;
-
-          when others =>
-            debug_state <= IDLE;
-        end case;
-
-        if reset = '1' then
-          debug_state <= INIT;
-          debug_write <= '0';
-          uart_stall  <= '1';
-        end if;
-      end if;
-    end process;
-    debug_wait <= not uart_ack_o;
-  end generate debug_gen;
-  no_debug_gen : if not DEBUG_ENABLE generate
-    debug_write     <= '0';
-    debug_writedata <= (others => '0');
-    debug_address   <= (others => '0');
-    uart_stall      <= '0';
-  end generate no_debug_gen;
-
-                                        -----------------------------------------------------------------------------
-                                        -- UART signals and interface
-                                        -----------------------------------------------------------------------------
-                                        --cts_n     <= cts;
+  -----------------------------------------------------------------------------
+  -- UART signals and interface
+  -----------------------------------------------------------------------------
+  --cts_n     <= cts;
   txd       <= serial_out;
   serial_in <= '0';
-                                        --rts       <= rts_n;
+  --rts       <= rts_n;
 
   the_uart : uart_core
     generic map (
@@ -976,16 +816,16 @@ begin
       CLK        => clk,
       RESET      => reset,
                                         -- WISHBONE interface
-      UART_ADR_I => uart_adr_i,
-      UART_DAT_I => uart_dat_i,
-      UART_DAT_O => uart_dat_o,
-      UART_STB_I => uart_stb_i,
-      UART_CYC_I => uart_cyc_i,
-      UART_WE_I  => uart_we_i,
-      UART_SEL_I => uart_sel_i,
-      UART_CTI_I => uart_cti_i,
-      UART_BTE_I => uart_bte_i,
-      UART_ACK_O => uart_ack_o,
+      UART_ADR_I => uart_wb.adr,
+      UART_DAT_I => uart_wb.wdat,
+      UART_DAT_O => uart_wb.rdat,
+      UART_STB_I => uart_wb.stb,
+      UART_CYC_I => uart_wb.cyc,
+      UART_WE_I  => uart_wb.we,
+      UART_SEL_I => uart_wb.sel,
+      UART_CTI_I => uart_wb.cti,
+      UART_BTE_I => uart_wb.bte,
+      UART_ACK_O => uart_wb.ack,
       INTR       => uart_interrupt,
                                         -- Receiver interface
       SIN        => serial_in,
@@ -1001,41 +841,5 @@ begin
       SOUT       => serial_out,
       TXRDY_N    => txrdy_n
       );
-
-
-                                        -----------------------------------------------------------------------------
-                                        --
-                                        -----------------------------------------------------------------------------
-  uart_pc : if DEBUG_ENABLE generate
-  begin
-    uart_dat_i(15 downto 8) <= (others => '0');
-    uart_dat_i(7 downto 0)  <= debug_writedata;
-    uart_we_i               <= debug_write;
-
-    uart_stb_i <= uart_we_i and (not txrdy_n);
-    uart_adr_i <= debug_address;
-    uart_cyc_i <= uart_stb_i and (not txrdy_n);
-
-    uart_cti_i <= WB_CTI_CLASSIC;
-
-                                        --constant ack to the riscv port
-    data_uart_ack_o   <= '1';
-    data_uart_stall_o <= not data_uart_ack_O;
-  end generate uart_pc;
-  uart_data_bus : if not DEBUG_ENABLE generate
-  begin
-    uart_adr_i        <= data_uart_adr_i(9 downto 2);
-    uart_dat_i        <= data_uart_dat_i(15 downto 0);
-    data_uart_dat_o   <= x"0000" & uart_dat_o(15 downto 0);
-    uart_stb_i        <= data_uart_stb_i;
-    uart_cyc_i        <= data_uart_cyc_i;
-    uart_we_i         <= data_uart_we_i;
-    uart_sel_i        <= data_uart_sel_i;
-    uart_cti_i        <= data_uart_cti_i;
-    uart_bte_i        <= data_uart_bte_i;
-    data_uart_ack_o   <= uart_ack_o;
-    data_uart_stall_o <= not data_uart_ack_O;
-  end generate uart_data_bus;
-
 
 end architecture rtl;

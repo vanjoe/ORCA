@@ -56,7 +56,7 @@ proc com {} {
 					 ]
 
 	 set icecube2_dir /opt/lattice/lscc/iCEcube2.2016.02/
-	 set icecube2_dir	 /nfs/opt/lattice/iCEcube2/2016.02/
+	 #set icecube2_dir	 /nfs/opt/lattice/iCEcube2/2016.02/
 	 lappend fileset $icecube2_dir/verilog/ABIPTBS8.v
 	 lappend fileset $icecube2_dir/verilog/ABIWTCZ4.v
 	 lappend fileset $icecube2_dir/verilog/sb_ice_ipenc_modelsim.v

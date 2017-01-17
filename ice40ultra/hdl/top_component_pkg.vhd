@@ -11,6 +11,23 @@ use work.top_util_pkg.all;
 
 package top_component_pkg is
 
+  type wishbone_bus is record
+    adr   : std_logic_vector(31 downto 0);
+    rdat  : std_logic_vector(31 downto 0);
+    we    : std_logic;
+    sel   : std_logic_vector(3 downto 0);
+    stb   : std_logic;
+    cyc   : std_logic;
+    cti   : std_logic_vector(2 downto 0);
+    stall : std_logic;
+    ack   : std_logic;
+    wdat  : std_logic_vector(31 downto 0);
+    bte   : std_logic_vector(1 downto 0);
+    lock  : std_logic;
+    err   : std_logic;
+    rty   : std_logic;
+  end record wishbone_bus;
+
   component uart_core
     generic(
       CLK_IN_MHZ : integer := 25;
@@ -71,7 +88,7 @@ package top_component_pkg is
 
   component wb_ram is
     generic (
-      MEM_SIZE        : integer := 4096;
+      MEM_SIZE         : integer := 4096;
       DATA_WIDTH       : integer := 32;
       INIT_FILE_FORMAT : string  := "hex";
       INIT_FILE_NAME   : string  := "none";
