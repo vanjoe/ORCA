@@ -398,9 +398,9 @@ begin
     end if;
   end process;
 
-  imem : component wb_ram
+  imem : entity work.wb_ram(bram)
     generic map(
-      SIZE             => INST_RAM_SIZE,
+      MEM_SIZE         => INST_RAM_SIZE,
       INIT_FILE_FORMAT => "hex",
       INIT_FILE_NAME   => "imem.mem",
       LATTICE_FAMILY   => "iCE5LP")
@@ -408,7 +408,7 @@ begin
       CLK_I => clk,
       RST_I => reset,
 
-      ADR_I  => instr_ADR_O,
+      ADR_I  => instr_ADR_O(log2(INST_RAM_SIZE)-1 downto 0),
       DAT_I  => (others => '0'),
       WE_I   => '0',
       CYC_I  => instr_CYC_O,
@@ -424,9 +424,9 @@ begin
       ERR_O   => instr_ERR_I,
       RTY_O   => instr_RTY_I);
 
-  dmem : component wb_ram
+  dmem : entity work.wb_ram(bram)
     generic map(
-      SIZE             => DATA_RAM_SIZE,
+      MEM_SIZE         => DATA_RAM_SIZE,
       INIT_FILE_FORMAT => "hex",
       INIT_FILE_NAME   => "dmem.mem",
       LATTICE_FAMILY   => "iCE5LP")
@@ -434,7 +434,7 @@ begin
       CLK_I => clk,
       RST_I => reset,
 
-      ADR_I   => data_ram_ADR_I,
+      ADR_I   => data_ram_ADR_I(log2(DATA_RAM_SIZE)-1 downto 0),
       DAT_I   => data_ram_DAT_I,
       WE_I    => data_ram_WE_I,
       CYC_I   => data_ram_CYC_I,
@@ -733,7 +733,7 @@ begin
   pio_in(3)    <= ovm_dma_busy;
   ovm_dma_busy <= '1' when ovm_dma_done = '0' else '0';
 
-  led       <= pio_out(4) and std_logic_vector(led_counter)(15) and std_logic_vector(led_counter)(14);
+  led       <= pio_out(4) and led_counter(15) and led_counter(14);
   pio_in(4) <= pio_out(4);
 
   pio_in(7 downto 5) <= pio_out(7 downto 5);
