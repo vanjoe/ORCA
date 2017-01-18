@@ -3,14 +3,7 @@
 all:
 .SUFFIXES:
 
-ICECUBE2=/nfs/opt/lattice/iCEcube2/2016.02
-ifndef ICECUBE2
-ifeq ($(findstring Vectorblox,$(ORGANIZATION)),Vectorblox)
-ICECUBE2=/nfs/opt/lattice/iCEcube2/2016.02
-else
-$(error Variable $$ICECUBE2 not defined )
-endif
-endif
+ICECUBE2?=/nfs/opt/lattice/iCEcube2/2016.12
 
 PROJECT ?= ice40up_mdp_16MHz
 SBT_PROJECT=$(PROJECT)_sbt.project
@@ -25,10 +18,9 @@ BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.hex
 
 IMEM_LIST=imem.list
 DMEM_LIST=dmem.list
-MEM_FILE?=software/test.mem
+BIN_FILE?=software/test.bin
 
 HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) ./top.vhd
-
 
 
 
@@ -36,18 +28,23 @@ HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) ./t
 all: build-software bit programmer.xcf program_flash.xcf
 bit: $(BITFILE)
 
-IMEM_BASE=0
-IMEM_LEN=8192
-DMEM_BASE=$(IMEM_LEN)
-DMEM_LEN=4096
+BOOT_BASE=0
+BOOT_LEN=1024
 
-imem.mem: $(MEM_FILE)
-	tail -n +$$(( $(IMEM_BASE)/4 +1)) $< | head -n $$(( $(IMEM_LEN)/4)) >$@
-dmem.mem: $(MEM_FILE)
-	tail -n +$$(($(DMEM_BASE)/4 +1)) $< | head -n $$(( $(DMEM_LEN)/4)) >$@
+FLASH_BASE=65536
+FLASH_LEN=131072
+boot.bin : $(BIN_FILE)
+	tail -c +$$(( $(BOOT_BASE) +1)) $< | head -c $$(( $(BOOT_LEN)))  >$@
+boot.mem: boot.bin
+	 xxd -g1 -c4 $^ | awk '{print $$5$$4$$3$$2}' > $@
 
-sim: imem.mem dmem.mem
-run_sim: sim
+flash.bin:$(BIN_FILE)
+	 tail -c +$$(( $(FLASH_BASE)+1)) $< | head -c $$(( $(FLASH_LEN))) > $@
+flash.mem: flash.bin
+	xxd -g1 -c1 $^ | awk '{print $$2}' >$@
+
+sim: flash.mem boot.mem
+run_sim: sims
 	vsim -gui -do simulate.tcl &
 
 define ice-tcl
@@ -90,9 +87,9 @@ clean:
 clean-all: clean
 	make -C software clean
 
-build-software: $(MEM_FILE)
-$(MEM_FILE)::
-	make -C software FORMAT=mem
+build-software: $(BIN_FILE)
+$(BIN_FILE)::
+	make -C software FORMAT=bin
 
 PGM_CMD=$(ICECUBE2)/../../programmer/3.8_x64/bin/lin64/pgrcmd -infile
 programmer.xcf::

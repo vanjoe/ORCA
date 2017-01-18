@@ -129,6 +129,10 @@ begin  -- architecture rtl
   low_we       <= not hi_sel and we_i and cyc_i and stb_i;
   hi_we        <= hi_sel and we_i and cyc_i and stb_i;
 
+  STALL_O <= '0';
+  ERR_O   <= '0';
+  RTY_O   <= '0';
+
   SPRAM0 : component SB_SPRAM256KA
     port map (
       ADDRESS    => spram_address,

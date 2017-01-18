@@ -9,7 +9,7 @@ RISCV_OLEVEL?=-Os
 RISCV_CFLAGS?=
 
 all:
-AS_SRCS=crt.S
+AS_SRCS=bootloader.S
 
 C_SRCS=
 C_SRCS+=$(C_MAIN)
@@ -24,7 +24,7 @@ CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
-CFLAGS=-m32 -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation
+CFLAGS=-m32 -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation -I..
 LD_FLAGS=-m32 -march=$(ARCH) -static -nostartfiles
 
 TARGET=test
@@ -67,7 +67,7 @@ $(TARGET).bin: $(TARGET).elf
 	$(OBJCOPY) -O binary $< $@
 
 $(TARGET).mem: $(TARGET).bin
-	 head -c $$((0x100)) /dev/zero | cat - $< | xxd -g1 -c4 | awk '{print $$5$$4$$3$$2}' > $@
+	  xxd -g1 -c4 $^ | awk '{print $$5$$4$$3$$2}'  > $@
 
 .phony:all clean
 ifndef FORMAT

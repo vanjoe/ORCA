@@ -501,7 +501,7 @@ begin  -- architecture rtl
       core_instruction_waitrequest   => core_instruction_waitrequest,
       core_instruction_readdatavalid => core_instruction_readdatavalid,
 
-      sp_address   => sp_address,
+      sp_address   => sp_address(CONDITIONAL(LVE_ENABLE = 1, 2**SCRATCHPAD_ADDR_BITS, 0)-1 downto 0),
       sp_byte_en   => sp_byte_en,
       sp_write_en  => sp_write_en,
       sp_read_en   => sp_read_en,

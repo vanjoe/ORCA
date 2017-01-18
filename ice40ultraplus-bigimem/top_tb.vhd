@@ -1,8 +1,12 @@
 library ieee;
 use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
+library fmf;
+
 entity top_tb is
 end entity;
+
+
 
 
 architecture rtl of top_tb is
@@ -58,6 +62,25 @@ architecture rtl of top_tb is
 
   signal pclk_count : integer := -35000;
 
+  component m25p80 is
+    generic (
+      -- memory file to be loaded
+      mem_file_name : string := "m25p80.mem";
+
+      UserPreload : boolean := false;   --TRUE;
+      DebugInfo   : boolean := false;
+      LongTimming : boolean := true);
+    port (
+      C       : in  std_ulogic := 'U';  --serial clock input
+      D       : in  std_ulogic := 'U';  --serial data input
+      SNeg    : in  std_ulogic := 'U';  -- chip select input
+      HOLDNeg : in  std_ulogic := 'U';  -- hold input
+      WNeg    : in  std_ulogic := 'U';  -- write protect input
+      Q       : out std_ulogic := 'U'   --serial data output
+      );
+
+  end component;
+
 begin
   process
   begin
@@ -80,9 +103,7 @@ begin
       cam_href  => ovm_href,
       cam_dat   => ovm_dat,
 
-
       txd => txd,
-
 
       sccb_scl => sccb_scl,
       sccb_sda => sccb_sda
@@ -99,30 +120,19 @@ begin
     wait;
   end process;
 
-  process(spi_sclk, spi_ss)
+  the_flash : entity work.m25p80(vhdl_behavioral)
+    generic map (
+      UserPreload => true,
+      mem_file_name => "flash.mem")
+    port map (
+      HOLDNEg => '1',
+      C       => spi_sclk,
+      D       => spi_mosi,
+      SNeg    => SPI_SS,
+      WNeg    => '1',
+      Q       => spi_miso);
 
-
-  begin
-    if falling_edge(spi_ss) then
-
-      bit_sel <= mydata'right+6;
-    end if;
-    if falling_edge(spi_sclk) then
-      if bit_sel = 0 then
-        mydata <= mydata+1;
-      end if;
-      if bit_sel = mydata'right then
-        bit_sel <= mydata'left;
-      else
-        bit_sel <= bit_sel-1;
-      end if;
-      spi_miso <= mydata(bit_sel);
-    end if;
-  end process;
-
-
-
-  ovm_dat <= x"F0" when (pclk_count mod 2) /= 0 else x"0F";
+    ovm_dat <= x"F0" when (pclk_count mod 2) /= 0 else x"0F";
 
   process(ovm_pclk)
     constant BYTES_PER_PIXEL : integer := 2;

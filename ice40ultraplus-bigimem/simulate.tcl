@@ -25,7 +25,6 @@ proc com {} {
                      hdl/wb_splitter.vhd                \
                      hdl/wb_pio.vhd                     \
                      hdl/bram.vhd                       \
-                     hdl/my_led_sim.v                   \
                      hdl/uart_rd1042/uart_core.vhd      \
                      hdl/uart_rd1042/modem.vhd          \
                      hdl/uart_rd1042/rxcver.vhd         \
@@ -41,7 +40,6 @@ proc com {} {
                      hdl/i2s_interface/i2s_wb.vhd       \
                      top.vhd                            \
                      top_top.v                          \
-                     top_tb.vhd \
 							hdl/i2s_tx/i2s_codec.vhd       \
 							hdl/i2s_tx/tx_i2s_pack.vhd		 \
 							hdl/i2s_tx/gen_control_reg.vhd \
@@ -51,12 +49,23 @@ proc com {} {
 							hdl/i2s_tx/tx_i2s_wbd.vhd      \
 							hdl/i2s_tx/tx_i2s_topm.vhd \
 							hdl/wb_flash_dma.vhd \
-							hdl/spi_master/wb_spi_simple.vhd
+							hdl/spi_master/wb_spi_simple.vhd \
+							hdl/fmf/gen_utils.vhd          \
+							hdl/fmf/switch_pkg.vhd			 \
+							hdl/fmf/conversions.vhd			 \
+							hdl/fmf/ecl_utils.vhd			 \
+							hdl/fmf/ecl_package.vhd			 \
+							hdl/fmf/ff_package.vhd			 \
+							hdl/fmf/state_tab_package.vhd	 \
+							hdl/fmf/memory.vhd				 \
+							hdl/fmf/m25p80.vhd \
+                     top_tb.vhd
+
 
 					 ]
 
-	 set icecube2_dir /opt/lattice/lscc/iCEcube2.2016.02/
-	 #set icecube2_dir	 /nfs/opt/lattice/iCEcube2/2016.02/
+	 #set icecube2_dir /opt/lattice/lscc/iCEcube2.2016.02/
+	 set icecube2_dir	 /nfs/opt/lattice/iCEcube2/2016.12/
 	 lappend fileset $icecube2_dir/verilog/ABIPTBS8.v
 	 lappend fileset $icecube2_dir/verilog/ABIWTCZ4.v
 	 lappend fileset $icecube2_dir/verilog/sb_ice_ipenc_modelsim.v
@@ -64,16 +73,17 @@ proc com {} {
 	 lappend fileset $icecube2_dir/verilog/sb_ice_syn.v
 
     ##If you want to view the ram contents of the scratchpad use this file, otherwise the Toolchain files above should work
-	 #	 lappend fileset SB_SPRAM256KA.vhd
+	 lappend fileset SB_SPRAM256KA.vhd
 
 
     vlib work
-
+	 vlib fmf
     foreach f $fileset {
+		  set lib work
         if { [file extension $f ] == ".v" } {
-            vlog -work work -stats=none $f
+            vlog -work $lib -stats=none $f
         } else {
-            vcom -work work -2002 -explicit $f
+            vcom -work $lib -2002 -explicit $f
         }
     }
 }

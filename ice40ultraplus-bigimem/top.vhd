@@ -47,19 +47,6 @@ architecture rtl of vhdl_top is
 
   constant REGISTER_SIZE : integer := 32;
 
-  --for combined memory
-  constant RAM_SIZE        : natural := 12*1024;
-  --for seperate memory
-  constant INST_RAM_SIZE   : natural := 8*1024;
-  constant INST_SPRAM_SIZE : natural := 64*1024;
-  constant DATA_RAM_SIZE   : natural := 4*1024;
-
-
-  constant SEPERATE_MEMS : boolean := true;
-
-
---  constant reset_btn: std_logic := '1';
-
   signal reset : std_logic := '1';
 
 
@@ -79,20 +66,19 @@ architecture rtl of vhdl_top is
 
   constant BOOTMEM_ADDR    : integer := 0;
   constant BOOTMEM_SIZE    : integer := 1024;
-  constant IMEM_ADDR       : integer := 16#10000;
+  constant IMEM_ADDR       : integer := 16#10000#;
   constant IMEM_SIZE       : integer := 64*1024;
-  constant DMEM_ADDR       : integer := 16#20000;
+  constant DMEM_ADDR       : integer := 16#20000#;
   constant DMEM_SIZE       : integer := 64*1024;
-  constant UART_ADDR       : integer := 16#100000;
+  constant UART_ADDR       : integer := 16#100000#;
   constant UART_SIZE       : integer := 1024;
-  constant PIO_ADDR        : integer := 16#110000;
+  constant PIO_ADDR        : integer := 16#110000#;
   constant PIO_SIZE        : integer := 1024;
-  constant FLASH_CTRL_ADDR : integer := 16#120000;
+  constant FLASH_CTRL_ADDR : integer := 16#120000#;
   constant FLASH_CTRL_SIZE : integer := 1024;
 
   signal instr_wb      : wishbone_bus;
   signal instr_imem_wb : wishbone_bus;
-  signal boot_wb       : wishbone_bus;
 
   signal spi_dmem_wb : wishbone_bus;
   signal spi_imem_wb : wishbone_bus;
@@ -167,7 +153,7 @@ architecture rtl of vhdl_top is
 
   signal cam_aux_out : std_logic_vector(7 downto 0);
 
-  for boot : wb_ram
+  for bootmem : wb_ram
     use entity work.wb_ram(bram);
   for dmem, imem : wb_ram
     use entity work.wb_ram(spram);
@@ -297,24 +283,24 @@ begin
     end if;
   end process;
 
-  boot : wb_ram
+  bootmem : wb_ram
     generic map(
-      MEM_SIZE         => INST_RAM_SIZE,
+      MEM_SIZE         => BOOTMEM_SIZE,
       INIT_FILE_FORMAT => "hex",
-      INIT_FILE_NAME   => "imem.mem",
+      INIT_FILE_NAME   => "boot.mem",
       LATTICE_FAMILY   => "iCE5LP")
     port map(
       CLK_I => clk,
       RST_I => reset,
 
-      ADR_I  => boot_wb.ADR(log2(INST_RAM_SIZE)-1 downto 0),
+      ADR_I  => boot_wb.ADR(log2(BOOTMEM_SIZE)-1 downto 0),
       DAT_I  => boot_wb.wdat,
       WE_I   => '0',
       CYC_I  => boot_wb.CYC,
       STB_I  => boot_wb.STB,
       SEL_I  => boot_wb.sel,
       CTI_I  => boot_wb.CTI,
-      BTE_I  => boot_wb.btd,
+      BTE_I  => boot_wb.bte,
       LOCK_I => boot_wb.lock,
 
       STALL_O => boot_wb.stall,
@@ -325,7 +311,7 @@ begin
 
   imem : wb_ram
     generic map(
-      MEM_SIZE         => INST_RAM_SIZE,
+      MEM_SIZE         => IMEM_SIZE,
       INIT_FILE_FORMAT => "hex",
       INIT_FILE_NAME   => "imem.mem",
       LATTICE_FAMILY   => "iCE5LP")
@@ -333,7 +319,7 @@ begin
       CLK_I => clk,
       RST_I => reset,
 
-      ADR_I  => imem_wb.ADR(log2(INST_RAM_SIZE)-1 downto 0),
+      ADR_I  => imem_wb.ADR(log2(IMEM_SIZE)-1 downto 0),
       DAT_I  => imem_wb.WDAT,
       WE_I   => imem_wb.WE,
       CYC_I  => imem_wb.CYC,
@@ -352,7 +338,7 @@ begin
 
   dmem : wb_ram
     generic map(
-      MEM_SIZE         => DATA_RAM_SIZE,
+      MEM_SIZE         => DMEM_SIZE,
       INIT_FILE_FORMAT => "mem",
       INIT_FILE_NAME   => "dmem.mem",
       LATTICE_FAMILY   => "iCE5LP")
@@ -360,7 +346,7 @@ begin
       CLK_I => clk,
       RST_I => reset,
 
-      ADR_I   => dmem_wb.ADR_I(log2(DATA_RAM_SIZE)-1 downto 0),
+      ADR_I   => dmem_wb.ADR(log2(DMEM_SIZE)-1 downto 0),
       DAT_I   => dmem_wb.WDAT,
       WE_I    => dmem_wb.WE,
       CYC_I   => dmem_wb.CYC,
@@ -387,7 +373,7 @@ begin
       slave0_CYC_I   => spi_imem_wb.CYC,
       slave0_STB_I   => spi_imem_wb.STB,
       slave0_SEL_I   => spi_imem_wb.SEL,
-      slave0_STALL_I => spi_imem_wb.STALL,
+      slave0_STALL_O => spi_imem_wb.STALL,
       slave0_ACK_O   => spi_imem_wb.ACK,
 
       slave1_ADR_I   => data_imem_wb.ADR,
@@ -397,7 +383,7 @@ begin
       slave1_CYC_I   => data_imem_wb.CYC,
       slave1_STB_I   => data_imem_wb.STB,
       slave1_SEL_I   => data_imem_wb.SEL,
-      slave1_STALL_I => data_imem_wb.STALL,
+      slave1_STALL_O => data_imem_wb.STALL,
       slave1_ACK_O   => data_imem_wb.ACK,
 
       slave2_ADR_I   => instr_imem_wb.ADR,
@@ -407,7 +393,7 @@ begin
       slave2_CYC_I   => instr_imem_wb.CYC,
       slave2_STB_I   => instr_imem_wb.STB,
       slave2_SEL_I   => instr_imem_wb.SEL,
-      slave2_STALL_I => instr_imem_wb.STALL,
+      slave2_STALL_O => instr_imem_wb.STALL,
       slave2_ACK_O   => instr_imem_wb.ACK,
 
       master_ADR_O   => imem_wb.ADR,
@@ -433,7 +419,7 @@ begin
       slave0_CYC_I   => cam_wb.CYC,
       slave0_STB_I   => cam_wb.STB,
       slave0_SEL_I   => cam_wb.SEL,
-      slave0_STALL_I => cam_wb.STALL,
+      slave0_STALL_O => cam_wb.STALL,
       slave0_ACK_O   => cam_wb.ACK,
 
       slave1_ADR_I   => spi_dmem_wb.ADR,
@@ -443,7 +429,7 @@ begin
       slave1_CYC_I   => spi_dmem_wb.CYC,
       slave1_STB_I   => spi_dmem_wb.STB,
       slave1_SEL_I   => spi_dmem_wb.SEL,
-      slave1_STALL_I => spi_dmem_wb.STALL,
+      slave1_STALL_O => spi_dmem_wb.STALL,
       slave1_ACK_O   => spi_dmem_wb.ACK,
 
       slave2_ADR_I   => data_dmem_wb.ADR,
@@ -453,7 +439,7 @@ begin
       slave2_CYC_I   => data_dmem_wb.CYC,
       slave2_STB_I   => data_dmem_wb.STB,
       slave2_SEL_I   => data_dmem_wb.SEL,
-      slave2_STALL_I => data_dmem_wb.STALL,
+      slave2_STALL_O => data_dmem_wb.STALL,
       slave2_ACK_O   => data_dmem_wb.ACK,
 
       master_ADR_O   => dmem_wb.ADR,
@@ -469,9 +455,9 @@ begin
   flash_splitter : wb_splitter
     generic map (
       --imem
-      master0_address => (16#10000, 64*1024),
+      master0_address => (IMEM_ADDR, IMEM_SIZE),
       --dmem
-      master1_address => (16#20000, 64*1024))
+      master1_address => (DMEM_ADDR, DMEM_SIZE))
     port map(
       clk_i => clk,
       rst_i => reset,
@@ -495,31 +481,31 @@ begin
       master0_DAT_O   => spi_imem_wb.WDAT,
       master0_WE_O    => spi_imem_wb.WE,
       master0_CYC_O   => spi_imem_wb.CYC,
-      master0_STB_O   => spi_imem_wb.STB_I,
+      master0_STB_O   => spi_imem_wb.STB,
       master0_SEL_O   => spi_imem_wb.SEL,
       master0_CTI_O   => spi_imem_wb.CTI,
       master0_BTE_O   => spi_imem_wb.BTE,
-      master0_LOCK_O  => spi_imem_wb.LOCK_I,
+      master0_LOCK_O  => spi_imem_wb.LOCK,
       master0_STALL_I => spi_imem_wb.STALL,
       master0_DAT_I   => spi_imem_wb.RDAT,
       master0_ACK_I   => spi_imem_wb.ACK,
       master0_ERR_I   => spi_imem_wb.ERR,
       master0_RTY_I   => spi_imem_wb.RTY,
 
-      master0_ADR_O   => spi_dmem_wb.ADR,
-      master0_DAT_O   => spi_dmem_wb.WDAT,
-      master0_WE_O    => spi_dmem_wb.WE,
-      master0_CYC_O   => spi_dmem_wb.CYC,
-      master0_STB_O   => spi_dmem_wb.STB_I,
-      master0_SEL_O   => spi_dmem_wb.SEL,
-      master0_CTI_O   => spi_dmem_wb.CTI,
-      master0_BTE_O   => spi_dmem_wb.BTE,
-      master0_LOCK_O  => spi_dmem_wb.LOCK_I,
-      master0_STALL_I => spi_dmem_wb.STALL,
-      master0_DAT_I   => spi_dmem_wb.RDAT,
-      master0_ACK_I   => spi_dmem_wb.ACK,
-      master0_ERR_I   => spi_dmem_wb.ERR,
-      master0_RTY_I   => spi_dmem_wb.RTY);
+      master1_ADR_O   => spi_dmem_wb.ADR,
+      master1_DAT_O   => spi_dmem_wb.WDAT,
+      master1_WE_O    => spi_dmem_wb.WE,
+      master1_CYC_O   => spi_dmem_wb.CYC,
+      master1_STB_O   => spi_dmem_wb.STB,
+      master1_SEL_O   => spi_dmem_wb.SEL,
+      master1_CTI_O   => spi_dmem_wb.CTI,
+      master1_BTE_O   => spi_dmem_wb.BTE,
+      master1_LOCK_O  => spi_dmem_wb.LOCK,
+      master1_STALL_I => spi_dmem_wb.STALL,
+      master1_DAT_I   => spi_dmem_wb.RDAT,
+      master1_ACK_I   => spi_dmem_wb.ACK,
+      master1_ERR_I   => spi_dmem_wb.ERR,
+      master1_RTY_I   => spi_dmem_wb.RTY);
 
 
   rv : component orca
@@ -552,13 +538,13 @@ begin
       data_STALL_I => data_wb.STALL,
       data_CTI_O   => data_wb.CTI,
 
-      instr_ADR_O   => instr_ADR_O,
-      instr_DAT_I   => instr_DAT_I,
-      instr_STB_O   => instr_STB_O,
-      instr_ACK_I   => instr_ACK_I,
-      instr_CYC_O   => instr_CYC_O,
-      instr_CTI_O   => instr_CTI_O,
-      instr_STALL_I => instr_STALL_I,
+      instr_ADR_O   => instr_wb.ADR,
+      instr_DAT_I   => instr_wb.RDAT,
+      instr_STB_O   => instr_wb.STB,
+      instr_ACK_I   => instr_wb.ACK,
+      instr_CYC_O   => instr_wb.CYC,
+      instr_CTI_O   => instr_wb.CTI,
+      instr_STALL_I => instr_wb.STALL,
 
       global_interrupts => (others => '0'));
 
@@ -663,10 +649,63 @@ begin
       master4_ACK_I   => flash_ctrl_wb.ACK,
       master4_ERR_I   => flash_ctrl_wb.ERR,
       master4_RTY_I   => flash_ctrl_wb.RTY);
+  orca_instr_splitter : component wb_splitter
+    generic map(
+      master0_address => (BOOTMEM_ADDR,BOOTMEM_SIZE),
+      master1_address => (IMEM_ADDR, IMEM_SIZE)
+      )
+    port map (
+      clk_i => clk,
+      rst_i => reset,
+
+      slave_ADR_I   => instr_wb.ADR,
+      slave_DAT_I   => instr_wb.WDAT,
+      slave_WE_I    => instr_wb.WE,
+      slave_CYC_I   => instr_wb.CYC,
+      slave_STB_I   => instr_wb.STB,
+      slave_SEL_I   => instr_wb.SEL,
+      slave_CTI_I   => instr_wb.CTI,
+      slave_BTE_I   => instr_wb.BTE,
+      slave_LOCK_I  => instr_wb.LOCK,
+      slave_STALL_O => instr_wb.STALL,
+      slave_DAT_O   => instr_wb.RDAT,
+      slave_ACK_O   => instr_wb.ACK,
+      slave_ERR_O   => instr_wb.ERR,
+      slave_RTY_O   => instr_wb.RTY,
+
+      master0_ADR_O   => boot_wb.ADR,
+      master0_DAT_O   => boot_wb.WDAT,
+      master0_WE_O    => boot_wb.WE,
+      master0_CYC_O   => boot_wb.CYC,
+      master0_STB_O   => boot_wb.STB,
+      master0_SEL_O   => boot_wb.SEL,
+      master0_CTI_O   => boot_wb.CTI,
+      master0_BTE_O   => boot_wb.BTE,
+      master0_LOCK_O  => boot_wb.LOCK,
+      master0_STALL_I => boot_wb.STALL,
+      master0_DAT_I   => boot_wb.RDAT,
+      master0_ACK_I   => boot_wb.ACK,
+      master0_ERR_I   => boot_wb.ERR,
+      master0_RTY_I   => boot_wb.RTY,
+
+      master1_ADR_O   => instr_imem_wb.ADR,
+      master1_DAT_O   => instr_imem_wb.WDAT,
+      master1_WE_O    => instr_imem_wb.WE,
+      master1_CYC_O   => instr_imem_wb.CYC,
+      master1_STB_O   => instr_imem_wb.STB,
+      master1_SEL_O   => instr_imem_wb.SEL,
+      master1_CTI_O   => instr_imem_wb.CTI,
+      master1_BTE_O   => instr_imem_wb.BTE,
+      master1_LOCK_O  => instr_imem_wb.LOCK,
+      master1_STALL_I => instr_imem_wb.STALL,
+      master1_DAT_I   => instr_imem_wb.RDAT,
+      master1_ACK_I   => instr_imem_wb.ACK,
+      master1_ERR_I   => instr_imem_wb.ERR,
+      master1_RTY_I   => instr_imem_wb.RTY);
 
   the_spi : wb_flash_dma
     generic map(
-      MAX_LENGTH => 64*1024)
+      MAX_LENGTH => 1024*1024)
     port map(
       clk_i         => clk,
       rst_i         => reset,
@@ -707,7 +746,7 @@ begin
       rst_i => reset,
 
       adr_i   => pio_wb.adr,
-      dat_i   => pio_wb.wdat_i(7 downto 0),
+      dat_i   => pio_wb.wdat(7 downto 0),
       we_i    => pio_wb.we,
       cyc_i   => pio_wb.cyc,
       stb_i   => pio_wb.stb,
@@ -746,14 +785,14 @@ begin
   pio_in(7 downto 5) <= pio_out(7 downto 5);
 
   no_cam_gen : if USE_CAM = 0 generate
-    rxd          <= pll_lock;
-    cam_sp_ADR_O <= (others => '0');
-    cam_sp_DAT_O <= (others => '0');
-    cam_sp_WE_O  <= '0';
-    cam_sp_SEL_O <= (others => '0');
-    cam_sp_STB_O <= '0';
-    cam_sp_CYC_O <= '0';
-    cam_sp_CTI_O <= (others => '0');
+
+    cam_wb.ADR <= (others => '0');
+    cam_wb.WDAT <= (others => '0');
+    cam_wb.WE  <= '0';
+    cam_wb.SEL <= (others => '0');
+    cam_wb.STB <= '0';
+    cam_wb.CYC <= '0';
+    cam_wb.CTI <= (others => '0');
     ovm_dma_done <= '1';
     cam_aux_out  <= (others => '0');
   end generate no_cam_gen;
@@ -773,14 +812,14 @@ begin
         clk_i => clk,
         rst_i => reset,
 
-        master_ADR_O   => cam_sp_ADR_O,
-        master_DAT_O   => cam_sp_DAT_O,
-        master_WE_O    => cam_sp_WE_O,
-        master_SEL_O   => cam_sp_SEL_O,
-        master_STB_O   => cam_sp_STB_O,
-        master_CYC_O   => cam_sp_CYC_O,
-        master_CTI_O   => cam_sp_CTI_O,
-        master_STALL_I => cam_sp_STALL_I,
+        master_ADR_O   => cam_wb.ADR,
+        master_DAT_O   => cam_wb.WDAT,
+        master_WE_O    => cam_wb.WE,
+        master_SEL_O   => cam_wb.SEL,
+        master_STB_O   => cam_wb.STB,
+        master_CYC_O   => cam_wb.CYC,
+        master_CTI_O   => cam_wb.CTI,
+        master_STALL_I => cam_wb.STALL,
 
         --pio control signals
         cam_start => ovm_dma_start,
@@ -801,6 +840,7 @@ begin
   txd       <= serial_out;
   serial_in <= '0';
   --rts       <= rts_n;
+  uart_wb.stall <= not uart_wb.ack;
 
   the_uart : uart_core
     generic map (
@@ -816,9 +856,9 @@ begin
       CLK        => clk,
       RESET      => reset,
                                         -- WISHBONE interface
-      UART_ADR_I => uart_wb.adr,
-      UART_DAT_I => uart_wb.wdat,
-      UART_DAT_O => uart_wb.rdat,
+      UART_ADR_I => uart_wb.adr(9 downto 2),
+      UART_DAT_I => uart_wb.wdat(15 downto 0),
+      UART_DAT_O => uart_wb.rdat(15 downto 0),
       UART_STB_I => uart_wb.stb,
       UART_CYC_I => uart_wb.cyc,
       UART_WE_I  => uart_wb.we,
@@ -826,7 +866,7 @@ begin
       UART_CTI_I => uart_wb.cti,
       UART_BTE_I => uart_wb.bte,
       UART_ACK_O => uart_wb.ack,
-      INTR       => uart_interrupt,
+      --INTR       => uart_interrupt,
                                         -- Receiver interface
       SIN        => serial_in,
       RXRDY_N    => rxrdy_n,
