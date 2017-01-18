@@ -77,9 +77,9 @@ int main()
 		//dma transfer, the cycle count might not be strictly correct.
 		//it should be about 19 cycles per byte, + interference
 		printf("%d bytes read in %d cycles\r\n",xfer_size,get_time()-start_tiem);
-		for(i=0;i<xfer_size;i++){
-			printf("%02X ",sp_base[i]);
-		}
+ 		/* for(i=0;i<xfer_size;i++){ */
+		/* 	printf("%02X ",sp_base[i]); */
+		/* } */
 		printf("\r\n");
 
 		print_base64(sp_base,xfer_size);
@@ -87,7 +87,7 @@ int main()
 		for(i=0;i<xfer_size;i++){
 		  checksum+=sp_base[i];
 		}
-		printf("DONE!!\r\n");
+		printf("\r\nDONE!!\r\n");
 		delayms(3000);
 	}
 	return 0;

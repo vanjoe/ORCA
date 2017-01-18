@@ -42,7 +42,6 @@ end entity;
 
 architecture rtl of vhdl_top is
 
-  constant SPRAM_SIZE     : integer := 128*1024;
   constant SYSCLK_FREQ_HZ : natural := 8000000 + (8000000*USE_PLL);
 
   constant REGISTER_SIZE : integer := 32;

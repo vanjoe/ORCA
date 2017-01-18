@@ -1,10 +1,10 @@
 [Project]
 ProjectVersion=2.0
-Version=Lattice Semiconductor Corporation iCEcube - Release: 2016.02.27810 - Build Date: Jan 29 2016 02:09:56
+Version=Lattice Semiconductor Corporation iCEcube - Release: 2016.12.27910 - Build Date: Dec 22 2016 01:52:15
 ProjectName=ice40up_mdp_16MHz
 Vendor=SiliconBlue
 Synthesis=synplify
-ProjectVFiles=top.vhd=work,top_top_ice40up_mdp_16MHz.v=work,../ice40ultra/hdl/top_component_pkg.vhd=work,../ice40ultra/hdl/top_util_pkg.vhd=work,../rtl/components.vhd=work,../rtl/utils.vhd=work,../rtl/constants_pkg.vhd=work,../ice40ultra/hdl/wb_splitter.vhd=work,../ice40ultra/hdl/wb_arbiter.vhd=work,../ice40ultra/hdl/wb_cam.vhd=work,../ice40ultra/hdl/wb_flash_dma.vhd=work,../ice40ultra/hdl/wb_pio.vhd=work,../ice40ultra/hdl/wb_ram.vhd=work,../ice40ultra/hdl/bram.vhd=work,osc_hf.vhd=work,../ice40ultra/hdl/spi_master/wb_spi_simple.vhd=work,../ice40ultra/hdl/uart_rd1042/intface.vhd=work,../ice40ultra/hdl/uart_rd1042/modem.vhd=work,../ice40ultra/hdl/uart_rd1042/rxcver.vhd=work,../ice40ultra/hdl/uart_rd1042/rxcver_fifo.vhd=work,../ice40ultra/hdl/uart_rd1042/txcver_fifo.vhd=work,../ice40ultra/hdl/uart_rd1042/txmitt.vhd=work,../ice40ultra/hdl/uart_rd1042/uart_core.vhd=work,../rtl/4port_mem_ultraplus.vhd=work,../rtl/alu.vhd=work,../rtl/branch_unit.vhd=work,../rtl/decode.vhd=work,../rtl/execute.vhd=work,../rtl/instruction_fetch.vhd=work,../rtl/load_store_unit.vhd=work,../rtl/lve_ci.vhd=work,../rtl/lve_top.vhd=work,../rtl/orca.vhd=work,../rtl/orca_core.vhd=work,../rtl/register_file.vhd=work,../rtl/sys_call.vhd=work,SB_PLL40_CORE_wrapper_div3=work
+ProjectVFiles=top.vhd=work,top_top_ice40up_mdp_16MHz.v=work,../ice40ultra/hdl/top_component_pkg.vhd=work,../ice40ultra/hdl/top_util_pkg.vhd=work,../rtl/components.vhd=work,../rtl/utils.vhd=work,../rtl/constants_pkg.vhd=work,../ice40ultra/hdl/wb_splitter.vhd=work,../ice40ultra/hdl/wb_arbiter.vhd=work,../ice40ultra/hdl/wb_cam.vhd=work,../ice40ultra/hdl/wb_flash_dma.vhd=work,../ice40ultra/hdl/wb_pio.vhd=work,../ice40ultra/hdl/wb_ram.vhd=work,../ice40ultra/hdl/bram.vhd=work,osc_hf.vhd=work,../ice40ultra/hdl/spi_master/wb_spi_simple.vhd=work,../ice40ultra/hdl/uart_rd1042/intface.vhd=work,../ice40ultra/hdl/uart_rd1042/modem.vhd=work,../ice40ultra/hdl/uart_rd1042/rxcver.vhd=work,../ice40ultra/hdl/uart_rd1042/rxcver_fifo.vhd=work,../ice40ultra/hdl/uart_rd1042/txcver_fifo.vhd=work,../ice40ultra/hdl/uart_rd1042/txmitt.vhd=work,../ice40ultra/hdl/uart_rd1042/uart_core.vhd=work,../rtl/4port_mem_ultraplus.vhd=work,../rtl/alu.vhd=work,../rtl/branch_unit.vhd=work,../rtl/decode.vhd=work,../rtl/execute.vhd=work,../rtl/instruction_fetch.vhd=work,../rtl/load_store_unit.vhd=work,../rtl/lve_ci.vhd=work,../rtl/lve_top.vhd=work,../rtl/orca.vhd=work,../rtl/orca_core.vhd=work,../rtl/register_file.vhd=work,../rtl/sys_call.vhd=work,SB_PLL40_CORE_wrapper_div3.v=work
 ProjectCFiles=constr_16MHz.sdc
 CurImplementation=ice40up_mdp_16MHz_Implmnt
 Implementations=ice40up_mdp_16MHz_Implmnt
@@ -71,6 +71,7 @@ PlacerEffortLevel=std
 PlacerAutoLutCascade=yes
 PlacerAutoRamCascade=yes
 PlacerPowerDriven=no
+PlacerAreaDriven=no
 RouteWithTimingDriven=yes
 RouteWithPinPermutation=yes
 BitmapSPIFlashMode=yes

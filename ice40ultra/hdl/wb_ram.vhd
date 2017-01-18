@@ -160,7 +160,7 @@ begin  -- architecture rtl
       POWEROFF   => '1',
       DATAOUT    => low_data_out(31 downto 16));
 
-  BIG_MEM : if MEM_SIZE > 2**14 generate
+  BIG_MEM : if MEM_SIZE > 2**16 generate
   begin
 
 

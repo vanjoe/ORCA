@@ -16,8 +16,7 @@ TIMING_REPORT=$(OUTPUT_DIR)/sbt/outputs/router/$(TOP_LEVEL_ENTITY)_timing.rpt
 EDF=$(OUTPUT_DIR)/$(PROJECT).edf
 BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.hex
 
-IMEM_LIST=imem.list
-DMEM_LIST=dmem.list
+BOOTMEM_LIST=bootmem.list
 BIN_FILE?=software/test.bin
 
 HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) ./top.vhd
@@ -33,17 +32,18 @@ BOOT_LEN=1024
 
 FLASH_BASE=65536
 FLASH_LEN=131072
-boot.bin : $(BIN_FILE)
+
+bootmem.bin : $(BIN_FILE)
 	tail -c +$$(( $(BOOT_BASE) +1)) $< | head -c $$(( $(BOOT_LEN)))  >$@
-boot.mem: boot.bin
-	 xxd -g1 -c4 $^ | awk '{print $$5$$4$$3$$2}' > $@
+bootmem.mem: boot.bin
+	xxd -g1 -c4 $^ | awk '{print $$5$$4$$3$$2}' > $@
 
 flash.bin:$(BIN_FILE)
-	 tail -c +$$(( $(FLASH_BASE)+1)) $< | head -c $$(( $(FLASH_LEN))) > $@
+	tail -c +$$(( $(FLASH_BASE)+1)) $< | head -c $$(( $(FLASH_LEN))) > $@
 flash.mem: flash.bin
 	xxd -g1 -c1 $^ | awk '{print $$2}' >$@
 
-sim: flash.mem boot.mem
+sim: flash.mem bootmem.mem
 run_sim: sims
 	vsim -gui -do simulate.tcl &
 
@@ -54,15 +54,10 @@ endef
 define mem-init
 LD_LIBRARY_PATH=$(ICECUBE2)/sbt_backend/lib/linux/opt:$${LD_LIBRARY_PATH} $(ICECUBE2)/sbt_backend/bin/linux/opt/meminitializer --des-lib $(OUTPUT_DIR)/sbt/netlist/oadb-$(TOP_LEVEL_ENTITY) --mem-list-file
 endef
-$(BITFILE): $(TIMING_REPORT) dmem.mem imem.mem $(DMEM_LIST) $(IMEM_LIST)
-	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) dmem.mem $(DMEM_LIST)
-	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) imem.mem $(IMEM_LIST)
-
-	$(mem-init) $(IMEM_LIST)
-	$(mem-init) $(DMEM_LIST)
-
-	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) $(DMEM_LIST)
-	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) $(IMEM_LIST)
+$(BITFILE): $(TIMING_REPORT) bootmem.mem $(BOOTMEM_LIST)
+	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) bootmem.mem $(BOOTMEM_LIST)
+	$(mem-init) $(BOOTMEM_LIST)
+	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) $(BOOTMEM_LIST)
 
 
 $(TIMING_REPORT): $(EDF)

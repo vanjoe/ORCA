@@ -1,0 +1,4 @@
+sub_top.bootmem.ram.ram3_ram3_0_0 init_03.imem
+sub_top.bootmem.ram.ram2_ram2_0_0 init_07.imem
+sub_top.bootmem.ram.ram1_ram1_0_0 init_11.imem
+sub_top.bootmem.ram.ram0_ram0_0_0 init_15.imem
