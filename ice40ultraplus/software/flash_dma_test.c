@@ -42,28 +42,42 @@ void do_lve(void* base){
 
 }
 
+#define DO_SPRAM_TEST 1
 int main()
 {
 
 	printf("TEST!\r\n");
 
-	int xfer_size=1024;
+	int xfer_size=64*1024;
 	volatile char* sp_base=(volatile char*)SCRATCHPAD_BASE;
 	int i;
 
 	printf("\r\n");
+#if DO_SPRAM_TEST
+	//SPRAM TEST:
+	int spram_test_len=1024;
+	for(i=0;i<spram_test_len;i++){
+		sp_base[i]=0xAA;
+	}
+	for(i=0;i<spram_test_len;i++){
+		printf("%d %02X \r\n",i,sp_base[i]);
+		if(sp_base[i] != 0xAA){
+			printf(" spram test failed\r\n");
+			return 0;
+		}
+	}
+#endif
 	//wait while initializing
-	while(	FLASH_DMA_BASE[FLASH_DMA_STATUS] & 0x80000000 ){
-		printf("waiting for initialization\r\n");
+	while(FLASH_DMA_BASE[FLASH_DMA_STATUS] & 0x80000000 ){
+		printf("waiting for Flash initialization\r\n");
 	}
 
-
-
 	while(1){
+#if 1
 		for(i=0;i<xfer_size;i++){
-			sp_base[i]=0;
+			sp_base[i]=0xFF;
 		}
-
+#endif
 
 		int start_tiem=get_time();
 		int flash_address=0;
@@ -77,18 +91,19 @@ int main()
 		//dma transfer, the cycle count might not be strictly correct.
 		//it should be about 19 cycles per byte, + interference
 		printf("%d bytes read in %d cycles\r\n",xfer_size,get_time()-start_tiem);
-		for(i=0;i<xfer_size;i++){
-			printf("%02X ",sp_base[i]);
+		for(i=0;i<xfer_size/4;i++){
+			printf("%d %d\r\n",flash_address+i,((int*)sp_base)[i]);
 		}
 		printf("\r\n");
 
-		print_base64(sp_base,xfer_size);
+		//		print_base64(sp_base,xfer_size);
 		int checksum=0;
 		for(i=0;i<xfer_size;i++){
 		  checksum+=sp_base[i];
 		}
 		printf("DONE!!\r\n");
 		delayms(3000);
+		return 0;
 	}
 	return 0;
 

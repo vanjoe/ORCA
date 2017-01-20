@@ -117,7 +117,11 @@ architecture spram of wb_ram is
   signal low_we       : std_logic;
   signal hi_we        : std_logic;
 begin  -- architecture rtl
-  --assert INIT_FILE_NAME = "none" report "SPRAM primitives cannot be initialized" severity failure;
+
+  STALL_O <= '0';
+  ERR_O   <= '0';
+  RTY_O   <= '0';
+
   spram_address <= std_logic_vector(resize(unsigned(adr_i(adr_i'left downto 2)), 14));
 
   mask_wren0 <= sel_i(1) & sel_i(1) & sel_i(0) & sel_i(0);

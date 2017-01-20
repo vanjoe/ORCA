@@ -82,7 +82,7 @@ architecture rtl of wb_flash_dma is
 
   signal cur_state       : state_t;
   signal next_state      : state_t;
-  signal xferlen_count   : integer range 0 to MAX_LENGTH/4;
+  signal xferlen_count   : unsigned(log2(MAX_LENGTH/4)-1 downto 0);
   signal word_count      : unsigned(1 downto 0);
   signal init_loop_count : integer range 0 to 10;
   signal start_xfer      : std_logic;
@@ -168,7 +168,7 @@ begin  -- architecture rtl
           -- if not done transfer do nothing
           if done_transfer = '1' then
             if init_loop_count = 0 then
-              if spi_data_out = x"13" or spi_data_out = x"15" then
+              if spi_data_out = x"13" or spi_data_out = x"15" or true then
                 next_state   <= IDLE;
                 cur_state    <= TRANSITION;
                 initializing <= '0';
@@ -188,7 +188,7 @@ begin  -- architecture rtl
           slave_select <= '1';
           word_count       <= "00";
           if start_xfer = '1' then
-            xferlen_count    <= to_integer(unsigned(length_register(length_register'length-2 downto 2)));
+            xferlen_count    <= unsigned(length_register(length_register'left downto 2));
             waddress_counter <= unsigned(waddress_register);
             spi_wdat         <= CMD_READ;
             spi_cyc          <= '1';
@@ -270,7 +270,7 @@ begin  -- architecture rtl
   master_dat_o  <= data_register(7 downto 0) & data_register(15 downto 8) & data_register(23 downto 16) & data_register(31 downto 24);
   slave_STALL_O <= '0';
 
-  slave_dat_o <= initializing & std_logic_vector(to_unsigned(xferlen_count, slave_dat_o'length-1));
+  slave_dat_o <= initializing & std_logic_vector(resize(xferlen_count, slave_dat_o'length-1));
   wishbone_proc : process(clk_i)
   begin
     if rising_edge(clk_i) then

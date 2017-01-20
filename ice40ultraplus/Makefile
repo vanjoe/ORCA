@@ -4,13 +4,6 @@ all:
 .SUFFIXES:
 
 ICECUBE2=/nfs/opt/lattice/iCEcube2/2016.02
-ifndef ICECUBE2
-ifeq ($(findstring Vectorblox,$(ORGANIZATION)),Vectorblox)
-ICECUBE2=/nfs/opt/lattice/iCEcube2/2016.02
-else
-$(error Variable $$ICECUBE2 not defined )
-endif
-endif
 
 PROJECT ?= ice40up_mdp_16MHz
 SBT_PROJECT=$(PROJECT)_sbt.project

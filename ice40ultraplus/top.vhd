@@ -547,6 +547,27 @@ begin
 
       global_interrupts => (others => '0'));
 
+
+  --spram : entity work.wb_ram(spram)
+  --  generic map(
+  --    MEM_SIZE         => SCRATCHPAD_SIZE)
+  --  port map(
+  --    CLK_I => clk,
+  --    RST_I => reset,
+
+  --    ADR_I   => sp_adr,
+  --    DAT_I   => sp_wdat,
+  --    WE_I    => sp_we,
+  --    CYC_I   => sp_cyc,
+  --    STB_I   => sp_stb,
+  --    SEL_I   => sp_sel,
+  --    CTI_I   => sp_cti,
+  --    BTE_I   => (others => '0'),
+  --    LOCK_I  => '0',
+  --    STALL_O => sp_stall,
+  --    DAT_O   => sp_rdat,
+  --    ACK_O   =>sp_ack);
+
   sp_ADR <= sp_ADR32(sp_ADR'range);
 
   data_BTE_O  <= "00";
@@ -661,7 +682,7 @@ begin
                                         --dma controller for reading blocks of flash
   the_spi : wb_flash_dma
     generic map(
-      MAX_LENGTH => 64*1024)
+      MAX_LENGTH => 128*1024)
     port map(
       clk_i         => clk,
       rst_i         => reset,
