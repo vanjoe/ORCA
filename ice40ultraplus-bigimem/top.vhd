@@ -286,7 +286,7 @@ begin
     generic map(
       MEM_SIZE         => BOOTMEM_SIZE,
       INIT_FILE_FORMAT => "hex",
-      INIT_FILE_NAME   => "boot.mem",
+      INIT_FILE_NAME   => "bootmem.mem",
       LATTICE_FAMILY   => "iCE5LP")
     port map(
       CLK_I => clk,

@@ -35,7 +35,7 @@ FLASH_LEN=131072
 
 bootmem.bin : $(BIN_FILE)
 	tail -c +$$(( $(BOOT_BASE) +1)) $< | head -c $$(( $(BOOT_LEN)))  >$@
-bootmem.mem: boot.bin
+bootmem.mem: bootmem.bin
 	xxd -g1 -c4 $^ | awk '{print $$5$$4$$3$$2}' > $@
 
 flash.bin:$(BIN_FILE)
