@@ -132,6 +132,7 @@ begin  -- architecture rtl
       end if;
 
       if rst_i = '1' then
+        clock_count           <= (others => '0');
         read_register    <= (others => '0');
         w_shift_register <= (others => '0');
       end if;

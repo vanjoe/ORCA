@@ -4,7 +4,6 @@
 
 add_file -vhdl -lib work "top.vhd" 
 add_file -verilog -lib work "top_top_ice40up_mdp_16MHz.v" 
-add_file -verilog -lib work "SB_PLL40_CORE_wrapper_div3.v" 
 add_file -vhdl -lib work "../ice40ultra/hdl/top_component_pkg.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/top_util_pkg.vhd" 
 add_file -vhdl -lib work "../rtl/components.vhd" 
@@ -39,6 +38,7 @@ add_file -vhdl -lib work "../rtl/orca.vhd"
 add_file -vhdl -lib work "../rtl/orca_core.vhd" 
 add_file -vhdl -lib work "../rtl/register_file.vhd" 
 add_file -vhdl -lib work "../rtl/sys_call.vhd" 
+add_file -verilog -lib work "SB_PLL40_CORE_wrapper_div3.v" 
 add_file -constraint -lib work "constr_16MHz.sdc"
 #implementation: "ice40up_mdp_16MHz_Implmnt"
 impl -add ice40up_mdp_16MHz_Implmnt -type fpga

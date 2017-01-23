@@ -46,10 +46,8 @@ architecture rtl of top_tb is
   signal sccb_sda : std_logic;
 
 
-  signal bit_sel        : integer              := 0;
-  signal mydata         : unsigned(7 downto 0) := x"0E";
   constant CLOCK_PERIOD : time                 := 83.33 ns;
-  constant PCLK_PERIOD : time                 := 74.074 ns;
+  constant PCLK_PERIOD  : time                 := 74.074 ns;
 
   signal ovm_pclk  : std_logic := '0';
   signal ovm_vsync : std_logic;
@@ -57,6 +55,26 @@ architecture rtl of top_tb is
   signal ovm_dat   : std_logic_vector(7 downto 0);
 
   signal pclk_count : integer := -35000;
+
+
+  component m25p80 is
+    generic (
+      -- memory file to be loaded
+      mem_file_name : string := "m25p80.mem";
+
+      UserPreload : boolean := false;   --TRUE;
+      DebugInfo   : boolean := false;
+      LongTimming : boolean := true);
+    port (
+      C       : in  std_ulogic := 'U';  --serial clock input
+      D       : in  std_ulogic := 'U';  --serial data input
+      SNeg    : in  std_ulogic := 'U';  -- chip select input
+      HOLDNeg : in  std_ulogic := 'U';  -- hold input
+      WNeg    : in  std_ulogic := 'U';  -- write protect input
+      Q       : out std_ulogic := 'U'   --serial data output
+      );
+
+  end component;
 
 begin
   process
@@ -70,9 +88,10 @@ begin
       CAM_NUM_COLS => CAM_NUM_COLS,
       CAM_NUM_ROWS => CAM_NUM_ROWS)
     port map(
-      spi_miso  => spi_miso,
-      spi_ss    => spi_ss,
-      spi_sclk  => spi_sclk,
+      spi_miso => spi_miso,
+      spi_mosi => spi_mosi,
+      spi_ss   => spi_ss,
+      spi_sclk => spi_sclk,
 
       cam_xclk  => ovm_pclk,
       cam_vsync => ovm_vsync,
@@ -86,7 +105,19 @@ begin
       sccb_scl => sccb_scl,
       sccb_sda => sccb_sda
       );
-  spi_miso <= '0';
+
+  the_flash : entity work.m25p80(vhdl_behavioral)
+    generic map (
+      UserPreload   => true,
+      mem_file_name => "flash.mem")
+    port map (
+      HOLDNEg => '1',
+      C       => spi_sclk,
+      D       => spi_mosi,
+      SNeg    => SPI_SS,
+      WNeg    => '1',
+      Q       => spi_miso);
+
 
   sccb_scl <= 'H';
   sccb_sda <= 'H';
@@ -99,45 +130,23 @@ begin
     wait;
   end process;
 
-  process(spi_sclk, spi_ss)
-
-
-  begin
-    if falling_edge(spi_ss) then
-
-      bit_sel <= mydata'right+6;
-    end if;
-    if falling_edge(spi_sclk) then
-      if bit_sel = 0 then
-        mydata <= mydata+1;
-      end if;
-      if bit_sel = mydata'right then
-        bit_sel <= mydata'left;
-      else
-        bit_sel <= bit_sel-1;
-      end if;
-      spi_miso <= mydata(bit_sel);
-    end if;
-  end process;
-
-
 
   ovm_dat <= x"F0" when (pclk_count mod 2) /= 0 else x"0F";
 
   process(ovm_pclk)
     constant BYTES_PER_PIXEL : integer := 2;
-    constant PCLK_INTERVAL : integer := CAM_NUM_COLS*BYTES_PER_PIXEL;
+    constant PCLK_INTERVAL   : integer := CAM_NUM_COLS*BYTES_PER_PIXEL;
   begin
     if rising_edge(ovm_pclk) then
       pclk_count <= pclk_count +1;
 
       ovm_vsync <= '0';
-      if pclk_count >0 and pclk_count < 10 then
+      if pclk_count > 0 and pclk_count < 10 then
         ovm_vsync <= '1';
       end if;
 
 
-      if  pclk_count < PCLK_INTERVAL then
+      if pclk_count < PCLK_INTERVAL then
         ovm_href <= '0';
       elsif pclk_count mod PCLK_INTERVAL = 0 then
         ovm_href <= not ovm_href;

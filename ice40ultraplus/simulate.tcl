@@ -40,8 +40,7 @@ proc com {} {
                      hdl/i2s_interface/i2s_decode.vhd   \
                      hdl/i2s_interface/i2s_wb.vhd       \
                      top.vhd                            \
-                     top_top.v                          \
-                     top_tb.vhd \
+                     top_top.v \
 							hdl/i2s_tx/i2s_codec.vhd       \
 							hdl/i2s_tx/tx_i2s_pack.vhd		 \
 							hdl/i2s_tx/gen_control_reg.vhd \
@@ -51,8 +50,17 @@ proc com {} {
 							hdl/i2s_tx/tx_i2s_wbd.vhd      \
 							hdl/i2s_tx/tx_i2s_topm.vhd \
 							hdl/wb_flash_dma.vhd \
-							hdl/spi_master/wb_spi_simple.vhd
-
+							hdl/spi_master/wb_spi_simple.vhd \
+							hdl/fmf/gen_utils.vhd          \
+							hdl/fmf/switch_pkg.vhd                   \
+							hdl/fmf/conversions.vhd                  \
+							hdl/fmf/ecl_utils.vhd                    \
+							hdl/fmf/ecl_package.vhd                  \
+							hdl/fmf/ff_package.vhd                   \
+							hdl/fmf/state_tab_package.vhd    \
+							hdl/fmf/memory.vhd                               \
+							hdl/fmf/m25p80.vhd \
+                     top_tb.vhd
 					 ]
 
 	 set icecube2_dir /opt/lattice/lscc/iCEcube2.2016.02/

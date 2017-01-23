@@ -20,7 +20,7 @@ NetlistFile=ice40up_mdp_16MHz_Implmnt/ice40up_mdp_16MHz.edf
 AdditionalEDIFFile=
 IPEDIFFile=
 DesignLib=ice40up_mdp_16MHz_Implmnt/sbt/netlist/oadb-verilog_top
-DesignView=_ep
+DesignView=_rt
 DesignCell=verilog_top
 SynthesisSDCFile=ice40up_mdp_16MHz_Implmnt/ice40up_mdp_16MHz.scf
 UserPinConstraintFile=
@@ -84,3 +84,4 @@ BitmapSetNoUsedIONoPullup=no
 FloorPlannerShowFanInNets=yes
 FloorPlannerShowFanOutNets=yes
 HookTo3rdPartyTextEditor=no
+
