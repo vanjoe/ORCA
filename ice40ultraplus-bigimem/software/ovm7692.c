@@ -3,8 +3,8 @@
 #include "sccb.h"
 #include "ovm7692.h"
 #include "time.h"
-#define DMEM_SPRAM 0x08000000
-
+#include "system.h"
+#define DMEM_SPRAM DMEM_ADDR
 #define OVM_VERBOSE 0
 #if OVM_VERBOSE
 #include "printf.h"

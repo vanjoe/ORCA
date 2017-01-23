@@ -133,6 +133,10 @@ begin  -- architecture rtl
   low_we       <= not hi_sel and we_i and cyc_i and stb_i;
   hi_we        <= hi_sel and we_i and cyc_i and stb_i;
 
+  STALL_O <= '0';
+  ERR_O   <= '0';
+  RTY_O   <= '0';
+
   SPRAM0 : component SB_SPRAM256KA
     port map (
       ADDRESS    => spram_address,
@@ -160,7 +164,7 @@ begin  -- architecture rtl
       POWEROFF   => '1',
       DATAOUT    => low_data_out(31 downto 16));
 
-  BIG_MEM : if MEM_SIZE > 2**14 generate
+  BIG_MEM : if MEM_SIZE > 2**16 generate
   begin
 
 

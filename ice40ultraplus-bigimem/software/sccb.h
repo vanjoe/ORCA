@@ -2,7 +2,7 @@
 #define __SCCB_H_
 
 #include "stdint.h"
-
+#include "system.h"
 #define OVM7692_ADDRESS 0x78
 #define OVM7692_SUBADDRESS_GAIN  0x00
 #define OVM7692_SUBADDRESS_BGAIN 0x01
@@ -22,7 +22,7 @@
 #define PIO_DATA_REGISTER   0
 #define PIO_ENABLE_REGISTER 1
 
-#define SCCB_PIO_BASE   ((unsigned *)0x00050000)
+#define SCCB_PIO_BASE   ((unsigned *)PIO_ADDR)
 
 void sccb_init(void *pioBase);
 void sccb_write(void *pioBase, uint8_t slaveAddress, uint8_t subAddress, uint8_t data);

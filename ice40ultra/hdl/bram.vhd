@@ -4,7 +4,6 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.numeric_std.all;
 use IEEE.STD_LOGIC_TEXTIO.all;
 use STD.TEXTIO.all;
-
 library work;
 use work.utils.all;
 
@@ -58,12 +57,10 @@ architecture rtl of bram_lattice is
   impure function init_bram (ram_file_name : in string;
                              bytesel       : in integer)
     return ram_type is
-    -- pragma translate_off
     file ramfile           : text is in ram_file_name;
     variable line_read     : line;
     variable my_line       : line;
     variable ss            : string(8 downto 1);
-    -- pragma translate_on
     variable ram_to_return : ram_type;
     variable tmp : std_logic_vector(31 downto 0);
   begin
@@ -72,17 +69,14 @@ architecture rtl of bram_lattice is
     for i in ram_type'range loop
       --this weird initialization is to avoid having the rams be removed
       --if the we is tied to zero. The tools will optimize away a ROM of all zeros
-
-      tmp := std_logic_vector(to_unsigned(i*i*i,32));
+      tmp := std_logic_vector(to_unsigned((i+3)*(2**24) +(i+2)*(2**16)+(i+1)*2**8+i,tmp'length));
       ram_to_return(i) := tmp(BYTE_SIZE*(bytesel+1) -1 downto BYTE_SIZE*bytesel);
-    -- pragma translate_off
       if not endfile(ramfile) then
         readline(ramfile, line_read);
         read(line_read, ss);
         tmp := to_slv(ss);
         ram_to_return(i) := tmp(BYTE_SIZE*(bytesel+1) -1 downto BYTE_SIZE*bytesel);
       end if;
-    -- pragma translate_on
     end loop;
 
     return ram_to_return;
@@ -103,6 +97,12 @@ architecture rtl of bram_lattice is
   signal Q0       : std_logic_vector(BYTE_SIZE-1 downto 0);
   signal ram0     : ram_type := init_bram(INIT_FILE_NAME, 0);
   signal byte_we0 : std_logic;
+
+  attribute syn_keep : boolean;
+  attribute syn_keep of ram3: signal is true;
+  attribute syn_keep of ram2: signal is true;
+  attribute syn_keep of ram1: signal is true;
+  attribute syn_keep of ram0: signal is true;
 
 begin  --architeture
 

@@ -8,7 +8,9 @@
 
 int main()
 {
-
+	mputc(0,'J');
+	mputc(0,'O');
+	mputc(0,'E');
 	printf("TEST!\r\n");
 
 	int xfer_size=1024;

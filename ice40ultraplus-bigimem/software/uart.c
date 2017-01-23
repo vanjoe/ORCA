@@ -1,10 +1,10 @@
 #include "uart.h"
-
+#include "system.h"
 //////////////////////
 //
 // UART stuff
 //////////////////////
-#define  UART_BASE ((volatile int*) 0x00020000)
+#define  UART_BASE ((volatile int*) UART_ADDR)
 
 volatile int*  UART_DATA=UART_BASE;
 volatile int*  UART_LCR=UART_BASE+3;

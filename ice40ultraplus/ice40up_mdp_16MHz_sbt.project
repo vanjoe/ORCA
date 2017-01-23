@@ -1,6 +1,6 @@
 [Project]
 ProjectVersion=2.0
-Version=Lattice Semiconductor Corporation iCEcube - Release: 2016.02.27810 - Build Date: Jan 29 2016 02:09:56
+Version=Lattice Semiconductor Corporation iCEcube - Release: 2016.12.27910 - Build Date: Dec 22 2016 01:52:15
 ProjectName=ice40up_mdp_16MHz
 Vendor=SiliconBlue
 Synthesis=synplify
@@ -71,6 +71,7 @@ PlacerEffortLevel=std
 PlacerAutoLutCascade=yes
 PlacerAutoRamCascade=yes
 PlacerPowerDriven=no
+PlacerAreaDriven=no
 RouteWithTimingDriven=yes
 RouteWithPinPermutation=yes
 BitmapSPIFlashMode=yes

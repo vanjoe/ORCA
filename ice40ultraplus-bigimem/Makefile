@@ -3,14 +3,7 @@
 all:
 .SUFFIXES:
 
-ICECUBE2=/nfs/opt/lattice/iCEcube2/2016.02
-ifndef ICECUBE2
-ifeq ($(findstring Vectorblox,$(ORGANIZATION)),Vectorblox)
-ICECUBE2=/nfs/opt/lattice/iCEcube2/2016.02
-else
-$(error Variable $$ICECUBE2 not defined )
-endif
-endif
+ICECUBE2?=/nfs/opt/lattice/iCEcube2/2016.12
 
 PROJECT ?= ice40up_mdp_16MHz
 SBT_PROJECT=$(PROJECT)_sbt.project
@@ -23,12 +16,10 @@ TIMING_REPORT=$(OUTPUT_DIR)/sbt/outputs/router/$(TOP_LEVEL_ENTITY)_timing.rpt
 EDF=$(OUTPUT_DIR)/$(PROJECT).edf
 BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.hex
 
-IMEM_LIST=imem.list
-DMEM_LIST=dmem.list
-MEM_FILE?=software/test.mem
+BOOTMEM_LIST=bootmem.list
+BIN_FILE?=software/test.bin
 
 HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) ./top.vhd
-
 
 
 
@@ -36,18 +27,24 @@ HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) ./t
 all: build-software bit programmer.xcf program_flash.xcf
 bit: $(BITFILE)
 
-IMEM_BASE=0
-IMEM_LEN=8192
-DMEM_BASE=$(IMEM_LEN)
-DMEM_LEN=4096
+BOOT_BASE=0
+BOOT_LEN=1024
 
-imem.mem: $(MEM_FILE)
-	tail -n +$$(( $(IMEM_BASE)/4 +1)) $< | head -n $$(( $(IMEM_LEN)/4)) >$@
-dmem.mem: $(MEM_FILE)
-	tail -n +$$(($(DMEM_BASE)/4 +1)) $< | head -n $$(( $(DMEM_LEN)/4)) >$@
+FLASH_BASE=65536
+FLASH_LEN=131072
 
-sim: imem.mem dmem.mem
-run_sim: sim
+bootmem.bin : $(BIN_FILE)
+	tail -c +$$(( $(BOOT_BASE) +1)) $< | head -c $$(( $(BOOT_LEN)))  >$@
+bootmem.mem: bootmem.bin
+	xxd -g1 -c4 $^ | awk '{print $$5$$4$$3$$2}' > $@
+
+flash.bin:$(BIN_FILE)
+	tail -c +$$(( $(FLASH_BASE)+1)) $< | head -c $$(( $(FLASH_LEN))) > $@
+flash.mem: flash.bin
+	xxd -g1 -c1 $^ | awk '{print $$2}' >$@
+
+sim: flash.mem bootmem.mem
+run_sim: sims
 	vsim -gui -do simulate.tcl &
 
 define ice-tcl
@@ -57,15 +54,10 @@ endef
 define mem-init
 LD_LIBRARY_PATH=$(ICECUBE2)/sbt_backend/lib/linux/opt:$${LD_LIBRARY_PATH} $(ICECUBE2)/sbt_backend/bin/linux/opt/meminitializer --des-lib $(OUTPUT_DIR)/sbt/netlist/oadb-$(TOP_LEVEL_ENTITY) --mem-list-file
 endef
-$(BITFILE): $(TIMING_REPORT) dmem.mem imem.mem $(DMEM_LIST) $(IMEM_LIST)
-	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) dmem.mem $(DMEM_LIST)
-	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) imem.mem $(IMEM_LIST)
-
-	$(mem-init) $(IMEM_LIST)
-	$(mem-init) $(DMEM_LIST)
-
-	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) $(DMEM_LIST)
-	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) $(IMEM_LIST)
+$(BITFILE): $(TIMING_REPORT) bootmem.mem $(BOOTMEM_LIST)
+	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) bootmem.mem $(BOOTMEM_LIST)
+	$(mem-init) $(BOOTMEM_LIST)
+	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) $(BOOTMEM_LIST)
 
 
 $(TIMING_REPORT): $(EDF)
@@ -90,9 +82,9 @@ clean:
 clean-all: clean
 	make -C software clean
 
-build-software: $(MEM_FILE)
-$(MEM_FILE)::
-	make -C software FORMAT=mem
+build-software: $(BIN_FILE)
+$(BIN_FILE)::
+	make -C software FORMAT=bin
 
 PGM_CMD=$(ICECUBE2)/../../programmer/3.8_x64/bin/lin64/pgrcmd -infile
 programmer.xcf::

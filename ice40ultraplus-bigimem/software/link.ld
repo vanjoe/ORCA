@@ -14,8 +14,9 @@
 OUTPUT_ARCH( "riscv" )
 MEMORY
 {
- IMEM : ORIGIN = 0x0, LENGTH = 8K
- DMEM : ORIGIN = 8K, LENGTH = 4K
+ BOOTMEM : ORIGIN = 0, LENGTH = 1K
+ IMEM : ORIGIN = 64K, LENGTH = 64K
+ DMEM : ORIGIN = 128K, LENGTH = 64K
 }
 /*----------------------------------------------------------------------*/
 /* Sections                                                             */
@@ -26,11 +27,10 @@ SECTIONS
 {
 
   /* text: test code section */
-  . = 0x100;
   .init . :
   {
 	  *(.init)
-  }>IMEM
+  }>BOOTMEM
   .text :
   {
     *(.text)
@@ -45,28 +45,18 @@ SECTIONS
     *(.sdata .sdata.* .gnu.linkonce.s.*)
   }>DMEM
 
+  _bss_start = .;
   /* bss segment */
   .sbss : {
     *(.sbss .sbss.* .gnu.linkonce.sb.*)
     *(.scommon)
   }>DMEM
   .bss : { *(.bss) }>DMEM
-
-  /* thread-local data segment */
-  .tdata :
-  {
-    _tls_data = .;
-    *(.tdata)
-  }>DMEM
-  .tbss :
-  {
-    *(.tbss)
-  }>DMEM
-
+  _bss_end = .;
   /* End of uninitalized data segement */
   _end = .;
 
-  _end_of_memory = 12K;
+  _end_of_memory = 128K + 64K;
 
   _scratchpad_base = 0x08000000;
 }
