@@ -127,7 +127,7 @@ begin  -- architecture rtl
   mask_wren0 <= sel_i(1) & sel_i(1) & sel_i(0) & sel_i(0);
   mask_wren1 <= sel_i(3) & sel_i(3) & sel_i(2) & sel_i(2);
 
-  hi_sel       <= '0'         when MEM_SIZE <= 2**14  else adr_i(adr_i'left);
+  hi_sel       <= '0'         when MEM_SIZE <= 2**16  else adr_i(adr_i'left);
   hi_sel_latch <= hi_sel      when rising_edge(clk_i);
   dat_o        <= hi_data_out when hi_sel_latch = '1' else low_data_out;
   low_we       <= not hi_sel and we_i and cyc_i and stb_i;
