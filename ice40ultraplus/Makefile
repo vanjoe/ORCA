@@ -3,7 +3,7 @@
 all:
 .SUFFIXES:
 
-ICECUBE2=/nfs/opt/lattice/iCEcube2/2016.02
+ICECUBE2?=/nfs/opt/lattice/iCEcube2/2016.02
 
 PROJECT ?= ice40up_mdp_16MHz
 SBT_PROJECT=$(PROJECT)_sbt.project
@@ -68,6 +68,7 @@ $(EDF): $(HDL_FILES)
 	SYNPLIFY_PATH=$(ICECUBE2)/synpbase \
 	SBT_DIR=$(ICECUBE2)/sbt_backend/ \
 	LD_LIBRARY_PATH=$(ICECUBE2)/sbt_backend/bin/linux/opt/synpwrap:$${LD_LIBRARY_PATH} \
+	setarch x86_64 --uname-2.6 \
 	$(ICECUBE2)/sbt_backend/bin/linux/opt/synpwrap/synpwrap -prj $(SYN_PRJ) || \
 	 ( cat $(COMPILER_LOG) && exit -1)
 
@@ -78,7 +79,7 @@ syn: $(EDF)
 
 
 clean:
-	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem *_Implmnt program_flash.xcf programmer.xcf
+	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem *_Implmnt program_flash.xcf programmer.xcf *~
 
 clean-all: clean
 	make -C software clean

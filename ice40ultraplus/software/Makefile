@@ -4,7 +4,7 @@
 -include config.mk
 C_MAIN?=main.c
 OBJDUMP_STYLE?=--disassemble-all
-ARCH?=RV32IXmxp
+ARCH?=RV32IMXmxp
 RISCV_OLEVEL?=-Os
 RISCV_CFLAGS?=
 
@@ -53,6 +53,9 @@ obj/:
 
 $(C_OBJ_FILES): obj/%.c.o : %.c sys_clk.h
 	$(CC) $(CFLAGS) -c $< -o $@
+
+obj/printf.c.o: obj/%.c.o : %.c sys_clk.h
+	$(CC) -m32 -march=RV32IXmxp $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation -c $< -o $@
 
 $(S_OBJ_FILES): obj/%.S.o : %.S
 	$(CC) $(CFLAGS) -c $< -o $@

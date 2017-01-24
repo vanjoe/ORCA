@@ -291,13 +291,25 @@ begin
   end process;
 
   pll_3x_gen : if USE_PLL = 2 generate
+    process (osc_clk)
+    begin
+      if rising_edge(osc_clk) then
+        clk_int <= not clk_int;
+      end if;
+    end process;
+
+    clk_gb : SB_GB
+      port map (
+        GLOBAL_BUFFER_OUTPUT         => clk,
+        USER_SIGNAL_TO_GLOBAL_BUFFER => clk_int);
+    
     pll_x3 : SB_PLL40_CORE_wrapper_x3
       port map (
-        REFERENCECLK => osc_clk,
+        REFERENCECLK => clk,
 
-        PLLOUTCORE      => clk_6x_int,
-        PLLOUTGLOBAL    => open,
-        EXTFEEDBACK     => 'X',
+        PLLOUTCORE      => open,
+        PLLOUTGLOBAL    => clk_3x,
+        EXTFEEDBACK     => clk_3x,
         DYNAMICDELAY    => (others => 'X'),
         LOCK            => pll_lock,
         BYPASS          => '0',
@@ -334,9 +346,6 @@ begin
   no_pll_gen : if USE_PLL = 0 generate
     clk_6x_int <= osc_clk;
     pll_lock   <= '1';
-  end generate no_pll_gen;
-
-  logic_clock_divider_gen : if USE_PLL /= 1 generate
     process (clk_6x_int)
     begin
       if rising_edge(clk_6x_int) then
@@ -358,7 +367,7 @@ begin
       port map (
         GLOBAL_BUFFER_OUTPUT         => clk_3x,
         USER_SIGNAL_TO_GLOBAL_BUFFER => clk_3x_int);
-  end generate logic_clock_divider_gen;
+  end generate no_pll_gen;
 
 
   cam_dat_internal <= cam_dat;
