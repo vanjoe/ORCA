@@ -24,7 +24,7 @@ HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) ./t
 
 
 
-all: build-software bit programmer.xcf program_flash.xcf flash.mem
+all: build-software bit programmer.xcf flash.mem
 bit: $(BITFILE)
 
 BOOT_BASE=0
