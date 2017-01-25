@@ -3,7 +3,7 @@
 all:
 .SUFFIXES:
 
-ICECUBE2?=/nfs/opt/lattice/iCEcube2/2016.12
+ICECUBE2?=/nfs/opt/lattice/iCEcube2/2016.02
 
 PROJECT ?= ice40up_mdp_16MHz
 SBT_PROJECT=$(PROJECT)_sbt.project
@@ -24,7 +24,7 @@ HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) ./t
 
 
 
-all: build-software bit programmer.xcf program_flash.xcf
+all: build-software bit programmer.xcf flash.mem
 bit: $(BITFILE)
 
 BOOT_BASE=0
@@ -40,6 +40,7 @@ bootmem.mem: bootmem.bin
 
 flash.bin:$(BIN_FILE)
 	tail -c +$$(( $(FLASH_BASE)+1)) $< | head -c $$(( $(FLASH_LEN))) > $@
+	@wc -c $@
 flash.mem: flash.bin
 	xxd -g1 -c1 $^ | awk '{print $$2}' >$@
 
@@ -94,14 +95,6 @@ programmer.xcf::
 	@rm -f programmer.xcf.temp
 pgm : $(BITFILE) programmer.xcf
 	$(PGM_CMD) programmer.xcf
-
-program_flash.xcf::
-	@if [ ! -e $@ ]; then touch $@; fi
-	@sed "s/ice40ultraplus/$(PROJECT)/g" program_flash.xcf.template > program_flash.xcf.temp
-	@diff -q program_flash.xcf.temp $@; if [ $$? != 0 ]; then cp program_flash.xcf.temp $@; echo "New key file $@ created."; fi
-	@rm -f program_flash.xcf.temp
-flash: program_flash.xcf.template
-	$(PGM_CMD) program_flash.xcf
 
 .PHONY: syn all clean clean-all build-software bit pgm sim run_sim
 

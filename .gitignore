@@ -41,7 +41,7 @@ ice40ultraplus/stdout.log
 ice40ultraplus/stdout.log.bak
 ice40ultraplus/synlog.tcl
 ice40ultraplus/transcript
-ice40ultraplus/*_Implmnt/
+ice40ultraplus*/*_Implmnt/
 ice40ultraplus/vsim.wlf
 ice40ultraplus/vish_stacktrace.vstf
 ice40ultraplus/work/
