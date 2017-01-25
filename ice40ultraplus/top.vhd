@@ -239,14 +239,9 @@ architecture rtl of vhdl_top is
   signal uart_interrupt : std_logic;
   signal uart_debug_ack : std_logic;
 
-
-  signal clk        : std_logic;
-  signal osc_clk    : std_logic;
-  signal clk_6x_int : std_logic;
-  signal clk_int    : std_logic            := '0';
-  signal clk_3x_int : std_logic            := '0';
-  signal clk_3x     : std_logic;
-  signal clk_count  : unsigned(1 downto 0) := (others => '0');
+  signal clk     : std_logic;
+  signal osc_clk : std_logic;
+  signal clk_3x  : std_logic;
 
   constant UART_ADDR_DAT         : std_logic_vector(7 downto 0) := "00000000";
   constant UART_ADDR_LSR         : std_logic_vector(7 downto 0) := "00000011";
@@ -277,12 +272,6 @@ architecture rtl of vhdl_top is
   signal cam_aux_out : std_logic_vector(7 downto 0);
 begin
 
-  hf_osc : component osc_48MHz
-    generic map (
-      DIVIDER => "00")                  -- 48 MHz
-    port map (
-      CLKOUT => osc_clk);
-
   pwm_counter : process (osc_clk) is
   begin
     if rising_edge(osc_clk) then
@@ -291,17 +280,16 @@ begin
   end process;
 
   pll_3x_gen : if USE_PLL = 2 generate
-    process (osc_clk)
-    begin
-      if rising_edge(osc_clk) then
-        clk_int <= not clk_int;
-      end if;
-    end process;
+    hf_osc : component osc_48MHz
+      generic map (
+        DIVIDER => "01")                -- 24 MHz
+      port map (
+        CLKOUT => osc_clk);
 
     clk_gb : SB_GB
       port map (
         GLOBAL_BUFFER_OUTPUT         => clk,
-        USER_SIGNAL_TO_GLOBAL_BUFFER => clk_int);
+        USER_SIGNAL_TO_GLOBAL_BUFFER => osc_clk);
     
     pll_x3 : SB_PLL40_CORE_wrapper_x3
       port map (
@@ -320,7 +308,18 @@ begin
         LATCHINPUTVALUE => 'X');
   end generate pll_3x_gen;
 
-  pll_2x_gen : if USE_PLL = 1 generate
+  pll_div3_gen : if USE_PLL = 1 generate
+    hf_osc : component osc_48MHz
+      generic map (
+        DIVIDER => "00")                -- 48 MHz
+      port map (
+        CLKOUT => osc_clk);
+
+    clk_gb : SB_GB
+      port map (
+        GLOBAL_BUFFER_OUTPUT         => clk_3x,
+        USER_SIGNAL_TO_GLOBAL_BUFFER => osc_clk);
+
     pll_div3 : SB_PLL40_CORE_wrapper_div3
       port map (
         REFERENCECLK => clk_3x,
@@ -336,19 +335,23 @@ begin
         SDI             => 'X',
         SCLK            => 'X',
         LATCHINPUTVALUE => 'X');
-
-    clk_gb : SB_GB
-      port map (
-        GLOBAL_BUFFER_OUTPUT         => clk_3x,
-        USER_SIGNAL_TO_GLOBAL_BUFFER => osc_clk);
-  end generate pll_2x_gen;
+  end generate pll_div3_gen;
 
   no_pll_gen : if USE_PLL = 0 generate
-    clk_6x_int <= osc_clk;
-    pll_lock   <= '1';
-    process (clk_6x_int)
+    signal clk_int    : std_logic            := '0';
+    signal clk_3x_int : std_logic            := '0';
+    signal clk_count  : unsigned(1 downto 0) := (others => '0');
+  begin
+    hf_osc : component osc_48MHz
+      generic map (
+        DIVIDER => "00")                -- 48 MHz
+      port map (
+        CLKOUT => osc_clk);
+
+    pll_lock <= '1';
+    process (osc_clk)
     begin
-      if rising_edge(clk_6x_int) then
+      if rising_edge(osc_clk) then
         clk_count  <= clk_count + 1;
         clk_3x_int <= not clk_3x_int;
         if clk_count = to_unsigned(2, clk_count'length) then
