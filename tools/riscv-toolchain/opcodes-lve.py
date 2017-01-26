@@ -68,7 +68,7 @@ sign_bits={'u':0,
            's':1}
 def make_line(name,bits):
     if "--riscv-opc" in sys.argv:
-        return '{{"{name}", "Xmxp", "s,t", MATCH_{uname}, MASK_{uname}, match_opcode, 0 }},'.format(name=name.strip(),
+        return '{{"{name}", "Xlve", "s,t", MATCH_{uname}, MASK_{uname}, match_opcode, 0 }},'.format(name=name.strip(),
                                                                                                     uname=name.strip().replace('.','_').upper())
     else:
         return name+bits

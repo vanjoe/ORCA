@@ -1,42 +1,34 @@
-#!/bin/bash
-#exit from script when command fails
-set -e
-
-#check to make sure RISCV is defined
-if [ -z "$RISCV" ]
+#!/bin/sh
+if [ -z "$RISCV_INSTALL" ]
 then
-	 echo "RISCV not defined, please define it to path for installing toolchain ... exiting" >&2
-	 exit 1
+        echo "RISCV_INSTALL not defined, please define it to path for installing toolchain ... exiting" >&2
+        exit 1
 fi
 
-#download all riscv repositories from github
-git submodule update --init --recursive
+git clone --recursive https://github.com/riscv/riscv-gnu-toolchain
+git clone https://github.com/riscv/riscv-opcodes.git
 
-#sanity check to make sure directories are where they are supposed to be
-BINUTILS_OPCODES_DIR=riscv-tools/riscv-gnu-toolchain/riscv-binutils-gdb/opcodes/
-OPCODES_REPO_DIR=riscv-tools/riscv-opcodes/
+python opcodes-lve.py > opcodes-lve
+python opcodes-lve.py --riscv-opc > lve_extensions.h
 
-function assert_dir_exist() {
-	 DIRECTORY=$1
-	 if [ ! -d $DIRECTORY ]
-	 then
-		  echo No Such Directory $DIRECTORY >&2
-		  exit 1
-	 fi
-}
+OPCODE_FILES="opcodes-lve \
+	 riscv-opcodes/opcodes-pseudo \
+	 riscv-opcodes/opcodes \
+	 riscv-opcodes/opcodes-rvc \
+	 riscv-opcodes/opcodes-rvc-pseudo"
 
-assert_dir_exist $BINUTILS_OPCODES_DIR
-assert_dir_exist $OPCODES_REPO_DIR
+RISCV_OPC_H=riscv-gnu-toolchain/riscv-binutils-gdb/include/opcode/riscv-opc.h
+cat $OPCODE_FILES | python riscv-opcodes/parse-opcodes -c > $RISCV_OPC_H
 
-set -o verbose
-cp riscv-opc.c $BINUTILS_OPCODES_DIR
-cp opcodes-Makefile $OPCODES_REPO_DIR/Makefile
-cp opcodes-mxp.py   $OPCODES_REPO_DIR/
 
-#update the opcodes generated files
-make -C $OPCODES_REPO_DIR/
+RISCV_OPC_C=riscv-gnu-toolchain/riscv-binutils-gdb/opcodes/riscv-opc.c
+mv lve_extensions.h $(dirname $RISCV_OPC_C)
+sed -i 's/#include "lve_extensions.h"//' $RISCV_OPC_C
+sed -i  '/\ Terminate the list.  /i#include "lve_extensions.h"' $RISCV_OPC_C
 
-#start the build process
-pushd riscv-tools
-./build-rv32im.sh
-popd
+cd riscv-gnu-toolchain
+mkdir build
+cd build
+../configure --prefix=$RISCV_INSTALL --with-arch=rv32im --with-abi=ilp32
+
+make -j 10
