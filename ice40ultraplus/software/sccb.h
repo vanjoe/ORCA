@@ -22,6 +22,8 @@
 #define PIO_DATA_REGISTER   0
 #define PIO_ENABLE_REGISTER 1
 
+#define SCCB_PIO_BASE   ((unsigned *)0x00050000)
+
 void sccb_init(void *pioBase);
 void sccb_write(void *pioBase, uint8_t slaveAddress, uint8_t subAddress, uint8_t data);
 uint8_t sccb_read(void *pioBase, uint8_t slaveAddress, uint8_t subAddress);

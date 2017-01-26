@@ -114,7 +114,7 @@ architecture rtl of orca_core is
   signal decode_flushed : std_logic;
   signal ifetch_next_pc : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-
+  signal e_sp_addr : std_logic_vector(CONDITIONAL(LVE_ENABLE = 1, sp_address'length,0)-1 downto 0);
 begin  -- architecture rtl
   pipeline_flush <= branch_get_flush(branch_pred_to_instr_fetch);
 
@@ -177,6 +177,7 @@ begin  -- architecture rtl
       decode_flushed => decode_flushed);
 
   e_valid <= d_valid_out and not pipeline_flush;
+  e_sp_addr <= sp_address(e_sp_addr'range);
   X : component execute
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
@@ -187,7 +188,7 @@ begin  -- architecture rtl
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
       COUNTER_LENGTH      => COUNTER_LENGTH,
       ENABLE_EXCEPTIONS   => ENABLE_EXCEPTIONS = 1,
-      SCRATCHPAD_SIZE     => CONDITIONAL(LVE_ENABLE = 1, SCRATCHPAD_SIZE, 0),
+      SCRATCHPAD_SIZE     => SCRATCHPAD_SIZE,
       FAMILY              => FAMILY)
     port map (
       clk                => clk,
@@ -220,7 +221,7 @@ begin  -- architecture rtl
       data_ack  => e_data_ack,
 
       --sp slave
-      sp_address   => sp_address,
+      sp_address   => e_sp_addr,
       sp_byte_en   => sp_byte_en,
       sp_write_en  => sp_write_en,
       sp_read_en   => sp_read_en,

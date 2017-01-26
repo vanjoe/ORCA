@@ -13,9 +13,10 @@ CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
-ARCH=RV32IXmxp
-CFLAGS= -m32  -march=$(ARCH) -O2 -MD -Wall -std=gnu99
-LD_FLAGS= -m32 -march=$(ARCH) -static -nostartfiles
+ARCH?=rv32im
+LVE_EXT=
+CFLAGS=-march=$(ARCH)  -O2 -MD -Wall -std=gnu99
+LD_FLAGS=-march=$(ARCH) -static -nostartfiles
 
 TARGET=test
 

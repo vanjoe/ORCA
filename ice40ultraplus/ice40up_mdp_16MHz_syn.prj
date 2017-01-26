@@ -1,0 +1,93 @@
+#-- Synopsys, Inc.
+#-- Project file /nfs/home/joel/Documents/orca-cam/ice40up_mdp_16MHz/ice40up_mdp_16MHz_syn.prj
+#project files
+
+add_file -vhdl -lib work "top.vhd" 
+add_file -verilog -lib work "top_top_ice40up_mdp_16MHz.v" 
+add_file -vhdl -lib work "../ice40ultra/hdl/top_component_pkg.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/top_util_pkg.vhd" 
+add_file -vhdl -lib work "../rtl/components.vhd" 
+add_file -vhdl -lib work "../rtl/utils.vhd" 
+add_file -vhdl -lib work "../rtl/constants_pkg.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/wb_splitter.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/wb_arbiter.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/wb_cam.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/wb_flash_dma.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/wb_pio.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/wb_ram.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/bram.vhd" 
+add_file -vhdl -lib work "osc_hf.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/spi_master/wb_spi_simple.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/uart_rd1042/intface.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/uart_rd1042/modem.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/uart_rd1042/rxcver.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/uart_rd1042/rxcver_fifo.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/uart_rd1042/txcver_fifo.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/uart_rd1042/txmitt.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/uart_rd1042/uart_core.vhd" 
+add_file -vhdl -lib work "../rtl/4port_mem_ultraplus.vhd" 
+add_file -vhdl -lib work "../rtl/alu.vhd" 
+add_file -vhdl -lib work "../rtl/branch_unit.vhd" 
+add_file -vhdl -lib work "../rtl/decode.vhd" 
+add_file -vhdl -lib work "../rtl/execute.vhd" 
+add_file -vhdl -lib work "../rtl/instruction_fetch.vhd" 
+add_file -vhdl -lib work "../rtl/load_store_unit.vhd" 
+add_file -vhdl -lib work "../rtl/lve_ci.vhd" 
+add_file -vhdl -lib work "../rtl/lve_top.vhd" 
+add_file -vhdl -lib work "../rtl/orca.vhd" 
+add_file -vhdl -lib work "../rtl/orca_core.vhd" 
+add_file -vhdl -lib work "../rtl/register_file.vhd" 
+add_file -vhdl -lib work "../rtl/sys_call.vhd" 
+add_file -verilog -lib work "SB_PLL40_CORE_wrapper_div3.v" 
+add_file -constraint -lib work "constr_16MHz.sdc"
+#implementation: "ice40up_mdp_16MHz_Implmnt"
+impl -add ice40up_mdp_16MHz_Implmnt -type fpga
+
+#implementation attributes
+set_option -vlog_std v2001
+set_option -project_relative_includes 1
+
+#device options
+set_option -technology SBTiCE40UP
+set_option -part iCE40UP5K
+set_option -package UWG30
+set_option -speed_grade 
+set_option -part_companion ""
+
+#compilation/mapping options
+
+# mapper_options
+set_option -frequency auto
+set_option -write_verilog 0
+set_option -write_vhdl 0
+
+# Silicon Blue iCE40UP
+set_option -maxfan 10000
+set_option -disable_io_insertion 0
+set_option -pipe 1
+set_option -retiming 0
+set_option -update_models_cp 0
+set_option -fixgatedclocks 2
+set_option -fixgeneratedclocks 0
+
+# NFilter
+set_option -popfeed 0
+set_option -constprop 0
+set_option -createhierarchy 0
+
+# sequential_optimization_options
+set_option -symbolic_fsm_compiler 1
+
+# Compiler Options
+set_option -compiler_compatible 0
+set_option -resource_sharing 1
+
+#automatic place and route (vendor) options
+set_option -write_apr_constraint 1
+
+#set result format/file last
+project -result_format "edif"
+project -result_file ./ice40up_mdp_16MHz_Implmnt/ice40up_mdp_16MHz.edf
+project -log_file "./ice40up_mdp_16MHz_Implmnt/ice40up_mdp_16MHz.srr"
+impl -active ice40up_mdp_16MHz_Implmnt
+project -run synthesis -clean

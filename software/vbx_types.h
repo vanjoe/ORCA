@@ -107,12 +107,17 @@ typedef struct {
 	/* char        fxp_word_frac_bits; ///< Num of fractional bit used with @ref vbx_word_t or @ref vbx_uword_t data types */
 	/* char        fxp_half_frac_bits; ///< Num of fractional bit used with @ref vbx_half_t or @ref vbx_uhalf_t data types */
 	/* char        fxp_byte_frac_bits; ///< Num of fractional bit used with vbx_byte_t or f vbx_ubyte_t data types */
-
-	int current_vl;
-
+	union{
+		int stride_and_vl;
+		struct {
+			int vl :16;
+			int stride: 16;
+		};
+	};
 	/* MXP flags */
-	char        init;
-
+	char  init;
+	char* sp_ptr;
+	char* sp_base;
 	/* MXP run-time state */
 /* 	vbx_void_t  *sp; ///< Current location of scratchpad pointer */
 /* #if VBX_STATIC_ALLOCATE_SP */

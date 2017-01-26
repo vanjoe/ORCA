@@ -4,6 +4,8 @@ config.mk
 tags
 *.nfs*
 *~
+\#*
+.#*
 
 de2-115/system/*
 de2-115/system.qsys.log
@@ -39,7 +41,7 @@ ice40ultraplus/stdout.log
 ice40ultraplus/stdout.log.bak
 ice40ultraplus/synlog.tcl
 ice40ultraplus/transcript
-ice40ultraplus/ultraplus_Implmnt/
+ice40ultraplus*/*_Implmnt/
 ice40ultraplus/vsim.wlf
 ice40ultraplus/vish_stacktrace.vstf
 ice40ultraplus/work/

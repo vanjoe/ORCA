@@ -1,8 +1,9 @@
 #include "printf.h"
 #include "i2s.h"
 #include "interrupt.h"
-#include "lve_test.h"
+#include "vbx.h"
 
+#if 0
 #define SYS_CLK 8000000
 static inline unsigned get_time()
 {int tmp;       asm volatile("csrr %0,time":"=r"(tmp));return tmp;}
@@ -28,12 +29,13 @@ void delayms( unsigned int ms)
 		}
 	}
 }
+#endif
 
 int main()
 {
-	int i=lve_test();
+	cifar_lve();
 
-	printf("LVE_TEST=%X\r\n",i);
+
 
 	return 0;
 }

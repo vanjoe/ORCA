@@ -34,7 +34,6 @@ entity wb_spimaster is
     --
     -- SPI Master Signals
     --
-    base_clk : in  std_logic;
     spi_mosi : out std_logic;
     spi_miso : in  std_logic;
     spi_ss   : out std_logic_vector(slaves- 1 downto 0);
@@ -59,10 +58,10 @@ architecture rtl of wb_spimaster is
 
 
 
-  constant CLOCK_DIVIDE_BITS : integer                     := 1;
-  signal clock_count         : unsigned(CLOCK_DIVIDE_BITS-1 downto 0);
-  constant CLOCK_COUNT_WRITE : unsigned(clock_count'range) := (others => '1');
-  constant CLOCK_COUNT_READ  : unsigned(clock_count'range) := SHIFT_RIGHT(clock_count_write, 1);
+  constant CLOCK_DIVIDE_BITS   : integer                     := 1;
+  signal clock_count           : unsigned(CLOCK_DIVIDE_BITS-1 downto 0);
+  constant CLOCK_COUNT_WRITE   : unsigned(clock_count'range) := (others => '1');
+  constant CLOCK_COUNT_READ    : unsigned(clock_count'range) := SHIFT_RIGHT(clock_count_write, 1);
 
   constant TXRX_REG : std_logic_vector(adr_i'range) := std_logic_vector(to_unsigned(0, adr_i'length));
   constant SS_REG   : std_logic_vector(adr_i'range) := std_logic_vector(to_unsigned(1, adr_i'length));
@@ -110,16 +109,16 @@ begin  -- architecture rtl
   spi_mosi  <= w_shift_register(w_shift_register'left);
 
   done_transfer <= done_xfer and not restart_xfer;
-  data_out      <= read_register;
+  data_out <= read_register;
 
-  process(base_clk)
+  process(clk_i)
   begin
-    if rising_edge(base_clk) then
+    if rising_edge(clk_i) then
 
       if restart_xfer = '1' then
-        bits_to_shift    <= 8;
-        w_shift_register <= write_register;
-        clock_count      <= (others => '0');
+        bits_to_shift         <= 8;
+        w_shift_register      <= write_register;
+        clock_count           <= (others => '0');
       else
         if done_xfer = '0' then
           if clock_count = CLOCK_COUNT_WRITE then
@@ -128,11 +127,12 @@ begin  -- architecture rtl
           elsif clock_count = CLOCK_COUNT_READ then
             read_register <= read_register(read_register'left -1 downto 0) & spi_miso;
           end if;
-          clock_count <= clock_count +1;
+          clock_count           <= clock_count +1;
         end if;
       end if;
 
       if rst_i = '1' then
+        clock_count           <= (others => '0');
         read_register    <= (others => '0');
         w_shift_register <= (others => '0');
       end if;

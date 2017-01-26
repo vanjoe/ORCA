@@ -293,7 +293,7 @@ begin  -- architecture rtl
         when MUL_OP =>
           mul_result       := unsigned(mul_dest(REGISTER_SIZE-1 downto 0));
           mul_result_valid := mul_dest_valid;
-        when MULH_OP=>
+        when MULH_OP =>
           mul_result       := unsigned(mul_dest(REGISTER_SIZE*2-1 downto REGISTER_SIZE));
           mul_result_valid := mul_dest_valid;
         when MULHSU_OP =>
@@ -335,7 +335,7 @@ begin  -- architecture rtl
         when LUI_OP =>
           data_out       <= std_logic_vector(upper_immediate);
           data_out_valid <= source_valid;
-        when AUIPC_OP=>
+        when AUIPC_OP =>
           data_out       <= std_logic_vector(upper_immediate + signed(program_counter));
           data_out_valid <= source_valid;
         when others =>
@@ -352,54 +352,50 @@ begin  -- architecture rtl
     signal mul_b            : signed(mul_srcb'range);
     signal mul_ab_shift_amt : unsigned(log2(REGISTER_SIZE)-1 downto 0);
     signal mul_ab_valid     : std_logic;
-
-    signal mul_d : signed(mul_dest'range);
   begin
     mul_enable <= valid_instr and source_valid when ((func7 = mul_f7 and opcode = ALU_OP) or
-                                                     (instruction(25) = '1' and opcode = LVE_OP)) and instruction(14)  = '0' else '0';
+                                                     (instruction(25) = '1' and opcode = LVE_OP)) and instruction(14) = '0' else '0';
     mul_stall <= mul_enable and (not mul_dest_valid);
 
     lattice_mul_gen : if FAMILY = "LATTICE" generate
-      signal mul_a_absval    : unsigned(mul_a'length - 2 downto 0);
-      signal mul_b_absval    : unsigned(mul_b'length - 2 downto 0);
-      signal mul_abs_product : unsigned(mul_a_absval'length*2 - 1 downto 0);
+      signal afix : unsigned(mul_a'length-2 downto 0);
+      signal bfix : unsigned(mul_b'length-2 downto 0);
+      signal abfix : unsigned(mul_a'length-2 downto 0);
+
+      signal mul_a_unsigned : unsigned(mul_a'length-2 downto 0);
+      signal mul_b_unsigned : unsigned(mul_b'length-2 downto 0);
+      signal mul_dest_unsigned : unsigned((mul_a_unsigned'length+mul_b_unsigned'length)-1 downto 0);
     begin
-      -- In this process, convert the incoming source operands to their absolute value.
-      -- As well, correct the sign of the absolute product if sign1 xor sign2 is true.
-      process (mul_a, mul_b, mul_abs_product)
+      afix <= unsigned(mul_a(mul_a'length-2 downto 0)) when mul_b(mul_b'left) = '1' else
+              to_unsigned(0, afix'length);
+      bfix <= unsigned(mul_b(mul_b'length-2 downto 0)) when mul_a(mul_a'left) = '1' else
+              to_unsigned(0, afix'length);
+
+      mul_a_unsigned <= unsigned(mul_a(mul_a'length-2 downto 0));
+      mul_b_unsigned <= unsigned(mul_b(mul_b'length-2 downto 0));
+
+      process(clk)
       begin
-        mul_d(65 downto 64) <= "--";
-        case std_logic_vector'(mul_a(REGISTER_SIZE) & mul_b(REGISTER_SIZE)) is
-          when "00" =>
-            mul_a_absval       <= unsigned(mul_a(mul_a_absval'length-1 downto 0));
-            mul_b_absval       <= unsigned(mul_b(mul_b_absval'length-1 downto 0));
-            mul_d(63 downto 0) <= signed(mul_abs_product);
-          when "10" =>
-            mul_a_absval       <= unsigned(not mul_a(mul_a_absval'length-1 downto 0)) + to_unsigned(1, 32);
-            mul_b_absval       <= unsigned(mul_b(mul_b_absval'length-1 downto 0));
-            mul_d(63 downto 0) <= signed(not mul_abs_product) + to_signed(1, 32);
-          when "01" =>
-            mul_a_absval       <= unsigned(mul_a(mul_a_absval'length-1 downto 0));
-            mul_b_absval       <= unsigned(not mul_b(mul_b_absval'length-1 downto 0)) + to_unsigned(1, 32);
-            mul_d(63 downto 0) <= signed(not mul_abs_product) + to_signed(1, 32);
-          when "11" =>
-            mul_a_absval       <= unsigned(not mul_a(mul_a_absval'length-1 downto 0)) + to_unsigned(1, 32);
-            mul_b_absval       <= unsigned(not mul_b(mul_b_absval'length-1 downto 0)) + to_unsigned(1, 32);
-            mul_d(63 downto 0) <= signed(mul_abs_product);
-          when others =>
-            mul_a_absval       <= (others => '-');
-            mul_b_absval       <= (others => '-');
-            mul_d(63 downto 0) <= (others => '-');
-        end case;
+        if rising_edge(clk) then
+          -- The multiplication of the absolute value of the source operands.
+          mul_dest_unsigned <= mul_a_unsigned * mul_b_unsigned;
+          abfix <= afix + bfix;
+        end if;
       end process;
 
-      -- The multiplication of the absolute value of the source operands.
-      mul_abs_product <= mul_a_absval * mul_b_absval;
+      mul_dest(mul_a_unsigned'length-1 downto 0) <= signed(mul_dest_unsigned(mul_a_unsigned'length-1 downto 0));
+      mul_dest(mul_dest_unsigned'left downto mul_a_unsigned'length) <=
+        signed(mul_dest_unsigned(mul_dest_unsigned'left downto mul_a_unsigned'length) - abfix);
     end generate lattice_mul_gen;
 
     default_mul_gen : if FAMILY /= "LATTICE" generate
     begin
-      mul_d <= mul_a * mul_b;
+      process(clk)
+      begin
+        if rising_edge(clk) then
+          mul_dest <= mul_a * mul_b;
+        end if;
+      end process;
     end generate default_mul_gen;
 
     process(clk)
@@ -412,7 +408,6 @@ begin  -- architecture rtl
         mul_ab_valid     <= mul_src_valid;
 
         --Register multiplier output
-        mul_dest           <= mul_d;
         mul_dest_shift_amt <= mul_ab_shift_amt;
         mul_dest_valid     <= mul_ab_valid;
 

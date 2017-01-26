@@ -268,29 +268,29 @@ begin  -- architecture rtl
       delay_toggle     <= toggle;
       delay2_toggle    <= delay_toggle;
       last_cycle_count <= cycle_count;
+      case toggles is
+        when "100" | "011" =>
+          cycle_count <= SECOND_READ;
+        when "110" | "001" =>
+          cycle_count <= FIRST_WRITE;
+        when others => 
+          cycle_count <= FIRST_READ;
+      end case;
     end if;
   end process;
   toggles <= toggle & delay_toggle & delay2_toggle;
 
-  with toggles select
-    cycle_count <=
-    FIRST_READ  when "100",
-    FIRST_READ  when "011",
-    SECOND_READ when "110",
-    SECOND_READ when "001",
-    FIRST_WRITE when others;
-
 
   actual_byte_en <= byte_en3 when port_sel = SLAVE_ACCESS else byte_en2;
-  actual_wr_en   <= wen3     when port_sel = SLAVE_ACCESS else
-                    wen2 when cycle_count = FIRST_WRITE else
+  actual_wr_en   <= wen2 when cycle_count = FIRST_WRITE else
+                    wen3 when port_sel = SLAVE_ACCESS else
                     '0';
-  actual_addr <= rwaddr3 when port_sel = SLAVE_ACCESS else
+  actual_addr <= waddr2 when cycle_count = FIRST_WRITE else
+                 rwaddr3 when port_sel = SLAVE_ACCESS else
                  raddr0 when cycle_count = FIRST_READ else
-                 raddr1 when cycle_count = SECOND_READ else
-                 waddr2;
+                 raddr1;
 
-  actual_data_in <= data_in2 when port_sel = LVE_ACCESS else
+  actual_data_in <= data_in2 when cycle_count = FIRST_WRITE else
                     data_in3;
 
   process(scratchpad_clk)

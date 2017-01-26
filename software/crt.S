@@ -1,6 +1,5 @@
 # See LICENSE for license details.
 
-#include "encoding.h"
 
 #ifdef __riscv64
 # define LREG ld
@@ -118,10 +117,15 @@ _start:
   sll sp, sp, STKSHIFT
   add sp, sp, tp
 
-  la t0, _init
-  csrw mepc, t0
-  mret
 
+#if 0
+ /* TtHIS does not work when exceptions are disabled*/
+  la t0, _init
+  csrw mepc, t1
+  mret
+#else
+  j _init
+#endif
 trap_entry:
   addi sp, sp, -272
 

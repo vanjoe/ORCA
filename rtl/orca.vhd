@@ -478,7 +478,7 @@ begin  -- architecture rtl
       PIPELINE_STAGES    => PIPELINE_STAGES,
       LVE_ENABLE         => LVE_ENABLE,
       NUM_EXT_INTERRUPTS => CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0),
-      SCRATCHPAD_SIZE    => 2**SCRATCHPAD_ADDR_BITS,
+      SCRATCHPAD_SIZE    => CONDITIONAL(LVE_ENABLE = 1, 2**SCRATCHPAD_ADDR_BITS, 0),
       FAMILY             => FAMILY)
 
     port map(
@@ -501,7 +501,7 @@ begin  -- architecture rtl
       core_instruction_waitrequest   => core_instruction_waitrequest,
       core_instruction_readdatavalid => core_instruction_readdatavalid,
 
-      sp_address   => sp_address,
+      sp_address   => sp_address(CONDITIONAL(LVE_ENABLE = 1, SCRATCHPAD_ADDR_BITS, 0)-1 downto 0),
       sp_byte_en   => sp_byte_en,
       sp_write_en  => sp_write_en,
       sp_read_en   => sp_read_en,
