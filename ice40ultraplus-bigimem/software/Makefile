@@ -4,7 +4,7 @@
 -include config.mk
 C_MAIN?=flash_dma_test.c
 OBJDUMP_STYLE?=--disassemble-all
-ARCH?=RV32IXmxp
+ARCH?=rv32im
 RISCV_OLEVEL?=-Os
 RISCV_CFLAGS?=
 
@@ -24,8 +24,8 @@ CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
-CFLAGS=-m32 -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation -I..
-LD_FLAGS=-m32 -march=$(ARCH) -static -nostartfiles
+CFLAGS=-march=$(ARCH) $(RISCV_OLEVEL) -mno-div -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation -I..
+LD_FLAGS=-march=$(ARCH) -static -nostartfiles
 
 TARGET=test
 

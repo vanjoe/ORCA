@@ -4,7 +4,8 @@
 -include config.mk
 C_MAIN?=main.c
 OBJDUMP_STYLE?=--disassemble-all
-ARCH?=RV32IMXmxp
+ARCH?=rv32im
+LVE_EXT=xlve
 RISCV_OLEVEL?=-Os
 RISCV_CFLAGS?=
 
@@ -24,8 +25,8 @@ CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
-CFLAGS=-m32 -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation
-LD_FLAGS=-m32 -march=$(ARCH) -static -nostartfiles
+CFLAGS=-march=$(ARCH) -Wa,-march=$(ARCH)$(LVE_EXT) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation -mno-div
+LD_FLAGS= -static -nostartfiles -march=$(ARCH)
 
 TARGET=test
 
@@ -54,8 +55,8 @@ obj/:
 $(C_OBJ_FILES): obj/%.c.o : %.c sys_clk.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-obj/printf.c.o: obj/%.c.o : %.c sys_clk.h
-	$(CC) -m32 -march=RV32IXmxp $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation -c $< -o $@
+# obj/printf.c.o: obj/%.c.o : %.c sys_clk.h
+# 	$(CC) -m32 -march=RV32IXmxp $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation -c $< -o $@
 
 $(S_OBJ_FILES): obj/%.S.o : %.S
 	$(CC) $(CFLAGS) -c $< -o $@

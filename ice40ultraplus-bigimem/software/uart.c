@@ -17,7 +17,7 @@ static volatile int* const UART_LSR =UART_BASE+5;
 
 //this function is put in the .init section
 //so that the boot loader can make use of it.
-void __attribute__ (( section (".init"))) mputc(void* p, char c){
+void  mputc(void* p, char c){
 
 	UART_INIT();
 	while(UART_BUSY());
