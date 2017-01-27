@@ -60,7 +60,7 @@ architecture rtl of wb_arbiter is
 
   signal wait_for_read     : std_logic;
   signal slave2_write_ack  : std_logic;
-  type port_sel_t is (SLAVE0, SLAVE1, SLAVE2);
+  type port_sel_t is (SLAVE0, SLAVE1, SLAVE2, READ_WAIT);
   signal port_sel_request  : port_sel_t;
   signal port_sel_response : port_sel_t;
 
@@ -94,7 +94,10 @@ architecture rtl of wb_arbiter is
     if ps = SLAVE1 then
       return s1;
     end if;
-    return s2;
+    if ps = SLAVE2 then
+      return s2;
+    end if;
+    return '0';
 
   end function;
 
@@ -102,11 +105,14 @@ architecture rtl of wb_arbiter is
   signal slave1_en : std_logic;
   signal slave2_en : std_logic;
 
+  signal waiting_for_read : std_logic;
+
 begin  -- architecture rtl
   slave0_en        <= slave0_STB_I and slave0_CYC_I;
   slave1_en        <= slave1_STB_I and slave1_CYC_I;
   slave2_en        <= slave2_STB_I and slave2_CYC_I;
-  port_sel_request <= SLAVE0 when slave0_en = '1' else
+  port_sel_request <= READ_WAIT when waiting_for_read ='1' and master_ACK_I = '0' else
+                      SLAVE0 when slave0_en = '1' else
                       SLAVE1 when slave1_en = '1' else
                       SLAVE2;
 
@@ -123,11 +129,18 @@ begin  -- architecture rtl
   slave2_DAT_O <= master_DAT_I;
 
 
+
   process(clk_i)
   begin
     if rising_edge(clk_i) then
       if master_STALL_I = '0' then
-        port_sel_response <= port_sel_request;
+        waiting_for_read <= (slave0_en and not slave0_we_i) or
+                            (slave1_en and not slave1_we_i) or
+                            (slave2_en and not slave2_we_i);
+        if port_sel_request /= READ_WAIT then
+          port_sel_response <= port_sel_request;
+        end if;
+
       end if;
     end if;
   end process;
