@@ -462,18 +462,6 @@ package rv_components is
       );
   end component register_file;
 
-  component upper_immediate is
-    generic (
-      REGISTER_SIZE : positive);
-    port (
-      clk         : in  std_logic;
-      valid       : in  std_logic;
-      instr       : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      pc_current  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_enable : out std_logic);
-  end component upper_immediate;
-
   component system_calls is
     generic (
       REGISTER_SIZE     : natural;
