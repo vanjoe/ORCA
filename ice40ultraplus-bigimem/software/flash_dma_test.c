@@ -29,7 +29,7 @@ int main()
 		}
 	}
 
-	while(1){
+	do{
 		for(i=0;i<xfer_size;i++){
 			sp_base[i]=0;
 		}
@@ -51,7 +51,7 @@ int main()
 
 		printf("DONE!!\r\n");
 		delayms(3000);
-	}
+	}while(1);
 	return 0;
 
 

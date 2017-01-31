@@ -90,12 +90,9 @@ _start:
 uart_putc:
 		  li     a5, UART_ADDR
 		  li      a4,3
-1:		  sw      a4,12(a5)
-		  lw      a4,20(a5)
+		  sw      a4,12(a5)
+1:		  lw      a4,20(a5)
 		  andi    a4,a4,32
 		  beqz    a4,1b
 		  sw      a1,0(a5)
 		  ret
-
-
-		  .ascii "string"

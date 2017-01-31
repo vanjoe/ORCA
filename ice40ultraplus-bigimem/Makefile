@@ -48,6 +48,7 @@ sim: flash.mem bootmem.mem
 run_sim: sims
 	vsim -gui -do simulate.tcl &
 
+SET_ARCH=setarch x86_64 --uname-2.6
 define ice-tcl
 ICECUBE2=$(ICECUBE2) tclsh
 endef
@@ -68,7 +69,7 @@ $(EDF): $(HDL_FILES)
 	SYNPLIFY_PATH=$(ICECUBE2)/synpbase \
 	SBT_DIR=$(ICECUBE2)/sbt_backend/ \
 	LD_LIBRARY_PATH=$(ICECUBE2)/sbt_backend/bin/linux/opt/synpwrap:$${LD_LIBRARY_PATH} \
-	$(ICECUBE2)/sbt_backend/bin/linux/opt/synpwrap/synpwrap -prj $(SYN_PRJ) || \
+	$(SET_ARCH)	$(ICECUBE2)/sbt_backend/bin/linux/opt/synpwrap/synpwrap -prj $(SYN_PRJ) || \
 	 ( cat $(COMPILER_LOG) && exit -1)
 
 
