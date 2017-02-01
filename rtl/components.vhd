@@ -455,7 +455,6 @@ package rv_components is
       wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
       wb_data     : in std_logic_vector(REGISTER_SIZE -1 downto 0);
       wb_enable   : in std_logic;
-      wb_valid    : in std_logic;
 
       rs1_data : out std_logic_vector(REGISTER_SIZE -1 downto 0);
       rs2_data : out std_logic_vector(REGISTER_SIZE -1 downto 0)

@@ -66,6 +66,12 @@ architecture rtl of decode is
   signal il_rs1    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal il_rs2    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal il_opcode : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+
+  signal wb_sel_int    : std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
+  signal wb_data_int   : std_logic_vector(REGISTER_SIZE -1 downto 0);
+  signal wb_enable_int : std_logic;
+  signal wb_valid_int  : std_logic;
+
 begin
 
   register_file_1 : component register_file
@@ -77,13 +83,34 @@ begin
       valid_input => valid_input,
       rs1_sel     => rs1,
       rs2_sel     => rs2,
-      wb_sel      => wb_sel,
-      wb_data     => wb_data,
-      wb_enable   => wb_enable,
-      wb_valid    => wb_valid,
+      wb_sel      => wb_sel_int,
+      wb_data     => wb_data_int,
+      wb_enable   => wb_enable_int,
       rs1_data    => rs1_reg,
       rs2_data    => rs2_reg
       );
+
+  reg_rst : if true generate
+    -- on systems where the register file can not be initialized,
+    -- the reset signal is used to write x0 to zero.
+    -- We can probably remove the generate statements, but I want to leave the
+    -- old stuff in for a while (JDV Jan 2017)
+    constant REGISTER_RESET : boolean := true;
+  begin
+    reg_rst_en : if REGISTER_RESET generate
+      wb_sel_int    <= wb_sel                 when reset = '0' else (others => '0');
+      wb_data_int   <= wb_data                when reset = '0' else (others => '0');
+      wb_enable_int <= wb_enable and wb_valid when reset = '0' else '1';
+
+    end generate reg_rst_en;
+    reg_rst_nen : if not REGISTER_RESET generate
+      wb_sel_int    <= wb_sel;
+      wb_data_int   <= wb_data;
+      wb_enable_int <= wb_enable and wb_valid;
+    end generate reg_rst_nen;
+
+  end generate reg_rst;
+
   two_cycle : if PIPELINE_STAGES = 2 generate
     rs1 <= instruction(REGISTER_RS1'range) when stall = '0' else instr_latch(REGISTER_RS1'range);
     rs2 <= instruction(REGISTER_RS2'range) when stall = '0' else instr_latch(REGISTER_RS2'range);
