@@ -35,8 +35,8 @@ proc com {} {
                      hdl/uart_rd1042/txmitt.vhd         \
                      hdl/pmod_mic/pmod_mic_wb.vhd       \
                      hdl/pmod_mic/pmod_mic_ref_comp.vhd \
-                     osc_hf_sim.vhd                     \
-                     SB_GB_sim.vhd                      \
+                     hdl/osc_hf_sim.vhd                     \
+                     hdl/SB_GB_sim.vhd                      \
                      hdl/i2s_interface/i2s_decode.vhd   \
                      hdl/i2s_interface/i2s_wb.vhd       \
                      top.vhd                            \

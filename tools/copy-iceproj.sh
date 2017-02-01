@@ -1,5 +1,5 @@
 
-DEST_DIR=$1
+DEST_DIR=$(readlink -f $1)
 
 THIS_DIR=`pwd`
 

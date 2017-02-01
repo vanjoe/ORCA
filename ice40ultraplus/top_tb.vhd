@@ -7,6 +7,9 @@ end entity;
 
 architecture rtl of top_tb is
   component verilog_top is
+    generic (
+      USE_PLL : integer := 0;
+      USE_CAM : integer := 0);
     port(
       --spi
       spi_mosi : out std_logic;
@@ -84,9 +87,6 @@ begin
   end process;
 
   dut : component verilog_top
-    generic map (
-      CAM_NUM_COLS => CAM_NUM_COLS,
-      CAM_NUM_ROWS => CAM_NUM_ROWS)
     port map(
       spi_miso => spi_miso,
       spi_mosi => spi_mosi,

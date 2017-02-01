@@ -22,6 +22,8 @@ module verilog_top
 	sccb_scl  ,
 	sccb_sda  );
 
+	parameter USE_PLL = 1;
+	parameter USE_CAM = 1;
 
 	input [7:0] cam_dat ;
 	input 		cam_xclk;
@@ -48,8 +50,8 @@ module verilog_top
 
 	vhdl_top
 	  #(
-	    .USE_PLL(0),
-	    .USE_CAM(1)
+	    .USE_PLL(USE_PLL),
+	    .USE_CAM(USE_CAM)
 	    )
 	sub_top
 	  (

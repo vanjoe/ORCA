@@ -55,9 +55,10 @@ int main()
 		sp_base[i]=0xAA;
 	}
 	for(i=0;i<spram_test_len;i++){
-		if(sp_base[i] != 0xAA){
+		int val=sp_base[i];
+		if(val != 0xAA){
 			spram_errors++;
-			printf(" spram test failed\r\n");
+			printf("spram test failed %x != 0xAA \r\n",val);
 		}
 	}
 #endif
@@ -72,7 +73,7 @@ int main()
 	}
 
 	int start_time=get_time();
-	int flash_address=512*1024;
+	int flash_address=0*1024;
 
 	int lve_errors=0;
 	int dma_errors;
@@ -111,7 +112,7 @@ int main()
 	}if(lve_errors){
 		printf("LVE ERRORS :(\r\n");
 	}if(dma_errors){
-		printf("DMA ERRORS :(\r\n");
+		printf("DMA ERRORS :( (Assuming you initialized the flash properly)\r\n");
 	}if(spram_errors + lve_errors + dma_errors == 0){
 		printf ("No Errors :)\r\n");
 	}
