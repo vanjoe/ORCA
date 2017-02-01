@@ -290,7 +290,7 @@ begin
       port map (
         GLOBAL_BUFFER_OUTPUT         => clk,
         USER_SIGNAL_TO_GLOBAL_BUFFER => osc_clk);
-    
+
     pll_x3 : SB_PLL40_CORE_wrapper_x3
       port map (
         REFERENCECLK => clk,
@@ -510,6 +510,7 @@ begin
   rv : component orca
     generic map (
       REGISTER_SIZE        => REGISTER_SIZE,
+      RESET_VECTOR         => 0,
       WISHBONE_ENABLE      => 1,
       MULTIPLY_ENABLE      => 1,
       DIVIDE_ENABLE        => 0,

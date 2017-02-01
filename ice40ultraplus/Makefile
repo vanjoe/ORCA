@@ -90,7 +90,7 @@ $(FINAL_BITFILE):$(BITFILE)
 bits: $(FINAL_BITFILE)
 
 pgm : $(FINAL_BITFILE)
-	$(PGM_CMD) programmer.xcf
+	$(PGM_CMD) programmer.xcf || true
 
 
 .PHONY: syn all clean clean-all build-software bit pgm sim run_sim
