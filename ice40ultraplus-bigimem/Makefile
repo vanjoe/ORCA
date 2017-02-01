@@ -5,7 +5,7 @@ all:
 
 ICECUBE2?=/nfs/opt/lattice/iCEcube2/2016.02
 
-PROJECT ?= ice40up_mdp_16MHz
+PROJECT ?= ice40ultraplus
 SBT_PROJECT=$(PROJECT)_sbt.project
 SYN_PRJ=$(PROJECT)_syn.prj
 LSE_PRJ=$(PROJECT)_lse.prj
@@ -14,8 +14,8 @@ TOP_LEVEL_ENTITY=verilog_top
 COMPILER_LOG=$(OUTPUT_DIR)/synlog/$(PROJECT)_compiler.srr
 TIMING_REPORT=$(OUTPUT_DIR)/sbt/outputs/router/$(TOP_LEVEL_ENTITY)_timing.rpt
 EDF=$(OUTPUT_DIR)/$(PROJECT).edf
-BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.hex
-
+BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.bin
+FINAL_BITFILE=bits.bin
 BOOTMEM_LIST=bootmem.list
 BIN_FILE?=software/test.bin
 
@@ -25,7 +25,7 @@ HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../rtl/*.vhd) ./t
 
 
 all: build-software bit programmer.xcf flash.mem
-bit: $(BITFILE)
+bits: $(FINAL_BITFILE)
 
 BOOT_BASE=0
 BOOT_LEN=1024
@@ -89,12 +89,10 @@ $(BIN_FILE)::
 	make -C software FORMAT=bin
 
 PGM_CMD=$(ICECUBE2)/../../programmer/3.8_x64/bin/lin64/pgrcmd -infile
-programmer.xcf::
-	@if [ ! -e $@ ]; then touch $@; fi
-	@sed "s/ice40ultraplus/$(PROJECT)/g" programmer.xcf.template > programmer.xcf.temp
-	@diff -q programmer.xcf.temp $@; if [ $$? != 0 ]; then cp programmer.xcf.temp $@; echo "New key file $@ created."; fi
-	@rm -f programmer.xcf.temp
-pgm : $(BITFILE) programmer.xcf
+
+$(FINAL_BITFILE):$(BITFILE)
+	cp $^ $@
+pgm : $(FINAL_BITFILE)
 	$(PGM_CMD) programmer.xcf
 
 .PHONY: syn all clean clean-all build-software bit pgm sim run_sim
