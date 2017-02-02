@@ -25,8 +25,8 @@ set_module_property NAME "vectorblox_orca"
 set_module_property VERSION 1.0
 set_module_property INTERNAL false
 set_module_property OPAQUE_ADDRESS_MAP true
-set_module_property AUTHOR ""
-set_module_property GROUP "Vectorblox/Processors"
+set_module_property AUTHOR "VectorBlox Computing Inc."
+set_module_property GROUP "VectorBlox Computing Inc./Processors"
 set_module_property DISPLAY_NAME "Orca (RISC-V)"
 set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
 set_module_property EDITABLE true
