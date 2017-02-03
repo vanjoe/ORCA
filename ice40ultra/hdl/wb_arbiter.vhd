@@ -57,10 +57,8 @@ end entity wb_arbiter;
 
 architecture rtl of wb_arbiter is
 
-
-  signal wait_for_read     : std_logic;
-  signal slave2_write_ack  : std_logic;
-  type port_sel_t is (SLAVE0, SLAVE1, SLAVE2, READ_WAIT);
+  signal write_ack         : std_logic_vector(2 downto 0);
+  type port_sel_t is (SLAVE0, SLAVE1, SLAVE2, READ_WAIT, NONE);
   signal port_sel_request  : port_sel_t;
   signal port_sel_response : port_sel_t;
 
@@ -101,28 +99,26 @@ architecture rtl of wb_arbiter is
 
   end function;
 
-  signal slave0_en : std_logic;
-  signal slave1_en : std_logic;
-  signal slave2_en : std_logic;
-
-  signal waiting_for_read : std_logic;
+  signal slave_en         : std_logic_vector(2 downto 0);
+  signal wait_for_read : std_logic;
 
 begin  -- architecture rtl
-  slave0_en        <= slave0_STB_I and slave0_CYC_I;
-  slave1_en        <= slave1_STB_I and slave1_CYC_I;
-  slave2_en        <= slave2_STB_I and slave2_CYC_I;
-  port_sel_request <= READ_WAIT when waiting_for_read ='1' and master_ACK_I = '0' else
-                      SLAVE0 when slave0_en = '1' else
-                      SLAVE1 when slave1_en = '1' else
-                      SLAVE2;
+  slave_en(0)      <= slave0_STB_I and slave0_CYC_I;
+  slave_en(1)      <= slave1_STB_I and slave1_CYC_I;
+  slave_en(2)      <= slave2_STB_I and slave2_CYC_I;
+  port_sel_request <= READ_WAIT when wait_for_read = '1' and master_ACK_I = '0' else
+                      SLAVE0 when slave_en(0) = '1' else
+                      SLAVE1 when slave_en(1) = '1' else
+                      SLAVE2 when slave_en(2) = '1' else
+                      NONE;             --NO SLAVE
 
-  slave0_STALL_O <= slave0_en when port_sel_request /= SLAVE0 else master_stall_i;
-  slave1_STALL_O <= slave1_en when port_sel_request /= SLAVE1 else master_stall_i;
-  slave2_STALL_O <= slave2_en when port_sel_request /= SLAVE2 else master_stall_i;
+  slave0_STALL_O <= slave_en(0) when port_sel_request /= SLAVE0 else master_stall_i;
+  slave1_STALL_O <= slave_en(1) when port_sel_request /= SLAVE1 else master_stall_i;
+  slave2_STALL_O <= slave_en(2) when port_sel_request /= SLAVE2 else master_stall_i;
 
-  slave0_ACK_O <= master_ACK_I when port_sel_response = SLAVE0 else '0';
-  slave1_ACK_O <= master_ACK_I when port_sel_response = SLAVE1 else '0';
-  slave2_ACK_O <= master_ACK_I when port_sel_response = SLAVE2 else '0';
+  slave0_ACK_O <= (master_ACK_I and wait_for_read) or write_ack(0) when port_sel_response = SLAVE0 else '0';
+  slave1_ACK_O <= (master_ACK_I and wait_for_read) or write_ack(1) when port_sel_response = SLAVE1 else '0';
+  slave2_ACK_O <= (master_ACK_I and wait_for_read) or write_ack(2) when port_sel_response = SLAVE2 else '0';
 
   slave0_DAT_O <= master_DAT_I;
   slave1_DAT_O <= master_DAT_I;
@@ -134,13 +130,27 @@ begin  -- architecture rtl
   begin
     if rising_edge(clk_i) then
       if master_STALL_I = '0' then
-        waiting_for_read <= (slave0_en and not slave0_we_i) or
-                            (slave1_en and not slave1_we_i) or
-                            (slave2_en and not slave2_we_i);
+
+        if wait_for_read = '1' and master_ack_i = '1' then
+          wait_for_read <= '0';
+        end if;
+        if ((slave_en(0) and not slave0_we_i) or
+            (slave_en(1) and not slave1_we_i) or
+            (slave_en(2) and not slave2_we_i)) = '1' then
+          wait_for_read <= '1';
+        end if;
+
+        write_ack(0) <= slave_en(0) and slave0_we_i;
+        write_ack(1) <= slave_en(1) and slave1_we_i;
+        write_ack(2) <= slave_en(2) and slave2_we_i;
+
         if port_sel_request /= READ_WAIT then
           port_sel_response <= port_sel_request;
         end if;
 
+      end if;
+      if rst_i = '1' then
+        wait_for_read <= '0';
       end if;
     end if;
   end process;
@@ -148,7 +158,7 @@ begin  -- architecture rtl
 
   master_ADR_O <= port_choose(slave0_adr_I, slave1_adr_I, slave2_adr_I, port_sel_request);
   master_DAT_O <= port_choose(slave0_dat_I, slave1_dat_I, slave2_dat_I, port_sel_request);
-  master_WE_O  <= port_choose(slave0_we_I, slave1_we_I, slave2_we_I,    port_sel_request);
+  master_WE_O  <= port_choose(slave0_we_I, slave1_we_I, slave2_we_I, port_sel_request);
   master_CYC_O <= port_choose(slave0_cyc_I, slave1_cyc_I, slave2_cyc_I, port_sel_request);
   master_STB_O <= port_choose(slave0_stb_I, slave1_stb_I, slave2_stb_I, port_sel_request);
   master_SEL_O <= port_choose(slave0_sel_I, slave1_sel_I, slave2_sel_I, port_sel_request);
