@@ -95,7 +95,7 @@ begin
     -- the reset signal is used to write x0 to zero.
     -- We can probably remove the generate statements, but I want to leave the
     -- old stuff in for a while (JDV Jan 2017)
-    constant REGISTER_RESET : boolean := true;
+    constant REGISTER_RESET : boolean := false;
   begin
     reg_rst_en : if REGISTER_RESET generate
       wb_sel_int    <= wb_sel                 when reset = '0' else (others => '0');
