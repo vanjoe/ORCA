@@ -1,12 +1,12 @@
 #include "vbx.h"
 
-vbx_mxp_t the_mxp;
+vbx_lve_t the_lve;
 
-void init_mxp(){
-	the_mxp.stride=1;
-	the_mxp.sp_ptr=SCRATCHPAD_BASE;
-	the_mxp.sp_base=SCRATCHPAD_BASE;
+void init_lve(){
+	the_lve.stride=1;
+	the_lve.sp_ptr=SCRATCHPAD_BASE;
+	the_lve.sp_base=SCRATCHPAD_BASE;
 
-	the_mxp.init=1;
+	the_lve.init=1;
 
 }

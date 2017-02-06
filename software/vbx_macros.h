@@ -3,7 +3,7 @@
 
 #include "vbx_types.h"
 
-extern vbx_mxp_t the_mxp;
+extern vbx_lve_t the_lve;
 
 
 #define riscv_vector_asm_(vinstr,src_t,op_sz,dim,acc,sign,sync,vlen,dest,srca,srcb) \
@@ -89,19 +89,19 @@ extern vbx_mxp_t the_mxp;
 #define vbx_3D_sync(...)     vbx_3D_sync_(__VA_ARGS__)
 
 static inline void vbx_set_vl(unsigned vl){
-	the_mxp.vl = vl;
+	the_lve.vl = vl;
 }
 static inline int vbx_get_vl(){
-	return the_mxp.stride_and_vl;
+	return the_lve.stride_and_vl;
 }
 
 static inline void* vbx_sp_alloc(unsigned sz){
-	char* retval=the_mxp.sp_ptr;
-	the_mxp.sp_ptr+=sz;
+	char* retval=the_lve.sp_ptr;
+	the_lve.sp_ptr+=sz;
 	return (void*)retval;
 }
 
 static inline void vbx_sp_free(){
-	the_mxp.sp_ptr= the_mxp.sp_base;
+	the_lve.sp_ptr= the_lve.sp_base;
 }
 #endif //MACROS_H

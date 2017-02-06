@@ -44,7 +44,7 @@ int equal(vbx_word_t *a, vbx_word_t *b, const int width) {
 void vbx_pool(vbx_word_t *v_out, vbx_word_t *v_pool, const int width, const int height) {
 #ifdef IS_LVE
     int i;
-    the_mxp.stride = 2;
+    the_lve.stride = 2;
     vbx_set_vl(width*height/2);
     vbx(VVW, VSLT, v_pool, v_out, v_out+1);
     vbx(VVW, VCMV_NZ, v_out, v_out+1, v_pool);
@@ -52,7 +52,7 @@ void vbx_pool(vbx_word_t *v_out, vbx_word_t *v_pool, const int width, const int 
 	v_out[i] = v_out[i*2];
     }
 
-    the_mxp.stride = 1;
+    the_lve.stride = 1;
     vbx_set_vl(width/2);
     for (i = 0; i < height/2; i++) {
 	vbx(VVW, VSLT, v_pool, v_out + (i*2) * width/2, v_out + (i*2+1) * width/2); 
@@ -302,7 +302,7 @@ void dummy_dense_lve(vbx_word_t *v_out, vbx_word_t *v_in, dense_layer_t *layer)
 }
 
 void cifar_lve() {
-	init_mxp();
+	init_lve();
 	printf("\r\n");
 	printf("\r\n\r\nCES or BUST!!\r\n");
 	printf("\r\n");

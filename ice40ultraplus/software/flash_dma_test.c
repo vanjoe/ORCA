@@ -10,7 +10,7 @@ int do_lve(void* base){
 	//initialize the unit stide to be 4 (1 word)
 	//note this does not mean you can do un-aligned aaccesses
 
-	the_mxp.stride=1;
+	the_lve.stride=1;
 	int vlen=20;
 	int i;
 	int errors=0;

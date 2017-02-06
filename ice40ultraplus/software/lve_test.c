@@ -40,7 +40,7 @@ int lve_test(unsigned int *failing_tests_ptr){
   //just running here to make sure I'm not breaking the LSU
   //with my LVE changes. -Aaron
 #if (TEST_RUN_MASK & LW_TEST_MASK)
-	the_mxp.stride=1;
+	the_lve.stride=1;
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = 0xDEADBEEF + element;
@@ -80,7 +80,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif //(TEST_RUN_MASK & LW_TEST_MASK)
 
 #if (TEST_RUN_MASK & ENUM_TEST_MASK)
-	the_mxp.stride=1;
+	the_lve.stride=1;
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = 0xDEADBEEF + element;
@@ -109,7 +109,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif //(TEST_RUN_MASK & ENUM_TEST_MASK)
 
 #if (TEST_RUN_MASK & VL_TEST_MASK)
-	the_mxp.stride=1;
+	the_lve.stride=1;
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = 0xDEADBEEF + element;
@@ -138,7 +138,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif //(TEST_RUN_MASK & VL_TEST_MASK)
 
 #if (TEST_RUN_MASK & OVERWRITE_TEST_MASK)
-	the_mxp.stride=1;
+	the_lve.stride=1;
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = 0xDEADBEEF + element;
@@ -167,7 +167,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif //(TEST_RUN_MASK & OVERWRITE_TEST_MASK)
 
 #if (TEST_RUN_MASK & MULTIPLY_TEST_MASK)
-	the_mxp.stride=1;
+	the_lve.stride=1;
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = 0xDEADBEEF + element;
@@ -196,7 +196,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif //(TEST_RUN_MASK & MULTIPLY_TEST_MASK)
 
 #if (TEST_RUN_MASK & ACCUM_TEST_MASK)
-	the_mxp.stride=1;
+	the_lve.stride=1;
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = 0xDEADBEEF + element;
@@ -225,7 +225,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif // (TEST_RUN_MASK & ACCUM_TEST_MASK)
 
 #if (TEST_RUN_MASK & CI_TEST_MASK)
-	the_mxp.stride=1;
+	the_lve.stride=1;
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = 0xDEADBEEF + element;
@@ -269,7 +269,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 
 
 #if (TEST_RUN_MASK & CI_WB_MASK)
-	the_mxp.stride=1;
+	the_lve.stride=1;
 	//Initialize data with some known values
 	for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = ((element&1)?element: -element)<<5;
@@ -298,7 +298,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif // (TEST_RUN_MASK & CI_WB_MASK)
 
 #if (TEST_RUN_MASK & CI_WB_MASK)
-	the_mxp.stride=1;
+	the_lve.stride=1;
 	//Initialize data with some known values
 	for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = ((element&1)?element: -element)<<5;
@@ -327,7 +327,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 #endif // (TEST_RUN_MASK & CI_WB_MASK)
 
 #if (TEST_RUN_MASK & CI_CONV_MASK)
-	the_mxp.stride=1;
+	the_lve.stride=1;
   //Initialize data with some known values
   for(element = 0; element < TEST_LENGTH; element++){
 		v_a[element] = 0xDEADBEEF + element;
@@ -345,7 +345,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 	vbx_set_vl(1);
 	vbx(SEW,VCUSTOM1,0,0x2,vbx_ENUM);
 	vbx_set_vl(3);
-	the_mxp.stride=2;
+	the_lve.stride=2;
 	vbx(VVWWU,VCUSTOM2,v_a,v_c,v_c+1);
 	debugx(v_a[2]);
 #endif // (TEST_RUN_MASK & CI_CONV_MASK)

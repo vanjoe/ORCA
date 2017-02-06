@@ -8,7 +8,7 @@
 #include "vbx_macros.h"
 
 
-void init_mxp();
+void init_lve();
 
 #define  SCRATCHPAD_BASE ((void*)0x08000000)
 

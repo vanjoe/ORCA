@@ -129,6 +129,6 @@ typedef struct {
 /* 	int         spstack_max; */
 
 
-} vbx_mxp_t;
+} vbx_lve_t;
 
 #endif //VBX_TYPES_H

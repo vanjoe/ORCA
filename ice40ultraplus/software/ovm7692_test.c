@@ -64,11 +64,11 @@
 int main()
 {
 	printf("\r\nTESTING OVM\r\n");
-	init_mxp();
+	init_lve();
 
 	//set the bottom of the scratchpad to skip the camera dma buffer
-	the_mxp.sp_base = ((char*)SCRATCHPAD_BASE)+( 64*32*4);
-	the_mxp.sp_ptr = ((char*)SCRATCHPAD_BASE)+( 64*32*4);
+	the_lve.sp_base = ((char*)SCRATCHPAD_BASE)+( 64*32*4);
+	the_lve.sp_ptr = ((char*)SCRATCHPAD_BASE)+( 64*32*4);
 
 	char* r_plane = (char*)vbx_sp_alloc(34*40);
 	char* g_plane=	 (char*)vbx_sp_alloc(34*40);

@@ -47,7 +47,7 @@ void delayus(int us)
 
 
 //volatile int *gpio_data= (volatil1e int*)0x10000;
-void test_mxp() {
+void test_lve() {
 	vbx_uhalf_t* a=scratchpad_base+0;
 	vbx_uhalf_t* b=scratchpad_base+6;
 	vbx_uhalf_t* c=scratchpad_base+12;
@@ -81,7 +81,7 @@ void test_mxp() {
 
 
 int main() {
-	test_mxp();
+	test_lve();
 }
 
 
