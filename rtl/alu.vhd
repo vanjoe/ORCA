@@ -358,12 +358,12 @@ begin  -- architecture rtl
     mul_stall <= mul_enable and (not mul_dest_valid);
 
     lattice_mul_gen : if FAMILY = "LATTICE" generate
-      signal afix : unsigned(mul_a'length-2 downto 0);
-      signal bfix : unsigned(mul_b'length-2 downto 0);
+      signal afix  : unsigned(mul_a'length-2 downto 0);
+      signal bfix  : unsigned(mul_b'length-2 downto 0);
       signal abfix : unsigned(mul_a'length-2 downto 0);
 
-      signal mul_a_unsigned : unsigned(mul_a'length-2 downto 0);
-      signal mul_b_unsigned : unsigned(mul_b'length-2 downto 0);
+      signal mul_a_unsigned    : unsigned(mul_a'length-2 downto 0);
+      signal mul_b_unsigned    : unsigned(mul_b'length-2 downto 0);
       signal mul_dest_unsigned : unsigned((mul_a_unsigned'length+mul_b_unsigned'length)-1 downto 0);
     begin
       afix <= unsigned(mul_a(mul_a'length-2 downto 0)) when mul_b(mul_b'left) = '1' else
@@ -379,7 +379,7 @@ begin  -- architecture rtl
         if rising_edge(clk) then
           -- The multiplication of the absolute value of the source operands.
           mul_dest_unsigned <= mul_a_unsigned * mul_b_unsigned;
-          abfix <= afix + bfix;
+          abfix             <= afix + bfix;
         end if;
       end process;
 
@@ -649,7 +649,7 @@ end entity;
 architecture rtl of operand_creation is
   constant MUL_F7 : std_logic_vector(6 downto 0) := "0000001";
 
-  signal is_immediate     : std_logic;
+  alias not_immediate is instruction(5);
   signal immediate_value  : unsigned(REGISTER_SIZE-1 downto 0);
   signal op1              : signed(REGISTER_SIZE downto 0);
   signal op2              : signed(REGISTER_SIZE downto 0);
@@ -672,14 +672,14 @@ architecture rtl of operand_creation is
   constant OP_IMM_IMMEDIATE_SIZE : integer := 12;
 
 begin  -- architecture rtl
-  is_immediate <= not instruction(5);
+
   immediate_value <= unsigned(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0)&
                               instruction(31 downto 20));
   data1     <= unsigned(rs1_data);
-  data2     <= unsigned(rs2_data)                              when is_immediate = '0' else immediate_value;
-  shift_amt <= unsigned(data2(log2(REGISTER_SIZE)-1 downto 0)) when not SHIFTER_USE_MULTIPLIER else
-               unsigned(data2(log2(REGISTER_SIZE)-1 downto 0)) when instruction(14) = '0'else
-               32-unsigned(data2(log2(REGISTER_SIZE)-1 downto 0));
+  data2     <= unsigned(rs2_data)                    when not_immediate = '1' else immediate_value;
+  shift_amt <= data2(log2(REGISTER_SIZE)-1 downto 0) when not SHIFTER_USE_MULTIPLIER else
+               data2(log2(REGISTER_SIZE)-1 downto 0) when instruction(14) = '0'else
+               unsigned(-signed(data2(log2(REGISTER_SIZE)-1 downto 0)));
 
   shift_value <= signed((instruction(30) and rs1_data(rs1_data'left)) & rs1_data);
 
