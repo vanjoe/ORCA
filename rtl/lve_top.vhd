@@ -159,11 +159,11 @@ architecture rtl of lve_top is
   signal lve_ack              : std_logic;
   signal external_port_enable : std_logic;
 
-  signal slave_address_reg    : std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-  signal slave_read_en_reg    : std_logic;
-  signal slave_write_en_reg   : std_logic;
-  signal slave_byte_en_reg    : std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
-  signal slave_data_in_reg    : std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
+  signal slave_address_reg  : std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+  signal slave_read_en_reg  : std_logic;
+  signal slave_write_en_reg : std_logic;
+  signal slave_byte_en_reg  : std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
+  signal slave_data_in_reg  : std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
 
 
   function align_input (
@@ -268,23 +268,24 @@ begin
           if external_port_enable = '0' then
             srca_ptr <= srca_ptr+ src_incr;
             srcb_ptr <= srcb_ptr+ src_incr;
-          end if;
 
-          if first_element = '1' then
-            dest_ptr              <= unsigned(rs1_data);
-            write_vector_length   <= unsigned(rs2_data(write_vector_length'range));
-            read_vector_length    <= unsigned(rs2_data(write_vector_length'range));
-            accumulation_register <= to_unsigned(0, accumulation_register'length);
-          else
-            if external_port_enable = '0' then
-              enum_count <= enum_count +1;
-              if read_vector_length /= 0 then
-                read_vector_length <= read_vector_length - 1;
+
+            if first_element = '1' then
+              dest_ptr              <= unsigned(rs1_data);
+              write_vector_length   <= unsigned(rs2_data(write_vector_length'range));
+              read_vector_length    <= unsigned(rs2_data(write_vector_length'range));
+              accumulation_register <= to_unsigned(0, accumulation_register'length);
+              first_element         <= '0';
+            else
+              if external_port_enable = '0' then
+                enum_count <= enum_count +1;
+                if read_vector_length /= 0 then
+                  read_vector_length <= read_vector_length - 1;
+                end if;
               end if;
-            end if;
 
+            end if;
           end if;
-          first_element <= '0';
         end if;
       else
         write_vector_length <= to_unsigned(0, write_vector_length'length);
