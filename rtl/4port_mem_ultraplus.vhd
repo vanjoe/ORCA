@@ -173,15 +173,18 @@ entity ram_4port is
     MEM_WIDTH : natural;
     FAMILY    : string := "ALTERA");
   port(
-    clk            : in  std_logic;
-    scratchpad_clk : in  std_logic;
-    reset          : in  std_logic;
-                                        --read source A
-    raddr0         : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-    ren0           : in  std_logic;
-    scalar_value   : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-    scalar_enable  : in  std_logic;
-    data_out0      : out std_logic_vector(MEM_WIDTH-1 downto 0);
+    clk            : in std_logic;
+    scratchpad_clk : in std_logic;
+    reset          : in std_logic;
+
+    pause_lve_in  : in  std_logic;
+    pause_lve_out : out std_logic;
+    --read source A
+    raddr0        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+    ren0          : in  std_logic;
+    scalar_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+    scalar_enable : in  std_logic;
+    data_out0     : out std_logic_vector(MEM_WIDTH-1 downto 0);
 
                                         --read source B
     raddr1      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
@@ -247,6 +250,8 @@ architecture rtl of ram_4port is
   signal delay2_toggle : std_logic;
   signal toggles       : std_logic_vector(2 downto 0);
 
+  signal pause_lve_internal : std_logic;
+
   signal ren0_0 : std_logic;
 begin  -- architecture rtl
   port_sel <= SLAVE_ACCESS when (ren3 or wen3) = '1' else LVE_ACCESS;
@@ -273,7 +278,7 @@ begin  -- architecture rtl
           cycle_count <= SECOND_READ;
         when "110" | "001" =>
           cycle_count <= FIRST_WRITE;
-        when others => 
+        when others =>
           cycle_count <= FIRST_READ;
       end case;
     end if;
@@ -282,12 +287,12 @@ begin  -- architecture rtl
 
 
   actual_byte_en <= byte_en3 when port_sel = SLAVE_ACCESS else byte_en2;
-  actual_wr_en   <= wen2 when cycle_count = FIRST_WRITE else
-                    wen3 when port_sel = SLAVE_ACCESS else
-                    '0';
+  actual_wr_en   <= wen2     when cycle_count = FIRST_WRITE else
+                  wen3 when port_sel = SLAVE_ACCESS else
+                  '0';
   actual_addr <= waddr2 when cycle_count = FIRST_WRITE else
                  rwaddr3 when port_sel = SLAVE_ACCESS else
-                 raddr0 when cycle_count = FIRST_READ else
+                 raddr0  when cycle_count = FIRST_READ else
                  raddr1;
 
   actual_data_in <= data_in2 when cycle_count = FIRST_WRITE else
@@ -308,8 +313,8 @@ begin  -- architecture rtl
     if rising_edge(clk) then
       data_out0_latch <= data_out0_tmp;
       data_out1_latch <= actual_data_out;
-      data_out0 <= data_out0_latch;
-      data_out1 <= data_out1_latch;
+      data_out0       <= data_out0_latch;
+      data_out1       <= data_out1_latch;
 
 
 
@@ -321,9 +326,12 @@ begin  -- architecture rtl
       end if;
       data_out3 <= data_out0_tmp;
 
+      pause_lve_internal <= pause_lve_in;
+      pause_lve_out      <= pause_lve_internal;
+
       ren0_0 <= ren0;
-      ack01 <= ren0_0;
-      ack3  <= ren3 or wen3;
+      ack01  <= ren0_0;
+      ack3   <= ren3 or wen3;
     end if;
   end process;
 

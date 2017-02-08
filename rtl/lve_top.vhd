@@ -50,15 +50,18 @@ architecture rtl of lve_top is
       MEM_WIDTH : natural;
       FAMILY    : string := "ALTERA");
     port(
-      clk            : in  std_logic;
-      scratchpad_clk : in  std_logic;
-      reset          : in  std_logic;
+      clk            : in std_logic;
+      scratchpad_clk : in std_logic;
+      reset          : in std_logic;
+
+      pause_lve_in     : in  std_logic;
+      pause_lve_out    : out  std_logic;
                                         --read source A
-      raddr0         : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      ren0           : in  std_logic;
-      scalar_value   : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-      scalar_enable  : in  std_logic;
-      data_out0      : out std_logic_vector(MEM_WIDTH-1 downto 0);
+      raddr0           : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+      ren0             : in  std_logic;
+      scalar_value     : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+      scalar_enable    : in  std_logic;
+      data_out0        : out std_logic_vector(MEM_WIDTH-1 downto 0);
 
                                         --read source B
       raddr1      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
@@ -98,7 +101,7 @@ architecture rtl of lve_top is
   alias sign_a    : std_logic is instruction(31);
   alias func_bit4 : std_logic is instruction(30);
   alias sign_b    : std_logic is instruction(29);
-  alias cmv_instr : std_logic is instruction(28);
+  alias mxp_instr : std_logic is instruction(28);
   alias acc       : std_logic is instruction(26);
   alias func_bit3 : std_logic is instruction(25);
   alias func      : std_logic_vector(2 downto 0) is instruction(14 downto 12);
@@ -199,14 +202,16 @@ architecture rtl of lve_top is
   signal ci_result_valid : std_logic;
   signal ci_write_en     : std_logic;
   signal ci_result       : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ci_start_vector : std_logic;
+  signal ci_pause        : std_logic;
 begin
 
   lve_alu_data1        <= lve_data1;
   lve_alu_data2        <= lve_data2;
-  lve_alu_source_valid <= lve_source_valid and not cmv_instr;
-  lve_result_valid     <= lve_alu_result_valid when cmv_instr = '0' else cmv_result_valid;
+  lve_alu_source_valid <= lve_source_valid and not mxp_instr;
+  lve_result_valid     <= lve_alu_result_valid when mxp_instr = '0' else cmv_result_valid;
 
-  lve_result <= lve_alu_result when cmv_instr = '0' else
+  lve_result <= lve_alu_result when mxp_instr = '0' else
                 cmv_result;
 
   valid_lve_instr <= valid_instr when major_op = CUSTOM0 else '0';
@@ -357,7 +362,7 @@ begin
       cmv_result_valid <= '0';
       cmv_write_en     <= '0';
       cmv_result       <= lve_data1;
-      if valid_lve_instr = '1' and cmv_instr = '1' then
+      if valid_lve_instr = '1' and mxp_instr = '1' then
         if func3 = LVE_VCMV_Z_FUNC3 then
           if lve_source_valid = '1' then
             cmv_result_valid <= '1';
@@ -382,6 +387,7 @@ begin
   end process;
 
   ci_valid_in <= '1' when ((valid_lve_instr and lve_source_valid) = '1' and
+                           mxp_instr = '1' and
                            func3 /= LVE_VCMV_Z_FUNC3 and
                            func3 /= LVE_VCMV_NZ_FUNC3) else
                  '0';
@@ -394,6 +400,8 @@ begin
       reset => reset,
 
       func3 => func3,
+
+      pause => ci_pause,
 
       valid_in => ci_valid_in,
       data1_in => lve_data1,
@@ -422,10 +430,14 @@ begin
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
-      raddr0         => std_logic_vector(srca_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
-      ren0           => rd_en,
-      scalar_value   => std_logic_vector(scalar_value),
-      scalar_enable  => scalar_enable,
+
+      pause_lve_in => external_port_enable,
+      pause_lve_out => ci_pause,
+
+      raddr0        => std_logic_vector(srca_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
+      ren0          => rd_en,
+      scalar_value  => std_logic_vector(scalar_value),
+      scalar_enable => scalar_enable,
 
       data_out0   => srca_data_read,
       raddr1      => std_logic_vector(srcb_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),

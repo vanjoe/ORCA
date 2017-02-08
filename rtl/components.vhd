@@ -501,6 +501,8 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
+      pause : in std_logic;
+
       func3 : in std_logic_vector(2 downto 0);
 
       valid_in : in std_logic;

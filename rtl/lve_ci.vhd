@@ -18,6 +18,7 @@ entity lve_ci is
 
     func3 : in std_logic_vector(2 downto 0);
 
+    pause : in std_logic;
 
     valid_in : in std_logic;
     data1_in : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -140,13 +141,19 @@ begin
     if rising_edge(clk) then
 
       --rotatie rows
-      conv_valid_data <= conv_valid_data(1 downto 0) & valid_in;
-      rows(2)         <= in_row;
-      rows(1)         <= rows(2);
-      rows(0)         <= rows(1);
-      conv_data_out   <= std_logic_vector(RESIZE(conv_sum(7), conv_data_out'length));
-      conv_we         <= bool_to_sl(conv_valid_data = "111");
-      conv_done       <= conv_valid_data(2);
+      conv_we   <= '0';
+      conv_done <= '0';
+      if pause = '0' then
+        conv_valid_data <= conv_valid_data(1 downto 0) & valid_in;
+        rows(2)         <= in_row;
+        rows(1)         <= rows(2);
+        rows(0)         <= rows(1);
+        conv_data_out   <= std_logic_vector(RESIZE(conv_sum(7), conv_data_out'length));
+        conv_we         <= bool_to_sl(conv_valid_data = "111");
+        conv_done       <= conv_valid_data(2);
+
+      end if;
+
     end if;
   end process;
 

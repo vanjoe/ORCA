@@ -81,7 +81,7 @@ int test_convolve()
 	int flash_dma_addr=0;
 	vbx_ubyte_t* v_dma_dest= vbx_sp_alloc(flash_dma_size);
 
-	const int PRINT_MATS=0;
+	const int PRINT_MATS=1;
 	printf("CONVOLVE TEST  start\r\n");
 	//copy the static data into the scratchpad
 	int i,j;
@@ -129,13 +129,15 @@ int test_convolve()
 				printf("%3d ",(int)(v_input_map[j*PAD_UP(INPUT_MAP_SIZE+2,4)+i]));
 			}printf("\r\n");
 		}
-		printf("\r\noutput map\r\n");
+	}
+
+	if(PRINT_MATS ){
+		printf("\r\nscalar output map\r\n");
 		for(i=0;i<INPUT_MAP_SIZE;i++){
 			for(j=0;j<PAD_UP(INPUT_MAP_SIZE+2,4);j++){
 				printf("%3d ",(int)(s_output_map[i*PAD_UP(INPUT_MAP_SIZE+2,4)+j]));
 			}printf("\r\n");
 		}
-
 	}
 	for(i=0;i<(sizeof(output_map_check)/sizeof(output_map_check[0]));i++){
 		v_output_map[i]=0;
@@ -146,23 +148,25 @@ int test_convolve()
 
 
 	int errors=0;
+	if(PRINT_MATS){
+		printf("\r\nvector output map\r\n");
+		for(i=0;i<INPUT_MAP_SIZE;i++){
+			for(j=0;j<PAD_UP(INPUT_MAP_SIZE+2,4);j++){
+				printf("%3d ",(int)(v_output_map[i*PAD_UP(INPUT_MAP_SIZE+2,4)+j]));
+			}printf("\r\n");
+		}
+	}
 	for(i=0;i<PAD_UP(INPUT_MAP_SIZE+2,4)*(INPUT_MAP_SIZE);i++){
 		if (s_output_map[i] != v_output_map[i]){
 			printf("FAILED i=%d %x !=%x\r\n",i,(int)s_output_map[i],(int)(v_output_map[i]));
 			errors++;
 		}
 	}
- 	if(!errors){
+
+	if(!errors){
 		printf("CONVOLVE TEST Passed\r\n");
 	}
-	if(PRINT_MATS){
-		printf("\r\noutput_map\r\n");
-		for(i=0;i<INPUT_MAP_SIZE;i++){
-			for(j=0;j<INPUT_MAP_SIZE;j++){
-				printf("%3d ",(int)(v_output_map[i*(INPUT_MAP_SIZE+4)+j]));
-			}printf("\r\n");
-		}
-	}
+
 	return errors;
 
 }
