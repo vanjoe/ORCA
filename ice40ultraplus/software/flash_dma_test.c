@@ -79,10 +79,10 @@ int main()
 	int dma_errors;
 	do{
 		flash_dma_trans(flash_address,(void*)sp_base,xfer_size);
-
+		lve_errors=do_lve(SCRATCHPAD_BASE+xfer_size);
 		//wait for transfer done
 		while(!flash_dma_done());
-		lve_errors=do_lve(SCRATCHPAD_BASE+xfer_size);
+
 		//since the LVE does some printing that can take longer than the
 		//dma transfer, the cycle count might not be strictly correct.
 		//it should be about 19 cycles per byte, + interference
@@ -90,7 +90,7 @@ int main()
 		dma_errors=0;
 		for(i=0;i<xfer_size/4;i++){
 			int a=i, b=((int*)sp_base)[i];
-			if (a!=b){
+			if (a!=b && a !=0x601 ){
 				dma_errors++;
 				if(dma_errors <10){
 					//only print the first 10 errors
@@ -101,10 +101,6 @@ int main()
 
 	}while(0);
 
-	int checksum=0;
-	for(i=0;i<xfer_size;i++){
-		checksum+=sp_base[i];
-	}
 	printf("DONE!!\r\n");
 
 	if(spram_errors){

@@ -72,30 +72,48 @@ begin
     signal mask_wren0    : std_logic_vector(3 downto 0);
     signal mask_wren1    : std_logic_vector(3 downto 0);
 
-    signal hi_sel       : std_logic;
-    signal hi_sel_latch : std_logic;
-    signal low_data_out : std_logic_vector(data_out'range);
-    signal hi_data_out  : std_logic_vector(data_out'range);
-    signal low_we       : std_logic;
-    signal hi_we        : std_logic;
+    signal hi_sel        : std_logic;
+    signal hi_output_sel : std_logic;
+    signal hi_sel_latch  : std_logic;
+    signal low_data_out  : std_logic_vector(data_out'range);
+    signal hi_data_out   : std_logic_vector(data_out'range);
+    signal low_we        : std_logic;
+    signal hi_we         : std_logic;
+    signal spram_data_in : std_logic_vector(data_in'range);
 
   begin
 
-    spram_address <= std_logic_vector(resize(unsigned(addr), 14));
 
-    mask_wren0 <= byte_en(1) & byte_en(1) & byte_en(0) & byte_en(0);
-    mask_wren1 <= byte_en(3) & byte_en(3) & byte_en(2) & byte_en(2);
 
-    hi_sel       <= '0'         when MEM_DEPTH <= 2**14 else addr(addr'left);
-    hi_sel_latch <= hi_sel      when rising_edge(clk);
-    data_out     <= hi_data_out when hi_sel_latch = '1' else low_data_out;
-    low_we       <= not hi_sel and wr_en;
-    hi_we        <= hi_sel and wr_en;
+    hi_sel <= '0' when MEM_DEPTH <= 2**14 else addr(addr'left);
+
+
+
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        hi_sel_latch  <= hi_sel;
+        hi_output_sel <= hi_sel_latch;
+
+        low_we        <= not hi_sel and wr_en;
+        hi_we         <= hi_sel and wr_en;
+        spram_address <= std_logic_vector(resize(unsigned(addr), 14));
+        spram_data_in <= data_in;
+        mask_wren0    <= byte_en(1) & byte_en(1) & byte_en(0) & byte_en(0);
+        mask_wren1    <= byte_en(3) & byte_en(3) & byte_en(2) & byte_en(2);
+        data_out      <= low_data_out;
+
+        if hi_output_sel = '1' then
+          data_out <= hi_data_out;
+        end if;
+
+      end if;
+    end process;
 
     SPRAM0 : component SB_SPRAM256KA
       port map (
         ADDRESS    => spram_address,
-        DATAIN     => data_in(15 downto 0),
+        DATAIN     => spram_data_in(15 downto 0),
         MASKWREN   => mask_wren0,
         WREN       => low_we,
         CHIPSELECT => chip_sel,
@@ -109,7 +127,7 @@ begin
     SPRAM1 : component SB_SPRAM256KA
       port map (
         ADDRESS    => spram_address,
-        DATAIN     => data_in(31 downto 16),
+        DATAIN     => spram_data_in(31 downto 16),
         MASKWREN   => mask_wren1,
         WREN       => low_we,
         CHIPSELECT => chip_sel,
@@ -126,7 +144,7 @@ begin
       SPRAM2 : component SB_SPRAM256KA
         port map (
           ADDRESS    => spram_address,
-          DATAIN     => data_in(15 downto 0),
+          DATAIN     => spram_data_in(15 downto 0),
           MASKWREN   => mask_wren0,
           WREN       => hi_we,
           CHIPSELECT => chip_sel,
@@ -139,7 +157,7 @@ begin
       SPRAM3 : component SB_SPRAM256KA
         port map (
           ADDRESS    => spram_address,
-          DATAIN     => data_in(31 downto 16),
+          DATAIN     => spram_data_in(31 downto 16),
           MASKWREN   => mask_wren1,
           WREN       => hi_we,
           CHIPSELECT => chip_sel,
@@ -193,7 +211,7 @@ entity ram_4port is
     enum_enable : in  std_logic;
     data_out1   : out std_logic_vector(MEM_WIDTH-1 downto 0);
     ack01       : out std_logic;
-    --write dest
+                                        --write dest
     waddr2      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
     byte_en2    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
     wen2        : in  std_logic;
@@ -240,8 +258,9 @@ architecture rtl of ram_4port is
   signal data_out1_latch : std_logic_vector(MEM_WIDTH-1 downto 0);
 
   signal data_out0_tmp : std_logic_vector(MEM_WIDTH-1 downto 0);
+  signal data_out1_tmp : std_logic_vector(MEM_WIDTH-1 downto 0);
 
-  type cycle_count_t is (FIRST_WRITE, FIRST_READ, SECOND_READ);
+  type cycle_count_t is (WRITE_CYC, READ0_CYC, READ1_CYC);
   signal cycle_count      : cycle_count_t;
   signal last_cycle_count : cycle_count_t;
 
@@ -252,7 +271,8 @@ architecture rtl of ram_4port is
 
   signal pause_lve_internal : std_logic;
 
-  signal ren0_0 : std_logic;
+  signal ren0_0   : std_logic;
+  signal ack3_int : std_logic;
 begin  -- architecture rtl
   port_sel <= SLAVE_ACCESS when (ren3 or wen3) = '1' else LVE_ACCESS;
 
@@ -275,11 +295,11 @@ begin  -- architecture rtl
       last_cycle_count <= cycle_count;
       case toggles is
         when "100" | "011" =>
-          cycle_count <= SECOND_READ;
+          cycle_count <= READ1_CYC;
         when "110" | "001" =>
-          cycle_count <= FIRST_WRITE;
+          cycle_count <= WRITE_CYC;
         when others =>
-          cycle_count <= FIRST_READ;
+          cycle_count <= READ0_CYC;
       end case;
     end if;
   end process;
@@ -287,23 +307,27 @@ begin  -- architecture rtl
 
 
   actual_byte_en <= byte_en3 when port_sel = SLAVE_ACCESS else byte_en2;
-  actual_wr_en   <= wen2     when cycle_count = FIRST_WRITE else
+  actual_wr_en   <= wen2     when cycle_count = WRITE_CYC else
                   wen3 when port_sel = SLAVE_ACCESS else
                   '0';
-  actual_addr <= waddr2 when cycle_count = FIRST_WRITE else
+  actual_addr <= waddr2 when cycle_count = WRITE_CYC else
                  rwaddr3 when port_sel = SLAVE_ACCESS else
-                 raddr0  when cycle_count = FIRST_READ else
+                 raddr0  when cycle_count = READ0_CYC else
                  raddr1;
 
-  actual_data_in <= data_in2 when cycle_count = FIRST_WRITE else
+  actual_data_in <= data_in2 when cycle_count = WRITE_CYC else
                     data_in3;
 
   process(scratchpad_clk)
   begin
     if rising_edge(scratchpad_clk) then
-      if last_cycle_count = FIRST_READ then
+      if cycle_count = READ0_CYC then
         data_out0_tmp <= actual_data_out;
       end if;
+      if cycle_count = READ1_CYC then
+        data_out1_tmp <= actual_data_out;
+      end if;
+
     end if;
   end process;
 
@@ -313,8 +337,8 @@ begin  -- architecture rtl
     if rising_edge(clk) then
       data_out0_latch <= data_out0_tmp;
       data_out1_latch <= actual_data_out;
-      data_out0       <= data_out0_latch;
-      data_out1       <= data_out1_latch;
+      data_out0       <= data_out0_tmp;
+      data_out1       <= data_out1_tmp;
 
 
 
@@ -329,9 +353,10 @@ begin  -- architecture rtl
       pause_lve_internal <= pause_lve_in;
       pause_lve_out      <= pause_lve_internal;
 
-      ren0_0 <= ren0;
-      ack01  <= ren0_0;
-      ack3   <= ren3 or wen3;
+      ren0_0   <= ren0;
+      ack01    <= ren0_0;
+      ack3_int <= ren3 or wen3;
+      ack3     <= ack3_int;
     end if;
   end process;
 
