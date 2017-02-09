@@ -355,8 +355,8 @@ begin  -- architecture rtl
 
       ren0_0   <= ren0;
       ack01    <= ren0_0;
-      ack3_int <= ren3 or wen3;
-      ack3     <= ack3_int;
+      ack3_int <= ren3 ;
+      ack3     <= ack3_int or wen3;
     end if;
   end process;
 
