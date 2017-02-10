@@ -2,47 +2,19 @@
 #include "flash_dma.h"
 #include "time.h"
 
-#define IS_LVE
-#define IS_CI
 
-void print_Q(vbx_word_t *v, const int width, const int shift) {
-#ifndef IS_LVE
-	vbx_sync();
-#endif
-	int i;
-	printf("\r\n");
-	for (i = 0; i < width; i++) {
-		printf("%d\t", v[i] >> shift);
-	}
-	printf("\r\n");
+void vbx_flash_dma(vbx_word_t *v_dst, int flash_byte_offset, const int bytes) {
+	flash_dma_trans(flash_byte_offset, (void*)v_dst, bytes);
+	while(!flash_dma_done());
 }
 
-int close(vbx_word_t *a, vbx_word_t *b, const int width, const int max_diff) {
-#ifndef IS_LVE
-	vbx_sync();
-#endif
-	int i, diff, errors = 0;
-	for (i = 0; i < width; i++) {
-	    int diff = a[i] - b[i];
-	    if (diff < 0) {
-		diff = -diff;
-	    }
-	    if (diff > max_diff) {
-	      errors++;
-	      if (errors < 10) {
-		printf("error @ %d\r\n", i);
-	      }
-	    }
-	}
-	return errors;
+
+void vbx_flash_dma_async(vbx_word_t *v_dst, int flash_byte_offset, const int bytes) {
+	flash_dma_trans(flash_byte_offset, (void*)v_dst, bytes);
 }
 
-int equal(vbx_word_t *a, vbx_word_t *b, const int width) {
-  return close(a, b, width, 0);
-}
 
 void vbx_pool(vbx_word_t *v_out, vbx_word_t *v_pool, const int width, const int height) {
-#ifdef IS_LVE
     int i;
     the_lve.stride = 2;
     vbx_set_vl(width*height/2);
@@ -59,460 +31,594 @@ void vbx_pool(vbx_word_t *v_out, vbx_word_t *v_pool, const int width, const int 
 	vbx(VVW, VCMV_NZ, v_out + (i*2) * width/2, v_out + (i*2+1) * width/2, v_pool); 
 	vbx(SVW, VOR, v_out + i * width/2, 0, v_out + (i*2) * width/2); 
     }
-#endif
 }
+
 
 void vbx_relu(vbx_word_t* v_out, vbx_word_t* v_flag) {
-#ifdef IS_LVE
     vbx(SVW, VSLT, v_flag, 0, v_out);
     vbx(VVW, VMUL, v_out, v_flag, v_out);
-#else
-    vbx(SVW, VCMV_LTZ, v_out, 0, v_out);
-#endif
-}
-
-void vbx_move(vbx_word_t* v_out, const int value) {
-    vbx(SVW, VAND, v_out, 0, v_out);
-    vbx(SVW, VOR, v_out, value, v_out);
 }
 
 
-void vbx_flash_dma(vbx_word_t *v_dst, int flash_byte_offset, const int bytes) {
-#ifdef IS_LVE
-	flash_dma_trans(flash_byte_offset, (void*)v_dst, bytes);
-	while(!flash_dma_done());
-#endif
+void vbx_unpack_weights(vbx_word_t *v_unpacked, vbx_word_t *v_packed, const int size)
+{
+  int b;
+  vbx_set_vl(size/32);
+  for (b = 0; b < 32; b++) {
+    vbx(SVWU, VAND, v_unpacked + b*(size/32), 1<<(b), v_packed); 
+    vbx(SVW, VCMV_NZ, v_unpacked + b*(size/32), 1, v_unpacked + b*(size/32)); 
+    vbx(SVW, VCMV_Z, v_unpacked + b*(size/32), -1, v_unpacked + b*(size/32)); 
+  }
 }
 
-void vbx_flash_dma_async(vbx_word_t *v_dst, int flash_byte_offset, const int bytes) {
-#ifdef IS_LVE
-	flash_dma_trans(flash_byte_offset, (void*)v_dst, bytes);
-#endif
-}
 
-void vbx_dma(vbx_word_t *v_dst, int *src, const int bytes) {
-#ifdef IS_LVE
-    int i;
-    for (i = 0; i < bytes/4; i++) {
-	v_dst[i] = src[i];
-    }
-#else
-    vbx_dma_to_vector(v_dst, src, bytes);
-#endif
-}
-
+//scales are prescaled by 1 << 32 aka need to be less than 0.5/-0.5 else prescale by less and scale v_out
 void dense_lve(vbx_word_t *v_out, vbx_word_t *v_in, dense_layer_t *layer)
 {
-#if 0
     int x;
     vbx_word_t *v_biases  = v_out + layer->outputs*1;
     vbx_word_t *v_scales  = v_out + layer->outputs*2;
     vbx_word_t *v_weights = v_out + layer->outputs*3;
+    vbx_word_t *v_buf0 = v_weights + layer->inputs*1;
+    vbx_word_t *v_buf1 = v_weights + layer->inputs*2;
+
+    vbx_word_t *v_dma[] = {v_buf0, v_buf1};
+
     vbx_word_t *v_relu = v_in;
 
-
-    vbx_set_vl(layer->inputs);
+    // packed into 32x
+    int buf = 0;
+    vbx_flash_dma(v_dma[buf], layer->weights, layer->inputs/32*sizeof(vbx_word_t));
 
     for (x = 0; x < layer->outputs; x++) {
-	vbx_flash_dma(v_weights, layer->weights + x*layer->inputs, layer->inputs*sizeof(vbx_word_t));
+	vbx_flash_dma_async(v_dma[!buf], layer->weights + (x+1)*layer->inputs/32, layer->inputs/32*sizeof(vbx_word_t));
+
+	vbx_unpack_weights(v_weights, v_dma[buf], layer->inputs);
+
+	vbx_set_vl(layer->inputs);
 	vbx_acc(VVW, VMUL, v_out + x, v_in, v_weights); 
+
+	while(!flash_dma_done());
+	buf = !buf;
     }
 
     vbx_set_vl(layer->outputs);
 
-    vbx_dma(v_biases, layer->biases, layer->outputs*sizeof(vbx_word_t));
+    vbx_flash_dma(v_biases, layer->biases, layer->outputs*sizeof(vbx_word_t));
     vbx(VVW, VADD, v_out, v_out, v_biases);
 
     if (layer->scale) {
-	vbx_dma(v_scales, layer->scales, layer->outputs*sizeof(vbx_word_t));
+	vbx_flash_dma(v_scales, layer->scales, layer->outputs*sizeof(vbx_word_t));
 	vbx(VVW, VMULH, v_out, v_out, v_scales); 
-	vbx(SVW, VMUL, v_out, 4, v_out); 
     }
 
     if (layer->activation_type == RELU) {
 	vbx_relu(v_out, v_relu);
     }
-#endif
 }
 
-void convolution_lve(vbx_word_t *v_out, vbx_word_t *v_in, convolution_layer_t *layer)
+
+void vbx_convolve_ci(vbx_word_t *v_out, vbx_ubyte_t *v_in, vbx_word_t *v_map, const int m, const int n, const short weights)
 {
-#if 0
-    int y, c, k, kw, kh;
-    int m = layer->m, n = layer->n, m0 = m, n0 = n;
+    int y, x;
+    
+    vbx_set_vl(1);
+    vbx(SVW, VCUSTOM1, 0, weights, 0);
+
+    vbx_set_vl(m+2);
+    the_lve.stride = m+2+2;
+
+    for(x=0; x<n; x++){
+	vbx(VVWB, VCUSTOM2, v_map + x, (vbx_byte_t*)v_in + x, (vbx_byte_t*)v_in + x + 4);
+    }
+
+    vbx_set_vl(n);
+    the_lve.stride = 1;
+    for(y=0; y<m; y++){
+      vbx(VVW, VADD, v_out+ y*n, v_out + y*n, v_map + y*(n+2+2));
+    }
+}
+
+
+void vbx_zeropad_ci(vbx_ubyte_t *v_out, vbx_word_t *v_pad, vbx_word_t *v_in, const int m, const int n)
+{
+    int y;
+
+    // zero top and bottom
+    vbx_set_vl(n+2+2);
+    vbx(SVW, VAND, v_pad, 0, v_pad);
+    vbx(VVBW, VCUSTOM0, (vbx_byte_t*)v_out + (0)*(n+2+2), v_pad, 0);
+    vbx(VVBW, VCUSTOM0, (vbx_byte_t*)v_out + (m+1)*(n+2+2), v_pad, 0);
+
+    // move in rows
+    for (y = 0; y < m; y++) {
+	vbx_set_vl(n);
+	vbx(SVW, VOR, v_pad + 1, 0, v_in + y*n);
+	vbx_set_vl(n+2+2);
+	vbx(VVBW, VCUSTOM0, (vbx_byte_t*)v_out + (y+1)*(n+2+2), v_pad, 0);
+    }
+}
+
+
+void vbx_zeropad_input(vbx_ubyte_t *v_out, vbx_ubyte_t *v_in, const int m, const int n)
+{
+    // zero map
+    int j, i;
+    for(j = 0; j < m+2; j++) {
+      for(i = 0; i < n+2+2; i++) {
+	v_out[j*(n+2+2)+i] = 0;
+      }
+    }
+    // move in rows
+    for (j = 0; j < m; j++) {
+      for(i = 0; i < n; i++) {
+	v_out[(j+1)*(n+2+2) + i+1] = v_in[j*n+i];
+      }
+    }
+}
+
+
+// takes in padded inputs
+void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_layer_t *layer, const int debug)
+{
+    int c, k, m = layer->m, n = layer->n, m0 = m, n0 = n;
     if (layer->maxpool) {
 	m0 = m/2; n0 = n/2;
     }
 
-    vbx_word_t *v_map, *v_pad, *v_relu, *v_pool;
-    v_pad = v_in + m*n*layer->channels;
-    v_pool = v_pad + (n+2)*(m+2);
-    v_relu = v_pool;
+    // assumes 128K scratch
+    vbx_word_t *v_map = (vbx_word_t*)(SCRATCHPAD_BASE + 110*1024);
+    vbx_word_t *v_tmp = (vbx_word_t*)(SCRATCHPAD_BASE + 116*1024);
+    vbx_word_t *v_dma0 = (vbx_word_t*)(SCRATCHPAD_BASE + 124*1024);
+    vbx_word_t *v_dma1 = (vbx_word_t*)(SCRATCHPAD_BASE + 126*1024);
+    vbx_word_t *v_dma[] = {v_dma0, v_dma1};
+    vbx_uhalf_t *v_weights;
 
-    vbx_set_vl((n+2)*(m+2));
-    vbx(SVW, VAND, v_pad, 0, v_pad);
+    int buf = 0;
+    int dma_size = 2*4 + layer->channels*2;
+    int dma_pad = dma_size % 4;
+    
+    vbx_flash_dma(v_dma[buf], layer->weights, dma_size+dma_pad);
 
     for (k = 0; k < layer->kernels; k++) {
-	v_map = v_out + k*m0*n0;
+	v_weights = (vbx_uhalf_t*)(v_dma[buf] + 2);
+	if (k < layer->kernels-1) {
+	  vbx_flash_dma_async(v_dma[!buf], layer->weights + (k+1)*dma_size, dma_size+dma_pad);
+	}
+
+	// set kernel bias
 	vbx_set_vl(n*m);
 	vbx(SVW, VAND, v_map, 0, v_map);
-	vbx(SVW, VOR, v_map, layer->biases[k], v_map);
+	vbx(SVW, VOR, v_map, v_dma[buf][0], v_map);
 
 	for (c = 0; c < layer->channels; c++) {
-	    vbx_set_vl(n);
-	    for (y = 0; y < m; y++) {
-		vbx(SVW, VOR, v_pad + (y+1)*(n+2) + 1, 0, v_in + c*m*n + y*n);
-	    }
-
-	    for (y = 0; y < m; y++) {
-		for (kh = 0; kh < 3; kh++) {
-		    for (kw = 0; kw < 3; kw++) {
-			if (layer->weights[(k*layer->channels+c)*3*3 + kh*3 + kw] > 0) {
-			    vbx(VVW, VADD, v_map+y*n, v_map+y*n, v_pad+(kh+y)*(n+2)+kw); 
-			} else {
-			    vbx(VVW, VSUB, v_map+y*n, v_map+y*n, v_pad+(kh+y)*(n+2)+kw); 
-			}
-		    }
-		}
-	    }
+	    vbx_convolve_ci(v_map, v_inb + c*(m+2)*(n+4), v_tmp, m, n, v_weights[c]);
 	}
 
 	if (layer->maxpool) {
-	    vbx_pool(v_map, v_pool, m, n);
+	    vbx_pool(v_map, v_tmp, m, n);
 	}
 
 	vbx_set_vl(m0*n0);
 	if (layer->scale) {
-	    vbx(SVW, VMULH, v_map, layer->scales[k], v_map); 
-	    vbx(SVW, VMUL, v_map, 4, v_map); 
+	    vbx(SVW, VMULH, v_map, v_dma[buf][1], v_map); 
 	} 
 
 	if (layer->activation_type == RELU) {
-	    vbx_relu(v_map, v_relu);
+	    vbx_relu(v_map, v_tmp);
 	}
-    }
-#endif
-}
-
-void dummy_convolution_lve(vbx_word_t *v_out, vbx_word_t *v_in, convolution_layer_t *layer)
-{
-    int y, c, k, kw, kh;
-    int m = layer->m, n = layer->n, m0 = m, n0 = n;
-    if (layer->maxpool) {
-	m0 = m/2; n0 = n/2;
-    }
-
-    vbx_word_t *v_map, *v_pad, *v_relu, *v_pool;
-    v_pad = v_in;
-    v_pool = v_pad + (n+2)*(m+2);
-    v_relu = v_pool;
-
-    vbx_set_vl((n+2)*(m+2));
-    vbx(SVW, VAND, v_pad, 0, v_pad);
-
-    for (k = 0; k < layer->kernels; k++) {
-	v_map = v_out;
-	vbx_set_vl(n*m);
-	vbx(SVW, VAND, v_map, 0, v_map);
-	vbx(SVW, VOR, v_map, v_map[0], v_map);
-
-	for (c = 0; c < layer->channels; c++) {
-	    vbx_set_vl(n);
-	    if (k == 0) {
-	      for (y = 0; y < m; y++) {
-		  vbx(SVW, VOR, v_pad + (y+1)*(n+2) + 1, 0, v_in);
-	      }
-	    }
-
-	    for (y = 0; y < m; y++) {
-#ifdef IS_CI
-		vbx(VVW, VADD, v_map+y*n, v_map+y*n, v_pad); 
-#else
-		for (kh = 0; kh < 3; kh++) {
-		    for (kw = 0; kw < 3; kw++) {
-			if (v_map[0] > 0) {
-			    vbx(VVW, VADD, v_map+y*n, v_map+y*n, v_pad+(kh+y)*(n+2)+kw); 
-			} else {
-			    vbx(VVW, VSUB, v_map+y*n, v_map+y*n, v_pad+(kh+y)*(n+2)+kw); 
-			}
-		    }
-		}
-#endif
-	    }
+	if (layer->zeropad_output) {
+	  vbx_zeropad_ci(v_outb+(k*(n0+4)*(m0+2)), v_tmp, v_map, m0, n0);
+	} else {
+	  vbx_set_vl(m0*n0);
+	  vbx(SVW, VOR, (vbx_word_t*)v_outb+(k*n0*m0), 0, v_map);
 	}
 
-	if (layer->maxpool) {
-	    vbx_pool(v_map, v_pool, m, n);
+	if (k < layer->kernels-1) {
+	  while(!flash_dma_done());
 	}
-
-	vbx_set_vl(m0*n0);
-	if (layer->scale) {
-	    vbx(SVW, VMULH, v_map, v_map[0], v_map); 
-	    vbx(SVW, VMUL, v_map, 4, v_map); 
-	} 
-
-	if (layer->activation_type == RELU) {
-	    vbx_relu(v_map, v_relu);
-	}
+	buf = !buf;
     }
 }
 
-void dummy_dense_lve(vbx_word_t *v_out, vbx_word_t *v_in, dense_layer_t *layer)
+//expects 3 padded 32x32 byte images at SCRATCHPAD_BASE+80*1024, output @ SCRATCHPAD_BASE
+void run_network(const int verbose)
 {
-    int x;
-    vbx_word_t *v_biases  = v_out + layer->outputs*1;
-    vbx_word_t *v_scales  = v_out + layer->outputs*2;
-    vbx_word_t *v_weights = v_out + layer->outputs*3;
-    vbx_word_t *v_relu = v_in;
+  int i, j, m, n;
+  int errors, count;
 
+  vbx_ubyte_t* v_outb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
+  vbx_ubyte_t* v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
 
-    vbx_set_vl(layer->inputs);
+  m = 32, n = 32;
+
+  convolution_layer_t conv;
+  conv.layer_type = CONV;
+  conv.activation_type = RELU;
+  conv.m = m;
+  conv.n = n;
+  conv.channels = 3;
+  conv.kernels = 64;
+  conv.scale = 1;
+  conv.scale_multiply = 0;
+  conv.weights = 3072;
+  conv.zeropad_output = 1;
+  conv.maxpool = 0;
+
+  if (verbose) printf("c0\r\n");
+  convolution_ci_lve(v_outb, v_padb, &(conv), 0);
+  m = 32, n = 32;
 
 #if 1
-    vbx_flash_dma(v_weights, 0, layer->inputs*sizeof(vbx_word_t));
-#endif
-    for (x = 0; x < layer->outputs; x++) {
-#if 0
-	vbx_flash_dma(v_weights, 0, layer->inputs*sizeof(vbx_word_t));
-	vbx_acc(VVW, VMUL, v_out + x, v_in, v_weights); 
+  errors = 0;
+  count = 0;
+  for (j = 0; j < conv.kernels; j++) {
+    vbx_flash_dma((vbx_word_t*)(v_padb), 3968+(j*m*n), (m*n)*sizeof(vbx_ubyte_t));
+    vbx_zeropad_input(v_padb+m*n, v_padb, m, n);
+#if 1
+    vbx_set_vl((m+2)*(n+4)/4);
+    vbx(SVW, VOR, v_outb+(n+4)*((m+2)*j), 0, v_padb+m*n);
 #else
-	vbx_flash_dma_async(v_weights, 0, layer->inputs*sizeof(vbx_word_t)/8);
-	vbx(SVW, VAND, v_weights, 0xFF, v_weights); 
-	vbx(SVW, VSLT, v_weights, 0xff, v_weights); 
-	vbx(SVW, VSLT, v_weights, 0xff, v_weights); 
-	vbx_acc(VVW, VMUL, v_out + x, v_in, v_weights); 
-	while(!flash_dma_done());
+    for (i = 0; i < (n+4)*(m+2); i++) {
+      count++;
+      int diff = v_outb[j*(n+4)*(m+2)+i] - v_padb[(m*n)+i];
+      if (diff < -1 || diff > 1) {
+	if (errors < 40) {
+	  printf("(%d,%d,%d)\t%d != %d\r\n", j, i/(n+4), i%(n+4), v_outb[j*(n+4)*(m+2)+i], v_padb[(m*n)+i]);
+	}
+	errors++;
+      }
+    }
 #endif
+  }
+  if (count) {
+    printf("%d errors\r\n", errors);
+    printf("%d count\r\n", count);
+  } else {
+    printf("loaded outputs\r\n");
+  }
+#endif
+
+  v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
+  v_outb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
+
+  conv.m = m;
+  conv.n = n;
+  conv.channels = 64;
+  conv.kernels = 64;
+  conv.weights = 69504;
+  conv.maxpool = 1;
+
+  if (verbose) printf("c1\r\n");
+  convolution_ci_lve(v_outb, v_padb, &(conv), 0);
+  m = 16, n = 16;
+
+#if 0
+  errors = 0;
+  count = 0;
+  for (j = 0; j < conv.kernels; j++) {
+    vbx_flash_dma((vbx_word_t*)(v_padb), 78208+(j*m*n), (m*n)*sizeof(vbx_ubyte_t));
+    vbx_zeropad_input(v_padb+m*n, v_padb, m, n);
+#if 1
+    vbx_set_vl((m+2)*(n+4)/4);
+    vbx(SVW, VOR, v_outb+(n+4)*((m+2)*j), 0, v_padb+m*n);
+#else
+    for (i = 0; i < (n+4)*(m+2); i++) {
+      count++;
+      int diff = v_outb[j*(n+4)*(m+2)+i] - v_padb[(m*n)+i];
+      if (diff < -4 || diff > 4) {
+	if (errors < 10) {
+	  printf("(%d,%d,%d)\t%d != %d\r\n", j, i/(n+4), i%(n+4), v_outb[j*(n+4)*(m+2)+i], v_padb[(m*n)+i]);
+	}
+	errors++;
+      }
     }
+#endif
+  }
+  if (count) {
+    printf("%d errors\r\n", errors);
+    printf("%d count\r\n", count);
+  } else {
+    printf("loaded outputs\r\n");
+  }
+#endif
 
-    vbx_set_vl(layer->outputs);
+  v_outb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
+  v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
 
-    vbx_flash_dma(v_biases, 0, layer->outputs*sizeof(vbx_word_t));
-    vbx(VVW, VADD, v_out, v_out, v_biases);
+  conv.m = m;
+  conv.n = n;
+  conv.channels = 64;
+  conv.kernels = 128;
+  conv.weights = 94592;
+  conv.maxpool = 0;
 
-    if (layer->scale) {
-	vbx_flash_dma(v_scales, 0, layer->outputs*sizeof(vbx_word_t));
-	vbx(VVW, VMULH, v_out, v_out, v_scales); 
-	vbx(SVW, VMUL, v_out, 4, v_out); 
+  if (verbose) printf("c2\r\n");
+  convolution_ci_lve(v_outb, v_padb, &(conv), 0);
+  m = 16, n = 16;
+
+#if 0
+  errors = 0;
+  count = 0;
+  for (j = 0; j < conv.kernels; j++) {
+    vbx_flash_dma((vbx_word_t*)(v_padb), 112000+(j*m*n), (m*n)*sizeof(vbx_ubyte_t));
+    vbx_zeropad_input(v_padb+m*n, v_padb, m, n);
+#if 0
+    vbx_set_vl((m+2)*(n+4)/4);
+    vbx(SVW, VOR, v_outb+(n+4)*((m+2)*j), 0, v_padb+m*n);
+#else
+    for (i = 0; i < (n+4)*(m+2); i++) {
+      count++;
+      int diff = v_outb[j*(n+4)*(m+2)+i] - v_padb[(m*n)+i];
+      if (diff < -4 || diff > 4) {
+	if (errors < 10) {
+	  printf("(%d,%d,%d)\t%d != %d\r\n", j, i/(n+4), i%(n+4), v_outb[j*(n+4)*(m+2)+i], v_padb[(m*n)+i]);
+	}
+	errors++;
+      }
     }
+#endif
+  }
+  if (count) {
+    printf("%d errors\r\n", errors);
+    printf("%d count\r\n", count);
+  } else {
+    printf("loaded outputs\r\n");
+  }
+#endif
 
-    if (layer->activation_type == RELU) {
-	vbx_relu(v_out, v_relu);
+  v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
+  v_outb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
+
+  conv.m = m;
+  conv.n = n;
+  conv.channels = 128;
+  conv.kernels = 128;
+  conv.weights = 144768;
+  conv.maxpool = 1;
+
+  if (verbose) printf("c3\r\n");
+  convolution_ci_lve(v_outb, v_padb, &(conv), 0);
+  m = 8, n = 8;
+
+#if 0
+  errors = 0;
+  count = 0;
+  for (j = 0; j < conv.kernels; j++) {
+    vbx_flash_dma((vbx_word_t*)(v_padb), 178560+(j*m*n), (m*n)*sizeof(vbx_ubyte_t));
+    vbx_zeropad_input(v_padb+m*n, v_padb, m, n);
+#if 0
+    vbx_set_vl((m+2)*(n+4)/4);
+    vbx(SVW, VOR, v_outb+(n+4)*((m+2)*j), 0, v_padb+m*n);
+#else
+    for (i = 0; i < (n+4)*(m+2); i++) {
+      count++;
+      int diff = v_outb[j*(n+4)*(m+2)+i] - v_padb[(m*n)+i];
+      if (diff < -4 || diff > 4) {
+	if (errors < 10) {
+	  printf("(%d,%d,%d)\t%d != %d\r\n", j, i/(n+4), i%(n+4), v_outb[j*(n+4)*(m+2)+i], v_padb[(m*n)+i]);
+	}
+	errors++;
+      }
     }
+#endif
+  }
+  if (count) {
+    printf("%d errors\r\n", errors);
+    printf("%d count\r\n", count);
+  } else {
+    printf("loaded outputs\r\n");
+  }
+#endif
+
+  v_outb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
+  v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
+
+  conv.m = m;
+  conv.n = n;
+  conv.channels = 128;
+  conv.kernels = 256;
+  conv.weights = 186752;
+  conv.maxpool = 0;
+
+  if (verbose) printf("c4\r\n");
+  convolution_ci_lve(v_outb, v_padb, &(conv), 0);
+  m = 8, n = 8;
+
+#if 0
+  errors = 0;
+  count = 0;
+  for (j = 0; j < conv.kernels; j++) {
+    vbx_flash_dma((vbx_word_t*)(v_padb), 254336+(j*m*n), (m*n)*sizeof(vbx_ubyte_t));
+    vbx_zeropad_input(v_padb+m*n, v_padb, m, n);
+#if 0
+    vbx_set_vl((m+2)*(n+4)/4);
+    vbx(SVW, VOR, v_outb+(n+4)*((m+2)*j), 0, v_padb+m*n);
+#else
+    for (i = 0; i < (n+4)*(m+2); i++) {
+      count++;
+      int diff = v_outb[j*(n+4)*(m+2)+i] - v_padb[(m*n)+i];
+      if (diff < -4 || diff > 4) {
+	if (errors < 100) {
+	  printf("(%d,%d,%d)\t%d != %d\r\n", j, i/(n+4), i%(n+4), v_outb[j*(n+4)*(m+2)+i], v_padb[(m*n)+i]);
+	}
+	errors++;
+      }
+    }
+#endif
+  }
+  if (count) {
+    printf("%d errors\r\n", errors);
+    printf("%d count\r\n", count);
+  } else {
+    printf("loaded outputs\r\n");
+  }
+#endif
+
+  v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
+  v_outb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
+
+  conv.m = m;
+  conv.n = n;
+  conv.channels = 256;
+  conv.kernels = 256;
+  conv.weights = 270720;
+  conv.maxpool = 1;
+  conv.zeropad_output = 0;
+
+  if (verbose) printf("c5\r\n");
+  convolution_ci_lve(v_outb, v_padb, &(conv), 0);
+  m = 4, n = 4;
+
+  vbx_word_t* v_in = (vbx_word_t*)(SCRATCHPAD_BASE+80*1024);
+  vbx_word_t* v_out = (vbx_word_t*)(SCRATCHPAD_BASE+0*1024);
+
+#if 0
+  errors = 0;
+  count = 0;
+  for (j = 0; j < conv.kernels; j++) {
+    vbx_flash_dma(v_out, 403840+(j*m*n)*4, (m*n)*sizeof(vbx_word_t));
+#if 0
+    vbx_set_vl(m*n);
+    vbx(SVW, VOR, v_in+n*m*j, 0, v_out);
+#else
+    for (i = 0; i < n*m; i++) {
+      count++;
+      int diff = v_in[j*n*m+i] - v_out[i];
+      if (diff < -4 || diff > 4) {
+	if (errors < 10) {
+	  printf("(%d,%d,%d)\t%d != %d\r\n", j, i/(n), i%(n), v_in[j*n*m+i], v_out[i]);
+	}
+	errors++;
+      }
+    }
+#endif
+  }
+  if (count) {
+    printf("%d errors\r\n", errors);
+    printf("%d count\r\n", count);
+  } else {
+    printf("loaded outputs\r\n");
+  }
+#endif
+
+  dense_layer_t dense;
+  dense.layer_type = DENSE;
+  dense.activation_type = RELU;
+  dense.scale = 1;
+  dense.inputs = 256*4*4;
+  dense.outputs = 256;
+  dense.biases = 551296;
+  dense.scales = 552320;
+  dense.weights = 420224;
+
+  if (verbose) printf("d0\r\n");
+  dense_lve(v_out, v_in, &(dense));
+
+#if 0
+  errors = 0;
+  count = 0;
+  vbx_flash_dma(v_in, 553344, dense.outputs*sizeof(vbx_word_t));
+#if 0
+  vbx_set_vl(dense.outputs);
+  vbx(SVW, VOR, v_out, 0, v_in);
+#else
+  for (i = 0; i < dense.outputs; i++) {
+    count++;
+    int diff = v_in[i] - v_out[i];
+    if (diff < -4 || diff > 4) {
+      if (errors < 10) {
+	printf("%d\t%d != %d\r\n", i, v_out[i], v_in[i]);
+      }
+      errors++;
+    }
+  }
+#endif
+  if (count) {
+    printf("%d errors\r\n", errors);
+    printf("%d count\r\n", count);
+  } else {
+    printf("loaded outputs\r\n");
+  }
+#endif
+
+  v_out = (vbx_word_t*)(SCRATCHPAD_BASE+80*1024);
+  v_in = (vbx_word_t*)(SCRATCHPAD_BASE+0*1024);
+
+  dense.activation_type = RELU;
+  dense.inputs = 256;
+  dense.outputs = 256;
+  dense.biases = 562560;
+  dense.scales = 563584;
+  dense.weights = 554368;
+
+  if (verbose) printf("d1\r\n");
+  dense_lve(v_out, v_in, &(dense));
+
+#if 0
+  errors = 0;
+  count = 0;
+  vbx_flash_dma(v_in, 564608, dense.outputs*sizeof(vbx_word_t));
+#if 0
+  vbx_set_vl(dense.outputs);
+  vbx(SVW, VOR, v_out, 0, v_in);
+#else
+  for (i = 0; i < dense.outputs; i++) {
+    count++;
+    int diff = v_in[i] - v_out[i];
+    if (diff < -4 || diff > 4) {
+      if (errors < 10) {
+	printf("%d\t%d != %d\r\n", i, v_out[i], v_in[i]);
+      }
+      errors++;
+    }
+  }
+#endif
+  if (count) {
+    printf("%d errors\r\n", errors);
+    printf("%d count\r\n", count);
+  } else {
+    printf("loaded outputs\r\n");
+  }
+#endif
+
+  v_in = (vbx_word_t*)(SCRATCHPAD_BASE+80*1024);
+  v_out = (vbx_word_t*)(SCRATCHPAD_BASE+0*1024);
+
+  dense.activation_type = LINEAR;
+  dense.inputs = 256;
+  dense.outputs = 10;
+  dense.biases = 565952;
+  dense.scales = 565992;
+  dense.weights = 565632;
+
+  if (verbose) printf("d2\r\n");
+  dense_lve(v_out, v_in, &(dense));
 }
+
 
 void cifar_lve() {
-	init_lve();
-	printf("\r\n");
-	printf("\r\n\r\nCES or BUST!!\r\n");
-	printf("\r\n");
+  init_lve();
+  int c, m = 32, n = 32;
 
-	int i, errors;
-	vbx_word_t *v_out, *v_in;
-	v_out = (vbx_word_t*)SCRATCHPAD_BASE;
-	v_in = v_out + 16384;
-#if 0
-	printf("\r\nTesting vbx_relu\r\n");
-	int relu_input[] = {-1, 2, 4, 4, 8, 12, -8, 1};
-	int relu_output[] = {0, 2, 4, 4, 8, 12, 0, 1};
-	int relu_size = 8;
+  printf("Testing convolution ci\r\n");
+  vbx_word_t* v_out = (vbx_word_t*)(SCRATCHPAD_BASE+0*1024);
+  vbx_ubyte_t* v_inb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
+  vbx_ubyte_t* v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
 
-	v_out = (vbx_word_t*)SCRATCHPAD_BASE;
-	vbx_word_t *v_flag = v_out + relu_size;
+  // dma in test image (or get from camera!!
+  vbx_flash_dma(v_inb, 0, (3*m*n)*sizeof(vbx_ubyte_t));
 
-	for (i = 0; i < relu_size; i++) {
-	    relu_input[i] = relu_input[i] << 16;
-	    relu_output[i] = relu_output[i] << 16;
-	}
-	vbx_dma(v_out, relu_input, relu_size*sizeof(vbx_word_t));
+  // zero pad imaged w/ bytes
+  for (c = 0; c < 3; c++) {
+    vbx_zeropad_input(v_padb + c*(m+2)*(n+4), v_inb + c*m*n, m, n);
+  }
 
-	vbx_set_vl(relu_size);
-	vbx_relu(v_out, v_flag);
+  int verbose = 1;
+  run_network(verbose);
 
-	errors += equal(v_out, relu_output, relu_size);
-
-	printf("errors %d\n", errors);
-
-	printf("\r\nTesting vbx_pool\r\n");
-	int pool_input[] = {2, -2, 4, 5,
-                            12, 11, -8, 1,
-	                    12, -12, 14, 15,
-                            112, 111, -18, 11};
-	int pool_output[] = {12, 5,
-                             112, 15};
-	int pool_size = 16;
-	for (i = 0; i < pool_size; i++) {
-	    pool_input[i] = pool_input[i] << 16;
-	    pool_output[i] = pool_output[i] << 16;
-	}
-	v_out = (vbx_word_t*)SCRATCHPAD_BASE;
-	v_flag = v_out + pool_size;
-	vbx_dma(v_out, pool_input, pool_size*sizeof(vbx_word_t));
-	vbx_pool(v_out, v_flag, 4, 4);
-	errors = equal(v_out, pool_output, pool_size/2/2);
-	printf("errors %d\n", errors);
-	print_Q(v_out, pool_size/2/2, 16);
-	
-	printf("\r\nTesting vbx mul hi\r\n");
-	int a[] = {2, -2, 4, 5};
-	int b[] = {1, -1, 4, 5};
-	int c[] = {2, 2, 16, 25};
-	int mul_size = 4;
-
-	v_out = (vbx_word_t*)SCRATCHPAD_BASE;
-	vbx_word_t *v_a = v_out + 1*mul_size;
-	vbx_word_t *v_b = v_out + 2*mul_size;
-
-	for (i = 0; i < mul_size; i++) {
-	    a[i] = a[i] << 16+4;
-	    b[i] = b[i] << 16+12;
-	    c[i] = c[i] << 16;
-	}
-	vbx_dma(v_a, a, mul_size*sizeof(vbx_word_t));
-	vbx_dma(v_b, b, mul_size*sizeof(vbx_word_t));
-
-	vbx_set_vl(mul_size);
-	vbx(VVW, VMULH, v_out, v_a, v_b);
-	print_Q(v_out, mul_size, 16);
-	errors = equal(v_out, c, mul_size);
-
-	printf("errors %d\n", errors);
-#endif
-
-#if 0
-	printf("\r\nTesting vbx dense\r\n");
-	while(FLASH_DMA_BASE[FLASH_DMA_STATUS] & 0x80000000){
-	}
-
-	printf("initialized DMA\r\n");
-
-	int elements= 8;
-	int xfer_size= 8*4;
-	int flash_address = 0;
-
-	int outputs = 10;
-	vbx_word_t *v_weights = v_out + outputs*2;
-
-	volatile char* sp_base=(volatile char*)SCRATCHPAD_BASE;
-	flash_dma_trans(flash_address, (void*)v_weights, xfer_size);
-	while(!flash_dma_done());
-
-	vbx_word_t *v_a=(vbx_word_t *)SCRATCHPAD_BASE;
-
-	printf("\r\n");
-	int i;
-	for (i=0; i < elements; i++) {
-	    printf("%d\t", v_a[i]);
-	}
-	printf("\r\n");
-#endif
-#if 0
-	printf("\r\nTesting vbx dense\r\n");
-
-	int dense_biases[] = {-501514,-175794,-383338,-841043,-387872,-342826,-469085,-458890,-201922,-613068};
-	int dense_scales[] = {111025912,96108008,112351344,104096248,117695752,108380824,111675008,108947872,114070048,88257352};
-	int dense_inputs[] = {28371,56800,11240,68338,0,0,0,25252,0,0,0,0,0,12629,7266,0,7409,59101,91565,0,0,0,0,0,452,0,0,0,0,70101,0,0,0,53390,0,0,79039,0,0,0,0,0,0,0,0,3713,102832,89912,0,90517,0,0,0,64244,20784,57052,0,0,86067,47562,90065,0,0,0,0,0,29809,16951,0,5374,0,53295,0,24815,0,0,76092,902,54498,0,9694,0,30561,0,0,0,8458,27541,66738,69998,52422,24424,0,0,76781,0,80373,0,0,0,0,88795,0,0,0,0,0,0,0,0,0,0,0,102499,0,0,0,0,0,82429,0,0,0,0,0,54452,0,0,46694,83834,0,0,0,0,0,0,60733,8280,0,0,0,0,0,0,0,33004,0,0,0,0,0,0,122693,0,0,83243,0,0,61312,0,0,0,119241,0,28501,0,32779,0,0,43861,54430,0,0,0,0,0,0,0,0,0,81915,69277,58149,12507,0,50229,74836,0,0,0,32315,0,35791,0,35829,0,79019,0,0,24023,0,80796,83324,24785,0,0,0,0,0,0,0,0,0,0,7365,0,0,87333,36797,0,0,0,0,0,0,50350,0,0,38763,89204,0,0,0,60581,94030,70103,0,0,0,0,134430,0,0,0,46977,110268,99227,24406,0,0,0,0,6433,42403,0,0};
-	int dense_outputs[] = {-210842,-148923,-183964,154733,-171223,-188231,-151054,-152742,-186070,-203593};
-
-	dense_layer_t dense_layer;
-	dense_layer.layer_type = DENSE;
-	dense_layer.activation_type = LINEAR;
-	dense_layer.inputs = 256;
-	dense_layer.outputs = 10;
-	dense_layer.scale = 1;
-	dense_layer.weights = 0;
-	dense_layer.biases = dense_biases;
-	dense_layer.scales = dense_scales;
-
-	vbx_dma(v_in, dense_inputs, dense_layer.inputs*sizeof(vbx_word_t));
-
-	dense_lve(v_out, v_in, &dense_layer);
-
-	errors = close(v_out, dense_outputs, dense_layer.outputs, 4);
-	printf("errors %d\n", errors);
-
-#endif
-#if 0
-	printf("\r\nTesting vbx convolution\r\n");
-	int conv_biases[] = {-299797,-152806,98137,130968};
-	int conv_scales[] = {806579392,258308416,624079808,771659072};
-	int conv_weights[] = {1,-1,-1,1,-1,-1,1,1,-1,1,-1,-1,1,1,-1,1,1,-1,1,-1,-1,1,-1,-1,1,1,-1,-1,-1,-1,1,1,-1,-1,1,-1,-1,-1,-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,-1,-1,1,-1,-1,1,1,1,1,-1,-1,1,-1,-1,1,1,1,-1,1,-1,1,-1,-1,1,1,1,-1,1,1,-1,1,-1,-1,1,-1,-1,-1,1,1,-1,-1,-1,1,-1,1,-1,1,1,-1,-1,1,1,-1,1};
-
-	convolution_layer_t conv_layer;
-	conv_layer.activation_type = RELU;
-	conv_layer.m = 32;
-	conv_layer.n = 32;
-	conv_layer.channels = 3;
-	conv_layer.kernels = 4;
-	conv_layer.maxpool = 0;
-	conv_layer.scale = 1;
-	conv_layer.weights = conv_weights;
-	conv_layer.biases = conv_biases;
-	conv_layer.scales = conv_scales;
-
-	v_in = v_out + conv_layer.m*conv_layer.n*conv_layer.kernels;
-	vbx_flash_dma(v_in, 0, conv_layer.m*conv_layer.n*conv_layer.channels*sizeof(vbx_word_t));
-
-	int start_time = get_time();
-
-	int l;
-	for (l = 0; l < 10; l++) {
-	  convolution_lve(v_out, v_in, &conv_layer);
-	}
-	int stop_time = get_time();
-	printf("10xtime %d\n", stop_time - start_time);
-
-	int size = conv_layer.m*conv_layer.n*conv_layer.kernels;
-	if (conv_layer.maxpool) size = size / 4;
-
-	vbx_flash_dma(v_in, 3*32*32*sizeof(vbx_word_t), size*sizeof(vbx_word_t));
-
-	errors = close(v_out, v_in, size, 8);
-	printf("errors %d\n", errors);
-#endif
-#if 1
-	printf("\r\nTesting non-ci vbx runtime\r\n");
-	int l = 0, done = 0;
-	int time_start, time_stop;
-	int time_init = get_time();
-	while(1) {
-		switch (cifar[l].layer_type) {
-			case DENSE:
-			    printf("dense %d\r\n", l);
-			    time_start = get_time();
-
-			    dummy_dense_lve(v_out, v_in, &(cifar[l].dense));
-
-			    time_stop = get_time();
-			    printf("cycles %d\r\n", time_stop-time_start);
-			    if (cifar[l].dense.last) {
-				done = 1;
-			    }
-			    break;
-			case CONV:
-			    printf("conv %d\r\n", l);
-			    time_start = get_time();
-
-			    dummy_convolution_lve(v_out, v_in, &(cifar[l].conv));
-
-			    time_stop = get_time();
-			    printf("cycles %d\r\n", time_stop-time_start);
-
-			    if (cifar[l].conv.last) {
-				done = 1;
-			    }
-			    break;
-			
-			default:
-			  printf("unknown layer type\r\n");
-			  break;
-		}
-
-		if (done) {
-		    break;
-		}
-		l++;
-	}
-	printf("total cycles %d\r\n", get_time() - time_init);
-#endif
+  // print results
+  for (c = 0; c < 10; c++) {
+      printf("%d\t%d\r\n", c, v_out[c]);
+  }
 }

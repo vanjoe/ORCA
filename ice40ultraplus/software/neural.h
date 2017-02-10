@@ -42,10 +42,10 @@ typedef struct {
     int kernels;
     int size;
     int maxpool;
-    int* weights;
-    int* biases;
+    int weights;
     int scale;
-    int* scales;
+    int scale_multiply;
+    int zeropad_output;
 } convolution_layer_t;
 
 
