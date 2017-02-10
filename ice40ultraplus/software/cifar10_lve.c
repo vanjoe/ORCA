@@ -249,7 +249,7 @@ void run_network(const int verbose)
   convolution_ci_lve(v_outb, v_padb, &(conv), 0);
   m = 32, n = 32;
 
-#if 1
+#if 0
   errors = 0;
   count = 0;
   for (j = 0; j < conv.kernels; j++) {
@@ -598,15 +598,20 @@ void run_network(const int verbose)
 
 
 void cifar_lve() {
-  init_lve();
-  int c, m = 32, n = 32;
 
+  printf("CES demo\r\n");
+  printf("Lattice\r\n");
   printf("Testing convolution ci\r\n");
-  vbx_word_t* v_out = (vbx_word_t*)(SCRATCHPAD_BASE+0*1024);
-  vbx_ubyte_t* v_inb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
-  vbx_ubyte_t* v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
 
-  // dma in test image (or get from camera!!
+  init_lve();
+
+  int c, m = 32, n = 32, verbose = 1;
+  vbx_ubyte_t* v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024); // IMPORTANT: padded input placed here
+  vbx_word_t* v_out = (vbx_word_t*)(SCRATCHPAD_BASE+0*1024); // IMPORTANT: 10 outputs produced here
+  vbx_ubyte_t* v_inb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
+
+
+  // dma in test image (or get from camera!!)
   vbx_flash_dma(v_inb, 0, (3*m*n)*sizeof(vbx_ubyte_t));
 
   // zero pad imaged w/ bytes
@@ -614,11 +619,14 @@ void cifar_lve() {
     vbx_zeropad_input(v_padb + c*(m+2)*(n+4), v_inb + c*m*n, m, n);
   }
 
-  int verbose = 1;
   run_network(verbose);
 
-  // print results
-  for (c = 0; c < 10; c++) {
-      printf("%d\t%d\r\n", c, v_out[c]);
+  if (verbose) {
+    // print results (or toggle LED if person is max, and > 0)
+    char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
+    for (c = 0; c < 10; c++) {
+	printf("%s\t%d\r\n", categories[c], v_out[c]);
+    }
   }
+
 }
