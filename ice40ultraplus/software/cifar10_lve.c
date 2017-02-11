@@ -1,7 +1,9 @@
 #include "neural.h"
 #include "flash_dma.h"
 #include "time.h"
-
+#include "ovm7692.h"
+#include "base64.h"
+#include "sccb.h"
 
 void vbx_flash_dma(vbx_word_t *v_dst, int flash_byte_offset, const int bytes) {
 	flash_dma_trans(flash_byte_offset, (void*)v_dst, bytes);
@@ -27,9 +29,9 @@ void vbx_pool(vbx_word_t *v_out, vbx_word_t *v_pool, const int width, const int 
     the_lve.stride = 1;
     vbx_set_vl(width/2);
     for (i = 0; i < height/2; i++) {
-	vbx(VVW, VSLT, v_pool, v_out + (i*2) * width/2, v_out + (i*2+1) * width/2); 
-	vbx(VVW, VCMV_NZ, v_out + (i*2) * width/2, v_out + (i*2+1) * width/2, v_pool); 
-	vbx(SVW, VOR, v_out + i * width/2, 0, v_out + (i*2) * width/2); 
+	vbx(VVW, VSLT, v_pool, v_out + (i*2) * width/2, v_out + (i*2+1) * width/2);
+	vbx(VVW, VCMV_NZ, v_out + (i*2) * width/2, v_out + (i*2+1) * width/2, v_pool);
+	vbx(SVW, VOR, v_out + i * width/2, 0, v_out + (i*2) * width/2);
     }
 }
 
@@ -45,9 +47,9 @@ void vbx_unpack_weights(vbx_word_t *v_unpacked, vbx_word_t *v_packed, const int 
   int b;
   vbx_set_vl(size/32);
   for (b = 0; b < 32; b++) {
-    vbx(SVWU, VAND, v_unpacked + b*(size/32), 1<<(b), v_packed); 
-    vbx(SVW, VCMV_NZ, v_unpacked + b*(size/32), 1, v_unpacked + b*(size/32)); 
-    vbx(SVW, VCMV_Z, v_unpacked + b*(size/32), -1, v_unpacked + b*(size/32)); 
+    vbx(SVWU, VAND, v_unpacked + b*(size/32), 1<<(b), v_packed);
+    vbx(SVW, VCMV_NZ, v_unpacked + b*(size/32), 1, v_unpacked + b*(size/32));
+    vbx(SVW, VCMV_Z, v_unpacked + b*(size/32), -1, v_unpacked + b*(size/32));
   }
 }
 
@@ -76,7 +78,7 @@ void dense_lve(vbx_word_t *v_out, vbx_word_t *v_in, dense_layer_t *layer)
 	vbx_unpack_weights(v_weights, v_dma[buf], layer->inputs);
 
 	vbx_set_vl(layer->inputs);
-	vbx_acc(VVW, VMUL, v_out + x, v_in, v_weights); 
+	vbx_acc(VVW, VMUL, v_out + x, v_in, v_weights);
 
 	while(!flash_dma_done());
 	buf = !buf;
@@ -89,7 +91,7 @@ void dense_lve(vbx_word_t *v_out, vbx_word_t *v_in, dense_layer_t *layer)
 
     if (layer->scale) {
 	vbx_flash_dma(v_scales, layer->scales, layer->outputs*sizeof(vbx_word_t));
-	vbx(VVW, VMULH, v_out, v_out, v_scales); 
+	vbx(VVW, VMULH, v_out, v_out, v_scales);
     }
 
     if (layer->activation_type == RELU) {
@@ -101,7 +103,7 @@ void dense_lve(vbx_word_t *v_out, vbx_word_t *v_in, dense_layer_t *layer)
 void vbx_convolve_ci(vbx_word_t *v_out, vbx_ubyte_t *v_in, vbx_word_t *v_map, const int m, const int n, const short weights)
 {
     int y, x;
-    
+
     vbx_set_vl(1);
     vbx(SVW, VCUSTOM1, 0, weights, 0);
 
@@ -177,7 +179,7 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
     int buf = 0;
     int dma_size = 2*4 + layer->channels*2;
     int dma_pad = dma_size % 4;
-    
+
     vbx_flash_dma(v_dma[buf], layer->weights, dma_size+dma_pad);
 
     for (k = 0; k < layer->kernels; k++) {
@@ -201,8 +203,8 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 
 	vbx_set_vl(m0*n0);
 	if (layer->scale) {
-	    vbx(SVW, VMULH, v_map, v_dma[buf][1], v_map); 
-	} 
+	    vbx(SVW, VMULH, v_map, v_dma[buf][1], v_map);
+	}
 
 	if (layer->activation_type == RELU) {
 	    vbx_relu(v_map, v_tmp);
@@ -595,7 +597,26 @@ void run_network(const int verbose)
   if (verbose) printf("d2\r\n");
   dense_lve(v_out, v_in, &(dense));
 }
-
+#define USE_CAM_IMG 1
+#if USE_CAM_IMG
+void cam_extract_and_pad(vbx_ubyte_t* channel,vbx_word_t* rgba_in,int byte_sel,int rows,int cols,int pitch)
+{
+  int c,r;
+  for(r=0;r<rows+2;r++){
+	 for(c=0;c<cols+4;c++){
+		int pixel;
+		if (c==0 || r==0 ||
+			 c>=cols+1 || r>=rows+1){
+		  pixel=0;
+		}else {
+		  pixel=rgba_in[(r-1)*pitch+(c-1)];
+		}
+		pixel=(pixel>>(byte_sel*8))&0xFF;
+		channel[r*(cols+4) + c]=pixel;
+	 }
+  }
+}
+#endif
 
 void cifar_lve() {
 
@@ -604,29 +625,93 @@ void cifar_lve() {
   printf("Testing convolution ci\r\n");
 
   init_lve();
+  //enable output on LED
+  SCCB_PIO_BASE[PIO_ENABLE_REGISTER] |= (1<<PIO_LED_BIT);
+#if USE_CAM_IMG
+  ovm_initialize();
+#endif
 
-  int c, m = 32, n = 32, verbose = 1;
-  vbx_ubyte_t* v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024); // IMPORTANT: padded input placed here
-  vbx_word_t* v_out = (vbx_word_t*)(SCRATCHPAD_BASE+0*1024); // IMPORTANT: 10 outputs produced here
-  vbx_ubyte_t* v_inb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
+  do{
+	  int c, m = 32, n = 32, verbose = 1;
+	  vbx_ubyte_t* v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024); // IMPORTANT: padded input placed here
+	  vbx_word_t* v_out = (vbx_word_t*)(SCRATCHPAD_BASE+0*1024); // IMPORTANT: 10 outputs produced here
+	  vbx_ubyte_t* v_inb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
 
 
-  // dma in test image (or get from camera!!)
-  vbx_flash_dma(v_inb, 0, (3*m*n)*sizeof(vbx_ubyte_t));
+#if USE_CAM_IMG
+	  //zero the img buffer first (uncomment for better presentation
+	  //vbx_set_vl(32*64);
+	  //vbx(SVW,VAND,v_inb,0,v_inb);
 
-  // zero pad imaged w/ bytes
-  for (c = 0; c < 3; c++) {
-    vbx_zeropad_input(v_padb + c*(m+2)*(n+4), v_inb + c*m*n, m, n);
-  }
 
-  run_network(verbose);
+	  ovm_get_frame();
+	 //print base64 encoding of rgb image
+	 char* rgb_plane = (char*)v_padb;
+	 int off;
 
-  if (verbose) {
-    // print results (or toggle LED if person is max, and > 0)
-    char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
-    for (c = 0; c < 10; c++) {
-	printf("%s\t%d\r\n", categories[c], v_out[c]);
-    }
-  }
+	 for(off=0;off<32*64;off++){
+		rgb_plane[3*off+0]/*CV_FRAME2: R*/ = v_inb[4*off+0];
+		rgb_plane[3*off+1]/*CV_FRAME1: G*/ = v_inb[4*off+1];
+		rgb_plane[3*off+2]/*CV_FRAME0: B*/ = v_inb[4*off+2];
+	 }
+	 printf("base64:");
+	 print_base64((char*)rgb_plane,3*32*64);
+	 printf("\r\n");
+	 for (c = 0; c < 3; c++) {
+
+		 cam_extract_and_pad(v_padb + c*(m+2)*(n+4), (vbx_word_t*)v_inb,c, m, n, 64);
+	 }
+
+#else
+
+	  // dma in test image (or get from camera!!)
+	  vbx_flash_dma(v_inb, 0, (3*m*n)*sizeof(vbx_ubyte_t));
+
+	  // zero pad imaged w/ bytes
+	  for (c = 0; c < 3; c++) {
+		  vbx_zeropad_input(v_padb + c*(m+2)*(n+4), v_inb + c*m*n, m, n);
+	  }
+#endif
+
+#if 0
+	  /* Print out maps*/
+	  for (c = 0; c < 3; c++) {
+		  int i,j;
+		  for(i=0;i<n+2;i++){
+			  for(j=0;j<m+4;j++){
+				  printf("%3d ",(v_padb + c*(m+2)*(n+4))[i*(n+4) +j]);
+			  }
+			  printf("\r\n");
+		  }
+		  printf("\r\n");
+	  }
+#endif
+
+	  run_network(verbose);
+
+	  int max_cat=0;
+		  // print results (or toggle LED if person is max, and > 0)
+	  char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
+	  for (c = 0; c < 10; c++) {
+		  if(v_out[c] > v_out[max_cat] ){
+			  max_cat =c;
+		  }
+		  if (verbose) {
+			  printf("%s\t%d\r\n", categories[c], v_out[c]);
+		  }
+	  }
+
+	  if(max_cat == 4 /*person*/){
+		  //turn on led
+		  SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
+		  if(verbose){
+			  printf("PERSON DETECTED %d\r\n ",(int)v_out[max_cat]);
+		  }
+	  }else {
+		  //turn off led
+		  SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
+	  }
+
+  }while(1);
 
 }

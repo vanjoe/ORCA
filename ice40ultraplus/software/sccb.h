@@ -19,6 +19,8 @@
 #define PIO_SDA_MASK (1 << PIO_SDA_BIT)
 #define PIO_SCL_MASK (1 << PIO_SCL_BIT)
 
+#define PIO_LED_BIT 4
+
 #define PIO_DATA_REGISTER   0
 #define PIO_ENABLE_REGISTER 1
 
