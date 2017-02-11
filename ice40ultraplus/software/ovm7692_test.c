@@ -66,21 +66,19 @@ int main()
 	printf("\r\nTESTING OVM\r\n");
 	init_lve();
 
+	int rgb_rows=32,rgb_cols=64;
+	char* rgba_plane=(char*)SCRATCHPAD_BASE;
 	//set the bottom of the scratchpad to skip the camera dma buffer
-	the_lve.sp_base = ((char*)SCRATCHPAD_BASE)+( 64*32*4);
-	the_lve.sp_ptr = ((char*)SCRATCHPAD_BASE)+( 64*32*4);
-
-	char* r_plane = (char*)vbx_sp_alloc(34*40);
-	char* g_plane=	 (char*)vbx_sp_alloc(34*40);
-	char* b_plane=  (char*)vbx_sp_alloc(34*40);
-
+	the_lve.sp_base = ((char*)SCRATCHPAD_BASE)+(rgb_rows*rgb_cols*4);
+	the_lve.sp_ptr = ((char*)SCRATCHPAD_BASE)+ (rgb_rows*rgb_cols*4);
 	//EXTRA,just used for opencv display
 	char* rgb_plane=(char*)vbx_sp_alloc(34*40*3);
 
-	int rgb_rows=34,rgb_cols=40;
+
+
 
 	int off;
-	if(ovm_initialize(r_plane,g_plane,b_plane)){
+	if(ovm_initialize()){
 		printf("Initializtion Failed\r\n");
 		return 1;
 	}else{
@@ -96,15 +94,12 @@ int main()
 			frame_time=get_time()-frame_time;
 			printf("Done Get frame. Took %d cycles %d ms\r\n",frame_time,cycle2ms(frame_time));
 		}
-
 		//recombine plane for OPENCV display
 		for(off=0;off<rgb_rows*rgb_cols;off++){
-			rgb_plane[3*off+0]/*CV_FRAME2: R*/ = r_plane[off];
-			rgb_plane[3*off+1]/*CV_FRAME1: G*/ = g_plane[off];
-			rgb_plane[3*off+2]/*CV_FRAME0: B*/ = b_plane[off];
-
+			rgb_plane[3*off+0]/*CV_FRAME2: R*/ = rgba_plane[4*off+0];
+			rgb_plane[3*off+1]/*CV_FRAME1: G*/ = rgba_plane[4*off+1];
+			rgb_plane[3*off+2]/*CV_FRAME0: B*/ = rgba_plane[4*off+2];
 		}
-
 		printf("base64:");
 		print_base64((char*)rgb_plane,3*rgb_rows*rgb_cols);
 		printf("\r\n");

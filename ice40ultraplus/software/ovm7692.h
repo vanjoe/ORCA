@@ -21,7 +21,7 @@ typedef struct{
 } regval_t;
 #include "ovm7692_reg.c"
 
-int ovm_initialize(char* red_plane,char* green_plane,char*blue_plane);
+int ovm_initialize();
 
 int ovm_get_frame();
 

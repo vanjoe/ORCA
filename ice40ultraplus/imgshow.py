@@ -10,8 +10,8 @@ ss=serial.Serial(sys.argv[1],baudrate=115200)
 
 while(True):
     ln=ss.readline()[:-1]
-    img_rows=34
-    img_cols = 40
+    img_rows=32
+    img_cols = 64
     header="P6\n{} {}\n255\n".format(img_cols,img_rows)
     if "base64:" in ln :
         ln=ln[len("base64:"):]
