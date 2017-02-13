@@ -5,7 +5,8 @@
 //8x8 input map with padding
 //1 BYTE per pixel
 //each row is aligned to word size
-#define INPUT_MAP_SIZE  48
+#define INPUT_MAP_SIZE  8
+#define PRINT_MAPS 0
 vbx_byte_t input_map [] = { 0,0,0,0,0,0,0,0,0,0,0,0,
                             0,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0,0,0,
                             0,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0,0,0,
@@ -81,8 +82,6 @@ int test_convolve()
 	int flash_dma_addr=0;
 	vbx_ubyte_t* v_dma_dest= vbx_sp_alloc(flash_dma_size);
 
-	const int PRINT_MATS=1;
-	printf("CONVOLVE TEST  start\r\n");
 	//copy the static data into the scratchpad
 	int i,j;
 	//initialize input matrix
@@ -123,7 +122,7 @@ int test_convolve()
 		}
 	}
 
-	if (PRINT_MATS){
+	if (PRINT_MAPS){
 		printf("\r\ninput map\r\n");
 		for(j=0;j<INPUT_MAP_SIZE+2;j++){
 			for(i=0;i<PAD_UP(INPUT_MAP_SIZE+2,4);i++){
@@ -132,7 +131,7 @@ int test_convolve()
 		}
 	}
 
-	if(PRINT_MATS ){
+	if(PRINT_MAPS ){
 		printf("\r\nscalar output map\r\n");
 		for(i=0;i<INPUT_MAP_SIZE;i++){
 			for(j=0;j<PAD_UP(INPUT_MAP_SIZE+2,4);j++){
@@ -149,7 +148,7 @@ int test_convolve()
 
 
 	int errors=0;
-	if(PRINT_MATS){
+	if(PRINT_MAPS){
 		printf("\r\nvector output map\r\n");
 		for(i=0;i<INPUT_MAP_SIZE;i++){
 			for(j=0;j<PAD_UP(INPUT_MAP_SIZE+2,4);j++){
@@ -157,18 +156,13 @@ int test_convolve()
 			}printf("\r\n");
 		}
 	}
-	/*
 	for(i=0;i<PAD_UP(INPUT_MAP_SIZE+2,4)*(INPUT_MAP_SIZE);i++){
 		if (s_output_map[i] != v_output_map[i]){
 			printf("FAILED i=%d %x !=%x\r\n",i,(int)s_output_map[i],(int)(v_output_map[i]));
 			errors++;
 		}
 	}
-	*/
-	if(!errors){
-		printf("CONVOLVE TEST Passed\r\n");
-	}
-
+	printf("CONVOLVE TEST %s\r\n",errors?"Failed":"Passed");
 	return errors;
 
 }
@@ -210,12 +204,40 @@ int test_word_to_byte()
 	return errors;
 }
 
+int test_halfword_add()
+{
+	int test_length=2048;
+	vbx_half_t* v_inputa=SCRATCHPAD_BASE;
+	vbx_half_t* v_inputb=(v_inputa+test_length);;
+	vbx_half_t* v_output=(v_inputb+test_length);
+	vbx_half_t* s_output=(v_output+test_length);
+	int i,errors=0;
+	for(i=0;i<test_length;i++){
+		v_inputa[i]=i*63+i;
+		v_inputb[i]=i*25+i+4;
+		s_output[i]=v_inputa[i]+v_inputb[i];
+	}
+	//treat the vector as words
+	vbx_set_vl(test_length/2);
+	the_lve.stride=1;
+	vbx(VVW,VCUSTOM3,(vbx_word_t*)v_output,(vbx_word_t*)v_inputa,(vbx_word_t*)v_inputb);
+
+	for(i=0;i<test_length;i++){
+		if(s_output[i] != v_output[i]){
+			errors++;
+			printf("ERROR @ %d: %d != %d ",i,s_output[i],v_output[i]);
+		}
+	}
+	printf("Halfword Add test %s\r\n",errors?"Failed":"Passed");
+	return errors;
+}
+
 int main()
 {
 	int errors=0;
-	errors+= test_convolve();
-	errors+= test_word_to_byte();
-
+	errors += test_convolve();
+	errors += test_word_to_byte();
+	errors += test_halfword_add();
 
 	printf("DONE -- errors = %d %s\r\n",errors,errors?"FAILED :(":"PASSED :)");
 
@@ -224,10 +246,10 @@ int main()
 
 
 
+
 /////
 //Word to byte conversion sample
 /////
-
 
 void vbx_w2b_convert(vbx_word_t* input_map,vbx_byte_t* output_map,int num_elements)
 {
