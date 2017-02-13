@@ -220,7 +220,7 @@ begin
   with dest_size select
     dest_incr <=
     SHIFT_LEFT(pointer_increment, 2) when LVE_WORD_SIZE,
-    --Don't enable halfe words
+    SHIFT_LEFT(pointer_increment, 1) when LVE_HALF_SIZE,
     pointer_increment                when others;
 
   --source bust be aways word
