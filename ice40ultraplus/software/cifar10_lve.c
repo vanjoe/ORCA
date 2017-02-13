@@ -5,6 +5,7 @@
 #include "base64.h"
 #include "sccb.h"
 
+#define FLASH_DATA_OFFSET 0
 void vbx_flash_dma(vbx_word_t *v_dst, int flash_byte_offset, const int bytes) {
 	flash_dma_trans(flash_byte_offset, (void*)v_dst, bytes);
 	while(!flash_dma_done());
@@ -243,7 +244,7 @@ void run_network(const int verbose)
   conv.kernels = 64;
   conv.scale = 1;
   conv.scale_multiply = 0;
-  conv.weights = 3072;
+  conv.weights = FLASH_DATA_OFFSET + 3072;
   conv.zeropad_output = 1;
   conv.maxpool = 0;
 
@@ -288,7 +289,7 @@ void run_network(const int verbose)
   conv.n = n;
   conv.channels = 64;
   conv.kernels = 64;
-  conv.weights = 69504;
+  conv.weights = FLASH_DATA_OFFSET + 69504;
   conv.maxpool = 1;
 
   if (verbose) printf("c1\r\n");
@@ -332,7 +333,7 @@ void run_network(const int verbose)
   conv.n = n;
   conv.channels = 64;
   conv.kernels = 128;
-  conv.weights = 94592;
+  conv.weights = FLASH_DATA_OFFSET + 94592;
   conv.maxpool = 0;
 
   if (verbose) printf("c2\r\n");
@@ -376,7 +377,7 @@ void run_network(const int verbose)
   conv.n = n;
   conv.channels = 128;
   conv.kernels = 128;
-  conv.weights = 144768;
+  conv.weights = FLASH_DATA_OFFSET + 144768;
   conv.maxpool = 1;
 
   if (verbose) printf("c3\r\n");
@@ -420,7 +421,7 @@ void run_network(const int verbose)
   conv.n = n;
   conv.channels = 128;
   conv.kernels = 256;
-  conv.weights = 186752;
+  conv.weights = FLASH_DATA_OFFSET + 186752;
   conv.maxpool = 0;
 
   if (verbose) printf("c4\r\n");
@@ -464,7 +465,7 @@ void run_network(const int verbose)
   conv.n = n;
   conv.channels = 256;
   conv.kernels = 256;
-  conv.weights = 270720;
+  conv.weights = FLASH_DATA_OFFSET + 270720;
   conv.maxpool = 1;
   conv.zeropad_output = 0;
 
@@ -510,9 +511,9 @@ void run_network(const int verbose)
   dense.scale = 1;
   dense.inputs = 256*4*4;
   dense.outputs = 256;
-  dense.biases = 551296;
-  dense.scales = 552320;
-  dense.weights = 420224;
+  dense.biases = FLASH_DATA_OFFSET +551296;
+  dense.scales = FLASH_DATA_OFFSET +552320;
+  dense.weights = FLASH_DATA_OFFSET + 420224;
 
   if (verbose) printf("d0\r\n");
   dense_lve(v_out, v_in, &(dense));
@@ -550,9 +551,9 @@ void run_network(const int verbose)
   dense.activation_type = RELU;
   dense.inputs = 256;
   dense.outputs = 256;
-  dense.biases = 562560;
-  dense.scales = 563584;
-  dense.weights = 554368;
+  dense.biases = FLASH_DATA_OFFSET + 562560;
+  dense.scales = FLASH_DATA_OFFSET + 563584;
+  dense.weights = FLASH_DATA_OFFSET + 554368;
 
   if (verbose) printf("d1\r\n");
   dense_lve(v_out, v_in, &(dense));
@@ -590,9 +591,9 @@ void run_network(const int verbose)
   dense.activation_type = LINEAR;
   dense.inputs = 256;
   dense.outputs = 10;
-  dense.biases = 565952;
-  dense.scales = 565992;
-  dense.weights = 565632;
+  dense.biases =FLASH_DATA_OFFSET + 565952;
+  dense.scales = FLASH_DATA_OFFSET + 565992;
+  dense.weights = FLASH_DATA_OFFSET + 565632;
 
   if (verbose) printf("d2\r\n");
   dense_lve(v_out, v_in, &(dense));
@@ -602,6 +603,12 @@ void run_network(const int verbose)
 void cam_extract_and_pad(vbx_ubyte_t* channel,vbx_word_t* rgba_in,int byte_sel,int rows,int cols,int pitch)
 {
   int c,r;
+  //channel reverse
+  if(byte_sel==2){
+	  byte_sel=0;
+  }else if(byte_sel ==0){
+	  byte_sel =2;
+  }
   for(r=0;r<rows+2;r++){
 	 for(c=0;c<cols+4;c++){
 		int pixel;
@@ -640,8 +647,8 @@ void cifar_lve() {
 
 #if USE_CAM_IMG
 	  //zero the img buffer first (uncomment for better presentation
-	  //vbx_set_vl(32*64);
-	  //vbx(SVW,VAND,v_inb,0,v_inb);
+	  vbx_set_vl(32*64);
+	  vbx(SVW,VAND,(vbx_word_t*)v_inb,0,(vbx_word_t*)v_inb);
 
 
 	  ovm_get_frame();
@@ -650,9 +657,9 @@ void cifar_lve() {
 	 int off;
 
 	 for(off=0;off<32*64;off++){
-		rgb_plane[3*off+0]/*CV_FRAME2: R*/ = v_inb[4*off+0];
+		rgb_plane[3*off+0]/*CV_FRAME2: R*/ = v_inb[4*off+2];
 		rgb_plane[3*off+1]/*CV_FRAME1: G*/ = v_inb[4*off+1];
-		rgb_plane[3*off+2]/*CV_FRAME0: B*/ = v_inb[4*off+2];
+		rgb_plane[3*off+2]/*CV_FRAME0: B*/ = v_inb[4*off+0];
 	 }
 	 printf("base64:");
 	 print_base64((char*)rgb_plane,3*32*64);
@@ -665,7 +672,7 @@ void cifar_lve() {
 #else
 
 	  // dma in test image (or get from camera!!)
-	  vbx_flash_dma(v_inb, 0, (3*m*n)*sizeof(vbx_ubyte_t));
+	  vbx_flash_dma(v_inb, FLASH_DATA_OFFSET+ 0, (3*m*n)*sizeof(vbx_ubyte_t));
 
 	  // zero pad imaged w/ bytes
 	  for (c = 0; c < 3; c++) {
@@ -686,9 +693,11 @@ void cifar_lve() {
 		  printf("\r\n");
 	  }
 #endif
-
+	  unsigned start_time=get_time();
 	  run_network(verbose);
-
+	  if(verbose){
+		  printf("network took %d ms\r\n",cycle2ms(get_time()-start_time));
+	  }
 	  int max_cat=0;
 		  // print results (or toggle LED if person is max, and > 0)
 	  char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
