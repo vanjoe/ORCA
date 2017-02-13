@@ -6,7 +6,7 @@ C_MAIN?=main.c
 OBJDUMP_STYLE?=--disassemble-all
 ARCH?=rv32im
 LVE_EXT=xlve
-RISCV_OLEVEL?=-Os
+RISCV_OLEVEL?=-O2
 RISCV_CFLAGS?=
 
 all:
