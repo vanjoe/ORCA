@@ -217,17 +217,18 @@ begin
   valid_lve_instr <= valid_instr when major_op = CUSTOM0 else '0';
 
   pointer_increment <= unsigned(rs2_data(rs2_data'left downto rs2_data'length - pointer_increment'length));
+
+
   with dest_size select
     dest_incr <=
     SHIFT_LEFT(pointer_increment, 2) when LVE_WORD_SIZE,
     SHIFT_LEFT(pointer_increment, 1) when LVE_HALF_SIZE,
     pointer_increment                when others;
 
-  --source bust be aways word
   with src_size select
     src_incr <=
     SHIFT_LEFT(pointer_increment, 2) when LVE_WORD_SIZE,
-    --Don't enable halfe words
+    SHIFT_LEFT(pointer_increment, 1) when LVE_HALF_SIZE,
     pointer_increment                when others;
 
   --src_incr <= SHIFT_LEFT(pointer_increment, 2);
@@ -312,8 +313,6 @@ begin
   rd_en <= valid_lve_instr when external_port_enable = '0' and (read_vector_length > 1 or first_element = '1') else '0';
 
 
-  --lve_data1 <= align_input(sign_a, src_size, s_align, srca_data_read);
-  --lve_data2 <= align_input(sign_b, src_size, s_align, srcb_data_read);
   lve_data1 <= srca_data_read;
   lve_data2 <= srcb_data_read;
 

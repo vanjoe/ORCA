@@ -232,12 +232,42 @@ int test_halfword_add()
 	return errors;
 }
 
+int test_halftoword()
+{
+	init_lve();
+	int test_length=64;
+	vbx_half_t* v_input=SCRATCHPAD_BASE;
+	vbx_word_t* v_output=(vbx_word_t*)(v_input+test_length);
+	int i,errors=0;
+	for(i=0;i<test_length;i++){
+		v_input[i]=i;
+	}
+
+	the_lve.stride=2;
+	vbx_set_vl(test_length/2);
+	vbx(SVWH,VAND,v_output,0xFFFF,v_input);
+	vbx(SVWH,VMULH,v_output+1,(1<<16),v_input);
+
+	for(i=0;i<test_length;i++){
+		if(v_output[i]!=i){
+			printf("error : %d %d\r\n",i,(int)v_output[i]);
+			errors++;
+		}
+	}
+
+	printf("Half to word test %s\r\n",errors?"Failed":"Passed");
+	return errors;
+}
+
 int main()
 {
 	int errors=0;
 	errors += test_convolve();
 	errors += test_word_to_byte();
 	errors += test_halfword_add();
+	errors += test_halftoword();
+
+
 
 	printf("DONE -- errors = %d %s\r\n",errors,errors?"FAILED :(":"PASSED :)");
 
