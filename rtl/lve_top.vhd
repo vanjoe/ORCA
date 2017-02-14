@@ -54,14 +54,14 @@ architecture rtl of lve_top is
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
 
-      pause_lve_in     : in  std_logic;
-      pause_lve_out    : out  std_logic;
+      pause_lve_in  : in  std_logic;
+      pause_lve_out : out std_logic;
                                         --read source A
-      raddr0           : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      ren0             : in  std_logic;
-      scalar_value     : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-      scalar_enable    : in  std_logic;
-      data_out0        : out std_logic_vector(MEM_WIDTH-1 downto 0);
+      raddr0        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+      ren0          : in  std_logic;
+      scalar_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+      scalar_enable : in  std_logic;
+      data_out0     : out std_logic_vector(MEM_WIDTH-1 downto 0);
 
                                         --read source B
       raddr1      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
@@ -430,7 +430,7 @@ begin
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
 
-      pause_lve_in => external_port_enable,
+      pause_lve_in  => external_port_enable,
       pause_lve_out => ci_pause,
 
       raddr0        => std_logic_vector(srca_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
