@@ -15,13 +15,13 @@ entity ram_1port is
     FAMILY    : string  := "ALTERA");
 
   port (
-    clk      : in  std_logic;
-    byte_en  : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-    wr_en    : in  std_logic;
-    chip_sel : in  std_logic;
-    addr     : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-    data_in  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-    data_out : out std_logic_vector(MEM_WIDTH-1 downto 0)
+    clk        : in  std_logic;
+    byte_en_d1 : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
+    wr_en_d1   : in  std_logic;
+    chip_sel   : in  std_logic;
+    addr_d1    : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+    data_in_d1 : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+    data_out   : out std_logic_vector(MEM_WIDTH-1 downto 0)
     );
 
 end entity ram_1port;
@@ -54,16 +54,15 @@ begin
     process (clk)
     begin
       if rising_edge(clk) then
-        Q <= ram(to_integer(unsigned(addr)));
+        Q        <= ram(to_integer(unsigned(addr_d1)));
+        data_out <= Q;
         for b in 0 to MEM_WIDTH/8 -1 loop
-          if wr_en = '1' and byte_en(b) = '1' then
-            ram(to_integer(unsigned(addr)))((b+1)*8 -1 downto b*8) <= data_in(8*(b+1)-1 downto 8*b);
+          if wr_en_d1 = '1' and byte_en_d1(b) = '1' then
+            ram(to_integer(unsigned(addr_d1)))((b+1)*8 -1 downto b*8) <= data_in_d1(8*(b+1)-1 downto 8*b);
           end if;
         end loop;  -- b
       end if;
     end process;
-
-    data_out <= Q;
 
   end generate;
 
@@ -72,35 +71,31 @@ begin
     signal mask_wren0    : std_logic_vector(3 downto 0);
     signal mask_wren1    : std_logic_vector(3 downto 0);
 
-    signal hi_sel        : std_logic;
     signal hi_output_sel : std_logic;
     signal hi_sel_latch  : std_logic;
     signal low_data_out  : std_logic_vector(data_out'range);
     signal hi_data_out   : std_logic_vector(data_out'range);
     signal low_we        : std_logic;
     signal hi_we         : std_logic;
-    signal spram_data_in : std_logic_vector(data_in'range);
+    signal spram_data_in : std_logic_vector(data_in_d1'range);
 
   begin
 
 
 
-    hi_sel <= '0' when MEM_DEPTH <= 2**14 else addr(addr'left);
+    hi_sel_latch <= '0' when MEM_DEPTH <= 2**14 else addr_d1(addr_d1'left);
+    mask_wren0   <= byte_en_d1(1) & byte_en_d1(1) & byte_en_d1(0) & byte_en_d1(0);
+    mask_wren1   <= byte_en_d1(3) & byte_en_d1(3) & byte_en_d1(2) & byte_en_d1(2);
 
-
-
+    low_we        <= not hi_sel_latch and wr_en_d1;
+    hi_we         <= hi_sel_latch and wr_en_d1;
+    spram_data_in <= data_in_d1;
+    spram_address <= std_logic_vector(resize(unsigned(addr_d1), 14));
     process(clk)
     begin
       if rising_edge(clk) then
-        hi_sel_latch  <= hi_sel;
         hi_output_sel <= hi_sel_latch;
 
-        low_we        <= not hi_sel and wr_en;
-        hi_we         <= hi_sel and wr_en;
-        spram_address <= std_logic_vector(resize(unsigned(addr), 14));
-        spram_data_in <= data_in;
-        mask_wren0    <= byte_en(1) & byte_en(1) & byte_en(0) & byte_en(0);
-        mask_wren1    <= byte_en(3) & byte_en(3) & byte_en(2) & byte_en(2);
         data_out      <= low_data_out;
 
         if hi_output_sel = '1' then
@@ -235,24 +230,24 @@ architecture rtl of ram_4port is
       MEM_WIDTH : natural := 32;
       FAMILY    : string  := "ALTERA");
     port (
-      clk      : in  std_logic;
-      byte_en  : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-      wr_en    : in  std_logic;
-      chip_sel : in  std_logic;
-      addr     : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      data_in  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-      data_out : out std_logic_vector(MEM_WIDTH-1 downto 0));
+      clk        : in  std_logic;
+      byte_en_d1 : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
+      wr_en_d1   : in  std_logic;
+      chip_sel   : in  std_logic;
+      addr_d1    : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+      data_in_d1 : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+      data_out   : out std_logic_vector(MEM_WIDTH-1 downto 0));
   end component;
 
   type port_sel_t is (SLAVE_ACCESS, LVE_ACCESS);
-  signal port_sel : port_sel_t;
+  signal last_port_sel : port_sel_t;
 
-  signal actual_byte_en  : std_logic_vector(MEM_WIDTH/8-1 downto 0);
-  signal actual_wr_en    : std_logic;
-  signal actual_chip_sel : std_logic;
-  signal actual_addr     : std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-  signal actual_data_in  : std_logic_vector(MEM_WIDTH-1 downto 0);
-  signal actual_data_out : std_logic_vector(MEM_WIDTH-1 downto 0);
+  signal actual_byte_en_d1 : std_logic_vector(MEM_WIDTH/8-1 downto 0);
+  signal actual_wr_en_d1   : std_logic;
+  signal actual_chip_sel   : std_logic;
+  signal actual_addr_d1    : std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+  signal actual_data_in_d1 : std_logic_vector(MEM_WIDTH-1 downto 0);
+  signal actual_data_out   : std_logic_vector(MEM_WIDTH-1 downto 0);
 
   signal data_out0_latch : std_logic_vector(MEM_WIDTH-1 downto 0);
   signal data_out1_latch : std_logic_vector(MEM_WIDTH-1 downto 0);
@@ -271,10 +266,22 @@ architecture rtl of ram_4port is
 
   signal pause_lve_internal : std_logic;
 
-  signal ren0_0   : std_logic;
-  signal ack3_int : std_logic;
+  signal ren0_0 : std_logic;
+
+  signal ack3_int    : std_logic;
+  signal raddr0_d1   : std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+  signal raddr1_d1   : std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+  signal waddr2_d1   : std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+  signal byte_en2_d1 : std_logic_vector(MEM_WIDTH/8-1 downto 0);
+  signal wen2_d1     : std_logic;
+  signal data_in2_d1 : std_logic_vector(MEM_WIDTH-1 downto 0);
+  signal rwaddr3_d1  : std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+  signal ren3_d1     : std_logic;
+  signal byte_en3_d1 : std_logic_vector(MEM_WIDTH/8-1 downto 0);
+  signal wen3_d1     : std_logic;
+  signal data_in3_d1 : std_logic_vector(MEM_WIDTH-1 downto 0);
 begin  -- architecture rtl
-  port_sel <= SLAVE_ACCESS when (ren3 or wen3) = '1' else LVE_ACCESS;
+  last_port_sel <= SLAVE_ACCESS when (ren3_d1 or wen3_d1) = '1' else LVE_ACCESS;
 
   process(clk)
   begin
@@ -301,22 +308,34 @@ begin  -- architecture rtl
         when others =>
           cycle_count <= READ0_CYC;
       end case;
+
+      raddr0_d1   <= raddr0;
+      raddr1_d1   <= raddr1;
+      waddr2_d1   <= waddr2;
+      byte_en2_d1 <= byte_en2;
+      wen2_d1     <= wen2;
+      data_in2_d1 <= data_in2;
+      rwaddr3_d1  <= rwaddr3;
+      ren3_d1     <= ren3;
+      byte_en3_d1 <= byte_en3;
+      wen3_d1     <= wen3;
+      data_in3_d1 <= data_in3;
     end if;
   end process;
   toggles <= toggle & delay_toggle & delay2_toggle;
 
 
-  actual_byte_en <= byte_en3 when port_sel = SLAVE_ACCESS else byte_en2;
-  actual_wr_en   <= wen2     when cycle_count = WRITE_CYC else
-                  wen3 when port_sel = SLAVE_ACCESS else
-                  '0';
-  actual_addr <= waddr2 when cycle_count = WRITE_CYC else
-                 rwaddr3 when port_sel = SLAVE_ACCESS else
-                 raddr0  when cycle_count = READ0_CYC else
-                 raddr1;
+  actual_byte_en_d1 <= byte_en3_d1 when last_port_sel = SLAVE_ACCESS else byte_en2_d1;
+  actual_wr_en_d1   <= wen2_d1     when last_cycle_count = WRITE_CYC else
+                     wen3_d1 when last_port_sel = SLAVE_ACCESS else
+                     '0';
+  actual_addr_d1 <= waddr2_d1 when last_cycle_count = WRITE_CYC else
+                    rwaddr3_d1 when last_port_sel = SLAVE_ACCESS else
+                    raddr0_d1  when last_cycle_count = READ0_CYC else
+                    raddr1_d1;
 
-  actual_data_in <= data_in2 when cycle_count = WRITE_CYC else
-                    data_in3;
+  actual_data_in_d1 <= data_in2_d1 when last_cycle_count = WRITE_CYC else
+                       data_in3_d1;
 
   process(scratchpad_clk)
   begin
@@ -355,7 +374,7 @@ begin  -- architecture rtl
 
       ren0_0   <= ren0;
       ack01    <= ren0_0;
-      ack3_int <= ren3 ;
+      ack3_int <= ren3;
       ack3     <= ack3_int or wen3;
     end if;
   end process;
@@ -366,12 +385,12 @@ begin  -- architecture rtl
       MEM_WIDTH => MEM_WIDTH,
       FAMILY    => FAMILY)
     port map(
-      clk      => scratchpad_clk,
-      byte_en  => actual_byte_en,
-      wr_en    => actual_wr_en,
-      chip_sel => '1',
-      addr     => actual_addr,
-      data_in  => actual_data_in,
-      data_out => actual_data_out);
+      clk        => scratchpad_clk,
+      byte_en_d1 => actual_byte_en_d1,
+      wr_en_d1   => actual_wr_en_d1,
+      chip_sel   => '1',
+      addr_d1    => actual_addr_d1,
+      data_in_d1 => actual_data_in_d1,
+      data_out   => actual_data_out);
 
 end architecture rtl;
