@@ -6,13 +6,53 @@
 #include "sccb.h"
 
 #define FLASH_DATA_OFFSET 0
-void vbx_flash_dma(vbx_word_t *v_dst, int flash_byte_offset, const int bytes) {
+
+void vprint(void *v_raw, const int height, const int width, const int stride, const int bytes, const int hex)
+{
+  vbx_ubyte_t *vub = (vbx_ubyte_t*)v_raw;
+  vbx_byte_t *vb = (vbx_byte_t*)v_raw;
+  vbx_half_t *vh = (vbx_half_t*)v_raw;
+  vbx_word_t *vw = (vbx_word_t*)v_raw;
+
+  int i,j;
+  for (j = 0; j < height; j++) {
+    for (i = 0; i < width; i++) {
+      if (hex) {
+	if (bytes == 0) {
+	  printf("%x\t", vub[j*stride+i]);
+	} else if (bytes == 1) {
+	  printf("%x\t", vb[j*stride+i]);
+	} else if (bytes == 2) {
+	  printf("%x\t", vh[j*stride+i]);
+	} else {
+	  printf("%x\t", vw[j*stride+i]);
+	}
+      } else {
+	if (bytes == 0) {
+	  printf("%d\t", vub[j*stride+i]);
+	} else if (bytes == 1) {
+	  printf("%d\t", vb[j*stride+i]);
+	} else if (bytes == 2) {
+	  printf("%d\t", vh[j*stride+i]);
+	} else {
+	  printf("%d\t", vw[j*stride+i]);
+	}
+      }
+    }
+      printf("\r\n");
+  }
+  printf("\r\n");
+}
+
+void vbx_flash_dma(vbx_word_t *v_dst, int flash_byte_offset, const int bytes)
+{
 	flash_dma_trans(flash_byte_offset, (void*)v_dst, bytes);
 	while(!flash_dma_done());
 }
 
 
-void vbx_flash_dma_async(vbx_word_t *v_dst, int flash_byte_offset, const int bytes) {
+void vbx_flash_dma_async(vbx_word_t *v_dst, int flash_byte_offset, const int bytes)
+{
 	flash_dma_trans(flash_byte_offset, (void*)v_dst, bytes);
 }
 
@@ -55,6 +95,7 @@ void vbx_unpack_weights(vbx_word_t *v_unpacked, vbx_word_t *v_packed, const int 
 }
 
 
+#if 0
 //scales are prescaled by 1 << 32 aka need to be less than 0.5/-0.5 else prescale by less and scale v_out
 void dense_lve(vbx_word_t *v_out, vbx_word_t *v_in, dense_layer_t *layer)
 {
@@ -99,9 +140,10 @@ void dense_lve(vbx_word_t *v_out, vbx_word_t *v_in, dense_layer_t *layer)
 	vbx_relu(v_out, v_relu);
     }
 }
+#endif
 
 
-void vbx_convolve_ci(vbx_word_t *v_out, vbx_ubyte_t *v_in, vbx_word_t *v_map, const int m, const int n, const short weights)
+void vbx_convolve_ci(vbx_half_t *v_out, vbx_ubyte_t *v_in, vbx_half_t *v_conv, const int m, const int n, const short weights)
 {
     int y, x;
 
@@ -109,16 +151,16 @@ void vbx_convolve_ci(vbx_word_t *v_out, vbx_ubyte_t *v_in, vbx_word_t *v_map, co
     vbx(SVW, VCUSTOM1, 0, weights, 0);
 
     vbx_set_vl(m+2);
-    the_lve.stride = m+2+2;
+    the_lve.stride = n+4;
 
-    for(x=0; x<n; x++){
-	vbx(VVWB, VCUSTOM2, v_map + x, (vbx_byte_t*)v_in + x, (vbx_byte_t*)v_in + x + 4);
+    for(x = 0; x < n; x +=2) {
+	vbx(VVHB, VCUSTOM2, v_conv + x, (vbx_byte_t*)v_in + x, (vbx_byte_t*)v_in + x + 4);
     }
 
-    vbx_set_vl(n);
+    vbx_set_vl(n/2);
     the_lve.stride = 1;
-    for(y=0; y<m; y++){
-      vbx(VVW, VADD, v_out+ y*n, v_out + y*n, v_map + y*(n+2+2));
+    for (y = 0; y < m; y++) {
+      vbx(VVW, VCUSTOM3, v_out + y*n, v_out + y*n, v_conv + y*(n+4));
     }
 }
 
@@ -160,6 +202,25 @@ void vbx_zeropad_input(vbx_ubyte_t *v_out, vbx_ubyte_t *v_in, const int m, const
     }
 }
 
+// called once every 16 channels (touches data 3x)
+void vbx_accumulate_columns(vbx_word_t *v_map, vbx_half_t *v_maph, vbx_word_t *v_tmp, const int m, const int n) 
+{
+  // add each packed column to output
+  the_lve.stride = 2;
+  vbx_set_vl(n/2*m);
+  vbx(SVWH, VMUL, v_tmp, (1<<16), v_maph);
+  vbx(SVW, VMULH, v_tmp, (1<<16), v_tmp);
+  vbx(SVWH, VMULH, v_tmp + 1, (1<<16), v_maph);
+
+  the_lve.stride = 1;
+  vbx_set_vl(n*m);
+  vbx(VVW, VADD, v_map, v_map, v_tmp);
+
+  // zero v_maph for next round of accum
+  vbx_set_vl(n/2*m);
+  vbx(SVW, VAND, v_maph, 0, v_maph);
+}
+
 
 // takes in padded inputs
 void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_layer_t *layer, const int debug)
@@ -171,6 +232,7 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 
     // assumes 128K scratch
     vbx_word_t *v_map = (vbx_word_t*)(SCRATCHPAD_BASE + 110*1024);
+    vbx_half_t *v_maph = (vbx_half_t*)(SCRATCHPAD_BASE + 114*1024);
     vbx_word_t *v_tmp = (vbx_word_t*)(SCRATCHPAD_BASE + 116*1024);
     vbx_word_t *v_dma0 = (vbx_word_t*)(SCRATCHPAD_BASE + 124*1024);
     vbx_word_t *v_dma1 = (vbx_word_t*)(SCRATCHPAD_BASE + 126*1024);
@@ -185,17 +247,26 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 
     for (k = 0; k < layer->kernels; k++) {
 	v_weights = (vbx_uhalf_t*)(v_dma[buf] + 2);
+
 	if (k < layer->kernels-1) {
 	  vbx_flash_dma_async(v_dma[!buf], layer->weights + (k+1)*dma_size, dma_size+dma_pad);
 	}
-
 	// set kernel bias
 	vbx_set_vl(n*m);
 	vbx(SVW, VAND, v_map, 0, v_map);
 	vbx(SVW, VOR, v_map, v_dma[buf][0], v_map);
 
+	vbx_set_vl(n/2*m);
+	vbx(SVW, VAND, v_maph, 0, v_maph);
+
 	for (c = 0; c < layer->channels; c++) {
-	    vbx_convolve_ci(v_map, v_inb + c*(m+2)*(n+4), v_tmp, m, n, v_weights[c]);
+	    vbx_convolve_ci(v_maph, v_inb + c*(m+2)*(n+4), v_tmp, m, n, v_weights[c]);
+	    if ((c+1)%16 == 0) {
+	      vbx_accumulate_columns(v_map, v_maph, v_tmp, m, n);
+	    }
+	}
+	if (layer->channels % 16) {
+	    vbx_accumulate_columns(v_map, v_maph, v_tmp, m , n);
 	}
 
 	if (layer->maxpool) {
@@ -229,6 +300,7 @@ void run_network(const int verbose)
 {
   int i, j, m, n;
   int errors, count;
+  int start_time;
 
   vbx_ubyte_t* v_outb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
   vbx_ubyte_t* v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
@@ -248,17 +320,25 @@ void run_network(const int verbose)
   conv.zeropad_output = 1;
   conv.maxpool = 0;
 
-  if (verbose) printf("c0\r\n");
+  if (verbose) {
+    printf("c0\r\n");
+    start_time = get_time();
+  }
+
   convolution_ci_lve(v_outb, v_padb, &(conv), 0);
   m = 32, n = 32;
 
-#if 0
+  if (verbose) {
+    printf("%d cycles\r\n", get_time()-start_time);
+  }
+
+#if 1
   errors = 0;
   count = 0;
   for (j = 0; j < conv.kernels; j++) {
-    vbx_flash_dma((vbx_word_t*)(v_padb), 3968+(j*m*n), (m*n)*sizeof(vbx_ubyte_t));
+    vbx_flash_dma((vbx_word_t*)(v_padb), FLASH_DATA_OFFSET+3968+(j*m*n), (m*n)*sizeof(vbx_ubyte_t));
     vbx_zeropad_input(v_padb+m*n, v_padb, m, n);
-#if 1
+#if 0
     vbx_set_vl((m+2)*(n+4)/4);
     vbx(SVW, VOR, v_outb+(n+4)*((m+2)*j), 0, v_padb+m*n);
 #else
@@ -282,6 +362,8 @@ void run_network(const int verbose)
   }
 #endif
 
+#if 0
+
   v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
   v_outb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
 
@@ -292,17 +374,25 @@ void run_network(const int verbose)
   conv.weights = FLASH_DATA_OFFSET + 69504;
   conv.maxpool = 1;
 
-  if (verbose) printf("c1\r\n");
+  if (verbose) {
+    printf("c1\r\n");
+    start_time = get_time();
+  }
+
   convolution_ci_lve(v_outb, v_padb, &(conv), 0);
   m = 16, n = 16;
 
-#if 0
+  if (verbose) {
+    printf("%d cycles\r\n", get_time()-start_time);
+  }
+
+#if 1
   errors = 0;
   count = 0;
   for (j = 0; j < conv.kernels; j++) {
     vbx_flash_dma((vbx_word_t*)(v_padb), 78208+(j*m*n), (m*n)*sizeof(vbx_ubyte_t));
     vbx_zeropad_input(v_padb+m*n, v_padb, m, n);
-#if 1
+#if 0
     vbx_set_vl((m+2)*(n+4)/4);
     vbx(SVW, VOR, v_outb+(n+4)*((m+2)*j), 0, v_padb+m*n);
 #else
@@ -336,9 +426,17 @@ void run_network(const int verbose)
   conv.weights = FLASH_DATA_OFFSET + 94592;
   conv.maxpool = 0;
 
-  if (verbose) printf("c2\r\n");
+  if (verbose) {
+    printf("c2\r\n");
+    start_time = get_time();
+  }
+
   convolution_ci_lve(v_outb, v_padb, &(conv), 0);
   m = 16, n = 16;
+
+  if (verbose) {
+    printf("%d cycles\r\n", get_time()-start_time);
+  }
 
 #if 0
   errors = 0;
@@ -380,9 +478,17 @@ void run_network(const int verbose)
   conv.weights = FLASH_DATA_OFFSET + 144768;
   conv.maxpool = 1;
 
-  if (verbose) printf("c3\r\n");
+  if (verbose) {
+    printf("c3\r\n");
+    start_time = get_time();
+  }
+
   convolution_ci_lve(v_outb, v_padb, &(conv), 0);
   m = 8, n = 8;
+
+  if (verbose) {
+    printf("%d cycles\r\n", get_time()-start_time);
+  }
 
 #if 0
   errors = 0;
@@ -424,9 +530,17 @@ void run_network(const int verbose)
   conv.weights = FLASH_DATA_OFFSET + 186752;
   conv.maxpool = 0;
 
-  if (verbose) printf("c4\r\n");
+  if (verbose) {
+    printf("c4\r\n");
+    start_time = get_time();
+  }
+
   convolution_ci_lve(v_outb, v_padb, &(conv), 0);
   m = 8, n = 8;
+
+  if (verbose) {
+    printf("%d cycles\r\n", get_time()-start_time);
+  }
 
 #if 0
   errors = 0;
@@ -469,9 +583,17 @@ void run_network(const int verbose)
   conv.maxpool = 1;
   conv.zeropad_output = 0;
 
-  if (verbose) printf("c5\r\n");
+  if (verbose) {
+    printf("c5\r\n");
+    start_time = get_time();
+  }
+
   convolution_ci_lve(v_outb, v_padb, &(conv), 0);
   m = 4, n = 4;
+
+  if (verbose) {
+    printf("%d cycles\r\n", get_time()-start_time);
+  }
 
   vbx_word_t* v_in = (vbx_word_t*)(SCRATCHPAD_BASE+80*1024);
   vbx_word_t* v_out = (vbx_word_t*)(SCRATCHPAD_BASE+0*1024);
@@ -515,8 +637,16 @@ void run_network(const int verbose)
   dense.scales = FLASH_DATA_OFFSET +552320;
   dense.weights = FLASH_DATA_OFFSET + 420224;
 
-  if (verbose) printf("d0\r\n");
+  if (verbose) {
+    printf("d0\r\n");
+    start_time = get_time();
+  }
+
   dense_lve(v_out, v_in, &(dense));
+
+  if (verbose) {
+    printf("%d cycles\r\n", get_time()-start_time);
+  }
 
 #if 0
   errors = 0;
@@ -555,8 +685,16 @@ void run_network(const int verbose)
   dense.scales = FLASH_DATA_OFFSET + 563584;
   dense.weights = FLASH_DATA_OFFSET + 554368;
 
-  if (verbose) printf("d1\r\n");
+  if (verbose) {
+    printf("d1\r\n");
+    start_time = get_time();
+  }
+
   dense_lve(v_out, v_in, &(dense));
+
+  if (verbose) {
+    printf("%d cycles\r\n", get_time()-start_time);
+  }
 
 #if 0
   errors = 0;
@@ -595,10 +733,20 @@ void run_network(const int verbose)
   dense.scales = FLASH_DATA_OFFSET + 565992;
   dense.weights = FLASH_DATA_OFFSET + 565632;
 
-  if (verbose) printf("d2\r\n");
+  if (verbose) {
+    printf("d2\r\n");
+    start_time = get_time();
+  }
+
   dense_lve(v_out, v_in, &(dense));
+
+  if (verbose) {
+    printf("%d cycles\r\n", get_time()-start_time);
+  }
+#endif
 }
-#define USE_CAM_IMG 1
+
+#define USE_CAM_IMG 0
 #if USE_CAM_IMG
 void cam_extract_and_pad(vbx_ubyte_t* channel,vbx_word_t* rgba_in,int byte_sel,int rows,int cols,int pitch)
 {
@@ -665,8 +813,7 @@ void cifar_lve() {
 	 print_base64((char*)rgb_plane,3*32*64);
 	 printf("\r\n");
 	 for (c = 0; c < 3; c++) {
-
-		 cam_extract_and_pad(v_padb + c*(m+2)*(n+4), (vbx_word_t*)v_inb,c, m, n, 64);
+	     cam_extract_and_pad(v_padb + c*(m+2)*(n+4), (vbx_word_t*)v_inb,c, m, n, 64);
 	 }
 
 #else
@@ -680,19 +827,6 @@ void cifar_lve() {
 	  }
 #endif
 
-#if 0
-	  /* Print out maps*/
-	  for (c = 0; c < 3; c++) {
-		  int i,j;
-		  for(i=0;i<n+2;i++){
-			  for(j=0;j<m+4;j++){
-				  printf("%3d ",(v_padb + c*(m+2)*(n+4))[i*(n+4) +j]);
-			  }
-			  printf("\r\n");
-		  }
-		  printf("\r\n");
-	  }
-#endif
 	  unsigned start_time=get_time();
 	  run_network(verbose);
 	  if(verbose){
@@ -721,6 +855,5 @@ void cifar_lve() {
 		  SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
 	  }
 
-  }while(1);
-
+  }while(USE_CAM_IMG);
 }
