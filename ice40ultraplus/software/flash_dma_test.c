@@ -38,6 +38,7 @@ int do_lve(void* base){
 
 #define DO_SPRAM_TEST 1
 #define TEST_RUNS     255
+#define MAX_XFER_SIZE (64*1024)
 
 extern const int      golden_size;
 extern const uint16_t golden_BSD_checksums[];
@@ -87,25 +88,57 @@ int main()
 
 	int checksum_errors=0;
 	int lve_errors=0;
-	int run;
+	uint32_t run;
 	for(run = 0; run < TEST_RUNS; run++){
-		printf("Run %d\r\n", run);
-		int xfer_size=64*1024;
+		printf("Run %u\r\n", (unsigned int)run);
+
+		int xfer_size = MAX_XFER_SIZE;
 		int chunk = 0;
+
 		for(flash_address = 0; flash_address < golden_size; flash_address += xfer_size){
 			if(flash_address + xfer_size > golden_size){
 				xfer_size = golden_size - flash_address;
 			}
 			for(i=0;i<xfer_size;i++){
-				sp_base[i]=0xFF;
+				sp_base[i]=0xAA;
+			}
+			{
+				printf("First 16 bytes cleared:");
+				int byte = 0;
+				for(byte = 0; byte < 16; byte++){
+					if(!(byte & 0x1)){
+						printf(" ");
+					}
+					printf("%02X", sp_base[byte]);
+				}
+				printf("\r\n");
 			}
 			printf("Chunk %d: Transferring %d bytes starting at %d\r\n", chunk, xfer_size, flash_address);
+
+			uint32_t internal_xfer_size = 1 << (((run+1) & 0xF)+1);
+			if(internal_xfer_size < 4){
+				internal_xfer_size = 4;
+			}
+			if(internal_xfer_size > xfer_size){
+				internal_xfer_size = xfer_size;
+			}
+			printf("Using %u byte sub-transfers\r\n", (unsigned int)internal_xfer_size);
 			
 			int start_time = get_time();
-			flash_dma_trans(flash_address, (void*)sp_base, xfer_size);
-			int local_lve_errors = do_lve(SCRATCHPAD_BASE + xfer_size);
+			uint32_t xfer_start = 0;
+			for(xfer_start = 0; xfer_start < xfer_size; xfer_start += internal_xfer_size){
+				if(xfer_start + internal_xfer_size > xfer_size){
+					internal_xfer_size = xfer_size - xfer_start;
+					internal_xfer_size += 4 - (internal_xfer_size & 0x3);
+				}
+				while(!flash_dma_done()){
+				}
+				flash_dma_trans(flash_address+xfer_start, (void *)(sp_base+xfer_start), internal_xfer_size);
+			}
+			int local_lve_errors = do_lve(SCRATCHPAD_BASE + MAX_XFER_SIZE);
 			//wait for transfer done
-			while(!flash_dma_done());
+			while(!flash_dma_done()){
+			}
 			int end_time = get_time();
 
 			//since the LVE does some printing that can take longer than the
