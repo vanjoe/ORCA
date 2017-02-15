@@ -5,3 +5,4 @@ test.dump
 test.bin
 *.temp
 sys_clk.h
+golden.bin.*

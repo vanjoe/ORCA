@@ -40,6 +40,15 @@ sys_clk.h::
 	@diff -q $(SYS_CLK_TEMP) $@; if [ $$? != 0 ]; then cp $(SYS_CLK_TEMP) $@; echo "New key file $@ created.  Contents:"; cat $@; fi
 	@rm -f $(SYS_CLK_TEMP)
 
+golden.c: ../golden.bin
+	rm -f $@
+	echo "#include <stdint.h>" > $@
+	echo "const int      golden_size = `du -b ../golden.bin | sed 's/\([0-9]*\).*/\1/g'`;" >> $@
+	echo "const uint16_t golden_BSD_checksums[] = {" >> $@
+	split -b 65536 ../golden.bin golden.bin.
+	for chunk in $$(ls golden.bin.*); do sum $$chunk | sed 's/[^0-9].*/,/g' >> $@; done
+	rm -f golden.bin.*
+	echo "};" >> $@
 
 $(C_OBJ_FILES) $(S_OBJ_FILES) : | obj/
 obj/:
@@ -70,6 +79,6 @@ endif
 all: $(TARGET).$(FORMAT)
 
 clean:
-	rm -rf obj test.elf test.dump test.bin test.hex test.mif test.mem sys_clk.h
+	rm -rf obj test.elf test.dump test.bin test.hex test.mif test.mem sys_clk.h golden.bin.*
 
 -include $(wildcard obj/*.d)
