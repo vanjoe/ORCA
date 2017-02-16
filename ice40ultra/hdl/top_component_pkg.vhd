@@ -200,15 +200,12 @@ package top_component_pkg is
   component wb_splitter is
 
     generic (
-      master0_address : address_array := (0, 0);
-      master1_address : address_array := (0, 0);
-      master2_address : address_array := (0, 0);
-      master3_address : address_array := (0, 0);
-      master4_address : address_array := (0, 0);
-      master5_address : address_array := (0, 0);
-      master6_address : address_array := (0, 0);
-      master7_address : address_array := (0, 0);
-      DATA_WIDTH      : natural       := 32
+      SUB_ADDRESS_BITS : positive range 1 to 29 := 16;
+      NUM_MASTERS      : positive range 2 to 8  := 2;
+
+      JUST_OR_ACKS : boolean := false;
+
+      DATA_WIDTH : natural := 32
       );
     port(
 

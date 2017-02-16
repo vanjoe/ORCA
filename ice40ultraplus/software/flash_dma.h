@@ -2,7 +2,7 @@
 #define FLASH_DMA_H
 
 
-#define FLASH_DMA_BASE ((volatile int*) 0x00010000)
+#define FLASH_DMA_BASE ((volatile int*) 0x02000000)
 #define FLASH_DMA_RADDR (0x0 >>2)
 #define FLASH_DMA_WADDR (0x4 >>2)
 #define FLASH_DMA_LEN   (0x8 >>2)

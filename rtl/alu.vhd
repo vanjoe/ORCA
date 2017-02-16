@@ -669,6 +669,10 @@ architecture rtl of operand_creation is
   alias func3 : std_logic_vector(2 downto 0) is instruction(14 downto 12);
   alias func7 : std_logic_vector(6 downto 0) is instruction(31 downto 25);
 
+  attribute syn_keep        : boolean;
+  signal add                : signed(REGISTER_SIZE downto 0);
+  attribute syn_keep of add : signal is true;
+
   constant OP_IMM_IMMEDIATE_SIZE : integer := 12;
 
 begin  -- architecture rtl
@@ -705,7 +709,8 @@ begin  -- architecture rtl
     instruction(14 downto 12) = "000"                           when "00",
     instruction(14 downto 12) = "000" and instruction(30) = '0' when "01",
     false                                                       when others;
-  sub       <= op1+op2 when is_add else op1 - op2;
+  add       <= op2 + op1;
+  sub       <= add when is_add else op1 - op2;
   sub_valid <= source_valid;
 
 

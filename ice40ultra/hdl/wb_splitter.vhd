@@ -15,19 +15,14 @@ use work.top_component_pkg.all;
 entity wb_splitter is
 
   generic (
-    master0_address : address_array := (0, 0);
-    master1_address : address_array := (0, 0);
-    master2_address : address_array := (0, 0);
-    master3_address : address_array := (0, 0);
-    master4_address : address_array := (0, 0);
-    master5_address : address_array := (0, 0);
-    master6_address : address_array := (0, 0);
-    master7_address : address_array := (0, 0);
+    SUB_ADDRESS_BITS : positive range 1 to 29 := 16;
+    NUM_MASTERS      : positive range 2 to 8  := 2;
+
+    JUST_OR_ACKS : boolean := false;
 
     DATA_WIDTH : natural := 32
     );
   port(
-
     CLK_I : in std_logic;
     RST_I : in std_logic;
 
@@ -166,8 +161,6 @@ entity wb_splitter is
     master7_ACK_I   : in  std_logic                               := '0';
     master7_ERR_I   : in  std_logic                               := '0';
     master7_RTY_I   : in  std_logic                               := '0');
-
-
 end entity wb_splitter;
 
 
@@ -183,98 +176,133 @@ architecture rtl of wb_splitter is
   signal master6_stb : std_logic;
   signal master7_stb : std_logic;
 
-  type choice_t is (M0, M1, M2, M3, M4, M5, M6, M7);
-  signal choice      : choice_t;
-  signal last_choice : choice_t;
-  signal adr_i       : signed(31 downto 0);
-begin  -- architecture rt
-  adr_i <= signed(slave_ADR_I);
+  signal master_stall_i : std_logic_vector(7 downto 0);
+  signal master_ack_i   : std_logic_vector(7 downto 0);
+  type data_array is array (natural range <>) of std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal master_dat_i   : data_array(7 downto 0);
 
-  master0_gen : if master0_address(1) /= 0 generate
-    constant adr  : integer                            := master0_address(0);
-    constant size : integer                            := master0_address(1);
-    constant mask : signed(REGISTER_SIZE-1 downto 0) := not to_signed(size-1, REGISTER_SIZE);
-  begin
-    master0_stb <= slave_STB_I when (adr_i and mask) = to_signed(adr, REGISTER_SIZE) else '0';
+  signal choice      : unsigned(2 downto 0);
+  signal last_choice : unsigned(2 downto 0);
+begin  -- architecture rt
+
+  master0_gen : if NUM_MASTERS > 0 generate
+    master0_stb <=
+      slave_STB_I when slave_ADR_I(SUB_ADDRESS_BITS+2 downto SUB_ADDRESS_BITS) = std_logic_vector(to_unsigned(0, 3))
+      else '0';
+    master_stall_i(0) <= master0_STALL_I;
+    master_ack_i(0)   <= master0_ACK_I;
+    master_dat_i(0)   <= master0_DAT_I;
   end generate master0_gen;
-  nmaster0_gen : if master0_address(1) = 0 generate
-    master0_stb <= '0';
+  nmaster0_gen : if NUM_MASTERS <= 0 generate
+    master0_stb       <= '0';
+    master_stall_i(0) <= '0';
+    master_ack_i(0)   <= '0';
+    master_dat_i(0)   <= (others => '0');
   end generate nmaster0_gen;
 
-  master1_gen : if master1_address(1) /= 0 generate
-    constant adr  : integer                            := master1_address(0);
-    constant size : integer                            := master1_address(1);
-    constant mask : signed(REGISTER_SIZE-1 downto 0) := not to_signed(size-1, REGISTER_SIZE);
-  begin
-    master1_stb <= slave_STB_I when (adr_i and mask) = to_signed(adr, REGISTER_SIZE) else '0';
+  master1_gen : if NUM_MASTERS > 1 generate
+    master1_stb <=
+      slave_STB_I when slave_ADR_I(SUB_ADDRESS_BITS+2 downto SUB_ADDRESS_BITS) = std_logic_vector(to_unsigned(1, 3))
+      else '0';
+    master_stall_i(1) <= master1_STALL_I;
+    master_ack_i(1)   <= master1_ACK_I;
+    master_dat_i(1)   <= master1_DAT_I;
   end generate master1_gen;
-  nmaster1_gen : if master1_address(1) = 0 generate
-    master1_stb <= '0';
+  nmaster1_gen : if NUM_MASTERS <= 1 generate
+    master1_stb       <= '0';
+    master_stall_i(1) <= '0';
+    master_ack_i(1)   <= '0';
+    master_dat_i(1)   <= (others => '0');
   end generate nmaster1_gen;
 
-  master2_gen : if master2_address(1) /= 0 generate
-    constant adr  : integer                            := master2_address(0);
-    constant size : integer                            := master2_address(1);
-    constant mask : signed(REGISTER_SIZE-1 downto 0) := not to_signed(size-1, REGISTER_SIZE);
-  begin
-    master2_stb <= slave_STB_I when (adr_i and mask) = to_signed(adr, REGISTER_SIZE) else '0';
+  master2_gen : if NUM_MASTERS > 2 generate
+    master2_stb <=
+      slave_STB_I when slave_ADR_I(SUB_ADDRESS_BITS+2 downto SUB_ADDRESS_BITS) = std_logic_vector(to_unsigned(2, 3))
+      else '0';
+    master_stall_i(2) <= master2_STALL_I;
+    master_ack_i(2)   <= master2_ACK_I;
+    master_dat_i(2)   <= master2_DAT_I;
   end generate master2_gen;
-  nmaster2_gen : if master2_address(1) = 0 generate
-    master2_stb <= '0';
+  nmaster2_gen : if NUM_MASTERS <= 2 generate
+    master2_stb       <= '0';
+    master_stall_i(2) <= '0';
+    master_ack_i(2)   <= '0';
+    master_dat_i(2)   <= (others => '0');
   end generate nmaster2_gen;
 
-  master3_gen : if master3_address(1) /= 0 generate
-    constant adr  : integer                            := master3_address(0);
-    constant size : integer                            := master3_address(1);
-    constant mask : signed(REGISTER_SIZE-1 downto 0) := not to_signed(size-1, REGISTER_SIZE);
-  begin
-    master3_stb <= slave_STB_I when (adr_i and mask) = to_signed(adr, REGISTER_SIZE) else '0';
+  master3_gen : if NUM_MASTERS > 3 generate
+    master3_stb <=
+      slave_STB_I when slave_ADR_I(SUB_ADDRESS_BITS+2 downto SUB_ADDRESS_BITS) = std_logic_vector(to_unsigned(3, 3))
+      else '0';
+    master_stall_i(3) <= master3_STALL_I;
+    master_ack_i(3)   <= master3_ACK_I;
+    master_dat_i(3)   <= master3_DAT_I;
   end generate master3_gen;
-  nmaster3_gen : if master3_address(1) = 0 generate
-    master3_stb <= '0';
+  nmaster3_gen : if NUM_MASTERS <= 3 generate
+    master3_stb       <= '0';
+    master_stall_i(3) <= '0';
+    master_ack_i(3)   <= '0';
+    master_dat_i(3)   <= (others => '0');
   end generate nmaster3_gen;
-  master4_gen : if master4_address(1) /= 0 generate
-    constant adr  : integer                            := master4_address(0);
-    constant size : integer                            := master4_address(1);
-    constant mask : signed(REGISTER_SIZE-1 downto 0) := not to_signed(size-1, REGISTER_SIZE);
-  begin
-    master4_stb <= slave_STB_I when (adr_i and mask) = to_signed(adr, REGISTER_SIZE) else '0';
+
+  master4_gen : if NUM_MASTERS > 4 generate
+    master4_stb <=
+      slave_STB_I when slave_ADR_I(SUB_ADDRESS_BITS+2 downto SUB_ADDRESS_BITS) = std_logic_vector(to_unsigned(4, 3))
+      else '0';
+    master_stall_i(4) <= master4_STALL_I;
+    master_ack_i(4)   <= master4_ACK_I;
+    master_dat_i(4)   <= master4_DAT_I;
   end generate master4_gen;
-  nmaster4_gen : if master4_address(1) = 0 generate
-    master4_stb <= '0';
+  nmaster4_gen : if NUM_MASTERS <= 4 generate
+    master4_stb       <= '0';
+    master_stall_i(4) <= '0';
+    master_ack_i(4)   <= '0';
+    master_dat_i(4)   <= (others => '0');
   end generate nmaster4_gen;
 
-  master5_gen : if master5_address(1) /= 0 generate
-    constant adr  : integer                            := master5_address(0);
-    constant size : integer                            := master5_address(1);
-    constant mask : signed(REGISTER_SIZE-1 downto 0) := not to_signed(size-1, REGISTER_SIZE);
-  begin
-    master5_stb <= slave_STB_I when (adr_i and mask) = to_signed(adr, REGISTER_SIZE) else '0';
+  master5_gen : if NUM_MASTERS > 5 generate
+    master5_stb <=
+      slave_STB_I when slave_ADR_I(SUB_ADDRESS_BITS+2 downto SUB_ADDRESS_BITS) = std_logic_vector(to_unsigned(5, 3))
+      else '0';
+    master_stall_i(5) <= master5_STALL_I;
+    master_ack_i(5)   <= master5_ACK_I;
+    master_dat_i(5)   <= master5_DAT_I;
   end generate master5_gen;
-  nmaster5_gen : if master5_address(1) = 0 generate
-    master5_stb <= '0';
+  nmaster5_gen : if NUM_MASTERS <= 5 generate
+    master5_stb       <= '0';
+    master_stall_i(5) <= '0';
+    master_ack_i(5)   <= '0';
+    master_dat_i(5)   <= (others => '0');
   end generate nmaster5_gen;
 
-  master6_gen : if master6_address(1) /= 0 generate
-    constant adr  : integer                            := master6_address(0);
-    constant size : integer                            := master6_address(1);
-    constant mask : signed(REGISTER_SIZE-1 downto 0) := not to_signed(size-1, REGISTER_SIZE);
-  begin
-    master6_stb <= slave_STB_I when (adr_i and mask) = to_signed(adr, REGISTER_SIZE) else '0';
+  master6_gen : if NUM_MASTERS > 6 generate
+    master6_stb <=
+      slave_STB_I when slave_ADR_I(SUB_ADDRESS_BITS+2 downto SUB_ADDRESS_BITS) = std_logic_vector(to_unsigned(6, 3))
+      else '0';
+    master_stall_i(6) <= master6_STALL_I;
+    master_ack_i(6)   <= master6_ACK_I;
+    master_dat_i(6)   <= master6_DAT_I;
   end generate master6_gen;
-  nmaster6_gen : if master6_address(1) = 0 generate
-    master6_stb <= '0';
+  nmaster6_gen : if NUM_MASTERS <= 6 generate
+    master6_stb       <= '0';
+    master_stall_i(6) <= '0';
+    master_ack_i(6)   <= '0';
+    master_dat_i(6)   <= (others => '0');
   end generate nmaster6_gen;
 
-  master7_gen : if master7_address(1) /= 0 generate
-    constant adr  : integer                            := master7_address(0);
-    constant size : integer                            := master7_address(1);
-    constant mask : signed(REGISTER_SIZE-1 downto 0) := not to_signed(size-1, REGISTER_SIZE);
-  begin
-    master7_stb <= slave_STB_I when (adr_i and mask) = to_signed(adr, REGISTER_SIZE) else '0';
+  master7_gen : if NUM_MASTERS > 7 generate
+    master7_stb <=
+      slave_STB_I when slave_ADR_I(SUB_ADDRESS_BITS+2 downto SUB_ADDRESS_BITS) = std_logic_vector(to_unsigned(7, 3))
+      else '0';
+    master_stall_i(7) <= master7_STALL_I;
+    master_ack_i(7)   <= master7_ACK_I;
+    master_dat_i(7)   <= master7_DAT_I;
   end generate master7_gen;
-  nmaster7_gen : if master7_address(1) = 0 generate
-    master7_stb <= '0';
+  nmaster7_gen : if NUM_MASTERS <= 7 generate
+    master7_stb       <= '0';
+    master_stall_i(7) <= '0';
+    master_ack_i(7)   <= '0';
+    master_dat_i(7)   <= (others => '0');
   end generate nmaster7_gen;
 
   -----------------------------------------------------------------------------
@@ -368,14 +396,14 @@ begin  -- architecture rt
   -------------------------------------------------------------------------------
   -- The output signals are multiplexed below
   -------------------------------------------------------------------------------
-  choice <= M0 when master0_stb = '1' else
-            M1 when master1_stb = '1' else
-            M2 when master2_stb = '1' else
-            M3 when master3_stb = '1' else
-            M4 when master4_stb = '1' else
-            M5 when master5_stb = '1' else
-            M6 when master6_stb = '1' else
-            M7;
+  choice <= to_unsigned(0, choice'length) when master0_stb = '1' else
+            to_unsigned(1, choice'length) when master1_stb = '1' else
+            to_unsigned(2, choice'length) when master2_stb = '1' else
+            to_unsigned(3, choice'length) when master3_stb = '1' else
+            to_unsigned(4, choice'length) when master4_stb = '1' else
+            to_unsigned(5, choice'length) when master5_stb = '1' else
+            to_unsigned(6, choice'length) when master6_stb = '1' else
+            to_unsigned(7, choice'length);
 
   process(clk_i)
   begin
@@ -383,44 +411,28 @@ begin  -- architecture rt
       if slave_CYC_I = '1' then
         last_choice <= choice;
       end if;
-
     end if;
   end process;
 
 
-  with choice select
-    slave_stall_O <=
-    master0_STALL_I when M0,
-    master1_STALL_I when M1,
-    master2_STALL_I when M2,
-    master3_STALL_I when M3,
-    master4_STALL_I when M4,
-    master5_STALL_I when M5,
-    master6_STALL_I when M6,
-    master7_STALL_I when M7;
+  slave_stall_O <= master_stall_i(to_integer(choice));
 
-  with last_choice select
+  select_ack : if (not JUST_OR_ACKS) generate
+    slave_ack_O <= master_ack_i(to_integer(last_choice));
+  end generate select_ack;
+  or_acks : if JUST_OR_ACKS generate
     slave_ack_O <=
-    master0_ACK_I when M0,
-    master1_ACK_I when M1,
-    master2_ACK_I when M2,
-    master3_ACK_I when M3,
-    master4_ACK_I when M4,
-    master5_ACK_I when M5,
-    master6_ACK_I when M6,
-    master7_ACK_I when M7;
+      master0_ACK_I or
+      master1_ACK_I or
+      master2_ACK_I or
+      master3_ACK_I or
+      master4_ACK_I or
+      master5_ACK_I or
+      master6_ACK_I or
+      master7_ACK_I;
+  end generate or_acks;
 
-
-  with last_choice select
-    slave_DAT_O <=
-    master0_DAT_I when M0,
-    master1_DAT_I when M1,
-    master2_DAT_I when M2,
-    master3_DAT_I when M3,
-    master4_DAT_I when M4,
-    master5_DAT_I when M5,
-    master6_DAT_I when M6,
-    master7_DAT_I when M7;
+  slave_dat_O <= master_dat_i(to_integer(last_choice));
 
   slave_ERR_O <= '0';
   slave_RTY_O <= '0';
