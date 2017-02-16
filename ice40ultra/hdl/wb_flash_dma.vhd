@@ -186,7 +186,7 @@ begin  -- architecture rtl
         when IDLE =>
           --wait for signal to start next transfer
           slave_select <= '1';
-          word_count       <= "00";
+          word_count   <= "00";
           if start_xfer = '1' then
             xferlen_count    <= unsigned(length_register(length_register'left downto 2));
             waddress_counter <= unsigned(waddress_register);
@@ -233,7 +233,12 @@ begin  -- architecture rtl
               --every 4 bytes, write via master
               if word_count = "00" then
                 next_state <= WRITE_MASTER_0;
+                --dont start another read on next xfer
+                if xferlen_count = 1 then
+                  spi_cyc <= '0';
+                end if;
               end if;
+
             else
               first_byte <= '0';
             end if;
@@ -256,6 +261,7 @@ begin  -- architecture rtl
 
       if rst_i = '1' then
         cur_state     <= RESET;
+        xferlen_count <= (others => '0');
         data_register <= (others => '0');
       end if;
     end if;
