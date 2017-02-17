@@ -1,27 +1,28 @@
 #include "neural.h"
+#define FLASH_OFFSET 0
 
 #if 0 // golden
 layer_t cifar[] = {
-	{.conv={CONV, RELU, 0, 32, 32, 3, 64, 0, 3072, 1, 1}},
-	{.conv={CONV, RELU, 0, 32, 32, 64, 64, 1, 69504, 1, 1}},
-	{.conv={CONV, RELU, 0, 16, 16, 64, 128, 0, 94592, 1, 1}},
-	{.conv={CONV, RELU, 0, 16, 16, 128, 128, 1, 144768, 1, 1}},
-	{.conv={CONV, RELU, 0, 8, 8, 128, 256, 0, 186752, 1, 1}},
-	{.conv={CONV, RELU, 0, 8, 8, 256, 256, 1, 270720, 1, 0}},
-	{.dense={DENSE, RELU, 0, 4096, 256, 420224, 551296, 1, 552320}},
-	{.dense={DENSE, RELU, 0, 256, 256, 554368, 562560, 1, 563584}},
-	{.dense={DENSE, LINEAR, 1, 256, 10, 565632, 565952, 1, 565992}},
+	{.conv={CONV, RELU, 0, 32, 32, 3, 64, 0, FLASH_OFFSET+3072, 1, 1}},
+	{.conv={CONV, RELU, 0, 32, 32, 64, 64, 1, FLASH_OFFSET+69504, 1, 1}},
+	{.conv={CONV, RELU, 0, 16, 16, 64, 128, 0, FLASH_OFFSET+94592, 1, 1}},
+	{.conv={CONV, RELU, 0, 16, 16, 128, 128, 1, FLASH_OFFSET+144768, 1, 1}},
+	{.conv={CONV, RELU, 0, 8, 8, 128, 256, 0, FLASH_OFFSET+186752, 1, 1}},
+	{.conv={CONV, RELU, 0, 8, 8, 256, 256, 1, FLASH_OFFSET+270720, 1, 0}},
+	{.dense={DENSE, RELU, 0, 4096, 256, FLASH_OFFSET+420224, FLASH_OFFSET+551296, 1, FLASH_OFFSET+552320}},
+	{.dense={DENSE, RELU, 0, 256, 256, FLASH_OFFSET+554368, FLASH_OFFSET+562560, 1, FLASH_OFFSET+563584}},
+	{.dense={DENSE, LINEAR, 1, 256, 10, FLASH_OFFSET+565632, FLASH_OFFSET+565952, 1, FLASH_OFFSET+565992}},
 };
 #else // reduced
 layer_t cifar[] = {
-	{.conv={CONV, RELU, 0, 32, 32, 3, 48, 0, 3072, 1, 1}},
-	{.conv={CONV, RELU, 0, 32, 32, 48, 48, 1, 52896, 1, 1}},
-	{.conv={CONV, RELU, 0, 16, 16, 48, 96, 0, 70176, 1, 1}},
-	{.conv={CONV, RELU, 0, 16, 16, 96, 96, 1, 104736, 1, 1}},
-	{.conv={CONV, RELU, 0, 8, 8, 96, 128, 0, 130080, 1, 1}},
-	{.conv={CONV, RELU, 0, 8, 8, 128, 128, 1, 163872, 1, 0}},
-	{.dense={DENSE, RELU, 0, 2048, 256, 205856, 271392, 1, 272416}},
-	{.dense={DENSE, RELU, 0, 256, 256, 274464, 282656, 1, 283680}},
-	{.dense={DENSE, LINEAR, 1, 256, 10, 285728, 286048, 1, 286088}},
+	{.conv={CONV, RELU, 0, 32, 32, 3, 48, 0, FLASH_OFFSET+3072, 1, 1}},
+	{.conv={CONV, RELU, 0, 32, 32, 48, 48, 1, FLASH_OFFSET+52896, 1, 1}},
+	{.conv={CONV, RELU, 0, 16, 16, 48, 96, 0, FLASH_OFFSET+70176, 1, 1}},
+	{.conv={CONV, RELU, 0, 16, 16, 96, 96, 1, FLASH_OFFSET+104736, 1, 1}},
+	{.conv={CONV, RELU, 0, 8, 8, 96, 128, 0, FLASH_OFFSET+130080, 1, 1}},
+	{.conv={CONV, RELU, 0, 8, 8, 128, 128, 1, FLASH_OFFSET+163872, 1, 0}},
+	{.dense={DENSE, RELU, 0, 2048, 256, FLASH_OFFSET+205856, FLASH_OFFSET+271392, 1, FLASH_OFFSET+272416}},
+	{.dense={DENSE, RELU, 0, 256, 256, FLASH_OFFSET+274464, FLASH_OFFSET+282656, 1, FLASH_OFFSET+283680}},
+	{.dense={DENSE, LINEAR, 1, 256, 10, FLASH_OFFSET+285728, FLASH_OFFSET+286048, 1, FLASH_OFFSET+286088}},
 };
 #endif
