@@ -37,7 +37,7 @@ int do_lve(void* base){
 }
 
 #define DO_SPRAM_TEST 1
-#define TEST_RUNS     255
+#define TEST_RUNS     14
 #define MAX_XFER_SIZE (64*1024)
 
 extern const int      golden_size;

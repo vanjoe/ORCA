@@ -2,7 +2,7 @@
 utils.vhd
 constants_pkg.vhd
 components.vhd
-4port_mem.vhd
+4port_mem_ultraplus.vhd
 alu.vhd
 branch_unit.vhd
 decode.vhd

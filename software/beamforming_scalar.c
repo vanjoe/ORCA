@@ -18,7 +18,7 @@
 
 #define DEBUG 1
 
-#define  UART_BASE ((volatile int*) 0x00020000)
+#define  UART_BASE ((volatile int*) 0x04000000)
 volatile int*  UART_DATA=UART_BASE;
 volatile int*  UART_LCR=UART_BASE+3;
 volatile int*  UART_LSR=UART_BASE+5;

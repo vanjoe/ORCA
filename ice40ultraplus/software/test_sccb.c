@@ -2,8 +2,6 @@
 #include "sccb.h"
 #include "ovm7692.h"
 
-#define SCCB_PIO_BASE   ((void *)0x00050000)
-
 int main(){
 	int errors = 0;
 	printf("\r\nTesting SCCB\r\n");

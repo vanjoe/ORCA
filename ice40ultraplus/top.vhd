@@ -588,11 +588,9 @@ begin
 
   split_wb_data : component wb_splitter
     generic map(
-      master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE),  -- RAM
-      master1_address => (16#00010000#, 1024),              -- SPI
-      master2_address => (16#00020000#, 4*1024),            -- UART
-      master3_address => (16#08000000#, SCRATCHPAD_SIZE),
-      master6_address => (16#00050000#, 1024)               -- SCCB PIO
+      SUB_ADDRESS_BITS => 25,
+      NUM_MASTERS      => 5,
+      JUST_OR_ACKS     => false
       )
     port map(
       clk_i => clk,
@@ -658,36 +656,36 @@ begin
       master2_ERR_I   => data_uart_ERR_O,
       master2_RTY_I   => data_uart_RTY_O,
 
+      master3_ADR_O   => sccb_pio_ADR_I,
+      master3_DAT_O   => sccb_pio_DAT_I,
+      master3_WE_O    => sccb_pio_WE_I,
+      master3_CYC_O   => sccb_pio_CYC_I,
+      master3_STB_O   => sccb_pio_STB_I,
+      master3_SEL_O   => sccb_pio_SEL_I,
+      master3_CTI_O   => sccb_pio_CTI_I,
+      master3_BTE_O   => sccb_pio_BTE_I,
+      master3_LOCK_O  => sccb_pio_LOCK_I,
+      master3_STALL_I => sccb_pio_STALL_O,
+      master3_DAT_I   => sccb_pio_DAT_O,
+      master3_ACK_I   => sccb_pio_ACK_O,
+      master3_ERR_I   => sccb_pio_ERR_O,
+      master3_RTY_I   => sccb_pio_RTY_O,
 
-      master3_ADR_O   => data_sp_ADR_O,
-      master3_DAT_O   => data_sp_DAT_O,
-      master3_WE_O    => data_sp_WE_O,
-      master3_CYC_O   => data_sp_CYC_O,
-      master3_STB_O   => data_sp_STB_O,
-      master3_SEL_O   => data_sp_SEL_O,
-      master3_CTI_O   => open,
-      master3_BTE_O   => open,
-      master3_LOCK_O  => open,
-      master3_STALL_I => data_sp_stall_i,
-      master3_DAT_I   => data_sp_DAT_I,
-      master3_ACK_I   => data_sp_ACK_I,
-      master3_ERR_I   => open,
-      master3_RTY_I   => open,
-
-      master6_ADR_O   => sccb_pio_ADR_I,
-      master6_DAT_O   => sccb_pio_DAT_I,
-      master6_WE_O    => sccb_pio_WE_I,
-      master6_CYC_O   => sccb_pio_CYC_I,
-      master6_STB_O   => sccb_pio_STB_I,
-      master6_SEL_O   => sccb_pio_SEL_I,
-      master6_CTI_O   => sccb_pio_CTI_I,
-      master6_BTE_O   => sccb_pio_BTE_I,
-      master6_LOCK_O  => sccb_pio_LOCK_I,
-      master6_STALL_I => sccb_pio_STALL_O,
-      master6_DAT_I   => sccb_pio_DAT_O,
-      master6_ACK_I   => sccb_pio_ACK_O,
-      master6_ERR_I   => sccb_pio_ERR_O,
-      master6_RTY_I   => sccb_pio_RTY_O);
+      master4_ADR_O   => data_sp_ADR_O,
+      master4_DAT_O   => data_sp_DAT_O,
+      master4_WE_O    => data_sp_WE_O,
+      master4_CYC_O   => data_sp_CYC_O,
+      master4_STB_O   => data_sp_STB_O,
+      master4_SEL_O   => data_sp_SEL_O,
+      master4_CTI_O   => open,
+      master4_BTE_O   => open,
+      master4_LOCK_O  => open,
+      master4_STALL_I => data_sp_stall_i,
+      master4_DAT_I   => data_sp_DAT_I,
+      master4_ACK_I   => data_sp_ACK_I,
+      master4_ERR_I   => open,
+      master4_RTY_I   => open
+      );
 
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
