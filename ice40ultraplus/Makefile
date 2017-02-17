@@ -14,8 +14,9 @@ TOP_LEVEL_ENTITY=verilog_top
 COMPILER_LOG=$(OUTPUT_DIR)/synlog/$(PROJECT)_compiler.srr
 TIMING_REPORT=$(OUTPUT_DIR)/sbt/outputs/router/$(TOP_LEVEL_ENTITY)_timing.rpt
 EDF=$(OUTPUT_DIR)/$(PROJECT).edf
-BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.bin
-FINAL_BITFILE=bits.bin
+PROJ_BITFILE=$(OUTPUT_DIR)/sbt/outputs/bitmap/$(TOP_LEVEL_ENTITY)_bitmap.bin
+
+FINAL_BITFILE=flash.bin
 IMEM_LIST=imem.list
 DMEM_LIST=dmem.list
 MEM_FILE?=software/test.mem
@@ -45,7 +46,7 @@ endef
 define mem-init
 LD_LIBRARY_PATH=$(ICECUBE2)/sbt_backend/lib/linux/opt:$${LD_LIBRARY_PATH} $(ICECUBE2)/sbt_backend/bin/linux/opt/meminitializer --des-lib $(OUTPUT_DIR)/sbt/netlist/oadb-$(TOP_LEVEL_ENTITY) --mem-list-file
 endef
-$(BITFILE): $(TIMING_REPORT) dmem.mem imem.mem $(DMEM_LIST) $(IMEM_LIST) $(MEM_FILE)
+$(PROJ_BITFILE): $(TIMING_REPORT) dmem.mem imem.mem $(DMEM_LIST) $(IMEM_LIST) $(MEM_FILE)
 	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) dmem.mem $(DMEM_LIST)
 	$(ice-tcl) iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR) imem.mem $(IMEM_LIST)
 
@@ -85,8 +86,16 @@ $(MEM_FILE)::
 
 PGM_CMD=$(ICECUBE2)/../../programmer/3.8_x64/bin/lin64/pgrcmd -infile
 
-$(FINAL_BITFILE):$(BITFILE)
+bits.bin : $(PROJ_BITFILE)
 	cp $^ $@
+$(FINAL_BITFILE): bits.bin golden.bin reduced.bin
+	cp bits.bin $@
+	truncate --size $$(( 0x20000 )) $@
+	cat golden.bin >> $@
+	truncate --size $$(( 0xB0000 )) $@
+	cat reduced.bin >> $@
+	wc -c $@
+
 bits: $(FINAL_BITFILE)
 
 pgm : $(FINAL_BITFILE)

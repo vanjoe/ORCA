@@ -5,10 +5,16 @@
 #include "printf.h"
 #include "flash_dma.h"
 
-#define FLASH_DATA_OFFSET 0
+
+
 #define DATA_SCALE 16
 #define CES_GOLDEN 0 //1 is larger 3 second net, 0 is reduced 1.3 second net
 
+#if CES_GOLDEN
+#define FLASH_DATA_OFFSET 0x20000
+#else
+#define FLASH_DATA_OFFSET 0xB0000
+#endif
 enum LAYER {
     DENSE,
     CONV
@@ -32,7 +38,7 @@ typedef struct {
     int biases;
     int scale;
     int scales;
-} dense_layer_t; 
+} dense_layer_t;
 
 
 typedef struct {

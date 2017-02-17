@@ -5,8 +5,6 @@
 #include "base64.h"
 #include "sccb.h"
 
-#define FLASH_DATA_OFFSET 0
-/* #define SCALAR */
 
 #if 0
 void vprint(void *v_raw, const int height, const int width, const int stride, const int bytes, const int hex)
@@ -347,7 +345,7 @@ void scalar_zeropad_input(vbx_ubyte_t *v_out, vbx_ubyte_t *v_in, const int m, co
 
 // called once every 16 channels (touches data 3x)
 #ifndef SCALAR
-void vbx_accumulate_columns(vbx_word_t *v_map, vbx_half_t *v_maph, vbx_word_t *v_tmp, const int m, const int n) 
+void vbx_accumulate_columns(vbx_word_t *v_map, vbx_half_t *v_maph, vbx_word_t *v_tmp, const int m, const int n)
 {
   // add each packed column to output
   the_lve.stride = 2;
@@ -365,7 +363,7 @@ void vbx_accumulate_columns(vbx_word_t *v_map, vbx_half_t *v_maph, vbx_word_t *v
   vbx(SVW, VAND, v_maph, 0, v_maph);
 }
 #else
-void scalar_accumulate_columns(vbx_word_t *v_map, vbx_half_t *v_maph, const int m, const int n) 
+void scalar_accumulate_columns(vbx_word_t *v_map, vbx_half_t *v_maph, const int m, const int n)
 {
   int i;
   // add each packed column to output
@@ -523,7 +521,7 @@ void run_network(const int verbose)
   conv.channels = 3;
   conv.kernels = 64;
   conv.scale = 1;
-  conv.weights = FLASH_DATA_OFFSET + 3072;
+  conv.weights = FLASH_OFFSET + 3072;
   conv.zeropad_output = 1;
   conv.maxpool = 0;
 
@@ -543,7 +541,7 @@ void run_network(const int verbose)
   errors = 0;
   count = 0;
   for (j = 0; j < conv.kernels; j++) {
-    vbx_flash_dma((vbx_word_t*)(v_padb), FLASH_DATA_OFFSET+3968+(j*m*n), (m*n)*sizeof(vbx_ubyte_t));
+    vbx_flash_dma((vbx_word_t*)(v_padb), FLASH_OFFSET+3968+(j*m*n), (m*n)*sizeof(vbx_ubyte_t));
     scalar_zeropad_input(v_padb+m*n, v_padb, m, n);
 #if 0
     vbx_set_vl((m+2)*(n+4)/4);
@@ -576,7 +574,7 @@ void run_network(const int verbose)
   conv.n = n;
   conv.channels = 64;
   conv.kernels = 64;
-  conv.weights = FLASH_DATA_OFFSET + 69504;
+  conv.weights = FLASH_OFFSET + 69504;
   conv.maxpool = 1;
 
   if (verbose) {
@@ -628,7 +626,7 @@ void run_network(const int verbose)
   conv.n = n;
   conv.channels = 64;
   conv.kernels = 128;
-  conv.weights = FLASH_DATA_OFFSET + 94592;
+  conv.weights = FLASH_OFFSET + 94592;
   conv.maxpool = 0;
 
   if (verbose) {
@@ -681,7 +679,7 @@ void run_network(const int verbose)
   conv.n = n;
   conv.channels = 128;
   conv.kernels = 128;
-  conv.weights = FLASH_DATA_OFFSET + 144768;
+  conv.weights = FLASH_OFFSET + 144768;
   conv.maxpool = 1;
 
   if (verbose) {
@@ -733,7 +731,7 @@ void run_network(const int verbose)
   conv.n = n;
   conv.channels = 128;
   conv.kernels = 256;
-  conv.weights = FLASH_DATA_OFFSET + 186752;
+  conv.weights = FLASH_OFFSET + 186752;
   conv.maxpool = 0;
 
   if (verbose) {
@@ -785,7 +783,7 @@ void run_network(const int verbose)
   conv.n = n;
   conv.channels = 256;
   conv.kernels = 256;
-  conv.weights = FLASH_DATA_OFFSET + 270720;
+  conv.weights = FLASH_OFFSET + 270720;
   conv.maxpool = 1;
   conv.zeropad_output = 0;
 
@@ -843,9 +841,9 @@ void run_network(const int verbose)
   dense.scale = 1;
   dense.inputs = 256*4*4;
   dense.outputs = 256;
-  dense.biases = FLASH_DATA_OFFSET +551296;
-  dense.scales = FLASH_DATA_OFFSET +552320;
-  dense.weights = FLASH_DATA_OFFSET + 420224;
+  dense.biases = FLASH_OFFSET +551296;
+  dense.scales = FLASH_OFFSET +552320;
+  dense.weights = FLASH_OFFSET + 420224;
 
 #ifdef VERBOSE
   if (verbose) {
@@ -895,9 +893,9 @@ void run_network(const int verbose)
   dense.activation_type = RELU;
   dense.inputs = 256;
   dense.outputs = 256;
-  dense.biases = FLASH_DATA_OFFSET + 562560;
-  dense.scales = FLASH_DATA_OFFSET + 563584;
-  dense.weights = FLASH_DATA_OFFSET + 554368;
+  dense.biases = FLASH_OFFSET + 562560;
+  dense.scales = FLASH_OFFSET + 563584;
+  dense.weights = FLASH_OFFSET + 554368;
 
 #ifdef VERBOSE
   if (verbose) {
@@ -947,9 +945,9 @@ void run_network(const int verbose)
   dense.activation_type = LINEAR;
   dense.inputs = 256;
   dense.outputs = 10;
-  dense.biases =FLASH_DATA_OFFSET + 565952;
-  dense.scales = FLASH_DATA_OFFSET + 565992;
-  dense.weights = FLASH_DATA_OFFSET + 565632;
+  dense.biases =FLASH_OFFSET + 565952;
+  dense.scales = FLASH_OFFSET + 565992;
+  dense.weights = FLASH_OFFSET + 565632;
 
 #ifdef VERBOSE
   if (verbose) {
@@ -1078,7 +1076,7 @@ void cifar_lve() {
 #else
 
 	  // dma in test image (or get from camera!!)
-	  vbx_flash_dma(v_inb, FLASH_DATA_OFFSET+ 0, (3*m*n)*sizeof(vbx_ubyte_t));
+	  vbx_flash_dma(v_inb, FLASH_OFFSET+ 0, (3*m*n)*sizeof(vbx_ubyte_t));
 
 	  // zero pad imaged w/ bytes
 	  for (c = 0; c < 3; c++) {
