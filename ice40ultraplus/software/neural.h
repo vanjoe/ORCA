@@ -8,13 +8,12 @@
 
 
 #define DATA_SCALE 16
-#define CES_GOLDEN 0 //1 is larger 3 second net, 0 is reduced 1.3 second net
+#define CES_GOLDEN 1 //1 is larger 3 second net, 0 is reduced 1.3 second net
 
-#if CES_GOLDEN
-#define FLASH_DATA_OFFSET 0x20000
-#else
-#define FLASH_DATA_OFFSET 0xB0000
-#endif
+#define GOLDEN_FLASH_DATA_OFFSET 0x20000
+
+#define REDUCED_FLASH_DATA_OFFSET 0xB0000
+
 enum LAYER {
     DENSE,
     CONV
@@ -63,7 +62,8 @@ typedef union {
 } layer_t;
 
 
-extern layer_t cifar[];
+extern layer_t cifar_golden[];
+extern layer_t cifar_reduced[];
 void cifar_lve();
 void vbx_flash_dma(vbx_word_t *v_dst, int flash_byte_offset, const int bytes);
 void vbx_flash_dma_async(vbx_word_t *v_dst, int flash_byte_offset, const int bytes);

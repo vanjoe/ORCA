@@ -5,7 +5,7 @@
 #include "sccb.h"
 
 //expects 3 padded 32x32 byte images at SCRATCHPAD_BASE+80*1024, output @ SCRATCHPAD_BASE
-void run_network(const int verbose)
+void run_network(const int verbose,layer_t *cifar)
 {
   int l = 0, buf = 0;
   vbx_ubyte_t* v_outb;
@@ -137,15 +137,16 @@ void cifar_lve() {
 #else
 
 	  // dma in test image (or get from camera!!)
-	  vbx_flash_dma((vbx_word_t*)v_inb, FLASH_DATA_OFFSET+0, (3*m*n)*sizeof(vbx_ubyte_t));
+	 int test_img_offset= CES_GOLDEN?GOLDEN_FLASH_DATA_OFFSET:REDUCED_FLASH_DATA_OFFSET;
+	  vbx_flash_dma((vbx_word_t*)v_inb, test_img_offset+0, (3*m*n)*sizeof(vbx_ubyte_t));
 
 	  // zero pad imaged w/ bytes
 	  for (c = 0; c < 3; c++) {
 	      zeropad_input(v_padb + c*(m+2)*(n+4), v_inb + c*m*n, m, n);
 	  }
 #endif
-
-	  run_network(verbose);
+	  layer_t* network=CES_GOLDEN? cifar_golden:cifar_reduced;
+	  run_network(verbose,network);
 	  int max_cat=0;
 		  // print results (or toggle LED if person is max, and > 0)
 	  char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
@@ -174,5 +175,5 @@ void cifar_lve() {
 		  printf("network took %d ms\r\n",cycle2ms(get_time()-start_time));
 	  }
 
-  }while(USE_CAM_IMG);
+  }while(1);
 }

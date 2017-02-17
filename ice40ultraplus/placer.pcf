@@ -31,8 +31,8 @@ set_io cam_xclk A5
 set_io rxd A2
 set_io sccb_scl E5
 set_io sccb_sda E4
-set_io spi_miso F1
-set_io spi_mosi E1 -pullup yes
+set_io spi_miso E1
+set_io spi_mosi F1
 set_io spi_sclk D1
 set_io spi_ss C1
 set_io txd A1
