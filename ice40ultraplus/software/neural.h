@@ -40,11 +40,9 @@ typedef struct {
     int n;
     int channels;
     int kernels;
-    int size;
     int maxpool;
     int weights;
     int scale;
-    int scale_multiply;
     int zeropad_output;
 } convolution_layer_t;
 
