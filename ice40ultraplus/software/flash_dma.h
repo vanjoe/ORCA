@@ -9,14 +9,14 @@
 #define FLASH_DMA_STATUS (0xC >>2)
 
 
-static void flash_dma_trans(int flash_address,void* dest_address,unsigned xfer_length)
+static void __attribute__((unused)) flash_dma_trans(int flash_address,void* dest_address,unsigned xfer_length)
 {
 	FLASH_DMA_BASE[FLASH_DMA_RADDR]=flash_address;
 	FLASH_DMA_BASE[FLASH_DMA_WADDR]=(int)dest_address;
 	FLASH_DMA_BASE[FLASH_DMA_LEN]=xfer_length;
 }
 
-static int flash_dma_done()
+static int __attribute__((unused)) flash_dma_done()
 {
 	return ! (FLASH_DMA_BASE[FLASH_DMA_STATUS]);
 }
