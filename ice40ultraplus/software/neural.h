@@ -8,7 +8,7 @@
 
 
 #define DATA_SCALE 16
-#define CES_GOLDEN 1 //1 is larger 3 second net, 0 is reduced 1.3 second net
+#define CES_GOLDEN 0 //1 is larger 3 second net, 0 is reduced 1.3 second net
 
 #define GOLDEN_FLASH_DATA_OFFSET 0x20000
 
