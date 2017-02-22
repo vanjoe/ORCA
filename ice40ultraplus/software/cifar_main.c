@@ -16,8 +16,11 @@ void run_network(const int verbose,layer_t *cifar)
 	vbx_ubyte_t* v_padb;
 	vbx_word_t* v_in;
 	vbx_word_t* v_out;
-
+	unsigned time;
 	while(1) {
+		if(verbose){
+			time=get_time();
+		}
 		if (cifar[l].layer_type == CONV) {
 			if(verbose){
 				printf("conv layer\r\n");
@@ -47,6 +50,10 @@ void run_network(const int verbose,layer_t *cifar)
 		}
 		buf = !buf;
 		l++;
+		if(verbose){
+			time=get_time()-time;
+			printf("layer took %u cycles %u ms \r\n",time,cycle2ms(time));
+		}
 	}
 }
 
@@ -105,11 +112,12 @@ void cifar_lve() {
 	SCCB_PIO_BASE[PIO_ENABLE_REGISTER] |= (1<<PIO_LED_BIT);
 #if USE_CAM_IMG
 	ovm_initialize();
+	int last_max_cat=0;
 #endif
 
 	int max_cat=0;
-	int last_max_cat=0;
-	int c, m = 32, n = 32, verbose = 0;
+
+	int c, m = 32, n = 32, verbose = 1;
 	vbx_ubyte_t* v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024); // IMPORTANT: padded input placed here
 	vbx_word_t* v_out = (vbx_word_t*)  (SCRATCHPAD_BASE+0*1024); // IMPORTANT: 10 outputs produced here
 	vbx_ubyte_t* v_inb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
@@ -123,15 +131,10 @@ void cifar_lve() {
 
 
 #if USE_CAM_IMG
-
-
 		//get camera frame
 		if(last_max_cat != 4 /*person*/){
 			//turn on led
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
-			if(verbose){
-				printf("PERSON DETECTED %d\r\n ",(int)v_out[max_cat]);
-			}
 		}else {
 			//turn off led
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
@@ -214,7 +217,9 @@ void cifar_lve() {
 
 #if 1
 #endif
-		printf("Frame processing took %d ms\r\n",cycle2ms(get_time()-start_time));
+		unsigned net_cycles=get_time()-start_time;
+		unsigned net_ms=cycle2ms(net_cycles);
+		printf("Frame processing took %u cycles %u ms \r\n",net_cycles,net_ms);
 
-	}while(1);
+	}while(USE_CAM_IMG);
 }

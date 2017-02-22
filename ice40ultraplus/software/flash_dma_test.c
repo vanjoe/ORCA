@@ -54,7 +54,7 @@ uint16_t bsd_checksum(char *data, int bytes){
 	}
 	return checksum;
 }
-
+#define GOLDEN_BASE 0x20000
 int main()
 {
 
@@ -123,7 +123,7 @@ int main()
 				internal_xfer_size = xfer_size;
 			}
 			printf("Using %u byte sub-transfers\r\n", (unsigned int)internal_xfer_size);
-			
+
 			int start_time = get_time();
 			uint32_t xfer_start = 0;
 			for(xfer_start = 0; xfer_start < xfer_size; xfer_start += internal_xfer_size){
@@ -133,7 +133,7 @@ int main()
 				}
 				while(!flash_dma_done()){
 				}
-				flash_dma_trans(flash_address+xfer_start, (void *)(sp_base+xfer_start), internal_xfer_size);
+				flash_dma_trans(GOLDEN_BASE+flash_address+xfer_start, (void *)(sp_base+xfer_start), internal_xfer_size);
 			}
 			int local_lve_errors = do_lve(SCRATCHPAD_BASE + MAX_XFER_SIZE);
 			//wait for transfer done
