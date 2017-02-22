@@ -3,7 +3,8 @@
 all:
 .SUFFIXES:
 
-ICECUBE2?=/nfs/opt/lattice/iCEcube2/2016.02
+#ICECUBE2?=/nfs/opt/lattice/iCEcube2/2016.02
+ICECUBE2?=/nfs/opt/lattice/iCEcube2/2017.01
 
 PROJECT= ice40ultraplus
 SBT_PROJECT=$(PROJECT)_sbt.project
