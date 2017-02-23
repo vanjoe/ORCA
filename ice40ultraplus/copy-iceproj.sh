@@ -52,6 +52,12 @@ cp $THIS_DIR/software/main.c \
 	$THIS_DIR/software/sys_clk.h.template \
 	software
 
-sed -i 's|../ice40ultra/hdl/|hdl/|g' ice40ultraplus_syn.prj
 sed -i 's|../ice40ultra/hdl/|hdl/|g' simulate.tcl
 sed -i 's|../ice40ultra/hdl/|hdl/|g' ice40ultraplus_sbt.project
+sed -i 's|../ice40ultra/hdl/|hdl/|g' ice40ultraplus_syn.prj
+
+sed -i 's|add_file.*lve.*vhd.*||g' ice40ultraplus_syn.prj
+sed -i 's|,../rtl/lve_ci.vhd=work||g' ice40ultraplus_sbt.project
+sed -i 's|,../rtl/lve_top.vhd=work||g' ice40ultraplus_sbt.project
+
+sed -i 's/USE_LVE [0-9]/USE_LVE 0/' ice40ultraplus_syn.prj

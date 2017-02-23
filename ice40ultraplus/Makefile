@@ -95,6 +95,7 @@ $(FINAL_BITFILE): bits.bin golden.bin reduced.bin
 	cat golden.bin >> $@
 	truncate --size $$(( 0xB0000 )) $@
 	cat reduced.bin >> $@
+	xxd -c 1 $@  | awk '{print $$2}' > flash.mem
 	wc -c $@
 
 bits: $(FINAL_BITFILE)

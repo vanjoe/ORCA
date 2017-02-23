@@ -24,6 +24,7 @@ module verilog_top
 
 	parameter USE_PLL = 1;
 	parameter USE_CAM = 1;
+	parameter USE_LVE = 1;
 
 	input [7:0] cam_dat ;
 	input 		cam_xclk;
@@ -51,7 +52,8 @@ module verilog_top
 	vhdl_top
 	  #(
 	    .USE_PLL(USE_PLL),
-	    .USE_CAM(USE_CAM)
+	    .USE_CAM(USE_CAM),
+		 .USE_LVE(USE_LVE)
 	    )
 	sub_top
 	  (

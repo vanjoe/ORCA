@@ -9,10 +9,9 @@ use work.rv_components.all;
 
 entity vhdl_top is
   generic (
-    USE_PLL      : natural range 0 to 2 := 0;
-    USE_CAM      : natural range 0 to 1 := 1;
-    CAM_NUM_COLS : integer              := 48;
-    CAM_NUM_ROWS : integer              := 16);
+    USE_PLL : natural range 0 to 2 := 0;
+    USE_CAM : natural range 0 to 1 := 1;
+    USE_LVE : natural range 0 to 1 := 1);
   port(
 
     --spi
@@ -507,59 +506,127 @@ begin
       master_DAT_I   => sp_RDAT,
       master_ACK_I   => sp_ACK);
 
-  rv : component orca
-    generic map (
-      REGISTER_SIZE        => REGISTER_SIZE,
-      RESET_VECTOR         => 0,
-      WISHBONE_ENABLE      => 1,
-      MULTIPLY_ENABLE      => 1,
-      DIVIDE_ENABLE        => 0,
-      SHIFTER_MAX_CYCLES   => 32,
-      COUNTER_LENGTH       => 32,
-      PIPELINE_STAGES      => 4,
-      LVE_ENABLE           => 1,
-      ENABLE_EXCEPTIONS    => 0,
-      NUM_EXT_INTERRUPTS   => 2,
-      SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
-      FAMILY               => "LATTICE")
-    port map(
+  WITH_LVE : if USE_LVE = 1 generate
 
-      clk            => clk,
-      scratchpad_clk => clk_3x,
-      reset          => reset,
+    rv : component orca
+      generic map (
+        REGISTER_SIZE        => REGISTER_SIZE,
+        RESET_VECTOR         => 0,
+        WISHBONE_ENABLE      => 1,
+        MULTIPLY_ENABLE      => 1,
+        DIVIDE_ENABLE        => 0,
+        SHIFTER_MAX_CYCLES   => 32,
+        COUNTER_LENGTH       => 32,
+        PIPELINE_STAGES      => 4,
+        LVE_ENABLE           => 1,
+        ENABLE_EXCEPTIONS    => 0,
+        NUM_EXT_INTERRUPTS   => 2,
+        SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
+        FAMILY               => "LATTICE")
+      port map(
 
-      data_ADR_O   => data_ADR_O,
-      data_DAT_I   => data_DAT_I,
-      data_DAT_O   => data_DAT_O,
-      data_WE_O    => data_WE_O,
-      data_SEL_O   => data_SEL_O,
-      data_STB_O   => data_STB_O,
-      data_ACK_I   => data_ACK_I,
-      data_CYC_O   => data_CYC_O,
-      data_STALL_I => data_STALL_I,
-      data_CTI_O   => data_CTI_O,
+        clk            => clk,
+        scratchpad_clk => clk_3x,
+        reset          => reset,
 
-      instr_ADR_O   => instr_ADR_O,
-      instr_DAT_I   => instr_DAT_I,
-      instr_STB_O   => instr_STB_O,
-      instr_ACK_I   => instr_ACK_I,
-      instr_CYC_O   => instr_CYC_O,
-      instr_CTI_O   => instr_CTI_O,
-      instr_STALL_I => instr_STALL_I,
+        data_ADR_O   => data_ADR_O,
+        data_DAT_I   => data_DAT_I,
+        data_DAT_O   => data_DAT_O,
+        data_WE_O    => data_WE_O,
+        data_SEL_O   => data_SEL_O,
+        data_STB_O   => data_STB_O,
+        data_ACK_I   => data_ACK_I,
+        data_CYC_O   => data_CYC_O,
+        data_STALL_I => data_STALL_I,
+        data_CTI_O   => data_CTI_O,
 
-      sp_ADR_I   => sp_ADR,
-      sp_DAT_O   => sp_RDAT,
-      sp_DAT_I   => sp_WDAT,
-      sp_WE_I    => sp_WE,
-      sp_SEL_I   => sp_SEL,
-      sp_STB_I   => sp_STB,
-      sp_ACK_O   => sp_ACK,
-      sp_CYC_I   => sp_CYC,
-      sp_CTI_I   => sp_CTI,
-      sp_STALL_O => sp_STALL,
+        instr_ADR_O   => instr_ADR_O,
+        instr_DAT_I   => instr_DAT_I,
+        instr_STB_O   => instr_STB_O,
+        instr_ACK_I   => instr_ACK_I,
+        instr_CYC_O   => instr_CYC_O,
+        instr_CTI_O   => instr_CTI_O,
+        instr_STALL_I => instr_STALL_I,
 
-      global_interrupts => (others => '0'));
+        sp_ADR_I   => sp_ADR,
+        sp_DAT_O   => sp_RDAT,
+        sp_DAT_I   => sp_WDAT,
+        sp_WE_I    => sp_WE,
+        sp_SEL_I   => sp_SEL,
+        sp_STB_I   => sp_STB,
+        sp_ACK_O   => sp_ACK,
+        sp_CYC_I   => sp_CYC,
+        sp_CTI_I   => sp_CTI,
+        sp_STALL_O => sp_STALL,
 
+        global_interrupts => (others => '0'));
+  end generate WITH_LVE;
+
+  WITHOUT_LVE : if USE_LVE = 0 generate
+    rv : component orca
+      generic map (
+        REGISTER_SIZE        => REGISTER_SIZE,
+        RESET_VECTOR         => 0,
+        WISHBONE_ENABLE      => 1,
+        MULTIPLY_ENABLE      => 1,
+        DIVIDE_ENABLE        => 0,
+        SHIFTER_MAX_CYCLES   => 32,
+        COUNTER_LENGTH       => 32,
+        PIPELINE_STAGES      => 4,
+        LVE_ENABLE           => 0,
+        ENABLE_EXCEPTIONS    => 0,
+        NUM_EXT_INTERRUPTS   => 2,
+        SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
+        FAMILY               => "LATTICE")
+      port map(
+
+        clk            => clk,
+        scratchpad_clk => clk_3x,
+        reset          => reset,
+
+        data_ADR_O   => data_ADR_O,
+        data_DAT_I   => data_DAT_I,
+        data_DAT_O   => data_DAT_O,
+        data_WE_O    => data_WE_O,
+        data_SEL_O   => data_SEL_O,
+        data_STB_O   => data_STB_O,
+        data_ACK_I   => data_ACK_I,
+        data_CYC_O   => data_CYC_O,
+        data_STALL_I => data_STALL_I,
+        data_CTI_O   => data_CTI_O,
+
+        instr_ADR_O   => instr_ADR_O,
+        instr_DAT_I   => instr_DAT_I,
+        instr_STB_O   => instr_STB_O,
+        instr_ACK_I   => instr_ACK_I,
+        instr_CYC_O   => instr_CYC_O,
+        instr_CTI_O   => instr_CTI_O,
+        instr_STALL_I => instr_STALL_I,
+
+        global_interrupts => (others => '0'));
+
+
+    dmem : entity work.wb_ram(spram)
+      generic map(
+        MEM_SIZE => SCRATCHPAD_SIZE)
+      port map(
+        CLK_I => clk,
+        RST_I => reset,
+
+        ADR_I   => sp_ADR(log2(SCRATCHPAD_SIZE)-1 downto 0),
+        DAT_I   => sp_WDAT,
+        WE_I    => sp_WE,
+        CYC_I   => sp_cyc,
+        STB_I   => sp_stb,
+        SEL_I   => sp_sel,
+        CTI_I   => sp_cti,
+        BTE_I   => (others => '0'),
+        LOCK_I  => '0',
+        STALL_O => sp_stall,
+        DAT_O   => sp_rdat,
+        ACK_O   => sp_ack);
+
+  end generate WITHOUT_LVE;
 
   --spram : entity work.wb_ram(spram)
   --  generic map(

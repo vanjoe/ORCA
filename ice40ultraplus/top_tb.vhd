@@ -9,7 +9,9 @@ architecture rtl of top_tb is
   component verilog_top is
     generic (
       USE_PLL : integer := 0;
+      USE_LVE : integer := 0;
       USE_CAM : integer := 0);
+
     port(
       --spi
       spi_mosi : out std_logic;
@@ -87,6 +89,7 @@ begin
   end process;
 
   dut : component verilog_top
+
     port map(
       spi_miso => spi_miso,
       spi_mosi => spi_mosi,
