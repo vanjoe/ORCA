@@ -413,6 +413,8 @@ begin
 
       global_interrupts => (others => '0'));
 
+  instr_wb.WE <= '0';
+
   orca_data_splitter : component wb_splitter
 
     generic map(

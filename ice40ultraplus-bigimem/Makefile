@@ -79,7 +79,7 @@ syn: $(EDF)
 
 
 clean:
-	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem *_Implmnt program_flash.xcf programmer.xcf
+	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem *_Implmnt
 
 clean-all: clean
 	make -C software clean
