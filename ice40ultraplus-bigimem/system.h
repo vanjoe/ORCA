@@ -7,11 +7,11 @@
 #define IMEM_SIZE       64*1024
 #define DMEM_ADDR       0x20000
 #define DMEM_SIZE       64*1024
-#define UART_ADDR       0x100000
+#define UART_ADDR       0x30000
 #define UART_SIZE       1024
-#define PIO_ADDR        0x110000
+#define PIO_ADDR        0x40000
 #define PIO_SIZE        1024
-#define FLASH_CTRL_ADDR 0x120000
+#define FLASH_CTRL_ADDR 0x50000
 #define FLASH_CTRL_SIZE 1024
 
 #endif //SYSTEM_H

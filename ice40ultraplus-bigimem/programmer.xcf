@@ -44,7 +44,7 @@
 	</ProjectOptions>
 	<CableOptions>
 		<CableName>USB2</CableName>
-		<PortAdd>FTUSB-0</PortAdd>
+		<PortAdd>FTUSB-1</PortAdd>
 		<USBID>DUAL RS232-HS A Location 0000 Serial Dual RS232-HS A</USBID>
 	</CableOptions>
 </ispXCF>

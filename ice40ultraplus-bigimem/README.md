@@ -4,19 +4,19 @@
 
 ## Memory System
 
-The System has 4 wishbone masters, Camera, Flash DMA, ORCA instruction, and ORCA data.
+The System has 3 wishbone masters, Flash DMA, ORCA instruction, and ORCA data.
 
 They are connected to the various slaves according to the following table
 
-    |       |                  MASTER              |                |
-    |       | cam  | flash | orca-data | orca-instr| Address        |
-    |SLAVE  |------|-------|-----------|-----------|----------------|
-    |boot   |      |       |           |     X     | 0 -0x3FF       |
-    |imem   |      |   X   |      X    |     X     | 0x10000-0x1FFFF|
-    |dmem   |  X   |   X   |      X    |           | 0x20000-0x2FFFF|
-    |uart   |      |       |      X    |           | 0x100000       |
-    |pio    |      |       |      X    |           | 0x110000       |
-    |flash  |      |       |      X    |           | 0x120000       |
+    |       |           MASTER              |                |
+    |       | flash | orca-data | orca-instr| Address        |
+    |SLAVE  |-------|-----------|-----------|----------------|
+    |boot   |       |           |     X     | 0 -0x3FF       |
+    |imem   |   X   |      X    |     X     | 0x10000-0x1FFFF|
+    |dmem   |   X   |      X    |           | 0x20000-0x2FFFF|
+    |uart   |       |      X    |           | 0x100000       |
+    |pio    |       |      X    |           | 0x110000       |
+    |flash  |       |      X    |           | 0x120000       |
 
 
 The boot memory is a ROM that is preconfigured in the bitstream,it is responsible with initializing the
@@ -37,8 +37,8 @@ Then run Make
 
 ### Building
 
-The make command should build a few important files: *ice40up\_mdp\_16MHz\_Implmnt/sbt/outputs/bitmap/verilog\_top\_bitmap.bin* and *flash.bin*
-The *verilog_top_bitmap.bin* is the bitstream that configures the FPGA, and
+The make command should build a few important files: *ice40up\_mdp\_16MHz\_Implmnt/sbt/outputs/bitmap/vhdl\_top\_bitmap.bin* and *flash.bin*
+The *vhdl_top_bitmap.bin* is the bitstream that configures the FPGA, and
 *flash.bin* contains the software that will be copied to the SPRAMs, and then executed.
 The `flash.mem` file contains the same contents as `flash.bin`, except in hex format, it is
 used for simulation.
@@ -85,7 +85,7 @@ To Program the FPGA:
 
 1. Perform steps 1-3 of the previous List
 
-2. Select *ice40up\_mdp\_16MHz\_Implmnt/sbt/outputs/bitmap/verilog\_top\_bitmap.bin* as the Filename
+2. Select *ice40up\_mdp\_16MHz\_Implmnt/sbt/outputs/bitmap/vhdl\_top\_bitmap.bin* as the Filename
 
 3. Click Program.
 

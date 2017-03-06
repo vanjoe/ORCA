@@ -5,7 +5,7 @@
 # User Configurable section
 #############################################
 set device iCE40UP5K-UWG30
-set top_module verilog_top
+set top_module vhdl_top
 set proj_dir [pwd]
 #set sdc_constraints "constraints/lve_timing.sdc"
 set pcf_constraints "placer.pcf"
@@ -28,7 +28,7 @@ source $sbt_tcl
 
 #Parse command line arguments, currently if non-zero then run interactive
 if {$::argc == 4} {
-    set edif_file [lindex $::argv 0] 
+    set edif_file [lindex $::argv 0]
     set output_dir [lindex $::argv 1]
     set mem_file_name [lindex $::argv 2]
     set list_file_name [lindex $::argv 3]
@@ -96,13 +96,13 @@ if {$::argc == 4} {
 
     }
 } elseif {$::argc == 3} {
-    set edif_file [lindex $::argv 0] 
+    set edif_file [lindex $::argv 0]
     set output_dir [lindex $::argv 1]
     puts "Three arguments passed, regenerating bits."
     sbt_init_env
     sbt_run_bitmap $top_module $device $output_dir $tool_options
 } elseif {$::argc == 2} {
-    set edif_file [lindex $::argv 0] 
+    set edif_file [lindex $::argv 0]
     set output_dir [lindex $::argv 1]
     puts "Two arguments passed, running full backend."
     run_sbt_backend_auto $device $top_module $proj_dir $output_dir $tool_options $edif_file

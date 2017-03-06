@@ -3,14 +3,14 @@
 all:
 .SUFFIXES:
 
-ICECUBE2?=/nfs/opt/lattice/iCEcube2/2016.02
+ICECUBE2?=/nfs/opt/lattice/iCEcube2/2017.01
 
 PROJECT ?= ice40ultraplus
 SBT_PROJECT=$(PROJECT)_sbt.project
 SYN_PRJ=$(PROJECT)_syn.prj
 LSE_PRJ=$(PROJECT)_lse.prj
 OUTPUT_DIR=$(PROJECT)_Implmnt
-TOP_LEVEL_ENTITY=verilog_top
+TOP_LEVEL_ENTITY=vhdl_top
 COMPILER_LOG=$(OUTPUT_DIR)/synlog/$(PROJECT)_compiler.srr
 TIMING_REPORT=$(OUTPUT_DIR)/sbt/outputs/router/$(TOP_LEVEL_ENTITY)_timing.rpt
 EDF=$(OUTPUT_DIR)/$(PROJECT).edf

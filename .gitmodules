@@ -1,3 +1,9 @@
 [submodule "tools/riscv-toolchain/riscv-tools"]
 	path = tools/riscv-toolchain/riscv-tools
 	url = https://github.com/riscv/riscv-tools.git
+[submodule "tools/riscv-toolchain/riscv-gnu-toolchain"]
+	path = tools/riscv-toolchain/riscv-gnu-toolchain
+	url = https://github.com/riscv/riscv-gnu-toolchain
+[submodule "tools/riscv-toolchain/riscv-opcodes"]
+	path = tools/riscv-toolchain/riscv-opcodes
+	url = https://github.com/riscv/riscv-opcodes.git

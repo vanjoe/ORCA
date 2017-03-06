@@ -10,7 +10,7 @@ end entity;
 
 
 architecture rtl of top_tb is
-  component verilog_top is
+  component vhdl_top is
     port(
       --spi
       spi_mosi : out std_logic;
@@ -19,17 +19,7 @@ architecture rtl of top_tb is
       spi_sclk : out std_logic;
 
       --uart
-      txd : out std_logic;
-
-      --clk
-      cam_xclk  : in std_logic;
-      cam_vsync : in std_logic;
-      cam_href  : in std_logic;
-      cam_dat   : in std_logic_vector(7 downto 0);
-
-      --sccb
-      sccb_scl : inout std_logic;
-      sccb_sda : inout std_logic
+      txd : out std_logic
       );
   end component;
 
@@ -88,29 +78,17 @@ begin
     wait for (PCLK_PERIOD/2);
   end process;
 
-  dut : component verilog_top
-    generic map (
-      CAM_NUM_COLS => CAM_NUM_COLS,
-      CAM_NUM_ROWS => CAM_NUM_ROWS)
+  dut : component vhdl_top
     port map(
       spi_miso => spi_miso,
       spi_mosi => spi_mosi,
       spi_ss   => spi_ss,
       spi_sclk => spi_sclk,
 
-      cam_xclk  => ovm_pclk,
-      cam_vsync => ovm_vsync,
-      cam_href  => ovm_href,
-      cam_dat   => ovm_dat,
+      txd => txd
 
-      txd => txd,
-
-      sccb_scl => sccb_scl,
-      sccb_sda => sccb_sda
       );
 
-  sccb_scl <= 'H';
-  sccb_sda <= 'H';
 
   process
   begin
@@ -134,27 +112,6 @@ begin
 
     ovm_dat <= x"F0" when (pclk_count mod 2) /= 0 else x"0F";
 
-  process(ovm_pclk)
-    constant BYTES_PER_PIXEL : integer := 2;
-    constant PCLK_INTERVAL   : integer := CAM_NUM_COLS*BYTES_PER_PIXEL;
-  begin
-    if rising_edge(ovm_pclk) then
-      pclk_count <= pclk_count +1;
 
-      ovm_vsync <= '0';
-      if pclk_count > 0 and pclk_count < 10 then
-        ovm_vsync <= '1';
-      end if;
-
-
-      if pclk_count < PCLK_INTERVAL then
-        ovm_href <= '0';
-      elsif pclk_count mod PCLK_INTERVAL = 0 then
-        ovm_href <= not ovm_href;
-      elsif pclk_count > (PCLK_INTERVAL*CAM_NUM_ROWS*2) then
-        pclk_count <= -PCLK_INTERVAL*2;
-      end if;
-    end if;
-  end process;
 
 end architecture;
