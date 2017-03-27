@@ -74,6 +74,7 @@ static inline int PAD_UP(int n,int align)
 
 int test_convolve()
 {
+	printf("test_convolve()\r\n");
 	init_lve();
 	vbx_ubyte_t* v_input_map=vbx_sp_alloc(PAD_UP(INPUT_MAP_SIZE+2,4)*(INPUT_MAP_SIZE+2));
 	vbx_half_t* v_output_map=vbx_sp_alloc(PAD_UP(INPUT_MAP_SIZE+2,4)*(INPUT_MAP_SIZE)*sizeof(vbx_half_t));
@@ -169,6 +170,7 @@ int test_convolve()
 
 int test_word_to_byte()
 {
+	printf("test_word_to_byte()\r\n");
 	int test_length=1024;;
 	vbx_uword_t* v_input=SCRATCHPAD_BASE;
 	vbx_ubyte_t* v_output=(vbx_ubyte_t*)(v_input+test_length);
@@ -198,14 +200,14 @@ int test_word_to_byte()
 			printf("ERROR i=%d %x !=%x\r\n",i,(int)test_val,(int)v_output[i]);
 		}
 	}
-	if(!errors){
-		printf("WORD TO BYTE TEST Passed\r\n");
-	}
+
+	printf("WORD TO BYTE TEST %s\r\n", errors ? "Failed" : "Passed");
 	return errors;
 }
 
 int test_halfword_add()
 {
+	printf("test_halfword_add()\r\n");
 	int test_length=2048;
 	vbx_half_t* v_inputa=SCRATCHPAD_BASE;
 	vbx_half_t* v_inputb=(v_inputa+test_length);;
@@ -234,6 +236,7 @@ int test_halfword_add()
 
 int test_halftoword()
 {
+	printf("test_halftoword()\r\n");
 	init_lve();
 	int test_length=64;
 	vbx_half_t* v_input=SCRATCHPAD_BASE;
@@ -261,6 +264,7 @@ int test_halftoword()
 
 int main()
 {
+	printf("\r\n\r\nStarting conv_ci_test");
 	int errors=0;
 	errors += test_convolve();
 	errors += test_word_to_byte();
@@ -269,7 +273,7 @@ int main()
 
 
 
-	printf("DONE -- errors = %d %s\r\n",errors,errors?"FAILED :(":"PASSED :)");
+	printf("DONE -- errors = %d %s\r\n\r\n",errors,errors?"FAILED :(":"PASSED :)");
 
 }
 

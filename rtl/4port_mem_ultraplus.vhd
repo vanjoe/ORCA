@@ -64,108 +64,73 @@ begin
       end if;
     end process;
 
-  end generate;
+  end generate behavioural_ram;
 
   lattice_ram : if FAMILY = "LATTICE" generate
-    signal spram_address : std_logic_vector(13 downto 0);
-    signal mask_wren0    : std_logic_vector(3 downto 0);
-    signal mask_wren1    : std_logic_vector(3 downto 0);
+    constant SPRAM_ADDR_BITS : positive := 14;
+    constant SPRAM_WIDTH     : positive := 16;
+    constant MEM_DEPTH_RAMS  : positive := (MEM_DEPTH+(2**SPRAM_ADDR_BITS)-1)/(2**SPRAM_ADDR_BITS);
 
-    signal hi_output_sel : std_logic;
-    signal hi_sel_latch  : std_logic;
-    signal low_data_out  : std_logic_vector(data_out'range);
-    signal hi_data_out   : std_logic_vector(data_out'range);
-    signal low_we        : std_logic;
-    signal hi_we         : std_logic;
-    signal spram_data_in : std_logic_vector(data_in_d1'range);
+    signal spram_address : std_logic_vector(SPRAM_ADDR_BITS-1 downto 0);
+    type mask_wren_vector is array (natural range <>) of std_logic_vector(3 downto 0);
+    signal mask_wren     : mask_wren_vector((MEM_WIDTH/SPRAM_WIDTH)-1 downto 0);
 
+    signal we_depth       : std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
+    type data_out_vector is array (natural range <>) of std_logic_vector(MEM_WIDTH-1 downto 0);
+    signal data_out_depth : data_out_vector(MEM_DEPTH_RAMS-1 downto 0);
   begin
+    spram_address <= std_logic_vector(resize(unsigned(addr_d1), SPRAM_ADDR_BITS));
 
+    one_deep_gen : if MEM_DEPTH <= (2**SPRAM_ADDR_BITS) generate
+      we_depth(0) <= wr_en_d1;
 
-
-    hi_sel_latch <= '0' when MEM_DEPTH <= 2**14 else addr_d1(addr_d1'left);
-    mask_wren0   <= byte_en_d1(1) & byte_en_d1(1) & byte_en_d1(0) & byte_en_d1(0);
-    mask_wren1   <= byte_en_d1(3) & byte_en_d1(3) & byte_en_d1(2) & byte_en_d1(2);
-
-    low_we        <= not hi_sel_latch and wr_en_d1;
-    hi_we         <= hi_sel_latch and wr_en_d1;
-    spram_data_in <= data_in_d1;
-    spram_address <= std_logic_vector(resize(unsigned(addr_d1), 14));
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        hi_output_sel <= hi_sel_latch;
-
-        data_out      <= low_data_out;
-
-        if hi_output_sel = '1' then
-          data_out <= hi_data_out;
+      data_register : process (clk) is
+      begin  -- process data_register
+        if rising_edge(clk) then
+          data_out <= data_out_depth(0);
         end if;
-
-      end if;
-    end process;
-
-    SPRAM0 : component SB_SPRAM256KA
-      port map (
-        ADDRESS    => spram_address,
-        DATAIN     => spram_data_in(15 downto 0),
-        MASKWREN   => mask_wren0,
-        WREN       => low_we,
-        CHIPSELECT => chip_sel,
-        CLOCK      => clk,
-        STANDBY    => '0',
-        SLEEP      => '0',
-        POWEROFF   => '1',
-        DATAOUT    => low_data_out(15 downto 0));
-
-
-    SPRAM1 : component SB_SPRAM256KA
-      port map (
-        ADDRESS    => spram_address,
-        DATAIN     => spram_data_in(31 downto 16),
-        MASKWREN   => mask_wren1,
-        WREN       => low_we,
-        CHIPSELECT => chip_sel,
-        CLOCK      => clk,
-        STANDBY    => '0',
-        SLEEP      => '0',
-        POWEROFF   => '1',
-        DATAOUT    => low_data_out(31 downto 16));
-
-    BIG_MEM : if MEM_DEPTH > 2**14 generate
+      end process data_register;
+    end generate one_deep_gen;
+    multiple_deep_gen : if MEM_DEPTH > (2**SPRAM_ADDR_BITS) generate
+      signal depth_select_in  : unsigned((log2(MEM_DEPTH)-SPRAM_ADDR_BITS)-1 downto 0);
+      signal depth_select_out : unsigned((log2(MEM_DEPTH)-SPRAM_ADDR_BITS)-1 downto 0);
     begin
+      depth_select_in <= unsigned(addr_d1(addr_d1'left downto SPRAM_ADDR_BITS));
 
+      deep_ram_gen : for gdepth in MEM_DEPTH_RAMS-1 downto 0 generate
+        we_depth(gdepth) <= wr_en_d1 when (depth_select_in = to_unsigned(gdepth, log2(MEM_DEPTH)-SPRAM_ADDR_BITS)) else
+                            '0';
+      end generate deep_ram_gen;
 
-      SPRAM2 : component SB_SPRAM256KA
-        port map (
-          ADDRESS    => spram_address,
-          DATAIN     => spram_data_in(15 downto 0),
-          MASKWREN   => mask_wren0,
-          WREN       => hi_we,
-          CHIPSELECT => chip_sel,
-          CLOCK      => clk,
-          STANDBY    => '0',
-          SLEEP      => '0',
-          POWEROFF   => '1',
-          DATAOUT    => hi_data_out(15 downto 0));
+      data_register : process (clk) is
+      begin  -- process data_register
+        if rising_edge(clk) then
+          depth_select_out <= depth_select_in;
+          data_out         <= data_out_depth(to_integer(depth_select_out));
+        end if;
+      end process data_register;
+    end generate multiple_deep_gen;
 
-      SPRAM3 : component SB_SPRAM256KA
-        port map (
-          ADDRESS    => spram_address,
-          DATAIN     => spram_data_in(31 downto 16),
-          MASKWREN   => mask_wren1,
-          WREN       => hi_we,
-          CHIPSELECT => chip_sel,
-          CLOCK      => clk,
-          STANDBY    => '0',
-          SLEEP      => '0',
-          POWEROFF   => '1',
-          DATAOUT    => hi_data_out(31 downto 16));
+    parallel_ram_gen : for gram in (MEM_WIDTH/SPRAM_WIDTH)-1 downto 0 generate
+      mask_wren(gram) <= byte_en_d1((gram*2)+1) & byte_en_d1((gram*2)+1) & byte_en_d1((gram*2)+0) & byte_en_d1((gram*2)+0);
 
-
-    end generate BIG_MEM;
-
-  end generate;
+      deep_ram_gen : for gdepth in MEM_DEPTH_RAMS-1 downto 0 generate
+        SPRAM : component SB_SPRAM256KA
+          port map (
+            ADDRESS    => spram_address,
+            DATAIN     => data_in_d1(((gram+1)*SPRAM_WIDTH)-1 downto gram*SPRAM_WIDTH),
+            MASKWREN   => mask_wren(gram),
+            WREN       => we_depth(gdepth),
+            CHIPSELECT => chip_sel,
+            CLOCK      => clk,
+            STANDBY    => '0',
+            SLEEP      => '0',
+            POWEROFF   => '1',
+            DATAOUT    => data_out_depth(gdepth)(((gram+1)*SPRAM_WIDTH)-1 downto gram*SPRAM_WIDTH)
+            );
+      end generate deep_ram_gen;
+    end generate parallel_ram_gen;
+  end generate lattice_ram;
 
 end architecture behav;
 
