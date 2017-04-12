@@ -5,9 +5,20 @@ then
         exit 1
 fi
 
-git clone --recursive https://github.com/riscv/riscv-gnu-toolchain
-git clone https://github.com/riscv/riscv-opcodes.git
+#get relevant git repositories, at the correct commit
+git clone https://github.com/riscv/riscv-gnu-toolchain
+(cd riscv-gnu-toolchain;
+ git checkout -q ff21e26eb8c4d55dad7ad0b57e7bd8f7784a60e9;
+ git submodule update --init --recursive
+ )
 
+git clone https://github.com/riscv/riscv-opcodes.git
+(cd riscv-opcodes;
+ git checkout -q 3c1a9110b71658f6e3249186e8b44e7474a4ee90;
+ )
+
+
+#edit the opcodes to include lve instructions
 python opcodes-lve.py > opcodes-lve
 python opcodes-lve.py --riscv-opc > lve_extensions.h
 
@@ -26,9 +37,11 @@ mv lve_extensions.h $(dirname $RISCV_OPC_C)
 sed -i 's/#include "lve_extensions.h"//' $RISCV_OPC_C
 sed -i  '/\ Terminate the list.  /i#include "lve_extensions.h"' $RISCV_OPC_C
 
+
+# start the compilation/build
 cd riscv-gnu-toolchain
 mkdir build
 cd build
 ../configure --prefix=$RISCV_INSTALL --with-arch=rv32im --with-abi=ilp32
 
-make -j 10
+make -j $(( $(nproc)*2 ))
