@@ -11,23 +11,27 @@
 
 void mputc(void* p, char c){
 	volatile uint32_t *pioRegister = (volatile uint32_t *)SCCB_PIO_BASE;
+	uint32_t old_pio = *pioRegister;
+	uint32_t uart_low = old_pio | UART_BIT; //Inverted; set bit for low
+	uint32_t uart_high = old_pio & (~UART_BIT); //Inverted; clear bit for high
+
 	unsigned end_time = get_time() + UART_DELAY_CYCLES;
-	*pioRegister |= UART_BIT;
+	*pioRegister = uart_low;
 	int bit;
 	for(bit = 0; bit < 8; bit++){
+		uint32_t next_pio = uart_low;
+		if((c >> bit) & 0x1){
+			next_pio = uart_high;
+		}
 		while(get_time() < end_time){
 		}
-		if((c >> bit) & 0x1){
-			*pioRegister &= ~UART_BIT;
-		} else {
-			*pioRegister |= UART_BIT;
-		}
+		*pioRegister = next_pio;
 		end_time = end_time + UART_DELAY_CYCLES;
 	}
 	
 	while(get_time() < end_time){
 	}
-	*pioRegister &= ~UART_BIT;
+	*pioRegister = uart_high;
 	end_time = end_time + UART_DELAY_CYCLES;
 	while(get_time() < end_time){
 	}
