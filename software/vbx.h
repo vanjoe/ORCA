@@ -10,6 +10,6 @@
 
 void init_lve();
 
-#define  SCRATCHPAD_BASE ((void*)0x08000000)
+#define  SCRATCHPAD_BASE ((void*)0x04000000)
 
 #endif //VBX_H

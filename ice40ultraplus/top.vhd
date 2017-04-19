@@ -9,9 +9,10 @@ use work.rv_components.all;
 
 entity vhdl_top is
   generic (
-    USE_PLL : natural range 0 to 2 := 0;
-    USE_CAM : natural range 0 to 1 := 1;
-    USE_LVE : natural range 0 to 1 := 1);
+    USE_PLL  : natural range 0 to 2 := 0;
+    USE_CAM  : natural range 0 to 1 := 1;
+    USE_UART : natural range 0 to 1 := 1;
+    USE_LVE  : natural range 0 to 1 := 1);
   port(
 
     --spi
@@ -264,11 +265,9 @@ architecture rtl of vhdl_top is
 
   signal cam_dat_internal : std_logic_vector(7 downto 0);
 
-  signal pio_in  : std_logic_vector(7 downto 0);
-  signal pio_out : std_logic_vector(7 downto 0);
-  signal pio_oe  : std_logic_vector(7 downto 0);
-
-  signal cam_aux_out : std_logic_vector(7 downto 0);
+  signal pio_in  : std_logic_vector(4+(1-USE_UART) downto 0);
+  signal pio_out : std_logic_vector(4+(1-USE_UART) downto 0);
+  signal pio_oe  : std_logic_vector(4+(1-USE_UART) downto 0);
 begin
 
   pwm_counter : process (osc_clk) is
@@ -468,7 +467,6 @@ begin
       CLK_I => clk,
       RST_I => reset,
 
-                                        --reserved for camera
       slave0_ADR_I   => cam_sp_ADR_O,
       slave0_DAT_I   => cam_sp_DAT_O,
       slave0_WE_I    => cam_sp_WE_O,
@@ -656,7 +654,7 @@ begin
   split_wb_data : component wb_splitter
     generic map(
       SUB_ADDRESS_BITS => 25,
-      NUM_MASTERS      => 5,
+      NUM_MASTERS      => 4+USE_UART,
       JUST_OR_ACKS     => false
       )
     port map(
@@ -708,20 +706,20 @@ begin
       master1_ERR_I   => open,
       master1_RTY_I   => open,
 
-      master2_ADR_O   => data_uart_ADR_I,
-      master2_DAT_O   => data_uart_DAT_I,
-      master2_WE_O    => data_uart_WE_I,
-      master2_CYC_O   => data_uart_CYC_I,
-      master2_STB_O   => data_uart_STB_I,
-      master2_SEL_O   => data_uart_SEL_I,
-      master2_CTI_O   => data_uart_CTI_I,
-      master2_BTE_O   => data_uart_BTE_I,
-      master2_LOCK_O  => data_uart_LOCK_I,
-      master2_STALL_I => data_uart_STALL_O,
-      master2_DAT_I   => data_uart_DAT_O,
-      master2_ACK_I   => data_uart_ACK_O,
-      master2_ERR_I   => data_uart_ERR_O,
-      master2_RTY_I   => data_uart_RTY_O,
+      master2_ADR_O   => data_sp_ADR_O,
+      master2_DAT_O   => data_sp_DAT_O,
+      master2_WE_O    => data_sp_WE_O,
+      master2_CYC_O   => data_sp_CYC_O,
+      master2_STB_O   => data_sp_STB_O,
+      master2_SEL_O   => data_sp_SEL_O,
+      master2_CTI_O   => open,
+      master2_BTE_O   => open,
+      master2_LOCK_O  => open,
+      master2_STALL_I => data_sp_stall_i,
+      master2_DAT_I   => data_sp_DAT_I,
+      master2_ACK_I   => data_sp_ACK_I,
+      master2_ERR_I   => open,
+      master2_RTY_I   => open,
 
       master3_ADR_O   => sccb_pio_ADR_I,
       master3_DAT_O   => sccb_pio_DAT_I,
@@ -738,26 +736,26 @@ begin
       master3_ERR_I   => sccb_pio_ERR_O,
       master3_RTY_I   => sccb_pio_RTY_O,
 
-      master4_ADR_O   => data_sp_ADR_O,
-      master4_DAT_O   => data_sp_DAT_O,
-      master4_WE_O    => data_sp_WE_O,
-      master4_CYC_O   => data_sp_CYC_O,
-      master4_STB_O   => data_sp_STB_O,
-      master4_SEL_O   => data_sp_SEL_O,
-      master4_CTI_O   => open,
-      master4_BTE_O   => open,
-      master4_LOCK_O  => open,
-      master4_STALL_I => data_sp_stall_i,
-      master4_DAT_I   => data_sp_DAT_I,
-      master4_ACK_I   => data_sp_ACK_I,
-      master4_ERR_I   => open,
-      master4_RTY_I   => open
+      master4_ADR_O   => data_uart_ADR_I,
+      master4_DAT_O   => data_uart_DAT_I,
+      master4_WE_O    => data_uart_WE_I,
+      master4_CYC_O   => data_uart_CYC_I,
+      master4_STB_O   => data_uart_STB_I,
+      master4_SEL_O   => data_uart_SEL_I,
+      master4_CTI_O   => data_uart_CTI_I,
+      master4_BTE_O   => data_uart_BTE_I,
+      master4_LOCK_O  => data_uart_LOCK_I,
+      master4_STALL_I => data_uart_STALL_O,
+      master4_DAT_I   => data_uart_DAT_O,
+      master4_ACK_I   => data_uart_ACK_O,
+      master4_ERR_I   => data_uart_ERR_O,
+      master4_RTY_I   => data_uart_RTY_O
       );
 
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
 
-                                        --dma controller for reading blocks of flash
+  --dma controller for reading blocks of flash
   the_spi : wb_flash_dma
     generic map(
       MAX_LENGTH => 128*1024)
@@ -794,14 +792,14 @@ begin
 
   the_sccb_pio : wb_pio
     generic map (
-      DATA_WIDTH => 8
+      DATA_WIDTH => 5+(1-USE_UART)
       )
     port map(
       clk_i => clk,
       rst_i => reset,
 
       adr_i   => sccb_pio_adr_i,
-      dat_i   => sccb_pio_dat_i(7 downto 0),
+      dat_i   => sccb_pio_dat_i(4+(1-USE_UART) downto 0),
       we_i    => sccb_pio_we_i,
       cyc_i   => sccb_pio_cyc_i,
       stb_i   => sccb_pio_stb_i,
@@ -811,7 +809,7 @@ begin
       lock_i  => sccb_pio_lock_i,
       ack_o   => sccb_pio_ack_o,
       stall_o => sccb_pio_stall_o,
-      data_o  => sccb_pio_dat_o(7 downto 0),
+      data_o  => sccb_pio_dat_o(4+(1-USE_UART) downto 0),
       err_o   => sccb_pio_err_o,
       rty_o   => sccb_pio_rty_o,
 
@@ -835,10 +833,7 @@ begin
   led       <= pio_out(4) and led_counter(15) and led_counter(14);
   pio_in(4) <= pio_out(4);
 
-  pio_in(7 downto 5) <= pio_out(7 downto 5);
-
   no_cam_gen : if USE_CAM = 0 generate
-    rxd          <= pll_lock;
     cam_sp_ADR_O <= (others => '0');
     cam_sp_DAT_O <= (others => '0');
     cam_sp_WE_O  <= '0';
@@ -847,19 +842,8 @@ begin
     cam_sp_CYC_O <= '0';
     cam_sp_CTI_O <= (others => '0');
     ovm_dma_done <= '1';
-    cam_aux_out  <= (others => '0');
   end generate no_cam_gen;
   cam_gen : if USE_CAM /= 0 generate
-    with pio_out(7 downto 5) select
-      rxd <=
-      cam_aux_out(0) when "000",
-      cam_aux_out(1) when "001",
-      cam_aux_out(2) when "010",
-      cam_aux_out(3) when "011",
-      cam_aux_out(4) when "100",
-      cam_aux_out(5) when "101",
-      cam_aux_out(6) when "110",
-      cam_aux_out(7) when others;
     cam_ctrl : wb_cam
       port map(
         clk_i => clk,
@@ -882,8 +866,7 @@ begin
         ovm_pclk    => cam_pclk,
         ovm_vsync   => cam_vsync,
         ovm_href    => cam_href,
-        ovm_dat     => cam_dat_internal,
-        cam_aux_out => cam_aux_out
+        ovm_dat     => cam_dat_internal
         );
   end generate cam_gen;
 
@@ -1006,49 +989,54 @@ begin
                                         -- UART signals and interface
                                         -----------------------------------------------------------------------------
                                         --cts_n     <= cts;
-  txd       <= serial_out;
   serial_in <= '0';
                                         --rts       <= rts_n;
 
-  the_uart : uart_core
-    generic map (
-      CLK_IN_MHZ => (SYSCLK_FREQ_HZ+500000)/1000000,
-      BAUD_RATE  => 115200,
-      ADDRWIDTH  => 3,
-      DATAWIDTH  => 8,
-      MODEM_B    => false,              --true by default...
-      FIFO       => false
-      )
-    port map (
+  uart_gen : if USE_UART /= 0 generate
+    txd <= serial_out;
+    the_uart : uart_core
+      generic map (
+        CLK_IN_MHZ => (SYSCLK_FREQ_HZ+500000)/1000000,
+        BAUD_RATE  => 115200,
+        ADDRWIDTH  => 3,
+        DATAWIDTH  => 8,
+        MODEM_B    => false,            --true by default...
+        FIFO       => false
+        )
+      port map (
                                         -- Global reset and clock
-      CLK        => clk,
-      RESET      => reset,
+        CLK        => clk,
+        RESET      => reset,
                                         -- WISHBONE interface
-      UART_ADR_I => uart_adr_i,
-      UART_DAT_I => uart_dat_i,
-      UART_DAT_O => uart_dat_o,
-      UART_STB_I => uart_stb_i,
-      UART_CYC_I => uart_cyc_i,
-      UART_WE_I  => uart_we_i,
-      UART_SEL_I => uart_sel_i,
-      UART_CTI_I => uart_cti_i,
-      UART_BTE_I => uart_bte_i,
-      UART_ACK_O => uart_ack_o,
-      INTR       => uart_interrupt,
+        UART_ADR_I => uart_adr_i,
+        UART_DAT_I => uart_dat_i,
+        UART_DAT_O => uart_dat_o,
+        UART_STB_I => uart_stb_i,
+        UART_CYC_I => uart_cyc_i,
+        UART_WE_I  => uart_we_i,
+        UART_SEL_I => uart_sel_i,
+        UART_CTI_I => uart_cti_i,
+        UART_BTE_I => uart_bte_i,
+        UART_ACK_O => uart_ack_o,
+        INTR       => uart_interrupt,
                                         -- Receiver interface
-      SIN        => serial_in,
-      RXRDY_N    => rxrdy_n,
+        SIN        => serial_in,
+        RXRDY_N    => rxrdy_n,
                                         -- MODEM
-      DCD_N      => '1',
-      CTS_N      => cts_n,
-      DSR_N      => '1',
-      RI_N       => '1',
-      DTR_N      => dir_n,
-      RTS_N      => rts_n,
+        DCD_N      => '1',
+        CTS_N      => cts_n,
+        DSR_N      => '1',
+        RI_N       => '1',
+        DTR_N      => dir_n,
+        RTS_N      => rts_n,
                                         -- Transmitter interface
-      SOUT       => serial_out,
-      TXRDY_N    => txrdy_n
-      );
+        SOUT       => serial_out,
+        TXRDY_N    => txrdy_n
+        );
+  end generate uart_gen;
+  no_uart_gen : if USE_UART = 0 generate
+    txd <= not pio_out(5);              --Invert so that it resets high
+  end generate no_uart_gen;
 
 
                                         -----------------------------------------------------------------------------
