@@ -70,6 +70,7 @@ void cam_extract_and_pad(vbx_ubyte_t* channel,vbx_word_t* rgba_in,int byte_sel,i
 	}
 	for(r=0;r<rows+2;r++){
 		for(c=0;c<cols+4;c++){
+
 			int pixel;
 			if (c==0 || r==0 ||
 			    c>=cols+1 || r>=rows+1){
@@ -105,26 +106,45 @@ void cifar_lve() {
 
 	printf("CES demo\r\n");
 	printf("Lattice\r\n");
-	printf("Testing convolution ci\r\n");
+
+		//wait while initializing
+	while(FLASH_DMA_BASE[FLASH_DMA_STATUS] & 0x80000000){
+		printf("waiting for Flash initialization\r\n");
+	}
 
 	init_lve();
 	//enable output on LED
 	SCCB_PIO_BASE[PIO_ENABLE_REGISTER] |= (1<<PIO_LED_BIT);
 #if USE_CAM_IMG
 	ovm_initialize();
-	int last_max_cat=0;
 #endif
-
-	int max_cat=0;
-
+	int is_face=0;
+	int max_cat;
 	int c, m = 32, n = 32, verbose = 0;
 	vbx_ubyte_t* v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024); // IMPORTANT: padded input placed here
 	vbx_word_t* v_out = (vbx_word_t*)  (SCRATCHPAD_BASE+0*1024); // IMPORTANT: 10 outputs produced here
 	vbx_ubyte_t* v_inb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
+
+#if CATEGORIES == 10
 	char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
-	printf("catagories:\r\n");
-	for (c = 0; c < 10; c++) {
+#else
+	char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
+#endif
+	printf("categories:\r\n");
+	for (c = 0; c < CATEGORIES; c++) {
 		printf("%s\r\n", categories[c]);
+	}
+
+
+	//boot loop
+	int i=0;
+	for(i=0;i<3*4;i++){
+	    //turn off led
+		SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
+		delayms(125);
+		//turn off led
+		SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
+		delayms(125);
 	}
 	do{
 		unsigned start_time=get_time();
@@ -132,7 +152,7 @@ void cifar_lve() {
 
 #if USE_CAM_IMG
 		//get camera frame
-		if(last_max_cat != 4 /*person*/){
+		if(!is_face){
 			//turn on led
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
 		}else {
@@ -140,13 +160,9 @@ void cifar_lve() {
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
 		}
 		ovm_get_frame();
-		last_max_cat = max_cat;
-		if(max_cat == 4 /*person*/){
+		if(is_face){
 			//turn on led
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
-			if(verbose){
-				printf("PERSON DETECTED %d\r\n ",(int)v_out[max_cat]);
-			}
 		}else {
 			//turn off led
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
@@ -166,12 +182,6 @@ void cifar_lve() {
 
 			}
 		}
-		//hack for cleaning up last two rows
-		if(max_cat==4){
-			rgb_plane[3*(row*32)]= 0xFF;
-		}else{
-			rgb_plane[3*(row*32)]= 0;
-		}
 
 		printf("base64:");
 		print_base64((char*)rgb_plane,3*32*32);
@@ -187,8 +197,9 @@ void cifar_lve() {
 
 #else
 
-		// dma in test image (or get from camera!!)
-		int test_img_offset= CES_GOLDEN?GOLDEN_FLASH_DATA_OFFSET:REDUCED_FLASH_DATA_OFFSET;
+		// dma in test image
+		/* int test_img_offset= CES_GOLDEN?GOLDEN_FLASH_DATA_OFFSET:REDUCED_FLASH_DATA_OFFSET; */
+		int test_img_offset= GOLDEN_FLASH_DATA_OFFSET;
 		vbx_flash_dma((vbx_word_t*)v_inb, test_img_offset+0, (3*m*n)*sizeof(vbx_ubyte_t));
 
 		// zero pad imaged w/ bytes
@@ -201,20 +212,22 @@ void cifar_lve() {
 
 		// print results (or toggle LED if person is max, and > 0)
 		printf("scores: ");
-		for (c = 0; c < 10; c++) {
+		max_cat=0;
+		for (c = 0; c < CATEGORIES; c++) {
 			if(v_out[c] > v_out[max_cat] ){
 				max_cat =c;
 			}
 			printf("%d\t", (int)v_out[c]);
 		}
+		is_face=(max_cat==1 && v_out[max_cat]>100);
+
 		printf("\r\n");
 
 		if (verbose) {
-			for (c = 0; c < 10; c++) {
+			for (c = 0; c < CATEGORIES; c++) {
 				printf("%s\t%d\r\n", categories[c], (int)v_out[c]);
 			}
 		}
-
 #if 1
 #endif
 		unsigned net_cycles=get_time()-start_time;

@@ -244,7 +244,11 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
     vbx_uhalf_t *v_weights;
 
     int buf = 0;
+#if 1
     int dma_size = 2*4 + layer->channels*2;
+#else
+    int dma_size = 2*4 + layer->channels*2*2;
+#endif
     int dma_pad = dma_size % 4;
 
     vbx_flash_dma(v_dma[buf], layer->weights, dma_size+dma_pad);
@@ -260,6 +264,7 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 	vbx(SVW, VAND, v_map, 0, v_map);
 	vbx(SVW, VOR, v_map, v_dma[buf][0], v_map);
 
+#if 1
 	vbx_set_vl(n/2*m);
 	vbx(SVW, VAND, (vbx_word_t*)v_maph, 0, (vbx_word_t*)v_maph);
 
@@ -272,6 +277,11 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 	if (layer->channels % 16) {
 	    vbx_accumulate_columns(v_map, v_maph, v_tmp, m , n);
 	}
+#else
+	for (c = 0; c < layer->channels; c+=2) {
+	    vbx_convolve_ci(v_maph, v_inb + c*(m+2)*(n+4), (vbx_half_t*)v_tmp, m, n, v_weights[c]);
+	}
+#endif
 
 	if (layer->maxpool) {
 	    vbx_pool(v_map, v_tmp, m, n);

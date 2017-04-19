@@ -7,7 +7,7 @@ import time
 scale=10
 
 ss=serial.Serial(sys.argv[1],baudrate=115200)
-
+is_face=False
 while(True):
     ln=ss.readline()[:-1]
     img_rows=32
@@ -22,12 +22,11 @@ while(True):
             continue
 
         cvimage = np.array(data,dtype=np.uint8).reshape(img_rows,img_cols,3)
-        check=cvimage[30][0][0] != 0
 
         #set last two rows as green or red
         cvimage[30:,:,0] = 0
-        cvimage[30:,:,1] = 255 if check else 0
-        cvimage[30:,:,2] = 0 if check else 255
+        cvimage[30:,:,1] = 255 if is_face else 0
+        cvimage[30:,:,2] = 0 if   is_face else 255
 
         bigimage=cv2.resize(cvimage,(img_cols*scale,img_rows*scale),interpolation=cv2.INTER_NEAREST)
 
@@ -45,7 +44,7 @@ while(True):
             cv2.imwrite(filename,cvimage)
     elif "scores:" == ln[:len("scores:")]:
         ln=ln[len("scores:"):]
-        catagories=["air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"]
+        catagories=["nonface", "face"]
         scores=zip(catagories,[int(s) for s in ln.split()])
 
         max_score= max(scores,key=lambda x :x[1])
@@ -55,7 +54,9 @@ while(True):
                 sys.stdout.write("   <==\n")
             else:
                 sys.stdout.write("\n")
-        print("")
+        #check face score
+        is_face=scores[1][1]> 100
+
     else:
         print ln
         pass

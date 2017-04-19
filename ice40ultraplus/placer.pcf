@@ -36,12 +36,12 @@ set_io spi_ss C1
 set_io txd A1
 
 #boot from flash
-#set_io spi_miso E1
-#set_io spi_mosi F1
+set_io spi_miso E1
+set_io spi_mosi F1
 
 #boot from jtag
-set_io spi_miso F1
-set_io spi_mosi E1
+#set_io spi_miso F1
+#set_io spi_mosi E1
 
 
 set_io cdone_led D3
