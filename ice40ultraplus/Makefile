@@ -95,6 +95,7 @@ $(FINAL_BITFILE): bits.bin golden.bin reduced.bin
 	cat golden.bin >> $@
 	truncate --size $$(( 0xB0000 )) $@
 	cat reduced.bin >> $@
+	echo -en "\x01\x06\x00" >> $@
 	xxd -c 1 $@  | awk '{print $$2}' > flash.mem
 	wc -c $@
 
@@ -102,8 +103,8 @@ bits: $(FINAL_BITFILE)
 
 pgm : $(FINAL_BITFILE)
 	$(PGM_CMD) programmer.xcf || true
-
-
+pgm-flash : $(FINAL_BITFILE)
+	$(PGM_CMD) programmer_flash.xcf || true
 .PHONY: syn all clean clean-all build-software bit pgm sim run_sim
 
 .DELETE_ON_ERROR:

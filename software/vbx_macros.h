@@ -97,7 +97,7 @@ static inline int vbx_get_vl(){
 
 static inline void* vbx_sp_alloc(unsigned sz){
 	char* retval=the_lve.sp_ptr;
-	the_lve.sp_ptr+=sz;
+	the_lve.sp_ptr += (sz+3) & (~0x3); //Align to words since LVE doesn't support arbitary alignments
 	return (void*)retval;
 }
 

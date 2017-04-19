@@ -31,7 +31,7 @@ LD_FLAGS= -static -nostartfiles -march=$(ARCH)
 TARGET=test
 
 #For including the system clock time
-SYS_CLK_FREQ :=(($(shell sed -n 's/.*USE_PLL \([0-9]\)/\1/p' ../ice40ultraplus_syn.prj)+1)*8000000)
+SYS_CLK_FREQ :=(($(shell sed -n 's/.*USE_PLL *\([0-9]\)/\1/p' ../ice40ultraplus_syn.prj)+1)*8000000)
 SYS_CLK_TEMPLATE := sys_clk.h.template
 SYS_CLK_TEMP     := sys_clk.h.temp
 sys_clk.h::

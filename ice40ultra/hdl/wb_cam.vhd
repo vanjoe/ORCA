@@ -30,9 +30,7 @@ entity wb_cam is
     ovm_pclk  : in std_logic;
     ovm_vsync : in std_logic;
     ovm_href  : in std_logic;
-    ovm_dat   : in std_logic_vector(7 downto 0);
-
-    cam_aux_out : out std_logic_vector(7 downto 0)
+    ovm_dat   : in std_logic_vector(7 downto 0)
     );
 end entity wb_cam;
 
@@ -395,14 +393,6 @@ begin  -- architecture rtl
   end process;
 
 
-  cam_aux_out(0) <= v_load_pixel;
-  cam_aux_out(1) <= h_load_pixel;
-  cam_aux_out(2) <= ovm_pclk;
-  cam_aux_out(3) <= ovm_pixel_valid;
-  cam_aux_out(4) <= v_load_row;
-  cam_aux_out(5) <= extra_href;
-  cam_aux_out(6) <= ff0;
-  cam_aux_out(7) <= v_rgb_out_valid;
 
 
   output_latch_lve : process(clk_i)

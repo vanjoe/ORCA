@@ -1,5 +1,5 @@
-#include "lve_test.h"
 #include "printf.h"
+#include "vbx.h"
 
 #define TEST_LENGTH 16
 
@@ -25,16 +25,14 @@ int lve_test(unsigned int *failing_tests_ptr){
   *failing_tests_ptr = 0;
  
 	//Vectors, manually allocated in scratchpad
-	volatile vbx_uword_t *v_a = ((vbx_uword_t *)SCRATCHPAD_BASE) + 0;
-	volatile vbx_uword_t *v_b = ((vbx_uword_t *)SCRATCHPAD_BASE) + TEST_LENGTH;
-	volatile vbx_uword_t *v_c = ((vbx_uword_t *)SCRATCHPAD_BASE) + (2*TEST_LENGTH);
-	volatile vbx_ubyte_t *v_c_byte = (vbx_ubyte_t *)v_c;
+	vbx_uword_t *v_a = ((vbx_uword_t *)SCRATCHPAD_BASE) + 0;
+	vbx_uword_t *v_b = ((vbx_uword_t *)SCRATCHPAD_BASE) + TEST_LENGTH;
+	vbx_uword_t *v_c = ((vbx_uword_t *)SCRATCHPAD_BASE) + (2*TEST_LENGTH);
 
 	//Scalar data, will keep up to data with vector
 	vbx_uword_t a[TEST_LENGTH];
 	vbx_uword_t b[TEST_LENGTH];
 	vbx_uword_t c[TEST_LENGTH];
-	vbx_ubyte_t c_byte[TEST_LENGTH];
 
   //Should be moved into a different test;
   //just running here to make sure I'm not breaking the LSU
@@ -101,6 +99,7 @@ int lve_test(unsigned int *failing_tests_ptr){
 
   for(element = 0; element < TEST_LENGTH; element++){
 		if(a[element] != v_a[element]){
+			printf("Enum error at %d, expected 0x%08X got 0x%08X\r\n", element, a[element], v_a[element]);
 			*failing_tests_ptr |= ENUM_TEST_MASK;
 			errors++;
 			v_a[element] = a[element];
@@ -269,60 +268,69 @@ int lve_test(unsigned int *failing_tests_ptr){
 
 
 #if (TEST_RUN_MASK & CI_WB_MASK)
-	the_lve.stride=1;
-	//Initialize data with some known values
-	for(element = 0; element < TEST_LENGTH; element++){
-		v_a[element] = ((element&1)?element: -element)<<5;
+	{
+		vbx_ubyte_t *v_c_byte = (vbx_ubyte_t *)v_c;
+		vbx_ubyte_t c_byte[TEST_LENGTH];
 
-		a[element]   = v_a[element];
+		the_lve.stride=1;
+		//Initialize data with some known values
+		for(element = 0; element < TEST_LENGTH; element++){
+			v_a[element] = ((element&1)?element: -element)<<5;
 
-		if(((signed)a[element]) > 127){
-			c_byte[element] = 127;
-		}else if(((signed)a[element]) < -128 ){
-			c_byte[element] = -128;
-		}else{
-			c_byte[element] = a[element];
-		}
+			a[element]   = v_a[element];
 
-	}
-	vbx_set_vl(TEST_LENGTH);
-	vbx(VVBWU,VCUSTOM0,v_c_byte,v_a,0);
-	for(element = 0; element < TEST_LENGTH; element++){
-		if(v_c_byte[element]!= c_byte[element]){
-			*failing_tests_ptr |= CI_WB_MASK;
-			errors ++;
+			if(((signed)a[element]) > 127){
+				c_byte[element] = 127;
+			}else if(((signed)a[element]) < -128 ){
+				c_byte[element] = -128;
+			}else{
+				c_byte[element] = a[element];
+			}
 
 		}
+		vbx_set_vl(TEST_LENGTH);
+		vbx(VVBWU,VCUSTOM0,v_c_byte,v_a,0);
+		for(element = 0; element < TEST_LENGTH; element++){
+			if(v_c_byte[element]!= c_byte[element]){
+				*failing_tests_ptr |= CI_WB_MASK;
+				errors ++;
 
+			}
+
+		}
 	}
 #endif // (TEST_RUN_MASK & CI_WB_MASK)
 
 #if (TEST_RUN_MASK & CI_WB_MASK)
-	the_lve.stride=1;
-	//Initialize data with some known values
-	for(element = 0; element < TEST_LENGTH; element++){
-		v_a[element] = ((element&1)?element: -element)<<5;
+	{
+		vbx_ubyte_t *v_c_byte = (vbx_ubyte_t *)v_c;
+		vbx_ubyte_t c_byte[TEST_LENGTH];
+		the_lve.stride=1;
+		//Initialize data with some known values
+		for(element = 0; element < TEST_LENGTH; element++){
+			v_a[element] = ((element&1)?element: -element)<<5;
 
-		a[element]   = v_a[element];
+			a[element]   = v_a[element];
 
-		if(((signed)a[element]) > 127){
-			c_byte[element] = 127;
-		}else if(((signed)a[element]) < -128 ){
-			c_byte[element] = -128;
-		}else{
-			c_byte[element] = a[element];
-		}
-
-	}
-	vbx_set_vl(TEST_LENGTH);
-	vbx(VVBWU,VCUSTOM0,v_c_byte,v_a,0);
-	for(element = 0; element < TEST_LENGTH; element++){
-		if(v_c_byte[element]!= c_byte[element]){
-			*failing_tests_ptr |= CI_WB_MASK;
-			errors ++;
+			if(((signed)a[element]) > 127){
+				c_byte[element] = 127;
+			}else if(((signed)a[element]) < -128 ){
+				c_byte[element] = -128;
+			}else{
+				c_byte[element] = a[element];
+			}
 
 		}
+		vbx_set_vl(TEST_LENGTH);
+		vbx(VVBWU,VCUSTOM0,v_c_byte,v_a,0);
+		for(element = 0; element < TEST_LENGTH; element++){
+			if(v_c_byte[element]!= c_byte[element]){
+				*failing_tests_ptr |= CI_WB_MASK;
+				errors ++;
 
+			}
+
+		}
 	}
 #endif // (TEST_RUN_MASK & CI_WB_MASK)
 
@@ -352,4 +360,20 @@ int lve_test(unsigned int *failing_tests_ptr){
 
 
 	return errors;
+}
+
+int main(){
+	int errors = 0;
+	unsigned int failed_tests = 0x0000;
+	printf("\r\nCI test\r\n");
+
+	errors += lve_test(&failed_tests);
+
+	if(errors){
+		printf("Failed CI test with %d errors %04X mask :(\r\n", errors, failed_tests);
+	} else {
+		printf("Passed CI test :)\r\n");
+	}
+													 
+	return 0;
 }

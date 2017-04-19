@@ -2,7 +2,6 @@
 #include "i2s.h"
 
 #include "interrupt.h"
-#include "lve_test.h"
 
 //////////////////////
 //

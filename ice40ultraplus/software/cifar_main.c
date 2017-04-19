@@ -117,7 +117,7 @@ void cifar_lve() {
 
 	int max_cat=0;
 
-	int c, m = 32, n = 32, verbose = 1;
+	int c, m = 32, n = 32, verbose = 0;
 	vbx_ubyte_t* v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024); // IMPORTANT: padded input placed here
 	vbx_word_t* v_out = (vbx_word_t*)  (SCRATCHPAD_BASE+0*1024); // IMPORTANT: 10 outputs produced here
 	vbx_ubyte_t* v_inb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);

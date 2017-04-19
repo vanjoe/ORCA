@@ -1,10 +1,44 @@
 #include "uart.h"
+#define BIT_BANG_UART 1
 
+#if BIT_BANG_UART
+
+#define UART_BIT (1<<5)
+#define UART_DELAY_CYCLES (SYS_CLK/115200)
+
+#include "time.h"
+#include "sccb.h"
+
+void mputc(void* p, char c){
+	volatile uint32_t *pioRegister = (volatile uint32_t *)SCCB_PIO_BASE;
+	unsigned end_time = get_time() + UART_DELAY_CYCLES;
+	*pioRegister |= UART_BIT;
+	int bit;
+	for(bit = 0; bit < 8; bit++){
+		while(get_time() < end_time){
+		}
+		if((c >> bit) & 0x1){
+			*pioRegister &= ~UART_BIT;
+		} else {
+			*pioRegister |= UART_BIT;
+		}
+		end_time = end_time + UART_DELAY_CYCLES;
+	}
+	
+	while(get_time() < end_time){
+	}
+	*pioRegister &= ~UART_BIT;
+	end_time = end_time + UART_DELAY_CYCLES;
+	while(get_time() < end_time){
+	}
+}
+
+#else
 //////////////////////
 //
 // UART stuff
 //////////////////////
-#define  UART_BASE ((volatile int*) 0x04000000)
+#define  UART_BASE ((volatile int*) 0x08000000)
 
 volatile int*  UART_DATA=UART_BASE;
 volatile int*  UART_LCR=UART_BASE+3;
@@ -24,3 +58,4 @@ void mputc(void* p, char c){
 	while(UART_BUSY());
 	*UART_DATA = c;
 }
+#endif

@@ -765,9 +765,7 @@ package top_component_pkg is
       ovm_pclk  : in std_logic;
       ovm_vsync : in std_logic;
       ovm_href  : in std_logic;
-      ovm_dat   : in std_logic_vector(7 downto 0);
-
-      cam_aux_out : out std_logic_vector(7 downto 0)
+      ovm_dat   : in std_logic_vector(7 downto 0)
       );
   end component wb_cam;
 

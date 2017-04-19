@@ -3,7 +3,7 @@ import cv2
 import base64
 import serial
 import sys
-
+import time
 scale=10
 
 ss=serial.Serial(sys.argv[1],baudrate=115200)
@@ -29,12 +29,20 @@ while(True):
         cvimage[30:,:,1] = 255 if check else 0
         cvimage[30:,:,2] = 0 if check else 255
 
-        cvimage=cv2.resize(cvimage,(img_cols*scale,img_rows*scale),interpolation=cv2.INTER_NEAREST)
+        bigimage=cv2.resize(cvimage,(img_cols*scale,img_rows*scale),interpolation=cv2.INTER_NEAREST)
 
-        cv2.imshow('Cam',cvimage)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        cv2.imshow('Cam',bigimage)
+        filename=None
+        key=cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
             break
+        if key == ord('f'):
+            filename="face_{}.png".format(int(time.time()*10))
+        if key == ord('n'):
+            filename="notface_{}.png".format(int(time.time()*10))
+        if filename:
+            print("saving: {}".format(filename))
+            cv2.imwrite(filename,cvimage)
     elif "scores:" == ln[:len("scores:")]:
         ln=ln[len("scores:"):]
         catagories=["air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"]
