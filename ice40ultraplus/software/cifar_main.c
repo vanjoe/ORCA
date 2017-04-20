@@ -5,8 +5,8 @@
 #include "sccb.h"
 
 #define USE_CAM_IMG 1
-#define PRINT_B64_IMG 1
-
+#define PRINT_B64_IMG 0
+#define BLINK_LED 0
 
 //expects 3 padded 32x32 byte images at SCRATCHPAD_BASE+80*1024, output @ SCRATCHPAD_BASE
 void run_network(const int verbose,layer_t *cifar)
@@ -118,6 +118,7 @@ void cifar_lve() {
 #if USE_CAM_IMG
 	ovm_initialize();
 #endif
+	int frame_num=0;
 	int is_face=0;
 	int max_cat;
 	int c, m = 32, n = 32, verbose = 0;
@@ -128,8 +129,9 @@ void cifar_lve() {
 #if CATEGORIES == 10
 	char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
 #else
-	char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
+	char *categories[] = {"noface","face"};
 #endif
+
 	printf("categories:\r\n");
 	for (c = 0; c < CATEGORIES; c++) {
 		printf("%s\r\n", categories[c]);
@@ -151,7 +153,13 @@ void cifar_lve() {
 
 
 #if USE_CAM_IMG
+
+#if BLINK_LED
+
+#endif //BLINK LED
+
 		//get camera frame
+		ovm_get_frame();
 		if(!is_face){
 			//turn on led
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
@@ -159,7 +167,7 @@ void cifar_lve() {
 			//turn off led
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
 		}
-		ovm_get_frame();
+		delayms(1);
 		if(is_face){
 			//turn on led
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
@@ -167,6 +175,7 @@ void cifar_lve() {
 			//turn off led
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
 		}
+
 
 #if PRINT_B64_IMG
 
@@ -211,17 +220,13 @@ void cifar_lve() {
 		run_network(verbose,network);
 
 		// print results (or toggle LED if person is max, and > 0)
-		printf("scores: ");
 		max_cat=0;
 		for (c = 0; c < CATEGORIES; c++) {
 			if(v_out[c] > v_out[max_cat] ){
 				max_cat =c;
 			}
-			printf("%d\t", (int)v_out[c]);
 		}
-		is_face=(max_cat==1 && v_out[max_cat]>100);
-
-		printf("\r\n");
+		is_face=(max_cat==1);
 
 		if (verbose) {
 			for (c = 0; c < CATEGORIES; c++) {
@@ -232,7 +237,7 @@ void cifar_lve() {
 #endif
 		unsigned net_cycles=get_time()-start_time;
 		unsigned net_ms=cycle2ms(net_cycles);
-		printf("Frame processing took %u cycles %u ms \r\n",net_cycles,net_ms);
+		printf("Frame %d: %u ms Face Score = %d \r\n",frame_num++,net_ms,(int) v_out[1]);
 
 	}while(USE_CAM_IMG);
 }

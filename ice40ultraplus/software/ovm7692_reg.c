@@ -188,9 +188,9 @@ static const regval_t regval_list[] = {
 // {0x30, 0x04},   // PCLK divide by 1 (default)
 
 // PCLK DIVIDER: METHOD 2, recomnmended by Omnivision, used by Sony
-// {0x11, 0x00},   // PCLK divider, data=N=0, divide by (N+1)=1
+ {0x11, 0x00},   // PCLK divider, data=N=0, divide by (N+1)=1
 // {0x11, 0x02},   // PCLK divider, data=N=1, divide by (N+1)=3
- {0x11, 0x01},   // PCLK divider, data=N=1, divide by (N+1)=2
+// {0x11, 0x01},   // PCLK divider, data=N=1, divide by (N+1)=2
 
 
 

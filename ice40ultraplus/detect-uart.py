@@ -55,7 +55,7 @@ while(True):
             else:
                 sys.stdout.write("\n")
         #check face score
-        is_face=scores[1][1]> 100
+        is_face=scores[1][1]> 0
 
     else:
         print ln

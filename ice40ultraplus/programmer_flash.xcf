@@ -18,7 +18,7 @@
 				<BScanVal>0</BScanVal>
 			</Bypass>
 			<File>flash.bin</File>
-			<FileTime>03/27/17 14:23:00</FileTime>
+			<FileTime>04/19/17 14:41:51</FileTime>
 			<Operation>SPI Flash Erase,Program,Verify</Operation>
 			<Option>
 				<SVFVendor>JTAG STANDARD</SVFVendor>
@@ -44,7 +44,7 @@
 					<Option>
 						<SVFVendor>JTAG STANDARD</SVFVendor>
 						<IOState>HighZ</IOState>
-						<IOVectorData>Ð³7</IOVectorData>
+						<IOVectorData>À©*</IOVectorData>
 						<AccessMode>JTAG</AccessMode>
 					</Option>
 				</Device>
@@ -60,9 +60,9 @@
 					<Operation>SPI Flash Erase,Program,Verify</Operation>
 					<File>flash.bin</File>
 					<AddressBase>0x00000000</AddressBase>
-					<EndAddress>0x000F0000</EndAddress>
+					<EndAddress>0x000D0000</EndAddress>
 					<DeviceSize>32</DeviceSize>
-					<DataSize>1007027</DataSize>
+					<DataSize>893043</DataSize>
 					<NumberOfDevices>1</NumberOfDevices>
 					<ReInitialize value="FALSE"/>
 				</Device>
@@ -97,7 +97,7 @@
 	</ProjectOptions>
 	<CableOptions>
 		<CableName>USB2</CableName>
-		<PortAdd>FTUSB-0</PortAdd>
-		<USBID>DUAL RS232-HS A Location 0000 Serial Dual RS232-HS A</USBID>
+		<PortAdd>FTUSB-1</PortAdd>
+		<USBID>DUAL RS232-HS A Location 0001 Serial Dual RS232-HS A</USBID>
 	</CableOptions>
 </ispXCF>
