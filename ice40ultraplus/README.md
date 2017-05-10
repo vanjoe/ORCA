@@ -12,7 +12,7 @@
 - save as `programmer-flash.xcf`
 - currently need `pgm-flash` to program board as jumpers switched
 
-- see `./uart.jpg` for UART (accessed via `picocom -b 1152000 /dev/ttyUSBX`)
+- see `./uart0.jpg` `./uart1.jpg` for UART (accessed via `picocom -b 1152000 /dev/ttyUSBX`)
 
 #Building Flash.bin
 
