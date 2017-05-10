@@ -7,8 +7,11 @@
 `programmer.xcf` `programmer-flash.xcf`
 
 - can generate and save updated `programmer-flash.xcf` via GUI tool @ `/nfs/opt/lattice/programmer/3.8_x64/bin/lin64/programmer`
-- choose `open from existing`, using `programmer-flash.xcf` as base, then `detect cable`
+- choose last option to `open from existing project`, using `programmer-flash.xcf` as base
+- click `detect cable` (may still need to try manually, if multiple found)
 - double-click `Operation` and change flash chip between `SPI-M25P32` and `SPI-M25P80`
+- click `load from file` to get actual `flash.bin` size
+- test an ensure it works (try switch cables if multiple found)
 - save as `programmer-flash.xcf`
 - currently need `pgm-flash` to program board as jumpers switched
 
