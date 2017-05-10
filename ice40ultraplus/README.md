@@ -1,3 +1,19 @@
+#Up and running
+
+- run `make` for initial build and to generate `flash.bin`
+- initial builds need to run on `avx`, subsquent software rebuilds can run on local machine
+
+- may need to edit xml for flash chip (depends on board) or FTUSB port (depends on what port usb cords in)
+`programmer.xcf` `programmer-flash.xcf`
+
+- can generate and save updated `programmer-flash.xcf` via GUI tool @ `/nfs/opt/lattice/programmer/3.8_x64/bin/lin64/programmer`
+- choose `open from existing`, using `programmer-flash.xcf` as base, then `detect cable`
+- double-click `Operation` and change flash chip between `SPI-M25P32` and `SPI-M25P80`
+- save as `programmer-flash.xcf`
+- currently need `pgm-flash` to program board as jumpers switched
+
+- see `./uart.jpg` for UART (accessed via `picocom -b 1152000 /dev/ttyUSBX`)
+
 #Building Flash.bin
 
 The flash.bin has the bitstream at offset 0, the golden.bin contents at offset 0x20000 and reduced.bin at offset 0xB0000.
