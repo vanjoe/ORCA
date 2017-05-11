@@ -105,128 +105,6 @@ void vbx_accumulate_columns(vbx_word_t *v_map, vbx_half_t *v_maph, vbx_word_t *v
 }
 
 // takes in padded inputs
-#if 0
-void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_layer_t *layer, const int debug)
-{
-    int c, k, m = layer->m, n = layer->n, m0 = m, n0 = n;
-#ifdef SCALAR
-    int i;
-#endif
-    if (layer->maxpool) {
-	m0 = m/2; n0 = n/2;
-    }
-
-    // assumes 128K scratch
-    vbx_word_t *v_map = (vbx_word_t*)(SCRATCHPAD_BASE + 110*1024);
-    vbx_half_t *v_maph = (vbx_half_t*)(SCRATCHPAD_BASE + 114*1024);
-    vbx_word_t *v_tmp = (vbx_word_t*)(SCRATCHPAD_BASE + 116*1024);
-    vbx_word_t *v_dma0 = (vbx_word_t*)(SCRATCHPAD_BASE + 124*1024);
-    vbx_word_t *v_dma1 = (vbx_word_t*)(SCRATCHPAD_BASE + 126*1024);
-    vbx_word_t *v_dma[] = {v_dma0, v_dma1};
-    vbx_uhalf_t *v_weights;
-
-    int buf = 0;
-    int dma_size = 2*4 + layer->channels*2;
-    int dma_pad = dma_size % 4;
-
-    vbx_flash_dma(v_dma[buf], layer->weights, dma_size+dma_pad);
-
-    for (k = 0; k < layer->kernels; k++) {
-	v_weights = (vbx_uhalf_t*)(v_dma[buf] + 2);
-
-	if (k < layer->kernels-1) {
-	  vbx_flash_dma_async(v_dma[!buf], layer->weights + (k+1)*dma_size, dma_size+dma_pad);
-	}
-	// set kernel bias
-#ifndef SCALAR
-	vbx_set_vl(n*m);
-	vbx(SVW, VAND, v_map, 0, v_map);
-	vbx(SVW, VOR, v_map, v_dma[buf][0], v_map);
-
-	vbx_set_vl(n/2*m);
-	vbx(SVW, VAND, (vbx_word_t*)v_maph, 0, (vbx_word_t*)v_maph);
-#else
-	for (i = 0; i < n*m; i++) {
-	  v_map[i] = v_dma[buf][0];
-	  v_maph[i] = 0;
-	}
-#endif
-
-	for (c = 0; c < layer->channels; c++) {
-#ifndef SCALAR
-	    vbx_convolve_ci(v_maph, v_inb + c*(m+2)*(n+4), (vbx_half_t*)v_tmp, m, n, v_weights[c]);
-#else
-	    scalar_convolve_ci(v_maph, v_inb + c*(m+2)*(n+4), v_tmp, m, n, v_weights[c]);
-#endif
-	    if ((c+1)%16 == 0) {
-#ifndef SCALAR
-	      vbx_accumulate_columns(v_map, v_maph, v_tmp, m, n);
-#else
-	      scalar_accumulate_columns(v_map, v_maph, m, n);
-#endif
-	    }
-	}
-	if (layer->channels % 16) {
-#ifndef SCALAR
-	    vbx_accumulate_columns(v_map, v_maph, v_tmp, m , n);
-#else
-	    scalar_accumulate_columns(v_map, v_maph, m , n);
-#endif
-	}
-
-	if (layer->maxpool) {
-#ifndef SCALAR
-	    vbx_pool(v_map, v_tmp, m, n);
-#else
-	    scalar_pool(v_map, m, n);
-#endif
-	}
-
-	vbx_set_vl(m0*n0);
-	if (layer->scale) {
-#ifndef SCALAR
-	    vbx(SVW, VMULH, v_map, v_dma[buf][1], v_map);
-#else
-	    long long mul;
-	    for (i = 0; i < m0*n0; i++) {
-	      mul = (long long)v_map[i] * (long long)v_dma[buf][1];
-	      v_map[i] = (int)(mul >> 32);
-	    }
-#endif
-	}
-
-	if (!layer->zeropad_output && layer->activation_type == RELU) {
-#ifndef SCALAR
-	    vbx_relu(v_map, v_tmp);
-#else
-	    scalar_relu(v_map, m0, n0);
-#endif
-	}
-	if (layer->zeropad_output) {
-#ifndef SCALAR
-	  vbx_zeropad_ci(v_outb+(k*(n0+4)*(m0+2)), v_tmp, v_map, m0, n0);
-#else
-	  scalar_zeropad_ci(v_outb+(k*(n0+4)*(m0+2)), v_map, m0, n0);
-#endif
-	} else {
-#ifndef SCALAR
-	  vbx_set_vl(m0*n0);
-	  vbx(SVW, VOR, (vbx_word_t*)v_outb+(k*n0*m0), 0, v_map);
-#else
-	  vbx_word_t* v_out = (vbx_word_t*)v_outb;
-	  for (i = 0; i < m0*n0; i++) {
-	    v_out[k*n0*m0+i] = v_map[i];
-	  }
-#endif
-	}
-
-	if (k < layer->kernels-1) {
-	  while(!flash_dma_done());
-	}
-	buf = !buf;
-    }
-}
-#else
 void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_layer_t *layer, const int debug)
 {
     int c, k, m = layer->m, n = layer->n, m0 = m, n0 = n;
@@ -234,37 +112,28 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 	m0 = m/2; n0 = n/2;
     }
 
+    int32_t bias, scale;
+
     // assumes 128K scratch
     vbx_word_t *v_map = (vbx_word_t*)(SCRATCHPAD_BASE + 110*1024);
     vbx_half_t *v_maph = (vbx_half_t*)(SCRATCHPAD_BASE + 114*1024);
     vbx_word_t *v_tmp = (vbx_word_t*)(SCRATCHPAD_BASE + 116*1024);
-    vbx_word_t *v_dma0 = (vbx_word_t*)(SCRATCHPAD_BASE + 124*1024);
-    vbx_word_t *v_dma1 = (vbx_word_t*)(SCRATCHPAD_BASE + 126*1024);
-    vbx_word_t *v_dma[] = {v_dma0, v_dma1};
+    int dma_size = 2*4 + layer->channels*2;
+    int dma_pad = dma_size % 4;
+    vbx_word_t *v_packed;
     vbx_uhalf_t *v_weights;
 
-    int buf = 0;
-#if 1
-    int dma_size = 2*4 + layer->channels*2;
-#else
-    int dma_size = 2*4 + layer->channels*2*2;
-#endif
-    int dma_pad = dma_size % 4;
-
-    vbx_flash_dma(v_dma[buf], layer->weights, dma_size+dma_pad);
-
     for (k = 0; k < layer->kernels; k++) {
-	v_weights = (vbx_uhalf_t*)(v_dma[buf] + 2);
+        v_packed = (vbx_word_t*)(layer->weights + k*(dma_size+dma_pad));
+	bias = v_packed[0];
+	scale = v_packed[1];
+	v_weights = (vbx_uhalf_t*)(v_packed + 2);
 
-	if (k < layer->kernels-1) {
-	  vbx_flash_dma_async(v_dma[!buf], layer->weights + (k+1)*dma_size, dma_size+dma_pad);
-	}
 	// set kernel bias
 	vbx_set_vl(n*m);
 	vbx(SVW, VAND, v_map, 0, v_map);
-	vbx(SVW, VOR, v_map, v_dma[buf][0], v_map);
+	vbx(SVW, VOR, v_map, bias, v_map);
 
-#if 1
 	vbx_set_vl(n/2*m);
 	vbx(SVW, VAND, (vbx_word_t*)v_maph, 0, (vbx_word_t*)v_maph);
 
@@ -277,11 +146,6 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 	if (layer->channels % 16) {
 	    vbx_accumulate_columns(v_map, v_maph, v_tmp, m , n);
 	}
-#else
-	for (c = 0; c < layer->channels; c+=2) {
-	    vbx_convolve_ci(v_maph, v_inb + c*(m+2)*(n+4), (vbx_half_t*)v_tmp, m, n, v_weights[c]);
-	}
-#endif
 
 	if (layer->maxpool) {
 	    vbx_pool(v_map, v_tmp, m, n);
@@ -289,7 +153,7 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 
 	vbx_set_vl(m0*n0);
 	if (layer->scale) {
-	    vbx(SVW, VMULH, v_map, v_dma[buf][1], v_map);
+	    vbx(SVW, VMULH, v_map, scale, v_map);
 	}
 
 	if (!layer->zeropad_output && layer->activation_type == RELU) {
@@ -301,55 +165,28 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 	  vbx_set_vl(m0*n0);
 	  vbx(SVW, VOR, (vbx_word_t*)v_outb+(k*n0*m0), 0, v_map);
 	}
-
-	if (k < layer->kernels-1) {
-	  while(!flash_dma_done());
-	}
-	buf = !buf;
     }
 }
-#endif
 
 void dense_lve(vbx_word_t *v_out, vbx_word_t *v_in, dense_layer_t *layer)
 {
     int x;
-    vbx_word_t *v_biases  = v_out + layer->outputs*1;
-    vbx_word_t *v_scales  = v_out + layer->outputs*2;
+    vbx_word_t *v_biases  = (vbx_word_t *)layer->biases;
+    vbx_word_t *v_scales  = (vbx_word_t *)layer->scales;
+    vbx_word_t *v_packed = (vbx_word_t *)layer->weights; // packed into 32x
     vbx_word_t *v_weights = v_out + layer->outputs*3;
-    vbx_word_t *v_buf0 = v_weights + layer->inputs*1;
-    vbx_word_t *v_buf1 = v_weights + layer->inputs*2;
-
-    vbx_word_t *v_dma[] = {v_buf0, v_buf1};
-
     vbx_word_t *v_relu = v_in;
 
-    // packed into 32x
-    int buf = 0;
-    vbx_flash_dma(v_dma[buf], layer->weights, layer->inputs/32*sizeof(vbx_word_t));
-
     for (x = 0; x < layer->outputs; x++) {
-	if (x < layer->outputs -1) {
-	  vbx_flash_dma_async(v_dma[!buf], layer->weights + (x+1)*layer->inputs/32*sizeof(vbx_word_t), layer->inputs/32*sizeof(vbx_word_t));
-	}
-
-	vbx_unpack_weights(v_weights, v_dma[buf], layer->inputs);
-
+	vbx_unpack_weights(v_weights, v_packed + x*layer->inputs/32, layer->inputs);
 	vbx_set_vl(layer->inputs);
 	vbx_acc(VVW, VMUL, v_out + x, v_in, v_weights);
-
-	if (x < layer->outputs -1) {
-	  while(!flash_dma_done());
-	}
-	buf = !buf;
     }
 
     vbx_set_vl(layer->outputs);
-
-    vbx_flash_dma(v_biases, layer->biases, layer->outputs*sizeof(vbx_word_t));
     vbx(VVW, VADD, v_out, v_out, v_biases);
 
     if (layer->scale) {
-	vbx_flash_dma(v_scales, layer->scales, layer->outputs*sizeof(vbx_word_t));
 	vbx(VVW, VMULH, v_out, v_out, v_scales);
     }
 

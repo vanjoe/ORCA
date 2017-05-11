@@ -7,9 +7,63 @@
 #define USE_CAM_IMG 1
 #define PRINT_B64_IMG 0
 #define BLINK_LED 0
+#define SP0 (SCRATCHPAD_BASE+0*1024)
+#define SP40 (SCRATCHPAD_BASE+40*1024)
+#define SP80 (SCRATCHPAD_BASE+80*1024)
+
+void transfer_network(layer_t *cifar, const int dst, const int src, const int verbose)
+{
+	int k, l = 0, offset = 0, koffset, dma_size, dma_pad;
+	while(1) {
+		if (cifar[l].layer_type == CONV) {
+			dma_size = (2*4 + 2*cifar[l].conv.channels);
+			dma_pad = dma_size % 4;
+
+			koffset = 0;
+			for (k=0; k < cifar[l].conv.kernels; k++) {
+				vbx_flash_dma((vbx_void_t*)(dst+offset+koffset), cifar[l].conv.weights + dma_size*k, dma_size+dma_pad);
+				koffset += dma_size+dma_pad;
+			}
+			if (verbose) {
+				printf("conv layer\r\n");
+			}
+			cifar[l].conv.weights = dst+offset;
+			offset += koffset;
+
+			if (cifar[l].conv.last) break;
+		} else {
+			dma_size = cifar[l].dense.inputs/32*4*cifar[l].dense.outputs;
+			if(verbose){
+				printf("dense layer weights\r\n");
+			}
+			vbx_flash_dma((vbx_void_t*)(dst+offset), cifar[l].dense.weights, dma_size);
+			cifar[l].dense.weights = dst+offset;
+			offset += dma_size;
+
+			dma_size = cifar[l].dense.outputs*4;
+			if(verbose){
+				printf("dense layer biases\r\n");
+			}
+			vbx_flash_dma((vbx_void_t*)(dst+offset), cifar[l].dense.biases, dma_size);
+			cifar[l].dense.biases = dst+offset;
+			offset += dma_size;
+
+			dma_size = cifar[l].dense.outputs*4;
+			if (verbose) {
+				printf("dense layer scales\r\n");
+			}
+			vbx_flash_dma(((vbx_word_t*)dst)+offset/4, cifar[l].dense.scales, dma_size);
+			cifar[l].dense.scales = dst+offset;
+			offset += dma_size;
+
+			if (cifar[l].dense.last) break;
+		}
+		l++;
+	}
+}
 
 //expects 3 padded 32x32 byte images at SCRATCHPAD_BASE+80*1024, output @ SCRATCHPAD_BASE
-void run_network(const int verbose,layer_t *cifar)
+void run_network(layer_t *cifar, const int verbose)
 {
 	int l = 0, buf = 0;
 	vbx_ubyte_t* v_outb;
@@ -26,11 +80,11 @@ void run_network(const int verbose,layer_t *cifar)
 				printf("conv layer\r\n");
 			}
 			if (!buf) {
-				v_outb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
-				v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
+				v_outb = (vbx_ubyte_t*)SP0;
+				v_padb = (vbx_ubyte_t*)SP80;
 			} else {
-				v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
-				v_outb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024);
+				v_padb = (vbx_ubyte_t*)SP0;
+				v_outb = (vbx_ubyte_t*)SP80;
 			}
 			convolution_ci_lve(v_outb, v_padb, &(cifar[l].conv), 0);
 			if (cifar[l].conv.last) break;
@@ -39,11 +93,11 @@ void run_network(const int verbose,layer_t *cifar)
 				printf("dense layer\r\n");
 			}
 			if (!buf) {
-				v_out = (vbx_word_t*)(SCRATCHPAD_BASE+0*1024);
-				v_in = (vbx_word_t*)(SCRATCHPAD_BASE+80*1024);
+				v_out = (vbx_word_t*)SP0;
+				v_in = (vbx_word_t*)SP80;
 			} else {
-				v_in = (vbx_word_t*)(SCRATCHPAD_BASE+0*1024);
-				v_out = (vbx_word_t*)(SCRATCHPAD_BASE+80*1024);
+				v_in = (vbx_word_t*)SP0;
+				v_out = (vbx_word_t*)SP80;
 			}
 			dense_lve(v_out, v_in, &(cifar[l].dense));
 			if (cifar[l].dense.last) break;
@@ -122,9 +176,9 @@ void cifar_lve() {
 	int is_face=0;
 	int max_cat;
 	int c, m = 32, n = 32, verbose = 0;
-	vbx_ubyte_t* v_padb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+80*1024); // IMPORTANT: padded input placed here
-	vbx_word_t* v_out = (vbx_word_t*)  (SCRATCHPAD_BASE+0*1024); // IMPORTANT: 10 outputs produced here
-	vbx_ubyte_t* v_inb = (vbx_ubyte_t*)(SCRATCHPAD_BASE+0*1024);
+	vbx_ubyte_t* v_padb = (vbx_ubyte_t*)SP80; // IMPORTANT: padded input placed here
+	vbx_word_t* v_out = (vbx_word_t*)  SP0; // IMPORTANT: 10 outputs produced here
+	vbx_ubyte_t* v_inb = (vbx_ubyte_t*)SP0;
 
 #if CATEGORIES == 10
 	char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
@@ -148,6 +202,10 @@ void cifar_lve() {
 		SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
 		delayms(125);
 	}
+
+	layer_t* network=CES_GOLDEN? cifar_golden:cifar_reduced;
+	transfer_network(network, SP40, REDUCED_FLASH_DATA_OFFSET, verbose);
+
 	do{
 		unsigned start_time=get_time();
 
@@ -207,7 +265,6 @@ void cifar_lve() {
 #else
 
 		// dma in test image
-		/* int test_img_offset= CES_GOLDEN?GOLDEN_FLASH_DATA_OFFSET:REDUCED_FLASH_DATA_OFFSET; */
 		int test_img_offset= GOLDEN_FLASH_DATA_OFFSET;
 		vbx_flash_dma((vbx_word_t*)v_inb, test_img_offset+0, (3*m*n)*sizeof(vbx_ubyte_t));
 
@@ -216,25 +273,22 @@ void cifar_lve() {
 			zeropad_input(v_padb + c*(m+2)*(n+4), v_inb + c*m*n, m, n);
 		}
 #endif
-		layer_t* network=CES_GOLDEN? cifar_golden:cifar_reduced;
-		run_network(verbose,network);
+		run_network(network, verbose);
 
 		// print results (or toggle LED if person is max, and > 0)
-		max_cat=0;
+		max_cat = 0;
 		for (c = 0; c < CATEGORIES; c++) {
 			if(v_out[c] > v_out[max_cat] ){
-				max_cat =c;
+				max_cat = c;
 			}
 		}
-		is_face=(max_cat==1);
+		is_face =(max_cat == 1);
 
 		if (verbose) {
 			for (c = 0; c < CATEGORIES; c++) {
 				printf("%s\t%d\r\n", categories[c], (int)v_out[c]);
 			}
 		}
-#if 1
-#endif
 		unsigned net_cycles=get_time()-start_time;
 		unsigned net_ms=cycle2ms(net_cycles);
 		printf("Frame %d: %u ms Face Score = %d \r\n",frame_num++,net_ms,(int) v_out[1]);
