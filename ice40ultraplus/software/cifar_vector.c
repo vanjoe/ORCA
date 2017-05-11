@@ -115,9 +115,9 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
     int32_t bias, scale;
 
     // assumes 128K scratch
-    vbx_word_t *v_map = (vbx_word_t*)(SCRATCHPAD_BASE + 110*1024);
-    vbx_half_t *v_maph = (vbx_half_t*)(SCRATCHPAD_BASE + 114*1024);
-    vbx_word_t *v_tmp = (vbx_word_t*)(SCRATCHPAD_BASE + 116*1024);
+    vbx_word_t *v_map = (vbx_word_t*)(SCRATCHPAD_BASE + 114*1024);
+    vbx_half_t *v_maph = (vbx_half_t*)(SCRATCHPAD_BASE + 118*1024);
+    vbx_word_t *v_tmp = (vbx_word_t*)(SCRATCHPAD_BASE + 120*1024);
     int dma_size = 2*4 + layer->channels*2;
     int dma_pad = dma_size % 4;
     vbx_word_t *v_packed;

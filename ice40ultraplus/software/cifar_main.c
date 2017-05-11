@@ -8,8 +8,9 @@
 #define PRINT_B64_IMG 0
 #define BLINK_LED 0
 #define SP0 (SCRATCHPAD_BASE+0*1024)
-#define SP40 (SCRATCHPAD_BASE+40*1024)
-#define SP80 (SCRATCHPAD_BASE+80*1024)
+#define SP4 (SCRATCHPAD_BASE+4*1024)
+#define SP44 (SCRATCHPAD_BASE+44*1024)
+#define SP84 (SCRATCHPAD_BASE+84*1024)
 
 void transfer_network(layer_t *cifar, const int dst, const int src, const int verbose)
 {
@@ -80,11 +81,11 @@ void run_network(layer_t *cifar, const int verbose)
 				printf("conv layer\r\n");
 			}
 			if (!buf) {
-				v_outb = (vbx_ubyte_t*)SP0;
-				v_padb = (vbx_ubyte_t*)SP80;
+				v_outb = (vbx_ubyte_t*)SP4;
+				v_padb = (vbx_ubyte_t*)SP84;
 			} else {
-				v_padb = (vbx_ubyte_t*)SP0;
-				v_outb = (vbx_ubyte_t*)SP80;
+				v_padb = (vbx_ubyte_t*)SP4;
+				v_outb = (vbx_ubyte_t*)SP84;
 			}
 			convolution_ci_lve(v_outb, v_padb, &(cifar[l].conv), 0);
 			if (cifar[l].conv.last) break;
@@ -93,11 +94,11 @@ void run_network(layer_t *cifar, const int verbose)
 				printf("dense layer\r\n");
 			}
 			if (!buf) {
-				v_out = (vbx_word_t*)SP0;
-				v_in = (vbx_word_t*)SP80;
+				v_out = (vbx_word_t*)SP4;
+				v_in = (vbx_word_t*)SP84;
 			} else {
-				v_in = (vbx_word_t*)SP0;
-				v_out = (vbx_word_t*)SP80;
+				v_in = (vbx_word_t*)SP4;
+				v_out = (vbx_word_t*)SP84;
 			}
 			dense_lve(v_out, v_in, &(cifar[l].dense));
 			if (cifar[l].dense.last) break;
@@ -176,8 +177,8 @@ void cifar_lve() {
 	int is_face=0;
 	int max_cat;
 	int c, m = 32, n = 32, verbose = 0;
-	vbx_ubyte_t* v_padb = (vbx_ubyte_t*)SP80; // IMPORTANT: padded input placed here
-	vbx_word_t* v_out = (vbx_word_t*)  SP0; // IMPORTANT: 10 outputs produced here
+	vbx_ubyte_t* v_padb = (vbx_ubyte_t*)SP84; // IMPORTANT: padded input placed here
+	vbx_word_t* v_out = (vbx_word_t*)  SP4; // IMPORTANT: 10 outputs produced here
 	vbx_ubyte_t* v_inb = (vbx_ubyte_t*)SP0;
 
 #if CATEGORIES == 10
@@ -204,7 +205,11 @@ void cifar_lve() {
 	}
 
 	layer_t* network=CES_GOLDEN? cifar_golden:cifar_reduced;
-	transfer_network(network, SP40, REDUCED_FLASH_DATA_OFFSET, verbose);
+	transfer_network(network, SP44, REDUCED_FLASH_DATA_OFFSET, verbose);
+
+#if USE_CAM_IMG
+	/* ovm_get_frame_async(); */
+#endif
 
 	do{
 		unsigned start_time=get_time();
@@ -217,6 +222,7 @@ void cifar_lve() {
 #endif //BLINK LED
 
 		//get camera frame
+		/* ovm_wait_frame(); */
 		ovm_get_frame();
 		if(!is_face){
 			//turn on led
@@ -261,6 +267,7 @@ void cifar_lve() {
 		for (c = 0; c < 3; c++) {
 			cam_extract_and_pad(v_padb + c*(m+2)*(n+4), (vbx_word_t*)v_inb,c, m, n, 64);
 		}
+		/* ovm_get_frame_async(); */
 
 #else
 
@@ -282,7 +289,7 @@ void cifar_lve() {
 				max_cat = c;
 			}
 		}
-		is_face =(max_cat == 1);
+		is_face = (max_cat == 1);
 
 		if (verbose) {
 			for (c = 0; c < CATEGORIES; c++) {
@@ -293,5 +300,5 @@ void cifar_lve() {
 		unsigned net_ms=cycle2ms(net_cycles);
 		printf("Frame %d: %u ms Face Score = %d \r\n",frame_num++,net_ms,(int) v_out[1]);
 
-	}while(USE_CAM_IMG);
+	} while(USE_CAM_IMG);
 }

@@ -17,6 +17,10 @@
 
 - see `./uart0.jpg` `./uart1.jpg` for UART (accessed via `picocom -b 1152000 /dev/ttyUSBX`)
 
+#Running smallest network
+`cp min.bin reduced.bin`
+change flag in `software/net.c` to use smaller reduced network
+
 #Building Flash.bin
 
 The flash.bin has the bitstream at offset 0, the golden.bin contents at offset 0x20000 and reduced.bin at offset 0xB0000.

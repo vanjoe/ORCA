@@ -139,3 +139,34 @@ int ovm_get_frame()
 
 	return 0;
 }
+
+int ovm_get_frame_async()
+{
+	if (initialized ==0){
+		return 1;
+	}
+	ovm_printf("is initialized\r\n");
+	// tell camera to capture a frame
+	ovm_set_bit( PIO_BIT_START );
+	ovm_printf("start bit set\r\n");
+	// wait until FSM actually starts
+	while( ovm_isdone() ){
+		ovm_printf("not done\r\n");
+	}
+	ovm_printf("done bit clear\r\n");
+	// clear the start bit
+	ovm_clear_bit( PIO_BIT_START );
+	ovm_printf("start bit clear\r\n");
+
+	return 0;
+}
+
+int ovm_wait_frame()
+{
+	// wait until DMA is DONE
+	while( ovm_isdone()==0 );
+	ovm_printf("done bit set\r\n");
+
+
+	return 0;
+}

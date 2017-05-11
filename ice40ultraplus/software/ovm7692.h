@@ -25,5 +25,8 @@ int ovm_initialize();
 
 int ovm_get_frame();
 
+int ovm_get_frame_async();
+int ovm_wait_frame();
+
 
 #endif //def __OVM7692_H_
