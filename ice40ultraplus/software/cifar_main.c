@@ -224,18 +224,11 @@ void cifar_lve() {
 		//get camera frame
 		/* ovm_wait_frame(); */
 		ovm_get_frame();
-		if(!is_face){
-			//turn on led
-			SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
-		}else {
-			//turn off led
-			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
-		}
+
+		//Turn on led
+		SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
 		delayms(1);
-		if(is_face){
-			//turn on led
-			SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
-		}else {
+		if(!is_face){
 			//turn off led
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
 		}
