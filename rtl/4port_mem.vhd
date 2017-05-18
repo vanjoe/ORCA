@@ -188,13 +188,15 @@ entity ram_4port is
     clk            : in  std_logic;
     scratchpad_clk : in  std_logic;
     reset          : in  std_logic;
+
+    pause_lve_in  : in  std_logic;
+    pause_lve_out : out std_logic;
                                         --read source A
     raddr0         : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
     ren0           : in  std_logic;
     scalar_value   : in  std_logic_vector(MEM_WIDTH-1 downto 0);
     scalar_enable  : in  std_logic;
     data_out0      : out std_logic_vector(MEM_WIDTH-1 downto 0);
-
                                         --read source B
     raddr1      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
     ren1        : in  std_logic;
@@ -202,7 +204,7 @@ entity ram_4port is
     enum_enable : in  std_logic;
     data_out1   : out std_logic_vector(MEM_WIDTH-1 downto 0);
     ack01       : out std_logic;
-    --write dest
+                                        --write dest
     waddr2      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
     byte_en2    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
     wen2        : in  std_logic;
@@ -265,6 +267,8 @@ architecture rtl of ram_4port is
   signal wen3_latch     : std_logic;
   signal rwaddr3_latch  : std_logic_vector(rwaddr3'range);
   signal data_in3_latch : std_logic_vector(data_in3'range);
+
+  signal pause_lve_internal : std_logic;
 
   --pipeline bits
   signal read3_ack0 : std_logic;
@@ -341,6 +345,15 @@ begin  -- architecture rtl
         ack01 <= read_ack;
       end if;
 
+    end if;
+  end process;
+
+  -- Adding this in to match ice40ultraplus lve ram behaviour.
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      pause_lve_internal <= pause_lve_in;
+      pause_lve_out      <= pause_lve_internal;
     end if;
   end process;
 

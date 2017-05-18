@@ -57,6 +57,7 @@ add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd TOP_LEVEL_FILE
 add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
 add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
+add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL Orca
@@ -77,6 +78,7 @@ add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd
 add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
 add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
+add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
 
 
 #
@@ -379,7 +381,7 @@ add_interface_port axi_data_master data_WVALID wvalid Output 1
 add_interface axi_instr_master axi start
 set_interface_property axi_instr_master associatedClock clock
 set_interface_property axi_instr_master associatedReset reset
-set_interface_property axi_instr_master readIssuingCapability 1
+set_interface_property axi_instr_master readIssuingCapability 2
 set_interface_property axi_instr_master writeIssuingCapability 1
 set_interface_property axi_instr_master combinedIssuingCapability 1
 set_interface_property axi_instr_master ENABLED true
