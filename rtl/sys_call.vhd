@@ -148,7 +148,7 @@ begin  -- architecture rtl
   --         MEIPEND  (external interrupt
   -----------------------------------------------------------------------------
 
-  instr_check : component instruction_legal
+  instr_check : instruction_legal
     generic map (
       check_legal_instructions => true)
     port map (

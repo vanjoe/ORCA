@@ -119,7 +119,7 @@ begin  -- architecture rtl
   pipeline_flush <= branch_get_flush(branch_pred_to_instr_fetch);
 
 
-  instr_fetch : component instruction_fetch
+  instr_fetch : instruction_fetch
     generic map (
       REGISTER_SIZE     => REGISTER_SIZE,
       RESET_VECTOR      => RESET_VECTOR,
@@ -144,11 +144,12 @@ begin  -- architecture rtl
 
   d_valid <= if_valid_out and not pipeline_flush;
 
-  D : component decode
+  D : decode
     generic map(
       REGISTER_SIZE       => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
-      PIPELINE_STAGES     => PIPELINE_STAGES-3)
+      PIPELINE_STAGES     => PIPELINE_STAGES-3,
+      FAMILY              => FAMILY)
     port map(
       clk            => clk,
       reset          => reset,
@@ -178,7 +179,7 @@ begin  -- architecture rtl
 
   e_valid <= d_valid_out and not pipeline_flush;
   e_sp_addr <= sp_address(e_sp_addr'range);
-  X : component execute
+  X : execute
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,

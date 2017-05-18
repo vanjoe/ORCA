@@ -323,7 +323,7 @@ begin
     end if;
   end process;
 
-  alu : component arithmetic_unit
+  alu : arithmetic_unit
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
@@ -375,7 +375,7 @@ begin
       br_taken_out   => br_taken_out,
       bad_predict    => br_bad_predict);
 
-  ls_unit : component load_store_unit
+  ls_unit : load_store_unit
     generic map(
       REGISTER_SIZE       => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE)
@@ -402,7 +402,7 @@ begin
 
   entire_pipeline_empty <= pipeline_empty and not valid_input;
 
-  syscall : component system_calls
+  syscall : system_calls
     generic map (
       REGISTER_SIZE     => REGISTER_SIZE,
       RESET_VECTOR      => RESET_VECTOR,
@@ -434,7 +434,7 @@ begin
 
   enable_lve : if LVE_ENABLE generate
   begin
-    lve : component lve_top
+    lve : lve_top
       generic map (
         REGISTER_SIZE    => REGISTER_SIZE,
         SCRATCHPAD_SIZE  => SCRATCHPAD_SIZE,

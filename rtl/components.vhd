@@ -246,7 +246,8 @@ package rv_components is
     generic(
       REGISTER_SIZE       : positive;
       SIGN_EXTENSION_SIZE : positive;
-      PIPELINE_STAGES     : natural range 1 to 2);
+      PIPELINE_STAGES     : natural range 1 to 2;
+      FAMILY              : string);
     port(
       clk   : in std_logic;
       reset : in std_logic;
@@ -308,7 +309,7 @@ package rv_components is
       wb_sel       : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
       wb_data      : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
       wb_enable    : buffer std_logic;
-      valid_output : out    std_logic;
+      valid_output : buffer std_logic;
 
       branch_pred        : out    std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
       stall_from_execute : buffer std_logic;
@@ -357,7 +358,7 @@ package rv_components is
       valid_instr_out : out std_logic;
 
       read_address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      read_en        : out std_logic;
+      read_en        : buffer std_logic;
       read_data      : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       read_datavalid : in  std_logic;
       read_wait      : in  std_logic);
@@ -436,8 +437,8 @@ package rv_components is
 --memory-bus
       address        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      write_en       : out    std_logic;
-      read_en        : out    std_logic;
+      write_en       : buffer std_logic;
+      read_en        : buffer std_logic;
       write_data     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       ack            : in     std_logic);
@@ -456,8 +457,8 @@ package rv_components is
       wb_data     : in std_logic_vector(REGISTER_SIZE -1 downto 0);
       wb_enable   : in std_logic;
 
-      rs1_data : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      rs2_data : out std_logic_vector(REGISTER_SIZE -1 downto 0)
+      rs1_data : buffer std_logic_vector(REGISTER_SIZE -1 downto 0);
+      rs2_data : buffer std_logic_vector(REGISTER_SIZE -1 downto 0)
       );
   end component register_file;
 
@@ -480,9 +481,9 @@ package rv_components is
 
       current_pc    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       pc_correction : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      pc_corr_en    : out std_logic;
+      pc_corr_en    : buffer std_logic;
 
-      interrupt_pending   : out std_logic;
+      interrupt_pending   : buffer std_logic;
       pipeline_empty      : in  std_logic;
       external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
 
@@ -548,6 +549,137 @@ package rv_components is
       lve_alu_source_valid : buffer std_logic;
       lve_alu_result       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       lve_alu_result_valid : in     std_logic
+      );
+  end component;
+
+  component ram_mux is
+    generic (
+      DATA_WIDTH : natural := 32;
+      ADDR_WIDTH : natural := 32
+    );
+    port (
+      -- init signals
+      nvm_addr : in std_logic_vector(ADDR_WIDTH-1 downto 0);
+      nvm_wdata : in std_logic_vector(DATA_WIDTH-1 downto 0);
+      nvm_wen : in std_logic;
+      nvm_byte_sel : in std_logic_vector(DATA_WIDTH/8 -1 downto 0);
+      nvm_strb : in std_logic;
+      nvm_ack : out std_logic;
+      nvm_rdata : out std_logic_vector(DATA_WIDTH-1 downto 0);
+
+      -- user signals
+      user_ARREADY : out std_logic;
+      user_ARADDR : in std_logic_vector(ADDR_WIDTH-1 downto 0);
+      user_ARVALID : in std_logic;
+
+      user_RREADY : out std_logic;
+      user_RDATA  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+      user_RVALID : out std_logic;
+      
+      user_AWADDR : in std_logic_vector(ADDR_WIDTH-1 downto 0);
+      user_AWVALID : in std_logic;
+      user_AWREADY : out std_logic;
+
+      user_WDATA  : in std_logic_vector(ADDR_WIDTH-1 downto 0);
+      user_WVALID : in std_logic;
+      user_WREADY : out std_logic;
+
+      user_BREADY : in std_logic;
+      user_BVALID : out std_logic;
+
+      -- mux signals/ram inputs
+      SEL : in std_logic;
+      ram_addr : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+      ram_wdata : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      ram_wen : out std_logic;
+      ram_byte_sel : out std_logic_vector(DATA_WIDTH/8-1 downto 0);
+      ram_strb : out std_logic;
+      ram_ack : in std_logic;
+      ram_rdata : in std_logic_vector(DATA_WIDTH-1 downto 0)
+    );
+  end component;
+
+  component iram is
+    generic (
+      SIZE        : integer := 4096;
+      RAM_WIDTH   : integer := 32;
+      BYTE_SIZE   : integer := 8);    
+    port (
+      clk : in std_logic;
+      reset : in std_logic;
+
+      addr : in std_logic_vector(RAM_WIDTH-1 downto 0);
+      wdata : in std_logic_vector(RAM_WIDTH-1 downto 0);
+      wen  : in std_logic;
+      byte_sel : in std_logic_vector(RAM_WIDTH/8-1 downto 0);
+      strb  : in std_logic;
+      ack   : out std_logic;
+      rdata   : out std_logic_vector(RAM_WIDTH-1 downto 0);
+      
+      ram_AWID    : in std_logic_vector(3 downto 0);
+      ram_AWADDR  : in std_logic_vector(RAM_WIDTH-1 downto 0);
+      ram_AWLEN   : in std_logic_vector(3 downto 0);
+      ram_AWSIZE  : in std_logic_vector(2 downto 0);
+      ram_AWBURST : in std_logic_vector(1 downto 0); 
+
+      ram_AWLOCK  : in std_logic_vector(1 downto 0);
+      ram_AWCACHE : in std_logic_vector(3 downto 0);
+      ram_AWPROT  : in std_logic_vector(2 downto 0);
+      ram_AWVALID : in std_logic;
+      ram_AWREADY : out std_logic;
+
+      ram_WID     : in std_logic_vector(3 downto 0);
+      ram_WDATA   : in std_logic_vector(RAM_WIDTH -1 downto 0);
+      ram_WSTRB   : in std_logic_vector(RAM_WIDTH/BYTE_SIZE -1 downto 0);
+      ram_WLAST   : in std_logic;
+      ram_WVALID  : in std_logic;
+      ram_WREADY  : out std_logic;
+
+      ram_BID     : out std_logic_vector(3 downto 0);
+      ram_BRESP   : out std_logic_vector(1 downto 0);
+      ram_BVALID  : out std_logic;
+      ram_BREADY  : in std_logic;
+
+      ram_ARID    : in std_logic_vector(3 downto 0);
+      ram_ARADDR  : in std_logic_vector(RAM_WIDTH -1 downto 0);
+      ram_ARLEN   : in std_logic_vector(3 downto 0);
+      ram_ARSIZE  : in std_logic_vector(2 downto 0);
+      ram_ARBURST : in std_logic_vector(1 downto 0);
+      ram_ARLOCK  : in std_logic_vector(1 downto 0);
+      ram_ARCACHE : in std_logic_vector(3 downto 0);
+      ram_ARPROT  : in std_logic_vector(2 downto 0);
+      ram_ARVALID : in std_logic;
+      ram_ARREADY : out std_logic;
+
+      ram_RID     : out std_logic_vector(3 downto 0);
+      ram_RDATA   : out std_logic_vector(RAM_WIDTH -1 downto 0);
+      ram_RRESP   : out std_logic_vector(1 downto 0);
+      ram_RLAST   : out std_logic;
+      ram_RVALID  : out std_logic;
+      ram_RREADY  : in std_logic
+    );
+  end component;
+
+  component bram_microsemi is
+    generic (
+      RAM_DEPTH       : integer := 1024; -- this is the maximum
+      RAM_WIDTH       : integer := 32;
+      BYTE_SIZE       : integer := 8
+      );
+    port (
+      clock    : in  std_logic;
+
+      address  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
+      data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
+      we       : in  std_logic;
+      be       : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE-1 downto 0);
+      readdata : out std_logic_vector(RAM_WIDTH-1 downto 0);
+
+      data_address  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
+      data_data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
+      data_we       : in  std_logic;
+      data_be       : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE-1 downto 0);
+      data_readdata : out std_logic_vector(RAM_WIDTH-1 downto 0)
       );
   end component;
 

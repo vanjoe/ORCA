@@ -9,7 +9,8 @@ entity decode is
   generic(
     REGISTER_SIZE       : positive;
     SIGN_EXTENSION_SIZE : positive;
-    PIPELINE_STAGES     : natural range 1 to 2);
+    PIPELINE_STAGES     : natural range 1 to 2;
+    FAMILY              : string := "ALTERA");
   port(
     clk   : in std_logic;
     reset : in std_logic;
@@ -74,7 +75,7 @@ architecture rtl of decode is
 
 begin
 
-  register_file_1 : component register_file
+  register_file_1 : register_file
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
       REGISTER_NAME_SIZE => REGISTER_NAME_SIZE)
@@ -91,19 +92,15 @@ begin
       );
 
   reg_rst : if true generate
-    -- on systems where the register file can not be initialized,
-    -- the reset signal is used to write x0 to zero.
-    -- We can probably remove the generate statements, but I want to leave the
-    -- old stuff in for a while (JDV Jan 2017)
-    constant REGISTER_RESET : boolean := false;
+  -- This is to handle Microsemi board's inability to initialize RAM to zero on startup.
   begin
-    reg_rst_en : if REGISTER_RESET generate
+    reg_rst_en : if FAMILY = "MICROSEMI" generate
       wb_sel_int    <= wb_sel                 when reset = '0' else (others => '0');
       wb_data_int   <= wb_data                when reset = '0' else (others => '0');
       wb_enable_int <= wb_enable and wb_valid when reset = '0' else '1';
 
     end generate reg_rst_en;
-    reg_rst_nen : if not REGISTER_RESET generate
+    reg_rst_nen : if FAMILY /= "MICROSEMI"  generate
       wb_sel_int    <= wb_sel;
       wb_data_int   <= wb_data;
       wb_enable_int <= wb_enable and wb_valid;

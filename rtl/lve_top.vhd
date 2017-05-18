@@ -390,7 +390,7 @@ begin
                            func3 /= LVE_VCMV_Z_FUNC3 and
                            func3 /= LVE_VCMV_NZ_FUNC3) else
                  '0';
-  the_lve_ci : component lve_ci
+  the_lve_ci : lve_ci
     generic map (
       REGISTER_SIZE => REGISTER_SIZE
       )
@@ -420,7 +420,7 @@ begin
   enum_enable   <= srcb_e;
 
 
-  scratchpad_memory : component ram_4port
+  scratchpad_memory : ram_4port
     generic map (
       MEM_WIDTH => 32,
       MEM_DEPTH => SCRATCHPAD_SIZE/4,
