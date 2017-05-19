@@ -157,13 +157,12 @@ entity ram_4port is
 
     pause_lve_in  : in  std_logic;
     pause_lve_out : out std_logic;
-    --read source A
+                                        --read source A
     raddr0        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
     ren0          : in  std_logic;
     scalar_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
     scalar_enable : in  std_logic;
     data_out0     : out std_logic_vector(MEM_WIDTH-1 downto 0);
-
                                         --read source B
     raddr1      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
     ren1        : in  std_logic;

@@ -44,49 +44,6 @@ end entity;
 
 architecture rtl of lve_top is
 
-  component ram_4port is
-    generic(
-      MEM_DEPTH : natural;
-      MEM_WIDTH : natural;
-      FAMILY    : string := "ALTERA");
-    port(
-      clk            : in std_logic;
-      scratchpad_clk : in std_logic;
-      reset          : in std_logic;
-
-      pause_lve_in  : in  std_logic;
-      pause_lve_out : out std_logic;
-                                        --read source A
-      raddr0        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      ren0          : in  std_logic;
-      scalar_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-      scalar_enable : in  std_logic;
-      data_out0     : out std_logic_vector(MEM_WIDTH-1 downto 0);
-
-                                        --read source B
-      raddr1      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      ren1        : in  std_logic;
-      enum_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-      enum_enable : in  std_logic;
-      data_out1   : out std_logic_vector(MEM_WIDTH-1 downto 0);
-      ack01       : out std_logic;
-      --write dest
-      waddr2      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      byte_en2    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-      wen2        : in  std_logic;
-      data_in2    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-                                        --external slave port
-      rwaddr3     : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      wen3        : in  std_logic;
-      ren3        : in  std_logic;      --cannot be asserted same cycle as wen3
-      byte_en3    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-      data_in3    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-      ack3        : out std_logic;
-      data_out3   : out std_logic_vector(MEM_WIDTH-1 downto 0));
-  end component;
-
-
-
   constant CUSTOM0 : std_logic_vector(6 downto 0) := "0101011";
 
   alias is_prefix : std_logic is instruction(27);
@@ -437,25 +394,26 @@ begin
       ren0          => rd_en,
       scalar_value  => std_logic_vector(scalar_value),
       scalar_enable => scalar_enable,
-
       data_out0   => srca_data_read,
+
       raddr1      => std_logic_vector(srcb_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
       ren1        => rd_en,
-      data_out1   => srcb_data_read,
       enum_value  => std_logic_vector(enum_count),
       enum_enable => enum_enable,
-
+      data_out1   => srcb_data_read,
       ack01     => lve_source_valid,
+      
       waddr2    => waddr2,
       byte_en2  => byte_en2,
       wen2      => write_enable,
       data_in2  => std_logic_vector(writeback_data),
+
       rwaddr3   => slave_address_reg(log2(SCRATCHPAD_SIZE)-1 downto 2),
-      ren3      => slave_read_en_reg,
       wen3      => slave_write_en_reg,
+      ren3      => slave_read_en_reg,
       byte_en3  => slave_byte_en_reg,
-      data_out3 => slave_data_out,
+      data_in3  => slave_data_in_reg,
       ack3      => slave_ack,
-      data_in3  => slave_data_in_reg);
+      data_out3 => slave_data_out);
 
 end architecture;

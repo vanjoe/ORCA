@@ -339,193 +339,37 @@ begin  -- architecture rtl
     -- incremental bursts
     constant BURST_INCR : std_logic_vector(1 downto 0) := "01";
 
-    signal write_ack               : std_logic := '0';
-    signal read_ack                : std_logic := '0';
+--    signal write_ack               : std_logic := '0';
+--    signal read_ack                : std_logic := '0';
     signal core_instruction_stall4 : std_logic := '0';
 
+    signal axi_reset : std_logic;
+
     -- Latched signals for AXI write bus
-    signal core_data_awvalid_l     : std_logic                                      := '0';
-    signal core_data_wvalid_l      : std_logic                                      := '0';
-    signal core_data_waddress_l    : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
-    signal core_data_byteenable_l  : std_logic_vector((REGISTER_SIZE/8)-1 downto 0) := (others => '0');
-    signal core_data_writedata_l   : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
-    signal write_pending           : std_logic                                      := '0';
-
-    -- Latched signals for AXI read bus
-    signal core_data_raddress_l    : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
-    signal core_data_read_l        : std_logic                                      := '0';
-    signal read_pending            : std_logic                                      := '0';
-    
-    type state_w_t is (IDLE, WAITING_BOTH, WAITING_WREADY, WAITING_AWREADY);
-    signal state_w : state_w_t := IDLE;
-
-    type state_r_t is (IDLE, WAITING_ARREADY, WAITING_RVALID);
-    signal state_r : state_r_t := IDLE;
+--    signal core_data_awvalid_l     : std_logic                                      := '0';
+--    signal core_data_wvalid_l      : std_logic                                      := '0';
+--    signal core_data_waddress_l    : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
+--    signal core_data_byteenable_l  : std_logic_vector((REGISTER_SIZE/8)-1 downto 0) := (others => '0');
+--    signal core_data_writedata_l   : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
+--    signal write_pending           : std_logic                                      := '0';
+--
+--    -- Latched signals for AXI read bus
+--    signal core_data_raddress_l    : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
+--    signal core_data_read_l        : std_logic                                      := '0';
+--    signal read_pending            : std_logic                                      := '0';
+--    
+--    type state_w_t is (IDLE, WAITING_BOTH, WAITING_WREADY, WAITING_AWREADY);
+--    signal state_w : state_w_t := IDLE;
+--
+--    type state_r_t is (IDLE, WAITING_ARREADY, WAITING_RVALID);
+--    signal state_r : state_r_t := IDLE;
 
   begin
-
-  
-
-
 --BUG: this logic disregards the write response data
 
---    data_AWID          <= (others => '0');
---    data_AWADDR        <= core_data_address when (write_pending = '0') else core_data_waddress_l;
---    data_AWLEN         <= BURST_LEN;
---    data_AWSIZE        <= BURST_SIZE;
---    data_AWBURST       <= BURST_INCR;
---    data_AWLOCK        <= (others => '0');
---    data_AWCACHE       <= (others => '0');
---    data_AWPROT        <= (others => '0');
---    data_AWVALID       <= core_data_write when (write_pending = '0') else core_data_awvalid_l;
---    data_WID           <= (others => '0');
---    data_WDATA         <= core_data_writedata when (write_pending = '0') else core_data_writedata_l;
---    data_WSTRB         <= core_data_byteenable when (write_pending = '0') else core_data_byteenable_l;
---    data_WLAST         <= '1';
---    data_WVALID        <= core_data_write when (write_pending = '0') else core_data_wvalid_l;
---    --data_BID
---    --data_BRESP
---    --data_BVALID
---    data_BREADY        <= '1';
---
---    data_ARID          <= (others => '0');
---    data_ARADDR        <= core_data_address when (read_pending = '0') else core_data_raddress_l;
---    data_ARLEN         <= BURST_LEN;
---    data_ARSIZE        <= BURST_SIZE;
---    data_ARBURST       <= BURST_INCR;
---    data_ARLOCK        <= (others => '0');
---    data_ARCACHE       <= (others => '0');
---    data_ARPROT        <= (others => '0');
---    data_ARVALID       <= core_data_read when (read_pending = '0') else core_data_read_l;
---    -- data_RID
---    core_data_readdata <= data_RDATA;
---    -- data_RRESP
---    -- data_RLAST
---    core_data_ack      <= read_ack or write_ack;
---    data_RREADY        <= '1';
---
---    -- This Process handles coupling the decoupled write data and write address channels
---    axi_data_master : process(clk)
---    begin
---      if rising_edge(clk) then
---        write_ack <= '0';
---        case state_w is
---          when IDLE =>
---            if core_data_write = '1' then
---              if (data_AWREADY = '1') and (data_WREADY = '1') then
---                write_ack <= '1';
---                state_w <= IDLE; 
---              else
---                write_pending <= '1';
---                core_data_awvalid_l <= core_data_write;
---                core_data_wvalid_l <= core_data_write;
---                core_data_waddress_l <= core_data_address;
---                core_data_byteenable_l <= core_data_byteenable;
---                core_data_writedata_l <= core_data_writedata;
---
---                if data_AWREADY = '1' then
---                  core_data_awvalid_l <= '0';
---                  state_w <= WAITING_WREADY;
---                elsif data_WREADY = '1' then
---                  core_data_wvalid_l <= '0';
---                  state_w <= WAITING_AWREADY;
---                else 
---                  state_w <= WAITING_BOTH;
---                end if;
---              end if;
---            end if;
---           
---          when WAITING_BOTH =>
---            if (data_WREADY = '1') and (data_AWREADY = '1') then
---              write_pending <= '0';
---              core_data_awvalid_l <= '0';
---              core_data_wvalid_l <= '0';
---              core_data_waddress_l <= (others => '0');
---              core_data_byteenable_l <= (others => '0');
---              core_data_writedata_l <= (others => '0');
---              write_ack <= '1';
---              state_w <= IDLE;
---            elsif data_AWREADY = '1' then
---              core_data_awvalid_l <= '0';
---              state_w <= WAITING_WREADY;
---            elsif data_WREADY = '1' then
---              core_data_wvalid_l <= '0';
---              state_w <= WAITING_AWREADY;
---            end if;
---            
---          when WAITING_WREADY => 
---            if data_WREADY = '1' then
---              write_pending <= '0';
---              core_data_awvalid_l <= '0';
---              core_data_wvalid_l <= '0';
---              core_data_waddress_l <= (others => '0');
---              core_data_byteenable_l <= (others => '0');
---              core_data_writedata_l <= (others => '0');
---              write_ack <= '1';
---              state_w <= IDLE;
---            end if;
---
---          when WAITING_AWREADY => --            if data_AWREADY = '1' then --              write_pending <= '0'; --              core_data_awvalid_l <= '0';
---              core_data_wvalid_l <= '0';
---              core_data_waddress_l <= (others => '0');
---              core_data_byteenable_l <= (others => '0');
---              core_data_writedata_l <= (others => '0');
---              write_ack <= '1';
---              state_w <= IDLE;
---            end if;
---
---        end case;
---      end if;
---    end process;
---
---    read_ack <= data_RVALID;
---    axi_read_master : process(clk)
---    begin
---      if rising_edge(clk) then
---        case state_r is
---          when IDLE =>
---            if core_data_read = '1' then
---              if data_ARREADY = '1' then
---                state_r <= WAITING_RVALID;
---              else
---                read_pending <= '1';
---                core_data_read_l <= core_data_read;
---                core_data_raddress_l <= core_data_address;
---                state_r <= WAITING_ARREADY; 
---              end if; 
---            end if;
---
---          when WAITING_ARREADY =>
---            if data_ARREADY = '1' then
---              core_data_read_l <= '0';
---              core_data_raddress_l <= (others => '0');
---              state_r <= WAITING_RVALID;
---            end if;
---
---          when WAITING_RVALID =>
---            if data_RVALID = '1' then
---              read_pending <= '0';
---              core_data_read_l <= '0';
---              core_data_raddress_l <= (others => '0');
---              state_r <= IDLE; 
---              if core_data_read = '1' then
---              -- Handles consecutive reads
---                if data_ARREADY = '1' then
---                  state_r <= WAITING_RVALID;
---                else
---                  read_pending <= '1';
---                  core_data_read_l <= core_data_read;
---                  core_data_raddress_l <= core_data_address;
---                  state_r <= WAITING_ARREADY; 
---                end if; 
---              end if;
---           end if;
---
---        end case;
---      end if;
---    end process;
+    axi_reset <= not reset;
 
-    axi_data_master : entity work.axi_master(rtl)
+    axi_data_master : axi_master
       generic map (
         REGISTER_SIZE => REGISTER_SIZE,
         BYTE_SIZE     => 8
@@ -533,7 +377,7 @@ begin  -- architecture rtl
 
       port map (
         ACLK                    => clk,
-        ARESETN                 => not reset,
+        ARESETN                 => axi_reset,
         core_data_address       => core_data_address, 
         core_data_byteenable    => core_data_byteenable,  
         core_data_read          => core_data_read,         

@@ -683,4 +683,109 @@ package rv_components is
       );
   end component;
 
+  component axi_master is
+    generic (
+      REGISTER_SIZE : integer := 32;
+      BYTE_SIZE : integer := 8
+    );
+
+    port (
+      ACLK : in std_logic;
+      ARESETN : in std_logic;
+
+      core_data_address : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      core_data_byteenable : in std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+      core_data_read : in std_logic;
+      core_data_readdata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      --core_data_response : out std_logic_vector(1 downto 0);
+      core_data_write : in std_logic;
+      core_data_writedata : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      --core_data_waitrequest : out std_logic;
+      --core_data_readdatavalid : out std_logic;
+      core_data_ack : out std_logic;
+
+      -- AXI BUS OUT
+      AWID : out std_logic_vector(3 downto 0);
+      AWADDR : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      AWLEN : out std_logic_vector(3 downto 0);
+      AWSIZE : out std_logic_vector(2 downto 0);
+      AWBURST : out std_logic_vector(1 downto 0);
+      AWLOCK : out std_logic_vector(1 downto 0);
+      AWVALID : out std_logic;
+      AWREADY : in std_logic;
+
+      WID : out std_logic_vector(3 downto 0);
+      WSTRB : out std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+      WLAST : out std_logic;
+      WVALID : out std_logic;
+      WDATA : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      WREADY : in std_logic;
+      
+      BID : in std_logic_vector(3 downto 0);
+      BRESP : in std_logic_vector(1 downto 0);
+      BVALID : in std_logic;
+      BREADY : out std_logic;
+
+      ARID : out std_logic_vector(3 downto 0);
+      ARADDR : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      ARLEN : out std_logic_vector(3 downto 0);
+      ARSIZE : out std_logic_vector(2 downto 0);
+      ARLOCK : out std_logic_vector(1 downto 0);
+      ARBURST : out std_logic_vector(1 downto 0);
+      ARVALID : out std_logic;
+      ARREADY : in std_logic;
+
+      RID : in std_logic_vector(3 downto 0);
+      RDATA : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      RRESP : in std_logic_vector(1 downto 0);
+      RLAST : in std_logic;
+      RVALID : in std_logic;
+      RREADY : out std_logic;
+
+      NEXT_DATA_IN : out std_logic;
+      DATA_BURST_NUM : buffer std_logic_vector(3 downto 0)
+    );
+  end component axi_master;
+
+  component ram_4port is
+    generic(
+      MEM_DEPTH : natural;
+      MEM_WIDTH : natural;
+      FAMILY    : string := "ALTERA");
+    port(
+      clk            : in std_logic;
+      scratchpad_clk : in std_logic;
+      reset          : in std_logic;
+
+      pause_lve_in  : in  std_logic;
+      pause_lve_out : out std_logic;
+                                        --read source A
+      raddr0        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+      ren0          : in  std_logic;
+      scalar_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+      scalar_enable : in  std_logic;
+      data_out0     : out std_logic_vector(MEM_WIDTH-1 downto 0);
+
+                                        --read source B
+      raddr1      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+      ren1        : in  std_logic;
+      enum_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+      enum_enable : in  std_logic;
+      data_out1   : out std_logic_vector(MEM_WIDTH-1 downto 0);
+      ack01       : out std_logic;
+      --write dest
+      waddr2      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+      byte_en2    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
+      wen2        : in  std_logic;
+      data_in2    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+                                        --external slave port
+      rwaddr3     : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+      wen3        : in  std_logic;
+      ren3        : in  std_logic;      --cannot be asserted same cycle as wen3
+      byte_en3    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
+      data_in3    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+      ack3        : out std_logic;
+      data_out3   : out std_logic_vector(MEM_WIDTH-1 downto 0));
+  end component;
+
 end package rv_components;
