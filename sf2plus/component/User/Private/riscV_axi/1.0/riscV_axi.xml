@@ -5,6 +5,27 @@
   <spirit:version>1.0</spirit:version>
   <spirit:busInterfaces>
   <spirit:busInterface>
+    <spirit:name>BL_SLAVE</spirit:name>
+    <spirit:busType spirit:vendor="AMBA" spirit:library="AMBA2" spirit:name="APB" spirit:version="r0p0"/>
+    <spirit:slave></spirit:slave>
+    <spirit:signalMap>
+      <spirit:signalName>
+        <spirit:componentSignalName>nvm_PADDR</spirit:componentSignalName><spirit:busSignalName>PADDR</spirit:busSignalName></spirit:signalName>
+      <spirit:signalName>
+        <spirit:componentSignalName>nvm_PENABLE</spirit:componentSignalName><spirit:busSignalName>PENABLE</spirit:busSignalName></spirit:signalName>
+      <spirit:signalName>
+        <spirit:componentSignalName>nvm_PWRITE</spirit:componentSignalName><spirit:busSignalName>PWRITE</spirit:busSignalName></spirit:signalName>
+      <spirit:signalName>
+        <spirit:componentSignalName>nvm_PRDATA</spirit:componentSignalName><spirit:busSignalName>PRDATA</spirit:busSignalName></spirit:signalName>
+      <spirit:signalName>
+        <spirit:componentSignalName>nvm_PWDATA</spirit:componentSignalName><spirit:busSignalName>PWDATA</spirit:busSignalName></spirit:signalName>
+      <spirit:signalName>
+        <spirit:componentSignalName>nvm_PREADY</spirit:componentSignalName><spirit:busSignalName>PREADY</spirit:busSignalName></spirit:signalName>
+      <spirit:signalName>
+        <spirit:componentSignalName>nvm_PSEL</spirit:componentSignalName><spirit:busSignalName>PSELx</spirit:busSignalName></spirit:signalName></spirit:signalMap>
+    <spirit:vendorExtensions></spirit:vendorExtensions>
+  </spirit:busInterface>
+  <spirit:busInterface>
     <spirit:name>AXI_DATA</spirit:name>
     <spirit:busType spirit:vendor="AMBA" spirit:library="AMBA3" spirit:name="AXI" spirit:version="r1p0_5"/>
     <spirit:master></spirit:master>
@@ -160,27 +181,6 @@
         <spirit:componentSignalName>ram_RVALID</spirit:componentSignalName><spirit:busSignalName>RVALID</spirit:busSignalName></spirit:signalName>
       <spirit:signalName>
         <spirit:componentSignalName>ram_RREADY</spirit:componentSignalName><spirit:busSignalName>RREADY</spirit:busSignalName></spirit:signalName></spirit:signalMap>
-    <spirit:vendorExtensions></spirit:vendorExtensions>
-  </spirit:busInterface>
-  <spirit:busInterface>
-    <spirit:name>BL_SLAVE</spirit:name>
-    <spirit:busType spirit:vendor="AMBA" spirit:library="AMBA2" spirit:name="APB" spirit:version="r0p0"/>
-    <spirit:slave></spirit:slave>
-    <spirit:signalMap>
-      <spirit:signalName>
-        <spirit:componentSignalName>nvm_PADDR</spirit:componentSignalName><spirit:busSignalName>PADDR</spirit:busSignalName></spirit:signalName>
-      <spirit:signalName>
-        <spirit:componentSignalName>nvm_PENABLE</spirit:componentSignalName><spirit:busSignalName>PENABLE</spirit:busSignalName></spirit:signalName>
-      <spirit:signalName>
-        <spirit:componentSignalName>nvm_PWRITE</spirit:componentSignalName><spirit:busSignalName>PWRITE</spirit:busSignalName></spirit:signalName>
-      <spirit:signalName>
-        <spirit:componentSignalName>nvm_PRDATA</spirit:componentSignalName><spirit:busSignalName>PRDATA</spirit:busSignalName></spirit:signalName>
-      <spirit:signalName>
-        <spirit:componentSignalName>nvm_PWDATA</spirit:componentSignalName><spirit:busSignalName>PWDATA</spirit:busSignalName></spirit:signalName>
-      <spirit:signalName>
-        <spirit:componentSignalName>nvm_PREADY</spirit:componentSignalName><spirit:busSignalName>PREADY</spirit:busSignalName></spirit:signalName>
-      <spirit:signalName>
-        <spirit:componentSignalName>nvm_PSEL</spirit:componentSignalName><spirit:busSignalName>PSELx</spirit:busSignalName></spirit:signalName></spirit:signalMap>
     <spirit:vendorExtensions></spirit:vendorExtensions>
   </spirit:busInterface>
   </spirit:busInterfaces>
@@ -645,7 +645,7 @@
   <spirit:fileSets>
   <spirit:fileSet spirit:fileSetId="HDL_FILESET">
     <spirit:file>
-      <spirit:name>/home/ryan/orca_final/rtl/axi_wrapper.vhd</spirit:name>
+      <spirit:name>hdl/axi_wrapper.vhd</spirit:name>
       <spirit:fileType>verilogSource</spirit:fileType>
     <spirit:vendorExtensions></spirit:vendorExtensions>
     </spirit:file>

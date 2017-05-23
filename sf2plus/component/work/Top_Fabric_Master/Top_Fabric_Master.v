@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////
-// Created by SmartDesign Tue May 23 08:17:06 2017
+// Created by SmartDesign Tue May 23 12:16:57 2017
 // Version: v11.7 SP3 11.7.3.8
 //////////////////////////////////////////////////////////////////////
 
@@ -326,16 +326,16 @@ wire   [2:0]  fabric_master_0_BIF_1_HSIZE;
 wire   [1:0]  fabric_master_0_BIF_1_HTRANS;
 wire   [31:0] fabric_master_0_BIF_1_HWDATA;
 wire          fabric_master_0_BIF_1_HWRITE;
-wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_0_PADDR;
-wire          my_mss_top_0_AMBA_SLAVE_0_0_PENABLE;
-wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_0_PRDATA;
-wire          my_mss_top_0_AMBA_SLAVE_0_0_PREADY;
-wire          my_mss_top_0_AMBA_SLAVE_0_0_PSELx;
-wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_0_PWDATA;
-wire          my_mss_top_0_AMBA_SLAVE_0_0_PWRITE;
-wire          my_mss_top_0_FIC_0_CLK_1;
+wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_1_PADDR;
+wire          my_mss_top_0_AMBA_SLAVE_0_1_PENABLE;
+wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_1_PRDATA;
+wire          my_mss_top_0_AMBA_SLAVE_0_1_PREADY;
+wire          my_mss_top_0_AMBA_SLAVE_0_1_PSELx;
+wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_1_PWDATA;
+wire          my_mss_top_0_AMBA_SLAVE_0_1_PWRITE;
+wire          my_mss_top_0_FIC_0_CLK_0;
 wire          my_mss_top_0_GL1;
-wire          my_mss_top_0_MSS_READY_0;
+wire          my_mss_top_0_MSS_READY_1;
 wire   [31:0] riscV_axi_0_AXI_DATA_ARADDR;
 wire   [1:0]  riscV_axi_0_AXI_DATA_ARBURST;
 wire   [3:0]  riscV_axi_0_AXI_DATA_ARCACHE;
@@ -757,13 +757,13 @@ wire          reset_IN_POST_INV0_0;
 wire   [31:0] axi_to_apb_0_APB_SLAVE_PADDR;
 wire   [4:0]  axi_to_apb_0_APB_SLAVE_PADDR_0_4to0;
 wire   [4:0]  axi_to_apb_0_APB_SLAVE_PADDR_0;
-wire   [7:0]  axi_to_apb_0_APB_SLAVE_PRDATA;
 wire   [31:8] axi_to_apb_0_APB_SLAVE_PRDATA_0_31to8;
 wire   [7:0]  axi_to_apb_0_APB_SLAVE_PRDATA_0_7to0;
 wire   [31:0] axi_to_apb_0_APB_SLAVE_PRDATA_0;
+wire   [7:0]  axi_to_apb_0_APB_SLAVE_PRDATA;
+wire   [31:0] axi_to_apb_0_APB_SLAVE_PWDATA;
 wire   [7:0]  axi_to_apb_0_APB_SLAVE_PWDATA_0_7to0;
 wire   [7:0]  axi_to_apb_0_APB_SLAVE_PWDATA_0;
-wire   [31:0] axi_to_apb_0_APB_SLAVE_PWDATA;
 wire   [31:0] axi_to_apb_1_APB_SLAVE_PADDR;
 wire   [6:0]  axi_to_apb_1_APB_SLAVE_PADDR_0_6to0;
 wire   [6:0]  axi_to_apb_1_APB_SLAVE_PADDR_0;
@@ -771,9 +771,9 @@ wire   [31:8] axi_to_apb_1_APB_SLAVE_PRDATA_0_31to8;
 wire   [7:0]  axi_to_apb_1_APB_SLAVE_PRDATA_0_7to0;
 wire   [31:0] axi_to_apb_1_APB_SLAVE_PRDATA_0;
 wire   [7:0]  axi_to_apb_1_APB_SLAVE_PRDATA;
-wire   [31:0] axi_to_apb_1_APB_SLAVE_PWDATA;
 wire   [7:0]  axi_to_apb_1_APB_SLAVE_PWDATA_0_7to0;
 wire   [7:0]  axi_to_apb_1_APB_SLAVE_PWDATA_0;
+wire   [31:0] axi_to_apb_1_APB_SLAVE_PWDATA;
 wire   [31:0] axi_to_apb_3_APB_SLAVE_PADDR;
 wire   [7:0]  axi_to_apb_3_APB_SLAVE_PADDR_0_7to0;
 wire   [7:0]  axi_to_apb_3_APB_SLAVE_PADDR_0;
@@ -834,9 +834,9 @@ wire   [4:4]  CoreAXI4Interconnect_0_AXI3mslave3_RID_0_4to4;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave3_RID_0_3to0;
 wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave3_RID_0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave3_RID;
+wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave3_WID;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave3_WID_0_3to0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave3_WID_0;
-wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave3_WID;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave4_ARID_0_3to0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave4_ARID_0;
 wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave4_ARID;
@@ -849,10 +849,10 @@ wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave4_AWID_0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave4_AWLEN_0_3to0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave4_AWLEN_0;
 wire   [7:0]  CoreAXI4Interconnect_0_AXI3mslave4_AWLEN;
+wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave4_BID;
 wire   [4:4]  CoreAXI4Interconnect_0_AXI3mslave4_BID_0_4to4;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave4_BID_0_3to0;
 wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave4_BID_0;
-wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave4_BID;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave4_RID;
 wire   [4:4]  CoreAXI4Interconnect_0_AXI3mslave4_RID_0_4to4;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave4_RID_0_3to0;
@@ -872,17 +872,17 @@ wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave5_AWID;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave5_AWLEN_0_3to0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave5_AWLEN_0;
 wire   [7:0]  CoreAXI4Interconnect_0_AXI3mslave5_AWLEN;
-wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave5_BID;
 wire   [4:4]  CoreAXI4Interconnect_0_AXI3mslave5_BID_0_4to4;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave5_BID_0_3to0;
 wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave5_BID_0;
+wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave5_BID;
 wire   [4:4]  CoreAXI4Interconnect_0_AXI3mslave5_RID_0_4to4;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave5_RID_0_3to0;
 wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave5_RID_0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave5_RID;
+wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave5_WID;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave5_WID_0_3to0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave5_WID_0;
-wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave5_WID;
 wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave6_ARID;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave6_ARID_0_3to0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave6_ARID_0;
@@ -1273,7 +1273,7 @@ assign MASTER7_ARREGION_const_net_0 = 4'h0;
 //--------------------------------------------------------------------
 // Inversions
 //--------------------------------------------------------------------
-assign reset_IN_POST_INV0_0 = ~ my_mss_top_0_MSS_READY_0;
+assign reset_IN_POST_INV0_0 = ~ my_mss_top_0_MSS_READY_1;
 //--------------------------------------------------------------------
 // Top level output port assignments
 //--------------------------------------------------------------------
@@ -1489,8 +1489,8 @@ axi_bram #(
         .LOG2_DEPTH_BYTES   ( 15 ) )
 axi_bram_0(
         // Inputs
-        .clk           ( my_mss_top_0_FIC_0_CLK_1 ),
-        .resetn        ( my_mss_top_0_MSS_READY_0 ),
+        .clk           ( my_mss_top_0_FIC_0_CLK_0 ),
+        .resetn        ( my_mss_top_0_MSS_READY_1 ),
         .s_axi_arvalid ( vectorblox_mxp_0_AXI_DMA_MASTER_ARVALID ),
         .s_axi_rready  ( vectorblox_mxp_0_AXI_DMA_MASTER_RREADY ),
         .s_axi_awvalid ( vectorblox_mxp_0_AXI_DMA_MASTER_AWVALID ),
@@ -1529,8 +1529,8 @@ axi_to_apb #(
         .REGISTER_SIZE ( 32 ) )
 axi_to_apb_0(
         // Inputs
-        .clk     ( my_mss_top_0_FIC_0_CLK_1 ),
-        .aresetn ( my_mss_top_0_MSS_READY_0 ),
+        .clk     ( my_mss_top_0_FIC_0_CLK_0 ),
+        .aresetn ( my_mss_top_0_MSS_READY_1 ),
         .AWVALID ( CoreAXI4Interconnect_0_AXI3mslave3_AWVALID ),
         .WLAST   ( CoreAXI4Interconnect_0_AXI3mslave3_WLAST ),
         .WVALID  ( CoreAXI4Interconnect_0_AXI3mslave3_WVALID ),
@@ -1579,8 +1579,8 @@ axi_to_apb #(
         .REGISTER_SIZE ( 32 ) )
 axi_to_apb_1(
         // Inputs
-        .clk     ( my_mss_top_0_FIC_0_CLK_1 ),
-        .aresetn ( my_mss_top_0_MSS_READY_0 ),
+        .clk     ( my_mss_top_0_FIC_0_CLK_0 ),
+        .aresetn ( my_mss_top_0_MSS_READY_1 ),
         .AWVALID ( CoreAXI4Interconnect_0_AXI3mslave4_AWVALID ),
         .WLAST   ( CoreAXI4Interconnect_0_AXI3mslave4_WLAST ),
         .WVALID  ( CoreAXI4Interconnect_0_AXI3mslave4_WVALID ),
@@ -1629,8 +1629,8 @@ axi_to_apb #(
         .REGISTER_SIZE ( 32 ) )
 axi_to_apb_2(
         // Inputs
-        .clk     ( my_mss_top_0_FIC_0_CLK_1 ),
-        .aresetn ( my_mss_top_0_MSS_READY_0 ),
+        .clk     ( my_mss_top_0_FIC_0_CLK_0 ),
+        .aresetn ( my_mss_top_0_MSS_READY_1 ),
         .AWVALID ( CoreAXI4Interconnect_0_AXI3mslave5_AWVALID ),
         .WLAST   ( CoreAXI4Interconnect_0_AXI3mslave5_WLAST ),
         .WVALID  ( CoreAXI4Interconnect_0_AXI3mslave5_WVALID ),
@@ -1679,8 +1679,8 @@ axi_to_apb #(
         .REGISTER_SIZE ( 32 ) )
 axi_to_apb_3(
         // Inputs
-        .clk     ( my_mss_top_0_FIC_0_CLK_1 ),
-        .aresetn ( my_mss_top_0_MSS_READY_0 ),
+        .clk     ( my_mss_top_0_FIC_0_CLK_0 ),
+        .aresetn ( my_mss_top_0_MSS_READY_1 ),
         .AWVALID ( CoreAXI4Interconnect_0_AXI3mslave6_AWVALID ),
         .WLAST   ( CoreAXI4Interconnect_0_AXI3mslave6_WLAST ),
         .WVALID  ( CoreAXI4Interconnect_0_AXI3mslave6_WVALID ),
@@ -2793,8 +2793,8 @@ CoreAXI4Interconnect #(
         .USER_WIDTH                    ( 1 ) )
 CoreAXI4Interconnect_0(
         // Inputs
-        .ACLK              ( my_mss_top_0_FIC_0_CLK_1 ),
-        .ARESETN           ( my_mss_top_0_MSS_READY_0 ),
+        .ACLK              ( my_mss_top_0_FIC_0_CLK_0 ),
+        .ARESETN           ( my_mss_top_0_MSS_READY_1 ),
         .MASTER0_AWVALID   ( riscV_axi_0_AXI_DATA_AWVALID ),
         .MASTER1_AWVALID   ( GND_net ), // tied to 1'b0 from definition
         .MASTER2_AWVALID   ( GND_net ), // tied to 1'b0 from definition
@@ -4871,8 +4871,8 @@ CoreGPIO #(
         .OE_TYPE         ( 1 ) )
 CoreGPIO_0(
         // Inputs
-        .PRESETN  ( my_mss_top_0_MSS_READY_0 ),
-        .PCLK     ( my_mss_top_0_FIC_0_CLK_1 ),
+        .PRESETN  ( my_mss_top_0_MSS_READY_1 ),
+        .PCLK     ( my_mss_top_0_FIC_0_CLK_0 ),
         .PSEL     ( axi_to_apb_3_APB_SLAVE_PSELx ),
         .PENABLE  ( axi_to_apb_3_APB_SLAVE_PENABLE ),
         .PWRITE   ( axi_to_apb_3_APB_SLAVE_PWRITE ),
@@ -4905,8 +4905,8 @@ CORESPI #(
         .FAMILY            ( 19 ) )
 CORESPI_0(
         // Inputs
-        .PCLK       ( my_mss_top_0_FIC_0_CLK_1 ),
-        .PRESETN    ( my_mss_top_0_MSS_READY_0 ),
+        .PCLK       ( my_mss_top_0_FIC_0_CLK_0 ),
+        .PRESETN    ( my_mss_top_0_MSS_READY_1 ),
         .PSEL       ( axi_to_apb_1_APB_SLAVE_PSELx ),
         .PENABLE    ( axi_to_apb_1_APB_SLAVE_PENABLE ),
         .PWRITE     ( axi_to_apb_1_APB_SLAVE_PWRITE ),
@@ -4943,8 +4943,8 @@ Top_Fabric_Master_CoreUARTapb_0_CoreUARTapb #(
         .TX_FIFO           ( 1 ) )
 CoreUARTapb_0(
         // Inputs
-        .PCLK        ( my_mss_top_0_FIC_0_CLK_1 ),
-        .PRESETN     ( my_mss_top_0_MSS_READY_0 ),
+        .PCLK        ( my_mss_top_0_FIC_0_CLK_0 ),
+        .PRESETN     ( my_mss_top_0_MSS_READY_1 ),
         .PSEL        ( axi_to_apb_0_APB_SLAVE_PSELx ),
         .PENABLE     ( axi_to_apb_0_APB_SLAVE_PENABLE ),
         .PWRITE      ( axi_to_apb_0_APB_SLAVE_PWRITE ),
@@ -4975,8 +4975,8 @@ fabric_master_0(
         .BREADY        ( CoreAXI4Interconnect_0_AXI3mslave7_BREADY ),
         .ARVALID       ( CoreAXI4Interconnect_0_AXI3mslave7_ARVALID ),
         .RREADY        ( CoreAXI4Interconnect_0_AXI3mslave7_RREADY ),
-        .HCLK          ( my_mss_top_0_FIC_0_CLK_1 ),
-        .HRESETn       ( my_mss_top_0_MSS_READY_0 ),
+        .HCLK          ( my_mss_top_0_FIC_0_CLK_0 ),
+        .HRESETn       ( my_mss_top_0_MSS_READY_1 ),
         .HREADY        ( fabric_master_0_BIF_1_HREADY ),
         .START         ( VCC_net ),
         .AWID          ( CoreAXI4Interconnect_0_AXI3mslave7_AWID_0 ),
@@ -5026,8 +5026,8 @@ i2s_apb #(
         .REGISTER_SIZE ( 32 ) )
 i2s_apb_0(
         // Inputs
-        .PCLK      ( my_mss_top_0_FIC_0_CLK_1 ),
-        .PRESETN   ( my_mss_top_0_MSS_READY_0 ),
+        .PCLK      ( my_mss_top_0_FIC_0_CLK_0 ),
+        .PRESETN   ( my_mss_top_0_MSS_READY_1 ),
         .PENABLE   ( axi_to_apb_2_APB_SLAVE_PENABLE ),
         .PWRITE    ( axi_to_apb_2_APB_SLAVE_PWRITE ),
         .PSEL      ( axi_to_apb_2_APB_SLAVE_PSELx ),
@@ -5051,7 +5051,7 @@ my_mss_top my_mss_top_0(
         .M3_RESET_N                 ( GND_net ),
         .AMBA_MASTER_0_HWRITE_M0    ( fabric_master_0_BIF_1_HWRITE ),
         .AMBA_MASTER_0_HMASTLOCK_M0 ( GND_net ), // tied to 1'b0 from definition
-        .PREADYS1                   ( my_mss_top_0_AMBA_SLAVE_0_0_PREADY ),
+        .PREADYS1                   ( my_mss_top_0_AMBA_SLAVE_0_1_PREADY ),
         .PSLVERRS1                  ( GND_net ), // tied to 1'b0 from definition
         .AMBA_MASTER_0_HADDR_M0     ( fabric_master_0_BIF_1_HADDR ),
         .AMBA_MASTER_0_HTRANS_M0    ( fabric_master_0_BIF_1_HTRANS ),
@@ -5059,23 +5059,23 @@ my_mss_top my_mss_top_0(
         .AMBA_MASTER_0_HBURST_M0    ( fabric_master_0_BIF_1_HBURST ),
         .AMBA_MASTER_0_HPROT_M0     ( fabric_master_0_BIF_1_HPROT ),
         .AMBA_MASTER_0_HWDATA_M0    ( fabric_master_0_BIF_1_HWDATA ),
-        .PRDATAS1                   ( my_mss_top_0_AMBA_SLAVE_0_0_PRDATA ),
+        .PRDATAS1                   ( my_mss_top_0_AMBA_SLAVE_0_1_PRDATA ),
         // Outputs
         .MMUART_0_TXD_M2F           (  ),
         .INIT_DONE                  (  ),
-        .MSS_READY                  ( my_mss_top_0_MSS_READY_0 ),
-        .FIC_0_CLK                  ( my_mss_top_0_FIC_0_CLK_1 ),
+        .MSS_READY                  ( my_mss_top_0_MSS_READY_1 ),
+        .FIC_0_CLK                  ( my_mss_top_0_FIC_0_CLK_0 ),
         .FIC_0_LOCK                 (  ),
         .POWER_ON_RESET_N           (  ),
         .GL1                        ( my_mss_top_0_GL1 ),
         .AMBA_MASTER_0_HREADY_M0    ( fabric_master_0_BIF_1_HREADY ),
-        .PSELS1                     ( my_mss_top_0_AMBA_SLAVE_0_0_PSELx ),
-        .PENABLES                   ( my_mss_top_0_AMBA_SLAVE_0_0_PENABLE ),
-        .PWRITES                    ( my_mss_top_0_AMBA_SLAVE_0_0_PWRITE ),
+        .PSELS1                     ( my_mss_top_0_AMBA_SLAVE_0_1_PSELx ),
+        .PENABLES                   ( my_mss_top_0_AMBA_SLAVE_0_1_PENABLE ),
+        .PWRITES                    ( my_mss_top_0_AMBA_SLAVE_0_1_PWRITE ),
         .AMBA_MASTER_0_HRDATA_M0    ( fabric_master_0_BIF_1_HRDATA ),
         .AMBA_MASTER_0_HRESP_M0     ( fabric_master_0_BIF_1_HRESP ),
-        .PADDRS                     ( my_mss_top_0_AMBA_SLAVE_0_0_PADDR ),
-        .PWDATAS                    ( my_mss_top_0_AMBA_SLAVE_0_0_PWDATA ) 
+        .PADDRS                     ( my_mss_top_0_AMBA_SLAVE_0_1_PADDR ),
+        .PWDATAS                    ( my_mss_top_0_AMBA_SLAVE_0_1_PWDATA ) 
         );
 
 //--------riscV_axi
@@ -5098,29 +5098,20 @@ riscV_axi #(
         .SHIFTER_MAX_CYCLES    ( 1 ) )
 riscV_axi_0(
         // Inputs
-        .clk          ( my_mss_top_0_FIC_0_CLK_1 ),
+        .clk          ( my_mss_top_0_FIC_0_CLK_0 ),
         .clk_2x       ( my_mss_top_0_GL1 ),
         .reset        ( reset_IN_POST_INV0_0 ),
         .data_AWREADY ( riscV_axi_0_AXI_DATA_AWREADY ),
         .data_WREADY  ( riscV_axi_0_AXI_DATA_WREADY ),
-        .data_BVALID  ( riscV_axi_0_AXI_DATA_BVALID ),
-        .data_ARREADY ( riscV_axi_0_AXI_DATA_ARREADY ),
-        .data_RLAST   ( riscV_axi_0_AXI_DATA_RLAST ),
-        .data_RVALID  ( riscV_axi_0_AXI_DATA_RVALID ),
-        .ram_AWVALID  ( CoreAXI4Interconnect_0_AXI3mslave0_AWVALID ),
-        .ram_WLAST    ( CoreAXI4Interconnect_0_AXI3mslave0_WLAST ),
-        .ram_WVALID   ( CoreAXI4Interconnect_0_AXI3mslave0_WVALID ),
-        .ram_BREADY   ( CoreAXI4Interconnect_0_AXI3mslave0_BREADY ),
-        .ram_ARVALID  ( CoreAXI4Interconnect_0_AXI3mslave0_ARVALID ),
-        .ram_RREADY   ( CoreAXI4Interconnect_0_AXI3mslave0_RREADY ),
-        .nvm_PENABLE  ( my_mss_top_0_AMBA_SLAVE_0_0_PENABLE ),
-        .nvm_PWRITE   ( my_mss_top_0_AMBA_SLAVE_0_0_PWRITE ),
-        .nvm_PSEL     ( my_mss_top_0_AMBA_SLAVE_0_0_PSELx ),
         .data_BID     ( riscV_axi_0_AXI_DATA_BID ),
         .data_BRESP   ( riscV_axi_0_AXI_DATA_BRESP ),
+        .data_BVALID  ( riscV_axi_0_AXI_DATA_BVALID ),
+        .data_ARREADY ( riscV_axi_0_AXI_DATA_ARREADY ),
         .data_RID     ( riscV_axi_0_AXI_DATA_RID ),
         .data_RDATA   ( riscV_axi_0_AXI_DATA_RDATA ),
         .data_RRESP   ( riscV_axi_0_AXI_DATA_RRESP ),
+        .data_RLAST   ( riscV_axi_0_AXI_DATA_RLAST ),
+        .data_RVALID  ( riscV_axi_0_AXI_DATA_RVALID ),
         .ram_AWID     ( CoreAXI4Interconnect_0_AXI3mslave0_AWID_0 ),
         .ram_AWADDR   ( CoreAXI4Interconnect_0_AXI3mslave0_AWADDR ),
         .ram_AWLEN    ( CoreAXI4Interconnect_0_AXI3mslave0_AWLEN_0 ),
@@ -5129,9 +5120,13 @@ riscV_axi_0(
         .ram_AWLOCK   ( CoreAXI4Interconnect_0_AXI3mslave0_AWLOCK ),
         .ram_AWCACHE  ( CoreAXI4Interconnect_0_AXI3mslave0_AWCACHE ),
         .ram_AWPROT   ( CoreAXI4Interconnect_0_AXI3mslave0_AWPROT ),
+        .ram_AWVALID  ( CoreAXI4Interconnect_0_AXI3mslave0_AWVALID ),
         .ram_WID      ( CoreAXI4Interconnect_0_AXI3mslave0_WID_0 ),
         .ram_WDATA    ( CoreAXI4Interconnect_0_AXI3mslave0_WDATA ),
         .ram_WSTRB    ( CoreAXI4Interconnect_0_AXI3mslave0_WSTRB ),
+        .ram_WLAST    ( CoreAXI4Interconnect_0_AXI3mslave0_WLAST ),
+        .ram_WVALID   ( CoreAXI4Interconnect_0_AXI3mslave0_WVALID ),
+        .ram_BREADY   ( CoreAXI4Interconnect_0_AXI3mslave0_BREADY ),
         .ram_ARID     ( CoreAXI4Interconnect_0_AXI3mslave0_ARID_0 ),
         .ram_ARADDR   ( CoreAXI4Interconnect_0_AXI3mslave0_ARADDR ),
         .ram_ARLEN    ( CoreAXI4Interconnect_0_AXI3mslave0_ARLEN_0 ),
@@ -5140,22 +5135,14 @@ riscV_axi_0(
         .ram_ARLOCK   ( CoreAXI4Interconnect_0_AXI3mslave0_ARLOCK ),
         .ram_ARCACHE  ( CoreAXI4Interconnect_0_AXI3mslave0_ARCACHE ),
         .ram_ARPROT   ( CoreAXI4Interconnect_0_AXI3mslave0_ARPROT ),
-        .nvm_PADDR    ( my_mss_top_0_AMBA_SLAVE_0_0_PADDR ),
-        .nvm_PWDATA   ( my_mss_top_0_AMBA_SLAVE_0_0_PWDATA ),
+        .ram_ARVALID  ( CoreAXI4Interconnect_0_AXI3mslave0_ARVALID ),
+        .ram_RREADY   ( CoreAXI4Interconnect_0_AXI3mslave0_RREADY ),
+        .nvm_PADDR    ( my_mss_top_0_AMBA_SLAVE_0_1_PADDR ),
+        .nvm_PENABLE  ( my_mss_top_0_AMBA_SLAVE_0_1_PENABLE ),
+        .nvm_PWRITE   ( my_mss_top_0_AMBA_SLAVE_0_1_PWRITE ),
+        .nvm_PWDATA   ( my_mss_top_0_AMBA_SLAVE_0_1_PWDATA ),
+        .nvm_PSEL     ( my_mss_top_0_AMBA_SLAVE_0_1_PSELx ),
         // Outputs
-        .data_AWVALID ( riscV_axi_0_AXI_DATA_AWVALID ),
-        .data_WLAST   ( riscV_axi_0_AXI_DATA_WLAST ),
-        .data_WVALID  ( riscV_axi_0_AXI_DATA_WVALID ),
-        .data_BREADY  ( riscV_axi_0_AXI_DATA_BREADY ),
-        .data_ARVALID ( riscV_axi_0_AXI_DATA_ARVALID ),
-        .data_RREADY  ( riscV_axi_0_AXI_DATA_RREADY ),
-        .ram_AWREADY  ( CoreAXI4Interconnect_0_AXI3mslave0_AWREADY ),
-        .ram_WREADY   ( CoreAXI4Interconnect_0_AXI3mslave0_WREADY ),
-        .ram_BVALID   ( CoreAXI4Interconnect_0_AXI3mslave0_BVALID ),
-        .ram_ARREADY  ( CoreAXI4Interconnect_0_AXI3mslave0_ARREADY ),
-        .ram_RLAST    ( CoreAXI4Interconnect_0_AXI3mslave0_RLAST ),
-        .ram_RVALID   ( CoreAXI4Interconnect_0_AXI3mslave0_RVALID ),
-        .nvm_PREADY   ( my_mss_top_0_AMBA_SLAVE_0_0_PREADY ),
         .data_AWID    ( riscV_axi_0_AXI_DATA_AWID ),
         .data_AWADDR  ( riscV_axi_0_AXI_DATA_AWADDR ),
         .data_AWLEN   ( riscV_axi_0_AXI_DATA_AWLEN ),
@@ -5164,9 +5151,13 @@ riscV_axi_0(
         .data_AWLOCK  ( riscV_axi_0_AXI_DATA_AWLOCK ),
         .data_AWCACHE ( riscV_axi_0_AXI_DATA_AWCACHE ),
         .data_AWPROT  ( riscV_axi_0_AXI_DATA_AWPROT ),
+        .data_AWVALID ( riscV_axi_0_AXI_DATA_AWVALID ),
         .data_WID     ( riscV_axi_0_AXI_DATA_WID ),
         .data_WDATA   ( riscV_axi_0_AXI_DATA_WDATA ),
         .data_WSTRB   ( riscV_axi_0_AXI_DATA_WSTRB ),
+        .data_WLAST   ( riscV_axi_0_AXI_DATA_WLAST ),
+        .data_WVALID  ( riscV_axi_0_AXI_DATA_WVALID ),
+        .data_BREADY  ( riscV_axi_0_AXI_DATA_BREADY ),
         .data_ARID    ( riscV_axi_0_AXI_DATA_ARID ),
         .data_ARADDR  ( riscV_axi_0_AXI_DATA_ARADDR ),
         .data_ARLEN   ( riscV_axi_0_AXI_DATA_ARLEN ),
@@ -5175,12 +5166,21 @@ riscV_axi_0(
         .data_ARLOCK  ( riscV_axi_0_AXI_DATA_ARLOCK ),
         .data_ARCACHE ( riscV_axi_0_AXI_DATA_ARCACHE ),
         .data_ARPROT  ( riscV_axi_0_AXI_DATA_ARPROT ),
+        .data_ARVALID ( riscV_axi_0_AXI_DATA_ARVALID ),
+        .data_RREADY  ( riscV_axi_0_AXI_DATA_RREADY ),
+        .ram_AWREADY  ( CoreAXI4Interconnect_0_AXI3mslave0_AWREADY ),
+        .ram_WREADY   ( CoreAXI4Interconnect_0_AXI3mslave0_WREADY ),
         .ram_BID      ( CoreAXI4Interconnect_0_AXI3mslave0_BID ),
         .ram_BRESP    ( CoreAXI4Interconnect_0_AXI3mslave0_BRESP ),
+        .ram_BVALID   ( CoreAXI4Interconnect_0_AXI3mslave0_BVALID ),
+        .ram_ARREADY  ( CoreAXI4Interconnect_0_AXI3mslave0_ARREADY ),
         .ram_RID      ( CoreAXI4Interconnect_0_AXI3mslave0_RID ),
         .ram_RDATA    ( CoreAXI4Interconnect_0_AXI3mslave0_RDATA ),
         .ram_RRESP    ( CoreAXI4Interconnect_0_AXI3mslave0_RRESP ),
-        .nvm_PRDATA   ( my_mss_top_0_AMBA_SLAVE_0_0_PRDATA ) 
+        .ram_RLAST    ( CoreAXI4Interconnect_0_AXI3mslave0_RLAST ),
+        .ram_RVALID   ( CoreAXI4Interconnect_0_AXI3mslave0_RVALID ),
+        .nvm_PRDATA   ( my_mss_top_0_AMBA_SLAVE_0_1_PRDATA ),
+        .nvm_PREADY   ( my_mss_top_0_AMBA_SLAVE_0_1_PREADY ) 
         );
 
 //--------vectorblox_mxp
@@ -5205,9 +5205,9 @@ vectorblox_mxp #(
         .VECTOR_LANES              ( 8 ) )
 vectorblox_mxp_0(
         // Inputs
-        .core_clk            ( my_mss_top_0_FIC_0_CLK_1 ),
+        .core_clk            ( my_mss_top_0_FIC_0_CLK_0 ),
         .core_clk_2x         ( my_mss_top_0_GL1 ),
-        .aresetn             ( my_mss_top_0_MSS_READY_0 ),
+        .aresetn             ( my_mss_top_0_MSS_READY_1 ),
         .s_axi_instr_awvalid ( CoreAXI4Interconnect_0_AXI3mslave2_AWVALID ),
         .s_axi_instr_wvalid  ( CoreAXI4Interconnect_0_AXI3mslave2_WVALID ),
         .s_axi_instr_wlast   ( CoreAXI4Interconnect_0_AXI3mslave2_WLAST ),
