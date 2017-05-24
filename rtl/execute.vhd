@@ -72,7 +72,7 @@ entity execute is
     external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     pipeline_empty      : in  std_logic;
     ifetch_next_pc      : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    interrupt_pending   : out std_logic);
+    interrupt_pending   : buffer std_logic);
 
 
 end entity execute;

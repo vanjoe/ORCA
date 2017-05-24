@@ -158,6 +158,7 @@ proc create_hier_cell_clock { parentCell nameHier } {
   # Create interface pins
 
   # Create pins
+  create_bd_pin -dir O clk_2x_out
   create_bd_pin -dir I -type clk clk_in1
   create_bd_pin -dir O -type clk clk_out
   create_bd_pin -dir I -type rst ext_reset_in
@@ -167,25 +168,31 @@ proc create_hier_cell_clock { parentCell nameHier } {
   # Create instance: clk_wiz, and set properties
   set clk_wiz [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:5.3 clk_wiz ]
   set_property -dict [ list \
-CONFIG.CLKOUT1_JITTER {130.958} \
+CONFIG.CLKOUT1_JITTER {175.402} \
 CONFIG.CLKOUT1_PHASE_ERROR {98.575} \
+CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {25} \
+CONFIG.CLKOUT2_JITTER {151.636} \
+CONFIG.CLKOUT2_PHASE_ERROR {98.575} \
+CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {50} \
+CONFIG.CLKOUT2_USED {true} \
 CONFIG.MMCM_CLKFBOUT_MULT_F {10.000} \
 CONFIG.MMCM_CLKIN1_PERIOD {10.0} \
 CONFIG.MMCM_CLKIN2_PERIOD {10.0} \
-CONFIG.MMCM_CLKOUT0_DIVIDE_F {10.000} \
+CONFIG.MMCM_CLKOUT0_DIVIDE_F {40.000} \
+CONFIG.MMCM_CLKOUT1_DIVIDE {20} \
 CONFIG.MMCM_COMPENSATION {ZHOLD} \
+CONFIG.MMCM_DIVCLK_DIVIDE {1} \
+CONFIG.NUM_OUT_CLKS {2} \
 CONFIG.RESET_PORT {resetn} \
 CONFIG.RESET_TYPE {ACTIVE_LOW} \
  ] $clk_wiz
 
   # Need to retain value_src of defaults
   set_property -dict [ list \
-CONFIG.CLKOUT1_JITTER.VALUE_SRC {DEFAULT} \
 CONFIG.CLKOUT1_PHASE_ERROR.VALUE_SRC {DEFAULT} \
 CONFIG.MMCM_CLKFBOUT_MULT_F.VALUE_SRC {DEFAULT} \
 CONFIG.MMCM_CLKIN1_PERIOD.VALUE_SRC {DEFAULT} \
 CONFIG.MMCM_CLKIN2_PERIOD.VALUE_SRC {DEFAULT} \
-CONFIG.MMCM_CLKOUT0_DIVIDE_F.VALUE_SRC {DEFAULT} \
 CONFIG.MMCM_COMPENSATION.VALUE_SRC {DEFAULT} \
  ] $clk_wiz
 
@@ -194,11 +201,35 @@ CONFIG.MMCM_COMPENSATION.VALUE_SRC {DEFAULT} \
 
   # Create port connections
   connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins clk_out] [get_bd_pins clk_wiz/clk_out1] [get_bd_pins rst_clk_wiz_100M/slowest_sync_clk]
+  connect_bd_net -net clk_wiz_clk_out2 [get_bd_pins clk_2x_out] [get_bd_pins clk_wiz/clk_out2]
   connect_bd_net -net clk_wiz_locked [get_bd_pins clk_wiz/locked] [get_bd_pins rst_clk_wiz_100M/dcm_locked]
   connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins clk_in1] [get_bd_pins clk_wiz/clk_in1]
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins ext_reset_in] [get_bd_pins clk_wiz/resetn] [get_bd_pins rst_clk_wiz_100M/ext_reset_in]
   connect_bd_net -net rst_clk_wiz_100M_interconnect_aresetn [get_bd_pins interconnect_aresetn] [get_bd_pins rst_clk_wiz_100M/interconnect_aresetn]
   connect_bd_net -net rst_clk_wiz_100M_peripheral_aresetn [get_bd_pins peripheral_aresetn] [get_bd_pins rst_clk_wiz_100M/peripheral_aresetn]
+
+  # Perform GUI Layout
+  regenerate_bd_layout -hierarchy [get_bd_cells /clock] -layout_string {
+   guistr: "# # String gsaved with Nlview 6.5.12  2016-01-29 bk=1.3547 VDI=39 GEI=35 GUI=JA:1.6
+#  -string -flagsOSRD
+preplace port clk_out -pg 1 -y 20 -defaultsOSRD
+preplace port clk_in1 -pg 1 -y 160 -defaultsOSRD
+preplace port ext_reset_in -pg 1 -y 90 -defaultsOSRD
+preplace port clk_2x_out -pg 1 -y 210 -defaultsOSRD
+preplace portBus peripheral_aresetn -pg 1 -y 110 -defaultsOSRD
+preplace portBus interconnect_aresetn -pg 1 -y 130 -defaultsOSRD
+preplace inst clk_wiz -pg 1 -lvl 1 -y 150 -defaultsOSRD
+preplace inst rst_clk_wiz_100M -pg 1 -lvl 2 -y 110 -defaultsOSRD
+preplace netloc clk_wiz_clk_out2 1 1 2 190 210 NJ
+preplace netloc clk_wiz_locked 1 1 1 N
+preplace netloc processing_system7_0_FCLK_RESET0_N 1 0 2 20 80 NJ
+preplace netloc rst_clk_wiz_100M_interconnect_aresetn 1 2 1 NJ
+preplace netloc processing_system7_0_FCLK_CLK0 1 0 1 NJ
+preplace netloc rst_clk_wiz_100M_peripheral_aresetn 1 2 1 NJ
+preplace netloc clk_wiz_clk_out1 1 1 2 180 20 NJ
+levelinfo -pg 1 0 100 360 550 -top 0 -bot 230
+",
+}
 
   # Restore current instance
   current_bd_instance $oldCurInst
@@ -261,18 +292,24 @@ CONFIG.SINGLE_PORT_BRAM {1} \
   # Create instance: blk_mem_gen_0, and set properties
   set blk_mem_gen_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.3 blk_mem_gen_0 ]
   set_property -dict [ list \
+CONFIG.Assume_Synchronous_Clk {true} \
+CONFIG.Byte_Size {8} \
+CONFIG.Coe_File {../../../../../../../software/test.coe} \
+CONFIG.Enable_32bit_Address {true} \
 CONFIG.Enable_B {Use_ENB_Pin} \
+CONFIG.Fill_Remaining_Memory_Locations {true} \
+CONFIG.Load_Init_File {true} \
 CONFIG.Memory_Type {True_Dual_Port_RAM} \
 CONFIG.Port_B_Clock {100} \
 CONFIG.Port_B_Enable_Rate {100} \
 CONFIG.Port_B_Write_Rate {50} \
+CONFIG.Register_PortA_Output_of_Memory_Primitives {true} \
+CONFIG.Register_PortB_Output_of_Memory_Primitives {true} \
+CONFIG.Use_Byte_Write_Enable {true} \
+CONFIG.Use_RSTA_Pin {true} \
 CONFIG.Use_RSTB_Pin {true} \
-CONFIG.use_bram_block {BRAM_Controller} \
- ] $blk_mem_gen_0
-
-  # Need to retain value_src of defaults
-  set_property -dict [ list \
-CONFIG.use_bram_block.VALUE_SRC {DEFAULT} \
+CONFIG.Write_Depth_A {65536} \
+CONFIG.use_bram_block {Stand_Alone} \
  ] $blk_mem_gen_0
 
   # Create interface connections
@@ -284,6 +321,27 @@ CONFIG.use_bram_block.VALUE_SRC {DEFAULT} \
   # Create port connections
   connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins s_axi_aclk] [get_bd_pins axi_bram_ctrl_0/s_axi_aclk] [get_bd_pins axi_bram_ctrl_1/s_axi_aclk]
   connect_bd_net -net rst_clk_wiz_100M_peripheral_aresetn [get_bd_pins s_axi_aresetn] [get_bd_pins axi_bram_ctrl_0/s_axi_aresetn] [get_bd_pins axi_bram_ctrl_1/s_axi_aresetn]
+
+  # Perform GUI Layout
+  regenerate_bd_layout -hierarchy [get_bd_cells /BRAM] -layout_string {
+   guistr: "# # String gsaved with Nlview 6.5.12  2016-01-29 bk=1.3547 VDI=39 GEI=35 GUI=JA:1.6
+#  -string -flagsOSRD
+preplace port s_axi_aclk -pg 1 -y 60 -defaultsOSRD
+preplace port S_AXI0 -pg 1 -y 160 -defaultsOSRD
+preplace port S_AXI1 -pg 1 -y 40 -defaultsOSRD
+preplace portBus s_axi_aresetn -pg 1 -y 180 -defaultsOSRD
+preplace inst blk_mem_gen_0 -pg 1 -lvl 2 -y 70 -defaultsOSRD
+preplace inst axi_bram_ctrl_0 -pg 1 -lvl 1 -y 180 -defaultsOSRD
+preplace inst axi_bram_ctrl_1 -pg 1 -lvl 1 -y 50 -defaultsOSRD
+preplace netloc axi_mem_intercon_1_M00_AXI 1 0 1 NJ
+preplace netloc axi_bram_ctrl_0_BRAM_PORTA 1 1 1 280
+preplace netloc axi_mem_intercon_M00_AXI 1 0 1 NJ
+preplace netloc axi_bram_ctrl_1_BRAM_PORTA 1 1 1 280
+preplace netloc rst_clk_wiz_100M_peripheral_aresetn 1 0 1 10
+preplace netloc clk_wiz_clk_out1 1 0 1 20
+levelinfo -pg 1 -10 150 390 500 -top -20 -bot 250
+",
+}
 
   # Restore current instance
   current_bd_instance $oldCurInst
@@ -334,10 +392,8 @@ proc create_root_design { parentCell } {
   # Create instance: Orca_0, and set properties
   set Orca_0 [ create_bd_cell -type ip -vlnv user.org:user:Orca:1.0 Orca_0 ]
   set_property -dict [ list \
-CONFIG.ENABLE_EXCEPTIONS {0} \
-CONFIG.ENABLE_EXT_INTERRUPTS {0} \
+CONFIG.DIVIDE_ENABLE {1} \
 CONFIG.MULTIPLY_ENABLE {1} \
-CONFIG.NUM_EXT_INTERRUPTS {1} \
  ] $Orca_0
 
   # Create instance: axi_gpio_0, and set properties
@@ -480,6 +536,14 @@ CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ {150.000000} \
 CONFIG.PCW_FPGA2_PERIPHERAL_FREQMHZ {50.000000} \
 CONFIG.PCW_FPGA3_PERIPHERAL_FREQMHZ {50} \
 CONFIG.PCW_FPGA_FCLK0_ENABLE {1} \
+CONFIG.PCW_FTM_CTI_IN0 {<Select>} \
+CONFIG.PCW_FTM_CTI_IN1 {<Select>} \
+CONFIG.PCW_FTM_CTI_IN2 {<Select>} \
+CONFIG.PCW_FTM_CTI_IN3 {<Select>} \
+CONFIG.PCW_FTM_CTI_OUT0 {<Select>} \
+CONFIG.PCW_FTM_CTI_OUT1 {<Select>} \
+CONFIG.PCW_FTM_CTI_OUT2 {<Select>} \
+CONFIG.PCW_FTM_CTI_OUT3 {<Select>} \
 CONFIG.PCW_GPIO_EMIO_GPIO_ENABLE {0} \
 CONFIG.PCW_GPIO_EMIO_GPIO_IO {<Select>} \
 CONFIG.PCW_GPIO_MIO_GPIO_ENABLE {1} \
@@ -1115,6 +1179,14 @@ CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ.VALUE_SRC {DEFAULT} \
 CONFIG.PCW_FPGA2_PERIPHERAL_FREQMHZ.VALUE_SRC {DEFAULT} \
 CONFIG.PCW_FPGA3_PERIPHERAL_FREQMHZ.VALUE_SRC {DEFAULT} \
 CONFIG.PCW_FPGA_FCLK0_ENABLE.VALUE_SRC {DEFAULT} \
+CONFIG.PCW_FTM_CTI_IN0.VALUE_SRC {DEFAULT} \
+CONFIG.PCW_FTM_CTI_IN1.VALUE_SRC {DEFAULT} \
+CONFIG.PCW_FTM_CTI_IN2.VALUE_SRC {DEFAULT} \
+CONFIG.PCW_FTM_CTI_IN3.VALUE_SRC {DEFAULT} \
+CONFIG.PCW_FTM_CTI_OUT0.VALUE_SRC {DEFAULT} \
+CONFIG.PCW_FTM_CTI_OUT1.VALUE_SRC {DEFAULT} \
+CONFIG.PCW_FTM_CTI_OUT2.VALUE_SRC {DEFAULT} \
+CONFIG.PCW_FTM_CTI_OUT3.VALUE_SRC {DEFAULT} \
 CONFIG.PCW_GPIO_EMIO_GPIO_ENABLE.VALUE_SRC {DEFAULT} \
 CONFIG.PCW_GPIO_EMIO_GPIO_IO.VALUE_SRC {DEFAULT} \
 CONFIG.PCW_GPIO_MIO_GPIO_ENABLE.VALUE_SRC {DEFAULT} \
@@ -1643,14 +1715,15 @@ CONFIG.PCW_WDT_WDT_IO.VALUE_SRC {DEFAULT} \
 
   # Create port connections
   connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins BRAM/s_axi_aclk] [get_bd_pins Orca_0/clk] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins axi_mem_intercon/ACLK] [get_bd_pins axi_mem_intercon/M00_ACLK] [get_bd_pins axi_mem_intercon/M01_ACLK] [get_bd_pins axi_mem_intercon/S00_ACLK] [get_bd_pins axi_mem_intercon_1/ACLK] [get_bd_pins axi_mem_intercon_1/M00_ACLK] [get_bd_pins axi_mem_intercon_1/S00_ACLK] [get_bd_pins clock/clk_out]
+  connect_bd_net -net clock_clk_2x_out [get_bd_pins Orca_0/clk_2x] [get_bd_pins clock/clk_2x_out]
   connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins clock/clk_in1] [get_bd_pins processing_system7_0/FCLK_CLK0]
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins clock/ext_reset_in] [get_bd_pins processing_system7_0/FCLK_RESET0_N]
   connect_bd_net -net rst_clk_wiz_100M_interconnect_aresetn [get_bd_pins axi_mem_intercon/ARESETN] [get_bd_pins axi_mem_intercon_1/ARESETN] [get_bd_pins clock/interconnect_aresetn]
   connect_bd_net -net rst_clk_wiz_100M_peripheral_aresetn [get_bd_pins BRAM/s_axi_aresetn] [get_bd_pins Orca_0/reset] [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins axi_mem_intercon/M00_ARESETN] [get_bd_pins axi_mem_intercon/M01_ARESETN] [get_bd_pins axi_mem_intercon/S00_ARESETN] [get_bd_pins axi_mem_intercon_1/M00_ARESETN] [get_bd_pins axi_mem_intercon_1/S00_ARESETN] [get_bd_pins clock/peripheral_aresetn]
 
   # Create address segments
-  create_bd_addr_seg -range 0x00002000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs BRAM/axi_bram_ctrl_0/S_AXI/Mem0] SEG_axi_bram_ctrl_0_Mem0
-  create_bd_addr_seg -range 0x00002000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/instr] [get_bd_addr_segs BRAM/axi_bram_ctrl_1/S_AXI/Mem0] SEG_axi_bram_ctrl_1_Mem0
+  create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs BRAM/axi_bram_ctrl_0/S_AXI/Mem0] SEG_axi_bram_ctrl_0_Mem0
+  create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/instr] [get_bd_addr_segs BRAM/axi_bram_ctrl_1/S_AXI/Mem0] SEG_axi_bram_ctrl_1_Mem0
   create_bd_addr_seg -range 0x00010000 -offset 0x40000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] SEG_axi_gpio_0_Reg
 
   # Perform GUI Layout
@@ -1660,27 +1733,28 @@ CONFIG.PCW_WDT_WDT_IO.VALUE_SRC {DEFAULT} \
 preplace port DDR -pg 1 -y 180 -defaultsOSRD
 preplace port leds_8bits -pg 1 -y -230 -defaultsOSRD
 preplace port FIXED_IO -pg 1 -y 200 -defaultsOSRD
-preplace inst axi_mem_intercon_1 -pg 1 -lvl 4 -y 450 -defaultsOSRD
-preplace inst BRAM -pg 1 -lvl 5 -y 210 -defaultsOSRD
+preplace inst axi_mem_intercon_1 -pg 1 -lvl 3 -y 450 -defaultsOSRD
+preplace inst BRAM -pg 1 -lvl 4 -y 218 -defaultsOSRD
+preplace inst clock -pg 1 -lvl 1 -y 250 -defaultsOSRD
 preplace inst axi_gpio_0 -pg 1 -lvl 1 -y -180 -defaultsOSRD
-preplace inst clock -pg 1 -lvl 2 -y 240 -defaultsOSRD
-preplace inst axi_mem_intercon -pg 1 -lvl 4 -y 180 -defaultsOSRD
-preplace inst Orca_0 -pg 1 -lvl 3 -y 190 -defaultsOSRD
-preplace inst processing_system7_0 -pg 1 -lvl 6 -y 250 -defaultsOSRD
-preplace netloc axi_mem_intercon_M01_AXI 1 0 5 0 -110 NJ -110 NJ -110 NJ -110 1030
-preplace netloc processing_system7_0_DDR 1 6 1 NJ
-preplace netloc axi_mem_intercon_1_M00_AXI 1 4 1 1040
-preplace netloc processing_system7_0_FCLK_RESET0_N 1 1 6 NJ 40 NJ 40 NJ 40 NJ 40 NJ 40 1540
-preplace netloc axi_mem_intercon_M00_AXI 1 4 1 1050
-preplace netloc Orca_0_data 1 3 1 700
-preplace netloc rst_clk_wiz_100M_interconnect_aresetn 1 2 2 NJ 250 730
-preplace netloc processing_system7_0_FIXED_IO 1 6 1 NJ
-preplace netloc Orca_0_instr 1 3 1 700
-preplace netloc axi_gpio_0_GPIO 1 1 6 NJ -230 NJ -230 NJ -230 NJ -230 NJ -230 NJ
-preplace netloc processing_system7_0_FCLK_CLK0 1 1 6 NJ 30 NJ 30 NJ 30 NJ 30 NJ 30 1550
-preplace netloc rst_clk_wiz_100M_peripheral_aresetn 1 0 5 10 160 NJ 160 530 260 720 330 1050
-preplace netloc clk_wiz_clk_out1 1 0 5 -10 310 NJ 310 540 270 710 320 1030
-levelinfo -pg 1 -30 110 370 620 880 1140 1390 1570 -top -250 -bot 570
+preplace inst axi_mem_intercon -pg 1 -lvl 3 -y 180 -defaultsOSRD
+preplace inst Orca_0 -pg 1 -lvl 2 -y 40 -defaultsOSRD
+preplace inst processing_system7_0 -pg 1 -lvl 5 -y 250 -defaultsOSRD
+preplace netloc processing_system7_0_DDR 1 5 1 NJ
+preplace netloc axi_mem_intercon_M01_AXI 1 0 4 -80 -100 NJ -100 N -100 1030
+preplace netloc clock_clk_2x_out 1 1 1 280
+preplace netloc axi_mem_intercon_1_M00_AXI 1 3 1 1040
+preplace netloc processing_system7_0_FCLK_RESET0_N 1 0 6 -40 110 NJ 110 NJ 40 NJ 40 NJ 40 2030
+preplace netloc Orca_0_data 1 2 1 510
+preplace netloc axi_mem_intercon_M00_AXI 1 3 1 1050
+preplace netloc rst_clk_wiz_100M_interconnect_aresetn 1 1 2 N 240 500
+preplace netloc Orca_0_instr 1 2 1 490
+preplace netloc processing_system7_0_FIXED_IO 1 5 1 NJ
+preplace netloc axi_gpio_0_GPIO 1 1 5 NJ -230 NJ -230 NJ -230 NJ -230 NJ
+preplace netloc processing_system7_0_FCLK_CLK0 1 0 6 -50 -30 NJ -30 NJ -30 NJ -30 NJ -30 2040
+preplace netloc rst_clk_wiz_100M_peripheral_aresetn 1 0 4 -60 60 NJ 180 480 330 1050
+preplace netloc clk_wiz_clk_out1 1 0 4 -70 20 NJ 120 510 320 1030
+levelinfo -pg 1 -100 110 400 880 1230 1880 2060 -top -500 -bot 570
 ",
 }
 

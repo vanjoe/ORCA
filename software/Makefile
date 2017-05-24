@@ -1,50 +1,54 @@
 all:
 AS_SRCS=crt.S
 
-TARGETS=interrupt_test interrupt_branch_test consecutive_read_shift_test read_mul_div_test de2-test
-C_SRCS=interrupt
-TARGET_C_SRCS=$(addsuffix .c,$(TARGETS))
-TARGET_C_OBJS=$(addprefix obj/,$(addsuffix .c.o,$(TARGETS)))
-C_OBJ_FILES=$(addprefix obj/,$(addsuffix .c.o, $(C_SRCS))) 
+C_SRCS=
+C_SRCS+=main.c
+C_SRCS+=printf.c
+
+
+C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
 S_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(AS_SRCS)))
 
 CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
-ARCH=RV32IMXlve
-CFLAGS= -m32 -O2 -fno-delete-null-pointer-checks -g -march=$(ARCH) -MD -Wall -std=gnu99 -msoft-float -mmuldiv 
-LD_FLAGS= -m32 -march=$(ARCH) -static -nostartfiles
+ARCH=rv32im
+CFLAGS= -O2 -fno-delete-null-pointer-checks -g -march=$(ARCH) -MD -Wall -std=gnu99
+LD_FLAGS= -march=$(ARCH) -static -nostartfiles
 
+TARGET=test
+
+$(C_OBJ_FILES) $(S_OBJ_FILES) : | obj/
 obj/:
 	mkdir -p obj/
 
-$(TARGET_C_OBJS) $(C_OBJ_FILES): obj/%.c.o : %.c | obj/
+$(C_OBJ_FILES): obj/%.c.o : %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(S_OBJ_FILES): obj/%.S.o : %.S | obj/
+$(S_OBJ_FILES): obj/%.S.o : %.S
 	$(CC) $(CFLAGS) -c $< -o $@
 
 LD_SCRIPT=link.ld
 LIBC=
-TARGET_ELFS=$(addsuffix .elf,$(TARGETS))
 
-$(TARGET_ELFS):%.elf:obj/%.c.o $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
-	$(CC) -T $(LD_SCRIPT) obj/$*.c.o $(S_OBJ_FILES) $(C_OBJ_FILES) -o $@ $(LD_FLAGS)
-	$(OBJDUMP) -D $@ > $*.dump
+$(TARGET).elf: $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
+	$(CC) -T $(LD_SCRIPT) $(S_OBJ_FILES)  $(C_OBJ_FILES)  -o $@ $(LD_FLAGS)
+	$(OBJDUMP)   -D test.elf > test.dump
+$(TARGET).bin: $(TARGET).elf
+	$(OBJCOPY) -O binary $< $@
+$(TARGET).hex: $(TARGET).elf
+	$(OBJCOPY) -O ihex $< $@
+$(TARGET).mem: $(TARGET).bin
+	 head -c $$((0x100)) /dev/zero | cat - $< | xxd -g1 -c4 | awk '{print $$5$$4$$3$$2}' > $@
 
 .phony:all clean
 ifndef FORMAT
 FORMAT=elf
 endif
-all: $(TARGET_ELFS)
+all: $(TARGET).$(FORMAT) $(TARGET).hex $(TARGET).mem
 
-TARGET_OBJ_DUMPS=$(addsuffix .dump, $(TARGETS))
-TARGET_BINS=$(addsuffix .bin, $(TARGETS))
-TARGET_HEXS=$(addsuffix .hex, $(TARGETS))
-TARGET_MIFS=$(addsuffix .mif, $(TARGETS))
-TARGET_MEMS=$(addsuffix .mem, $(TARGETS))
 clean:
-	rm -rf obj $(TARGET_ELFS) $(TARGET_OBJ_DUMPS) $(TARGET_BINS) $(TARGET_HEXS) $(TARGET_HEXS) $(TARGET_MEMS)
+	rm -rf obj test.elf test.dump test.bin test.hex test.mif test.mem
 
 -include $(wildcard obj/*.d)
