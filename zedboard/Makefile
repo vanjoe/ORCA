@@ -40,13 +40,11 @@ $(IMPL_LOG): $(SYNTH_LOG)
 $(PROJ_NAME).bit: $(IMPL_LOG)
 	echo "export_bit $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
 
-$(MEM_FILE):
-	make -C $(SW_DIR)
-
 $(MMI_FILE):
 	echo "mmi_wrapper $(PROJ_DIR) $(PROJ_NAME) $(BRAM_NAME)" | $(VIVADO) -source $(MMI_TCL)
 
-bits: $(PROJ_NAME).bit $(MEM_FILE) $(MMI_FILE) 
+bits: $(PROJ_NAME).bit $(MMI_FILE) 
+	make -C $(SW_DIR)
 	updatemem -force --meminfo $(MMI_FILE) \
   	--data $(ELF_FILE) \
   	--bit $(PROJ_NAME).bit \
