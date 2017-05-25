@@ -11,6 +11,7 @@ MEM_FILE=$(SW_DIR)/test.mem
 
 PROJ_FILE=$(PROJ_DIR)/$(PROJ_NAME).xpr
 BD_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/design_1/design_1.bd
+BLOCK_DESIGN_GEN_STAMP=$(BD_FILE).gen_stamp
 HWDEF_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/design_1/design_1.hwdef
 SYNTH_LOG=$(PROJ_DIR)/$(PROJ_NAME).runs/synth_1/runme.log
 IMPL_LOG=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/runme.log
@@ -22,16 +23,15 @@ MMI_FILE=$(BRAM_NAME).mmi
 OUT_BIT=out.bit
 
 
-$(PROJ_FILE):
+$(PROJ_FILE) $(BD_FILE):
 	echo "init_project $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
-
-$(BD_FILE): $(PROJ_FILE)
 	echo "create_bd $(PROJ_DIR) $(PROJ_NAME) $(BD_TCL)" | $(VIVADO) -source $(PROJECT_TCL)
 
-$(HWDEF_FILE): $(BD_FILE)
+$(BLOCK_DESIGN_GEN_STAMP): $(BD_FILE)
 	echo "generate_bd_design $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
+	touch $@
 
-$(SYNTH_LOG): $(HWDEF_FILE)
+$(SYNTH_LOG): $(BLOCK_DESIGN_GEN_STAMP) 
 	echo "project_synth $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
 
 $(IMPL_LOG): $(SYNTH_LOG)
