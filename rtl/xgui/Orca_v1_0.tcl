@@ -19,7 +19,6 @@ proc init_gui { IPINST } {
   set LVE [ipgui::add_group $IPINST -name "LVE" -parent ${Page_0}]
   set_property tooltip {Lightweight Vector Extensions} ${LVE}
   ipgui::add_param $IPINST -name "LVE_ENABLE" -parent ${LVE} -widget checkBox
-  ipgui::add_param $IPINST -name "SCRATCHPAD_SIZE" -parent ${LVE}
 
   #Adding Group
   set Control_and_Status [ipgui::add_group $IPINST -name "Control and Status" -parent ${Page_0}]
@@ -70,24 +69,6 @@ proc validate_PARAM_VALUE.NUM_EXT_INTERRUPTS { PARAM_VALUE.NUM_EXT_INTERRUPTS } 
 	return true
 }
 
-proc update_PARAM_VALUE.SCRATCHPAD_SIZE { PARAM_VALUE.SCRATCHPAD_SIZE PARAM_VALUE.LVE_ENABLE } {
-	# Procedure called to update SCRATCHPAD_SIZE when any of the dependent parameters in the arguments change
-	
-	set SCRATCHPAD_SIZE ${PARAM_VALUE.SCRATCHPAD_SIZE}
-	set LVE_ENABLE ${PARAM_VALUE.LVE_ENABLE}
-	set values(LVE_ENABLE) [get_property value $LVE_ENABLE]
-	if { [gen_USERPARAMETER_SCRATCHPAD_SIZE_ENABLEMENT $values(LVE_ENABLE)] } {
-		set_property enabled true $SCRATCHPAD_SIZE
-	} else {
-		set_property enabled false $SCRATCHPAD_SIZE
-	}
-}
-
-proc validate_PARAM_VALUE.SCRATCHPAD_SIZE { PARAM_VALUE.SCRATCHPAD_SIZE } {
-	# Procedure called to validate SCRATCHPAD_SIZE
-	return true
-}
-
 proc update_PARAM_VALUE.SHIFTER_MAX_CYCLES { PARAM_VALUE.SHIFTER_MAX_CYCLES PARAM_VALUE.MULTIPLY_ENABLE } {
 	# Procedure called to update SHIFTER_MAX_CYCLES when any of the dependent parameters in the arguments change
 	
@@ -106,30 +87,21 @@ proc validate_PARAM_VALUE.SHIFTER_MAX_CYCLES { PARAM_VALUE.SHIFTER_MAX_CYCLES } 
 	return true
 }
 
-proc update_PARAM_VALUE.AVALON_ENABLE { PARAM_VALUE.AVALON_ENABLE } {
-	# Procedure called to update AVALON_ENABLE when any of the dependent parameters in the arguments change
-}
-
-proc validate_PARAM_VALUE.AVALON_ENABLE { PARAM_VALUE.AVALON_ENABLE } {
-	# Procedure called to validate AVALON_ENABLE
-	return true
-}
-
-proc update_PARAM_VALUE.AXI_ENABLE { PARAM_VALUE.AXI_ENABLE } {
-	# Procedure called to update AXI_ENABLE when any of the dependent parameters in the arguments change
-}
-
-proc validate_PARAM_VALUE.AXI_ENABLE { PARAM_VALUE.AXI_ENABLE } {
-	# Procedure called to validate AXI_ENABLE
-	return true
-}
-
 proc update_PARAM_VALUE.BRANCH_PREDICTORS { PARAM_VALUE.BRANCH_PREDICTORS } {
 	# Procedure called to update BRANCH_PREDICTORS when any of the dependent parameters in the arguments change
 }
 
 proc validate_PARAM_VALUE.BRANCH_PREDICTORS { PARAM_VALUE.BRANCH_PREDICTORS } {
 	# Procedure called to validate BRANCH_PREDICTORS
+	return true
+}
+
+proc update_PARAM_VALUE.BYTE_SIZE { PARAM_VALUE.BYTE_SIZE } {
+	# Procedure called to update BYTE_SIZE when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.BYTE_SIZE { PARAM_VALUE.BYTE_SIZE } {
+	# Procedure called to validate BYTE_SIZE
 	return true
 }
 
@@ -160,12 +132,21 @@ proc validate_PARAM_VALUE.ENABLE_EXCEPTIONS { PARAM_VALUE.ENABLE_EXCEPTIONS } {
 	return true
 }
 
-proc update_PARAM_VALUE.FAMILY { PARAM_VALUE.FAMILY } {
-	# Procedure called to update FAMILY when any of the dependent parameters in the arguments change
+proc update_PARAM_VALUE.FORWARD_ALU_ONLY { PARAM_VALUE.FORWARD_ALU_ONLY } {
+	# Procedure called to update FORWARD_ALU_ONLY when any of the dependent parameters in the arguments change
 }
 
-proc validate_PARAM_VALUE.FAMILY { PARAM_VALUE.FAMILY } {
-	# Procedure called to validate FAMILY
+proc validate_PARAM_VALUE.FORWARD_ALU_ONLY { PARAM_VALUE.FORWARD_ALU_ONLY } {
+	# Procedure called to validate FORWARD_ALU_ONLY
+	return true
+}
+
+proc update_PARAM_VALUE.IRAM_SIZE { PARAM_VALUE.IRAM_SIZE } {
+	# Procedure called to update IRAM_SIZE when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.IRAM_SIZE { PARAM_VALUE.IRAM_SIZE } {
+	# Procedure called to validate IRAM_SIZE
 	return true
 }
 
@@ -214,12 +195,12 @@ proc validate_PARAM_VALUE.RESET_VECTOR { PARAM_VALUE.RESET_VECTOR } {
 	return true
 }
 
-proc update_PARAM_VALUE.WISHBONE_ENABLE { PARAM_VALUE.WISHBONE_ENABLE } {
-	# Procedure called to update WISHBONE_ENABLE when any of the dependent parameters in the arguments change
+proc update_PARAM_VALUE.SCRATCHPAD_ADDR_BITS { PARAM_VALUE.SCRATCHPAD_ADDR_BITS } {
+	# Procedure called to update SCRATCHPAD_ADDR_BITS when any of the dependent parameters in the arguments change
 }
 
-proc validate_PARAM_VALUE.WISHBONE_ENABLE { PARAM_VALUE.WISHBONE_ENABLE } {
-	# Procedure called to validate WISHBONE_ENABLE
+proc validate_PARAM_VALUE.SCRATCHPAD_ADDR_BITS { PARAM_VALUE.SCRATCHPAD_ADDR_BITS } {
+	# Procedure called to validate SCRATCHPAD_ADDR_BITS
 	return true
 }
 
@@ -227,21 +208,6 @@ proc validate_PARAM_VALUE.WISHBONE_ENABLE { PARAM_VALUE.WISHBONE_ENABLE } {
 proc update_MODELPARAM_VALUE.REGISTER_SIZE { MODELPARAM_VALUE.REGISTER_SIZE PARAM_VALUE.REGISTER_SIZE } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.REGISTER_SIZE}] ${MODELPARAM_VALUE.REGISTER_SIZE}
-}
-
-proc update_MODELPARAM_VALUE.AVALON_ENABLE { MODELPARAM_VALUE.AVALON_ENABLE PARAM_VALUE.AVALON_ENABLE } {
-	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.AVALON_ENABLE}] ${MODELPARAM_VALUE.AVALON_ENABLE}
-}
-
-proc update_MODELPARAM_VALUE.WISHBONE_ENABLE { MODELPARAM_VALUE.WISHBONE_ENABLE PARAM_VALUE.WISHBONE_ENABLE } {
-	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.WISHBONE_ENABLE}] ${MODELPARAM_VALUE.WISHBONE_ENABLE}
-}
-
-proc update_MODELPARAM_VALUE.AXI_ENABLE { MODELPARAM_VALUE.AXI_ENABLE PARAM_VALUE.AXI_ENABLE } {
-	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.AXI_ENABLE}] ${MODELPARAM_VALUE.AXI_ENABLE}
 }
 
 proc update_MODELPARAM_VALUE.RESET_VECTOR { MODELPARAM_VALUE.RESET_VECTOR PARAM_VALUE.RESET_VECTOR } {
@@ -299,13 +265,23 @@ proc update_MODELPARAM_VALUE.NUM_EXT_INTERRUPTS { MODELPARAM_VALUE.NUM_EXT_INTER
 	set_property value [get_property value ${PARAM_VALUE.NUM_EXT_INTERRUPTS}] ${MODELPARAM_VALUE.NUM_EXT_INTERRUPTS}
 }
 
-proc update_MODELPARAM_VALUE.SCRATCHPAD_SIZE { MODELPARAM_VALUE.SCRATCHPAD_SIZE PARAM_VALUE.SCRATCHPAD_SIZE } {
+proc update_MODELPARAM_VALUE.SCRATCHPAD_ADDR_BITS { MODELPARAM_VALUE.SCRATCHPAD_ADDR_BITS PARAM_VALUE.SCRATCHPAD_ADDR_BITS } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.SCRATCHPAD_SIZE}] ${MODELPARAM_VALUE.SCRATCHPAD_SIZE}
+	set_property value [get_property value ${PARAM_VALUE.SCRATCHPAD_ADDR_BITS}] ${MODELPARAM_VALUE.SCRATCHPAD_ADDR_BITS}
 }
 
-proc update_MODELPARAM_VALUE.FAMILY { MODELPARAM_VALUE.FAMILY PARAM_VALUE.FAMILY } {
+proc update_MODELPARAM_VALUE.FORWARD_ALU_ONLY { MODELPARAM_VALUE.FORWARD_ALU_ONLY PARAM_VALUE.FORWARD_ALU_ONLY } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.FAMILY}] ${MODELPARAM_VALUE.FAMILY}
+	set_property value [get_property value ${PARAM_VALUE.FORWARD_ALU_ONLY}] ${MODELPARAM_VALUE.FORWARD_ALU_ONLY}
+}
+
+proc update_MODELPARAM_VALUE.IRAM_SIZE { MODELPARAM_VALUE.IRAM_SIZE PARAM_VALUE.IRAM_SIZE } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.IRAM_SIZE}] ${MODELPARAM_VALUE.IRAM_SIZE}
+}
+
+proc update_MODELPARAM_VALUE.BYTE_SIZE { MODELPARAM_VALUE.BYTE_SIZE PARAM_VALUE.BYTE_SIZE } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.BYTE_SIZE}] ${MODELPARAM_VALUE.BYTE_SIZE}
 }
 
