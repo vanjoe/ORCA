@@ -68,38 +68,29 @@ entity Orca is
     instr_STALL_I                 : in  std_logic;
 
     --AXI
+    data_AWID    : out std_logic_vector(3 downto 0);
+    data_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+    data_AWLEN   : out std_logic_vector(3 downto 0);
+    data_AWSIZE  : out std_logic_vector(2 downto 0);
+    data_AWBURST : out std_logic_vector(1 downto 0);
+    data_AWLOCK  : out std_logic_vector(1 downto 0);
+    data_AWCACHE : out std_logic_vector(3 downto 0);
+    data_AWPROT  : out std_logic_vector(2 downto 0);
+    data_AWVALID : out std_logic;
+    data_AWREADY : in  std_logic;
 
-    -- Write address channel ---------------------------------------------------------
-    data_AWID    : out std_logic_vector(3 downto 0);  -- ID for write address signals
-    data_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);  -- Address of the first transferin a burst
-    data_AWLEN   : out std_logic_vector(3 downto 0);  -- Number of transfers in a burst, burst must not cross 4 KB boundary, burst length of 1 to 16 transfers in AXI3
-    data_AWSIZE  : out std_logic_vector(2 downto 0);  -- Maximum number of bytes to transfer in each data transfer (beat) in a burst
-    -- See Table A3-2 for AxSIZE encoding
-    -- 0b010 => 4 bytes in a transfer
-    data_AWBURST : out std_logic_vector(1 downto 0);  -- defines the burst type, fixed, incr, or wrap
-    -- fixed accesses the same address repeatedly, incr increments the address for each transfer, wrap = incr except rolls over to lower address if upper limit is reached
-    -- see table A3-3 for AxBURST encoding
-    data_AWLOCK  : out std_logic_vector(1 downto 0);  -- Ensures that only the master can access the targeted slave region
-    data_AWCACHE : out std_logic_vector(3 downto 0);  -- specifies memory type, see Table A4-5
-    data_AWPROT  : out std_logic_vector(2 downto 0);  -- specifies access permission, see Table A4-6
-    data_AWVALID : out std_logic;  -- Valid address and control information on bus, asserted until slave asserts AWREADY
-    data_AWREADY : in  std_logic;  -- Slave is ready to accept address and control signals
-
-    -- Write data channel ------------------------------------------------------------
-    data_WID    : out std_logic_vector(3 downto 0);  -- ID for write data signals
+    data_WID    : out std_logic_vector(3 downto 0);
     data_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-    data_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);  -- Specifies which byte lanes contain valid information
-    data_WLAST  : out std_logic;  -- Asserted when master is driving the final write transfer in the burst
-    data_WVALID : out std_logic;  -- Valid data available on bus, asserted until slave asserts WREADY
-    data_WREADY : in  std_logic;  -- Slave is now available to accept write data
+    data_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    data_WLAST  : out std_logic;
+    data_WVALID : out std_logic;
+    data_WREADY : in  std_logic;
 
-    -- Write response channel ---------------------------------------------------------
-    data_BID    : in  std_logic_vector(3 downto 0);  -- ID for write response
-    data_BRESP  : in  std_logic_vector(1 downto 0);  -- Slave response (with error codes) to a write
-    data_BVALID : in  std_logic;  -- Indicates that the channel is signaling a valid write response
-    data_BREADY : out std_logic;  -- Indicates that master has acknowledged write response
+    data_BID    : in  std_logic_vector(3 downto 0);
+    data_BRESP  : in  std_logic_vector(1 downto 0);
+    data_BVALID : in  std_logic;
+    data_BREADY : out std_logic;
 
-    -- Read address channel ------------------------------------------------------------
     data_ARID    : out std_logic_vector(3 downto 0);
     data_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
     data_ARLEN   : out std_logic_vector(3 downto 0);
@@ -111,7 +102,6 @@ entity Orca is
     data_ARVALID : out std_logic;
     data_ARREADY : in  std_logic;
 
-    -- Read data channel -----------------------------------------------------------------
     data_RID    : in  std_logic_vector(3 downto 0);
     data_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
     data_RRESP  : in  std_logic_vector(1 downto 0);
@@ -119,7 +109,6 @@ entity Orca is
     data_RVALID : in  std_logic;
     data_RREADY : out std_logic;
 
-    -- Read address channel ------------------------------------------------------------
     instr_ARID    : out std_logic_vector(3 downto 0);
     instr_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
     instr_ARLEN   : out std_logic_vector(3 downto 0);
@@ -131,7 +120,6 @@ entity Orca is
     instr_ARVALID : out std_logic;
     instr_ARREADY : in  std_logic;
 
-    -- Read data channel -----------------------------------------------------------------
     instr_RID    : in  std_logic_vector(3 downto 0);
     instr_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
     instr_RRESP  : in  std_logic_vector(1 downto 0);
@@ -413,10 +401,7 @@ begin  -- architecture rtl
 
         );
 
-
     -- Instruction read port
-    
-     
 
 
     instr_ARID                     <= (others => '0');

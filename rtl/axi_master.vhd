@@ -18,20 +18,18 @@ entity axi_master is
     core_data_byteenable : in std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
     core_data_read : in std_logic;
     core_data_readdata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    --core_data_response : out std_logic_vector(1 downto 0);
     core_data_write : in std_logic;
     core_data_writedata : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    --core_data_waitrequest : out std_logic;
-    --core_data_readdatavalid : out std_logic;
     core_data_ack : out std_logic;
 
-    -- AXI BUS OUT
     AWID : out std_logic_vector(3 downto 0);
     AWADDR : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     AWLEN : out std_logic_vector(3 downto 0);
     AWSIZE : out std_logic_vector(2 downto 0);
     AWBURST : out std_logic_vector(1 downto 0);
     AWLOCK : out std_logic_vector(1 downto 0);
+    AWCACHE : out std_logic_vector(3 downto 0);
+    AWPROT : out std_logic_vector(2 downto 0);
     AWVALID : out std_logic;
     AWREADY : in std_logic;
 
@@ -52,6 +50,8 @@ entity axi_master is
     ARLEN : out std_logic_vector(3 downto 0);
     ARSIZE : out std_logic_vector(2 downto 0);
     ARLOCK : out std_logic_vector(1 downto 0);
+    ARCACHE : out std_logic_vector(3 downto 0);
+    ARPROT : out std_logic_vector(2 downto 0);
     ARBURST : out std_logic_vector(1 downto 0);
     ARVALID : out std_logic;
     ARREADY : in std_logic;
@@ -98,28 +98,24 @@ architecture rtl of axi_master is
   constant BURST_SIZE   : std_logic_vector(2 downto 0) := "010";
   -- incremental bursts
   constant BURST_INCR   : std_logic_vector(1 downto 0) := "01";
-
-
+  constant CACHE_VAL    : std_logic_vector(3 downto 0) := "0011";
+  constant PROT_VAL     : std_logic_vector(2 downto 0) := "000";
+  constant LOCK_VAL     : std_logic_vector(1 downto 0) := "00";
 
 begin
   AWLEN <= BURST_LEN;
-  AWLOCK <= "00";
+  AWLOCK <= LOCK_VAL;
+  AWCACHE <= CACHE_VAL;
+  AWPROT <= PROT_VAL;
   AWID <= "0000";
   WID <= "0000";
   ARLEN <= BURST_LEN;
-  ARLOCK <= "00";
+  ARCACHE <= CACHE_VAL;
+  ARPROT <= PROT_VAL;
+  ARLOCK <= LOCK_VAL;
   ARID <= "0000";
   
   core_data_ack <= read_finished or write_finished; 
-
-  --AXI_WC_BUSY <= core_data_write and (not write_finished);
-  --AXI_RC_BUSY <= core_data_read and (not read_finished);
- 
-  --core_data_waitrequest <= AXI_WC_BUSY or AXI_RC_BUSY;
-
-  --core_data_response <= BRESP when (core_data_write = '1') else
-  --                     RRESP when (core_data_read = '1') else
-  --                     "00";
 
   process(ACLK)
   variable aw_done : std_logic := '0';

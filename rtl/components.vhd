@@ -703,24 +703,22 @@ package rv_components is
       ACLK    : in std_logic;
       ARESETN : in std_logic;
 
-      core_data_address    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      core_data_byteenable : in  std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
-      core_data_read       : in  std_logic;
-      core_data_readdata   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      --core_data_response : out std_logic_vector(1 downto 0);
-      core_data_write      : in  std_logic;
-      core_data_writedata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      --core_data_waitrequest : out std_logic;
-      --core_data_readdatavalid : out std_logic;
-      core_data_ack        : out std_logic;
+      core_data_address : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      core_data_byteenable : in std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+      core_data_read : in std_logic;
+      core_data_readdata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      core_data_write : in std_logic;
+      core_data_writedata : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      core_data_ack : out std_logic;
 
-      -- AXI BUS OUT
-      AWID    : out std_logic_vector(3 downto 0);
-      AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      AWLEN   : out std_logic_vector(3 downto 0);
-      AWSIZE  : out std_logic_vector(2 downto 0);
+      AWID : out std_logic_vector(3 downto 0);
+      AWADDR : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      AWLEN : out std_logic_vector(3 downto 0);
+      AWSIZE : out std_logic_vector(2 downto 0);
       AWBURST : out std_logic_vector(1 downto 0);
-      AWLOCK  : out std_logic_vector(1 downto 0);
+      AWLOCK : out std_logic_vector(1 downto 0);
+      AWCACHE : out std_logic_vector(3 downto 0);
+      AWPROT : out std_logic_vector(2 downto 0);
       AWVALID : out std_logic;
       AWREADY : in  std_logic;
 
@@ -736,11 +734,13 @@ package rv_components is
       BVALID : in  std_logic;
       BREADY : out std_logic;
 
-      ARID    : out std_logic_vector(3 downto 0);
-      ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      ARLEN   : out std_logic_vector(3 downto 0);
-      ARSIZE  : out std_logic_vector(2 downto 0);
-      ARLOCK  : out std_logic_vector(1 downto 0);
+      ARID : out std_logic_vector(3 downto 0);
+      ARADDR : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      ARLEN : out std_logic_vector(3 downto 0);
+      ARSIZE : out std_logic_vector(2 downto 0);
+      ARLOCK : out std_logic_vector(1 downto 0);
+      ARCACHE : out std_logic_vector(3 downto 0);
+      ARPROT : out std_logic_vector(2 downto 0);
       ARBURST : out std_logic_vector(1 downto 0);
       ARVALID : out std_logic;
       ARREADY : in  std_logic;

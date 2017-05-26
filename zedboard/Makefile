@@ -21,6 +21,7 @@ MMI_TCL=write_mmi.tcl
 BRAM_NAME=blk_mem_gen_0
 MMI_FILE=$(BRAM_NAME).mmi
 OUT_BIT=out.bit
+GUI_BIT=$(PROJ_DIR)project.runs/impl_1/design_1_wrapper.bit
 
 
 $(PROJ_FILE) $(BD_FILE):
@@ -48,6 +49,14 @@ bits: $(PROJ_NAME).bit $(MMI_FILE)
 	updatemem -force --meminfo $(MMI_FILE) \
   	--data $(ELF_FILE) \
   	--bit $(PROJ_NAME).bit \
+  	--proc dummy \
+  	--out $(OUT_BIT) 
+
+bitstream: 
+	make -C $(SW_DIR)
+	updatemem -force --meminfo $(MMI_FILE) \
+  	--data $(ELF_FILE) \
+  	--bit $(GUI_BIT) \
   	--proc dummy \
   	--out $(OUT_BIT) 
 
