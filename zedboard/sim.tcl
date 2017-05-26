@@ -1,4 +1,4 @@
-add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/rv/core/X/clk}} {{/design_1_wrapper/design_1_i/Orca_0/U0/rv/core/X/reset}} {{/design_1_wrapper/design_1_i/Orca_0/U0/rv/core/X/valid_input}} {{/design_1_wrapper/design_1_i/Orca_0/U0/rv/core/X/pc_current}} {{/design_1_wrapper/design_1_i/Orca_0/U0/rv/core/X/instruction}} 
+add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/clk}} {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/reset}} {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/valid_input}} {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/pc_current}} {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/instruction}} 
 
 restart
 run 1 ps
@@ -19,4 +19,4 @@ foreach line $data {
   }
 }
 
-run 100 us
+run 1500 us

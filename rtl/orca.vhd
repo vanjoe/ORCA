@@ -13,7 +13,7 @@ entity Orca is
     WISHBONE_ENABLE : integer range 0 to 1 := 0;
     AXI_ENABLE      : integer range 0 to 1 := 0;
 
-    RESET_VECTOR          : integer               := 16#00000200#;
+    RESET_VECTOR          : integer               := 16#00000000#;
     MULTIPLY_ENABLE       : natural range 0 to 1  := 0;
     DIVIDE_ENABLE         : natural range 0 to 1  := 0;
     SHIFTER_MAX_CYCLES    : natural               := 1;
@@ -83,7 +83,7 @@ entity Orca is
     data_AWCACHE : out std_logic_vector(3 downto 0);  -- specifies memory type, see Table A4-5
     data_AWPROT  : out std_logic_vector(2 downto 0);  -- specifies access permission, see Table A4-6
     data_AWVALID : out std_logic;  -- Valid address and control information on bus, asserted until slave asserts AWREADY
-    data_AWREADY : in  std_logic := '-';  -- Slave is ready to accept address and control signals
+    data_AWREADY : in  std_logic;  -- Slave is ready to accept address and control signals
 
     -- Write data channel ------------------------------------------------------------
     data_WID    : out std_logic_vector(3 downto 0);  -- ID for write data signals
@@ -91,12 +91,12 @@ entity Orca is
     data_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);  -- Specifies which byte lanes contain valid information
     data_WLAST  : out std_logic;  -- Asserted when master is driving the final write transfer in the burst
     data_WVALID : out std_logic;  -- Valid data available on bus, asserted until slave asserts WREADY
-    data_WREADY : in  std_logic := '-';  -- Slave is now available to accept write data
+    data_WREADY : in  std_logic;  -- Slave is now available to accept write data
 
     -- Write response channel ---------------------------------------------------------
-    data_BID    : in  std_logic_vector(3 downto 0) := (others => '-');  -- ID for write response
-    data_BRESP  : in  std_logic_vector(1 downto 0) := (others => '-');  -- Slave response (with error codes) to a write
-    data_BVALID : in  std_logic                    := '-';  -- Indicates that the channel is signaling a valid write response
+    data_BID    : in  std_logic_vector(3 downto 0);  -- ID for write response
+    data_BRESP  : in  std_logic_vector(1 downto 0);  -- Slave response (with error codes) to a write
+    data_BVALID : in  std_logic;  -- Indicates that the channel is signaling a valid write response
     data_BREADY : out std_logic;  -- Indicates that master has acknowledged write response
 
     -- Read address channel ------------------------------------------------------------
@@ -109,14 +109,14 @@ entity Orca is
     data_ARCACHE : out std_logic_vector(3 downto 0);
     data_ARPROT  : out std_logic_vector(2 downto 0);
     data_ARVALID : out std_logic;
-    data_ARREADY : in  std_logic := '-';
+    data_ARREADY : in  std_logic;
 
     -- Read data channel -----------------------------------------------------------------
-    data_RID    : in  std_logic_vector(3 downto 0)                := (others => '-');
-    data_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '-');
-    data_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '-');
-    data_RLAST  : in  std_logic                                   := '-';
-    data_RVALID : in  std_logic                                   := '-';
+    data_RID    : in  std_logic_vector(3 downto 0);
+    data_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+    data_RRESP  : in  std_logic_vector(1 downto 0);
+    data_RLAST  : in  std_logic;
+    data_RVALID : in  std_logic;
     data_RREADY : out std_logic;
 
     -- Read address channel ------------------------------------------------------------
@@ -129,14 +129,14 @@ entity Orca is
     instr_ARCACHE : out std_logic_vector(3 downto 0);
     instr_ARPROT  : out std_logic_vector(2 downto 0);
     instr_ARVALID : out std_logic;
-    instr_ARREADY : in  std_logic := '-';
+    instr_ARREADY : in  std_logic;
 
     -- Read data channel -----------------------------------------------------------------
-    instr_RID    : in  std_logic_vector(3 downto 0)                := (others => '-');
-    instr_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '-');
-    instr_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '-');
-    instr_RLAST  : in  std_logic                                   := '-';
-    instr_RVALID : in  std_logic                                   := '-';
+    instr_RID    : in  std_logic_vector(3 downto 0);
+    instr_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+    instr_RRESP  : in  std_logic_vector(1 downto 0);
+    instr_RLAST  : in  std_logic;
+    instr_RVALID : in  std_logic;
     instr_RREADY : out std_logic;
 
     instr_AWID    : out std_logic_vector(3 downto 0);
@@ -148,16 +148,16 @@ entity Orca is
     instr_AWCACHE : out std_logic_vector(3 downto 0);
     instr_AWPROT  : out std_logic_vector(2 downto 0);
     instr_AWVALID : out std_logic;
-    instr_AWREADY : in  std_logic                    := '-';
+    instr_AWREADY : in  std_logic;
     instr_WID     : out std_logic_vector(3 downto 0);
     instr_WDATA   : out std_logic_vector(REGISTER_SIZE -1 downto 0);
     instr_WSTRB   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
     instr_WLAST   : out std_logic;
     instr_WVALID  : out std_logic;
-    instr_WREADY  : in  std_logic                    := '-';
-    instr_BID     : in  std_logic_vector(3 downto 0) := (others => '-');
-    instr_BRESP   : in  std_logic_vector(1 downto 0) := (others => '-');
-    instr_BVALID  : in  std_logic                    := '-';
+    instr_WREADY  : in  std_logic;
+    instr_BID     : in  std_logic_vector(3 downto 0);
+    instr_BRESP   : in  std_logic_vector(1 downto 0);
+    instr_BVALID  : in  std_logic;
     instr_BREADY  : out std_logic;
 
     -------------------------------------------------------------------------------
@@ -183,8 +183,7 @@ entity Orca is
     sp_ACK_O   : out std_logic;
     sp_CYC_I   : in  std_logic;
     sp_CTI_I   : in  std_logic_vector(2 downto 0);
-    sp_STALL_O : out std_logic;
-
+    sp_STALL_O : out std_logic; 
 
     global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
     );
@@ -206,6 +205,12 @@ architecture rtl of Orca is
   signal core_instruction_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal core_instruction_waitrequest   : std_logic;
   signal core_instruction_readdatavalid : std_logic;
+
+  signal rom_instruction_address        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rom_instruction_read           : std_logic;
+  signal rom_instruction_readdata       : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rom_instruction_waitrequest    : std_logic;
+  signal rom_instruction_readdatavalid  : std_logic;
 
   signal sp_address   : std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
   signal sp_byte_en   : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
@@ -340,30 +345,9 @@ begin  -- architecture rtl
     -- incremental bursts
     constant BURST_INCR : std_logic_vector(1 downto 0) := "01";
 
---    signal write_ack               : std_logic := '0';
---    signal read_ack                : std_logic := '0';
     signal core_instruction_stall4 : std_logic := '0';
 
     signal axi_reset : std_logic;
-
-    -- Latched signals for AXI write bus
---    signal core_data_awvalid_l     : std_logic                                      := '0';
---    signal core_data_wvalid_l      : std_logic                                      := '0';
---    signal core_data_waddress_l    : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
---    signal core_data_byteenable_l  : std_logic_vector((REGISTER_SIZE/8)-1 downto 0) := (others => '0');
---    signal core_data_writedata_l   : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
---    signal write_pending           : std_logic                                      := '0';
---
---    -- Latched signals for AXI read bus
---    signal core_data_raddress_l    : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
---    signal core_data_read_l        : std_logic                                      := '0';
---    signal read_pending            : std_logic                                      := '0';
---
---    type state_w_t is (IDLE, WAITING_BOTH, WAITING_WREADY, WAITING_AWREADY);
---    signal state_w : state_w_t := IDLE;
---
---    type state_r_t is (IDLE, WAITING_ARREADY, WAITING_RVALID);
---    signal state_r : state_r_t := IDLE;
 
   begin
 --BUG: this logic disregards the write response data
@@ -431,6 +415,10 @@ begin  -- architecture rtl
 
 
     -- Instruction read port
+    
+     
+
+
     instr_ARID                     <= (others => '0');
     instr_ARADDR                   <= core_instruction_address;
     instr_ARLEN                    <= BURST_LEN;
