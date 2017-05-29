@@ -273,7 +273,7 @@ architecture rtl of ram_4port is
   --pipeline bits
   signal read3_ack0 : std_logic;
   signal read3_ack1 : std_logic;
-  signal read_ack : std_logic;
+  signal read_ack   : std_logic;
 begin  -- architecture rtl
 
   process(clk)
@@ -285,7 +285,7 @@ begin  -- architecture rtl
       end if;
       read3_ack0 <= ren3;
       read3_ack1 <= read3_ack0;
-      read_ack <= ren0 ;
+      read_ack   <= ren0;
     end if;
   end process;
 

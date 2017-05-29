@@ -66,7 +66,7 @@ entity execute is
     sp_read_en   : in  std_logic;
     sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_ack  : out std_logic;
+    sp_ack       : out std_logic;
 
     external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     pipeline_empty      : in  std_logic;
@@ -165,12 +165,13 @@ architecture behavioural of execute is
   alias ni_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(19 downto 15);
   alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
 
-  constant LVE_ENABLE : boolean                            := SCRATCHPAD_SIZE /= 0;
+  constant LVE_ENABLE : boolean := SCRATCHPAD_SIZE /= 0;
 
   signal use_after_produce_stall      : std_logic;
   signal use_after_produce_stall_mask : std_logic;
 
   signal stalled_component : std_logic;
+  signal simd_op_size  : std_logic_vector(1 downto 0);
 
 begin
   valid_instr <= valid_input and not use_after_produce_stall;
@@ -326,6 +327,7 @@ begin
   alu : arithmetic_unit
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
+      SIMD_ENABLE         => false,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
       MULTIPLY_ENABLE     => MULTIPLY_ENABLE,
       DIVIDE_ENABLE       => DIVIDE_ENABLE,
@@ -336,6 +338,7 @@ begin
       stall_to_alu       => stall_to_alu,
       stall_from_execute => stall_from_execute,
       valid_instr        => valid_instr,
+      simd_op_size       => simd_op_size,
       rs1_data           => alu_rs1_data,
       rs2_data           => alu_rs2_data,
       instruction        => instruction,
@@ -460,6 +463,7 @@ begin
         stall_from_lve       => stall_from_lve,
         lve_alu_data1        => lve_alu_data1,
         lve_alu_data2        => lve_alu_data2,
+        lve_alu_op_size => simd_op_size,
         lve_alu_source_valid => lve_alu_source_valid,
         lve_alu_result       => alu_data_out,
         lve_alu_result_valid => alu_data_out_valid
@@ -469,7 +473,7 @@ begin
 
   n_enable_lve : if not LVE_ENABLE generate
     stall_from_lve <= '0';
-
+    simd_op_size <= LVE_WORD_SIZE;
     lve_alu_source_valid <= '0';
     lve_alu_data1        <= (others => '-');
     lve_alu_data2        <= (others => '-');
