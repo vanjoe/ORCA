@@ -41,7 +41,7 @@ $(IMPL_LOG): $(SYNTH_LOG)
 $(PROJ_NAME).bit: $(IMPL_LOG)
 	echo "export_bit $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
 
-$(MMI_FILE):
+$(MMI_FILE): $(IMPL_LOG) 
 	echo "mmi_wrapper $(PROJ_DIR) $(PROJ_NAME) $(BRAM_NAME)" | $(VIVADO) -source $(MMI_TCL)
 
 bits: $(PROJ_NAME).bit $(MMI_FILE) 

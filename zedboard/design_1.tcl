@@ -339,6 +339,7 @@ proc create_root_design { parentCell } {
   # Create instance: Orca_0, and set properties
   set Orca_0 [ create_bd_cell -type ip -vlnv user.org:user:Orca:1.0 Orca_0 ]
   set_property -dict [ list \
+CONFIG.COUNTER_LENGTH {32} \
 CONFIG.DIVIDE_ENABLE {1} \
 CONFIG.MULTIPLY_ENABLE {1} \
  ] $Orca_0
@@ -681,7 +682,13 @@ CONFIG.preset {ZedBoard} \
 
   # Create interface connections
   connect_bd_intf_net -intf_net Orca_0_data [get_bd_intf_pins Orca_0/data] [get_bd_intf_pins axi_mem_intercon/S00_AXI]
+  set_property -dict [ list \
+HDL_ATTRIBUTE.DEBUG {true} \
+ ] [get_bd_intf_nets Orca_0_data]
   connect_bd_intf_net -intf_net Orca_0_instr [get_bd_intf_pins Orca_0/instr] [get_bd_intf_pins axi_mem_intercon_1/S00_AXI]
+  set_property -dict [ list \
+HDL_ATTRIBUTE.DEBUG {true} \
+ ] [get_bd_intf_nets Orca_0_instr]
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports leds_8bits] [get_bd_intf_pins axi_gpio_0/GPIO]
   connect_bd_intf_net -intf_net axi_mem_intercon_1_M00_AXI [get_bd_intf_pins BRAM/S_AXI1] [get_bd_intf_pins axi_mem_intercon_1/M00_AXI]
   connect_bd_intf_net -intf_net axi_mem_intercon_M00_AXI [get_bd_intf_pins BRAM/S_AXI0] [get_bd_intf_pins axi_mem_intercon/M00_AXI]
@@ -692,7 +699,7 @@ CONFIG.preset {ZedBoard} \
 
   # Create port connections
   connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins BRAM/s_axi_aclk] [get_bd_pins Orca_0/clk] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins axi_mem_intercon/ACLK] [get_bd_pins axi_mem_intercon/M00_ACLK] [get_bd_pins axi_mem_intercon/M01_ACLK] [get_bd_pins axi_mem_intercon/M02_ACLK] [get_bd_pins axi_mem_intercon/S00_ACLK] [get_bd_pins axi_mem_intercon_1/ACLK] [get_bd_pins axi_mem_intercon_1/M00_ACLK] [get_bd_pins axi_mem_intercon_1/S00_ACLK] [get_bd_pins clock/clk_out] [get_bd_pins processing_system7_0/S_AXI_GP0_ACLK]
-  connect_bd_net -net clock_clk_2x_out [get_bd_pins Orca_0/clk_2x] [get_bd_pins clock/clk_2x_out]
+  connect_bd_net -net clock_clk_2x_out [get_bd_pins Orca_0/scratchpad_clk] [get_bd_pins clock/clk_2x_out]
   connect_bd_net -net clock_peripheral_reset [get_bd_pins Orca_0/reset] [get_bd_pins clock/peripheral_reset]
   connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins clock/clk_in1] [get_bd_pins processing_system7_0/FCLK_CLK0]
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins clock/ext_reset_in] [get_bd_pins processing_system7_0/FCLK_RESET0_N]
@@ -700,7 +707,7 @@ CONFIG.preset {ZedBoard} \
   connect_bd_net -net rst_clk_wiz_100M_peripheral_aresetn [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins axi_mem_intercon/M00_ARESETN] [get_bd_pins axi_mem_intercon/M01_ARESETN] [get_bd_pins axi_mem_intercon/M02_ARESETN] [get_bd_pins axi_mem_intercon/S00_ARESETN] [get_bd_pins axi_mem_intercon_1/M00_ARESETN] [get_bd_pins axi_mem_intercon_1/S00_ARESETN] [get_bd_pins clock/peripheral_aresetn]
 
   # Create address segments
-  create_bd_addr_seg -range 0x00008000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs BRAM/axi_bram_ctrl_0/S_AXI/Mem0] SEG_axi_bram_ctrl_0_Mem0
+  create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs BRAM/axi_bram_ctrl_0/S_AXI/Mem0] SEG_axi_bram_ctrl_0_Mem0
   create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/instr] [get_bd_addr_segs BRAM/axi_bram_ctrl_1/S_AXI/Mem0] SEG_axi_bram_ctrl_1_Mem0
   create_bd_addr_seg -range 0x00010000 -offset 0x40000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] SEG_axi_gpio_0_Reg
   create_bd_addr_seg -range 0x10000000 -offset 0x10000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs processing_system7_0/S_AXI_GP0/GP0_DDR_LOWOCM] SEG_processing_system7_0_GP0_DDR_LOWOCM
