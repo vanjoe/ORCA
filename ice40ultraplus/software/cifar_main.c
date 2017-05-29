@@ -6,7 +6,7 @@
 
 #define USE_CAM_IMG 1
 #define PRINT_B64_IMG 0
-#define BLINK_LED 0
+
 #define SP0 (SCRATCHPAD_BASE+0*1024)
 #define SP4 (SCRATCHPAD_BASE+4*1024)
 #define SP44 (SCRATCHPAD_BASE+44*1024)
@@ -217,19 +217,15 @@ void cifar_lve() {
 
 #if USE_CAM_IMG
 
-#if BLINK_LED
-
-#endif //BLINK LED
+		//turn on led during camera capture
+		SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
 
 		//get camera frame
 		/* ovm_wait_frame(); */
 		ovm_get_frame();
 
-		//Turn on led
-		SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
-		delayms(1);
-		if(!is_face){
-			//turn off led
+		//if not face, turn off led
+		if(!is_face) {
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
 		}
 
