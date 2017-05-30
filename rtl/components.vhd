@@ -799,4 +799,46 @@ package rv_components is
       data_out3   : out std_logic_vector(MEM_WIDTH-1 downto 0));
   end component;
 
+  component idram_xilinx is
+    generic (
+      RAM_DEPTH       : integer := 1024;
+      RAM_WIDTH       : integer := 32;
+      BYTE_SIZE       : integer := 8
+      );
+    port (
+      clock    : in  std_logic;
+
+      instr_address  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
+      instr_data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
+      instr_we       : in  std_logic;
+      instr_be       : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE-1 downto 0);
+      instr_readdata : out std_logic_vector(RAM_WIDTH-1 downto 0);
+
+      data_address  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
+      data_data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
+      data_we       : in  std_logic;
+      data_be       : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE-1 downto 0);
+      data_readdata : out std_logic_vector(RAM_WIDTH-1 downto 0)
+      );
+  end component;
+
+  component bram_xilinx is
+    generic (
+      RAM_DEPTH : integer := 1024
+      );
+    port
+      (
+        address_a  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
+        address_b  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
+        clock      : in  std_logic;
+        data_a     : in  std_logic_vector(7 downto 0);
+        data_b     : in  std_logic_vector(7 downto 0);
+        wren_a     : in  std_logic;
+        wren_b     : in  std_logic;
+        readdata_a : out std_logic_vector(7 downto 0);
+        readdata_b : out std_logic_vector(7 downto 0)
+        );
+  end component;
+
+
 end package rv_components;

@@ -72,3 +72,6 @@ ice40ultra/init_*.imem
 *.sopcinfo
 transcript
 */work
+
+*.jou
+*.log

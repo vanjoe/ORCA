@@ -6,18 +6,19 @@ library work;
 use work.rv_components.all;
 use work.utils.all;
 
-entity iram is
+entity idram is
 
   generic (
-    SIZE        : integer := 4096;
+    SIZE        : integer := 32768;
     RAM_WIDTH   : integer := 32;
+    ADDR_WIDTH  : integer := 32;
     BYTE_SIZE   : integer := 8);    
   port (
     clk : in std_logic;
     reset : in std_logic;
 
     instr_AWID    : in std_logic_vector(3 downto 0);
-    instr_AWADDR  : in std_logic_vector(RAM_WIDTH-1 downto 0);
+    instr_AWADDR  : in std_logic_vector(ADDR_WIDTH-1 downto 0);
     instr_AWLEN   : in std_logic_vector(3 downto 0);
     instr_AWSIZE  : in std_logic_vector(2 downto 0);
     instr_AWBURST : in std_logic_vector(1 downto 0); 
@@ -41,7 +42,7 @@ entity iram is
     instr_BREADY  : in std_logic;
 
     instr_ARID    : in std_logic_vector(3 downto 0);
-    instr_ARADDR  : in std_logic_vector(RAM_WIDTH -1 downto 0);
+    instr_ARADDR  : in std_logic_vector(ADDR_WIDTH -1 downto 0);
     instr_ARLEN   : in std_logic_vector(3 downto 0);
     instr_ARSIZE  : in std_logic_vector(2 downto 0);
     instr_ARBURST : in std_logic_vector(1 downto 0);
@@ -59,7 +60,7 @@ entity iram is
     instr_RREADY  : in std_logic;
 
     data_AWID    : in std_logic_vector(3 downto 0);
-    data_AWADDR  : in std_logic_vector(RAM_WIDTH-1 downto 0);
+    data_AWADDR  : in std_logic_vector(ADDR_WIDTH-1 downto 0);
     data_AWLEN   : in std_logic_vector(3 downto 0);
     data_AWSIZE  : in std_logic_vector(2 downto 0);
     data_AWBURST : in std_logic_vector(1 downto 0); 
@@ -83,7 +84,7 @@ entity iram is
     data_BREADY  : in std_logic;
 
     data_ARID    : in std_logic_vector(3 downto 0);
-    data_ARADDR  : in std_logic_vector(RAM_WIDTH -1 downto 0);
+    data_ARADDR  : in std_logic_vector(ADDR_WIDTH -1 downto 0);
     data_ARLEN   : in std_logic_vector(3 downto 0);
     data_ARSIZE  : in std_logic_vector(2 downto 0);
     data_ARBURST : in std_logic_vector(1 downto 0);
@@ -101,9 +102,9 @@ entity iram is
     data_RREADY  : in std_logic
 
   );
-end entity iram;
+end entity idram;
 
-architecture rtl of iram is
+architecture rtl of idram is
 
   constant BYTES_PER_WORD : integer := RAM_WIDTH/8;
 
@@ -150,16 +151,12 @@ begin
     if rising_edge(clk) then
       if reset = '1' then
         state_i <= IDLE;
-        instr_AWREADY <= '1';
-        instr_WREADY <= '1';
         instr_RVALID <= '0';
         instr_BVALID <= '0';
         instr_RLAST <= '0';
       else
         case state_i is
           when IDLE =>
-            instr_AWREADY <= '1';
-            instr_WREADY <= '1';
             instr_RVALID <= '0';
             instr_RLAST <= '0';
             instr_BVALID <= '0';
@@ -184,16 +181,12 @@ begin
     if rising_edge(clk) then
       if reset = '1' then
         state_d <= IDLE;
-        data_AWREADY <= '1';
-        data_WREADY <= '1';
         data_RVALID <= '0';
         data_BVALID <= '0';
         data_RLAST <= '0';
       else
         case state_d is
           when IDLE =>
-            data_AWREADY <= '1';
-            data_WREADY <= '1';
             data_RVALID <= '0';
             data_RLAST <= '0';
             data_BVALID <= '0';
@@ -213,7 +206,7 @@ begin
     end if;
   end process;
 
-  ram : entity work.bram_xilinx(rtl)
+  ram : component idram_xilinx
     generic map (
       RAM_DEPTH => SIZE/4,
       RAM_WIDTH => RAM_WIDTH,
