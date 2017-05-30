@@ -11,12 +11,30 @@ set i 0
 set data [split $coe_data "\n"]
 foreach line $data {
   set words [regexp -all -inline {\S+} $line]
-  puts $words
+  #puts $words
   foreach word $words {
-    puts $word
-    set_value "/design_1_wrapper/design_1_i/BRAM/blk_mem_gen_0/inst/\\native_mem_mapped_module.blk_mem_gen_v8_3_6_inst /memory[$i]" -radix hex $word 
+    set byte0 ""
+    append byte0 [string index $word 6]
+    append byte0 [string index $word 7]
+    puts $byte0
+    set_value "/design_1_wrapper/design_1_i/iram_0/U0/ram/ram0[$i]" -radix hex $byte0 
+    set byte1 ""
+    append byte1 [string index $word 4]
+    append byte1 [string index $word 5]
+    puts $byte1
+    set_value "/design_1_wrapper/design_1_i/iram_0/U0/ram/ram1[$i]" -radix hex $byte1
+    set byte2 ""
+    append byte2 [string index $word 2]
+    append byte2 [string index $word 3]
+    puts $byte2
+    set_value "/design_1_wrapper/design_1_i/iram_0/U0/ram/ram2[$i]" -radix hex $byte2 
+    set byte3 "" 
+    append byte3 [string index $word 0]
+    append byte3 [string index $word 1]
+    puts $byte3
+    set_value "/design_1_wrapper/design_1_i/iram_0/U0/ram/ram3[$i]" -radix hex $byte3 
     set i [expr {$i + 1}]
   }
 }
 
-run 1500 us
+run 100 us

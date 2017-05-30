@@ -16,7 +16,7 @@ int main()
      char output[9];	// 8 chars + termination
      /* These could be inputs */
 
-	 long max_address = 0xFFFF;
+	 long max_address = 0x7FFF;
 	 unsigned char default_value = 0;
 
      unsigned char buffer[65536];
