@@ -54,7 +54,7 @@ bits: $(PROJ_NAME).bit $(MMI_FILE)
 
 bitstream: 
 	make -C $(SW_DIR)
-	updatemem -force --meminfo $(MMI_FILE) \
+	updatemem -force --meminfo idram_gen.mmi \
   	--data $(ELF_FILE) \
   	--bit $(GUI_BIT) \
   	--proc dummy \
