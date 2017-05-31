@@ -41,7 +41,7 @@ proc write_mmi {cell_name} {
 			set bram_range [expr {$bram_range + 4096}]	
 		}
 	}
-	puts $fileout "  <AddressSpace Name=\"$cell_name\" Begin=\"0\" End=\"[expr {$bram_range - 1}]\">"
+	puts $fileout "    <AddressSpace Name=\"$cell_name\" Begin=\"0\" End=\"[expr {$bram_range - 1}]\">"
 
 	set bram [llength $cell_name_bram]
 	if {$bram >= 32} {
@@ -68,11 +68,24 @@ proc write_mmi {cell_name} {
 		for {set i 0} {$i < [llength $sequence]} {incr i} {
 			for {set j 0} {$j < [llength $cell_name_bram]} {incr j} {
 				set block_start [expr {32768 * $b}]
-				set bmm_width [bram_info [lindex $cell_name_bram $j] "bit_lane"]
-				set bmm_width [split $bmm_width ":"]
-				set bmm_msb [lindex $bmm_width 0]
-				set bmm_lsb [lindex $bmm_width 1]
-				set bmm_range [bram_info [lindex $cell_name_bram $j] "range"]
+				#set bmm_width [bram_info [lindex $cell_name_bram $j] "bit_lane"]
+				#set bmm_width [split $bmm_width ":"]
+				#set bmm_msb [lindex $bmm_width 0]
+				#set bmm_lsb [lindex $bmm_width 1]
+				#set bmm_range [bram_info [lindex $cell_name_bram $j] "range"]
+        set bmm_name [get_property parent [get_cells [lindex $cell_name_bram $j]]]
+        puts $bmm_name
+        regexp {\[([0-9]+)\]} $bmm_name whole_substring ram_num
+        puts $ram_num
+        set addr_offset [expr $ram_num * 8]
+        set bmm_msb [get_property bram_slice_end [get_cells [lindex $cell_name_bram $j]]] 
+        set bmm_msb [expr $bmm_msb + $addr_offset]
+        set bmm_lsb [get_property bram_slice_begin [get_cells [lindex $cell_name_bram $j]]] 
+        set bmm_lsb [expr $bmm_lsb + $addr_offset]
+        set bmm_range ""
+        append bmm_range [get_property bram_addr_begin [get_cells [lindex $cell_name_bram $j]]]
+        append bmm_range ":"
+        append bmm_range [get_property bram_addr_end [get_cells [lindex $cell_name_bram $j]]]
 				set split_ranges [split $bmm_range ":"]
 				set MSB [lindex $sequence $i]
 				if {$MSB == $bmm_msb && $block_start == [lindex $split_ranges 0]} {
@@ -105,8 +118,8 @@ proc write_mmi {cell_name} {
 	puts $fileout "  </Processor>"
 	puts $fileout "<Config>"
 	puts $fileout "  <Option Name=\"Part\" Val=\"[get_property PART [current_project ]]\"/>"
-  	puts $fileout "</Config>"
-  	puts $fileout "</MemInfo>"
+  puts $fileout "</Config>"
+  puts $fileout "</MemInfo>"
 	close $fileout
 	puts "MMI file ($filename) created successfully."
 	puts "To run Updatemem, use the command line below after write_bitstream:"
@@ -160,15 +173,3 @@ proc mmi_wrapper {proj_dir proj_name cell_name} {
   write_mmi $cell_name
   close_project
 }
-
-#proc updatemem_vblox {{proj_dir 1} {proj_name 2} {mmi_file 3} {elf_file 4} {bits_i 5} {bits_o 6}} {
-#  puts $proj_dir
-#  puts $proj_name
-#  puts $mmi_file
-#  puts $elf_file
-#  puts $bits_i
-#  puts $bits_o
-#  open_project $proj_dir/$proj_name.xpr
-#  updatemem -force --meminfo $mmi_file --data $elf_file --bit $bits_i --proc dummy --out $bits_o
-#  close_project
-#}
