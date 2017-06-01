@@ -31,6 +31,8 @@ entity bram_xilinx is
       data_b     : in  std_logic_vector(7 downto 0);
       wren_a     : in  std_logic;
       wren_b     : in  std_logic;
+      en_a       : in  std_logic;
+      en_b       : in  std_logic;
       readdata_a : out std_logic_vector(7 downto 0);
       readdata_b : out std_logic_vector(7 downto 0)
       );
@@ -50,11 +52,13 @@ begin
   process (clock)
   begin
     if clock'event and clock = '1' then
-      -- NOTE: read assignment must come before write assignment to correctly
-      -- model read-first synchronization.
-      readdata_a <= ram(conv_integer(address_a));
-      if wren_a = '1' then
-        ram(conv_integer(address_a)) := data_a;
+      if (en_a = '1') then
+        -- NOTE: read assignment must come before write assignment to correctly
+        -- model read-first synchronization.
+        readdata_a <= ram(conv_integer(address_a));
+        if wren_a = '1' then
+          ram(conv_integer(address_a)) := data_a;
+        end if;
       end if;
     end if;
   end process;
@@ -62,9 +66,11 @@ begin
   process (clock)
   begin
     if clock'event and clock = '1' then
-      readdata_b <= ram(conv_integer(address_b));
-      if wren_b = '1' then
-        ram(conv_integer(address_b)) := data_b;
+      if (en_b = '1') then
+        readdata_b <= ram(conv_integer(address_b));
+        if wren_b = '1' then
+          ram(conv_integer(address_b)) := data_b;
+        end if;
       end if;
     end if;
   end process;

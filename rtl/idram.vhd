@@ -114,10 +114,12 @@ architecture rtl of idram is
   signal instr_address : std_logic_vector(log2(SIZE/BYTES_PER_WORD)-1 downto 0);
   signal instr_write_en : std_logic;
   signal instr_byte_sel : std_logic_vector(RAM_WIDTH/8-1 downto 0);
+  signal instr_en : std_logic;
 
   signal data_address : std_logic_vector(log2(SIZE/BYTES_PER_WORD)-1 downto 0);
   signal data_write_en : std_logic;
   signal data_byte_sel : std_logic_vector(RAM_WIDTH/8-1 downto 0);
+  signal data_en : std_logic;
 
   type state_t is (IDLE);
   signal state_i : state_t;
@@ -132,8 +134,9 @@ begin
   instr_AWREADY <= instr_AWVALID and instr_WVALID;
   instr_WREADY <= instr_AWVALID and instr_WVALID;
   instr_address <= instr_ARADDR(instr_address'left+log2(BYTES_PER_WORD) downto log2(BYTES_PER_WORD)) when instr_ARVALID = '1' else instr_AWADDR(data_address'left+log2(BYTES_PER_WORD) downto log2(BYTES_PER_WORD));
-  instr_write_en <= (instr_AWVALID and data_WVALID);
+  instr_write_en <= (instr_AWVALID and instr_WVALID);
   instr_byte_sel <= (others => '1') when instr_ARVALID = '1' else instr_WSTRB;
+  instr_en <= (instr_AWVALID and instr_WVALID) or instr_ARVALID;
 
   data_BID <= (others => '0');
   data_RID <= (others => '0');
@@ -145,6 +148,7 @@ begin
   data_address <= data_ARADDR(data_address'left+log2(BYTES_PER_WORD) downto log2(BYTES_PER_WORD)) when data_ARVALID = '1' else data_AWADDR(data_address'left+log2(BYTES_PER_WORD) downto log2(BYTES_PER_WORD));
   data_write_en <= (data_AWVALID and data_WVALID); 
   data_byte_sel <= (others => '1') when data_ARVALID = '1' else data_WSTRB;
+  data_en <= (data_AWVALID and data_WVALID) or data_ARVALID;
 
   instruction_port : process(clk)
   begin
@@ -217,12 +221,14 @@ begin
       instr_address  => instr_address,
       instr_data_in  => instr_WDATA,
       instr_we       => instr_write_en,
+      instr_en       => instr_en,
       instr_be       => instr_byte_sel,
       instr_readdata => instr_RDATA,
 
       data_address => data_address,
       data_data_in => data_WDATA,
       data_we => data_write_en,
+      data_en => data_en,
       data_be => data_byte_sel,
       data_readdata => data_RDATA
     );

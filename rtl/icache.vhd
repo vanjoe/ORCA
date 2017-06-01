@@ -9,11 +9,11 @@ use work.utils.all;
 entity icache is
 
   generic (
-    LINE_SIZE      : integer := 1; -- Words per cache line 
-    NUM_LINES      : integer := 1; -- Number of cache lines
+    SIZE           : integer := 32768; -- Byte size of cache
+    LINE_SIZE      : integer := 64;    -- Bytes per cache line 
     DATA_WIDTH     : integer := 32;
     ADDR_WIDTH     : integer := 32;
-    DRAM_WIDTH     : integer := 128
+    DRAM_WIDTH     : integer := 32; 
     BYTE_SIZE      : integer := 8;
   );
   port (
@@ -107,9 +107,23 @@ entity icache is
 end entity icache;
 
 architecture rtl of icache is
+begin
+
+  cache : component cache_xilinx
+    generic map (
+      NUM_LINES   => SIZE/LINE_SIZE,
+      LINE_SIZE   => LINE_SIZE,
+      BYTE_SIZE   => BYTE_SIZE
+    )
+    port map (
+      clock => clk,
+      
+
+
+
+
+    );
+
 
 
 end architecture;
-
-
-    
