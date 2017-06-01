@@ -1,32 +1,19 @@
 #include "uart.h"
 #include "main.h"
 
-#define DMEM ((volatile unsigned int *) (0x00004000))
+//void mputc (void* p, char c) {
+//  print_char(c); 
+//}
 
 int main(void) {
+  int i;
 
-  volatile unsigned int* data;
-  volatile unsigned int i, temp; 
-
-  //data = DMEM;
-  //for (i = 0x20; i < 0x30; i++) {
-  //  *(data++) = i;
-  //}
-
-  //data = DMEM;
-  //for (i = 0x20; i < 0x30; i++) {
-  //  temp = *(data++);
-  //}
-  //
-  //data = DMEM;
-  //for (i = 0x20; i < 0x30; i++) {
-  //  *(data) = 2*i;
-  //  temp = *(data++); 
-  //}
+  //init_printf(0, mputc);
 
   for (;;) {
     ChangedPrint("Hello World\r\n");
-    delayms(500);
+    delayms(100);
+    //printf("Hello World\r\n"); 
   }
 
   return 1;

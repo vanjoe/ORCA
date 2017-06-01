@@ -15,3 +15,7 @@ void ChangedPrint(char *ptr) {
   }
 }
 
+void print_char(char c) {
+  outbyte(c);
+}
+

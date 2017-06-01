@@ -10,3 +10,4 @@
 void XUARTChanged_SendByte(uint32_t BaseAddress, uint8_t Data);
 void outbyte(char c);
 void ChangedPrint(char *ptr);
+void print_char(char c);

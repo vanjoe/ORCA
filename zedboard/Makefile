@@ -1,6 +1,7 @@
 all:bits
 PROJECT_TCL=project.tcl
 BD_TCL=design_1.tcl
+PGM_TCL=pgm.tcl
 
 PROJ_DIR=project/
 PROJ_NAME=project
@@ -18,7 +19,7 @@ IMPL_LOG=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/runme.log
 VIVADO=vivado -mode tcl -nolog -nojournal
 
 MMI_TCL=write_mmi.tcl
-BRAM_NAME=blk_mem_gen_0
+BRAM_NAME=idram_gen
 MMI_FILE=$(BRAM_NAME).mmi
 OUT_BIT=out.bit
 GUI_BIT=$(PROJ_DIR)project.runs/impl_1/design_1_wrapper.bit
@@ -54,11 +55,16 @@ bits: $(PROJ_NAME).bit $(MMI_FILE)
 
 bitstream: 
 	make -C $(SW_DIR)
-	updatemem -force --meminfo idram_gen.mmi \
+	updatemem -force --meminfo $(MMI_FILE) \
   	--data $(ELF_FILE) \
   	--bit $(GUI_BIT) \
   	--proc dummy \
   	--out $(OUT_BIT) 
 
+pgm:
+	echo "pgm_wrapper $(PROJ_DIR) $(PROJ_NAME) $(OUT_BIT)" | $(VIVADO) -source $(PGM_TCL)
+
+
+
 clean:
-	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit out.bit
+	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) $(MMI_FILE) 

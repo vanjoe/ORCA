@@ -249,20 +249,6 @@ CONFIG.DIVIDE_ENABLE {1} \
 CONFIG.MULTIPLY_ENABLE {1} \
  ] $Orca_0
 
-  set_property -dict [ list \
-CONFIG.SUPPORTS_NARROW_BURST {1} \
-CONFIG.NUM_READ_OUTSTANDING {2} \
-CONFIG.NUM_WRITE_OUTSTANDING {2} \
-CONFIG.MAX_BURST_LENGTH {16} \
- ] [get_bd_intf_pins /Orca_0/data]
-
-  set_property -dict [ list \
-CONFIG.SUPPORTS_NARROW_BURST {1} \
-CONFIG.NUM_READ_OUTSTANDING {2} \
-CONFIG.NUM_WRITE_OUTSTANDING {2} \
-CONFIG.MAX_BURST_LENGTH {16} \
- ] [get_bd_intf_pins /Orca_0/instr]
-
   # Create instance: axi_gpio_0, and set properties
   set axi_gpio_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio_0 ]
   set_property -dict [ list \
@@ -288,18 +274,8 @@ CONFIG.NUM_MI {1} \
   # Create instance: idram_0, and set properties
   set idram_0 [ create_bd_cell -type ip -vlnv user.org:user:iram:1.0 idram_0 ]
   set_property -dict [ list \
-CONFIG.SIZE {32768} \
+CONFIG.SIZE {524288} \
  ] $idram_0
-
-  set_property -dict [ list \
-CONFIG.NUM_READ_OUTSTANDING {2} \
-CONFIG.NUM_WRITE_OUTSTANDING {2} \
- ] [get_bd_intf_pins /idram_0/data]
-
-  set_property -dict [ list \
-CONFIG.NUM_READ_OUTSTANDING {2} \
-CONFIG.NUM_WRITE_OUTSTANDING {2} \
- ] [get_bd_intf_pins /idram_0/instr]
 
   # Create instance: processing_system7_0, and set properties
   set processing_system7_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0 ]
@@ -643,8 +619,8 @@ HDL_ATTRIBUTE.DEBUG {true} \
 
   # Create address segments
   create_bd_addr_seg -range 0x00010000 -offset 0x40000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] SEG_axi_gpio_0_Reg
-  create_bd_addr_seg -range 0x00008000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs idram_0/data/reg0] SEG_iram_0_reg0
-  create_bd_addr_seg -range 0x00008000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/instr] [get_bd_addr_segs idram_0/instr/reg0] SEG_iram_0_reg0
+  create_bd_addr_seg -range 0x00080000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs idram_0/data/reg0] SEG_iram_0_reg0
+  create_bd_addr_seg -range 0x00080000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/instr] [get_bd_addr_segs idram_0/instr/reg0] SEG_iram_0_reg0
   create_bd_addr_seg -range 0x10000000 -offset 0x10000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs processing_system7_0/S_AXI_GP0/GP0_DDR_LOWOCM] SEG_processing_system7_0_GP0_DDR_LOWOCM
   create_bd_addr_seg -range 0x00400000 -offset 0xE0000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs processing_system7_0/S_AXI_GP0/GP0_IOP] SEG_processing_system7_0_GP0_IOP
   create_bd_addr_seg -range 0x01000000 -offset 0xFC000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs processing_system7_0/S_AXI_GP0/GP0_QSPI_LINEAR] SEG_processing_system7_0_GP0_QSPI_LINEAR

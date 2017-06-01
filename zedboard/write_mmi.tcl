@@ -74,9 +74,7 @@ proc write_mmi {cell_name} {
 				#set bmm_lsb [lindex $bmm_width 1]
 				#set bmm_range [bram_info [lindex $cell_name_bram $j] "range"]
         set bmm_name [get_property parent [get_cells [lindex $cell_name_bram $j]]]
-        puts $bmm_name
         regexp {\[([0-9]+)\]} $bmm_name whole_substring ram_num
-        puts $ram_num
         set addr_offset [expr $ram_num * 8]
         set bmm_msb [get_property bram_slice_end [get_cells [lindex $cell_name_bram $j]]] 
         set bmm_msb [expr $bmm_msb + $addr_offset]
@@ -113,8 +111,8 @@ proc write_mmi {cell_name} {
 			}
 		}
 		puts $fileout "      </BusBlock>"
-		puts $fileout "    </AddressSpace>"
 	}
+	puts $fileout "    </AddressSpace>"
 	puts $fileout "  </Processor>"
 	puts $fileout "<Config>"
 	puts $fileout "  <Option Name=\"Part\" Val=\"[get_property PART [current_project ]]\"/>"
