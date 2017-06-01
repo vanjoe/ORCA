@@ -54,7 +54,7 @@ static const regval_t regval_list[] = {
 
  {0x81, 0x3f}, // (0x3f) b76=reserved, b5=sde_en, b4=uv_adj_en, b3=scale_v_en, b2=scale_h_en, b1=uv_avg_en, b0=cmx_en
 
-#if 1
+#if 0
  // TO SCALE DOWN, set output size appropriately
  // eg 640x480: 640 = 0x02 0x80, 480 = 0x01 0xe0
  // Omnivision defaults
@@ -66,10 +66,10 @@ static const regval_t regval_list[] = {
  // TO SCALE DOWN, set output size appropriately
  // eg 40x30: 40 = 0x00 0x28, 30 = 0x00 0x1e
  // VectorBlox version (Tested to work, but unsure of PCLK timing)
- {0xcc, 0x00}, // (0x02) b1:0=oh[9:8] MSB of horiz output size \ 40 pixels output size
- {0xcd, 0x28}, // (0x80) b7:0=oh[7:0] LSB of horiz output size /
+ {0xcc, 0x01}, // (0x02) b1:0=oh[9:8] MSB of horiz output size \ 40 pixels output size
+ {0xcd, 0x40}, // (0x80) b7:0=oh[7:0] LSB of horiz output size /
  {0xce, 0x00}, // (0x01)   b0=ov[8]   MSB of vert output size  \ 30 pixels output size
- {0xcf, 0x1e}, // (0xe0) b7:0=ov[7:0] LSB of vert output size  /
+ {0xcf, 0xF0}, // (0xe0) b7:0=ov[7:0] LSB of vert output size  /
 #endif
 
  // INPUT SIZE FOR SCALING

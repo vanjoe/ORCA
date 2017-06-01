@@ -9,7 +9,7 @@ architecture rtl of top_tb is
   component verilog_top is
     generic (
       USE_PLL : integer := 0;
-      USE_LVE : integer := 0;
+      USE_LVE : integer := 1;
       USE_CAM : integer := 0);
 
     port(

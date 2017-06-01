@@ -4,7 +4,7 @@ use IEEE.NUMERIC_STD.all;
 
 library work;
 --use work.top_component_pkg.all;
---use work.top_util_pkg.all;
+use work.top_util_pkg.all;
 
 
 entity wb_cam is
@@ -36,16 +36,16 @@ end entity wb_cam;
 
 architecture rtl of wb_cam is
 
-
-  constant CAM_NUM_COLS : integer := 640;
-  constant CAM_NUM_ROWS : integer := 480;
+  constant IN_SENSOR_SCALE : integer := 2;
+  constant CAM_NUM_COLS    : integer := 640/IN_SENSOR_SCALE;
+  constant CAM_NUM_ROWS    : integer := 480/IN_SENSOR_SCALE;
 
 
   type row_buf_t is array (0 to 63) of std_logic_vector(29 downto 0);
   type pixel_state_t is (PIXEL_FIRST, PIXEL_SECOND);
   type ovm_state_t is (OVM_DONE, OVM_PREGAP, OVM_GAP, OVM_ROW, OVM_FLUSH);
 
-  signal ovm_dat_ff: std_logic_vector(7 downto 0);
+  signal ovm_dat_ff : std_logic_vector(7 downto 0);
 
   signal ovm_state   : ovm_state_t;
   signal pixel_state : pixel_state_t;
@@ -55,14 +55,14 @@ architecture rtl of wb_cam is
   signal ovm_pixel_rgb   : std_logic_vector(15 downto 0);
   signal ovm_pixel_valid : std_logic;
 
-  signal ovm_col_count  : integer range 0 to 640;
+  signal ovm_col_count  : integer range 0 to CAM_NUM_COLS;
   signal ovm_col_vector : std_logic_vector(9 downto 0);
 
   signal h_tile_start : std_logic;
   signal h_load_pixel : std_logic;
   signal v_load_pixel : std_logic;
   signal h_tile_idx   : std_logic_vector(5 downto 0);
-  signal h_tile_sidx  : std_logic_vector(3 downto 0);
+  signal h_tile_sidx  : std_logic_vector(3-LOG2(IN_SENSOR_SCALE) downto 0);
 
   signal h_red_in        : unsigned(9 downto 0);
   signal h_grn_in        : unsigned(9 downto 0);
@@ -86,14 +86,14 @@ architecture rtl of wb_cam is
   signal ovm_row_count  : integer range 0 to CAM_NUM_ROWS;
   signal ovm_row_vector : std_logic_vector(8 downto 0);
 
-  signal v_tile_start  : std_logic;
-  signal v_load_row    : std_logic;
-  signal v_tile_idx    : std_logic_vector(4 downto 0);
-  signal v_tile_sidx   : std_logic_vector(3 downto 0);
-  signal v_rowbuf_row     :  std_logic_vector(4 downto 0);
-  signal v_rowbuf_row_ff  : std_logic_vector(4 downto 0);
-  signal v_rgb_out_col : std_logic_vector(5 downto 0);
-  signal v_rgb_out_row : std_logic_vector(4 downto 0);
+  signal v_tile_start    : std_logic;
+  signal v_load_row      : std_logic;
+  signal v_tile_idx      : std_logic_vector(4 downto 0);
+  signal v_tile_sidx     : std_logic_vector(3-LOG2(IN_SENSOR_SCALE) downto 0);
+  signal v_rowbuf_row    : std_logic_vector(4 downto 0);
+  signal v_rowbuf_row_ff : std_logic_vector(4 downto 0);
+  signal v_rgb_out_col   : std_logic_vector(5 downto 0);
+  signal v_rgb_out_row   : std_logic_vector(4 downto 0);
 
   signal v_red_mux : unsigned(9 downto 0);
   signal v_grn_mux : unsigned(9 downto 0);
@@ -158,8 +158,8 @@ begin  -- architecture rtl
   --          h_tile_start, h_tile_sidx(), s_tile_idx()
 
   ovm_col_vector <= std_logic_vector(to_unsigned(ovm_col_count, 10));
-  h_tile_sidx    <= ovm_col_vector(3 downto 0);  -- LSB 4 bits (0..15)
-  h_tile_idx     <= ovm_col_vector(9 downto 4);  -- MSB 6 bits (0..63)
+  h_tile_sidx    <= ovm_col_vector(3-LOG2(IN_SENSOR_SCALE) downto 0);  -- LSB 4 bits (0..15)
+  h_tile_idx     <= ovm_col_vector(9-LOG2(IN_SENSOR_SCALE) downto 4-LOG2(IN_SENSOR_SCALE));  -- MSB 6 bits (0..63)
 
   pixel_fsm : process(ovm_pclk)
   begin
@@ -180,7 +180,7 @@ begin  -- architecture rtl
           pixel_state                <= PIXEL_SECOND;
           ovm_pixel_rgb(15 downto 8) <= ovm_dat;
           -- assert 'tile start' only during SECOND half-pixel
-          if h_tile_sidx = "0000" then
+          if h_tile_sidx = "000" then
             h_tile_start <= '1';
           end if;
 
@@ -195,10 +195,10 @@ begin  -- architecture rtl
         ovm_col_count <= 0;
       end if;
 
-      --if rst_i = '1' then
-      --  pixel_state   <= PIXEL_FIRST;
-      --  ovm_col_count <= 0;
-      --end if;
+    --if rst_i = '1' then
+    --  pixel_state   <= PIXEL_FIRST;
+    --  ovm_col_count <= 0;
+    --end if;
     end if;
   end process;
 
@@ -206,8 +206,8 @@ begin  -- architecture rtl
 
   -- combinational logic: input bit width extension
   h_red_in <= resize(unsigned(ovm_pixel_rgb(15 downto 11))&"0", h_red_in'length);  --  5 bits
-  h_grn_in <= resize(unsigned(ovm_pixel_rgb(10 downto  5)    ), h_grn_in'length);  --  6 bits
-  h_blu_in <= resize(unsigned(ovm_pixel_rgb( 4 downto  0))&"0", h_blu_in'length);  --  5 bits
+  h_grn_in <= resize(unsigned(ovm_pixel_rgb(10 downto 5)), h_grn_in'length);  --  6 bits
+  h_blu_in <= resize(unsigned(ovm_pixel_rgb(4 downto 0))&"0", h_blu_in'length);  --  5 bits
 
   -- combinational logic: mux to initialize accumulator
   h_pixel_mux : process(h_load_pixel, h_accum_red, h_accum_grn, h_accum_blu)
@@ -235,19 +235,19 @@ begin  -- architecture rtl
       if h_load_pixel = '1' then
         h_rgb_out_idx <= h_tile_idx;
       end if;
-      --if rst_i = '1' then
-      --  h_accum_red   <= (others => '0');
-      --  h_accum_grn   <= (others => '0');
-      --  h_accum_blu   <= (others => '0');
-      --  h_rgb_out_idx <= (others => '0');
-      --end if;
+    --if rst_i = '1' then
+    --  h_accum_red   <= (others => '0');
+    --  h_accum_grn   <= (others => '0');
+    --  h_accum_blu   <= (others => '0');
+    --  h_rgb_out_idx <= (others => '0');
+    --end if;
     end if;
   end process;
 
   -- combinational logic: output width truncation and resizing
-  h_red_out       <= "0000" & h_accum_red(9 downto 4);  --  truncated to 6 bits
-  h_grn_out       <= "0000" & h_accum_grn(9 downto 4);  --  truncated to 6 bits
-  h_blu_out       <= "0000" & h_accum_blu(9 downto 4);  --  truncated to 6 bits
+  h_red_out       <= "0000" & h_accum_red(9-LOG2(IN_SENSOR_SCALE) downto 4- LOG2(IN_SENSOR_SCALE));  --  truncated to 6 bits
+  h_grn_out       <= "0000" & h_accum_grn(9-LOG2(IN_SENSOR_SCALE) downto 4- LOG2(IN_SENSOR_SCALE));  --  truncated to 6 bits
+  h_blu_out       <= "0000" & h_accum_blu(9-LOG2(IN_SENSOR_SCALE) downto 4- LOG2(IN_SENSOR_SCALE));  --  truncated to 6 bits
   h_rgb_out_valid <= h_load_pixel;  -- when loading new pixel, read out old tile average
 
 
@@ -258,24 +258,24 @@ begin  -- architecture rtl
   -- outputs: extra_href, v_load_row, ovm_row_count
 
   ovm_row_vector <= std_logic_vector(to_unsigned(ovm_row_count, 9));
-  v_tile_idx     <= ovm_row_vector(8 downto 4);    -- MSB 5 bits (0..31)
-  v_tile_sidx    <= ovm_row_vector(3 downto 0);    -- LSB 4 bits (0..15)
-  v_tile_start   <= '1' when v_tile_sidx = "0000"  -- this can be slow logic
-                    else '0';
+  v_tile_idx     <= ovm_row_vector(8-LOG2(IN_SENSOR_SCALE) downto 4-LOG2(IN_SENSOR_SCALE));    -- MSB 5 bits (0..31)
+  v_tile_sidx    <= ovm_row_vector(3-LOG2(IN_SENSOR_SCALE) downto 0);    -- LSB 4 bits (0..15)
+  v_tile_start   <= '1' when v_tile_sidx = "000"  -- this can be slow logic
+                  else '0';
 
   ovm_fsm : process(ovm_pclk)
   begin
     if rising_edge(ovm_pclk) then
 
-      extra_href <= '0';
-      v_load_row <= '0';
-      v_rowbuf_row     <= v_rowbuf_row_ff;
+      extra_href   <= '0';
+      v_load_row   <= '0';
+      v_rowbuf_row <= v_rowbuf_row_ff;
       case ovm_state is
 
         when OVM_DONE =>
           -- row0 is written twice (first: dummy values, then: valid values)
-          v_rowbuf_row_ff  <= (others => '0');
-          ovm_row_count <= 0;
+          v_rowbuf_row_ff <= (others => '0');
+          ovm_row_count   <= 0;
           if cam_start_sync = '1' then
             ovm_state <= OVM_PREGAP;
           end if;
@@ -294,13 +294,13 @@ begin  -- architecture rtl
         when OVM_ROW =>
           v_load_row <= v_tile_start;
           if ovm_href = '0' then
-            v_rowbuf_row_ff  <= v_tile_idx;  -- update row# that we just accumulated
-            ovm_row_count <= ovm_row_count + 1;  -- data is rows 0 to 479
-            ovm_state     <= OVM_PREGAP;
+            v_rowbuf_row_ff <= v_tile_idx;  -- update row# that we just accumulated
+            ovm_row_count   <= ovm_row_count + 1;  -- data is rows 0 to 479
+            ovm_state       <= OVM_PREGAP;
           end if;
 
         when OVM_FLUSH =>
-        -- one extra row of pixels to flush the last set of averaged rows
+          -- one extra row of pixels to flush the last set of averaged rows
           extra_href <= '1';
           v_load_row <= '1';
           if ovm_col_count = CAM_NUM_COLS then
@@ -310,7 +310,7 @@ begin  -- architecture rtl
       end case;
 
       if rst_i = '1' then
-        ovm_state    <= OVM_DONE;
+        ovm_state       <= OVM_DONE;
         v_rowbuf_row_ff <= (others => '0');  -- update row# that we just accumulated
       end if;
     end if;
@@ -327,13 +327,13 @@ begin  -- architecture rtl
       v_red_mux <= "0000000000";        -- zero to produce RGB image
       v_grn_mux <= "0000000000";
       v_blu_mux <= "0000000000";
-      --v_red_mux <= "1000000000"; -- preload with neg bias for NN
-      --v_grn_mux <= "1000000000";
-      --v_blu_mux <= "1000000000";
+    --v_red_mux <= "1000000000"; -- preload with neg bias for NN
+    --v_grn_mux <= "1000000000";
+    --v_blu_mux <= "1000000000";
     else
       v_red_mux <= unsigned(v_rdata(29 downto 20));
       v_grn_mux <= unsigned(v_rdata(19 downto 10));
-      v_blu_mux <= unsigned(v_rdata( 9 downto  0));
+      v_blu_mux <= unsigned(v_rdata(9 downto 0));
     end if;
   end process;
 
@@ -357,7 +357,7 @@ begin  -- architecture rtl
     end if;
   end process;
 
-  v_rgb_ff(31 downto 16) <= (others=>'0');
+  v_rgb_ff(31 downto 16) <= (others => '0');
 
   output_latch_cam : process(ovm_pclk)
   begin
@@ -379,12 +379,12 @@ begin  -- architecture rtl
 -- RGBA8888, using 16x16 averages
 -- NOTE: Be sure the software has appropriate settings
         v_rgb_out(31 downto 24) <= (others => '0');
-        v_rgb_out(23 downto 16) <= v_rdata(29 downto 22);  -- extract red 8 MSB
-        v_rgb_out(15 downto  8) <= v_rdata(19 downto 12);  -- extract grn 8 MSB
-        v_rgb_out( 7 downto  0) <= v_rdata( 9 downto  2);  -- extract blu 8 MSB
+        v_rgb_out(23 downto 16) <= v_rdata(29-LOG2(IN_SENSOR_SCALE) downto 22-LOG2(IN_SENSOR_SCALE));  -- extract red 8 MSB
+        v_rgb_out(15 downto 8)  <= v_rdata(19-LOG2(IN_SENSOR_SCALE) downto 12-LOG2(IN_SENSOR_SCALE));  -- extract grn 8 MSB
+        v_rgb_out(7 downto 0)   <= v_rdata(9 -LOG2(IN_SENSOR_SCALE) downto 2 -LOG2(IN_SENSOR_SCALE));    -- extract blu 8 MSB
 -- RGB565, using 16:1 subsampling
 -- NOTE: Be sure the software has appropriate settings
-        --v_rgb_out <= v_rgb_ff;
+      --v_rgb_out <= v_rgb_ff;
       end if;
       if rst_i = '1' then
         v_rgb_out_valid <= '0';
@@ -406,13 +406,13 @@ begin  -- architecture rtl
       master_CYC_O <= ff1;
       master_WE_O  <= ff1;
       if ff1 = '1' then
-        master_dat_O <= v_rgb_out;
+        master_dat_O              <= v_rgb_out;
         master_ADR_O(12 downto 0) <= v_rgb_out_row & v_rgb_out_col & "00";
       end if;
 
     end if;
   end process;
   master_ADR_O(master_ADR_O'left downto 13) <= (others => '0');
-  master_SEL_O <= (others => '1');
+  master_SEL_O                              <= (others => '1');
 
 end architecture rtl;
