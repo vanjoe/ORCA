@@ -15,7 +15,7 @@
 
 
 #define AUTO_WHITE_BALANCE 1
-
+#define IN_SENSOR_SCALE 4
 
 static const regval_t regval_list[] = {
 
@@ -54,23 +54,10 @@ static const regval_t regval_list[] = {
 
  {0x81, 0x3f}, // (0x3f) b76=reserved, b5=sde_en, b4=uv_adj_en, b3=scale_v_en, b2=scale_h_en, b1=uv_avg_en, b0=cmx_en
 
-#if 0
- // TO SCALE DOWN, set output size appropriately
- // eg 640x480: 640 = 0x02 0x80, 480 = 0x01 0xe0
- // Omnivision defaults
- {0xcc, 0x02}, // (0x02) b1:0=oh[9:8] MSB of horiz output size \ 640 pixels output size
- {0xcd, 0x80}, // (0x80) b7:0=oh[7:0] LSB of horiz output size /
- {0xce, 0x01}, // (0x01)   b0=ov[8]   MSB of vert output size  \ 480 pixels output size
- {0xcf, 0xe0}, // (0xe0) b7:0=ov[7:0] LSB of vert output size  /
-#else
- // TO SCALE DOWN, set output size appropriately
- // eg 40x30: 40 = 0x00 0x28, 30 = 0x00 0x1e
- // VectorBlox version (Tested to work, but unsure of PCLK timing)
- {0xcc, 0x01}, // (0x02) b1:0=oh[9:8] MSB of horiz output size \ 40 pixels output size
- {0xcd, 0x40}, // (0x80) b7:0=oh[7:0] LSB of horiz output size /
- {0xce, 0x00}, // (0x01)   b0=ov[8]   MSB of vert output size  \ 30 pixels output size
- {0xcf, 0xF0}, // (0xe0) b7:0=ov[7:0] LSB of vert output size  /
-#endif
+ {0xcc, (640/IN_SENSOR_SCALE)>>8}, // (0x02) b1:0=oh[9:8] MSB of horiz output size \ 40 pixels output size
+ {0xcd, (640/IN_SENSOR_SCALE)&0xFF}, // (0x80) b7:0=oh[7:0] LSB of horiz output size /
+ {0xce, (480/IN_SENSOR_SCALE)>>8}, // (0x01)   b0=ov[8]   MSB of vert output size  \ 30 pixels output size
+ {0xcf, (480/IN_SENSOR_SCALE)&0xFF}, // (0xe0) b7:0=ov[7:0] LSB of vert output size  /
 
  // INPUT SIZE FOR SCALING
  {0xc8, 0x02}, // (0x02) b1:0=ih[9:8] MSB of horiz input size \ 640 pixels input size

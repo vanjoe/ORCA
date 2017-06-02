@@ -36,7 +36,7 @@ end entity wb_cam;
 
 architecture rtl of wb_cam is
 
-  constant IN_SENSOR_SCALE : integer := 2;
+  constant IN_SENSOR_SCALE : integer := 4;
   constant CAM_NUM_COLS    : integer := 640/IN_SENSOR_SCALE;
   constant CAM_NUM_ROWS    : integer := 480/IN_SENSOR_SCALE;
 
@@ -180,7 +180,7 @@ begin  -- architecture rtl
           pixel_state                <= PIXEL_SECOND;
           ovm_pixel_rgb(15 downto 8) <= ovm_dat;
           -- assert 'tile start' only during SECOND half-pixel
-          if h_tile_sidx = "000" then
+          if unsigned(h_tile_sidx) = 0 then
             h_tile_start <= '1';
           end if;
 
@@ -260,7 +260,7 @@ begin  -- architecture rtl
   ovm_row_vector <= std_logic_vector(to_unsigned(ovm_row_count, 9));
   v_tile_idx     <= ovm_row_vector(8-LOG2(IN_SENSOR_SCALE) downto 4-LOG2(IN_SENSOR_SCALE));    -- MSB 5 bits (0..31)
   v_tile_sidx    <= ovm_row_vector(3-LOG2(IN_SENSOR_SCALE) downto 0);    -- LSB 4 bits (0..15)
-  v_tile_start   <= '1' when v_tile_sidx = "000"  -- this can be slow logic
+  v_tile_start   <= '1' when unsigned(v_tile_sidx) = 0  -- this can be slow logic
                   else '0';
 
   ovm_fsm : process(ovm_pclk)
