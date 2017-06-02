@@ -20,8 +20,12 @@ while(True):
         except base64.binascii.Error:
             sys.stderr.write("Python Error: Bad base64 string\n")
             continue
+        try:
+            cvimage = np.array(data,dtype=np.uint8)
+            cvimage = cvimage.reshape(img_rows,img_cols,3)
+        except ValueError:
+            sys.stderr.write("Python Error: Numpy conversion error\n")
 
-        cvimage = np.array(data,dtype=np.uint8).reshape(img_rows,img_cols,3)
 
         #set last two rows as green or red
         cvimage[30:,:,0] = 0
