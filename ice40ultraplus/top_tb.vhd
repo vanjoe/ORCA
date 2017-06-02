@@ -8,9 +8,10 @@ end entity;
 architecture rtl of top_tb is
   component verilog_top is
     generic (
-      USE_PLL : integer := 0;
-      USE_LVE : integer := 1;
-      USE_CAM : integer := 0);
+      USE_PLL  : integer := 0;
+      USE_LVE  : integer := 1;
+      USE_UART : integer := 0;
+      USE_CAM  : integer := 0);
 
     port(
       --spi
@@ -51,8 +52,8 @@ architecture rtl of top_tb is
   signal sccb_sda : std_logic;
 
 
-  constant CLOCK_PERIOD : time                 := 83.33 ns;
-  constant PCLK_PERIOD  : time                 := 74.074 ns;
+  constant CLOCK_PERIOD : time := 83.33 ns;
+  constant PCLK_PERIOD  : time := 74.074 ns;
 
   signal ovm_pclk  : std_logic := '0';
   signal ovm_vsync : std_logic;
