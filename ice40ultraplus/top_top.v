@@ -22,7 +22,7 @@ module verilog_top
    sccb_scl,
    sccb_sda
    );
-   
+
    parameter USE_PLL  = 1;
    parameter USE_CAM  = 1;
    parameter USE_UART = 1;
@@ -47,6 +47,7 @@ module verilog_top
    wire [7:0]  cam_dat_internal;
    wire        cam_href_internal;
    wire        cam_vsync_internal;
+	wire 			cam_dat_en;
 
    //assign cdone_led = 0;
 
@@ -64,6 +65,7 @@ module verilog_top
       .cam_xclk(cam_xclk_internal),
       .cam_vsync(cam_vsync_internal),
       .cam_href(cam_href_internal),
+		.cam_dat_en(cam_dat_en),
       .spi_mosi(spi_mosi),
       .spi_miso(spi_miso),
       .spi_ss  (spi_ss),
@@ -95,7 +97,7 @@ module verilog_top
      od0(
          .PACKAGEPIN (cam_dat[0]),
          .LATCHINPUTVALUE (0),
-         .CLOCKENABLE (1),
+         .CLOCKENABLE (cam_dat_en),
          .INPUTCLK (cam_xclk_internal_buf),
          .OUTPUTCLK (0),
          .OUTPUTENABLE (0),
@@ -112,7 +114,7 @@ module verilog_top
      od1(
          .PACKAGEPIN (cam_dat[1]),
          .LATCHINPUTVALUE (0),
-         .CLOCKENABLE (1),
+         .CLOCKENABLE (cam_dat_en),
          .INPUTCLK (cam_xclk_internal_buf),
          .OUTPUTCLK (0),
          .OUTPUTENABLE (0),
@@ -128,7 +130,7 @@ module verilog_top
      od2(
          .PACKAGE_PIN (cam_dat[2]),
          .LATCH_INPUT_VALUE (0),
-         .CLOCK_ENABLE (1),
+         .CLOCK_ENABLE (cam_dat_en),
          .INPUT_CLK (cam_xclk_internal_buf),
          .OUTPUT_CLK (0),
          .OUTPUT_ENABLE (0),
@@ -144,7 +146,7 @@ module verilog_top
      od3(
          .PACKAGE_PIN (cam_dat[3]),
          .LATCH_INPUT_VALUE (0),
-         .CLOCK_ENABLE (1),
+         .CLOCK_ENABLE (cam_dat_en),
          .INPUT_CLK (cam_xclk_internal_buf),
          .OUTPUT_CLK (0),
          .OUTPUT_ENABLE (0),
@@ -160,7 +162,7 @@ module verilog_top
      od4(
          .PACKAGE_PIN (cam_dat[4]),
          .LATCH_INPUT_VALUE (0),
-         .CLOCK_ENABLE (1),
+         .CLOCK_ENABLE (cam_dat_en),
          .INPUT_CLK (cam_xclk_internal_buf),
          .OUTPUT_CLK (0),
          .OUTPUT_ENABLE (0),
@@ -176,7 +178,7 @@ module verilog_top
      od5(
          .PACKAGE_PIN (cam_dat[5]),
          .LATCH_INPUT_VALUE (0),
-         .CLOCK_ENABLE (1),
+         .CLOCK_ENABLE (cam_dat_en),
          .INPUT_CLK (cam_xclk_internal_buf),
          .OUTPUT_CLK (0),
          .OUTPUT_ENABLE (0),
@@ -192,7 +194,7 @@ module verilog_top
      od6(
          .PACKAGE_PIN (cam_dat[6]),
          .LATCH_INPUT_VALUE (0),
-         .CLOCK_ENABLE (1),
+         .CLOCK_ENABLE (cam_dat_en),
          .INPUT_CLK (cam_xclk_internal_buf),
          .OUTPUT_CLK (0),
          .OUTPUT_ENABLE (0),
@@ -208,7 +210,7 @@ module verilog_top
      od7(
          .PACKAGE_PIN (cam_dat[7]),
          .LATCH_INPUT_VALUE (0),
-         .CLOCK_ENABLE (1),
+         .CLOCK_ENABLE (cam_dat_en),
          .INPUT_CLK (cam_xclk_internal_buf),
          .OUTPUT_CLK (0),
          .OUTPUT_ENABLE (0),

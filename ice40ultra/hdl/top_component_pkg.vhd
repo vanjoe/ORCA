@@ -758,14 +758,14 @@ package top_component_pkg is
       master_STALL_I : in  std_logic;
 
       --pio control signals
-      cam_start : in  std_logic;
-      cam_done  : out std_logic;
-
+      cam_start  : in  std_logic;
+      cam_done   : out std_logic;
+      cam_dat_en : out std_logic;
       --camera signals
-      ovm_pclk  : in std_logic;
-      ovm_vsync : in std_logic;
-      ovm_href  : in std_logic;
-      ovm_dat   : in std_logic_vector(7 downto 0)
+      ovm_pclk   : in  std_logic;
+      ovm_vsync  : in  std_logic;
+      ovm_href   : in  std_logic;
+      ovm_dat    : in  std_logic_vector(7 downto 0)
       );
   end component wb_cam;
 

@@ -25,7 +25,7 @@ entity wb_cam is
     --pio control signals
     cam_start : in  std_logic;
     cam_done  : out std_logic;
-
+    cam_dat_en : out std_logic;
     --camera signals
     ovm_pclk  : in std_logic;
     ovm_vsync : in std_logic;
@@ -142,8 +142,16 @@ begin  -- architecture rtl
     end if;
   end process;
 
-
-
+  cam_start_process : process(ovm_pclk)
+  begin
+    if rising_edge(ovm_pclk) then
+      if cam_start_ff = '1' then
+        cam_dat_en <= '1';
+      elsif ovm_state = OVM_DONE then
+        cam_dat_en <= '0';
+      end if;
+    end if;
+  end process;
 
 
   -- PIXEL_FSM: Camera column-wise FSM

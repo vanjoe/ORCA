@@ -29,14 +29,14 @@ entity vhdl_top is
     led : out std_logic;
 
     --clk
-    cam_xclk  : in std_logic;
-    cam_vsync : in std_logic;
-    cam_href  : in std_logic;
-    cam_dat   : in std_logic_vector(7 downto 0);
-
+    cam_xclk   : in    std_logic;
+    cam_vsync  : in    std_logic;
+    cam_href   : in    std_logic;
+    cam_dat    : in    std_logic_vector(7 downto 0);
+    cam_dat_en : out   std_logic;
     --sccb
-    sccb_scl : inout std_logic;
-    sccb_sda : inout std_logic
+    sccb_scl   : inout std_logic;
+    sccb_sda   : inout std_logic
     );
 end entity;
 
@@ -859,14 +859,15 @@ begin
         master_STALL_I => cam_sp_STALL_I,
 
         --pio control signals
-        cam_start => ovm_dma_start,
-        cam_done  => ovm_dma_done,
-
+        cam_start  => ovm_dma_start,
+        cam_done   => ovm_dma_done,
+        cam_dat_en => cam_dat_en,
         --camera signals
-        ovm_pclk    => cam_pclk,
-        ovm_vsync   => cam_vsync,
-        ovm_href    => cam_href,
-        ovm_dat     => cam_dat_internal
+        ovm_pclk   => cam_pclk,
+        ovm_vsync  => cam_vsync,
+        ovm_href   => cam_href,
+        ovm_dat    => cam_dat_internal
+
         );
   end generate cam_gen;
 
