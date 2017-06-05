@@ -166,8 +166,12 @@ begin  -- architecture rtl
 
   immediate_value <= unsigned(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0)&
                               instruction(31 downto 20));
-  data1 <= unsigned(rs1_data);
-  data2 <= unsigned(rs2_data) when not_immediate = '1' else immediate_value;
+  data1 <= (others => '0') when source_valid = '0' else unsigned(rs1_data);
+  data2 <= (others => '0') when source_valid = '0' else unsigned(rs2_data) when not_immediate = '1' else immediate_value;
+
+  --data1 <=  unsigned(rs1_data);
+  --data2 <=  unsigned(rs2_data) when not_immediate = '1' else immediate_value;
+
 
   shift_amt <= data2(log2(REGISTER_SIZE)-1 downto 0) when not SHIFTER_USE_MULTIPLIER else
                data2(log2(REGISTER_SIZE)-1 downto 0) when instruction(14) = '0'else
@@ -219,7 +223,7 @@ begin  -- architecture rtl
 
 
     cin0 <= "000000001" when is_sub = '1' else
-                 "000000000";
+            "000000000";
     cin1 <= "00000000"&cout0 when byte_size = '0' else
             "000000001" when byte_size = '1' and is_sub = '1' else
             "000000000";
@@ -502,8 +506,13 @@ begin  -- architecture rtl
     begin
       if rising_edge(clk) then
         --Register multiplier inputs
-        mul_a            <= mul_srca;
-        mul_b            <= mul_srcb;
+
+        mul_a <= mul_srca;
+        mul_b <= mul_srcb;
+        if mul_enable = '0' and sh_enable = '0' then
+          mul_a <= (others => '0');
+          mul_b <= (others => '0');
+        end if;
         mul_ab_shift_amt <= mul_src_shift_amt;
         mul_ab_valid     <= mul_src_valid;
 
