@@ -56,7 +56,8 @@ begin
 
     bram : component bram_xilinx 
       generic map (
-        RAM_DEPTH => RAM_DEPTH
+        RAM_DEPTH => RAM_DEPTH,
+        RAM_WIDTH => BYTE_SIZE
       )
       port map (
         address_a => instr_address,

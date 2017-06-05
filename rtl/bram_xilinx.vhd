@@ -20,21 +20,22 @@ use work.utils.all;
 
 entity bram_xilinx is
   generic (
-    RAM_DEPTH : integer := 1024
+    RAM_DEPTH : integer := 1024,
+    RAM_WIDTH : integer := 8
     );
   port
     (
       address_a  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
       address_b  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
       clock      : in  std_logic;
-      data_a     : in  std_logic_vector(7 downto 0);
-      data_b     : in  std_logic_vector(7 downto 0);
+      data_a     : in  std_logic_vector(RAM_WIDTH-1 downto 0);
+      data_b     : in  std_logic_vector(RAM_WIDTH-1 downto 0);
       wren_a     : in  std_logic;
       wren_b     : in  std_logic;
       en_a       : in  std_logic;
       en_b       : in  std_logic;
-      readdata_a : out std_logic_vector(7 downto 0);
-      readdata_b : out std_logic_vector(7 downto 0)
+      readdata_a : out std_logic_vector(RAM_WIDTH-1 downto 0);
+      readdata_b : out std_logic_vector(RAM_WIDTH-1 downto 0)
       );
 end bram_xilinx;
 
