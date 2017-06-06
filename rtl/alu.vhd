@@ -168,7 +168,7 @@ architecture rtl of arithmetic_unit is
   signal func7_shift : boolean;
 begin  -- architecture rtl
 
-  oc : component operand_creation
+  oc : operand_creation
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE    => SIGN_EXTENSION_SIZE,
@@ -221,7 +221,7 @@ begin  -- architecture rtl
   end generate SH_GEN0;
   SH_GEN1 : if not SHIFTER_USE_MULTIPLIER generate
 
-    sh : component shifter
+    sh : shifter
       generic map (
         REGiSTER_SIZE => REGISTER_SIZE,
         SINGLE_CYCLE  => SHIFT_SC)
@@ -434,7 +434,7 @@ begin  -- architecture rtl
   d_en : if DIVIDE_ENABLE generate
   begin
     div_enable <= '1' when (func7 = mul_f7 and opcode = ALU_OP and instruction(14) = '1') and valid_instr = '1' and source_valid = '1' else '0';
-    div : component divider
+    div : divider
       generic map (
         REGISTER_SIZE => REGISTER_SIZE)
       port map (

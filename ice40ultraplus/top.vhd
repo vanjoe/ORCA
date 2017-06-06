@@ -830,7 +830,7 @@ begin
   pio_in(3)    <= ovm_dma_busy;
   ovm_dma_busy <= '1' when ovm_dma_done = '0' else '0';
 
-  led       <= pio_out(4) and led_counter(15) and led_counter(14);
+  led       <= 'Z' when (pio_out(4) and led_counter(15) and led_counter(14)) = '1' else '0';
   pio_in(4) <= pio_out(4);
 
   no_cam_gen : if USE_CAM = 0 generate

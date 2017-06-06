@@ -339,94 +339,97 @@ begin  -- architecture rtl
     -- incremental bursts
     constant BURST_INCR : std_logic_vector(1 downto 0) := "01";
 
+--    signal write_ack               : std_logic := '0';
+--    signal read_ack                : std_logic := '0';
+    signal core_instruction_stall4 : std_logic := '0';
 
-    signal core_data_stall1        : std_logic;
-    signal core_data_stall2        : std_logic;
-    signal core_data_stall3        : std_logic;
-    signal write_ack               : std_logic;
-    signal core_instruction_stall4 : std_logic;
+    signal axi_reset : std_logic;
 
-    type state_t is (IDLE, WRITE_ADDR, WRITE_DATA);
-    signal state : state_t;
+    -- Latched signals for AXI write bus
+--    signal core_data_awvalid_l     : std_logic                                      := '0';
+--    signal core_data_wvalid_l      : std_logic                                      := '0';
+--    signal core_data_waddress_l    : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
+--    signal core_data_byteenable_l  : std_logic_vector((REGISTER_SIZE/8)-1 downto 0) := (others => '0');
+--    signal core_data_writedata_l   : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
+--    signal write_pending           : std_logic                                      := '0';
+--
+--    -- Latched signals for AXI read bus
+--    signal core_data_raddress_l    : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
+--    signal core_data_read_l        : std_logic                                      := '0';
+--    signal read_pending            : std_logic                                      := '0';
+--    
+--    type state_w_t is (IDLE, WAITING_BOTH, WAITING_WREADY, WAITING_AWREADY);
+--    signal state_w : state_w_t := IDLE;
+--
+--    type state_r_t is (IDLE, WAITING_ARREADY, WAITING_RVALID);
+--    signal state_r : state_r_t := IDLE;
+
   begin
-
---BUG: this combinational logic assumes that AWREADY and WREADY are the same signal
 --BUG: this logic disregards the write response data
 
-    data_AWID        <= (others => '0');
-    data_AWADDR      <= core_data_address;
-    data_AWLEN       <= BURST_LEN;
-    data_AWSIZE      <= BURST_SIZE;
-    data_AWBURST     <= BURST_INCR;
-    data_AWLOCK      <= (others => '0');
-    data_AWCACHE     <= (others => '0');
-    data_AWPROT      <= (others => '0');
-    data_AWVALID     <= core_data_write when (state /= WRITE_DATA) else '0';
-    core_data_stall1 <= not data_AWREADY;
-    data_WID         <= (others => '0');
-    data_WDATA       <= core_data_writedata;
-    data_WSTRB       <= core_data_byteenable;
-    data_WLAST       <= '1';
-    data_WVALID      <= core_data_write when (state /= WRITE_ADDR) else '0';
-    core_data_stall2 <= data_WREADY;
-    --data_BID
-    --data_BRESP
-    --data_BVALID
-    data_BREADY      <= '1';
+    axi_reset <= not reset;
 
+    axi_data_master : axi_master
+      generic map (
+        REGISTER_SIZE => REGISTER_SIZE,
+        BYTE_SIZE     => 8
+      )
 
-    data_ARID          <= (others => '0');
-    data_ARADDR        <= core_data_address;
-    data_ARLEN         <= BURST_LEN;
-    data_ARSIZE        <= BURST_SIZE;
-    data_ARBURST       <= BURST_INCR;
-    data_ARLOCK        <= (others => '0');
-    data_ARCACHE       <= (others => '0');
-    data_ARPROT        <= (others => '0');
-    data_ARVALID       <= core_data_read;
-    core_data_stall3   <= not data_ARREADY;
-    -- data_RID
-    core_data_readdata <= data_RDATA;
-    -- data_RRESP
-    -- data_RLAST
-    core_data_ack      <= data_RVALID or write_ack;
-    data_RREADY        <= '1';
+      port map (
+        ACLK                    => clk,
+        ARESETN                 => axi_reset,
+        core_data_address       => core_data_address, 
+        core_data_byteenable    => core_data_byteenable,  
+        core_data_read          => core_data_read,         
+        core_data_readdata      => core_data_readdata,    
+        core_data_write         => core_data_write,        
+        core_data_writedata     => core_data_writedata,    
+        core_data_ack           => core_data_ack,
 
-    -- This Process handles coupling the decoupled write data and write address channels
-    data_write_proc : process(clk)
-    begin
-      if rising_edge(clk) then
-        write_ack <= '0';
-        case state is
-          when IDLE =>
-            if core_data_write = '1' then
-              write_ack <= data_AWREADY and data_WREADY;
-              if (data_AWREADY and not data_WREADY) = '1' then
-                state <= WRITE_DATA;
-              elsif (not data_AWREADY and data_WREADY) = '1' then
-                state <= WRITE_ADDR;
-              end if;
-            end if;
-          when WRITE_ADDR =>
-            if data_AWREADY = '1' then
-              state     <= IDLE;
-              write_ack <= '1';
-            end if;
-          when WRITE_DATA =>
-            if data_WREADY = '1' then
-              state     <= IDLE;
-              write_ack <= '1';
-            end if;
-          when others => null;
-        end case;
-        if reset = '1' then
-          state <= IDLE;
-        end if;
-      end if;
-    end process;
+        AWID                    => data_AWID, 
+        AWADDR                  => data_AWADDR, 
+        AWLEN                   => data_AWLEN,
+        AWSIZE                  => data_AWSIZE,
+        AWBURST                 => data_AWBURST,
+        AWLOCK                  => data_AWLOCK, 
+        AWVALID                 => data_AWVALID,
+        AWREADY                 => data_AWREADY,
 
-    --Instruction read port
+        WID                     => data_WID,
+        WSTRB                   => data_WSTRB,
+        WLAST                   => data_WLAST,
+        WVALID                  => data_WVALID,
+        WDATA                   => data_WDATA,
+        WREADY                  => data_WREADY,
+        
+        BID                     => data_BID,
+        BRESP                   => data_BRESP,
+        BVALID                  => data_BVALID,
+        BREADY                  => data_BREADY,
 
+        ARID                    => data_ARID, 
+        ARADDR                  => data_ARADDR,
+        ARLEN                   => data_ARLEN, 
+        ARSIZE                  => data_ARSIZE,
+        ARLOCK                  => data_ARLOCK,
+        ARBURST                 => data_ARBURST,
+        ARVALID                 => data_ARVALID,
+        ARREADY                 => data_ARREADY,
+
+        RID                     => data_RID, 
+        RDATA                   => data_RDATA, 
+        RRESP                   => data_RRESP,
+        RLAST                   => data_RLAST, 
+        RVALID                  => data_RVALID,
+        RREADY                  => data_RREADY,
+
+        NEXT_DATA_IN            => OPEN, 
+        DATA_BURST_NUM          => OPEN 
+       
+      );
+
+    
+    -- Instruction read port
     instr_ARID                     <= (others => '0');
     instr_ARADDR                   <= core_instruction_address;
     instr_ARLEN                    <= BURST_LEN;
@@ -465,7 +468,7 @@ begin  -- architecture rtl
 
   end generate axi_enabled;
 
-  core : component orca_core
+  core : orca_core
     generic map(
       REGISTER_SIZE      => REGISTER_SIZE,
       RESET_VECTOR       => RESET_VECTOR,
