@@ -77,6 +77,8 @@ architecture rtl of lve_top is
   signal cmv_result       : std_logic_vector(lve_alu_result'range);
   signal lve_data1        : std_logic_vector(lve_alu_data1'range);
   signal lve_data2        : std_logic_vector(lve_alu_data2'range);
+  signal ci_data1        : std_logic_vector(lve_alu_data1'range);
+  signal ci_data2        : std_logic_vector(lve_alu_data2'range);
 
   signal cmv_write_en : std_logic;
 
@@ -350,6 +352,9 @@ begin
                            func3 /= LVE_VCMV_Z_FUNC3 and
                            func3 /= LVE_VCMV_NZ_FUNC3) else
                  '0';
+
+  ci_data1 <= srca_data_read when ci_valid_in = '1' else (others => '0');
+  ci_data2 <= srcb_data_read when ci_valid_in = '1' else (others => '0');
   the_lve_ci : lve_ci
     generic map (
       REGISTER_SIZE => REGISTER_SIZE
@@ -363,8 +368,8 @@ begin
       pause => ci_pause,
 
       valid_in => ci_valid_in,
-      data1_in => lve_data1,
-      data2_in => lve_data2,
+      data1_in => ci_data1,
+      data2_in => ci_data2,
 
       align1_in => std_logic_vector(srca_ptr(1 downto 0)),
       align2_in => std_logic_vector(srcb_ptr(1 downto 0)),
