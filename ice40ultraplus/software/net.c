@@ -13,7 +13,7 @@ layer_t cifar_golden[] = {
 	{.dense={DENSE, LINEAR, 1, 256, 10, GOLDEN_FLASH_DATA_OFFSET+565632, GOLDEN_FLASH_DATA_OFFSET+565952, 1, GOLDEN_FLASH_DATA_OFFSET+565992}},
 };
 
-#if 1 //n400
+#if 0 //n400
 layer_t cifar_reduced[] = {
 	{.conv={CONV, RELU, 0, 32, 32, 3, 32, 0, REDUCED_FLASH_DATA_OFFSET+0, 1, 1}},
 	{.conv={CONV, RELU, 0, 32, 32, 32, 32, 1, REDUCED_FLASH_DATA_OFFSET+448, 1, 1}},

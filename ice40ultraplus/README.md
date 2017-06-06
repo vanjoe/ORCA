@@ -1,3 +1,12 @@
+#Running newly quanitzed networks
+`cp qmin.bin min.bin`
+Use either  `qmin.bin` (230) opr `qreduced.bin` (400) 
+change flag in `software/net.c` to use larger reduced networks
+
+#Running 400 reduced network
+`cp reduced.bin min.bin`
+change flag in `software/net.c` to use larger reduced network
+
 #Up and running
 
 - run `make` for initial build and to generate `flash.bin`
@@ -16,10 +25,6 @@
 - currently need `pgm-flash` to program board as jumpers switched
 
 - see `./uart0.jpg` `./uart1.jpg` for UART (accessed via `picocom -b 1152000 /dev/ttyUSBX`)
-
-#Running smallest network
-`cp min.bin reduced.bin`
-change flag in `software/net.c` to use smaller reduced network
 
 #Building Flash.bin
 

@@ -139,11 +139,11 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 
 	for (c = 0; c < layer->channels; c++) {
 	    vbx_convolve_ci(v_maph, v_inb + c*(m+2)*(n+4), (vbx_half_t*)v_tmp, m, n, v_weights[c]);
-	    if ((c+1)%16 == 0) {
+	    if ((c+1)%13 == 0) {
 	      vbx_accumulate_columns(v_map, v_maph, v_tmp, m, n);
 	    }
 	}
-	if (layer->channels % 16) {
+	if (layer->channels % 13) {
 	    vbx_accumulate_columns(v_map, v_maph, v_tmp, m , n);
 	}
 
@@ -153,12 +153,15 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 
 	vbx_set_vl(m0*n0);
 	if (layer->scale) {
+	  if (layer->zeropad_output) {
 	    vbx(SVW, VMULH, v_map, scale, v_map);
+	  }
 	}
 
 	if (!layer->zeropad_output && layer->activation_type == RELU) {
 	    vbx_relu(v_map, v_tmp);
 	}
+
 	if (layer->zeropad_output) {
 	  vbx_zeropad_ci(v_outb+(k*(n0+4)*(m0+2)), v_tmp, v_map, m0, n0);
 	} else {
