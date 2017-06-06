@@ -20,7 +20,7 @@ use work.utils.all;
 
 entity bram_xilinx is
   generic (
-    RAM_DEPTH : integer := 1024,
+    RAM_DEPTH : integer := 1024;
     RAM_WIDTH : integer := 8
     );
   port
@@ -42,7 +42,7 @@ end bram_xilinx;
 
 architecture rtl of bram_xilinx is
 
-  type ram_type is array (RAM_DEPTH-1 downto 0) of std_logic_vector(7 downto 0);
+  type ram_type is array (RAM_DEPTH-1 downto 0) of std_logic_vector(RAM_WIDTH-1 downto 0);
   -- To infer a true DP RAM with Vivado Synthesis, must use separate processes
   -- for each port, and thus a shared variable.
   -- signal ram : ram_type;

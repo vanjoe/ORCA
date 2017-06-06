@@ -8,6 +8,7 @@ use work.utils.all;
 entity Orca is
   generic (
     REGISTER_SIZE   : integer              := 32;
+    BYTE_SIZE       : integer              := 8;
     --BUS Select
     AVALON_ENABLE   : integer range 0 to 1 := 0;
     WISHBONE_ENABLE : integer range 0 to 1 := 0;
@@ -377,7 +378,7 @@ begin  -- architecture rtl
     signal axi_reset : std_logic;
 
     signal instr_AWID    : std_logic_vector(3 downto 0);
-    signal instr_AWADDR  : std_logic_vector(ADDR_WIDTH-1 downto 0);
+    signal instr_AWADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal instr_AWLEN   : std_logic_vector(3 downto 0);
     signal instr_AWSIZE  : std_logic_vector(2 downto 0);
     signal instr_AWBURST : std_logic_vector(1 downto 0); 
@@ -389,8 +390,8 @@ begin  -- architecture rtl
     signal instr_AWREADY : std_logic;
 
     signal instr_WID     : std_logic_vector(3 downto 0);
-    signal instr_WDATA   : std_logic_vector(REGISTER_SIZE -1 downto 0);
-    signal instr_WSTRB   : std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+    signal instr_WDATA   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+    signal instr_WSTRB   : std_logic_vector(REGISTER_SIZE/BYTE_SIZE-1 downto 0);
     signal instr_WLAST   : std_logic;
     signal instr_WVALID  : std_logic;
     signal instr_WREADY  : std_logic;
@@ -401,7 +402,7 @@ begin  -- architecture rtl
     signal instr_BREADY  : std_logic;
 
     signal instr_ARID    : std_logic_vector(3 downto 0);
-    signal instr_ARADDR  : std_logic_vector(ADDR_WIDTH -1 downto 0);
+    signal instr_ARADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal instr_ARLEN   : std_logic_vector(3 downto 0);
     signal instr_ARSIZE  : std_logic_vector(2 downto 0);
     signal instr_ARBURST : std_logic_vector(1 downto 0);
@@ -410,9 +411,16 @@ begin  -- architecture rtl
     signal instr_ARPROT  : std_logic_vector(2 downto 0);
     signal instr_ARVALID : std_logic;
     signal instr_ARREADY : std_logic;
+    
+    signal instr_RID     : std_logic_vector(3 downto 0);
+    signal instr_RDATA   : std_logic_vector(REGISTER_SIZE -1 downto 0);
+    signal instr_RRESP   : std_logic_vector(1 downto 0);
+    signal instr_RLAST   : std_logic;
+    signal instr_RVALID  : std_logic;
+    signal instr_RREADY  : std_logic;
 
     signal cache_AWID    : std_logic_vector(3 downto 0);
-    signal cache_AWADDR  : std_logic_vector(ADDR_WIDTH-1 downto 0);
+    signal cache_AWADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal cache_AWLEN   : std_logic_vector(3 downto 0);
     signal cache_AWSIZE  : std_logic_vector(2 downto 0);
     signal cache_AWBURST : std_logic_vector(1 downto 0); 
@@ -425,7 +433,7 @@ begin  -- architecture rtl
 
     signal cache_WID     : std_logic_vector(3 downto 0);
     signal cache_WDATA   : std_logic_vector(REGISTER_SIZE -1 downto 0);
-    signal cache_WSTRB   : std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+    signal cache_WSTRB   : std_logic_vector(REGISTER_SIZE/BYTE_SIZE-1 downto 0);
     signal cache_WLAST   : std_logic;
     signal cache_WVALID  : std_logic;
     signal cache_WREADY  : std_logic;
@@ -436,7 +444,7 @@ begin  -- architecture rtl
     signal cache_BREADY  : std_logic;
 
     signal cache_ARID    : std_logic_vector(3 downto 0);
-    signal cache_ARADDR  : std_logic_vector(ADDR_WIDTH -1 downto 0);
+    signal cache_ARADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal cache_ARLEN   : std_logic_vector(3 downto 0);
     signal cache_ARSIZE  : std_logic_vector(2 downto 0);
     signal cache_ARBURST : std_logic_vector(1 downto 0);
@@ -453,13 +461,6 @@ begin  -- architecture rtl
     signal cache_RVALID  : std_logic;
     signal cache_RREADY  : std_logic;
 
-    signal cache_RID     : std_logic_vector(3 downto 0);
-    signal cache_RDATA   : std_logic_vector(REGISTER_SIZE -1 downto 0);
-    signal cache_RRESP   : std_logic_vector(1 downto 0);
-    signal cache_RLAST   : std_logic;
-    signal cache_RVALID  : std_logic;
-    signal cache_RREADY  : std_logic;
-
   begin
 --BUG: this logic disregards the write response data
 
@@ -468,7 +469,7 @@ begin  -- architecture rtl
     axi_data_master : axi_master
       generic map (
         REGISTER_SIZE => REGISTER_SIZE,
-        BYTE_SIZE     => 8
+        BYTE_SIZE     => BYTE_SIZE
       )
       port map (
         ACLK                    => clk,
@@ -562,153 +563,154 @@ begin  -- architecture rtl
     instr_WVALID  <= '0';
     instr_BREADY  <= '1';
 
-  cache_mux : cache_mux
+  instruction_cache_mux :  cache_mux
     generic map (
-      TCRAM_SIZE <= TCRAM_SIZE, 
-      ADDR_WIDTH <= ADDR_WIDTH,
-      ORCA_WIDTH <= REGISTER_SIZE
+      TCRAM_SIZE => TCRAM_SIZE, 
+      ADDR_WIDTH => REGISTER_SIZE,
+      REGISTER_SIZE => REGISTER_SIZE,
+      BYTE_SIZE => BYTE_SIZE
     )
     port map (
-      clk <= clk,
-      reset <= reset,
+      clk => clk,
+      reset => reset,
       
-      in_AWID       =>  instr_AWID      
-      in_AWADDR     =>  instr_AWADDR 
-      in_AWLEN      =>  instr_AWLEN  
-      in_AWSIZE     =>  instr_AWSIZE 
-      in_AWBURST    =>  instr_AWBURST
+      in_AWID       =>  instr_AWID,      
+      in_AWADDR     =>  instr_AWADDR, 
+      in_AWLEN      =>  instr_AWLEN,  
+      in_AWSIZE     =>  instr_AWSIZE, 
+      in_AWBURST    =>  instr_AWBURST,
                                   
-      in_AWLOCK     =>  instr_AWLOCK 
-      in_AWCACHE    =>  instr_AWCACHE
-      in_AWPROT     =>  instr_AWPROT 
-      in_AWVALID    =>  instr_AWVALID
-      in_AWREADY    =>  instr_AWREADY
+      in_AWLOCK     =>  instr_AWLOCK, 
+      in_AWCACHE    =>  instr_AWCACHE,
+      in_AWPROT     =>  instr_AWPROT, 
+      in_AWVALID    =>  instr_AWVALID,
+      in_AWREADY    =>  instr_AWREADY,
                                   
-      in_WID        =>  instr_WID    
-      in_WDATA      =>  instr_WDATA  
-      in_WSTRB      =>  instr_WSTRB  
-      in_WLAST      =>  instr_WLAST  
-      in_WVALID     =>  instr_WVALID 
-      in_WREADY     =>  instr_WREADY 
+      in_WID        =>  instr_WID,    
+      in_WDATA      =>  instr_WDATA,  
+      in_WSTRB      =>  instr_WSTRB,  
+      in_WLAST      =>  instr_WLAST,  
+      in_WVALID     =>  instr_WVALID, 
+      in_WREADY     =>  instr_WREADY, 
                                   
-      in_BID        =>  instr_BID    
-      in_BRESP      =>  instr_BRESP  
-      in_BVALID     =>  instr_BVALID 
-      in_BREADY     =>  instr_BREADY 
+      in_BID        =>  instr_BID,    
+      in_BRESP      =>  instr_BRESP,  
+      in_BVALID     =>  instr_BVALID, 
+      in_BREADY     =>  instr_BREADY, 
                                   
-      in_ARID       =>  instr_ARID   
-      in_ARADDR     =>  instr_ARADDR 
-      in_ARLEN      =>  instr_ARLEN  
-      in_ARSIZE     =>  instr_ARSIZE 
-      in_ARBURST    =>  instr_ARBURST
-      in_ARLOCK     =>  instr_ARLOCK 
-      in_ARCACHE    =>  instr_ARCACHE
-      in_ARPROT     =>  instr_ARPROT 
-      in_ARVALID    =>  instr_ARVALID
-      in_ARREADY    =>  instr_ARREADY
+      in_ARID       =>  instr_ARID,   
+      in_ARADDR     =>  instr_ARADDR,
+      in_ARLEN      =>  instr_ARLEN, 
+      in_ARSIZE     =>  instr_ARSIZE, 
+      in_ARBURST    =>  instr_ARBURST,
+      in_ARLOCK     =>  instr_ARLOCK, 
+      in_ARCACHE    =>  instr_ARCACHE,
+      in_ARPROT     =>  instr_ARPROT, 
+      in_ARVALID    =>  instr_ARVALID,
+      in_ARREADY    =>  instr_ARREADY,
                                   
-      in_RID        =>  instr_RID    
-      in_RDATA      =>  instr_RDATA  
-      in_RRESP      =>  instr_RRESP  
-      in_RLAST      =>  instr_RLAST  
-      in_RVALID     =>  instr_RVALID 
-      in_RREADY     =>  instr_RREADY 
+      in_RID        =>  instr_RID,    
+      in_RDATA      =>  instr_RDATA,  
+      in_RRESP      =>  instr_RRESP,  
+      in_RLAST      =>  instr_RLAST,  
+      in_RVALID     =>  instr_RVALID, 
+      in_RREADY     =>  instr_RREADY, 
       
-      cache_AWID    =>  cache_AWID   
-      cache_AWADDR  =>  cache_AWADDR 
-      cache_AWLEN   =>  cache_AWLEN  
-      cache_AWSIZE  =>  cache_AWSIZE 
-      cache_AWBURST =>  cache_AWBURST
+      cache_AWID    =>  cache_AWID,   
+      cache_AWADDR  =>  cache_AWADDR, 
+      cache_AWLEN   =>  cache_AWLEN,  
+      cache_AWSIZE  =>  cache_AWSIZE, 
+      cache_AWBURST =>  cache_AWBURST,
                                      
-      cache_AWLOCK  =>  cache_AWLOCK 
-      cache_AWCACHE =>  cache_AWCACHE
-      cache_AWPROT  =>  cache_AWPROT 
-      cache_AWVALID =>  cache_AWVALID
-      cache_AWREADY =>  cache_AWREADY
+      cache_AWLOCK  =>  cache_AWLOCK, 
+      cache_AWCACHE =>  cache_AWCACHE,
+      cache_AWPROT  =>  cache_AWPROT, 
+      cache_AWVALID =>  cache_AWVALID,
+      cache_AWREADY =>  cache_AWREADY,
                                      
-      cache_WID     =>  cache_WID    
-      cache_WDATA   =>  cache_WDATA  
-      cache_WSTRB   =>  cache_WSTRB  
-      cache_WLAST   =>  cache_WLAST  
-      cache_WVALID  =>  cache_WVALID 
-      cache_WREADY  =>  cache_WREADY 
+      cache_WID     =>  cache_WID,    
+      cache_WDATA   =>  cache_WDATA,  
+      cache_WSTRB   =>  cache_WSTRB,  
+      cache_WLAST   =>  cache_WLAST,  
+      cache_WVALID  =>  cache_WVALID, 
+      cache_WREADY  =>  cache_WREADY, 
                                      
-      cache_BID     =>  cache_BID    
-      cache_BRESP   =>  cache_BRESP  
-      cache_BVALID  =>  cache_BVALID 
-      cache_BREADY  =>  cache_BREADY 
+      cache_BID     =>  cache_BID,    
+      cache_BRESP   =>  cache_BRESP,  
+      cache_BVALID  =>  cache_BVALID, 
+      cache_BREADY  =>  cache_BREADY, 
                                      
-      cache_ARID    =>  cache_ARID   
-      cache_ARADDR  =>  cache_ARADDR 
-      cache_ARLEN   =>  cache_ARLEN  
-      cache_ARSIZE  =>  cache_ARSIZE 
-      cache_ARBURST =>  cache_ARBURST
-      cache_ARLOCK  =>  cache_ARLOCK 
-      cache_ARCACHE =>  cache_ARCACHE
-      cache_ARPROT  =>  cache_ARPROT 
-      cache_ARVALID =>  cache_ARVALID
-      cache_ARREADY =>  cache_ARREADY
+      cache_ARID    =>  cache_ARID,  
+      cache_ARADDR  =>  cache_ARADDR, 
+      cache_ARLEN   =>  cache_ARLEN,  
+      cache_ARSIZE  =>  cache_ARSIZE, 
+      cache_ARBURST =>  cache_ARBURST,
+      cache_ARLOCK  =>  cache_ARLOCK, 
+      cache_ARCACHE =>  cache_ARCACHE,
+      cache_ARPROT  =>  cache_ARPROT, 
+      cache_ARVALID =>  cache_ARVALID,
+      cache_ARREADY =>  cache_ARREADY,
                                      
-      cache_RID     =>  cache_RID    
-      cache_RDATA   =>  cache_RDATA  
-      cache_RRESP   =>  cache_RRESP  
-      cache_RLAST   =>  cache_RLAST  
-      cache_RVALID  =>  cache_RVALID 
-      cache_RREADY  =>  cache_RREADY 
+      cache_RID     =>  cache_RID,    
+      cache_RDATA   =>  cache_RDATA,  
+      cache_RRESP   =>  cache_RRESP,  
+      cache_RLAST   =>  cache_RLAST,  
+      cache_RVALID  =>  cache_RVALID, 
+      cache_RREADY  =>  cache_RREADY, 
 
-      tcram_AWID    =>  itcram_AWID    
-      tcram_AWADDR  =>  itcram_AWADDR  
-      tcram_AWLEN   =>  itcram_AWLEN   
-      tcram_AWSIZE  =>  itcram_AWSIZE  
-      tcram_AWBURST =>  itcram_AWBURST 
+      tcram_AWID    =>  itcram_AWID,    
+      tcram_AWADDR  =>  itcram_AWADDR,  
+      tcram_AWLEN   =>  itcram_AWLEN,   
+      tcram_AWSIZE  =>  itcram_AWSIZE,  
+      tcram_AWBURST =>  itcram_AWBURST, 
                                      
-      tcram_AWLOCK  =>  itcram_AWLOCK  
-      tcram_AWCACHE =>  itcram_AWCACHE 
-      tcram_AWPROT  =>  itcram_AWPROT  
-      tcram_AWVALID =>  itcram_AWVALID 
-      tcram_AWREADY =>  itcram_AWREADY 
+      tcram_AWLOCK  =>  itcram_AWLOCK,  
+      tcram_AWCACHE =>  itcram_AWCACHE, 
+      tcram_AWPROT  =>  itcram_AWPROT,  
+      tcram_AWVALID =>  itcram_AWVALID, 
+      tcram_AWREADY =>  itcram_AWREADY, 
                                      
-      tcram_WID     =>  itcram_WID     
-      tcram_WDATA   =>  itcram_WDATA   
-      tcram_WSTRB   =>  itcram_WSTRB   
-      tcram_WLAST   =>  itcram_WLAST   
-      tcram_WVALID  =>  itcram_WVALID  
-      tcram_WREADY  =>  itcram_WREADY  
+      tcram_WID     =>  itcram_WID,     
+      tcram_WDATA   =>  itcram_WDATA,   
+      tcram_WSTRB   =>  itcram_WSTRB,   
+      tcram_WLAST   =>  itcram_WLAST,   
+      tcram_WVALID  =>  itcram_WVALID,  
+      tcram_WREADY  =>  itcram_WREADY,  
                                      
-      tcram_BID     =>  itcram_BID     
-      tcram_BRESP   =>  itcram_BRESP   
-      tcram_BVALID  =>  itcram_BVALID  
-      tcram_BREADY  =>  itcram_BREADY  
+      tcram_BID     =>  itcram_BID,     
+      tcram_BRESP   =>  itcram_BRESP,   
+      tcram_BVALID  =>  itcram_BVALID,  
+      tcram_BREADY  =>  itcram_BREADY,  
                                      
-      tcram_ARID    =>  itcram_ARID    
-      tcram_ARADDR  =>  itcram_ARADDR  
-      tcram_ARLEN   =>  itcram_ARLEN   
-      tcram_ARSIZE  =>  itcram_ARSIZE  
-      tcram_ARBURST =>  itcram_ARBURST 
-      tcram_ARLOCK  =>  itcram_ARLOCK  
-      tcram_ARCACHE =>  itcram_ARCACHE 
-      tcram_ARPROT  =>  itcram_ARPROT  
-      tcram_ARVALID =>  itcram_ARVALID 
-      tcram_ARREADY =>  itcram_ARREADY 
+      tcram_ARID    =>  itcram_ARID,   
+      tcram_ARADDR  =>  itcram_ARADDR,  
+      tcram_ARLEN   =>  itcram_ARLEN,   
+      tcram_ARSIZE  =>  itcram_ARSIZE,  
+      tcram_ARBURST =>  itcram_ARBURST, 
+      tcram_ARLOCK  =>  itcram_ARLOCK,  
+      tcram_ARCACHE =>  itcram_ARCACHE, 
+      tcram_ARPROT  =>  itcram_ARPROT,  
+      tcram_ARVALID =>  itcram_ARVALID, 
+      tcram_ARREADY =>  itcram_ARREADY, 
                                      
-      tcram_RID     =>  itcram_RID     
-      tcram_RDATA   =>  itcram_RDATA   
-      tcram_RRESP   =>  itcram_RRESP   
-      tcram_RLAST   =>  itcram_RLAST   
-      tcram_RVALID  =>  itcram_RVALID  
+      tcram_RID     =>  itcram_RID,     
+      tcram_RDATA   =>  itcram_RDATA,   
+      tcram_RRESP   =>  itcram_RRESP,   
+      tcram_RLAST   =>  itcram_RLAST,   
+      tcram_RVALID  =>  itcram_RVALID,  
       tcram_RREADY  =>  itcram_RREADY  
     );
 
-    icache : icache
+    instruction_cache : icache
       generic map (
         CACHE_SIZE => CACHE_SIZE, -- Byte size of cache
         LINE_SIZE  => LINE_SIZE,    -- Bytes per cache line 
         ADDR_WIDTH => REGISTER_SIZE,
         ORCA_WIDTH => REGISTER_SIZE,
         DRAM_WIDTH => DRAM_WIDTH, 
-        BYTE_SIZE  => 8,
+        BYTE_SIZE  => BYTE_SIZE,
         BURST_EN   => BURST_EN 
-      );
+      )
       port map (
         clk          => clk, 
         reset        => reset, 
@@ -797,8 +799,6 @@ begin  -- architecture rtl
         dram_RVALID  => iram_RVALID,
         dram_RREADY  => iram_RREADY
       );
-    end entity icache;
-
 
   end generate axi_enabled;
 

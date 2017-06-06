@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <string>
 
-#define MAX_ADDRESS 0x7FFFF
+#define MAX_ADDRESS 0xFFFF
 #define BUFFER_SIZE (MAX_ADDRESS+1)
 
 using namespace std;

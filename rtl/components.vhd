@@ -11,6 +11,7 @@ package rv_components is
   component orca is
     generic (
     REGISTER_SIZE   : integer              := 32;
+    BYTE_SUZE       : integer              := 8;
     --BUS Select
     AVALON_ENABLE   : integer range 0 to 1 := 0;
     WISHBONE_ENABLE : integer range 0 to 1 := 0;
@@ -867,21 +868,21 @@ package rv_components is
 
   component bram_xilinx is
     generic (
-      RAM_DEPTH : integer := 1024,
+      RAM_DEPTH : integer := 1024;
       RAM_WIDTH : integer := 8
       );
     port (
         address_a  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
         address_b  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
         clock      : in  std_logic;
-        data_a     : in  std_logic_vector(7 downto 0);
-        data_b     : in  std_logic_vector(7 downto 0);
+        data_a     : in  std_logic_vector(RAM_WIDTH-1 downto 0);
+        data_b     : in  std_logic_vector(RAM_WIDTH-1 downto 0);
         wren_a     : in  std_logic;
         wren_b     : in  std_logic;
         en_a       : in  std_logic;
         en_b       : in  std_logic;
-        readdata_a : out std_logic_vector(7 downto 0);
-        readdata_b : out std_logic_vector(7 downto 0)
+        readdata_a : out std_logic_vector(RAM_WIDTH-1 downto 0);
+        readdata_b : out std_logic_vector(RAM_WIDTH-1 downto 0)
         );
   end component;
 
@@ -889,12 +890,11 @@ package rv_components is
     generic (
       CACHE_SIZE     : integer range 64 to 524288 := 32768; -- Byte size of cache
       LINE_SIZE      : integer range 16 to 64     := 64;    -- Bytes per cache line 
-      DATA_WIDTH     : integer                    := 32;
       ADDR_WIDTH     : integer                    := 32;
       ORCA_WIDTH     : integer                    := 32;
       DRAM_WIDTH     : integer                    := 32; 
       BYTE_SIZE      : integer                    := 8;
-      BURST_EN       : integer                    := 0;
+      BURST_EN       : integer                    := 0
     );
     port (
       clk     : in std_logic;
@@ -982,7 +982,7 @@ package rv_components is
       dram_RRESP    : in std_logic_vector(1 downto 0);
       dram_RLAST    : in std_logic;
       dram_RVALID   : in std_logic;
-      dram_RREADY   : out std_logic;
+      dram_RREADY   : out std_logic
     );
   end component icache;
 
@@ -1018,9 +1018,10 @@ package rv_components is
 
   component cache_mux is
     generic (
-      TCRAM_SIZE : integer range 64 to 524288 := 32768; -- Byte size of cache
-      ADDR_WIDTH : integer                    := 32;
-      ORCA_WIDTH : integer                    := 32
+      TCRAM_SIZE    : integer range 64 to 524288 := 32768; -- Byte size of cache
+      ADDR_WIDTH    : integer                    := 32;
+      REGISTER_SIZE : integer                    := 32;
+      BYTE_SIZE     : integer                    := 8
     );
     port ( 
       clk        : in std_logic;
@@ -1039,8 +1040,8 @@ package rv_components is
       in_AWREADY : out std_logic;
 
       in_WID     : in std_logic_vector(3 downto 0);
-      in_WDATA   : in std_logic_vector(ORCA_WIDTH -1 downto 0);
-      in_WSTRB   : in std_logic_vector(ORCA_WIDTH/BYTE_SIZE -1 downto 0);
+      in_WDATA   : in std_logic_vector(REGISTER_SIZE -1 downto 0);
+      in_WSTRB   : in std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
       in_WLAST   : in std_logic;
       in_WVALID  : in std_logic;
       in_WREADY  : out std_logic;
@@ -1062,7 +1063,7 @@ package rv_components is
       in_ARREADY : out std_logic;
 
       in_RID     : out std_logic_vector(3 downto 0);
-      in_RDATA   : out std_logic_vector(ORCA_WIDTH -1 downto 0);
+      in_RDATA   : out std_logic_vector(REGISTER_SIZE -1 downto 0);
       in_RRESP   : out std_logic_vector(1 downto 0);
       in_RLAST   : out std_logic;
       in_RVALID  : out std_logic;
@@ -1081,8 +1082,8 @@ package rv_components is
       cache_AWREADY  : in std_logic;
 
       cache_WID      : out std_logic_vector(3 downto 0);
-      cache_WDATA    : out std_logic_vector(ORCA_WIDTH -1 downto 0);
-      cache_WSTRB    : out std_logic_vector(ORCA_WIDTH/BYTE_SIZE -1 downto 0);
+      cache_WDATA    : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      cache_WSTRB    : out std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
       cache_WLAST    : out std_logic;
       cache_WVALID   : out std_logic;
       cache_WREADY   : in std_logic;
@@ -1104,11 +1105,11 @@ package rv_components is
       cache_ARREADY  : in std_logic;
 
       cache_RID      : in std_logic_vector(3 downto 0);
-      cache_RDATA    : in std_logic_vector(ORCA_WIDTH -1 downto 0);
+      cache_RDATA    : in std_logic_vector(REGISTER_SIZE -1 downto 0);
       cache_RRESP    : in std_logic_vector(1 downto 0);
       cache_RLAST    : in std_logic;
       cache_RVALID   : in std_logic;
-      cache_RREADY   : out std_logic
+      cache_RREADY   : out std_logic;
 
       tcram_AWID     : out std_logic_vector(3 downto 0);
       tcram_AWADDR   : out std_logic_vector(ADDR_WIDTH-1 downto 0);
@@ -1123,8 +1124,8 @@ package rv_components is
       tcram_AWREADY  : in std_logic;
 
       tcram_WID      : out std_logic_vector(3 downto 0);
-      tcram_WDATA    : out std_logic_vector(ORCA_WIDTH -1 downto 0);
-      tcram_WSTRB    : out std_logic_vector(ORCA_WIDTH/BYTE_SIZE -1 downto 0);
+      tcram_WDATA    : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      tcram_WSTRB    : out std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
       tcram_WLAST    : out std_logic;
       tcram_WVALID   : out std_logic;
       tcram_WREADY   : in std_logic;
@@ -1146,7 +1147,7 @@ package rv_components is
       tcram_ARREADY  : in std_logic;
 
       tcram_RID      : in std_logic_vector(3 downto 0);
-      tcram_RDATA    : in std_logic_vector(DRAM_WIDTH -1 downto 0);
+      tcram_RDATA    : in std_logic_vector(REGISTER_SIZE -1 downto 0);
       tcram_RRESP    : in std_logic_vector(1 downto 0);
       tcram_RLAST    : in std_logic;
       tcram_RVALID   : in std_logic;
