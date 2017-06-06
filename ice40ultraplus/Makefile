@@ -90,12 +90,12 @@ PGM_CMD=$(ICECUBE2)/../../programmer/3.8_x64/bin/lin64/pgrcmd -infile
 
 bits.bin : $(PROJ_BITFILE)
 	cp $^ $@
-$(FINAL_BITFILE): bits.bin golden.bin min.bin
+$(FINAL_BITFILE): bits.bin golden.bin qmin.bin
 	cp bits.bin $@
 	truncate --size $$(( 0x20000 )) $@
 	cat golden.bin >> $@
 	truncate --size $$(( 0xB0000 )) $@
-	cat min.bin >> $@
+	cat qmin.bin >> $@
 	echo -en "\x01\x06\x00" >> $@
 	xxd -c 1 $@  | awk '{print $$2}' > flash.mem
 	wc -c $@
