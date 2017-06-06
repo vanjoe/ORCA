@@ -78,12 +78,13 @@ begin
     signal we_depth       : std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
     type data_out_vector is array (natural range <>) of std_logic_vector(MEM_WIDTH-1 downto 0);
     signal data_out_depth : data_out_vector(MEM_DEPTH_RAMS-1 downto 0);
+    signal chip_sel_depth: std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
   begin
     spram_address <= std_logic_vector(resize(unsigned(addr_d1), SPRAM_ADDR_BITS));
 
     one_deep_gen : if MEM_DEPTH <= (2**SPRAM_ADDR_BITS) generate
       we_depth(0) <= wr_en_d1;
-
+      chip_sel_depth(0) <= chip_sel;
       data_register : process (clk) is
       begin  -- process data_register
         if rising_edge(clk) then
@@ -99,6 +100,8 @@ begin
 
       deep_ram_gen : for gdepth in MEM_DEPTH_RAMS-1 downto 0 generate
         we_depth(gdepth) <= wr_en_d1 when (depth_select_in = to_unsigned(gdepth, log2(MEM_DEPTH)-SPRAM_ADDR_BITS)) else
+                            '0';
+        chip_sel_depth(gdepth) <= chip_sel when (depth_select_in = to_unsigned(gdepth, log2(MEM_DEPTH)-SPRAM_ADDR_BITS)) else
                             '0';
       end generate deep_ram_gen;
 
@@ -121,9 +124,9 @@ begin
             DATAIN     => data_in_d1(((gram+1)*SPRAM_WIDTH)-1 downto gram*SPRAM_WIDTH),
             MASKWREN   => mask_wren(gram),
             WREN       => we_depth(gdepth),
-            CHIPSELECT => chip_sel,
+            CHIPSELECT => chip_sel_depth(gdepth),
             CLOCK      => clk,
-            STANDBY    => '0',
+            STANDBY    => not chip_sel_depth(gdepth),
             SLEEP      => '0',
             POWEROFF   => '1',
             DATAOUT    => data_out_depth(gdepth)(((gram+1)*SPRAM_WIDTH)-1 downto gram*SPRAM_WIDTH)
@@ -164,25 +167,25 @@ entity ram_4port is
     scalar_enable : in  std_logic;
     data_out0     : out std_logic_vector(MEM_WIDTH-1 downto 0);
                                         --read source B
-    raddr1      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-    ren1        : in  std_logic;
-    enum_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-    enum_enable : in  std_logic;
-    data_out1   : out std_logic_vector(MEM_WIDTH-1 downto 0);
-    ack01       : out std_logic;
+    raddr1        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+    ren1          : in  std_logic;
+    enum_value    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+    enum_enable   : in  std_logic;
+    data_out1     : out std_logic_vector(MEM_WIDTH-1 downto 0);
+    ack01         : out std_logic;
                                         --write dest
-    waddr2      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-    byte_en2    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-    wen2        : in  std_logic;
-    data_in2    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+    waddr2        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+    byte_en2      : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
+    wen2          : in  std_logic;
+    data_in2      : in  std_logic_vector(MEM_WIDTH-1 downto 0);
                                         --external slave port
-    rwaddr3     : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-    wen3        : in  std_logic;
-    ren3        : in  std_logic;        --cannot be asserted same cycle as wen3
-    byte_en3    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-    data_in3    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-    ack3        : out std_logic;
-    data_out3   : out std_logic_vector(MEM_WIDTH-1 downto 0)
+    rwaddr3       : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+    wen3          : in  std_logic;
+    ren3          : in  std_logic;      --cannot be asserted same cycle as wen3
+    byte_en3      : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
+    data_in3      : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+    ack3          : out std_logic;
+    data_out3     : out std_logic_vector(MEM_WIDTH-1 downto 0)
     );
 end entity;
 
@@ -243,6 +246,8 @@ architecture rtl of ram_4port is
   signal ren3_d1     : std_logic;
   signal byte_en3_d1 : std_logic_vector(MEM_WIDTH/8-1 downto 0);
   signal wen3_d1     : std_logic;
+  signal ren0_d1     : std_logic;
+  signal ren1_d1     : std_logic;
   signal data_in3_d1 : std_logic_vector(MEM_WIDTH-1 downto 0);
 begin  -- architecture rtl
   last_port_sel <= SLAVE_ACCESS when (ren3_d1 or wen3_d1) = '1' else LVE_ACCESS;
@@ -284,6 +289,8 @@ begin  -- architecture rtl
       byte_en3_d1 <= byte_en3;
       wen3_d1     <= wen3;
       data_in3_d1 <= data_in3;
+      ren0_d1     <= ren0;
+      ren1_d1     <= ren1;
     end if;
   end process;
   toggles <= toggle & delay_toggle & delay2_toggle;
@@ -297,6 +304,10 @@ begin  -- architecture rtl
                     rwaddr3_d1 when last_port_sel = SLAVE_ACCESS else
                     raddr0_d1  when last_cycle_count = READ0_CYC else
                     raddr1_d1;
+  actual_chip_sel <= wen2_d1 when last_cycle_count = WRITE_CYC else
+                     ren3_d1 or wen3_d1 when last_port_sel = SLAVE_ACCESS else
+                     ren0_d1            when last_cycle_count = READ0_CYC else
+                     ren1_d1;
 
   actual_data_in_d1 <= data_in2_d1 when last_cycle_count = WRITE_CYC else
                        data_in3_d1;
@@ -352,7 +363,7 @@ begin  -- architecture rtl
       clk        => scratchpad_clk,
       byte_en_d1 => actual_byte_en_d1,
       wr_en_d1   => actual_wr_en_d1,
-      chip_sel   => '1',
+      chip_sel   => actual_chip_sel,
       addr_d1    => actual_addr_d1,
       data_in_d1 => actual_data_in_d1,
       data_out   => actual_data_out);
