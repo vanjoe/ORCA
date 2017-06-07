@@ -79,6 +79,7 @@ begin
     type data_out_vector is array (natural range <>) of std_logic_vector(MEM_WIDTH-1 downto 0);
     signal data_out_depth : data_out_vector(MEM_DEPTH_RAMS-1 downto 0);
     signal chip_sel_depth: std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
+    signal standby_depth: std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
   begin
     spram_address <= std_logic_vector(resize(unsigned(addr_d1), SPRAM_ADDR_BITS));
 
@@ -104,7 +105,7 @@ begin
         chip_sel_depth(gdepth) <= chip_sel when (depth_select_in = to_unsigned(gdepth, log2(MEM_DEPTH)-SPRAM_ADDR_BITS)) else
                             '0';
       end generate deep_ram_gen;
-
+      standby_depth <= not chip_sel_depth;
       data_register : process (clk) is
       begin  -- process data_register
         if rising_edge(clk) then
@@ -118,6 +119,7 @@ begin
       mask_wren(gram) <= byte_en_d1((gram*2)+1) & byte_en_d1((gram*2)+1) & byte_en_d1((gram*2)+0) & byte_en_d1((gram*2)+0);
 
       deep_ram_gen : for gdepth in MEM_DEPTH_RAMS-1 downto 0 generate
+
         SPRAM : component SB_SPRAM256KA
           port map (
             ADDRESS    => spram_address,
@@ -126,7 +128,7 @@ begin
             WREN       => we_depth(gdepth),
             CHIPSELECT => chip_sel_depth(gdepth),
             CLOCK      => clk,
-            STANDBY    => not chip_sel_depth(gdepth),
+            STANDBY    => standby_depth(gdepth),
             SLEEP      => '0',
             POWEROFF   => '1',
             DATAOUT    => data_out_depth(gdepth)(((gram+1)*SPRAM_WIDTH)-1 downto gram*SPRAM_WIDTH)

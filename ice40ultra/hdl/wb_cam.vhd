@@ -23,14 +23,14 @@ entity wb_cam is
     master_STALL_I : in  std_logic;
 
     --pio control signals
-    cam_start : in  std_logic;
-    cam_done  : out std_logic;
+    cam_start  : in  std_logic;
+    cam_done   : out std_logic;
     cam_dat_en : out std_logic;
     --camera signals
-    ovm_pclk  : in std_logic;
-    ovm_vsync : in std_logic;
-    ovm_href  : in std_logic;
-    ovm_dat   : in std_logic_vector(7 downto 0)
+    ovm_pclk   : in  std_logic;
+    ovm_vsync  : in  std_logic;
+    ovm_href   : in  std_logic;
+    ovm_dat    : in  std_logic_vector(7 downto 0)
     );
 end entity wb_cam;
 
@@ -142,7 +142,7 @@ begin  -- architecture rtl
     end if;
   end process;
 
-  cam_start_process : process(ovm_pclk)
+  process(ovm_pclk)
   begin
     if rising_edge(ovm_pclk) then
       if cam_start_ff = '1' then
@@ -266,8 +266,8 @@ begin  -- architecture rtl
   -- outputs: extra_href, v_load_row, ovm_row_count
 
   ovm_row_vector <= std_logic_vector(to_unsigned(ovm_row_count, 9));
-  v_tile_idx     <= ovm_row_vector(8-LOG2(IN_SENSOR_SCALE) downto 4-LOG2(IN_SENSOR_SCALE));    -- MSB 5 bits (0..31)
-  v_tile_sidx    <= ovm_row_vector(3-LOG2(IN_SENSOR_SCALE) downto 0);    -- LSB 4 bits (0..15)
+  v_tile_idx     <= ovm_row_vector(8-LOG2(IN_SENSOR_SCALE) downto 4-LOG2(IN_SENSOR_SCALE));  -- MSB 5 bits (0..31)
+  v_tile_sidx    <= ovm_row_vector(3-LOG2(IN_SENSOR_SCALE) downto 0);  -- LSB 4 bits (0..15)
   v_tile_start   <= '1' when unsigned(v_tile_sidx) = 0  -- this can be slow logic
                   else '0';
 
@@ -382,14 +382,14 @@ begin  -- architecture rtl
       --v_rgb_out_valid <= v_load_pixel AND (NOT ff0_pclk);
 
       if v_load_pixel = '1' then
-        v_rgb_out_row           <= v_rowbuf_row;           -- 5 bits (0..31)
-        v_rgb_out_col           <= v_address;              -- 6 bits (0..63)
+        v_rgb_out_row           <= v_rowbuf_row;  -- 5 bits (0..31)
+        v_rgb_out_col           <= v_address;     -- 6 bits (0..63)
 -- RGBA8888, using 16x16 averages
 -- NOTE: Be sure the software has appropriate settings
         v_rgb_out(31 downto 24) <= (others => '0');
         v_rgb_out(23 downto 16) <= v_rdata(29-LOG2(IN_SENSOR_SCALE) downto 22-LOG2(IN_SENSOR_SCALE));  -- extract red 8 MSB
         v_rgb_out(15 downto 8)  <= v_rdata(19-LOG2(IN_SENSOR_SCALE) downto 12-LOG2(IN_SENSOR_SCALE));  -- extract grn 8 MSB
-        v_rgb_out(7 downto 0)   <= v_rdata(9 -LOG2(IN_SENSOR_SCALE) downto 2 -LOG2(IN_SENSOR_SCALE));    -- extract blu 8 MSB
+        v_rgb_out(7 downto 0)   <= v_rdata(9 -LOG2(IN_SENSOR_SCALE) downto 2 -LOG2(IN_SENSOR_SCALE));  -- extract blu 8 MSB
 -- RGB565, using 16:1 subsampling
 -- NOTE: Be sure the software has appropriate settings
       --v_rgb_out <= v_rgb_ff;
