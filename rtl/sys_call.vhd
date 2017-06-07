@@ -54,6 +54,7 @@ entity system_calls is
     reset       : in std_logic;
     valid       : in std_logic;
     stall_in    : in std_logic;
+    stall_out   : out std_logic;
     rs1_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
@@ -172,17 +173,17 @@ begin  -- architecture rtl
 
   with csr_select select
     csr_read_val <=
-    mstatus         when CSR_MSTATUS,
-    mepc            when CSR_MEPC,
-    mcause          when CSR_MCAUSE,
-    mbadaddr        when CSR_MBADADDR,
-    mip             when CSR_MIP,
-    meimask         when CSR_MEIMASK,
-    meipend         when CSR_MEIPEND,
-    mtime           when CSR_MTIME,
-    mtimeh          when CSR_MTIMEH,
-    mtime           when CSR_UTIME,
-    mtimeh          when CSR_UTIMEH,
+    mstatus  when CSR_MSTATUS,
+    mepc     when CSR_MEPC,
+    mcause   when CSR_MCAUSE,
+    mbadaddr when CSR_MBADADDR,
+    mip      when CSR_MIP,
+    meimask  when CSR_MEIMASK,
+    meipend  when CSR_MEIPEND,
+    mtime    when CSR_MTIME,
+    mtimeh   when CSR_MTIMEH,
+    mtime    when CSR_UTIME,
+    mtimeh   when CSR_UTIMEH,
 
     (others => '0') when others;
 
@@ -195,6 +196,10 @@ begin  -- architecture rtl
     csr_read_val and not bit_sel when CSRRC_FUNC3,
     csr_read_val                 when others;  --no write
 
+  stall_out <= '1' when (instruction(MAJOR_OP'range) = SYSTEM_OP and
+                         csr_select = CSR_SLEEP and
+                         valid ='1' and
+                         csr_write_val /= mtime ) else '0';
 
   process(clk)
   begin
@@ -215,7 +220,7 @@ begin  -- architecture rtl
           mcause                    <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, mcause'length));
           mepc                      <= current_pc;
           was_illegal               <= '1';
-        elsif instruction(MAJOR_OP'range) = SYSTEM_OP  and stall_in = '0' then
+        elsif instruction(MAJOR_OP'range) = SYSTEM_OP and stall_in = '0' then
           if func3 /= "000" then
             ---------------------------------------------------------------------
             -- CSR READ/WRITE
@@ -245,6 +250,7 @@ begin  -- architecture rtl
                 --  meipend <= csr_write_val;
                 when others => null;
               end case;
+
             end if;
           elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
             ---------------------------------------------------------------------

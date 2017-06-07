@@ -86,7 +86,8 @@ architecture behavioural of execute is
   signal predict_corr    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal predict_corr_en : std_logic;
 
-  signal stall_to_syscall : std_logic;
+  signal stall_to_syscall   : std_logic;
+  signal stall_from_syscall : std_logic;
 
   signal ls_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal ls_byte_en    : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
@@ -171,7 +172,7 @@ architecture behavioural of execute is
   signal use_after_produce_stall_mask : std_logic;
 
   signal stalled_component : std_logic;
-  signal simd_op_size  : std_logic_vector(1 downto 0);
+  signal simd_op_size      : std_logic_vector(1 downto 0);
 
 begin
   valid_instr <= valid_input and not use_after_produce_stall;
@@ -215,7 +216,7 @@ begin
         assert (bool_to_int(sys_data_enable) +
                 bool_to_int(ld_data_enable) +
                 bool_to_int(br_data_enable) +
-                bool_to_int(alu_data_out_valid)) <=1  and reset = '0' report "Multiple Data Enables Asserted" severity failure;
+                bool_to_int(alu_data_out_valid)) <= 1 and reset = '0' report "Multiple Data Enables Asserted" severity failure;
       end if;
     end if;
   end process;
@@ -241,7 +242,7 @@ begin
 
   --use_after_produce_stall <= wb_enable and valid_input and use_after_produce_stall_mask;
 
-  stalled_component  <= ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve;
+  stalled_component  <= ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve or stall_from_syscall;
   stall_to_lve       <= (ls_unit_waiting or use_after_produce_stall);
   stall_to_alu       <= (ls_unit_waiting or use_after_produce_stall);
   stall_from_execute <= stalled_component and valid_input;
@@ -266,9 +267,9 @@ begin
       valid_input_latched <= valid_input and not stall_from_execute;
       --calculate where the next forward data will go
       current_alu         := opcode = LUI_OP or
-                             opcode = AUIPC_OP or
-                             opcode = ALU_OP or
-                             opcode = ALUI_OP;
+                     opcode = AUIPC_OP or
+                     opcode = ALU_OP or
+                     opcode = ALUI_OP;
 
       rs1_mux_var := NO_FWD;
       rs2_mux_var := NO_FWD;
@@ -416,7 +417,8 @@ begin
       reset => reset,
       valid => valid_instr,
 
-      stall_in => stall_to_syscall,
+      stall_in  => stall_to_syscall,
+      stall_out => stall_from_syscall,
 
       rs1_data    => rs1_data_fwd,
       instruction => instruction,
@@ -463,7 +465,7 @@ begin
         stall_from_lve       => stall_from_lve,
         lve_alu_data1        => lve_alu_data1,
         lve_alu_data2        => lve_alu_data2,
-        lve_alu_op_size => simd_op_size,
+        lve_alu_op_size      => simd_op_size,
         lve_alu_source_valid => lve_alu_source_valid,
         lve_alu_result       => alu_data_out,
         lve_alu_result_valid => alu_data_out_valid
@@ -472,8 +474,8 @@ begin
   end generate enable_lve;
 
   n_enable_lve : if not LVE_ENABLE generate
-    stall_from_lve <= '0';
-    simd_op_size <= LVE_WORD_SIZE;
+    stall_from_lve       <= '0';
+    simd_op_size         <= LVE_WORD_SIZE;
     lve_alu_source_valid <= '0';
     lve_alu_data1        <= (others => '-');
     lve_alu_data2        <= (others => '-');

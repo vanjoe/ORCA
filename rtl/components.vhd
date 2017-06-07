@@ -473,15 +473,15 @@ package rv_components is
       COUNTER_LENGTH    : natural;
       ENABLE_EXCEPTIONS : boolean);
     port (
-      clk         : in std_logic;
-      reset       : in std_logic;
-      valid       : in std_logic;
-      stall_in    : in std_logic;
-      rs1_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-
-      wb_data   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      wb_enable : out std_logic;
+      clk         : in  std_logic;
+      reset       : in  std_logic;
+      valid       : in  std_logic;
+      stall_in    : in  std_logic;
+      rs1_data    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      stall_out   : out std_logic;
+      wb_data     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      wb_enable   : out std_logic;
 
       current_pc    : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       pc_correction : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
