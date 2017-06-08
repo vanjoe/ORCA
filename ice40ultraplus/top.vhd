@@ -513,6 +513,7 @@ begin
         WISHBONE_ENABLE      => 1,
         MULTIPLY_ENABLE      => 1,
         DIVIDE_ENABLE        => 0,
+        POWER_OPTIMIZED      => 1,
         SHIFTER_MAX_CYCLES   => 32,
         COUNTER_LENGTH       => 32,
         PIPELINE_STAGES      => 4,

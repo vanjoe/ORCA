@@ -14,6 +14,7 @@ entity orca_core is
     MULTIPLY_ENABLE    : natural range 0 to 1;
     DIVIDE_ENABLE      : natural range 0 to 1;
     SHIFTER_MAX_CYCLES : natural;
+    POWER_OPTIMIZED    : natural range 0 to 1 := 0;
     COUNTER_LENGTH     : natural;
     ENABLE_EXCEPTIONS  : natural;
     BRANCH_PREDICTORS  : natural;
@@ -114,7 +115,7 @@ architecture rtl of orca_core is
   signal decode_flushed : std_logic;
   signal ifetch_next_pc : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal e_sp_addr : std_logic_vector(CONDITIONAL(LVE_ENABLE = 1, sp_address'length,0)-1 downto 0);
+  signal e_sp_addr : std_logic_vector(CONDITIONAL(LVE_ENABLE = 1, sp_address'length, 0)-1 downto 0);
 begin  -- architecture rtl
   pipeline_flush <= branch_get_flush(branch_pred_to_instr_fetch);
 
@@ -177,7 +178,7 @@ begin  -- architecture rtl
       valid_output   => d_valid_out,
       decode_flushed => decode_flushed);
 
-  e_valid <= d_valid_out and not pipeline_flush;
+  e_valid   <= d_valid_out and not pipeline_flush;
   e_sp_addr <= sp_address(e_sp_addr'range);
   X : execute
     generic map (
@@ -186,6 +187,7 @@ begin  -- architecture rtl
       RESET_VECTOR        => RESET_VECTOR,
       MULTIPLY_ENABLE     => MULTIPLY_ENABLE = 1,
       DIVIDE_ENABLE       => DIVIDE_ENABLE = 1,
+      POWER_OPTIMIZED     => POWER_OPTIMIZED = 1,
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
       COUNTER_LENGTH      => COUNTER_LENGTH,
       ENABLE_EXCEPTIONS   => ENABLE_EXCEPTIONS = 1,

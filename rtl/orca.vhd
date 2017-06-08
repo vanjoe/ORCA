@@ -21,6 +21,7 @@ entity Orca is
     ENABLE_EXCEPTIONS     : natural               := 1;
     BRANCH_PREDICTORS     : natural               := 0;
     PIPELINE_STAGES       : natural range 4 to 5  := 5;
+    POWER_OPTIMIZED       : natural range 0 to 1  := 0;
     LVE_ENABLE            : natural range 0 to 1  := 0;
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1  := 0;
     NUM_EXT_INTERRUPTS    : integer range 1 to 32 := 1;
@@ -357,7 +358,7 @@ begin  -- architecture rtl
 --    signal core_data_raddress_l    : std_logic_vector(REGISTER_SIZE-1 downto 0)     := (others => '0');
 --    signal core_data_read_l        : std_logic                                      := '0';
 --    signal read_pending            : std_logic                                      := '0';
---    
+--
 --    type state_w_t is (IDLE, WAITING_BOTH, WAITING_WREADY, WAITING_AWREADY);
 --    signal state_w : state_w_t := IDLE;
 --
@@ -373,62 +374,62 @@ begin  -- architecture rtl
       generic map (
         REGISTER_SIZE => REGISTER_SIZE,
         BYTE_SIZE     => 8
-      )
+        )
 
       port map (
-        ACLK                    => clk,
-        ARESETN                 => axi_reset,
-        core_data_address       => core_data_address, 
-        core_data_byteenable    => core_data_byteenable,  
-        core_data_read          => core_data_read,         
-        core_data_readdata      => core_data_readdata,    
-        core_data_write         => core_data_write,        
-        core_data_writedata     => core_data_writedata,    
-        core_data_ack           => core_data_ack,
+        ACLK                 => clk,
+        ARESETN              => axi_reset,
+        core_data_address    => core_data_address,
+        core_data_byteenable => core_data_byteenable,
+        core_data_read       => core_data_read,
+        core_data_readdata   => core_data_readdata,
+        core_data_write      => core_data_write,
+        core_data_writedata  => core_data_writedata,
+        core_data_ack        => core_data_ack,
 
-        AWID                    => data_AWID, 
-        AWADDR                  => data_AWADDR, 
-        AWLEN                   => data_AWLEN,
-        AWSIZE                  => data_AWSIZE,
-        AWBURST                 => data_AWBURST,
-        AWLOCK                  => data_AWLOCK, 
-        AWVALID                 => data_AWVALID,
-        AWREADY                 => data_AWREADY,
+        AWID    => data_AWID,
+        AWADDR  => data_AWADDR,
+        AWLEN   => data_AWLEN,
+        AWSIZE  => data_AWSIZE,
+        AWBURST => data_AWBURST,
+        AWLOCK  => data_AWLOCK,
+        AWVALID => data_AWVALID,
+        AWREADY => data_AWREADY,
 
-        WID                     => data_WID,
-        WSTRB                   => data_WSTRB,
-        WLAST                   => data_WLAST,
-        WVALID                  => data_WVALID,
-        WDATA                   => data_WDATA,
-        WREADY                  => data_WREADY,
-        
-        BID                     => data_BID,
-        BRESP                   => data_BRESP,
-        BVALID                  => data_BVALID,
-        BREADY                  => data_BREADY,
+        WID    => data_WID,
+        WSTRB  => data_WSTRB,
+        WLAST  => data_WLAST,
+        WVALID => data_WVALID,
+        WDATA  => data_WDATA,
+        WREADY => data_WREADY,
 
-        ARID                    => data_ARID, 
-        ARADDR                  => data_ARADDR,
-        ARLEN                   => data_ARLEN, 
-        ARSIZE                  => data_ARSIZE,
-        ARLOCK                  => data_ARLOCK,
-        ARBURST                 => data_ARBURST,
-        ARVALID                 => data_ARVALID,
-        ARREADY                 => data_ARREADY,
+        BID    => data_BID,
+        BRESP  => data_BRESP,
+        BVALID => data_BVALID,
+        BREADY => data_BREADY,
 
-        RID                     => data_RID, 
-        RDATA                   => data_RDATA, 
-        RRESP                   => data_RRESP,
-        RLAST                   => data_RLAST, 
-        RVALID                  => data_RVALID,
-        RREADY                  => data_RREADY,
+        ARID    => data_ARID,
+        ARADDR  => data_ARADDR,
+        ARLEN   => data_ARLEN,
+        ARSIZE  => data_ARSIZE,
+        ARLOCK  => data_ARLOCK,
+        ARBURST => data_ARBURST,
+        ARVALID => data_ARVALID,
+        ARREADY => data_ARREADY,
 
-        NEXT_DATA_IN            => OPEN, 
-        DATA_BURST_NUM          => OPEN 
-       
-      );
+        RID    => data_RID,
+        RDATA  => data_RDATA,
+        RRESP  => data_RRESP,
+        RLAST  => data_RLAST,
+        RVALID => data_RVALID,
+        RREADY => data_RREADY,
 
-    
+        NEXT_DATA_IN   => open,
+        DATA_BURST_NUM => open
+
+        );
+
+
     -- Instruction read port
     instr_ARID                     <= (others => '0');
     instr_ARADDR                   <= core_instruction_address;
@@ -475,6 +476,7 @@ begin  -- architecture rtl
       MULTIPLY_ENABLE    => MULTIPLY_ENABLE,
       DIVIDE_ENABLE      => DIVIDE_ENABLE,
       SHIFTER_MAX_CYCLES => SHIFTER_MAX_CYCLES,
+      POWER_OPTIMIZED    => POWER_OPTIMIZED,
       COUNTER_LENGTH     => COUNTER_LENGTH,
       ENABLE_EXCEPTIONS  => ENABLE_EXCEPTIONS,
       BRANCH_PREDICTORS  => BRANCH_PREDICTORS,

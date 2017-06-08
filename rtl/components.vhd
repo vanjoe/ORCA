@@ -20,6 +20,7 @@ package rv_components is
       MULTIPLY_ENABLE       : natural range 0 to 1  := 0;
       DIVIDE_ENABLE         : natural range 0 to 1  := 0;
       SHIFTER_MAX_CYCLES    : natural               := 1;
+      POWER_OPTIMIZED       : natural range 0 to 1  := 0;
       COUNTER_LENGTH        : natural               := 0;
       ENABLE_EXCEPTIONS     : natural               := 1;
       BRANCH_PREDICTORS     : natural               := 0;
@@ -201,6 +202,7 @@ package rv_components is
       MULTIPLY_ENABLE    : natural range 0 to 1;
       DIVIDE_ENABLE      : natural range 0 to 1;
       SHIFTER_MAX_CYCLES : natural;
+      POWER_OPTIMIZED    : natural range 0 to 1 := 0;
       COUNTER_LENGTH     : natural;
       ENABLE_EXCEPTIONS  : natural;
       BRANCH_PREDICTORS  : natural;
@@ -286,6 +288,7 @@ package rv_components is
       MULTIPLY_ENABLE     : boolean;
       DIVIDE_ENABLE       : boolean;
       SHIFTER_MAX_CYCLES  : natural;
+      POWER_OPTIMIZED     : boolean;
       COUNTER_LENGTH      : natural;
       ENABLE_EXCEPTIONS   : boolean;
       SCRATCHPAD_SIZE     : integer;
@@ -373,6 +376,7 @@ package rv_components is
       MULTIPLY_ENABLE     : boolean;
       DIVIDE_ENABLE       : boolean;
       SHIFTER_MAX_CYCLES  : natural;
+      POWER_OPTIMIZED     : boolean;
       FAMILY              : string);
     port (
       clk                : in std_logic;
@@ -528,6 +532,7 @@ package rv_components is
       REGISTER_SIZE    : natural;
       SLAVE_DATA_WIDTH : natural;
       SCRATCHPAD_SIZE  : integer;
+      POWER_OPTIMIZED  : boolean;
       FAMILY           : string);
     port(
       clk            : in std_logic;
@@ -754,9 +759,10 @@ package rv_components is
 
   component ram_4port is
     generic(
-      MEM_DEPTH : natural;
-      MEM_WIDTH : natural;
-      FAMILY    : string := "ALTERA");
+      MEM_DEPTH       : natural;
+      MEM_WIDTH       : natural;
+      POWER_OPTIMIZED : boolean;
+      FAMILY          : string := "ALTERA");
     port(
       clk            : in std_logic;
       scratchpad_clk : in std_logic;

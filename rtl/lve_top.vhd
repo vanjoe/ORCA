@@ -13,6 +13,7 @@ entity lve_top is
   generic(
     REGISTER_SIZE    : natural;
     SLAVE_DATA_WIDTH : natural := 32;
+    POWER_OPTIMIZED  : boolean;
     SCRATCHPAD_SIZE  : integer := 1024;
     FAMILY           : string  := "ALTERA");
   port(
@@ -77,8 +78,8 @@ architecture rtl of lve_top is
   signal cmv_result       : std_logic_vector(lve_alu_result'range);
   signal lve_data1        : std_logic_vector(lve_alu_data1'range);
   signal lve_data2        : std_logic_vector(lve_alu_data2'range);
-  signal ci_data1        : std_logic_vector(lve_alu_data1'range);
-  signal ci_data2        : std_logic_vector(lve_alu_data2'range);
+  signal ci_data1         : std_logic_vector(lve_alu_data1'range);
+  signal ci_data2         : std_logic_vector(lve_alu_data2'range);
 
   signal cmv_write_en : std_logic;
 
@@ -353,8 +354,8 @@ begin
                            func3 /= LVE_VCMV_NZ_FUNC3) else
                  '0';
 
-  ci_data1 <= srca_data_read when ci_valid_in = '1' else (others => '0');
-  ci_data2 <= srcb_data_read when ci_valid_in = '1' else (others => '0');
+  ci_data1 <= (others => '0') when ci_valid_in = '0' and POWER_OPTIMIZED else srca_data_read;
+  ci_data2 <= (others => '0') when ci_valid_in = '0' and POWER_OPTIMIZED else srcb_data_read;
   the_lve_ci : lve_ci
     generic map (
       REGISTER_SIZE => REGISTER_SIZE
@@ -387,9 +388,10 @@ begin
 
   scratchpad_memory : ram_4port
     generic map (
-      MEM_WIDTH => 32,
-      MEM_DEPTH => SCRATCHPAD_SIZE/4,
-      FAMILY    => FAMILY)
+      MEM_WIDTH       => 32,
+      MEM_DEPTH       => SCRATCHPAD_SIZE/4,
+      POWER_OPTIMIZED => POWER_OPTIMIZED,
+      FAMILY          => FAMILY)
     port map (
       clk            => clk,
       scratchpad_clk => scratchpad_clk,

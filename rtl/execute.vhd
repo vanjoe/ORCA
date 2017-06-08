@@ -16,6 +16,7 @@ entity execute is
     REGISTER_SIZE       : positive;
     SIGN_EXTENSION_SIZE : positive;
     RESET_VECTOR        : integer;
+    POWER_OPTIMIZED     : boolean;
     MULTIPLY_ENABLE     : boolean;
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
@@ -330,6 +331,7 @@ begin
       REGISTER_SIZE       => REGISTER_SIZE,
       SIMD_ENABLE         => false,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
+      POWER_OPTIMIZED     => POWER_OPTIMIZED,
       MULTIPLY_ENABLE     => MULTIPLY_ENABLE,
       DIVIDE_ENABLE       => DIVIDE_ENABLE,
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
@@ -443,6 +445,7 @@ begin
       generic map (
         REGISTER_SIZE    => REGISTER_SIZE,
         SCRATCHPAD_SIZE  => SCRATCHPAD_SIZE,
+        POWER_OPTIMIZED  => POWER_OPTIMIZED,
         SLAVE_DATA_WIDTH => REGISTER_SIZE,
         FAMILY           => FAMILY)
       port map (

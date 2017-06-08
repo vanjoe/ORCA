@@ -13,6 +13,7 @@ entity arithmetic_unit is
     SIMD_ENABLE         : boolean;
     SIGN_EXTENSION_SIZE : integer;
     MULTIPLY_ENABLE     : boolean;
+    POWER_OPTIMIZED     : boolean;
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
     FAMILY              : string := "ALTERA");
@@ -166,11 +167,11 @@ begin  -- architecture rtl
 
   immediate_value <= unsigned(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0)&
                               instruction(31 downto 20));
-  data1 <= (others => '0') when source_valid = '0' else unsigned(rs1_data);
-  data2 <= (others => '0') when source_valid = '0' else unsigned(rs2_data) when not_immediate = '1' else immediate_value;
+  data1 <= (others => '0') when source_valid = '0' and POWER_OPTIMIZED else
+           unsigned(rs1_data);
+  data2 <= (others => '0') when source_valid = '0' and POWER_OPTIMIZED else
+           unsigned(rs2_data) when not_immediate = '1' else immediate_value;
 
-  --data1 <=  unsigned(rs1_data);
-  --data2 <=  unsigned(rs2_data) when not_immediate = '1' else immediate_value;
 
 
   shift_amt <= data2(log2(REGISTER_SIZE)-1 downto 0) when not SHIFTER_USE_MULTIPLIER else
@@ -509,7 +510,7 @@ begin  -- architecture rtl
 
         mul_a <= mul_srca;
         mul_b <= mul_srcb;
-        if mul_enable = '0' and sh_enable = '0' then
+        if POWER_OPTIMIZED and mul_enable = '0' and sh_enable = '0' then
           mul_a <= (others => '0');
           mul_b <= (others => '0');
         end if;

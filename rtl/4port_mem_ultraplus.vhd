@@ -78,13 +78,13 @@ begin
     signal we_depth       : std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
     type data_out_vector is array (natural range <>) of std_logic_vector(MEM_WIDTH-1 downto 0);
     signal data_out_depth : data_out_vector(MEM_DEPTH_RAMS-1 downto 0);
-    signal chip_sel_depth: std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
-    signal standby_depth: std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
+    signal chip_sel_depth : std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
+    signal standby_depth  : std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
   begin
     spram_address <= std_logic_vector(resize(unsigned(addr_d1), SPRAM_ADDR_BITS));
 
     one_deep_gen : if MEM_DEPTH <= (2**SPRAM_ADDR_BITS) generate
-      we_depth(0) <= wr_en_d1;
+      we_depth(0)       <= wr_en_d1;
       chip_sel_depth(0) <= chip_sel;
       data_register : process (clk) is
       begin  -- process data_register
@@ -103,7 +103,7 @@ begin
         we_depth(gdepth) <= wr_en_d1 when (depth_select_in = to_unsigned(gdepth, log2(MEM_DEPTH)-SPRAM_ADDR_BITS)) else
                             '0';
         chip_sel_depth(gdepth) <= chip_sel when (depth_select_in = to_unsigned(gdepth, log2(MEM_DEPTH)-SPRAM_ADDR_BITS)) else
-                            '0';
+                                  '0';
       end generate deep_ram_gen;
       standby_depth <= not chip_sel_depth;
       data_register : process (clk) is
@@ -152,9 +152,10 @@ use work.utils.all;
 
 entity ram_4port is
   generic(
-    MEM_DEPTH : natural;
-    MEM_WIDTH : natural;
-    FAMILY    : string := "ALTERA");
+    MEM_DEPTH       : natural;
+    MEM_WIDTH       : natural;
+    POWER_OPTIMIZED : boolean;
+    FAMILY          : string := "ALTERA");
   port(
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
@@ -306,7 +307,9 @@ begin  -- architecture rtl
                     rwaddr3_d1 when last_port_sel = SLAVE_ACCESS else
                     raddr0_d1  when last_cycle_count = READ0_CYC else
                     raddr1_d1;
-  actual_chip_sel <= wen2_d1 when last_cycle_count = WRITE_CYC else
+
+  actual_chip_sel <= '1' when not POWER_OPTIMIZED else
+                     wen2_d1            when last_cycle_count = WRITE_CYC else
                      ren3_d1 or wen3_d1 when last_port_sel = SLAVE_ACCESS else
                      ren0_d1            when last_cycle_count = READ0_CYC else
                      ren1_d1;
