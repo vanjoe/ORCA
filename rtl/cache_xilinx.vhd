@@ -92,6 +92,8 @@ architecture rtl of cache_xilinx is
 
   signal orca_tag_l : std_logic_vector(TAG_BITS-2 downto 0);
   signal dram_tag_l : std_logic_vector(TAG_BITS-2 downto 0);
+  signal orca_block_offset_l : std_logic_vector(BLOCK_OFFSET_BITS-1 downto 0);
+  signal dram_block_offset_l : std_logic_vector(BLOCK_OFFSET_BITS-1 downto 0);
   
   alias orca_block_offset : std_logic_vector(BLOCK_OFFSET_BITS-1 downto 0) 
     is orca_address(BLOCK_OFFSET_LEFT-1 downto BLOCK_OFFSET_RIGHT);
@@ -113,11 +115,13 @@ begin
     if rising_edge(clock) then
       orca_tag_l <= orca_tag;
       dram_tag_l <= dram_tag;
+      orca_block_offset_l <= orca_block_offset;
+      dram_block_offset_l <= dram_block_offset;
     end if;
   end process;
 
-  orca_current_word <= orca_line_out(to_integer(unsigned(orca_block_offset))); -- TODO handle width difference between ORCA and DRAM
-  dram_current_word <= dram_line_out(to_integer(unsigned(dram_block_offset)));
+  orca_current_word <= orca_line_out(to_integer(unsigned(orca_block_offset_l))); -- TODO handle width difference between ORCA and DRAM
+  dram_current_word <= dram_line_out(to_integer(unsigned(dram_block_offset_l)));
   orca_readdata <= orca_current_word(ORCA_WIDTH-1 downto 0);
   dram_readdata <= dram_current_word(DRAM_WIDTH-1 downto 0);
 
@@ -165,7 +169,7 @@ begin
 
   -- This block contains the cache line, with a valid bit for each DRAM-width word in the line.
   cache_gen :
-  for i in 0 to WORDS_PER_LINE generate
+  for i in 0 to WORDS_PER_LINE-1 generate
     orca_line_in(i) <= orca_valid_in & orca_data_in;
     dram_line_in(i) <= dram_valid_in & dram_data_in;
     orca_line_wren(i) <= '1' when ((i = to_integer(unsigned(orca_block_offset))) and (orca_we = '1')) else '0';
