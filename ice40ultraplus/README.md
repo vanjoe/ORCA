@@ -1,11 +1,11 @@
 #Running newly quanitzed networks
-Use either  `qmin.bin` (230) opr `qreduced.bin` (400) 
+Use either  `qmin.bin` (230) opr `qreduced.bin` (400)
 change flag in `software/net.c` to use larger reduced networks
 
 #Running old 230/400 reduced network
 `cp reduced.bin qmin.bin`
 change flag in `software/net.c` to use larger reduced network
-and revert the conditional escaping of scaling the last convolution layer 
+and revert the conditional escaping of scaling the last convolution layer
 
 #Up and running
 
@@ -25,6 +25,12 @@ and revert the conditional escaping of scaling the last convolution layer
 - currently need `pgm-flash` to program board as jumpers switched
 
 - see `./uart0.jpg` `./uart1.jpg` for UART (accessed via `picocom -b 1152000 /dev/ttyUSBX`)
+
+# Controlling Runtime,
+
+The runtime is controlled by changing the camera and the orca clock speed. The total framerate
+is the sum of the the algorithm time and the frame transfer time. The ORCA core sleeps most of
+the time while waiting for the camera.
 
 #Building Flash.bin
 
