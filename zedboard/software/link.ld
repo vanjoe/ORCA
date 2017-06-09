@@ -35,6 +35,20 @@ SECTIONS
   {
     *(.text)
   }>IMEM
+
+/*  .cache_test_1 ALIGN(0x2000):
+  {
+    *(.cache_test_1)
+  }>IMEM
+  .cache_test_2 ALIGN(0x100):
+  {
+    *(.cache_test_2)
+  }>IMEM
+  .cache_test_3 ALIGN(0x100):
+  {
+    *(.cache_test_3)
+  }>IMEM */
+
   /* data segment */
   .data : { *(.data) }>DMEM
   .rodata : { *(.rodata) }>DMEM
@@ -63,16 +77,7 @@ SECTIONS
     *(.tbss)
   }>DMEM
 
-  . = 0x2000;
-  .cache_test_1 :
-  {
-    *(.cache_test_1)
-  }
-  . = 0x2100;
-  .cache_test_2 :
-  {
-    *(.cache_test_2)
-  }
+
 
   /* End of uninitalized data segement */
   _end = .;
