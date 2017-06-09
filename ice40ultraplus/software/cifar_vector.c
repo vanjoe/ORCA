@@ -155,6 +155,8 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 	if (layer->scale) {
 	  if (layer->zeropad_output) {
 	    vbx(SVW, VMULH, v_map, scale, v_map);
+	  } else {
+	    vbx(SVW, VMUL, v_map, scale, v_map);
 	  }
 	}
 
