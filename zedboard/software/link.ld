@@ -63,7 +63,16 @@ SECTIONS
     *(.tbss)
   }>DMEM
 
-
+  . = 0x2000;
+  .cache_test_1 :
+  {
+    *(.cache_test_1)
+  }
+  . = 0x2100;
+  .cache_test_2 :
+  {
+    *(.cache_test_2)
+  }
 
   /* End of uninitalized data segement */
   _end = .;

@@ -126,28 +126,28 @@ architecture rtl of icache is
 
   signal state : state_t;
 
-  signal orca_address_i   : std_logic_vector(ADDR_WIDTH-1 downto 0);
-  signal orca_address     : std_logic_vector(ADDR_WIDTH-1 downto 0);
-  signal orca_data_in     : std_logic_vector(ORCA_WIDTH-1 downto 0); 
-  signal orca_valid_in    : std_logic;
-  signal orca_we          : std_logic;
-  signal orca_en          : std_logic;
-  signal orca_readdata    : std_logic_vector(ORCA_WIDTH-1 downto 0);
-  signal orca_hit         : std_logic;
+  signal read_address_i   : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal read_address     : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal read_data_in     : std_logic_vector(ORCA_WIDTH-1 downto 0); 
+  signal read_valid_in    : std_logic;
+  signal read_we          : std_logic;
+  signal read_en          : std_logic;
+  signal read_readdata    : std_logic_vector(ORCA_WIDTH-1 downto 0);
+  signal read_hit         : std_logic;
   
-  signal dram_address   : std_logic_vector(ADDR_WIDTH-1 downto 0);
-  signal dram_data_in   : std_logic_vector(DRAM_WIDTH-1 downto 0);
-  signal dram_valid_in  : std_logic;
-  signal dram_we        : std_logic;
-  signal dram_en        : std_logic;
-  signal dram_readdata  : std_logic_vector(DRAM_WIDTH-1 downto 0);
-  signal dram_hit       : std_logic;
+  signal write_address   : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal write_data_in   : std_logic_vector(DRAM_WIDTH-1 downto 0);
+  signal write_valid_in  : std_logic;
+  signal write_we        : std_logic;
+  signal write_en        : std_logic;
+  signal write_readdata  : std_logic_vector(DRAM_WIDTH-1 downto 0);
+  signal write_hit       : std_logic;
   
-  signal dram_read_pending : std_logic;
-  signal dram_write_pending : std_logic;
+  signal read_address_l : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal write_address_next : std_logic_vector(ADDR_WIDTH-1 downto 0);
 
-  signal orca_address_l : std_logic_vector(ADDR_WIDTH-1 downto 0);
-  signal dram_address_next : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal write_tag_valid_in : std_logic;
+  signal write_tag_valid_en : std_logic;
 
 begin
  
@@ -159,19 +159,19 @@ begin
     orca_RID <= (others => '0');
     orca_RRESP <= (others => '0');
     orca_BRESP <= (others => '0');
-    orca_ARREADY <= '1' when ((state = IDLE) or ((state = READ_CACHE) and (orca_hit = '1')) or (state = BLOCK_COMPLETE_1)) else '0'; -- If a miss occurs, no longer ready.
+    orca_ARREADY <= '1' when ((state = IDLE) or ((state = READ_CACHE) and (read_hit = '1')) or (state = BLOCK_COMPLETE_1)) else '0'; -- If a miss occurs, no longer ready.
     orca_AWREADY <= '0';
     orca_WREADY <= '0';
-    orca_RDATA <= orca_readdata;
-    orca_RVALID <= '1' when (((state = READ_CACHE) and (orca_hit = '1')) or (state = BLOCK_COMPLETE_1)) else '0';
-    orca_RLAST <= '1' when (((state = READ_CACHE) and (orca_hit = '1')) or (state = BLOCK_COMPLETE_1)) else '0';
+    orca_RDATA <= read_readdata;
+    orca_RVALID <= '1' when (((state = READ_CACHE) and (read_hit = '1')) or (state = BLOCK_COMPLETE_1)) else '0';
+    orca_RLAST <= '1' when (((state = READ_CACHE) and (read_hit = '1')) or (state = BLOCK_COMPLETE_1)) else '0';
 
-    orca_address_i <= orca_ARADDR;
-    orca_address <= orca_address_i when ((state = IDLE) or ((state = READ_CACHE) and (orca_hit = '1')) or (state = BLOCK_COMPLETE_1)) else orca_address_l; 
-    orca_data_in <= orca_WDATA;
-    orca_valid_in <= orca_WVALID;
-    orca_we <= orca_AWVALID and orca_WVALID;
-    orca_en <= '1';
+    read_address_i <= orca_ARADDR;
+    read_address <= read_address_i when ((state = IDLE) or ((state = READ_CACHE) and (read_hit = '1')) or (state = BLOCK_COMPLETE_1)) else read_address_l; 
+    read_data_in <= orca_WDATA;
+    read_valid_in <= orca_WVALID;
+    read_we <= orca_AWVALID and orca_WVALID;
+    read_en <= '1';
 
     dram_AWID <= (others => '0');
     dram_AWLEN <= BURST_LEN; 
@@ -189,10 +189,10 @@ begin
     dram_ARCACHE <= CACHE_VAL;
     dram_ARPROT <= PROT_VAL; 
 
-    dram_data_in <= dram_RDATA;
-    dram_valid_in <= dram_RVALID;  
-    dram_we <= dram_RVALID;
-    dram_en <= dram_RVALID;
+    write_data_in <= dram_RDATA;
+    write_valid_in <= dram_RVALID;  
+    write_we <= dram_RVALID;
+    write_en <= dram_RVALID;
     
     process(clk)
     begin
@@ -205,6 +205,8 @@ begin
           dram_ARADDR <= (others => '0');
           dram_ARVALID <= '0';
           dram_RREADY <= '0';
+          write_tag_valid_in <= '0';
+          write_tag_valid_en <= '0';
         else
           case (state) is
             when IDLE =>
@@ -215,8 +217,10 @@ begin
               dram_ARADDR <= (others => '0');
               dram_ARVALID <= '0';
               dram_RREADY <= '0';
+              write_tag_valid_in <= '0';
+              write_tag_valid_en <= '0';
               if orca_ARVALID = '1' then
-                orca_address_l <= orca_ARADDR;
+                read_address_l <= orca_ARADDR;
                 state <= READ_CACHE;
               end if;
 
@@ -226,15 +230,17 @@ begin
               dram_AWVALID <= '0';
               dram_ARVALID <= '0';
               dram_RREADY <= '0';
-              if orca_hit /= '1' then
-                dram_ARADDR <= orca_address_l(ORCA_WIDTH-1 downto BLOCK_OFFSET_LEFT) & BLOCK_START;
-                dram_address <= orca_address_l(ORCA_WIDTH-1 downto BLOCK_OFFSET_LEFT) & BLOCK_START;
-                dram_address_next <= orca_address_l(ORCA_WIDTH-1 downto BLOCK_OFFSET_LEFT) & BLOCK_NEXT_START;
+              if read_hit /= '1' then
+                dram_ARADDR <= read_address_l(ADDR_WIDTH-1 downto BLOCK_OFFSET_LEFT) & BLOCK_START;
+                write_address <= read_address_l(ADDR_WIDTH-1 downto BLOCK_OFFSET_LEFT) & BLOCK_START;
+                write_address_next <= read_address_l(ADDR_WIDTH-1 downto BLOCK_OFFSET_LEFT) & BLOCK_NEXT_START;
                 dram_ARVALID <= '1';
                 dram_RREADY <= '1';
+                write_tag_valid_in <= '0';
+                write_tag_valid_en <= '1';
                 state <= CACHE_MISSED; 
               elsif orca_ARVALID = '1' then
-                orca_address_l <= orca_ARADDR;
+                read_address_l <= orca_ARADDR;
                 state <= READ_CACHE;
               end if;
 
@@ -243,18 +249,22 @@ begin
               orca_BVALID <= '0';
               dram_AWVALID <= '0';
               dram_RREADY <= '1';
+              write_tag_valid_in <= '0';
+              write_tag_valid_en <= '0';
               if dram_ARREADY = '1' then
                 dram_ARVALID <= '0';
                 if dram_RVALID = '1' then
                   dram_RREADY <= '1'; 
-                  if (dram_address_next(BLOCK_OFFSET_LEFT-1 downto 0) = BLOCK_START) then
+                  if (write_address_next(BLOCK_OFFSET_LEFT-1 downto 0) = BLOCK_START) then
                     dram_RREADY <= '0';
                     state <= BLOCK_COMPLETE_0;
+                    write_tag_valid_in <= '1';
+                    write_tag_valid_en <= '1';
                   else
                     -- Prepare next DRAM transaction.
-                    dram_ARADDR <= dram_address_next;
-                    dram_address <= dram_address_next;
-                    dram_address_next <= std_logic_vector(unsigned(dram_address_next) + to_unsigned(4, ORCA_WIDTH)); 
+                    dram_ARADDR <= write_address_next;
+                    write_address <= write_address_next;
+                    write_address_next <= std_logic_vector(unsigned(write_address_next) + to_unsigned(4, ADDR_WIDTH)); 
                     dram_ARVALID <= '1';
                   end if;
                 else
@@ -268,16 +278,20 @@ begin
               dram_AWVALID <= '0';
               dram_ARVALID <= '0';
               dram_RREADY <= '1';
+              write_tag_valid_in <= '0';
+              write_tag_valid_en <= '0';
               if dram_RVALID = '1' then
                 state <= CACHE_MISSED;
                 dram_RREADY <= '0';
-                if (dram_address_next(BLOCK_OFFSET_LEFT-1 downto 0) = BLOCK_START) then
+                if (write_address_next(BLOCK_OFFSET_LEFT-1 downto 0) = BLOCK_START) then
                   dram_RREADY <= '0';
                   state <= BLOCK_COMPLETE_0;
+                  write_tag_valid_in <= '1';
+                  write_tag_valid_en <= '1';
                 else
-                  dram_ARADDR <= dram_address_next;
-                  dram_address <= dram_address_next;
-                  dram_address_next <= std_logic_vector(unsigned(dram_address_next) + to_unsigned(4, ORCA_WIDTH));
+                  dram_ARADDR <= write_address_next;
+                  write_address <= write_address_next;
+                  write_address_next <= std_logic_vector(unsigned(write_address_next) + to_unsigned(4, ADDR_WIDTH));
                   dram_ARVALID <= '1';
                 end if;
               end if;
@@ -287,14 +301,18 @@ begin
               orca_BVALID <= '0';
               dram_AWVALID <= '0';
               dram_ARVALID <= '0';
+              write_tag_valid_in <= '0';
+              write_tag_valid_en <= '0';
 
             when BLOCK_COMPLETE_1 => -- This state ensures correct new data is read from the cache block, not the old data.
               state <= IDLE;
               orca_BVALID <= '0';
               dram_AWVALID <= '0';
               dram_ARVALID <= '0';
+              write_tag_valid_in <= '0';
+              write_tag_valid_en <= '0';
               if orca_ARVALID = '1' then
-                orca_address_l <= orca_ARADDR;
+                read_address_l <= orca_ARADDR;
                 state <= READ_CACHE;
               end if;
               
@@ -313,26 +331,29 @@ begin
       LINE_SIZE   => LINE_SIZE,
       BYTE_SIZE   => BYTE_SIZE,
       ADDR_WIDTH  => ADDR_WIDTH,
-      ORCA_WIDTH  => ORCA_WIDTH,
-      DRAM_WIDTH  => DRAM_WIDTH
+      READ_WIDTH  => ORCA_WIDTH,
+      WRITE_WIDTH  => DRAM_WIDTH
     )
     port map (
       clock => clk,
      
-      orca_address => orca_address,
-      orca_data_in => orca_data_in,
-      orca_valid_in => orca_valid_in,
-      orca_we => orca_we,
-      orca_en => orca_en,
-      orca_readdata => orca_readdata,
-      orca_hit => orca_hit,
+      read_address => read_address,
+      read_data_in => read_data_in,
+      read_valid_in => read_valid_in,
+      read_we => read_we,
+      read_en => read_en,
+      read_readdata => read_readdata,
+      read_hit => read_hit,
 
-      dram_address => dram_address,
-      dram_data_in => dram_data_in,
-      dram_valid_in => dram_valid_in,
-      dram_we => dram_we,
-      dram_en => dram_en,
-      dram_readdata => dram_readdata,
-      dram_hit => dram_hit
+      write_address => write_address,
+      write_data_in => write_data_in,
+      write_valid_in => write_valid_in,
+      write_we => write_we,
+      write_en => write_en,
+      write_readdata => write_readdata,
+      write_hit => write_hit,
+
+      write_tag_valid_in => write_tag_valid_in,
+      write_tag_valid_en => write_tag_valid_en
     );
 end architecture;

@@ -992,27 +992,30 @@ package rv_components is
       LINE_SIZE   : integer := 64; -- In bytes
       BYTE_SIZE   : integer := 8;
       ADDR_WIDTH  : integer := 32;
-      ORCA_WIDTH  : integer := 32;
-      DRAM_WIDTH  : integer := 32
+      READ_WIDTH  : integer := 32;
+      WRITE_WIDTH  : integer := 32
     );
     port (
       clock : in std_logic;
 
-      orca_address   : in std_logic_vector(ADDR_WIDTH-1 downto 0);
-      orca_data_in   : in std_logic_vector(ORCA_WIDTH-1 downto 0); 
-      orca_valid_in  : in std_logic;
-      orca_we        : in std_logic;
-      orca_en        : in std_logic;
-      orca_readdata  : out std_logic_vector(ORCA_WIDTH-1 downto 0);
-      orca_hit       : out std_logic;
+      read_address   : in std_logic_vector(ADDR_WIDTH-1 downto 0);
+      read_data_in   : in std_logic_vector(READ_WIDTH-1 downto 0); 
+      read_valid_in  : in std_logic;
+      read_we        : in std_logic;
+      read_en        : in std_logic;
+      read_readdata  : out std_logic_vector(READ_WIDTH-1 downto 0);
+      read_hit       : out std_logic;
 
-      dram_address   : in std_logic_vector(ADDR_WIDTH-1 downto 0);
-      dram_data_in   : in std_logic_vector(DRAM_WIDTH-1 downto 0);
-      dram_valid_in  : in std_logic;
-      dram_we        : in std_logic;
-      dram_en        : in std_logic;
-      dram_readdata  : out std_logic_vector(DRAM_WIDTH-1 downto 0);
-      dram_hit       : out std_logic
+      write_address   : in std_logic_vector(ADDR_WIDTH-1 downto 0);
+      write_data_in   : in std_logic_vector(WRITE_WIDTH-1 downto 0);
+      write_valid_in  : in std_logic;
+      write_we        : in std_logic;
+      write_en        : in std_logic;
+      write_readdata  : out std_logic_vector(WRITE_WIDTH-1 downto 0);
+      write_hit       : out std_logic;
+
+      write_tag_valid_in : in std_logic;
+      write_tag_valid_en : in std_logic
     );
   end component;
 

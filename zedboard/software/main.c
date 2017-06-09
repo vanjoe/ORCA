@@ -1,5 +1,6 @@
 #include "uart.h"
 #include "main.h"
+#include "cache_test.h"
 
 //void mputc (void* p, char c) {
 //  print_char(c); 
@@ -9,6 +10,8 @@ int main(void) {
   int i;
 
   //init_printf(0, mputc);
+
+  cache_test();
 
   for (;;) {
     ChangedPrint("Hello World\r\n");

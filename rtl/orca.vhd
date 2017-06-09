@@ -5,7 +5,7 @@ library work;
 use work.rv_components.all;
 use work.utils.all;
 
-entity Orca is
+entity orca is
   generic (
     REGISTER_SIZE   : integer              := 32;
     BYTE_SIZE       : integer              := 8;
@@ -220,9 +220,9 @@ entity Orca is
     global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
     );
 
-end entity Orca;
+end entity orca;
 
-architecture rtl of Orca is
+architecture rtl of orca is
 
   signal core_data_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal core_data_byteenable : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);

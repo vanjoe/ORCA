@@ -1,5 +1,6 @@
 all:
 AS_SRCS=crt.S
+AS_SRCS+=cache_test.S
 
 C_SRCS=
 C_SRCS+=main.c
