@@ -58,8 +58,8 @@ architecture rtl of cache_xilinx is
   --constant WORD_OFFSET_LEFT : integer log2(BYTES_PER_WORD);
   --constant WORD_OFFSET_RIGHT : integer WORD_OFFSET_LEFT-WORD_OFFSET_BITS;
 
-  type en_t is array (0 to WORDS_PER_LINE) of std_logic;
-  type line_t is array (0 to WORDS_PER_LINE) of std_logic_vector(DATA_BITS-1 downto 0);
+  type en_t is array (0 to WORDS_PER_LINE-1) of std_logic;
+  type line_t is array (0 to WORDS_PER_LINE-1) of std_logic_vector(DATA_BITS-1 downto 0);
 
   signal read_tag_address : std_logic_vector(CACHE_ADDR_BITS-1 downto 0);
   signal read_tag_en : std_logic;

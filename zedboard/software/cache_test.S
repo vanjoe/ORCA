@@ -1,6 +1,8 @@
 /* For this test, the cache size should be set to 256 bytes,
  * the cache line size should be set to 16 bytes, as well as the TCRAM size should 
  * be set to 64 bytes.
+ * In the future, consider automating this by using rdtime as a cycle count to 
+ * ensure single cycle accesses are performed at the correct times.
  */
 
 .section .text
