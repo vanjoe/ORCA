@@ -26,11 +26,26 @@ and revert the conditional escaping of scaling the last convolution layer
 
 - see `./uart0.jpg` `./uart1.jpg` for UART (accessed via `picocom -b 1152000 /dev/ttyUSBX`)
 
+- to view image coming off of the sensor set `#define PRINT_B64_IMG 1` before building, and open up the
+serial port with `python detect_uart.py /dev/ttyUSBX`
+
 # Controlling Runtime,
 
 The runtime is controlled by changing the camera and the orca clock speed. The total framerate
 is the sum of the the algorithm time and the frame transfer time. The ORCA core sleeps most of
 the time while waiting for the camera.
+
+# Power optimized vs Speed Optimized
+**Power Optimzed**
+* PLL = 0 (8 MHz)
+* ovm7692_regs.c change PCLK divider to `{0x11,0x07}` (3.375 MHz)
+* change `POWER_OPTIMIZED=>0` to `POWER_OPTIMIZED=>1` in top.vhd
+
+**Speed Optimized**
+* PLL = 2 (24 MHz)
+* ovm7692_regs.c change PCLK divider to `{0x11,0x00}` (27 MHz)
+* change `POWER_OPTIMIZED=>1` to `POWER_OPTIMIZED=>0` in top.vhd
+
 
 #Building Flash.bin
 
