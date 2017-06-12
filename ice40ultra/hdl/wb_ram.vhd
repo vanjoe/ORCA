@@ -50,6 +50,7 @@ architecture bram of wb_ram is
         clock    : in  std_logic;
         data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
         we       : in  std_logic;
+        re       : in  std_logic;
         be       : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE-1 downto 0);
         readdata : out std_logic_vector(RAM_WIDTH-1 downto 0)
         );
@@ -57,12 +58,13 @@ architecture bram of wb_ram is
 
   constant BYTES_PER_WORD : integer := DATA_WIDTH/8;
 
-  signal address  : std_logic_vector(log2(MEM_SIZE/BYTES_PER_WORD)-1 downto 0);
-  signal write_en : std_logic;
+  signal address           : std_logic_vector(log2(MEM_SIZE/BYTES_PER_WORD)-1 downto 0);
+  signal write_en, read_en : std_logic;
 begin  -- architecture rtl
 
   address  <= ADR_I(address'left+log2(BYTES_PER_WORD) downto log2(BYTES_PER_WORD));
-  write_en <= STB_I and we_i;
+  write_en <= STB_I and cyc_i and we_i;
+  read_en  <= STB_I and cyc_i;
   ram : component bram_lattice
     generic map (
       RAM_DEPTH      => MEM_SIZE/4,
@@ -72,6 +74,7 @@ begin  -- architecture rtl
       clock    => CLK_I,
       data_in  => DAT_I,
       we       => write_en,
+      re       => read_en,
       be       => SEL_I,
       readdata => DAT_O);
 

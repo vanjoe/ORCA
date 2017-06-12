@@ -21,6 +21,7 @@ entity bram_lattice is
       clock    : in  std_logic;
       data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
       we       : in  std_logic;
+      re       : in  std_logic;
       be       : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE-1 downto 0);
       readdata : out std_logic_vector(RAM_WIDTH-1 downto 0)
       );
@@ -33,10 +34,10 @@ architecture rtl of bram_lattice is
 
   function to_slv (tmp_hexnum : string) return std_logic_vector is
     variable temp  : std_logic_vector(31 downto 0);
-    variable n : integer;
+    variable n     : integer;
     variable digit : natural;
   begin
-    n:=tmp_hexnum'length-1;
+    n :=tmp_hexnum'length-1;
     for i in tmp_hexnum'range loop
       case tmp_hexnum(i) is
         when '0' to '9' =>
@@ -49,7 +50,7 @@ architecture rtl of bram_lattice is
 
       end case;
       temp(n*4+3 downto n*4) := std_logic_vector(to_unsigned(digit, 4));
-      n:= n-1;
+      n                      := n-1;
     end loop;
     return temp;
   end function;
@@ -62,19 +63,19 @@ architecture rtl of bram_lattice is
     variable my_line       : line;
     variable ss            : string(8 downto 1);
     variable ram_to_return : ram_type;
-    variable tmp : std_logic_vector(31 downto 0);
+    variable tmp           : std_logic_vector(31 downto 0);
   begin
     --ram_to_return := (others => (others => '0'));
 
     for i in ram_type'range loop
       --this weird initialization is to avoid having the rams be removed
       --if the we is tied to zero. The tools will optimize away a ROM of all zeros
-      tmp := std_logic_vector(to_unsigned((i+3)*(2**24) +(i+2)*(2**16)+(i+1)*2**8+i,tmp'length));
+      tmp              := std_logic_vector(to_unsigned((i+3)*(2**24) +(i+2)*(2**16)+(i+1)*2**8+i, tmp'length));
       ram_to_return(i) := tmp(BYTE_SIZE*(bytesel+1) -1 downto BYTE_SIZE*bytesel);
       if not endfile(ramfile) then
         readline(ramfile, line_read);
         read(line_read, ss);
-        tmp := to_slv(ss);
+        tmp              := to_slv(ss);
         ram_to_return(i) := tmp(BYTE_SIZE*(bytesel+1) -1 downto BYTE_SIZE*bytesel);
       end if;
     end loop;
@@ -98,11 +99,11 @@ architecture rtl of bram_lattice is
   signal ram0     : ram_type := init_bram(INIT_FILE_NAME, 0);
   signal byte_we0 : std_logic;
 
-  attribute syn_keep : boolean;
-  attribute syn_keep of ram3: signal is true;
-  attribute syn_keep of ram2: signal is true;
-  attribute syn_keep of ram1: signal is true;
-  attribute syn_keep of ram0: signal is true;
+  attribute syn_keep         : boolean;
+  attribute syn_keep of ram3 : signal is true;
+  attribute syn_keep of ram2 : signal is true;
+  attribute syn_keep of ram1 : signal is true;
+  attribute syn_keep of ram0 : signal is true;
 
 begin  --architeture
 
@@ -110,7 +111,9 @@ begin  --architeture
   process (clock)
   begin
     if rising_edge(clock) then
-      Q3 <= ram3(to_integer(unsigned(address)));
+      if re = '1' then
+        Q3 <= ram3(to_integer(unsigned(address)));
+      end if;
       if byte_we3 = '1' then
         ram3(to_integer(unsigned(address))) <= data_in(BYTE_SIZE*(3+1)-1 downto BYTE_SIZE*3);
       end if;
@@ -121,7 +124,9 @@ begin  --architeture
   process (clock)
   begin
     if rising_edge(clock) then
-      Q2 <= ram2(to_integer(unsigned(address)));
+      if re = '1' then
+        Q2 <= ram2(to_integer(unsigned(address)));
+      end if;
       if byte_we2 = '1' then
         ram2(to_integer(unsigned(address))) <= data_in(BYTE_SIZE*(2+1)-1 downto BYTE_SIZE*2);
       end if;
@@ -132,7 +137,9 @@ begin  --architeture
   process (clock)
   begin
     if rising_edge(clock) then
-      Q1 <= ram1(to_integer(unsigned(address)));
+      if re = '1' then
+        Q1 <= ram1(to_integer(unsigned(address)));
+      end if;
       if byte_we1 = '1' then
         ram1(to_integer(unsigned(address))) <= data_in(BYTE_SIZE*(1+1)-1 downto BYTE_SIZE*1);
       end if;
@@ -143,7 +150,9 @@ begin  --architeture
   process (clock)
   begin
     if rising_edge(clock) then
-      Q0 <= ram0(to_integer(unsigned(address)));
+      if re = '1' then
+        Q0 <= ram0(to_integer(unsigned(address)));
+      end if;
       if byte_we0 = '1' then
         ram0(to_integer(unsigned(address))) <= data_in(BYTE_SIZE*(0+1)-1 downto BYTE_SIZE*0);
       end if;
