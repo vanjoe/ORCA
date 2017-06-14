@@ -147,110 +147,21 @@ end entity cache_mux;
 
 architecture rtl of cache_mux is
 
-  signal pending_transaction_r : std_logic;
-  signal pending_transaction_w : std_logic;
-  signal consecutive_transaction_r : std_logic;
-  signal consecutive_transaction_w : std_logic;
-  signal latched_address_r : std_logic_vector(ADDR_WIDTH-1 downto 0);
-  signal latched_address_w : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  type state_r_t is (IDLE, WAITING_AR, READ);
+  type state_w_t is (IDLE);
+
+  signal state_r : state_r_t;
+  signal state_w : state_w_t;
+  signal next_state_r : state_r_t;
+  signal next_state_w : state_w_t;
   signal cache_select_r : std_logic;
   signal cache_select_w : std_logic;
   signal cache_select_r_l : std_logic;
   signal cache_select_w_l : std_logic;
+  signal latch_enable_r : std_logic;
+  signal latch_enable_w : std_logic;
 
 begin 
-  
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      if reset = '1' then
-        pending_transaction_r <= '0';
-        pending_transaction_w <= '0';
-        latched_address_r <= (others => '0');
-        latched_address_w <= (others => '0');
-        cache_select_r_l <= '0';
-        cache_select_w_l <= '0';
-      else
-        -- This logic handles the case when there is a multi-cycle transaction, and certain
-        -- values need to be latched to preserve which slave's response should be sent to the
-        -- master.
-        if ((pending_transaction_r = '0') and (in_ARVALID = '1')) then
-          pending_transaction_r <= '1';
-          latched_address_r <= in_ARADDR;
-        end if;
-        if ((pending_transaction_w = '0') and (in_AWVALID = '1')) then
-          pending_transaction_w <= '1';
-          latched_address_w <= in_AWADDR;
-        end if;
-
-        if ((cache_select_r_l = '1') and (cache_RVALID = '1')) or ((cache_select_r_l = '0') and (tcram_RVALID = '1')) then
-          if (in_ARVALID = '1') then
-            latched_address_r <= in_ARADDR;
-            pending_transaction_r <= '1';
-          else 
-            latched_address_r <= (others => '0');
-            pending_transaction_r <= '0';
-          end if;
-        end if;
-
-        if ((cache_select_w_l = '1') and (cache_BVALID = '1')) or ((cache_select_w_l = '0') and (tcram_BVALID = '1')) then
-          if (in_AWVALID = '1') then
-            latched_address_w <= in_AWADDR;
-            pending_transaction_w <= '1';
-          else
-            latched_address_w <= (others => '0');
-            pending_transaction_w <= '0';
-          end if;
-        end if;
-
-        -- The cache select signal is registered to determine which xVALID signal to return to the master.
-        -- Using the unregistered signal for the xVALID signals may result in a combinational loop.
-        -- The unregistered value will be used for selecting which xVALID signal to send to the slave.
-        cache_select_r_l <= cache_select_r;
-        cache_select_w_l <= cache_select_w; 
-
-      end if;
-    end if;
-  end process;
-
-  -- These signals handle the case when a new read or write enters the mux 
-  -- immediately after a multi-cycle operation. 
-  consecutive_transaction_r <= pending_transaction_r and in_ARVALID;
-  consecutive_transaction_w <= pending_transaction_w and in_AWVALID;  
-
-  -- The cache should be chosen in 3 cases:
-  -- 1) When an initial operation is issued with no previous operations pending on the previous cycle.
-  -- 2) When there is an outstanding operation in the cache address space that is yet to complete.
-  -- 3) When there is an incoming cache operation on the same cycle as another operation is finishing.
-  cache_select_r <= '1' when ((unsigned(in_ARADDR) > to_unsigned(TCRAM_SIZE, ADDR_WIDTH)) and pending_transaction_r = '0') 
-                          or ((unsigned(latched_address_r) > to_unsigned(TCRAM_SIZE, ADDR_WIDTH)) and (pending_transaction_r = '1') and (consecutive_transaction_r = '0')) 
-                          or ((unsigned(in_ARADDR) > to_unsigned(TCRAM_SIZE, ADDR_WIDTH)) and (consecutive_transaction_r = '1'))
-                          else '0';
-  cache_select_w <= '1' when ((unsigned(in_AWADDR) > to_unsigned(TCRAM_SIZE, ADDR_WIDTH)) and pending_transaction_w = '0') 
-                          or ((unsigned(latched_address_w) > to_unsigned(TCRAM_SIZE, ADDR_WIDTH)) and (pending_transaction_w = '1') and (consecutive_transaction_w = '0'))
-                          or ((unsigned(in_AWADDR) > to_unsigned(TCRAM_SIZE, ADDR_WIDTH)) and (consecutive_transaction_w = '1'))
-                          else '0';
-
-  in_ARREADY <= '0' when (pending_transaction_r = '1') and (((cache_select_r_l = '1') and (cache_RVALID = '0')) 
-                                                         or ((cache_select_r_l = '0') and (tcram_RVALID = '0'))) else '1';
-  in_AWREADY <= '0' when (pending_transaction_w = '1') and (((cache_select_w_l = '1') and (cache_BVALID = '0'))
-                                                         or ((cache_select_w_l = '0') and (tcram_BVALID = '0'))) else '1';
-  in_WREADY  <= '0' when (pending_transaction_w = '1') and (((cache_select_w_l = '1') and (cache_BVALID = '0'))
-                                                         or ((cache_select_w_l = '0') and (tcram_BVALID = '0'))) else '1';
-
-  -- TODO This MUX will break if AWREADY and WREADY are asserted at different times.
-  -- This is the case when using a Microsemi interconnect. A more complex set of signals 
-  -- is needed to fix this issue with the AW and W buses.
-
-  in_BID <= cache_BID when (cache_select_w_l = '1') else tcram_BID;
-  in_BRESP <= cache_BRESP when (cache_select_w_l = '1') else tcram_BRESP;
-  in_BVALID <= cache_BVALID when (cache_select_w_l = '1') else tcram_BVALID;
-  
-  in_RID <= cache_RID when (cache_select_r_l = '1') else tcram_RID;
-  in_RDATA <= cache_RDATA when (cache_select_r_l = '1') else tcram_RDATA;
-  in_RRESP <= cache_RRESP when (cache_select_r_l = '1') else tcram_RRESP;
-  in_RLAST <= cache_RLAST when (cache_select_r_l = '1') else tcram_RLAST;
-  in_RVALID <= cache_RVALID when (cache_select_r_l = '1') else tcram_RVALID;
 
   cache_AWID    <= in_AWID;  
   cache_AWADDR  <= in_AWADDR;
@@ -261,13 +172,11 @@ begin
   cache_AWLOCK  <= in_AWLOCK;   
   cache_AWCACHE <= in_AWCACHE; 
   cache_AWPROT  <= in_AWPROT; 
-  cache_AWVALID <= in_AWVALID when (cache_select_w = '1') else '0';  
   
   cache_WID     <= in_WID; 
   cache_WDATA   <= in_WDATA; 
   cache_WSTRB   <= in_WSTRB; 
   cache_WLAST   <= in_WLAST; 
-  cache_WVALID  <= in_WVALID when (cache_select_w = '1') else '0'; 
 
   cache_BREADY  <= in_BREADY; 
 
@@ -279,9 +188,6 @@ begin
   cache_ARLOCK  <= in_ARLOCK; 
   cache_ARCACHE <= in_ARCACHE; 
   cache_ARPROT  <= in_ARPROT; 
-  cache_ARVALID <= in_ARVALID when (cache_select_r = '1') else '0'; 
-
-  cache_RREADY  <= in_RREADY; 
 
   tcram_AWID    <= in_AWID;
   tcram_AWADDR  <= in_AWADDR;
@@ -292,13 +198,11 @@ begin
   tcram_AWLOCK  <= in_AWLOCK;    
   tcram_AWCACHE <= in_AWCACHE; 
   tcram_AWPROT  <= in_AWPROT; 
-  tcram_AWVALID <= in_AWVALID when (cache_select_w = '0') else '0'; 
 
   tcram_WID     <= in_WID;
   tcram_WDATA   <= in_WDATA; 
   tcram_WSTRB   <= in_WSTRB; 
   tcram_WLAST   <= in_WLAST; 
-  tcram_WVALID  <= in_WVALID when (cache_select_w = '0') else '0'; 
 
   tcram_BREADY  <= in_BREADY; 
 
@@ -310,8 +214,238 @@ begin
   tcram_ARLOCK  <= in_ARLOCK; 
   tcram_ARCACHE <= in_ARCACHE; 
   tcram_ARPROT  <= in_ARPROT; 
-  tcram_ARVALID <= in_ARVALID when (cache_select_r = '0') else '0'; 
 
-  tcram_RREADY  <= in_RREADY; 
+  cache_select_r <= '1' when ((unsigned(in_ARADDR) > to_unsigned(TCRAM_SIZE, ADDR_WIDTH)))
+                        else '0'; 
+  cache_select_w <= '1' when ((unsigned(in_AWADDR) > to_unsigned(TCRAM_SIZE, ADDR_WIDTH))) 
+                        else '0'; 
+  process(state_r, cache_select_r, cache_select_r_l, 
+          in_ARVALID, in_RREADY, 
+          cache_ARREADY, cache_RVALID, cache_RID, cache_RDATA, cache_RRESP, cache_RLAST, 
+          tcram_ARREADY, tcram_RVALID, tcram_RID, tcram_RDATA, tcram_RRESP, tcram_RLAST)
+  begin
+    case(state_r) is
+      when IDLE =>
+        next_state_r <= IDLE;
+        latch_enable_r <= '0';
+        cache_ARVALID <= '0';
+        tcram_ARVALID <= '0';
+        cache_RREADY <= '0';
+        tcram_RREADY <= '0';
+        in_RID <= (others => '0');
+        in_RDATA <= (others => '0');
+        in_RRESP <= (others => '0');
+        in_RLAST <= '0';
+        in_RVALID <= '0';
+        if (cache_select_r = '1') then
+          in_ARREADY <= cache_ARREADY;
+          cache_ARVALID <= in_ARVALID;
+          cache_RREADY <= in_RREADY;
+          in_RVALID <= cache_RVALID;
+          -- Starting a read transaction to the cache.
+          if (in_ARVALID = '1') then
+            latch_enable_r <= '1';
+            -- Cache address bus is ready, proceed to read.
+            if (cache_ARREADY = '1') then
+              next_state_r <= READ;
+            -- Cache address bus is not ready, wait.
+            else
+              next_state_r <= WAITING_AR;
+            end if;
+          end if;
+        else
+          in_ARREADY <= tcram_ARREADY;
+          tcram_ARVALID <= in_ARVALID;
+          tcram_RREADY <= in_RREADY;
+          in_RVALID <= cache_RVALID;
+          -- Starting a read transaction to TCRAM.
+          if (in_ARVALID = '1') then
+            latch_enable_r <= '1';
+            -- TCRAM address bus is ready, proceed to read.
+            if (tcram_ARREADY = '1') then
+              next_state_r <= READ;
+            -- TCRAM address bus is not ready, wait.
+            else
+              next_state_r <= WAITING_AR;
+            end if;
+          end if;
+        end if;
+
+      when WAITING_AR =>
+        next_state_r <= WAITING_AR;
+        latch_enable_r <= '0';
+        cache_ARVALID <= '0';
+        tcram_ARVALID <= '0'; 
+        cache_RREADY <= '0';
+        tcram_RREADY <= '0';
+        in_ARREADY <= '0';
+        in_RID <= (others => '0');
+        in_RDATA <= (others => '0');
+        in_RRESP <= (others => '0');
+        in_RLAST <= '0';
+        in_RVALID <= '0';
+        if (cache_select_r_l = '1') then
+          cache_ARVALID <= in_ARVALID;
+          cache_RREADY <= in_RREADY;
+          in_ARREADY <= cache_ARREADY;
+          in_RVALID <= cache_RVALID;
+          -- Cache address bus is ready, proceed to read.
+          if ((cache_ARREADY = '1') and (in_ARVALID = '1')) then
+            next_state_r <= READ;
+          -- Cache address bus is still not ready, continue to wait.
+          else
+            next_state_r <= WAITING_AR;
+          end if;
+        else
+          tcram_ARVALID <= in_ARVALID;
+          tcram_RREADY <= in_RREADY;
+          in_ARREADY <= tcram_ARREADY;
+          in_RVALID <= tcram_RVALID;
+          -- TCRAM address bus is ready, proceed to read.
+          if ((tcram_ARREADY = '1') and (in_ARVALID = '1')) then
+            next_state_r <= READ;
+          -- TCRAM address bus is still not ready, continue to wait.
+          else
+            next_state_r <= WAITING_AR;
+          end if;
+        end if;
+
+      when READ =>
+        next_state_r <= IDLE;
+        latch_enable_r <= '0';
+        cache_ARVALID <= '0';
+        tcram_ARVALID <= '0';
+        cache_RREADY <= '0';
+        tcram_RREADY <= '0';
+        in_ARREADY <= '0';
+        in_RID <= (others => '0');
+        in_RDATA <= (others => '0');
+        in_RRESP <= (others => '0');
+        in_RLAST <= '0';
+        in_RVALID <= '0';
+        if (cache_select_r_l = '1') then
+          cache_RREADY <= in_RREADY;
+          in_RVALID <= cache_RVALID;
+          -- Cache read is complete, ready to process new transaction.
+          if ((cache_RVALID = '1') and (in_RREADY = '1')) then
+            in_RID <= cache_RID; 
+            in_RDATA <= cache_RDATA; 
+            in_RRESP <= cache_RRESP;
+            in_RLAST <= cache_RLAST;
+            in_RVALID <= cache_RVALID;
+            -- Start a new transaction immediately if the master is ready.
+            if (in_ARVALID = '1') then
+              latch_enable_r <= '1';
+              -- Start a cache transaction.
+              if (cache_select_r = '1') then
+                in_ARREADY <= cache_ARREADY;
+                cache_ARVALID <= in_ARVALID;
+                -- Cache address bus is ready, proceed to read. 
+                if (cache_ARREADY = '1') then
+                  next_state_r <= READ;
+                -- Cache address bus is not ready, wait.
+                else
+                  next_state_r <= WAITING_AR;
+                end if;
+              -- Start a TCRAM transaction.
+              else
+                in_ARREADY <= tcram_ARREADY;
+                tcram_ARVALID <= in_ARVALID;
+                -- TCRAM address bus is ready, proceed to read.
+                if (tcram_ARREADY = '1') then
+                  next_state_r <= READ;
+                -- TCRAM address bus is not ready, wait.
+                else
+                  next_state_r <= WAITING_AR;
+                end if;
+              end if;
+            end if;
+          -- Cache read is not yet complete, wait.
+          else
+            next_state_r <= READ;
+          end if;
+        else
+          tcram_RREADY <= in_RREADY;
+          in_RVALID <= tcram_RVALID; 
+          -- TCRAM read is complete, ready to process new transaction.
+          if ((tcram_RVALID = '1') and (in_RREADY = '1')) then
+            in_RID <= tcram_RID; 
+            in_RDATA <= tcram_RDATA; 
+            in_RRESP <= tcram_RRESP;
+            in_RLAST <= tcram_RLAST;
+            in_RVALID <= tcram_RVALID;
+            if (in_ARVALID = '1') then
+              latch_enable_r <= '1';
+              -- Start a cache transaction.
+              if (cache_select_r = '1') then
+                in_ARREADY <= cache_ARREADY;
+                cache_ARVALID <= in_ARVALID;
+                -- Cache address bus is ready, proceed to read.
+                if (cache_ARREADY = '1') then
+                  next_state_r <= READ;
+                -- Cache address bus is not ready, wait.
+                else
+                  next_state_r <= WAITING_AR;
+                end if;
+              -- Start a TCRAM transaction.
+              else
+                in_ARREADY <= tcram_ARREADY;
+                tcram_ARVALID <= in_ARVALID;
+                -- TCRAM address bus is ready, proceed to read.
+                if (tcram_ARREADY = '1') then
+                  next_state_r <= READ;
+                -- TCRAM address bus not ready, wait.
+                else
+                  next_state_r <= WAITING_AR;
+                end if;
+              end if;
+            end if;
+          -- TCRAM read is not yet complete, wait.
+          else
+            next_state_r <= READ;
+          end if;
+        end if;
+    end case;
+  end process;
+
+
+  -- TODO Implement write support.
+  process(state_w)
+  begin
+    case(state_w) is
+      when IDLE =>
+        next_state_w <= IDLE;
+        cache_AWVALID <= '0';
+        cache_WVALID <= '0';
+        tcram_AWVALID <= '0';
+        tcram_WVALID <= '0';
+        in_BID <= (others => '0'); 
+        in_BRESP <= (others => '0'); 
+        in_BVALID <= '0'; 
+        in_WREADY <= '0';
+        in_AWREADY <= '0';
+    end case;
+  end process;
+
+  -- The cache select is latched to determine which port's signals
+  -- to return to the master when the slave completes its transaction.
+  process(clk, reset)
+  begin
+    if (reset = '1') then
+      cache_select_r_l <= '0';
+      cache_select_w_l <= '0';
+      state_r <= IDLE;
+      state_w <= IDLE;
+    elsif rising_edge(clk) then
+      state_r <= next_state_r;
+      state_w <= next_state_w;
+      if (latch_enable_r = '1') then
+        cache_select_r_l <= cache_select_r;
+      end if;
+      if (latch_enable_w = '1') then
+        cache_select_w_l <= cache_select_w;
+      end if;
+    end if;
+  end process;
 
 end architecture;

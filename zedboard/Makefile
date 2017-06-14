@@ -60,6 +60,14 @@ bitstream:
   	--bit $(GUI_BIT) \
   	--proc dummy \
   	--out $(OUT_BIT) 
+    
+trigger_bitstream: 
+	make -C $(SW_DIR)
+	updatemem -force --meminfo $(MMI_FILE) \
+  	--data $(ELF_FILE) \
+  	--bit trig_at_startup.bit \
+  	--proc dummy \
+  	--out $(OUT_BIT) 
 
 pgm:
 	echo "pgm_wrapper $(PROJ_DIR) $(PROJ_NAME) $(OUT_BIT)" | $(VIVADO) -source $(PGM_TCL)

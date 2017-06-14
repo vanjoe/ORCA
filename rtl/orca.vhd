@@ -238,12 +238,6 @@ architecture rtl of orca is
   signal core_instruction_waitrequest   : std_logic;
   signal core_instruction_readdatavalid : std_logic;
 
-  signal rom_instruction_address        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal rom_instruction_read           : std_logic;
-  signal rom_instruction_readdata       : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal rom_instruction_waitrequest    : std_logic;
-  signal rom_instruction_readdatavalid  : std_logic;
-
   signal sp_address   : std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
   signal sp_byte_en   : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
   signal sp_write_en  : std_logic;
@@ -373,8 +367,6 @@ begin  -- architecture rtl
     -- incremental bursts
     constant BURST_INCR : std_logic_vector(1 downto 0) := "01";
 
-    signal core_instruction_stall4 : std_logic := '0';
-
     signal axi_reset : std_logic;
 
     signal instr_AWID    : std_logic_vector(3 downto 0);
@@ -461,12 +453,17 @@ begin  -- architecture rtl
     signal cache_RVALID  : std_logic;
     signal cache_RREADY  : std_logic;
 
+    signal core_instruction_write : std_logic;
+    signal core_instruction_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
   begin
 --BUG: this logic disregards the write response data
 
     axi_reset <= not reset;
+    core_instruction_write <= '0';
+    core_instruction_writedata <= (others => '0');
 
-    axi_data_master : axi_master
+    data_master : axi_master
       generic map (
         REGISTER_SIZE => REGISTER_SIZE,
         BYTE_SIZE     => BYTE_SIZE
@@ -528,40 +525,97 @@ begin  -- architecture rtl
       );
 
     -- Instruction read port
-    instr_ARID                     <= (others => '0');
-    instr_ARADDR                   <= core_instruction_address;
-    instr_ARLEN                    <= BURST_LEN;
-    instr_ARSIZE                   <= BURST_SIZE;
-    instr_ARBURST                  <= BURST_INCR;
-    instr_ARLOCK                   <= (others => '0');
-    instr_ARCACHE                  <= (others => '0');
-    instr_ARPROT                   <= (others => '0');
-    instr_ARVALID                  <= core_instruction_read;
-    core_instruction_stall4        <= not instr_ARREADY;
-                                        -- instr_RID
-    core_instruction_readdata      <= instr_RDATA;
-                                        --instr_RRESP
-                                        --instr_RLAST
-    core_instruction_readdatavalid <= instr_RVALID;
-    instr_RREADY                   <= '1';
+    instruction_master : axi_instruction_master
+      generic map (
+        REGISTER_SIZE => REGISTER_SIZE,
+        BYTE_SIZE     => BYTE_SIZE
+      )
+      port map (
+        clk                            => clk,
+        aresetn                        => axi_reset,
+        core_instruction_address       => core_instruction_address, 
+        core_instruction_read          => core_instruction_read,         
+        core_instruction_readdata      => core_instruction_readdata,    
+        core_instruction_readdatavalid => core_instruction_readdatavalid,
+        core_instruction_write         => core_instruction_write,        
+        core_instruction_writedata     => core_instruction_writedata,    
+        core_instruction_waitrequest   => core_instruction_waitrequest,
 
-    core_instruction_waitrequest <= core_instruction_stall4;
+        AWID                           => instr_AWID, 
+        AWADDR                         => instr_AWADDR, 
+        AWLEN                          => instr_AWLEN,
+        AWSIZE                         => instr_AWSIZE,
+        AWBURST                        => instr_AWBURST,
+        AWLOCK                         => instr_AWLOCK, 
+        AWCACHE                        => instr_AWCACHE,
+        AWPROT                         => instr_AWPROT,
+        AWVALID                        => instr_AWVALID,
+        AWREADY                        => instr_AWREADY,
 
-    instr_AWID    <= (others => '0');
-    instr_AWADDR  <= (others => '0');
-    instr_AWLEN   <= (others => '0');
-    instr_AWSIZE  <= (others => '0');
-    instr_AWBURST <= (others => '0');
-    instr_AWLOCK  <= (others => '0');
-    instr_AWCACHE <= (others => '0');
-    instr_AWPROT  <= (others => '0');
-    instr_AWVALID <= '0';
-    instr_WID     <= (others => '0');
-    instr_WDATA   <= (others => '0');
-    instr_WSTRB   <= (others => '0');
-    instr_WLAST   <= '0';
-    instr_WVALID  <= '0';
-    instr_BREADY  <= '1';
+        WID                            => instr_WID,
+        WSTRB                          => instr_WSTRB,
+        WLAST                          => instr_WLAST,
+        WVALID                         => instr_WVALID,
+        WDATA                          => instr_WDATA,
+        WREADY                         => instr_WREADY,
+        
+        BID                            => instr_BID,
+        BRESP                          => instr_BRESP,
+        BVALID                         => instr_BVALID,
+        BREADY                         => instr_BREADY,
+
+        ARID                           => instr_ARID, 
+        ARADDR                         => instr_ARADDR,
+        ARLEN                          => instr_ARLEN, 
+        ARSIZE                         => instr_ARSIZE,
+        ARLOCK                         => instr_ARLOCK,
+        ARCACHE                        => instr_ARCACHE,
+        ARPROT                         => instr_ARPROT,
+        ARBURST                        => instr_ARBURST,
+        ARVALID                        => instr_ARVALID,
+        ARREADY                        => instr_ARREADY,
+
+        RID                            => instr_RID, 
+        RDATA                          => instr_RDATA, 
+        RRESP                          => instr_RRESP,
+        RLAST                          => instr_RLAST, 
+        RVALID                         => instr_RVALID,
+        RREADY                         => instr_RREADY
+      );
+
+    --instr_ARID                     <= (others => '0');
+    --instr_ARADDR                   <= core_instruction_address;
+    --instr_ARLEN                    <= BURST_LEN;
+    --instr_ARSIZE                   <= BURST_SIZE;
+    --instr_ARBURST                  <= BURST_INCR;
+    --instr_ARLOCK                   <= (others => '0');
+    --instr_ARCACHE                  <= (others => '0');
+    --instr_ARPROT                   <= (others => '0');
+    --instr_ARVALID                  <= core_instruction_read;
+    --core_instruction_waitrequest   <= not instr_ARREADY;
+    --                                    -- instr_RID
+    --core_instruction_readdata      <= instr_RDATA;
+    --                                    --instr_RRESP
+    --                                    --instr_RLAST
+    --core_instruction_readdatavalid <= instr_RVALID;
+    --instr_RREADY                   <= '1';
+
+
+    --instr_AWID    <= (others => '0');
+    --instr_AWADDR  <= (others => '0');
+    --instr_AWLEN   <= (others => '0');
+    --instr_AWSIZE  <= (others => '0');
+    --instr_AWBURST <= (others => '0');
+    --instr_AWLOCK  <= (others => '0');
+    --instr_AWCACHE <= (others => '0');
+    --instr_AWPROT  <= (others => '0');
+    --instr_AWVALID <= '0';
+    --instr_WID     <= (others => '0');
+    --instr_WDATA   <= (others => '0');
+    --instr_WSTRB   <= (others => '0');
+    --instr_WLAST   <= '0';
+    --instr_WVALID  <= '0';
+    --instr_BREADY  <= '1';
 
   instruction_cache_mux :  cache_mux
     generic map (

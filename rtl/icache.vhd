@@ -263,7 +263,7 @@ begin
     end process;
 
     process(state_w, cache_miss, write_offset_addr_next, read_offset_addr_next, read_address_l, 
-            read_offset_addr, write_offset_addr, dram_RVALID, dram_RDATA, dram_ARREADY) 
+            read_offset_addr, write_offset_addr, dram_RVALID, dram_RDATA, dram_ARREADY, dram_read_done) 
     begin
       case (state_w) is
         when IDLE =>

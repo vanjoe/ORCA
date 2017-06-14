@@ -799,6 +799,68 @@ package rv_components is
       );
   end component axi_master;
 
+component axi_instruction_master is
+  generic (
+    REGISTER_SIZE : integer := 32;
+    BYTE_SIZE : integer := 8
+  );
+
+  port (
+    clk : in std_logic;
+    aresetn : in std_logic;
+
+    core_instruction_address : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    core_instruction_read : in std_logic;
+    core_instruction_readdata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    core_instruction_readdatavalid : out std_logic;
+    core_instruction_write : in std_logic;
+    core_instruction_writedata : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    core_instruction_waitrequest : out std_logic;
+
+    AWID : out std_logic_vector(3 downto 0);
+    AWADDR : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    AWLEN : out std_logic_vector(3 downto 0);
+    AWSIZE : out std_logic_vector(2 downto 0);
+    AWBURST : out std_logic_vector(1 downto 0);
+    AWLOCK : out std_logic_vector(1 downto 0);
+    AWCACHE : out std_logic_vector(3 downto 0);
+    AWPROT : out std_logic_vector(2 downto 0);
+    AWVALID : out std_logic;
+    AWREADY : in std_logic;
+
+    WID : out std_logic_vector(3 downto 0);
+    WSTRB : out std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+    WLAST : out std_logic;
+    WVALID : out std_logic;
+    WDATA : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    WREADY : in std_logic;
+    
+    BID : in std_logic_vector(3 downto 0);
+    BRESP : in std_logic_vector(1 downto 0);
+    BVALID : in std_logic;
+    BREADY : out std_logic;
+
+    ARID : out std_logic_vector(3 downto 0);
+    ARADDR : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    ARLEN : out std_logic_vector(3 downto 0);
+    ARSIZE : out std_logic_vector(2 downto 0);
+    ARLOCK : out std_logic_vector(1 downto 0);
+    ARCACHE : out std_logic_vector(3 downto 0);
+    ARPROT : out std_logic_vector(2 downto 0);
+    ARBURST : out std_logic_vector(1 downto 0);
+    ARVALID : out std_logic;
+    ARREADY : in std_logic;
+
+    RID : in std_logic_vector(3 downto 0);
+    RDATA : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    RRESP : in std_logic_vector(1 downto 0);
+    RLAST : in std_logic;
+    RVALID : in std_logic;
+    RREADY : out std_logic
+  );
+    
+end component axi_instruction_master;
+
   component ram_4port is
     generic(
       MEM_DEPTH       : natural;
