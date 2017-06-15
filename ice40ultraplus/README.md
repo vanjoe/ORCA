@@ -1,9 +1,9 @@
 #Running newly quanitzed networks
-Use either  `qmin.bin` (230) opr `qreduced.bin` (400) 
+Use either `n80.bin` (80??) or  `qmin.bin` (230) or `qreduced.bin` (400) 
 change flag in `software/net.c` to use larger reduced networks
 
-#Running old 230/400 reduced network
-`cp reduced.bin qmin.bin`
+#Running network
+`cp XXX.bin qmin.bin`
 change flag in `software/net.c` to use larger reduced network
 and revert the conditional escaping of scaling the last convolution layer 
 
