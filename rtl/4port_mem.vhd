@@ -183,6 +183,7 @@ entity ram_4port is
   generic(
     MEM_DEPTH : natural;
     MEM_WIDTH : natural;
+    POWER_OPTIMIZED : boolean;
     FAMILY    : string := "ALTERA");
   port(
     clk            : in  std_logic;
