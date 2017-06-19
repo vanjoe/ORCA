@@ -6,6 +6,7 @@
 
 #define USE_CAM_IMG 1
 #define PRINT_B64_IMG 0
+#define STRETCH_TO_1S 1
 
 #define SP0 (SCRATCHPAD_BASE+0*1024)
 #define SP4 (SCRATCHPAD_BASE+4*1024)
@@ -210,7 +211,7 @@ void cifar_lve() {
 #if USE_CAM_IMG
 	/* ovm_get_frame_async(); */
 #endif
-
+	unsigned one_sec_start=get_time();
 	do{
 		unsigned start_time=get_time();
 
@@ -285,9 +286,16 @@ void cifar_lve() {
 				printf("%s\t%d\r\n", categories[c], (int)v_out[c]);
 			}
 		}
+
+
 		unsigned net_cycles=get_time()-start_time;
 		unsigned net_ms=cycle2ms(net_cycles);
-		printf("Frame %d: %u ms Face Score = %d \r\n",frame_num++,net_ms,(int) v_out[1]);
+
+		printf("Frame %d: %d ms Face Score = %d \r\n",frame_num++,net_ms,(int) v_out[1]);
+#if STRETCH_TO_1S
+		sleepuntil(one_sec_start+ms2cycle(1000));
+		one_sec_start = get_time();
+#endif
 
 	} while(USE_CAM_IMG);
 }

@@ -9,11 +9,15 @@ static inline unsigned get_time()
 	asm volatile("csrr %0,time":"=r"(tmp));
 	return tmp;
 }
+static inline void sleepuntil(unsigned int cycle)
+{
+	asm volatile ("csrw 0x800,%0"::"r"(cycle));
+}
 static inline void sleepus(unsigned int us)
 {
 	us*=(SYS_CLK/1000000);
 	unsigned start=get_time();
-	asm volatile ("csrw 0x800,%0"::"r"(start+us));
+	sleepuntil(start+us);
 }
 static inline void sleepms(unsigned int ms)
 {
@@ -31,5 +35,5 @@ static inline void delayus(unsigned int us)
 void delayms( unsigned int ms);
 
 #define cycle2ms(cyc) (((unsigned)(cyc))/(SYS_CLK/1000))
-
+#define ms2cycle(ms) ((ms) * (SYS_CLK/1000))
 #endif //TIME_H
