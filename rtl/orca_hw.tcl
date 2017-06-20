@@ -172,6 +172,14 @@ set_parameter_property SHIFTER_MAX_CYCLES UNITS Cycles
 set_parameter_property SHIFTER_MAX_CYCLES ALLOWED_RANGES {1 8 32}
 set_parameter_property SHIFTER_MAX_CYCLES HDL_PARAMETER true
 
+add_parameter POWER_OPTIMIZED natural
+set_parameter_property POWER_OPTIMIZED DEFAULT_VALUE 0
+set_parameter_property POWER_OPTIMIZED DISPLAY_NAME "Optimize for Power"
+set_parameter_property POWER_OPTIMIZED DESCRIPTION "Improve power usage at the expense of area"
+set_parameter_property POWER_OPTIMIZED HDL_PARAMETER true
+set_parameter_property POWER_OPTIMIZED ALLOWED_RANGES 0:1
+set_display_item_property POWER_OPTIMIZED DISPLAY_HINT boolean
+
 
 add_parameter ENABLE_EXCEPTIONS natural 1
 set_parameter_property ENABLE_EXCEPTIONS DISPLAY_NAME "Enable Excecptions"

@@ -1,11 +1,11 @@
 #Running newly quanitzed networks
-Use either `n80.bin` (80??) or  `qmin.bin` (230) or `qreduced.bin` (400) 
+Use either `n80.bin` (80??) or  `qmin.bin` (230) or `qreduced.bin` (400)
 change flag in `software/net.c` to use larger reduced networks
 
 #Running network
 `cp XXX.bin qmin.bin`
 change flag in `software/net.c` to use larger reduced network
-and revert the conditional escaping of scaling the last convolution layer 
+and revert the conditional escaping of scaling the last convolution layer
 
 #Up and running
 
@@ -25,6 +25,28 @@ and revert the conditional escaping of scaling the last convolution layer
 - currently need `pgm-flash` to program board as jumpers switched
 
 - see `./uart0.jpg` `./uart1.jpg` for UART (accessed via `picocom -b 1152000 /dev/ttyUSBX`)
+
+- to view image coming off of the sensor set `#define PRINT_B64_IMG 1` before building, and open up the
+serial port with `python detect_uart.py /dev/ttyUSBX`
+
+# Controlling Runtime,
+
+The runtime is controlled by changing the camera and the orca clock speed. The total framerate
+is the sum of the the algorithm time and the frame transfer time. The ORCA core sleeps most of
+the time while waiting for the camera.
+
+# Power optimized vs Speed Optimized
+**Power Optimzed**
+* PLL = 0 (8 MHz)
+* ovm7692_regs.c change PCLK divider to `{0x11,0x07}` (3.375 MHz)
+* change `POWER_OPTIMIZED=>0` to `POWER_OPTIMIZED=>1` in top.vhd
+* set `#define STRETCH_TO_1S 1` in cifar_main.c
+
+**Speed Optimized**
+* PLL = 2 (24 MHz)
+* ovm7692_regs.c change PCLK divider to `{0x11,0x00}` (27 MHz)
+* change `POWER_OPTIMIZED=>1` to `POWER_OPTIMIZED=>0` in top.vhd
+* set `#define STRETCH_TO_1S 0` in cifar_main.c
 
 #Building Flash.bin
 

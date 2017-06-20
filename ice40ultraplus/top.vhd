@@ -29,14 +29,14 @@ entity vhdl_top is
     led : out std_logic;
 
     --clk
-    cam_xclk  : in std_logic;
-    cam_vsync : in std_logic;
-    cam_href  : in std_logic;
-    cam_dat   : in std_logic_vector(7 downto 0);
-
+    cam_xclk   : in    std_logic;
+    cam_vsync  : in    std_logic;
+    cam_href   : in    std_logic;
+    cam_dat    : in    std_logic_vector(7 downto 0);
+    cam_dat_en : out   std_logic;
     --sccb
-    sccb_scl : inout std_logic;
-    sccb_sda : inout std_logic
+    sccb_scl   : inout std_logic;
+    sccb_sda   : inout std_logic
     );
 end entity;
 
@@ -51,7 +51,7 @@ architecture rtl of vhdl_top is
   constant RAM_SIZE      : natural := 12*1024;
   --for seperate memory
   constant INST_RAM_SIZE : natural := 8*1024;
-  constant DATA_RAM_SIZE : natural := 4*1024;
+  constant DATA_RAM_SIZE : natural := 2*1024;
 
   constant SEPERATE_MEMS : boolean := true;
 
@@ -513,6 +513,7 @@ begin
         WISHBONE_ENABLE      => 1,
         MULTIPLY_ENABLE      => 1,
         DIVIDE_ENABLE        => 0,
+        POWER_OPTIMIZED      => 1,
         SHIFTER_MAX_CYCLES   => 32,
         COUNTER_LENGTH       => 32,
         PIPELINE_STAGES      => 4,
@@ -859,14 +860,15 @@ begin
         master_STALL_I => cam_sp_STALL_I,
 
         --pio control signals
-        cam_start => ovm_dma_start,
-        cam_done  => ovm_dma_done,
-
+        cam_start  => ovm_dma_start,
+        cam_done   => ovm_dma_done,
+        cam_dat_en => cam_dat_en,
         --camera signals
-        ovm_pclk    => cam_pclk,
-        ovm_vsync   => cam_vsync,
-        ovm_href    => cam_href,
-        ovm_dat     => cam_dat_internal
+        ovm_pclk   => cam_pclk,
+        ovm_vsync  => cam_vsync,
+        ovm_href   => cam_href,
+        ovm_dat    => cam_dat_internal
+
         );
   end generate cam_gen;
 

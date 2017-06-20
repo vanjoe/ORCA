@@ -8,6 +8,7 @@ scale=10
 
 ss=serial.Serial(sys.argv[1],baudrate=115200)
 is_face=False
+filename=None
 while(True):
     ln=ss.readline()[:-1]
     img_rows=32
@@ -20,13 +21,12 @@ while(True):
         except base64.binascii.Error:
             sys.stderr.write("Python Error: Bad base64 string\n")
             continue
-
-        cvimage = np.array(data,dtype=np.uint8).reshape(img_rows,img_cols,3)
-
-        #set last two rows as green or red
-        cvimage[30:,:,0] = 0
-        cvimage[30:,:,1] = 255 if is_face else 0
-        cvimage[30:,:,2] = 0 if   is_face else 255
+        try:
+            cvimage = np.array(data,dtype=np.uint8)
+            cvimage = cvimage.reshape(img_rows,img_cols,3)
+        except ValueError:
+            sys.stderr.write("Python Error: Numpy conversion error\n")
+            continue
 
         bigimage=cv2.resize(cvimage,(img_cols*scale,img_rows*scale),interpolation=cv2.INTER_NEAREST)
 
@@ -39,24 +39,12 @@ while(True):
             filename="face_{}.png".format(int(time.time()*10))
         if key == ord('n'):
             filename="notface_{}.png".format(int(time.time()*10))
-        if filename:
-            print("saving: {}".format(filename))
-            cv2.imwrite(filename,cvimage)
-    elif "scores:" == ln[:len("scores:")]:
-        ln=ln[len("scores:"):]
-        catagories=["nonface", "face"]
-        scores=zip(catagories,[int(s) for s in ln.split()])
-
-        max_score= max(scores,key=lambda x :x[1])
-        for c,s in scores:
-            sys.stdout.write("{}\t{}".format(c,s))
-            if c== max_score[0]:
-                sys.stdout.write("   <==\n")
-            else:
-                sys.stdout.write("\n")
-        #check face score
-        is_face=scores[1][1]> 0
 
     else:
-        print ln
-        pass
+        print(ln)
+        if "Face Score =" in ln:
+            score = int(ln.split()[-1])
+            if filename:
+                filename="s_{}_".format(score)+filename
+                print("saving: {}".format(filename))
+                cv2.imwrite(filename,cvimage)

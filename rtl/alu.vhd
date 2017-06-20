@@ -10,8 +10,10 @@ use work.constants_pkg.all;
 entity arithmetic_unit is
   generic (
     REGISTER_SIZE       : integer;
+    SIMD_ENABLE         : boolean;
     SIGN_EXTENSION_SIZE : integer;
     MULTIPLY_ENABLE     : boolean;
+    POWER_OPTIMIZED     : boolean;
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
     FAMILY              : string := "ALTERA");
@@ -20,6 +22,7 @@ entity arithmetic_unit is
     clk                : in  std_logic;
     valid_instr        : in  std_logic;
     stall_to_alu       : in  std_logic;
+    simd_op_size       : in  std_logic_vector(1 downto 0);
     stall_from_execute : in  std_logic;
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -27,9 +30,10 @@ entity arithmetic_unit is
     sign_extension     : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     program_counter    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_out_valid     : out std_logic;
-    less_than          : out std_logic;
-    stall_from_alu     : out std_logic;
+
+    data_out_valid : out std_logic;
+    less_than      : out std_logic;
+    stall_from_alu : out std_logic;
 
     lve_data1        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     lve_data2        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -51,12 +55,9 @@ architecture rtl of arithmetic_unit is
   alias func7  : std_logic_vector(6 downto 0) is instruction(31 downto 25);
   alias opcode : std_logic_vector(6 downto 0) is instruction(6 downto 0);
 
-  signal data1       : unsigned(REGISTER_SIZE-1 downto 0);
-  signal data2       : unsigned(REGISTER_SIZE-1 downto 0);
-  signal data_result : unsigned(REGISTER_SIZE-1 downto 0);
+  signal data1 : unsigned(REGISTER_SIZE-1 downto 0);
+  signal data2 : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal data_in1     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_in2     : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal source_valid : std_logic;
 
   signal shift_amt            : unsigned(log2(REGISTER_SIZE)-1 downto 0);
@@ -140,63 +141,163 @@ architecture rtl of arithmetic_unit is
       );
   end component;
 
-  component operand_creation is
-    generic (
-      REGISTER_SIZE          : natural;
-      SIGN_EXTENSION_SIZE    : natural;
-      INSTRUCTION_SIZE       : natural;
-      SHIFTER_USE_MULTIPLIER : boolean
-      );
-    port(
-      rs1_data          : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data          : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      source_valid      : in     std_logic;
-      instruction       : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      sign_extension    : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-      data1             : buffer unsigned(REGISTER_SIZE-1 downto 0);
-      data2             : buffer unsigned(REGISTER_SIZE-1 downto 0);
-      sub               : out    signed(REGISTER_SIZE downto 0);
-      sub_valid         : out    std_logic;
-      shift_amt         : buffer unsigned(log2(REGISTER_SIZE)-1 downto 0);
-      shift_value       : buffer signed(REGISTER_SIZE downto 0);
-      mul_srca          : out    signed(REGISTER_SIZE downto 0);
-      mul_srcb          : out    signed(REGISTER_SIZE downto 0);
-      mul_src_shift_amt : out    unsigned(log2(REGISTER_SIZE)-1 downto 0);
-      mul_src_valid     : out    std_logic
-      );
-  end component;
   signal func7_shift : boolean;
+
+  --operand creation signals
+  alias not_immediate is instruction(5);
+  signal immediate_value  : unsigned(REGISTER_SIZE-1 downto 0);
+  signal shifter_multiply : signed(REGISTER_SIZE downto 0);
+  signal m_op1_msk        : std_logic;
+  signal m_op2_msk        : std_logic;
+  signal m_op1            : signed(REGISTER_SIZE downto 0);
+  signal m_op2            : signed(REGISTER_SIZE downto 0);
+
+  signal unsigned_div : std_logic;
+
+
+  signal is_add : boolean;
+  signal is_sub : std_logic;
+
+  signal add : signed(REGISTER_SIZE downto 0);
+
+
+  signal arith_msb_mask : std_logic_vector(3 downto 0);
 begin  -- architecture rtl
 
-  oc : operand_creation
-    generic map (
-      REGISTER_SIZE          => REGISTER_SIZE,
-      SIGN_EXTENSION_SIZE    => SIGN_EXTENSION_SIZE,
-      SHIFTER_USE_MULTIPLIER => SHIFTER_USE_MULTIPLIER,
-      INSTRUCTION_SIZE       => INSTRUCTION_SIZE)
-    port map (
-      rs1_data          => data_in1,
-      rs2_data          => data_in2,
-      source_valid      => source_valid,
-      instruction       => instruction,
-      sign_extension    => sign_extension,
-      data1             => data1,
-      data2             => data2,
-      sub               => sub,
-      sub_valid         => sub_valid,
-      shift_amt         => shift_amt,
-      shift_value       => shift_value,
-      mul_srca          => mul_srca,
-      mul_srcb          => mul_srcb,
-      mul_src_shift_amt => mul_src_shift_amt,
-      mul_src_valid     => mul_src_valid
-      );
 
---  data_in1 <= lve_data1 when lve_source_valid = '1' else rs1_data;
---  data_in2 <= lve_data2 when lve_source_valid = '1' else rs2_data;
+  immediate_value <= unsigned(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0)&
+                              instruction(31 downto 20));
+  data1 <= (others => '0') when source_valid = '0' and POWER_OPTIMIZED else
+           unsigned(rs1_data);
+  data2 <= (others => '0') when source_valid = '0' and POWER_OPTIMIZED else
+           unsigned(rs2_data) when not_immediate = '1' else immediate_value;
 
-  data_in1 <= rs1_data;
-  data_in2 <= rs2_data;
+
+
+  shift_amt <= data2(log2(REGISTER_SIZE)-1 downto 0) when not SHIFTER_USE_MULTIPLIER else
+               data2(log2(REGISTER_SIZE)-1 downto 0) when instruction(14) = '0'else
+               unsigned(-signed(data2(log2(REGISTER_SIZE)-1 downto 0)));
+  shift_value <= signed((instruction(30) and rs1_data(rs1_data'left)) & rs1_data);
+
+
+
+
+  with instruction(6 downto 5) select
+    is_add <=
+    instruction(14 downto 12) = "000"                           when "00",
+    instruction(14 downto 12) = "000" and instruction(30) = '0' when "01",
+    false                                                       when others;
+
+  is_sub <= '0' when is_add else '1';
+  gen_simd_en : if SIMD_ENABLE generate
+    signal cin0, cin1, cin2, cin3                     : signed(8 downto 0);
+    signal cout0, cout1, cout2, cout3                 : std_logic;
+    signal op1_byte3, op1_byte2, op1_byte1, op1_byte0 : signed(8 downto 0);
+    signal op2_byte3, op2_byte2, op2_byte1, op2_byte0 : signed(8 downto 0);
+    signal add3, add2, add1, add0                     : signed(8 downto 0);
+
+    signal op1_msb : std_logic_vector(3 downto 0);
+    signal op2_msb : std_logic_vector(3 downto 0);
+
+    signal byte_size : std_logic;
+    signal half_size : std_logic;
+    signal word_size : std_logic;
+
+  begin
+    byte_size <= '1' when simd_op_size = LVE_BYTE_SIZE else '0';
+    half_size <= '1' when simd_op_size = LVE_HALF_SIZE else '0';
+    word_size <= '1' when simd_op_size = LVE_WORD_SIZE else '0';
+
+    with instruction(14 downto 12) select
+      op1_msb <=
+      "0000"                                                                                      when "110",
+      "0000"                                                                                      when "111",
+      "0000"                                                                                      when "011",
+      data1(31)&(data1(23)and byte_size) &(data1(15)and not word_size) & (data1(7) and byte_size) when others;
+    with instruction(14 downto 12) select
+      op2_msb <=
+      "0000"                                                                             when "110",
+      "0000"                                                                             when "111",
+      not ("0"& not byte_size & word_size & not byte_size)                               when "011",
+      (data2(31) xor is_sub) & ((data2(23) xor is_sub) and byte_size) &
+      ((data2(15) xor is_sub) and not word_size) & ((data2(7) xor is_sub) and byte_size) when others;
+
+
+    cin0 <= "000000001" when is_sub = '1' else
+            "000000000";
+    cin1 <= "00000000"&cout0 when byte_size = '0' else
+            "000000001" when byte_size = '1' and is_sub = '1' else
+            "000000000";
+    cin2 <= "00000000"&cout1 when word_size = '1' else
+            "000000001" when word_size = '0' and is_sub = '1' else
+            "000000000";
+    cin3 <= "00000000"&cout2 when byte_size = '0' else
+            "000000001" when byte_size = '1' and is_sub = '1' else
+            "000000000";
+    op1_byte3 <= signed(op1_msb(3) & data1(31 downto 24));
+    op1_byte2 <= signed(op1_msb(2) & data1(23 downto 16));
+    op1_byte1 <= signed(op1_msb(1) & data1(15 downto 8));
+    op1_byte0 <= signed(op1_msb(0) & data1(7 downto 0));
+
+    op2_byte3 <= signed(op2_msb(3) & data2(31 downto 24));
+    op2_byte2 <= signed(op2_msb(2) & data2(23 downto 16));
+    op2_byte1 <= signed(op2_msb(1) & data2(15 downto 8));
+    op2_byte0 <= signed(op2_msb(0) & data2(7 downto 0));
+
+    add0  <= cin0 +op1_byte0 + conditional(is_sub = '1', op2_byte0 xor to_signed(255, 9), op2_byte0);
+    add1  <= cin1 +op1_byte1 + conditional(is_sub = '1', op2_byte1 xor to_signed(255, 9), op2_byte1);
+    add2  <= cin2 +op1_byte2 + conditional(is_sub = '1', op2_byte2 xor to_signed(255, 9), op2_byte2);
+    add3  <= cin3 +op1_byte3 + conditional(is_sub = '1', op2_byte3 xor to_signed(255, 9), op2_byte3);
+    cout0 <= add0(8);
+    cout1 <= add1(8);
+    cout2 <= add2(8);
+    cout3 <= add3(8);
+
+    add       <= add3(8 downto 0) &add2(7 downto 0) &add1(7 downto 0) &add0(7 downto 0);
+    sub       <= add(sub'range);
+    sub_valid <= source_valid;
+  end generate;
+  gen_simd_nen : if not SIMD_ENABLE generate
+
+    signal op1 : signed(REGISTER_SIZE downto 0);
+    signal op2 : signed(REGISTER_SIZE downto 0);
+
+    signal op1_msb, op2_msb : std_logic;
+  begin
+    with instruction(14 downto 12) select
+      op1_msb <=
+      '0'               when "110",
+      '0'               when "111",
+      '0'               when "011",
+      data1(data1'left) when others;
+    with instruction(14 downto 12) select
+      op2_msb <=
+      '0'               when "110",
+      '0'               when "111",
+      '0'               when "011",
+      data2(data1'left) when others;
+
+    op1 <= signed(op1_msb & data1);
+    op2 <= signed(op2_msb & data2);
+
+    add       <= op2 + op1;
+    sub       <= add when is_add else op1 - op2;
+    sub_valid <= source_valid;
+  end generate;
+
+
+
+
+  m_op1_msk <= '0' when instruction(13 downto 12) = "11" else '1';
+  m_op2_msk <= not instruction(13);
+  m_op1     <= signed((m_op1_msk and rs1_data(data1'left)) & data1);
+  m_op2     <= signed((m_op2_msk and rs2_data(data2'left)) & data2);
+
+  mul_srca          <= signed(m_op1) when instruction(25) = '1' or not SHIFTER_USE_MULTIPLIER else shifter_multiply;
+  mul_srcb          <= signed(m_op2) when instruction(25) = '1' or not SHIFTER_USE_MULTIPLIER else shift_value;
+  mul_src_shift_amt <= shift_amt;
+  mul_src_valid     <= source_valid;
+
 
   source_valid <= lve_source_valid when opcode = LVE_OP else
                   not stall_to_alu and valid_instr;
@@ -206,6 +307,10 @@ begin  -- architecture rtl
   sh_stall    <= (not shifted_result_valid)   when sh_enable = '1'                                                                                                                                else '0';
 
   SH_GEN0 : if SHIFTER_USE_MULTIPLIER generate
+    shift_mul_gen : for n in shifter_multiply'left-1 downto 0 generate
+      shifter_multiply(n) <= '1' when std_logic_vector(shift_amt) = std_logic_vector(to_unsigned(n, shift_amt'length)) else '0';
+    end generate shift_mul_gen;
+    shifter_multiply(shifter_multiply'left) <= '0';
     process(clk) is
     begin
       if rising_edge(clk) then
@@ -402,8 +507,13 @@ begin  -- architecture rtl
     begin
       if rising_edge(clk) then
         --Register multiplier inputs
-        mul_a            <= mul_srca;
-        mul_b            <= mul_srcb;
+
+        mul_a <= mul_srca;
+        mul_b <= mul_srcb;
+        if POWER_OPTIMIZED and mul_enable = '0' and sh_enable = '0' then
+          mul_a <= (others => '0');
+          mul_b <= (others => '0');
+        end if;
         mul_ab_shift_amt <= mul_src_shift_amt;
         mul_ab_valid     <= mul_src_valid;
 
@@ -609,129 +719,6 @@ begin  -- architecture rtl
 end architecture rtl;
 
 
-
--------------------------------------------------------------------------------
--- Operand Creation
--------------------------------------------------------------------------------
-library ieee;
-use ieee.std_logic_1164.all;
-use IEEE.NUMERIC_STD.all;
-library work;
-use work.utils.all;
-
-
-entity operand_creation is
-  generic (
-    REGISTER_SIZE          : natural;
-    INSTRUCTION_SIZE       : natural;
-    SIGN_EXTENSION_SIZE    : natural;
-    SHIFTER_USE_MULTIPLIER : boolean
-    );
-  port(
-    rs1_data          : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data          : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    source_valid      : in     std_logic;
-    instruction       : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    sign_extension    : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-    data1             : buffer unsigned(REGISTER_SIZE-1 downto 0);
-    data2             : buffer unsigned(REGISTER_SIZE-1 downto 0);
-    sub               : out    signed(REGISTER_SIZE downto 0);
-    sub_valid         : out    std_logic;
-    shift_amt         : buffer unsigned(log2(REGISTER_SIZE)-1 downto 0);
-    shift_value       : buffer signed(REGISTER_SIZE downto 0);
-    mul_srca          : out    signed(REGISTER_SIZE downto 0);
-    mul_srcb          : out    signed(REGISTER_SIZE downto 0);
-    mul_src_shift_amt : out    unsigned(log2(REGISTER_SIZE)-1 downto 0);
-    mul_src_valid     : out    std_logic
-    );
-end entity;
-
-architecture rtl of operand_creation is
-  constant MUL_F7 : std_logic_vector(6 downto 0) := "0000001";
-
-  alias not_immediate is instruction(5);
-  signal immediate_value  : unsigned(REGISTER_SIZE-1 downto 0);
-  signal op1              : signed(REGISTER_SIZE downto 0);
-  signal op2              : signed(REGISTER_SIZE downto 0);
-  signal shifter_multiply : signed(REGISTER_SIZE downto 0);
-  signal m_op1_msk        : std_logic;
-  signal m_op2_msk        : std_logic;
-  signal m_op1            : signed(REGISTER_SIZE downto 0);
-  signal m_op2            : signed(REGISTER_SIZE downto 0);
-
-  signal unsigned_div : std_logic;
-
-  signal op1_msb : std_logic;
-  signal op2_msb : std_logic;
-
-  signal is_add : boolean;
-
-  alias func3 : std_logic_vector(2 downto 0) is instruction(14 downto 12);
-  alias func7 : std_logic_vector(6 downto 0) is instruction(31 downto 25);
-
-  attribute syn_keep        : boolean;
-  signal add                : signed(REGISTER_SIZE downto 0);
-  attribute syn_keep of add : signal is true;
-
-  constant OP_IMM_IMMEDIATE_SIZE : integer := 12;
-
-begin  -- architecture rtl
-
-  immediate_value <= unsigned(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0)&
-                              instruction(31 downto 20));
-  data1     <= unsigned(rs1_data);
-  data2     <= unsigned(rs2_data)                    when not_immediate = '1' else immediate_value;
-  shift_amt <= data2(log2(REGISTER_SIZE)-1 downto 0) when not SHIFTER_USE_MULTIPLIER else
-               data2(log2(REGISTER_SIZE)-1 downto 0) when instruction(14) = '0'else
-               unsigned(-signed(data2(log2(REGISTER_SIZE)-1 downto 0)));
-
-  shift_value <= signed((instruction(30) and rs1_data(rs1_data'left)) & rs1_data);
-
---combine slt
-  with instruction(14 downto 12) select
-    op1_msb <=
-    '0'               when "110",
-    '0'               when "111",
-    '0'               when "011",
-    data1(data1'left) when others;
-  with instruction(14 downto 12) select
-    op2_msb <=
-    '0'               when "110",
-    '0'               when "111",
-    '0'               when "011",
-    data2(data1'left) when others;
-
-  op1 <= signed(op1_msb & data1);
-  op2 <= signed(op2_msb & data2);
-
-  with instruction(6 downto 5) select
-    is_add <=
-    instruction(14 downto 12) = "000"                           when "00",
-    instruction(14 downto 12) = "000" and instruction(30) = '0' when "01",
-    false                                                       when others;
-  add       <= op2 + op1;
-  sub       <= add when is_add else op1 - op2;
-  sub_valid <= source_valid;
-
-
-  shift_mul_gen : for n in shifter_multiply'left-1 downto 0 generate
-    shifter_multiply(n) <= '1' when std_logic_vector(shift_amt) = std_logic_vector(to_unsigned(n, shift_amt'length)) else '0';
-  end generate shift_mul_gen;
-  shifter_multiply(shifter_multiply'left) <= '0';
-
-
-  m_op1_msk <= '0' when instruction(13 downto 12) = "11" else '1';
-  m_op2_msk <= not instruction(13);
-  m_op1     <= signed((m_op1_msk and rs1_data(data1'left)) & data1);
-  m_op2     <= signed((m_op2_msk and rs2_data(data2'left)) & data2);
-
-  mul_srca          <= signed(m_op1) when instruction(25) = '1' or not SHIFTER_USE_MULTIPLIER else shifter_multiply;
-  mul_srcb          <= signed(m_op2) when instruction(25) = '1' or not SHIFTER_USE_MULTIPLIER else shift_value;
-  mul_src_shift_amt <= shift_amt;
-  mul_src_valid     <= source_valid;
-end architecture rtl;
-
-
 -------------------------------------------------------------------------------
 -- DIVISION
 -------------------------------------------------------------------------------
@@ -781,11 +768,13 @@ begin  -- architecture rtl
   div_neg_op1 <= not unsigned_div when signed(rs1_data) < 0 else '0';
   div_neg_op2 <= not unsigned_div when signed(rs2_data) < 0 else '0';
 
-  min_signed <= (min_signed'left => '1',
-                 others          => '0');
-  div_zero     <= rs2_data = to_unsigned(0, REGISTER_SIZE);
-  div_overflow <= rs1_data = min_signed and
-                  rs2_data = unsigned(to_signed(-1, REGISTER_SIZE)) and unsigned_div = '0';
+  min_signed(min_signed'left)             <= '1';
+  min_signed(min_signed'left -1 downto 0) <= (others => '0');
+
+  div_zero <= rs2_data = to_unsigned(0, REGISTER_SIZE);
+  div_overflow <= (rs1_data = min_signed and
+                   rs2_data = unsigned(to_signed(-1, REGISTER_SIZE)) and
+                   unsigned_div = '0');
 
 
   numerator   <= unsigned(rs1_data) when div_neg_op1 = '0' else unsigned(-signed(rs1_data));

@@ -11,10 +11,22 @@ package utils is
     N : integer)
     return integer;
   function conditional (
-    constant a        :    boolean;
-    constant if_true  : in integer;
-    constant if_false : in integer)
+    a        :    boolean;
+    if_true  : in integer;
+    if_false : in integer)
     return integer;
+
+  function conditional (
+    a        :    boolean;
+    if_true  : in std_logic_vector;
+    if_false : in std_logic_vector)
+    return std_logic_vector;
+
+  function conditional (
+    a        :    boolean;
+    if_true  : in signed;
+    if_false : in signed)
+    return signed;
 
 
   function branch_pack_signal (
@@ -44,7 +56,7 @@ package utils is
     return integer;
 
   function bool_to_sl (
-     a : boolean)
+    a : boolean)
     return std_logic;
 
 end utils;
@@ -60,7 +72,7 @@ package body utils is
   end function bool_to_int;
 
   function bool_to_sl (
-     a : boolean)
+    a : boolean)
     return std_logic is
   begin  -- function bool_to_int
     if a then
@@ -93,9 +105,35 @@ package body utils is
   end log2;
 
   function conditional (
-    constant a        :    boolean;
-    constant if_true  : in integer;
-    constant if_false : in integer)
+    a        :    boolean;
+    if_true  : in std_logic_vector;
+    if_false : in std_logic_vector)
+    return std_logic_vector is
+  begin
+    if a then
+      return if_true;
+    else
+      return if_false;
+    end if;
+  end conditional;
+
+    function conditional (
+    a        :    boolean;
+    if_true  : in signed;
+    if_false : in signed)
+    return signed is
+  begin
+    if a then
+      return if_true;
+    else
+      return if_false;
+    end if;
+  end conditional;
+
+  function conditional (
+    a        :    boolean;
+    if_true  : in integer;
+    if_false : in integer)
     return integer is
   begin
     if a then
@@ -104,6 +142,7 @@ package body utils is
       return if_false;
     end if;
   end conditional;
+
 
   function ceil_log2(i : natural) return integer is
     variable temp    : integer := i;

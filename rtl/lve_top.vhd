@@ -13,6 +13,7 @@ entity lve_top is
   generic(
     REGISTER_SIZE    : natural;
     SLAVE_DATA_WIDTH : natural := 32;
+    POWER_OPTIMIZED  : boolean;
     SCRATCHPAD_SIZE  : integer := 1024;
     FAMILY           : string  := "ALTERA");
   port(
@@ -36,6 +37,7 @@ entity lve_top is
     stall_from_lve       : out    std_logic;
     lve_alu_data1        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     lve_alu_data2        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lve_alu_op_size      : out    std_logic_vector(1 downto 0);
     lve_alu_source_valid : out    std_logic;
     lve_alu_result       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     lve_alu_result_valid : in     std_logic
@@ -76,6 +78,8 @@ architecture rtl of lve_top is
   signal cmv_result       : std_logic_vector(lve_alu_result'range);
   signal lve_data1        : std_logic_vector(lve_alu_data1'range);
   signal lve_data2        : std_logic_vector(lve_alu_data2'range);
+  signal ci_data1         : std_logic_vector(lve_alu_data1'range);
+  signal ci_data2         : std_logic_vector(lve_alu_data2'range);
 
   signal cmv_write_en : std_logic;
 
@@ -163,6 +167,8 @@ architecture rtl of lve_top is
   signal ci_pause        : std_logic;
 begin
 
+  lve_alu_op_size <= LVE_WORD_SIZE when lve_source_valid = '0' else
+                     dsz;
   lve_alu_data1        <= lve_data1;
   lve_alu_data2        <= lve_data2;
   lve_alu_source_valid <= lve_source_valid and not mxp_instr;
@@ -347,6 +353,9 @@ begin
                            func3 /= LVE_VCMV_Z_FUNC3 and
                            func3 /= LVE_VCMV_NZ_FUNC3) else
                  '0';
+
+  ci_data1 <= (others => '0') when ci_valid_in = '0' and POWER_OPTIMIZED else srca_data_read;
+  ci_data2 <= (others => '0') when ci_valid_in = '0' and POWER_OPTIMIZED else srcb_data_read;
   the_lve_ci : lve_ci
     generic map (
       REGISTER_SIZE => REGISTER_SIZE
@@ -360,8 +369,8 @@ begin
       pause => ci_pause,
 
       valid_in => ci_valid_in,
-      data1_in => lve_data1,
-      data2_in => lve_data2,
+      data1_in => ci_data1,
+      data2_in => ci_data2,
 
       align1_in => std_logic_vector(srca_ptr(1 downto 0)),
       align2_in => std_logic_vector(srcb_ptr(1 downto 0)),
@@ -379,9 +388,10 @@ begin
 
   scratchpad_memory : ram_4port
     generic map (
-      MEM_WIDTH => 32,
-      MEM_DEPTH => SCRATCHPAD_SIZE/4,
-      FAMILY    => FAMILY)
+      MEM_WIDTH       => 32,
+      MEM_DEPTH       => SCRATCHPAD_SIZE/4,
+      POWER_OPTIMIZED => POWER_OPTIMIZED,
+      FAMILY          => FAMILY)
     port map (
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
@@ -394,19 +404,19 @@ begin
       ren0          => rd_en,
       scalar_value  => std_logic_vector(scalar_value),
       scalar_enable => scalar_enable,
-      data_out0   => srca_data_read,
+      data_out0     => srca_data_read,
 
       raddr1      => std_logic_vector(srcb_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
       ren1        => rd_en,
       enum_value  => std_logic_vector(enum_count),
       enum_enable => enum_enable,
       data_out1   => srcb_data_read,
-      ack01     => lve_source_valid,
-      
-      waddr2    => waddr2,
-      byte_en2  => byte_en2,
-      wen2      => write_enable,
-      data_in2  => std_logic_vector(writeback_data),
+      ack01       => lve_source_valid,
+
+      waddr2   => waddr2,
+      byte_en2 => byte_en2,
+      wen2     => write_enable,
+      data_in2 => std_logic_vector(writeback_data),
 
       rwaddr3   => slave_address_reg(log2(SCRATCHPAD_SIZE)-1 downto 2),
       wen3      => slave_write_en_reg,

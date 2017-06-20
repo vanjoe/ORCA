@@ -126,6 +126,7 @@ int ovm_get_frame()
 	ovm_printf("start bit set\r\n");
 	// wait until FSM actually starts
 	while( ovm_isdone() ){
+		sleepus(500);
 		ovm_printf("not done\r\n");
 	}
 	ovm_printf("done bit clear\r\n");
@@ -133,7 +134,9 @@ int ovm_get_frame()
 	ovm_clear_bit( PIO_BIT_START );
 	ovm_printf("start bit clear\r\n");
 	// wait until DMA is DONE
-	while( ovm_isdone()==0 );
+	while( ovm_isdone()==0 ){
+		sleepus(1000);
+	}
 	ovm_printf("done bit set\r\n");
 
 

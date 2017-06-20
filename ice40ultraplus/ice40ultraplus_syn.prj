@@ -54,7 +54,7 @@ set_option -project_relative_includes 1
 
 #
 #implementation parameter settings
-set_option -hdl_param -set USE_PLL  2
+set_option -hdl_param -set USE_PLL  0
 set_option -hdl_param -set USE_CAM  1
 set_option -hdl_param -set USE_UART 0
 set_option -hdl_param -set USE_LVE  1

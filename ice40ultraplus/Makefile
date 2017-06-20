@@ -60,6 +60,7 @@ $(PROJ_BITFILE): $(TIMING_REPORT) dmem.mem imem.mem $(DMEM_LIST) $(IMEM_LIST) $(
 
 $(TIMING_REPORT): $(EDF)
 	ICECUBE2=$(ICECUBE2) tclsh iCEcube2_flow.tcl $(PROJECT) $(OUTPUT_DIR)
+	grep -B10 "End of Clock Frequency Summary" $(TIMING_REPORT)
 $(EDF): $(HDL_FILES) $(SYN_PRJ)
 #run the compiler, output the log if compiler fails
 	SYNPLIFY_PATH=$(ICECUBE2)/synpbase \

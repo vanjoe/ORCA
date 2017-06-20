@@ -1,7 +1,7 @@
 
 #include "vbx.h"
 
-vbx_mxp_t the_mxp;
+vbx_lve_t the_mxp;
 
 #define TEST_ATTR static __attribute__((noinline))
 
@@ -33,7 +33,7 @@ TEST_ATTR int test_2()
 
 int main()
 {
-	the_mxp.stride =1;
+	the_lve.stride =1;
 
 	do_test(2);
 	return 0;

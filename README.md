@@ -72,6 +72,11 @@ Enable hardware division (takes 32 cycles)
 How many cycles a shift operation can take. valid values are 1, 8 and 32. If `MULTIPLY_ENABLE` is set to 1, this
 configuration option is ignored, and the shifter uses the multiplier.
 
+### POWER_OPTIMIZED (default = 0)
+
+If This is set to 1, then extra gates are added to improve power usage at the expense of area.
+
+
 ### COUNTER_LENGTH (default = 0)
 
 How many bits the mtime register contains. The standard RISC-V dictates 64 bits, but ORCA allows 32 and 0 as valid
@@ -127,3 +132,13 @@ that the *nth* interrupt is enabled. `MEIPEND` is connected to the external inte
 
 The Processor is interrupted by an external interrupt on line *n* if and only if the `MIE` bit of the `MSTATUS` CSR is 1 and
 bit *n* of the `MEIMASK` CSR is set to 1.
+
+Sleep CSR
+----------------------
+
+By writing to csr number 0x800 (Write-Only) it is possible to stall the processor until the value in `MTIME` is equal to
+the value being written.
+
+The standard way of sleeping a risc-v processor is to set `MTIMECMP` and then use the `WIP` instruction to wait for an
+interrupt. We chose to implement the above non-standard sleep mode because we wanted to sleep even on systems
+without interrupt support.
