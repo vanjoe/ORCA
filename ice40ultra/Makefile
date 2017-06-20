@@ -76,7 +76,7 @@ syn: $(EDF)
 
 
 clean:
-	rm -rf $(OUTPUT_DIR) *.imem
+	rm -rf $(OUTPUT_DIR) *.imem *.dmem
 
 clean-all: clean
 	make -C software clean

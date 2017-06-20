@@ -1,4 +1,3 @@
-
 library ieee;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
@@ -10,6 +9,9 @@ use work.top_component_pkg.all;
 use work.top_util_pkg.all;
 
 entity top is
+  generic(
+    GPIO_LENGTH : integer := 12
+  );
   port(
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
@@ -26,13 +28,15 @@ entity top is
     B_LED  : out std_logic;
     HP_LED : out std_logic;
 
-    gpio : inout std_logic_vector(11 downto 0)
-    );
+    gpio : inout std_logic_vector(GPIO_LENGTH-1 downto 0)
+  );
 end entity;
 
 architecture rtl of top is
 
   constant REGISTER_SIZE : integer := 32;
+
+  constant LED_COUNTER_LENGTH : integer := 24; 
 
   --for combined memory
   constant RAM_SIZE      : natural := 8*1024;
@@ -42,9 +46,7 @@ architecture rtl of top is
 
   constant SEPERATE_MEMS : boolean := true;
 
-
   signal reset : std_logic;
-
 
   signal data_ADR_O  : std_logic_vector(31 downto 0);
   signal data_DAT_O  : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -106,8 +108,6 @@ architecture rtl of top is
   signal gpio_err_o   : std_logic;
   signal gpio_rty_o   : std_logic;
 
-
-
   signal data_uart_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_uart_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_uart_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -138,7 +138,12 @@ architecture rtl of top is
   signal data_ram_err_o   : std_logic;
   signal data_ram_rty_o   : std_logic;
 
-  signal led_pio_out      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal led_pio_out      : std_logic_vector(LED_COUNTER_LENGTH-1 downto 0);
+  
+  signal gpio_pio_in      : std_logic_vector(GPIO_LENGTH-1 downto 0);
+  signal gpio_pio_oe      : std_logic_vector(GPIO_LENGTH-1 downto 0);
+  signal gpio_pio_out     : std_logic_vector(GPIO_LENGTH-1 downto 0);
+
   type data_port_choice_t is (RAM_CHOICE, LED_CHOICE, UART_CHOICE);
   signal data_port_choice : data_port_choice_t;
 
@@ -155,7 +160,6 @@ architecture rtl of top is
   signal txrdy_n    : std_logic;
   signal rts_n      : std_logic;
   signal dir_n      : std_logic;
-
 
   signal uart_adr_i     : std_logic_vector(7 downto 0);
   signal uart_dat_i     : std_logic_vector(15 downto 0);
@@ -225,7 +229,8 @@ begin
   begin
     mem : component wb_ram
       generic map(
-        SIZE             => RAM_SIZE,
+        MEM_SIZE         => RAM_SIZE,
+        DATA_WIDTH       => REGISTER_SIZE,
         INIT_FILE_FORMAT => "hex",
         INIT_FILE_NAME   => "test.mem",
         LATTICE_FAMILY   => "iCE5LP")
@@ -254,15 +259,23 @@ begin
         CLK_I => clk,
         RST_I => reset,
 
+        slave0_ADR_I  => data_ram_ADR_I,
+        slave0_DAT_I  => data_ram_DAT_I,
+        slave0_WE_I   => data_ram_WE_I,
+        slave0_CYC_I  => data_ram_CYC_I,
+        slave0_STB_I  => data_ram_STB_I,
+        slave0_SEL_I  => data_ram_SEL_I,
+
+        slave0_STALL_O => data_ram_STALL_O,
+        slave0_DAT_O   => data_ram_DAT_O,
+        slave0_ACK_O   => data_ram_ack_O,
+
         slave1_ADR_I  => data_ram_ADR_I,
         slave1_DAT_I  => data_ram_DAT_I,
         slave1_WE_I   => data_ram_WE_I,
         slave1_CYC_I  => data_ram_CYC_I,
         slave1_STB_I  => data_ram_STB_I,
         slave1_SEL_I  => data_ram_SEL_I,
-        slave1_CTI_I  => data_ram_CTI_I,
-        slave1_BTE_I  => data_ram_BTE_I,
-        slave1_LOCK_I => data_ram_LOCK_I,
 
         slave1_STALL_O => data_ram_STALL_O,
         slave1_DAT_O   => data_ram_DAT_O,
@@ -274,15 +287,10 @@ begin
         slave2_CYC_I  => instr_CYC_O,
         slave2_STB_I  => instr_STB_O,
         slave2_SEL_I  => (others => '1'),
-        slave2_CTI_I  => instr_CTI_O,
-        slave2_BTE_I  => instr_BTE_O,
-        slave2_LOCK_I => instr_LOCK_O,
 
         slave2_STALL_O => mem_instr_stall,
         slave2_DAT_O   => instr_DAT_I,
         slave2_ACK_O   => mem_instr_ACK,
-        slave2_ERR_O   => instr_ERR_I,
-        slave2_RTY_O   => instr_RTY_I,
 
         master_ADR_O  => RAM_ADR_I,
         master_DAT_O  => RAM_DAT_I,
@@ -290,23 +298,18 @@ begin
         master_CYC_O  => RAM_CYC_I,
         master_STB_O  => RAM_STB_I,
         master_SEL_O  => RAM_SEL_I,
-        master_CTI_O  => RAM_CTI_I,
-        master_BTE_O  => RAM_BTE_I,
-        master_LOCK_O => RAM_LOCK_I,
 
-        master_STALL_I => ram_STALL_O,
+        master_STALL_I => RAM_STALL_O,
         master_DAT_I   => RAM_DAT_O,
-        master_ACK_I   => RAM_ACK_O,
-        master_ERR_I   => RAM_ERR_O,
-        master_RTY_I   => RAM_RTY_O);
-
+        master_ACK_I   => RAM_ACK_O);
 
   end generate;
 
   SEPERATE_MEM_GEN : if SEPERATE_MEMS generate
-    imem : component wb_ram
+  imem : entity work.wb_ram(bram)
       generic map(
-        SIZE             => INST_RAM_SIZE,
+        MEM_SIZE         => INST_RAM_SIZE,
+        DATA_WIDTH       => REGISTER_SIZE,
         INIT_FILE_FORMAT => "hex",
         INIT_FILE_NAME   => "imem.mem",
         LATTICE_FAMILY   => "iCE5LP")
@@ -314,25 +317,25 @@ begin
         CLK_I => clk,
         RST_I => reset,
 
-        ADR_I  => instr_ADR_O,
-        DAT_I  => (others => '0'),
-        WE_I   => '0',
-        CYC_I  => instr_CYC_O,
-        STB_I  => instr_STB_O,
-        SEL_I  => (others => '0'),
-        CTI_I  => instr_CTI_O,
-        BTE_I  => instr_BTE_O,
-        LOCK_I => instr_LOCK_O,
-
+        ADR_I   => instr_ADR_O(log2(INST_RAM_SIZE)-1 downto 0),
+        DAT_I   => (others => '0'),
+        WE_I    => '0',
+        CYC_I   => instr_CYC_O,
+        STB_I   => instr_STB_O,
+        SEL_I   => (others => '0'),
+        CTI_I   => instr_CTI_O,
+        BTE_I   => instr_BTE_O,
+        LOCK_I  => instr_LOCK_O,
         STALL_O => mem_instr_stall,
         DAT_O   => instr_DAT_I,
         ACK_O   => mem_instr_ACK,
         ERR_O   => instr_ERR_I,
         RTY_O   => instr_RTY_I);
 
-    dmem : component wb_ram
+  dmem : entity work.wb_ram(bram)
       generic map(
-        SIZE             => DATA_RAM_SIZE,
+        MEM_SIZE         => DATA_RAM_SIZE,
+        DATA_WIDTH       => REGISTER_SIZE, 
         INIT_FILE_FORMAT => "hex",
         INIT_FILE_NAME   => "dmem.mem",
         LATTICE_FAMILY   => "iCE5LP")
@@ -340,7 +343,7 @@ begin
         CLK_I => clk,
         RST_I => reset,
 
-        ADR_I   => data_ram_ADR_I,
+        ADR_I   => data_ram_ADR_I(log2(INST_RAM_SIZE)-1 downto 0),
         DAT_I   => data_ram_DAT_I,
         WE_I    => data_ram_WE_I,
         CYC_I   => data_ram_CYC_I,
@@ -357,22 +360,26 @@ begin
 
   end generate SEPERATE_MEM_GEN;
 
-
-
   rv : component orca
     generic map (
-      REGISTER_SIZE      => REGISTER_SIZE,
-      WISHBONE_ENABLE => 1,
-      MULTIPLY_ENABLE    => 0,
-      SHIFTER_MAX_CYCLES => 1,
-      COUNTER_LENGTH     => 32,
-      PIPELINE_STAGES    => 4,
-      PLIC_ENABLE        => 0,
-      NUM_EXT_INTERRUPTS => 2,
-      LVE_ENABLE         => 0,
-      FAMILY            => "LATTICE")
+      REGISTER_SIZE         => REGISTER_SIZE,
+      AVALON_ENABLE         => 0,
+      WISHBONE_ENABLE       => 1,
+      AXI_ENABLE            => 0,
+      RESET_VECTOR          => 16#00000200#,
+      MULTIPLY_ENABLE       => 0,
+      DIVIDE_ENABLE         => 0,
+      SHIFTER_MAX_CYCLES    => 1,
+      COUNTER_LENGTH        => 32,
+      ENABLE_EXCEPTIONS     => 1,
+      BRANCH_PREDICTORS     => 0,
+      PIPELINE_STAGES       => 4,
+      LVE_ENABLE            => 0,
+      ENABLE_EXT_INTERRUPTS => 0,
+      NUM_EXT_INTERRUPTS    => 1,
+      SCRATCHPAD_ADDR_BITS  => 10,
+      FAMILY                => "LATTICE")
     port map(
-
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
@@ -403,29 +410,28 @@ begin
 
   split_wb_data : component wb_splitter
     generic map(
-      master0_address => (0+INST_RAM_SIZE, DATA_RAM_SIZE)  --RAM
-, master1_address     => (16#00010000#, 4*1024)            --led
-, master2_address     => (16#00020000#, 4*1024)            --uart
-, master3_address     => (16#00030000#, 4*1024))
-
+      SUB_ADDRESS_BITS => 16,
+      NUM_MASTERS      => 4,
+      JUST_OR_ACKS     => FALSE
+    )
     port map(
       clk_i => clk,
       rst_i => reset,
 
-      slave_ADR_I   => data_ADR_O,
-      slave_DAT_I   => data_DAT_O,
-      slave_WE_I    => data_WE_O,
-      slave_CYC_I   => data_CYC_O,
-      slave_STB_I   => data_STB_O,
-      slave_SEL_I   => data_SEL_O,
-      slave_CTI_I   => data_CTI_O,
-      slave_BTE_I   => data_BTE_O,
-      slave_LOCK_I  => data_LOCK_O,
-      slave_STALL_O => data_STALL_I,
-      slave_DAT_O   => data_DAT_I,
-      slave_ACK_O   => data_ACK_I,
-      slave_ERR_O   => data_ERR_I,
-      slave_RTY_O   => data_RTY_I,
+      slave_ADR_I     => data_ADR_O,
+      slave_DAT_I     => data_DAT_O,
+      slave_WE_I      => data_WE_O,
+      slave_CYC_I     => data_CYC_O,
+      slave_STB_I     => data_STB_O,
+      slave_SEL_I     => data_SEL_O,
+      slave_CTI_I     => data_CTI_O,
+      slave_BTE_I     => data_BTE_O,
+      slave_LOCK_I    => data_LOCK_O,
+      slave_STALL_O   => data_STALL_I,
+      slave_DAT_O     => data_DAT_I,
+      slave_ACK_O     => data_ACK_I,
+      slave_ERR_O     => data_ERR_I,
+      slave_RTY_O     => data_RTY_I,
 
       master0_ADR_O   => data_ram_ADR_I,
       master0_DAT_O   => data_ram_DAT_I,
@@ -452,12 +458,10 @@ begin
       master1_BTE_O   => led_BTE_I,
       master1_LOCK_O  => led_LOCK_I,
       master1_STALL_I => led_STALL_O,
-
-      master1_DAT_I => led_DAT_O,
-      master1_ACK_I => led_ACK_O,
-      master1_ERR_I => led_ERR_O,
-      master1_RTY_I => led_RTY_O,
-
+      master1_DAT_I   => led_DAT_O,
+      master1_ACK_I   => led_ACK_O,
+      master1_ERR_I   => led_ERR_O,
+      master1_RTY_I   => led_RTY_O,
 
       master2_ADR_O   => data_uart_ADR_I,
       master2_DAT_O   => data_uart_DAT_I,
@@ -474,7 +478,6 @@ begin
       master2_ERR_I   => data_uart_ERR_O,
       master2_RTY_I   => data_uart_RTY_O,
 
-
       master3_ADR_O   => gpio_ADR_I,
       master3_DAT_O   => gpio_DAT_I,
       master3_WE_O    => gpio_WE_I,
@@ -489,22 +492,20 @@ begin
       master3_ACK_I   => gpio_ACK_O,
       master3_ERR_I   => gpio_ERR_O,
       master3_RTY_I   => gpio_RTY_O
-
-      );
-
+    );
 
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
 
   led_pio : component wb_pio
     generic map (
-      ALLOW_INPUT => false)
+      DATA_WIDTH => LED_COUNTER_LENGTH)
     port map(
       CLK_I => clk,
       RST_I => reset,
 
       ADR_I        => led_ADR_I,
-      DAT_I        => led_DAT_I,
+      DAT_I        => led_DAT_I(LED_COUNTER_LENGTH-1 downto 0),
       WE_I         => led_WE_I,
       CYC_I        => led_CYC_I,
       STB_I        => led_STB_I,
@@ -514,14 +515,18 @@ begin
       LOCK_I       => led_LOCK_I,
       ACK_O        => led_ACK_O,
       STALL_O      => led_STALL_O,
-      DATA_O       => led_DAT_O,
+      DATA_O       => led_DAT_O(LED_COUNTER_LENGTH-1 downto 0),
       ERR_O        => led_ERR_O,
       RTY_O        => led_RTY_O,
-      input_output => led_pio_out);
+      
+      input        => (others => '0'),  
+      output_en    => OPEN,
+      output       => led_pio_out
+    );
 
   gpio_pio : component wb_pio
     generic map (
-      DATA_WIDTH => gpio'length)
+      DATA_WIDTH => GPIO_LENGTH)
     port map(
       CLK_I => clk,
       RST_I => reset,
@@ -540,7 +545,11 @@ begin
       DATA_O       => gpio_DAT_O(gpio'range),
       ERR_O        => gpio_ERR_O,
       RTY_O        => gpio_RTY_O,
-      input_output => gpio);
+      
+      input        => gpio_pio_in,
+      output_en    => gpio_pio_oe, 
+      output       => gpio_pio_out
+    );      
 
 -----------------------------------------------------------------------------
 -- Debugging logic (PC over UART)
@@ -705,10 +714,6 @@ begin
       TXRDY_N    => txrdy_n
       );
 
-
-                                        -----------------------------------------------------------------------------
-                                        --
-                                        -----------------------------------------------------------------------------
   uart_pc : if DEBUG_ENABLE generate
   begin
     uart_dat_i(15 downto 8) <= (others => '0');
@@ -752,7 +757,6 @@ begin
   green_led <= '1' when unsigned(led_pio_out(15 downto 8)) > heartbeat_counter(7 downto 0)  else '0';
   blue_led  <= '1' when unsigned(led_pio_out(7 downto 0)) > heartbeat_counter(7 downto 0)   else '0';
 
-
   led : component my_led
     port map(
       red_i   => rgb_led(2),
@@ -774,6 +778,13 @@ begin
     end if;
   end process;
 
-
+-------------------------------------------------------------------------------
+-- GPIO 
+-------------------------------------------------------------------------------
+  gpio_tristate : 
+  for i in 0 to GPIO_LENGTH-1 generate
+    gpio(i) <= gpio_pio_out(i) when gpio_pio_oe(i) = '1' else 'Z'; 
+    gpio_pio_in(i) <= gpio(i);
+  end generate gpio_tristate;
 
 end architecture rtl;

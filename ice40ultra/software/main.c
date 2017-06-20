@@ -27,8 +27,6 @@ void mputc ( void* p, char c)
 	while(UART_BUSY());
 	*UART_DATA = c;
 }
-#define debug(var) printf("%s:%d  %s = %d \r\n",__FILE__,__LINE__,#var,(signed)(var))
-#define debugx(var) printf("%s:%d  %s = %08X \r\n",__FILE__,__LINE__,#var,(unsigned)(var))
 
 ////////////
 //TIMER   //
@@ -47,30 +45,27 @@ void delayus(int us)
 
 int main()
 {
-	int i=0;
 	int colour=0x01;
+	int delay_length = 500;
 	UART_INIT();
 	init_printf(0,mputc);
-	int delay_length=500;
 	for(;;){
-		if ((colour<<=8) >=0x00800000){
-			colour>>= 23;
-		}
-		*ledrgb=colour;
-		printf("Hello World %d\r\n",i++);
-		debugx(*gpio_data);
-
 		if((*gpio_data)&1){
 			delay_length=500;
 		}else{
 			delay_length=250;
 		}
+		if ((colour <<= 8) >= 0x00800000) {
+			colour >>= 23;
+		}
+		*ledrgb=colour;
+		printf("Hello World\r\n");
 		delayms(delay_length);
 	}
 }
 
 
-int handle_trap(long cause,long epc, long regs[32])
+int handle_trap(long cause, long epc, long regs[32])
 {
 	//spin forever
 	for(;;);

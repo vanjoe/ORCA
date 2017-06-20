@@ -33,7 +33,7 @@ proc com {} {
 							hdl/uart_rd1042/txmitt.vhd     \
 							hdl/pmod_mic/pmod_mic_wb.vhd \
 							hdl/pmod_mic/pmod_mic_ref_comp.vhd \
-							hdl/top.vhd				  \
+							top.vhd				  \
 							hdl/top_tb.vhd]
 
 

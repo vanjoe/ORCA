@@ -15,7 +15,7 @@ OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
 ARCH?=rv32im
 LVE_EXT=
-CFLAGS=-march=$(ARCH)  -O2 -MD -Wall -std=gnu99
+CFLAGS=-march=$(ARCH)  -O2 -MD -Wall -std=gnu99 -mno-div
 LD_FLAGS=-march=$(ARCH) -static -nostartfiles
 
 TARGET=test
