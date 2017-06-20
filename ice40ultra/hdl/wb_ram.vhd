@@ -75,7 +75,6 @@ begin  -- architecture rtl
       be       => SEL_I,
       readdata => DAT_O);
 
-
   STALL_O <= '0';
   ERR_O   <= '0';
   RTY_O   <= '0';
@@ -88,7 +87,6 @@ begin  -- architecture rtl
   end process;
 
 end architecture bram;
-
 
 architecture spram of wb_ram is
   component SB_SPRAM256KA is

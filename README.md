@@ -19,18 +19,25 @@ have included a linked a specific version of the toolchain to this repository. I
 may have mixed results. Follow the instructions provided in tools/riscv-toolchain to build the supported toolchain.
 
 
-
 Sample Systems
 --------------
 
-We have provided a sample system targeting the DE2-115 found in the TPad or Veek development systems as an example design.
+We have provided multiple sample projects across different vendor platforms in the systems/ subdirectory.
+
+The first sample system targeting the DE2-115 (found in the TPad or Veek development systems) is located in the de2-115
+directory. It uses the Altera toolchain and requires Quartus and Qsys. 
+
+A sample system using the Lattice iCEcube2 toolchain is located in the ice40ultra directory. It targets the iCE5LP4K chip.
+
+In the sf2plus directory is a Microsemi SmartFusion2 sample project that targets the M2S150-FC1152 chip. It is built using the
+Libero toolchain.
+
+The zedboard directory contains a Xilinx sample project that targets the Zynq-7000 XC7Z020-CLG484-1 SoC. It is built using the 
+Vivado toolchain. 
 
 In addition to this example system we provide a system targeting a simulator such as modelsim. We use QSYS to help maintain
-theses systems.
-
-We have also had success with building systems using the Libero toolchain from Microsemi and the IceCube2 toolchain from lattice,
-but have not provided example systems as of yet.
-
+these systems. The Libero tools include BFM models to simulate the SmartFusion2 system, and the Vivado tools include a simulator
+to debug a generated Vivado design.
 
 
 Configuring ORCA
@@ -40,7 +47,6 @@ Below is an overview of the various generics exposed from the top level to confi
 
 ### BUS TYPE
 
-
 There are three generics (`AVALON_ENABLE` ,  `WISHBONE_ENABLE` , `AXI_ENABLE` ) of which only one must
 be set to one. An Assertion will be thrown if more than one is enabled. From the QSYS Configuration
 box, only Avalon or AXI can be selected.
@@ -49,7 +55,7 @@ box, only Avalon or AXI can be selected.
 
 Reserved for future use, must be set to 32
 
-### RESET_VECTOR (default = 0x0000 0200)
+### RESET_VECTOR (default = 0x0000 0000)
 
 Address that the first instruction to be executed at reset is located. The automated tests expect the default value.
 
@@ -63,7 +69,7 @@ Enable hardware division (takes 32 cycles)
 
 ### SHIFTER_MAX_CYCLES (default = 1)
 
-How many cycles a shift operation can take. valid values are 1, 8 and 32. If `MULTIPLY_ENABLE` is set to 1. This
+How many cycles a shift operation can take. valid values are 1, 8 and 32. If `MULTIPLY_ENABLE` is set to 1, this
 configuration option is ignored, and the shifter uses the multiplier.
 
 ### COUNTER_LENGTH (default = 0)
@@ -87,9 +93,9 @@ Legal values are 4 and 5. If set to 4, the registers on the output side of the r
 
 Enable Lightweight Vector Extensions (not publicly available)
 
-### SCRATCHPAD_SIZE (default = 1024)
+### SCRATCHPAD_ADDR_BITS (default = 10)
 
-If `LVE_ENABLE == 1`, how large should the scratchpad be in Bytes, otherwise ignored.
+If `LVE_ENABLE == 1`, the number of address bits gives the size of the scratchpad memory.
 
 ### ENABLE_EXT_INTERRUPTS (default = 0)
 
@@ -98,6 +104,10 @@ Enable interrupts from the outside world to interrupt the processor. Depends on 
 ### NUM_EXT_INTERRUPTS (default = 1)
 
 If `ENABLE_EXT_INTERRUPTS = 1` select how many interrupts to support.
+
+## FAMILY (default = ALTERA)
+
+Enables certain portability workarounds when using a specific family ("ALTERA", "LATTICE", "MICROSEMI", and "XILINX").
 
 
 Interrupts

@@ -163,7 +163,6 @@ entity wb_splitter is
     master7_RTY_I   : in  std_logic                               := '0');
 end entity wb_splitter;
 
-
 architecture rtl of wb_splitter is
   constant REGISTER_SIZE : natural := 32;
 
@@ -183,7 +182,7 @@ architecture rtl of wb_splitter is
 
   signal choice      : unsigned(2 downto 0);
   signal last_choice : unsigned(2 downto 0);
-begin  -- architecture rt
+begin  -- architecture rtl
 
   master0_gen : if NUM_MASTERS > 0 generate
     master0_stb <=

@@ -2,7 +2,6 @@ library ieee;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
-
 entity wb_pio is
   generic (
     DATA_WIDTH   : integer := 32);
@@ -30,8 +29,6 @@ entity wb_pio is
     output    : out std_logic_vector(DATA_WIDTH -1 downto 0)
     );
 end entity;
-
-
 
 architecture rtl of wb_pio is
   --when control bit is one,
@@ -72,7 +69,6 @@ begin
       end if;
     end if;
   end process;
-
 
   output    <= out_reg;
   output_en <= control;
