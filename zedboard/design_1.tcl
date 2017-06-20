@@ -170,11 +170,13 @@ proc create_hier_cell_clock { parentCell nameHier } {
   set clk_wiz [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:5.4 clk_wiz ]
   set_property -dict [ list \
 CONFIG.CLKOUT1_JITTER {175.402} \
+CONFIG.CLKOUT1_PHASE_ERROR {98.575} \
 CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {25} \
 CONFIG.CLKOUT2_JITTER {151.636} \
 CONFIG.CLKOUT2_PHASE_ERROR {98.575} \
 CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {50} \
 CONFIG.CLKOUT2_USED {true} \
+CONFIG.MMCM_CLKFBOUT_MULT_F {10.000} \
 CONFIG.MMCM_CLKIN1_PERIOD {10.000} \
 CONFIG.MMCM_CLKIN2_PERIOD {10.000} \
 CONFIG.MMCM_CLKOUT0_DIVIDE_F {40.000} \
@@ -291,8 +293,11 @@ CONFIG.NUM_MI {4} \
   # Create instance: axi_mem_intercon_1, and set properties
   set axi_mem_intercon_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_mem_intercon_1 ]
   set_property -dict [ list \
+CONFIG.ENABLE_ADVANCED_OPTIONS {1} \
+CONFIG.ENABLE_PROTOCOL_CHECKERS {1} \
 CONFIG.NUM_MI {1} \
 CONFIG.NUM_SI {2} \
+CONFIG.STRATEGY {0} \
  ] $axi_mem_intercon_1
 
   # Create instance: clock

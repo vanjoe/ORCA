@@ -106,7 +106,7 @@ end entity idram;
 
 architecture rtl of idram is
 
-  constant BYTES_PER_WORD : integer := RAM_WIDTH/8;
+  constant BYTES_PER_WORD : integer := RAM_WIDTH/BYTE_SIZE;
 
   signal address : std_logic_vector(log2(SIZE/BYTES_PER_WORD)-1 downto 0);
   signal write_en : std_logic;
@@ -123,7 +123,19 @@ architecture rtl of idram is
 
   type state_t is (IDLE);
   signal state_i : state_t;
+  signal next_state_i : state_t;
   signal state_d : state_t;
+  signal next_state_d : state_t;
+
+  signal latch_enable_r_i : std_logic;
+  signal latch_enable_w_i : std_logic;
+  signal instr_address_r_l : std_logic_vector(log2(SIZE/BYTES_PER_WORD)-1 downto 0);
+  signal instr_address_w_l : std_logic_vector(log2(SIZE/BYTES_PER_WORD)-1 downto 0);
+  
+  signal latch_enable_r_d : std_logic;
+  signal latch_enable_w_d : std_logic;
+  signal data_address_r_l : std_logic_vector(log2(SIZE/BYTES_PER_WORD)-1 downto 0);
+  signal data_address_w_l : std_logic_vector(log2(SIZE/BYTES_PER_WORD)-1 downto 0); 
 
 begin  
   instr_RRESP <= (others => '0');
@@ -145,6 +157,86 @@ begin
   data_write_en <= (data_AWVALID and data_WVALID); 
   data_byte_sel <= (others => '1') when data_ARVALID = '1' else data_WSTRB;
   data_en <= (data_AWVALID and data_WVALID) or data_ARVALID;
+
+  process(state_i)
+  begin
+    case (state_i) is  
+      when IDLE =>
+        instr_ARREADY <= instr_ARVALID;
+        instr_AWREADY <= instr_AWVALID and instr_WVALID;
+        instr_WREADY <= instr_AWVALID and instr_WVALID;
+        instr_address <= (others => '0');
+        instr_write_en <= instr_AWVALID and instr_WVALID;
+        instr_byte_sel <= (others => '1');
+        instr_en <= (instr_AWVALID and instr_WVALID) or instr_ARVALID;
+        latch_enable_r_i <= '0';
+        latch_enable_w_i <= '0';
+        next_state_i <= IDLE;
+        if (instr_ARVALID = '1') then
+          instr_address <= instr_ARADDR(instr_address'left+log2(BYTES_PER_WORD) downto log2(BYTES_PER_WORD));
+          latch_enable_r_i <= '1';
+          next_state_i <= READ;
+        elsif ((instr_AWVALID = '1') and (instr_WVALID = '1')) then
+          instr_address <= instr_AWADDR(data_address'left+log2(BYTES_PER_WORD) downto log2(BYTES_PER_WORD));
+          instr_byte_sel <= instr_WSTRB;
+          latch_enable_w_i <= '1';
+          next_state_i <= WRITE; 
+        end if;
+
+      when READ =>
+        instr_ARREADY <= '0';
+        instr_AWREADY <= '0';
+        instr_WREADY <= '0';
+        instr_address <= instr_address_r_l;
+        instr_write_en <= '0';
+        instr_byte_sel <= (others => '1'); 
+        
+
+
+
+        
+  end process;
+
+  process(state_d)
+  begin
+
+  end process;
+
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if (reset = '1') then
+        state_i <= IDLE;
+        state_d <= IDLE;
+        instr_address_r_l <= (others => '0');
+        instr_address_w_l <= (others => '0');
+        data_address_r_l <= (others => '0');
+        data_address_w_l <= (others => '0');
+        instr_RID <= (others => '0');
+        instr_BID <= (others => '0');
+        data_RID <= (others => '0');
+        data_BID <= (others => '0');
+      else
+        state_i <= next_state_i;
+        state_d <= next_state_d;    
+        if (latch_enable_r_i = '1') then
+          instr_address_r_l <= instr_address;
+          instr_RID <= instr_ARID;
+        end if;
+        if (latch_enable_w_i = '1') then
+          instr_address_w_l <= instr_address;
+          instr_BID <= instr_AWID;
+        end if;
+        if (latch_enable_r_d = '1') then
+          data_address_r_l <= data_address;
+          data_RID <= data_ARID;
+        end if;
+        if (latch_enable_w_d = '1') then
+          data_address_w_l <= data_address;
+          data_BID <= data_AWID;
+        end if;
+      end if;
+  end process;
 
   instruction_port : process(clk)
   begin

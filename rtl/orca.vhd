@@ -165,7 +165,7 @@ entity orca is
     iram_ARREADY : in  std_logic;
 
     iram_RID    : in  std_logic_vector(3 downto 0);
-    iram_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+    iram_RDATA  : in  std_logic_vector(DRAM_WIDTH-1 downto 0);
     iram_RRESP  : in  std_logic_vector(1 downto 0);
     iram_RLAST  : in  std_logic;
     iram_RVALID : in  std_logic;
@@ -182,8 +182,8 @@ entity orca is
     iram_AWVALID : out std_logic;
     iram_AWREADY : in  std_logic;
     iram_WID     : out std_logic_vector(3 downto 0);
-    iram_WDATA   : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-    iram_WSTRB   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    iram_WDATA   : out std_logic_vector(DRAM_WIDTH-1 downto 0);
+    iram_WSTRB   : out std_logic_vector(DRAM_WIDTH/8 -1 downto 0);
     iram_WLAST   : out std_logic;
     iram_WVALID  : out std_logic;
     iram_WREADY  : in  std_logic;

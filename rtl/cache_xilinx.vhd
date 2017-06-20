@@ -13,7 +13,7 @@ entity cache_xilinx is
     BYTE_SIZE   : integer := 8;
     ADDR_WIDTH  : integer := 32;
     READ_WIDTH  : integer := 32;
-    WRITE_WIDTH  : integer := 32
+    WRITE_WIDTH : integer := 32
   );
   port (
     clock : in std_logic;
@@ -40,24 +40,25 @@ entity cache_xilinx is
 end entity;
 
 architecture rtl of cache_xilinx is
-  constant BYTES_PER_WORD : integer := WRITE_WIDTH/BYTE_SIZE;
-  constant WORDS_PER_LINE : integer := LINE_SIZE/BYTES_PER_WORD;
-  constant DATA_BITS : integer := WRITE_WIDTH+1; -- One valid bit per DRAM-width word
+  constant BYTES_PER_READ : integer := READ_WIDTH/BYTE_SIZE;
+  constant BYTES_PER_WRITE : integer := WRITE_WIDTH/BYTE_SIZE;
+  constant WORDS_PER_WRITE : integer := WRITE_WIDTH/READ_WIDTH;
+  constant WORDS_PER_LINE : integer := LINE_SIZE/BYTES_PER_READ;
+  constant WRITES_PER_LINE : integer := LINE_SIZE/BYTES_PER_WRITE;
+  constant DATA_BITS : integer := READ_WIDTH+1; -- One valid bit per DRAM-width word
   constant TAG_BITS : integer := ADDR_WIDTH-log2(NUM_LINES)-log2(LINE_SIZE)+1; -- One valid bit for the tag
   constant TAG_LEFT : integer := ADDR_WIDTH;  
   constant TAG_RIGHT : integer := log2(NUM_LINES)+log2(LINE_SIZE);
   constant CACHE_ADDR_BITS : integer := log2(NUM_LINES);
   constant CACHE_ADDR_LEFT : integer := log2(NUM_LINES)+log2(LINE_SIZE); 
   constant CACHE_ADDR_RIGHT : integer := log2(LINE_SIZE);
-  constant BLOCK_OFFSET_LEFT : integer := log2(LINE_SIZE);
-  constant BLOCK_OFFSET_RIGHT : integer := log2(BYTES_PER_WORD);
-  constant BLOCK_OFFSET_BITS : integer := BLOCK_OFFSET_LEFT-BLOCK_OFFSET_RIGHT;
+  constant BLOCK_OFFSET_LEFT_R : integer := log2(LINE_SIZE);
+  constant BLOCK_OFFSET_RIGHT_R : integer := log2(BYTES_PER_READ);
+  constant BLOCK_OFFSET_BITS_R : integer := BLOCK_OFFSET_LEFT_R-BLOCK_OFFSET_RIGHT_R;
+  constant BLOCK_OFFSET_LEFT_W : integer := log2(LINE_SIZE);
+  constant BLOCK_OFFSET_RIGHT_W : integer := log2(BYTES_PER_WRITE);
+  constant BLOCK_OFFSET_BITS_W : integer := BLOCK_OFFSET_LEFT_W-BLOCK_OFFSET_RIGHT_W;
   
-  --constant IWORDS_PER_WORD : integer := WRITE_WIDTH/READ_WIDTH; -- Instruction width may differ from DRAM width
-  --constant WORD_OFFSET_BITS : integer := log2(IWORDS_PER_WORD); -- TODO handle width difference between ORCA and DRAM
-  --constant WORD_OFFSET_LEFT : integer log2(BYTES_PER_WORD);
-  --constant WORD_OFFSET_RIGHT : integer WORD_OFFSET_LEFT-WORD_OFFSET_BITS;
-
   type en_t is array (0 to WORDS_PER_LINE-1) of std_logic;
   type line_t is array (0 to WORDS_PER_LINE-1) of std_logic_vector(DATA_BITS-1 downto 0);
 
@@ -92,13 +93,13 @@ architecture rtl of cache_xilinx is
 
   signal read_tag_l : std_logic_vector(TAG_BITS-2 downto 0);
   signal write_tag_l : std_logic_vector(TAG_BITS-2 downto 0);
-  signal read_block_offset_l : std_logic_vector(BLOCK_OFFSET_BITS-1 downto 0);
-  signal write_block_offset_l : std_logic_vector(BLOCK_OFFSET_BITS-1 downto 0);
+  signal read_block_offset_l : std_logic_vector(BLOCK_OFFSET_BITS_R-1 downto 0);
+  signal write_block_offset_l : std_logic_vector(BLOCK_OFFSET_BITS_R-1 downto 0);
   
-  alias read_block_offset : std_logic_vector(BLOCK_OFFSET_BITS-1 downto 0) 
-    is read_address(BLOCK_OFFSET_LEFT-1 downto BLOCK_OFFSET_RIGHT);
-  alias write_block_offset : std_logic_vector(BLOCK_OFFSET_BITS-1 downto 0) 
-    is write_address(BLOCK_OFFSET_LEFT-1 downto BLOCK_OFFSET_RIGHT);
+  alias read_block_offset : std_logic_vector(BLOCK_OFFSET_BITS_R-1 downto 0) 
+    is read_address(BLOCK_OFFSET_LEFT_R-1 downto BLOCK_OFFSET_RIGHT_R);
+  alias write_block_offset : std_logic_vector(BLOCK_OFFSET_BITS_R-1 downto 0) 
+    is write_address(BLOCK_OFFSET_LEFT_R-1 downto BLOCK_OFFSET_RIGHT_R);
   alias read_cache_address : std_logic_vector(CACHE_ADDR_BITS-1 downto 0)
     is read_address(CACHE_ADDR_LEFT-1 downto CACHE_ADDR_RIGHT);
   alias write_cache_address : std_logic_vector(CACHE_ADDR_BITS-1 downto 0)
@@ -120,9 +121,9 @@ begin
     end if;
   end process;
 
-  read_current_word <= read_line_out(to_integer(unsigned(read_block_offset_l))); -- TODO handle width difference between ORCA and DRAM
+  read_current_word <= read_line_out(to_integer(unsigned(read_block_offset_l))); 
   read_readdata <= read_current_word(READ_WIDTH-1 downto 0);
-  write_readdata <= write_current_word(WRITE_WIDTH-1 downto 0);
+  write_readdata <= (others => '0'); -- TODO Reading from the write port not yet supported. 
 
   read_tag_valid <= read_tag_out(read_tag_out'left);
   read_word_valid <= read_current_word(read_current_word'left);
@@ -161,15 +162,17 @@ begin
       readdata_b => OPEN 
     ); 
 
-  -- This block contains the cache line, with a valid bit for each DRAM-width word in the line.
+  -- This block contains the cache line, with a valid bit for each word in the line.
   cache_gen :
   for i in 0 to WORDS_PER_LINE-1 generate
     read_line_in(i) <= read_valid_in & read_data_in;
-    write_line_in(i) <= write_valid_in & write_data_in;
+    write_line_in(i) <= write_valid_in & write_data_in((((i/WRITES_PER_LINE)+1)*READ_WIDTH)-1 downto ((i/WRITES_PER_LINE)*READ_WIDTH));
+
     read_line_wren(i) <= '1' when ((i = to_integer(unsigned(read_block_offset))) and (read_we = '1')) else '0';
-    write_line_wren(i) <= '1' when ((i = to_integer(unsigned(write_block_offset))) and (write_we = '1')) else '0'; 
     read_line_en(i) <= '1' when ((i = to_integer(unsigned(read_block_offset))) and (read_en = '1')) else '0';
-    write_line_en(i) <= '1' when ((i = to_integer(unsigned(write_block_offset))) and (write_en = '1')) else '0'; 
+
+    write_line_wren(i) <= '1' when (((i/WORDS_PER_WRITE) = to_integer(unsigned(write_block_offset))) and (write_we = '1')) else '0'; 
+    write_line_en(i) <= '1' when (((i/WORDS_PER_WRITE) = to_integer(unsigned(write_block_offset))) and (write_en = '1')) else '0'; 
     
     cache_data : component bram_xilinx
     generic map (
@@ -190,6 +193,5 @@ begin
       readdata_b => write_line_out(i)
     );
   end generate cache_gen;
-
 
 end architecture;

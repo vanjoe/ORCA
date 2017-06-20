@@ -109,17 +109,20 @@ end entity icache;
 architecture rtl of icache is
 
   constant BURST_LEN  : std_logic_vector(3 downto 0) := "0000";
-  constant BURST_SIZE : std_logic_vector(2 downto 0) := "010";
   constant BURST_INCR : std_logic_vector(1 downto 0) := "01";
   constant CACHE_VAL  : std_logic_vector(3 downto 0) := "0011";
   constant PROT_VAL   : std_logic_vector(2 downto 0) := "000";
   constant LOCK_VAL   : std_logic_vector(1 downto 0) := "00";
 
-  constant NUM_READS         : integer := LINE_SIZE*BYTE_SIZE/DRAM_WIDTH; -- Number of reads to perform from DRAM. 
+  constant BYTES_PER_DRAM    : integer := DRAM_WIDTH/BYTE_SIZE;
+  constant NUM_READS         : integer := LINE_SIZE/BYTES_PER_DRAM; -- Number of reads to perform from DRAM. 
+
   constant BLOCK_OFFSET_LEFT : integer := log2(LINE_SIZE); 
   constant BLOCK_START       : std_logic_vector(BLOCK_OFFSET_LEFT-1 downto 0) := (others => '0');
-  constant BLOCK_NEXT_START  : std_logic_vector(BLOCK_OFFSET_LEFT-1 downto 0) := std_logic_vector(to_unsigned(4, BLOCK_OFFSET_LEFT));
+  constant BLOCK_NEXT_START  : std_logic_vector(BLOCK_OFFSET_LEFT-1 downto 0) := std_logic_vector(to_unsigned(BYTES_PER_DRAM, BLOCK_OFFSET_LEFT));
   constant BLOCK_END         : std_logic_vector(BLOCK_OFFSET_LEFT-1 downto 0) := (others => '1');
+
+  signal burst_size : std_logic_vector(2 downto 0);
 
   type state_r_t is (IDLE, READ_CACHE, CACHE_MISSED);
   signal state_r        : state_r_t;
@@ -137,7 +140,7 @@ architecture rtl of icache is
   signal next_state_w : state_w_t;
   signal write_address : std_logic_vector(ADDR_WIDTH-1 downto 0);
   signal write_address_next : std_logic_vector(ADDR_WIDTH-1 downto 0);
-  signal write_data_in : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal write_data_in : std_logic_vector(DRAM_WIDTH-1 downto 0);
   signal write_valid_in : std_logic;
   signal write_we : std_logic;
   signal write_en : std_logic;
@@ -160,6 +163,10 @@ begin
   burst_disabled : if BURST_EN = 0 generate 
   begin
 
+    burst_size <= "111" when (DRAM_WIDTH = 128)
+             else "110" when (DRAM_WIDTH = 64)
+             else "101";
+
     orca_BID <= (others => '0');
     orca_BVALID <= '0';
 
@@ -174,7 +181,7 @@ begin
 
     dram_AWID <= (others => '0');
     dram_AWLEN <= BURST_LEN; 
-    dram_AWSIZE <= BURST_SIZE; -- TODO Support burst writes to DRAM.
+    dram_AWSIZE <= burst_size;
     dram_AWBURST <= BURST_INCR;
     dram_AWLOCK <= LOCK_VAL;
     dram_AWCACHE <= CACHE_VAL;
@@ -184,7 +191,7 @@ begin
 
     dram_ARID <= (others => '0'); 
     dram_ARLEN <= BURST_LEN;
-    dram_ARSIZE <= BURST_SIZE; -- TODO Support burst reads from DRAM.
+    dram_ARSIZE <= burst_size;
     dram_ARBURST <= BURST_INCR;
     dram_ARLOCK <= LOCK_VAL;
     dram_ARCACHE <= CACHE_VAL;
@@ -358,14 +365,14 @@ begin
           read_offset_addr_next <= BLOCK_NEXT_START;
         elsif ((read_offset_incr = '1') and (read_offset_addr_next /= BLOCK_START)) then
           read_offset_addr <= read_offset_addr_next;
-          read_offset_addr_next <= std_logic_vector(unsigned(read_offset_addr_next) + to_unsigned(4, BLOCK_OFFSET_LEFT)); 
+          read_offset_addr_next <= std_logic_vector(unsigned(read_offset_addr_next) + to_unsigned(BYTES_PER_DRAM, BLOCK_OFFSET_LEFT)); 
         end if;
         if (write_offset_reset = '1') then
           write_offset_addr <= BLOCK_START;
           write_offset_addr_next <= BLOCK_NEXT_START;
         elsif ((write_offset_incr = '1') and (write_offset_addr_next /= BLOCK_START)) then
           write_offset_addr <=  write_offset_addr_next;
-          write_offset_addr_next <= std_logic_vector(unsigned(write_offset_addr_next) + to_unsigned(4, BLOCK_OFFSET_LEFT));
+          write_offset_addr_next <= std_logic_vector(unsigned(write_offset_addr_next) + to_unsigned(BYTES_PER_DRAM, BLOCK_OFFSET_LEFT));
         end if;
         if (state_w = IDLE) then
           dram_read_done <= '0';
