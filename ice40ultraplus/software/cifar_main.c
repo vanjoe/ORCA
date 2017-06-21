@@ -218,18 +218,10 @@ void cifar_lve() {
 
 #if USE_CAM_IMG
 
-		//turn on led during camera capture
-		SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
 
 		//get camera frame
 		/* ovm_wait_frame(); */
 		ovm_get_frame();
-
-		//if not face, turn off led
-		if(!is_face) {
-			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
-		}
-
 
 #if PRINT_B64_IMG
 
@@ -270,6 +262,13 @@ void cifar_lve() {
 			zeropad_input(v_padb + c*(m+2)*(n+4), v_inb + c*m*n, m, n);
 		}
 #endif
+
+#if USE_CAM_IMG
+		//turn on led during camera capture
+		SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
+#endif
+
+
 		run_network(network, verbose);
 
 		// print results (or toggle LED if person is max, and > 0)
@@ -286,6 +285,12 @@ void cifar_lve() {
 				printf("%s\t%d\r\n", categories[c], (int)v_out[c]);
 			}
 		}
+#if USE_CAM_IMG
+		//if not face, turn off led
+		if(!is_face) {
+			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
+		}
+#endif
 
 
 		unsigned net_cycles=get_time()-start_time;

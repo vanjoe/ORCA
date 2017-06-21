@@ -37,16 +37,16 @@ the time while waiting for the camera.
 
 # Power optimized vs Speed Optimized
 **Power Optimzed**
-* PLL = 0 (8 MHz)
-* ovm7692_regs.c change PCLK divider to `{0x11,0x07}` (3.375 MHz)
-* change `POWER_OPTIMIZED=>0` to `POWER_OPTIMIZED=>1` in top.vhd
-* set `#define STRETCH_TO_1S 1` in cifar_main.c
+* set `USE_PLL = 0` (8 MHz) in `top_top.v`
+* set PCLK divider to `{0x11,0x07}` (3.375 MHz) in `software/ovm7692_reg.c` 
+* set `POWER_OPTIMIZED => 1`  in `top.vhd`
+* set `#define STRETCH_TO_1S 1` in `software/cifar_main.c`
 
 **Speed Optimized**
-* PLL = 2 (24 MHz)
-* ovm7692_regs.c change PCLK divider to `{0x11,0x00}` (27 MHz)
-* change `POWER_OPTIMIZED=>1` to `POWER_OPTIMIZED=>0` in top.vhd
-* set `#define STRETCH_TO_1S 0` in cifar_main.c
+* set `USE_PLL = 2` (24 MHz) in `top_top.v`
+* change PCLK divider to `{0x11,0x00}` (27 MHz) in `software/ovm7692_reg.c` 
+* set `POWER_OPTIMIZED => 0`  in `top.vhd`
+* set `#define STRETCH_TO_1S 0` in `software/cifar_main.c`
 
 #Building Flash.bin
 
