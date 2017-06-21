@@ -3,59 +3,38 @@
 <drcreport>
   <header>Top_Fabric_Master</header>
   <drc>
-    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/error.png</status>
-    <StatusMessage>Error</StatusMessage>
-    <message>Undriven Pin</message>
-    <detail>Unconnected input pin axi_to_apb_2:clk</detail>
-    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/axi_to_apb_2:clk</crossprobe>
+    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/warn.png</status>
+    <StatusMessage>Warning</StatusMessage>
+    <message>Unconnected Bus Interface</message>
+    <detail>Unconnected bus interface pin CoreAXI4Interconnect_0:AXI3mslave1</detail>
+    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/CoreAXI4Interconnect_0:AXI3mslave1</crossprobe>
   </drc>
   <drc>
-    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/error.png</status>
-    <StatusMessage>Error</StatusMessage>
-    <message>Undriven Pin</message>
-    <detail>Unconnected input pin axi_to_apb_2:aresetn</detail>
-    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/axi_to_apb_2:aresetn</crossprobe>
+    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/warn.png</status>
+    <StatusMessage>Warning</StatusMessage>
+    <message>Unconnected Bus Interface</message>
+    <detail>Unconnected bus interface pin CoreAXI4Interconnect_0:AXI3mslave2</detail>
+    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/CoreAXI4Interconnect_0:AXI3mslave2</crossprobe>
   </drc>
   <drc>
-    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/error.png</status>
-    <StatusMessage>Error</StatusMessage>
-    <message>Undriven Pin</message>
-    <detail>Unconnected input pin axi_to_apb_3:clk</detail>
-    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/axi_to_apb_3:clk</crossprobe>
+    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/warn.png</status>
+    <StatusMessage>Warning</StatusMessage>
+    <message>Unconnected Bus Interface</message>
+    <detail>Unconnected bus interface pin CoreAXI4Interconnect_0:AXI3mslave4</detail>
+    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/CoreAXI4Interconnect_0:AXI3mslave4</crossprobe>
   </drc>
   <drc>
-    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/error.png</status>
-    <StatusMessage>Error</StatusMessage>
-    <message>Undriven Pin</message>
-    <detail>Unconnected input pin axi_to_apb_3:aresetn</detail>
-    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/axi_to_apb_3:aresetn</crossprobe>
+    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/warn.png</status>
+    <StatusMessage>Warning</StatusMessage>
+    <message>Unconnected Bus Interface</message>
+    <detail>Unconnected bus interface pin CoreAXI4Interconnect_0:AXI3mslave5</detail>
+    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/CoreAXI4Interconnect_0:AXI3mslave5</crossprobe>
   </drc>
   <drc>
-    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/error.png</status>
-    <StatusMessage>Error</StatusMessage>
-    <message>Required Pin Connection</message>
-    <detail>Unconnected input pin CoreGPIO_0:PRESETN</detail>
-    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/CoreGPIO_0:PRESETN</crossprobe>
-  </drc>
-  <drc>
-    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/error.png</status>
-    <StatusMessage>Error</StatusMessage>
-    <message>Required Pin Connection</message>
-    <detail>Unconnected input pin CoreGPIO_0:PCLK</detail>
-    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/CoreGPIO_0:PCLK</crossprobe>
-  </drc>
-  <drc>
-    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/error.png</status>
-    <StatusMessage>Error</StatusMessage>
-    <message>Undriven Pin</message>
-    <detail>Unconnected input pin i2s_apb_0:PCLK</detail>
-    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/i2s_apb_0:PCLK</crossprobe>
-  </drc>
-  <drc>
-    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/error.png</status>
-    <StatusMessage>Error</StatusMessage>
-    <message>Undriven Pin</message>
-    <detail>Unconnected input pin i2s_apb_0:PRESETN</detail>
-    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/i2s_apb_0:PRESETN</crossprobe>
+    <status>/nfs/opt/microsemi/Libero_v11.7//Libero/data/drcreport/warn.png</status>
+    <StatusMessage>Warning</StatusMessage>
+    <message>Unconnected Bus Interface</message>
+    <detail>Unconnected bus interface pin CoreAXI4Interconnect_0:AXI3mslave6</detail>
+    <crossprobe>liberoaction://cross_probe/smartdesign/Top_Fabric_Master/pins/CoreAXI4Interconnect_0:AXI3mslave6</crossprobe>
   </drc>
 </drcreport>

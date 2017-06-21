@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////
-// Created by SmartDesign Fri May 12 14:54:39 2017
+// Created by SmartDesign Fri Jun 16 12:00:37 2017
 // Version: v11.7 SP3 11.7.3.8
 //////////////////////////////////////////////////////////////////////
 
@@ -39,8 +39,7 @@ Top_Fabric_Master Top_Fabric_Master_0(
         .DEVRST_N ( RESET_GEN_0_RESET ),
         .RX       ( GND_net ),
         // Outputs
-        .TX       (  ),
-        .TX_copy  (  ) 
+        .TX       (  ) 
         );
 
 

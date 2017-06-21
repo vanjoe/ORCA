@@ -59,12 +59,6 @@ set_io TX           \
     -iostd LVCMOS33   \
     -DIRECTION OUTPUT
 
-set_io TX_copy      \
-    -pinname E3     \
-    -fixed yes      \
-    -iostd LVCMOS33     \
-    -DIRECTION OUTPUT
-
 
 #set_io i2s_sck_i \
     -iostd LVTTL \

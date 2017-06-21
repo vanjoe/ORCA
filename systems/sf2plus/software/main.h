@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-int mxp_test();
-
 #define SYS_CLK 20000000
 static inline uint32_t get_time() {
   int tmp;

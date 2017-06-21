@@ -16,7 +16,7 @@ MEMORY
 {
  IMEM : ORIGIN = 0x0, LENGTH = 16K 
  DMEM : ORIGIN = 16K, LENGTH = 16K 
- FMEM : ORIGIN = 32K, LENGTH = 200K
+ FMEM : ORIGIN = 32K, LENGTH = 256K
 }
 /*----------------------------------------------------------------------*/
 /* Sections                                                             */

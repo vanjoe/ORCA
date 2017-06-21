@@ -6,14 +6,14 @@
     <fam>SmartFusion2</fam>
     <die>M2S150</die>
     <package>1152 FC</package>
-    <speed-grade>-1</speed-grade>
+    <speed-grade>STD</speed-grade>
     <voltage>1.2</voltage>
     <hdl-type>Verilog</hdl-type>
     <project-description>
     </project-description>
-    <location>/nfs/home/ryan/orca_2017/sf2plus/component/work/Top_Fabric_Master</location>
-    <state>GENERATED ( Thu May 11 10:59:35 2017 )</state>
-    <swide-toolchain>SoftConsole workspace generated to /nfs/home/ryan/orca_2017/sf2plus/SoftConsole</swide-toolchain>
+    <location>/nfs/home/ryan/orca_old/sf2plus/component/work/Top_Fabric_Master</location>
+    <state>GENERATED ( Mon Jun 19 14:16:33 2017 )</state>
+    <swide-toolchain>SoftConsole workspace has not been generated</swide-toolchain>
   </project-settings>
   <site-map>
   </site-map>
@@ -92,8 +92,8 @@
           <fullPinName>
           </fullPinName>
           <remapAddress>0x60000000</remapAddress>
-          <fullAddressSpace>0x60000000 - 0x6000407F</fullAddressSpace>
-          <range>0x4080</range>
+          <fullAddressSpace>0x60000000 - 0x6000807F</fullAddressSpace>
+          <range>0x8080</range>
         </slave>
         <slave>
           <name>CACHE_BACKDOOR</name>
@@ -3801,42 +3801,16 @@
         </slave>
       </subsystem>
       <subsystem>
-        <name>riscV_axi_0</name>
-        <master>riscV_axi_0</master>
-        <master>riscV_axi_0</master>
-        <master>vectorblox_mxp_0</master>
+        <name>microsemi_wrapper_0</name>
+        <master>microsemi_wrapper_0</master>
         <addressNames>
           <count>1</count>
           <name>
           </name>
         </addressNames>
         <slave>
-          <name>fabric_master_0</name>
-          <fullPinName>fabric_master_0:AXI_SLAVE</fullPinName>
-          <range>
-          </range>
-        </slave>
-        <slave>
-          <name>IRAM</name>
-          <fullPinName>IRAM:AXI_SLAVE</fullPinName>
-          <range>
-          </range>
-        </slave>
-        <slave>
-          <name>DRAM</name>
-          <fullPinName>DRAM:AXI_SLAVE</fullPinName>
-          <range>
-          </range>
-        </slave>
-        <slave>
-          <name>vectorblox_mxp_0</name>
-          <fullPinName>vectorblox_mxp_0:AXI_INSTR_SLAVE</fullPinName>
-          <range>
-          </range>
-        </slave>
-        <slave>
-          <name>vectorblox_mxp_0</name>
-          <fullPinName>vectorblox_mxp_0:AXI_SCRATCHPAD_SLAVE</fullPinName>
+          <name>microsemi_wrapper_0</name>
+          <fullPinName>microsemi_wrapper_0:IRAM_SLAVE</fullPinName>
           <range>
           </range>
         </slave>
@@ -3846,16 +3820,31 @@
           <range>
           </range>
         </slave>
+        <slave>
+          <name>fabric_master_0</name>
+          <fullPinName>fabric_master_0:AXI_SLAVE</fullPinName>
+          <range>
+          </range>
+        </slave>
       </subsystem>
       <subsystem>
         <name>fabric_master_0</name>
         <master>fabric_master_0</master>
         <master>fabric_master_0</master>
         <addressNames>
-          <count>1</count>
-          <name>
-          </name>
+          <count>2</count>
+          <name>NoRemap</name>
+          <name>M0_SwapSlots0and1</name>
         </addressNames>
+        <slave>
+          <name>microsemi_wrapper_0</name>
+          <fullPinName>microsemi_wrapper_0:BL_SLAVE</fullPinName>
+          <remapAddress name="NoRemap">0x10000000</remapAddress>
+          <fullAddressSpace name="NoRemap">0x10000000 - 0x1FFFFFFF</fullAddressSpace>
+          <remapAddress name="M0_SwapSlots0and1">0x10000000</remapAddress>
+          <fullAddressSpace name="M0_SwapSlots0and1">0x10000000 - 0x1FFFFFFF</fullAddressSpace>
+          <range>0x10000000</range>
+        </slave>
         <slave>
           <name>FIC32_0</name>
           <fullPinName>my_mss_MSS_0:FIC_0_AHB_SLAVE</fullPinName>
