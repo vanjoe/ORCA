@@ -102,6 +102,9 @@ clean:
 	rm -rf db/ incremental_db/
 	rm -rf *.log system.sopcinfo
 	rm -rf system.sof .qsys_edit/
+	make clean -C software/
+	rm test.hex
+
 pgm: system.sof
 	quartus_pgm -m JTAG -o P\;$^
 

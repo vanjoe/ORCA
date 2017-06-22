@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
+
 library work;
 use work.rv_components.all;
 use work.utils.all;
@@ -32,7 +33,7 @@ entity orca is
     DRAM_WIDTH            : integer                    := 32;
     BURST_EN              : integer range 0  to 1      := 0;
 		POWER_OPTIMIZED				: integer range 0  to 1			 := 0;
-		CACHE_ENABLED					: integer range 0  to 1			 := 0;
+		CACHE_ENABLE					: integer range 0  to 1			 := 0;
     FAMILY                : string                     := "ALTERA");
   port(
     clk            : in std_logic;
@@ -251,7 +252,8 @@ architecture rtl of orca is
   signal sp_ack       : std_logic;
 
 begin  -- architecture rtl
-  assert AVALON_ENABLE + WISHBONE_ENABLE + AXI_ENABLE = 1 report "Exactly one bus type must be enabled" severity failure;
+  assert (AVALON_ENABLE + WISHBONE_ENABLE + AXI_ENABLE = 1) report "Exactly one bus type must be enabled" severity failure;
+	assert (((CACHE_ENABLE = 1) and (FAMILY = "XILINX")) or (CACHE_ENABLE = 0)) report "Cache not supported for this family" severity failure;
 
   -----------------------------------------------------------------------------
   -- AVALON
@@ -545,7 +547,7 @@ begin  -- architecture rtl
         RREADY                         => instr_RREADY
       );
 
-		cache : if CACHE_ENABLED = 1 generate 
+		cache : if CACHE_ENABLE = 1 generate 
 
 			signal cache_AWID    : std_logic_vector(3 downto 0);
 			signal cache_AWADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -830,7 +832,7 @@ begin  -- architecture rtl
 
 		end generate cache;
 
-		no_cache: if CACHE_ENABLED /= 1 generate
+		no_cache: if CACHE_ENABLE /= 1 generate
 		begin
 
 			iram_AWID    <= (others => '0');

@@ -10,31 +10,33 @@ package rv_components is
 
   component orca is
     generic (
-    REGISTER_SIZE   : integer              := 32;
-    BYTE_SUZE       : integer              := 8;
-    --BUS Select
-    AVALON_ENABLE   : integer range 0 to 1 := 0;
-    WISHBONE_ENABLE : integer range 0 to 1 := 0;
-    AXI_ENABLE      : integer range 0 to 1 := 0;
+			REGISTER_SIZE   : integer              := 32;
+			BYTE_SIZE       : integer              := 8;
+			--BUS Select
+			AVALON_ENABLE   : integer range 0 to 1 := 0;
+			WISHBONE_ENABLE : integer range 0 to 1 := 0;
+			AXI_ENABLE      : integer range 0 to 1 := 0;
 
-    RESET_VECTOR          : integer                    := 16#00000000#;
-    MULTIPLY_ENABLE       : natural range 0  to 1      := 0;
-    DIVIDE_ENABLE         : natural range 0  to 1      := 0;
-    SHIFTER_MAX_CYCLES    : natural                    := 1;
-    COUNTER_LENGTH        : natural                    := 0;
-    ENABLE_EXCEPTIONS     : natural                    := 1;
-    BRANCH_PREDICTORS     : natural                    := 0;
-    PIPELINE_STAGES       : natural range 4  to 5      := 5;
-    LVE_ENABLE            : natural range 0  to 1      := 0;
-    ENABLE_EXT_INTERRUPTS : natural range 0  to 1      := 0;
-    NUM_EXT_INTERRUPTS    : integer range 1  to 32     := 1;
-    SCRATCHPAD_ADDR_BITS  : integer                    := 10;
-    TCRAM_SIZE            : integer range 64 to 524288 := 32768;
-    CACHE_SIZE            : integer range 64 to 524288 := 32768;
-    LINE_SIZE             : integer range 16 to 64     := 64;
-    DRAM_WIDTH            : integer                    := 32;
-    BURST_EN              : integer range 0  to 1      := 0;
-    FAMILY                : string                     := "ALTERA");
+			RESET_VECTOR          : integer                    := 16#00000000#;
+			MULTIPLY_ENABLE       : natural range 0  to 1      := 0;
+			DIVIDE_ENABLE         : natural range 0  to 1      := 0;
+			SHIFTER_MAX_CYCLES    : natural                    := 1;
+			COUNTER_LENGTH        : natural                    := 0;
+			ENABLE_EXCEPTIONS     : natural                    := 1;
+			BRANCH_PREDICTORS     : natural                    := 0;
+			PIPELINE_STAGES       : natural range 4  to 5      := 5;
+			LVE_ENABLE            : natural range 0  to 1      := 0;
+			ENABLE_EXT_INTERRUPTS : natural range 0  to 1      := 0;
+			NUM_EXT_INTERRUPTS    : integer range 1  to 32     := 1;
+			SCRATCHPAD_ADDR_BITS  : integer                    := 10;
+			TCRAM_SIZE            : integer range 64 to 524288 := 32768;
+			CACHE_SIZE            : integer range 64 to 524288 := 32768;
+			LINE_SIZE             : integer range 16 to 64     := 64;
+			DRAM_WIDTH            : integer                    := 32;
+			BURST_EN              : integer range 0  to 1      := 0;
+			POWER_OPTIMIZED				: integer range 0	 to 1			 := 0;
+			CACHE_ENABLED					: integer range 0 to	1			 := 0;
+			FAMILY                : string                     := "ALTERA");
     port(
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
@@ -788,18 +790,6 @@ package rv_components is
       ARVALID : out std_logic;
       ARREADY : in  std_logic;
 
-<<<<<<< HEAD
-      RID    : in  std_logic_vector(3 downto 0);
-      RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      RRESP  : in  std_logic_vector(1 downto 0);
-      RLAST  : in  std_logic;
-      RVALID : in  std_logic;
-      RREADY : out std_logic;
-
-      NEXT_DATA_IN   : out    std_logic;
-      DATA_BURST_NUM : buffer std_logic_vector(3 downto 0)
-      );
-=======
       RID : in std_logic_vector(3 downto 0);
       RDATA : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       RRESP : in std_logic_vector(1 downto 0);
@@ -807,7 +797,6 @@ package rv_components is
       RVALID : in std_logic;
       RREADY : out std_logic
     );
->>>>>>> 38a8871... Fixed bug where RVALID on the data bus was locked high. This may be due to previous USB transactions from the other project on the SD card of the Zedboard.
   end component axi_master;
 
 component axi_instruction_master is

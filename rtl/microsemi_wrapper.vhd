@@ -235,7 +235,7 @@ begin
       SCRATCHPAD_ADDR_BITS  => SCRATCHPAD_ADDR_BITS,
 			TCRAM_SIZE						=> TCRAM_SIZE,
 			POWER_OPTIMIZED				=> POWER_OPTIMIZED,
-			CACHE_ENABLED					=> 0,
+			CACHE_ENABLE 					=> 0,
       -- Hardcoded because string generics not supported by Libero
       FAMILY                => "MICROSEMI")
     port map (

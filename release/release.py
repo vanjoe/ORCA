@@ -1,17 +1,25 @@
-import subprocess
+import helpers
 
-new_dir = '~/orca_to_push'
-push_projects = ['de2-115', 'ice40ultra', 'sf2plus', 'zedboard']
-hdl_to_stub = ['lve_top.vhd', 'lve_ci.vhd', 'icache.vhd', 'cache_xilinx.vhd']
+new_dir = '~/orca_to_push/'
+files_to_copy = ['LICENSE.txt', 'README.md']
+directories_to_copy = ['rtl', 'sim', 'systems/ice40ultra', 'systems/sf2plus', 'systems/de2-115', \
+											 'systems/zedboard',  'tools']
 
-subprocess.Popen('pwd')
-subprocess.Popen('cp -r ../ ' + new_dir)
+hdl_to_stub = [new_dir+'rtl/lve_top.vhd', new_dir+'rtl/lve_ci.vhd', new_dir+'rtl/icache.vhd', new_dir+'rtl/cache_xilinx.vhd']
+hdl_to_remove = [new_dir+'rtl/lve_ci.vhd', new_dir+'rtl/cache_xilinx.vhd', new_dir+'rtl/spram.v', new_dir+'rtl/4port_mem.vhd', \
+								 new_dir+'rtl/4port_mem_ultraplus.vhd']
 
-hdl = hdl_to_stub[0];
-file_to_read = open(hdl, 'r')
-file_text = file_to_read.read()
-entity_declaration, impl = file_text.split('architecture rtl of')
-file_to_read.close()
-file_to_write = open(hdl, 'w')
-file_to_write.write(entity_declaration)
-file_to_write.close()
+print('Cleaning project directories...')
+helpers.clean_projects(directories_to_copy)
+
+print('Cleaning new directory location...')
+helpers.clean_new(new_dir)
+
+print('Making new directory...')
+helpers.make_new_dir(new_dir)
+
+print('Copying over to new directory...')
+helpers.copy_to_dir(new_dir, directories_to_copy, files_to_copy)
+
+print('Preparing hdl...')
+helpers.clean_hdl(hdl_to_stub, hdl_to_remove)
