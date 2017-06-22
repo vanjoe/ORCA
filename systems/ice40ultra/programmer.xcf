@@ -19,8 +19,8 @@
 				<BScanLen>1</BScanLen>
 				<BScanVal>0</BScanVal>
 			</Bypass>
-			<File>/nfs/home/joel/Documents/orca/ice40ultra/ice40ultra_Implmnt/sbt/outputs/bitmap/top_bitmap.bin</File>
-			<FileTime>06/10/16 09:47:42</FileTime>
+			<File>/home/ryan/orca/systems/ice40ultra/ice40ultra_Implmnt/sbt/outputs/bitmap/top_bitmap.bin</File>
+			<FileTime>06/22/17 13:45:46</FileTime>
 			<Operation>Fast Program</Operation>
 			<Option>
 				<SVFVendor>JTAG STANDARD</SVFVendor>
@@ -45,5 +45,6 @@
 	<CableOptions>
 		<CableName>USB2</CableName>
 		<PortAdd>FTUSB-0</PortAdd>
+		<USBID>LATTICE ICE40LP1K EVAL KIT A Location 0000 Serial Lattice iCE40LP1K Eval Kit A</USBID>
 	</CableOptions>
 </ispXCF>

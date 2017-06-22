@@ -77,7 +77,7 @@ build-software:
 	make -C software FORMAT=mem
 	ln -sf software/*.mem $(MEM_FILE)
 
-PGM_CMD=$(ICECUBE2)/../../diamond/3.8_x64/bin/lin64/pgrcmd -infile
+PGM_CMD=$(ICECUBE2)/../../diamond/3.7_x64/bin/lin64/pgrcmd -infile
 pgm : $(BITFILE)
 	$(PGM_CMD) programmer.xcf
 
