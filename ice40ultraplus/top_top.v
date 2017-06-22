@@ -23,7 +23,7 @@ module verilog_top
    sccb_sda
    );
 
-   parameter USE_PLL  = 0;
+   parameter USE_PLL  = 1;
    parameter USE_CAM  = 1;
    parameter USE_UART = 1;
    parameter USE_LVE  = 1;
