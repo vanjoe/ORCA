@@ -112,7 +112,7 @@ set_parameter_property AVALON_ENABLE HDL_PARAMETER true
 set_parameter_property AVALON_ENABLE visible false
 set_parameter_property AVALON_ENABLE derived true
 
-add_parameter          AXI_ENABLE natural 1
+add_parameter          AXI_ENABLE natural 0
 set_parameter_property AXI_ENABLE ALLOWED_RANGES 0:1
 set_parameter_property AXI_ENABLE HDL_PARAMETER true
 set_parameter_property AXI_ENABLE visible false
@@ -141,21 +141,22 @@ set_parameter_property SCRATCHPAD_SIZE UNITS kilobytes
 set_parameter_property SCRATCHPAD_SIZE HDL_PARAMETER false
 set_parameter_property SCRATCHPAD_SIZE visible false
 
-add_parameter SCRATCHPAD_ADDR_BITS integer 1024
+add_parameter SCRATCHPAD_ADDR_BITS integer 10
 set_parameter_property SCRATCHPAD_ADDR_BITS DISPLAY_NAME "        Scratchpad address bits"
 set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
 set_parameter_property SCRATCHPAD_ADDR_BITS visible true
 set_parameter_property SCRATCHPAD_ADDR_BITS derived true
 
-add_parameter RESET_VECTOR NATURAL 512
+add_parameter RESET_VECTOR NATURAL 0 
+set_parameter_property RESET_VECTOR DEFAULT_VALUE 0
 set_parameter_property RESET_VECTOR DISPLAY_NAME "Reset Vector"
 set_parameter_property RESET_VECTOR TYPE integer
 set_parameter_property RESET_VECTOR UNITS None
 set_parameter_property RESET_VECTOR HDL_PARAMETER true
 set_display_item_property RESET_VECTOR DISPLAY_HINT hexadecimal
 
-add_parameter MULTIPLY_ENABLE natural 0
-set_parameter_property MULTIPLY_ENABLE DEFAULT_VALUE 0
+add_parameter MULTIPLY_ENABLE natural 1
+set_parameter_property MULTIPLY_ENABLE DEFAULT_VALUE 1
 set_parameter_property MULTIPLY_ENABLE DISPLAY_NAME "Hardware Multiply"
 set_parameter_property MULTIPLY_ENABLE DESCRIPTION "Enable Multiplier, uses around 100 LUT4s, Shift instruction use the multiplier, 2 cycle operation"
 set_parameter_property MULTIPLY_ENABLE TYPE NATURAL
@@ -164,8 +165,8 @@ set_parameter_property MULTIPLY_ENABLE ALLOWED_RANGES 0:1
 set_parameter_property MULTIPLY_ENABLE HDL_PARAMETER true
 set_display_item_property MULTIPLY_ENABLE DISPLAY_HINT boolean
 
-add_parameter DIVIDE_ENABLE natural 0
-set_parameter_property DIVIDE_ENABLE DEFAULT_VALUE 0
+add_parameter DIVIDE_ENABLE natural 1
+set_parameter_property DIVIDE_ENABLE DEFAULT_VALUE 1
 set_parameter_property DIVIDE_ENABLE DISPLAY_NAME "Hardware Divide"
 set_parameter_property DIVIDE_ENABLE DESCRIPTION "Enable Divider, uses around 400 LUT4s, 35 cycle operation"
 set_parameter_property DIVIDE_ENABLE TYPE NATURAL
@@ -189,9 +190,8 @@ set_parameter_property POWER_OPTIMIZED HDL_PARAMETER true
 set_parameter_property POWER_OPTIMIZED ALLOWED_RANGES 0:1
 set_display_item_property POWER_OPTIMIZED DISPLAY_HINT boolean
 
-
 add_parameter ENABLE_EXCEPTIONS natural 1
-set_parameter_property ENABLE_EXCEPTIONS DISPLAY_NAME "Enable Excecptions"
+set_parameter_property ENABLE_EXCEPTIONS DISPLAY_NAME "Enable Exceptions"
 set_parameter_property ENABLE_EXCEPTIONS DESCRIPTION "Enable handling of illegal instructions, external interrupts, and timer interrupts (Recommended)"
 set_parameter_property ENABLE_EXCEPTIONS TYPE NATURAL
 set_parameter_property ENABLE_EXCEPTIONS UNITS None
@@ -199,9 +199,18 @@ set_parameter_property ENABLE_EXCEPTIONS ALLOWED_RANGES 0:1
 set_parameter_property ENABLE_EXCEPTIONS HDL_PARAMETER true
 set_display_item_property ENABLE_EXCEPTIONS DISPLAY_HINT boolean
 
+add_parameter ENABLE_EXT_INTERRUPTS natural 0
+set_parameter_property ENABLE_EXT_INTERRUPTS DISPLAY_NAME "Enable Interrupts"
+set_parameter_property ENABLE_EXT_INTERRUPTS DESCRIPTION "Enable handling of external interrupts" 
+set_parameter_property ENABLE_EXT_INTERRUPTS TYPE NATURAL
+set_parameter_property ENABLE_EXT_INTERRUPTS UNITS None
+set_parameter_property ENABLE_EXT_INTERRUPTS ALLOWED_RANGES 0:1
+set_parameter_property ENABLE_EXT_INTERRUPTS HDL_PARAMETER true
+set_display_item_property ENABLE_EXT_INTERRUPTS DISPLAY_HINT boolean
+
 add_parameter          EXT_INTERRUPTS integer 1
 set_parameter_property EXT_INTERRUPTS HDL_PARAMETER false
-set_parameter_property EXT_INTERRUPTS DISPLAY_NAME "       External Interruptes"
+set_parameter_property EXT_INTERRUPTS DISPLAY_NAME "       External Interrupts"
 set_parameter_property EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
 set_parameter_property EXT_INTERRUPTS ALLOWED_RANGES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,32}
 
@@ -210,13 +219,6 @@ set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
 set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES 1:32
 set_parameter_property NUM_EXT_INTERRUPTS visible false
 set_parameter_property NUM_EXT_INTERRUPTS derived true
-
-add_parameter          ENABLE_EXT_INTERRUPTS natural 1
-set_parameter_property ENABLE_EXT_INTERRUPTS HDL_PARAMETER true
-set_parameter_property ENABLE_EXT_INTERRUPTS ALLOWED_RANGES 0:1
-set_parameter_property ENABLE_EXT_INTERRUPTS visible false
-set_parameter_property ENABLE_EXT_INTERRUPTS derived true
-
 
 add_parameter COUNTER_LENGTH natural 64
 set_parameter_property COUNTER_LENGTH DISPLAY_NAME "Counters Register Size"
@@ -230,7 +232,7 @@ set_parameter_property COUNTER_LENGTH HDL_PARAMETER true
 set_display_item_property COUNTER_LENGTH DISPLAY_HINT boolean
 
 add_parameter          BRANCH_PREDICTORS natural 0
-set_parameter_property BRANCH_PREDICTORS DEFAULT_VALUE 1
+set_parameter_property BRANCH_PREDICTORS DEFAULT_VALUE 0
 set_parameter_property BRANCH_PREDICTORS TYPE NATURAL
 set_parameter_property BRANCH_PREDICTORS UNITS None
 set_parameter_property BRANCH_PREDICTORS HDL_PARAMETER true
@@ -247,11 +249,11 @@ set_parameter_property BTB_SIZE DISPLAY_NAME "        Branch Target Buffer Size"
 set_parameter_property BTB_SIZE DISPLAY_UNITS entries
 set_parameter_property BTB_SIZE visible false
 
-add_parameter          PIPELINE_STAGES natural 4
+add_parameter          PIPELINE_STAGES natural 5
 set_parameter_property PIPELINE_STAGES HDL_PARAMETER true
 set_parameter_property PIPELINE_STAGES DISPLAY_NAME "Pipeline Stages"
-set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipeline stages, 3 stages is smaller\
-but 4 stages has a higher fmax"
+set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipeline stages, 4 stages is smaller\
+but 5 stages has a higher fmax"
 set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
 
 #
@@ -655,22 +657,20 @@ proc elaboration_callback {} {
 		}
 
 	if { [get_parameter_value ENABLE_EXCEPTIONS] } {
-		set_parameter_property EXT_INTERRUPTS visible true
-			if { [ get_parameter_value EXT_INTERRUPTS ] > 0 } {
+		set_parameter_property ENABLE_EXT_INTERRUPTS visible true
+			if { [get_parameter_value  ENABLE_EXT_INTERRUPTS] > 0 } {
+				set_parameter_property EXT_INTERRUPTS visible true
 				set_interface_property global_interrupts enabled true
-					set_parameter_value ENABLE_EXT_INTERRUPTS 1
-					set_parameter_value NUM_EXT_INTERRUPTS [ get_parameter_value EXT_INTERRUPTS ]
-
+				set_parameter_value NUM_EXT_INTERRUPTS [ get_parameter_value EXT_INTERRUPTS ]
 			} else {
+				set_parameter_property EXT_INTERRUPTS visible false 
 				set_interface_property global_interrupts enabled false
-					set_parameter_value ENABLE_EXT_INTERRUPTS 0
-					set_parameter_value NUM_EXT_INTERRUPTS 1
+				set_parameter_value NUM_EXT_INTERRUPTS 1
 			}
 	} else {
-		set_parameter_property EXT_INTERRUPTS visible false
-			set_interface_property global_interrupts enabled false
-			set_parameter_value ENABLE_EXT_INTERRUPTS 0
-			set_parameter_value NUM_EXT_INTERRUPTS 1
+		set_parameter_property ENABLE_EXT_INTERRUPTS visible false 
+		set_interface_property global_interrupts enabled false
+		set_parameter_value NUM_EXT_INTERRUPTS 1
 	}
 	set count 0
 		for {set i 0} {$i<32} {incr i} {

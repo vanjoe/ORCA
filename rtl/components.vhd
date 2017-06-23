@@ -956,7 +956,8 @@ end component axi_instruction_master;
       ORCA_WIDTH     : integer                    := 32;
       DRAM_WIDTH     : integer                    := 32; 
       BYTE_SIZE      : integer                    := 8;
-      BURST_EN       : integer                    := 0
+      BURST_EN       : integer                    := 0;
+			FAMILY				 : string											:= "ALTERA"
     );
     port (
       clk     : in std_logic;

@@ -48,7 +48,7 @@ ifdef ENABLE_EXCEPTIONS
 endif
 
 $(QIP_FILE):$(QSYS_FILE) ../../rtl/orca_hw.tcl
-	qsys-generate --synthesis=VHDL system.qsys 2>&1 | tee ./system.qsys.log
+	qsys-generate --synthesis=Verilog system.qsys 2>&1 | tee ./system.qsys.log
 
 $(ORCA_SUBMODULE_FILES): system/synthesis/submodules/vblox_orca/% : ../../rtl/% | $(QIP_FILE)
 	 cp $^ $@

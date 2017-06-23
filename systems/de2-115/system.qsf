@@ -643,3 +643,4 @@ set_global_assignment -name SYSTEMVERILOG_FILE system/synthesis/submodules/syste
 set_global_assignment -name SYSTEMVERILOG_FILE system/synthesis/submodules/system_mm_interconnect_1_router_001.sv -library system
 set_global_assignment -name SYSTEMVERILOG_FILE system/synthesis/submodules/system_mm_interconnect_1_router.sv -library system
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name VHDL_FILE system/synthesis/system.vhd -library system

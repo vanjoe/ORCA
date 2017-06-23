@@ -739,7 +739,8 @@ begin  -- architecture rtl
 					ORCA_WIDTH => REGISTER_SIZE,
 					DRAM_WIDTH => DRAM_WIDTH, 
 					BYTE_SIZE  => BYTE_SIZE,
-					BURST_EN   => BURST_EN 
+					BURST_EN   => BURST_EN,
+					FAMILY		 => FAMILY
 				)
 				port map (
 					clk          => clk, 

@@ -14,7 +14,8 @@ entity icache is
     ORCA_WIDTH     : integer                    := 32;
     DRAM_WIDTH     : integer                    := 32; 
     BYTE_SIZE      : integer                    := 8;
-    BURST_EN       : integer                    := 0
+    BURST_EN       : integer                    := 0;
+		FAMILY				 : string											:= "ALTERA"
   );
   port (
     clk     : in std_logic;
@@ -383,35 +384,44 @@ begin
     end process;
   end generate;
 
-  cache : cache_xilinx
-    generic map (
-      NUM_LINES   => CACHE_SIZE/LINE_SIZE,
-      LINE_SIZE   => LINE_SIZE,
-      BYTE_SIZE   => BYTE_SIZE,
-      ADDR_WIDTH  => ADDR_WIDTH,
-      READ_WIDTH  => ORCA_WIDTH,
-      WRITE_WIDTH  => DRAM_WIDTH
-    )
-    port map (
-      clock => clk,
-     
-      read_address => read_address,
-      read_data_in => (others => '0'),
-      read_valid_in => '0',
-      read_we => '0',
-      read_en => read_en,
-      read_readdata => read_readdata,
-      read_hit => read_hit,
+	xilinx_cache : if FAMILY = "XILINX" generate
+		cache : cache_xilinx
+			generic map (
+				NUM_LINES   => CACHE_SIZE/LINE_SIZE,
+				LINE_SIZE   => LINE_SIZE,
+				BYTE_SIZE   => BYTE_SIZE,
+				ADDR_WIDTH  => ADDR_WIDTH,
+				READ_WIDTH  => ORCA_WIDTH,
+				WRITE_WIDTH  => DRAM_WIDTH
+			)
+			port map (
+				clock => clk,
+			 
+				read_address => read_address,
+				read_data_in => (others => '0'),
+				read_valid_in => '0',
+				read_we => '0',
+				read_en => read_en,
+				read_readdata => read_readdata,
+				read_hit => read_hit,
 
-      write_address => write_address,
-      write_data_in => write_data_in,
-      write_valid_in => write_valid_in,
-      write_we => write_we,
-      write_en => write_en,
-      write_readdata => OPEN,
-      write_hit => OPEN,
+				write_address => write_address,
+				write_data_in => write_data_in,
+				write_valid_in => write_valid_in,
+				write_we => write_we,
+				write_en => write_en,
+				write_readdata => OPEN,
+				write_hit => OPEN,
 
-      write_tag_valid_in => write_tag_valid_in,
-      write_tag_valid_en => write_tag_valid_en
-    );
+				write_tag_valid_in => write_tag_valid_in,
+				write_tag_valid_en => write_tag_valid_en
+			);
+
+	end generate;
+
+	not_xilinx_cache : if FAMILY /= "XILINX" generate
+		read_readdata <= (others => '0');
+		read_hit <= '0';
+	end generate;	
+
 end architecture;
