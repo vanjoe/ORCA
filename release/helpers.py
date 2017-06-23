@@ -42,7 +42,35 @@ def clean_hdl(hdl_to_stub, hdl_to_remove):
 		subprocess.Popen('rm {}'.format(os.path.expanduser(hdl)), shell=True).wait()
 
 def fix_ice40ultra(ice40ultra_dir):
-	return #stub
+	folders_to_remove = ['fmf/', 'i2s_interface/', 'i2s_tx/', 'spi_master/']
+	files_to_remove = ['SB_GB_sim.vhd', 'SB_PLL40_CORE_wrapper_div3.v', \
+											'SB_PLL40_CORE_wrapper_x3.v', 'SB_SPRAM256KA.vhd', \
+											'wb_cam.vhd', 'wb_flash_dma.vhd']
+	for folder in folders_to_remove:
+		subprocess.Popen('rm -rf {}'.format(os.path.expanduser(ice40ultra_dir + 'hdl/' + folder)), shell=True).wait()
+	for f in files_to_remove:
+		subprocess.Popen('rm {}'.format(os.path.expanduser(ice40ultra_dir + 'hdl/' + f)), shell=True).wait()
+	file_to_read = open(os.path.expanduser(ice40ultra_dir + 'ice40ultra_syn.prj'), 'r')
+	file_text = file_to_read.read()
+	file_to_read.close()
+	file_to_write = open(os.path.expanduser(ice40ultra_dir + 'ice40ultra_syn.prj'), 'w')
+	file_text = file_text.split('\n')
+	for line in file_text:
+		if '4port_mem' not in line:
+			file_to_write.write(line + '\n')	
+	file_to_read = open(os.path.expanduser(ice40ultra_dir + 'programmer.xcf'), 'r')
+	file_text = file_to_read.read()
+	file_to_read.close()
+	file_to_write = open(os.path.expanduser(ice40ultra_dir + 'programmer.xcf'), 'w')
+	file_text = file_text.split('\n')
+	for line in file_text:
+		if 'top_bitmap.bin' not in line:
+			file_to_write.write(line + '\n')
+		else:
+			file_to_write.write('\t\t\t<File>')
+			file_to_write.write(os.path.expanduser(ice40ultra_dir + \
+												  'ice40ultra_Implmnt/sbt/outputs/bitmap/top_bitmap.bin'))
+			file_to_write.write('</File>\n')
 
 def fix_sf2plus(sf2plus_dir):
 	return #stub 
@@ -57,6 +85,5 @@ def fix_de2(de2_dir, rtl):
 		if '4port_mem' not in line:
 			file_to_write.write(line + '\n')
 	
-
 def fix_zedboard(zedboard_dir):
 	return #stub
