@@ -11,7 +11,7 @@ hdl_to_remove = [new_dir+'rtl/lve_ci.vhd', new_dir+'rtl/cache_xilinx.vhd', new_d
 								 new_dir+'rtl/4port_mem_ultraplus.vhd']
 
 print('Cleaning project directories...')
-#helpers.clean_projects(directories_to_copy)
+#helpers.clean_projects(projects_to_copy)
 
 print('Cleaning new directory location...')
 helpers.clean_new(new_dir)
@@ -35,4 +35,4 @@ print('Fixing de2-115 project...')
 helpers.fix_de2(new_dir + projects_to_copy[2], new_dir + directories_to_copy[0])
 
 print('Fixing zedboard project...')
-helpers.fix_zedboard(new_dir + projects_to_copy[3])
+helpers.fix_zedboard(new_dir + projects_to_copy[3], new_dir + directories_to_copy[0], hdl_to_remove)

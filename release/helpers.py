@@ -1,5 +1,7 @@
 import subprocess
 import os.path
+import xml.etree.ElementTree
+import re
 
 def clean_projects(projects_to_copy):
 	for project in projects_to_copy:
@@ -47,9 +49,11 @@ def fix_ice40ultra(ice40ultra_dir):
 											'SB_PLL40_CORE_wrapper_x3.v', 'SB_SPRAM256KA.vhd', \
 											'wb_cam.vhd', 'wb_flash_dma.vhd']
 	for folder in folders_to_remove:
-		subprocess.Popen('rm -rf {}'.format(os.path.expanduser(ice40ultra_dir + 'hdl/' + folder)), shell=True).wait()
+		subprocess.Popen('rm -rf {}'.format(os.path.expanduser(ice40ultra_dir + 'hdl/' + folder)), \
+			shell=True).wait()
 	for f in files_to_remove:
-		subprocess.Popen('rm {}'.format(os.path.expanduser(ice40ultra_dir + 'hdl/' + f)), shell=True).wait()
+		subprocess.Popen('rm {}'.format(os.path.expanduser(ice40ultra_dir + 'hdl/' + f)), \
+			shell=True).wait()
 	file_to_read = open(os.path.expanduser(ice40ultra_dir + 'ice40ultra_syn.prj'), 'r')
 	file_text = file_to_read.read()
 	file_to_read.close()
@@ -85,5 +89,41 @@ def fix_de2(de2_dir, rtl):
 		if '4port_mem' not in line:
 			file_to_write.write(line + '\n')
 	
-def fix_zedboard(zedboard_dir):
-	return #stub
+def fix_zedboard(zedboard_dir, rtl, hdl_to_remove):
+
+	i = 0
+	for vhd in hdl_to_remove:
+		f = re.findall(r"[^/.]+\..+", vhd)[0]
+		hdl_to_remove[i] = f
+		i = i + 1
+
+	xml_ns = {'xilinx': 'http://www.xilinx.com',
+						'spirit': 'http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009',
+						'xsi': "http://www.w3.org/2001/XMLSchema-instance"}
+	xml.etree.ElementTree.register_namespace('xilinx', xml_ns.get('xilinx'))
+	xml.etree.ElementTree.register_namespace('spirit', xml_ns.get('spirit'))
+	xml.etree.ElementTree.register_namespace('xsi', xml_ns.get('xsi'))
+	xml_tree = xml.etree.ElementTree.parse(os.path.expanduser(rtl + 'component.xml'))
+
+	root = xml_tree.getroot()
+
+	file_sets = root.find('spirit:fileSets', xml_ns)
+
+	for file_set in file_sets.findall('spirit:fileSet', xml_ns):
+		file_set_name = file_set.find('spirit:name', xml_ns).text
+		if ('synthesis' in file_set_name) or ('simulation' in file_set_name):
+			for hdl in file_set.findall('spirit:file', xml_ns):
+				hdl_name = hdl.find('spirit:name', xml_ns).text
+				for vhd in hdl_to_remove:
+					if vhd in hdl_name:
+						file_set.remove(hdl)
+	xml_tree.write(os.path.expanduser(rtl + 'component.xml'), encoding = 'UTF-8', \
+		xml_declaration = True)
+
+		
+
+
+
+
+
+

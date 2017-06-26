@@ -1,4 +1,3 @@
-all:$(OUT_BIT)
 PROJECT_TCL=project.tcl
 BD_TCL=design_1.tcl
 PGM_TCL=pgm.tcl
@@ -24,6 +23,8 @@ MMI_FILE=$(BRAM_NAME).mmi
 OUT_BIT=out.bit
 GUI_BIT=$(PROJ_DIR)project.runs/impl_1/design_1_wrapper.bit
 
+all: $(OUT_BIT)
+
 $(PROJ_FILE) $(BD_FILE):
 	echo "init_project $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
 	echo "create_bd $(PROJ_DIR) $(PROJ_NAME) $(BD_TCL)" | $(VIVADO) -source $(PROJECT_TCL)
@@ -47,7 +48,7 @@ $(MMI_FILE): $(IMPL_LOG)
 $(ELF_FILE):
 	make -C $(SW_DIR)
 
-$(OUT_BIT): $(PROJ_NAME).bit $(MMI_FILE) 
+$(OUT_BIT): $(PROJ_NAME).bit $(MMI_FILE) $(ELF_FILE)
 	updatemem -force --meminfo $(MMI_FILE) \
   	--data $(ELF_FILE) \
   	--bit $(PROJ_NAME).bit \

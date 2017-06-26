@@ -124,29 +124,6 @@ set_parameter_property WISHBONE_ENABLE HDL_PARAMETER true
 set_parameter_property WISHBONE_ENABLE visible false
 set_parameter_property WISHBONE_ENABLE derived true
 
-add_parameter LVE_ENABLE natural 0
-set_parameter_property LVE_ENABLE DEFAULT_VALUE 0
-set_parameter_property LVE_ENABLE DISPLAY_NAME "Vector Extensions"
-set_parameter_property LVE_ENABLE DESCRIPTION "Enable Vector Extensions"
-set_parameter_property LVE_ENABLE TYPE NATURAL
-set_parameter_property LVE_ENABLE UNITS None
-set_parameter_property LVE_ENABLE ALLOWED_RANGES 0:1
-set_parameter_property LVE_ENABLE HDL_PARAMETER true
-set_display_item_property LVE_ENABLE DISPLAY_HINT boolean
-
-add_parameter SCRATCHPAD_SIZE integer 64
-set_parameter_property SCRATCHPAD_SIZE DISPLAY_NAME "        Scratchpad size"
-set_parameter_property SCRATCHPAD_SIZE DESCRIPTION "        Scratchpad size"
-set_parameter_property SCRATCHPAD_SIZE UNITS kilobytes
-set_parameter_property SCRATCHPAD_SIZE HDL_PARAMETER false
-set_parameter_property SCRATCHPAD_SIZE visible false
-
-add_parameter SCRATCHPAD_ADDR_BITS integer 10
-set_parameter_property SCRATCHPAD_ADDR_BITS DISPLAY_NAME "        Scratchpad address bits"
-set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
-set_parameter_property SCRATCHPAD_ADDR_BITS visible true
-set_parameter_property SCRATCHPAD_ADDR_BITS derived true
-
 add_parameter RESET_VECTOR NATURAL 0 
 set_parameter_property RESET_VECTOR DEFAULT_VALUE 0
 set_parameter_property RESET_VECTOR DISPLAY_NAME "Reset Vector"
@@ -182,44 +159,6 @@ set_parameter_property SHIFTER_MAX_CYCLES UNITS Cycles
 set_parameter_property SHIFTER_MAX_CYCLES ALLOWED_RANGES {1 8 32}
 set_parameter_property SHIFTER_MAX_CYCLES HDL_PARAMETER true
 
-add_parameter POWER_OPTIMIZED natural
-set_parameter_property POWER_OPTIMIZED DEFAULT_VALUE 0
-set_parameter_property POWER_OPTIMIZED DISPLAY_NAME "Optimize for Power"
-set_parameter_property POWER_OPTIMIZED DESCRIPTION "Improve power usage at the expense of area"
-set_parameter_property POWER_OPTIMIZED HDL_PARAMETER true
-set_parameter_property POWER_OPTIMIZED ALLOWED_RANGES 0:1
-set_display_item_property POWER_OPTIMIZED DISPLAY_HINT boolean
-
-add_parameter ENABLE_EXCEPTIONS natural 1
-set_parameter_property ENABLE_EXCEPTIONS DISPLAY_NAME "Enable Exceptions"
-set_parameter_property ENABLE_EXCEPTIONS DESCRIPTION "Enable handling of illegal instructions, external interrupts, and timer interrupts (Recommended)"
-set_parameter_property ENABLE_EXCEPTIONS TYPE NATURAL
-set_parameter_property ENABLE_EXCEPTIONS UNITS None
-set_parameter_property ENABLE_EXCEPTIONS ALLOWED_RANGES 0:1
-set_parameter_property ENABLE_EXCEPTIONS HDL_PARAMETER true
-set_display_item_property ENABLE_EXCEPTIONS DISPLAY_HINT boolean
-
-add_parameter ENABLE_EXT_INTERRUPTS natural 0
-set_parameter_property ENABLE_EXT_INTERRUPTS DISPLAY_NAME "Enable Interrupts"
-set_parameter_property ENABLE_EXT_INTERRUPTS DESCRIPTION "Enable handling of external interrupts" 
-set_parameter_property ENABLE_EXT_INTERRUPTS TYPE NATURAL
-set_parameter_property ENABLE_EXT_INTERRUPTS UNITS None
-set_parameter_property ENABLE_EXT_INTERRUPTS ALLOWED_RANGES 0:1
-set_parameter_property ENABLE_EXT_INTERRUPTS HDL_PARAMETER true
-set_display_item_property ENABLE_EXT_INTERRUPTS DISPLAY_HINT boolean
-
-add_parameter          EXT_INTERRUPTS integer 1
-set_parameter_property EXT_INTERRUPTS HDL_PARAMETER false
-set_parameter_property EXT_INTERRUPTS DISPLAY_NAME "       External Interrupts"
-set_parameter_property EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
-set_parameter_property EXT_INTERRUPTS ALLOWED_RANGES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,32}
-
-add_parameter          NUM_EXT_INTERRUPTS integer 1
-set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
-set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES 1:32
-set_parameter_property NUM_EXT_INTERRUPTS visible false
-set_parameter_property NUM_EXT_INTERRUPTS derived true
-
 add_parameter COUNTER_LENGTH natural 64
 set_parameter_property COUNTER_LENGTH DISPLAY_NAME "Counters Register Size"
 set_parameter_property COUNTER_LENGTH DESCRIPTION "\
@@ -230,6 +169,15 @@ set_parameter_property COUNTER_LENGTH UNITS None
 set_parameter_property COUNTER_LENGTH ALLOWED_RANGES {0 32 64}
 set_parameter_property COUNTER_LENGTH HDL_PARAMETER true
 set_display_item_property COUNTER_LENGTH DISPLAY_HINT boolean
+
+add_parameter ENABLE_EXCEPTIONS natural 1
+set_parameter_property ENABLE_EXCEPTIONS DISPLAY_NAME "Enable Exceptions"
+set_parameter_property ENABLE_EXCEPTIONS DESCRIPTION "Enable handling of illegal instructions, external interrupts, and timer interrupts (Recommended)"
+set_parameter_property ENABLE_EXCEPTIONS TYPE NATURAL
+set_parameter_property ENABLE_EXCEPTIONS UNITS None
+set_parameter_property ENABLE_EXCEPTIONS ALLOWED_RANGES 0:1
+set_parameter_property ENABLE_EXCEPTIONS HDL_PARAMETER true
+set_display_item_property ENABLE_EXCEPTIONS DISPLAY_HINT boolean
 
 add_parameter          BRANCH_PREDICTORS natural 0
 set_parameter_property BRANCH_PREDICTORS DEFAULT_VALUE 0
@@ -255,6 +203,93 @@ set_parameter_property PIPELINE_STAGES DISPLAY_NAME "Pipeline Stages"
 set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipeline stages, 4 stages is smaller\
 but 5 stages has a higher fmax"
 set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
+
+add_parameter LVE_ENABLE natural 0
+set_parameter_property LVE_ENABLE DEFAULT_VALUE 0
+set_parameter_property LVE_ENABLE DISPLAY_NAME "Vector Extensions"
+set_parameter_property LVE_ENABLE DESCRIPTION "Enable Vector Extensions"
+set_parameter_property LVE_ENABLE TYPE NATURAL
+set_parameter_property LVE_ENABLE UNITS None
+set_parameter_property LVE_ENABLE ALLOWED_RANGES 0:1
+set_parameter_property LVE_ENABLE HDL_PARAMETER true
+set_display_item_property LVE_ENABLE DISPLAY_HINT boolean
+
+add_parameter ENABLE_EXT_INTERRUPTS natural 0
+set_parameter_property ENABLE_EXT_INTERRUPTS DISPLAY_NAME "Enable Interrupts"
+set_parameter_property ENABLE_EXT_INTERRUPTS DESCRIPTION "Enable handling of external interrupts" 
+set_parameter_property ENABLE_EXT_INTERRUPTS TYPE NATURAL
+set_parameter_property ENABLE_EXT_INTERRUPTS UNITS None
+set_parameter_property ENABLE_EXT_INTERRUPTS ALLOWED_RANGES 0:1
+set_parameter_property ENABLE_EXT_INTERRUPTS HDL_PARAMETER true
+set_display_item_property ENABLE_EXT_INTERRUPTS DISPLAY_HINT boolean
+
+add_parameter          EXT_INTERRUPTS integer 1
+set_parameter_property EXT_INTERRUPTS HDL_PARAMETER false
+set_parameter_property EXT_INTERRUPTS DISPLAY_NAME "       External Interrupts"
+set_parameter_property EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
+set_parameter_property EXT_INTERRUPTS ALLOWED_RANGES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,32}
+
+add_parameter          NUM_EXT_INTERRUPTS integer 1
+set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
+set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES 1:32
+set_parameter_property NUM_EXT_INTERRUPTS visible false
+set_parameter_property NUM_EXT_INTERRUPTS derived true
+
+add_parameter SCRATCHPAD_SIZE integer 64
+set_parameter_property SCRATCHPAD_SIZE DISPLAY_NAME "        Scratchpad size"
+set_parameter_property SCRATCHPAD_SIZE DESCRIPTION "        Scratchpad size"
+set_parameter_property SCRATCHPAD_SIZE UNITS kilobytes
+set_parameter_property SCRATCHPAD_SIZE HDL_PARAMETER false
+set_parameter_property SCRATCHPAD_SIZE visible true 
+
+add_parameter SCRATCHPAD_ADDR_BITS integer 10
+set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
+set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+set_parameter_property SCRATCHPAD_ADDR_BITS derived true
+
+add_parameter TCRAM_SIZE integer 64
+set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
+set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+
+add_parameter CACHE_SIZE integer 64
+set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
+set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+
+add_parameter LINE_SIZE integer 16
+set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
+set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+
+add_parameter DRAM_WIDTH integer 32
+set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
+set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+
+add_parameter BURST_EN integer 0 
+set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
+set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+
+add_parameter POWER_OPTIMIZED natural
+set_parameter_property POWER_OPTIMIZED DEFAULT_VALUE 0
+set_parameter_property POWER_OPTIMIZED DISPLAY_NAME "Optimize for Power"
+set_parameter_property POWER_OPTIMIZED DESCRIPTION "Improve power usage at the expense of area"
+set_parameter_property POWER_OPTIMIZED HDL_PARAMETER true
+set_parameter_property POWER_OPTIMIZED ALLOWED_RANGES 0:1
+set_display_item_property POWER_OPTIMIZED DISPLAY_HINT boolean
+
+add_parameter CACHE_ENABLE integer 0 
+set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
+set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+
+add_parameter FAMILY string ALTERA 
+set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
+set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+
+
+
+
+
+
+
+
 
 #
 # display items
