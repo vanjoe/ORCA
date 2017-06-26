@@ -103,7 +103,7 @@ set_global_assignment -name SDC_FILE system.sdc
 set_global_assignment -name VHDL_FILE riscv_test.vhd
 set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
 set_global_assignment -name QIP_FILE db/ip/sld7c65c258/alt_sld_fab.qip
-set_global_assignment -name USE_SIGNALTAP_FILE test.stp
+set_global_assignment -name USE_SIGNALTAP_FILE stp1.stp
 set_global_assignment -name ENABLE_SIGNALTAP OFF
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 11.1
 set_global_assignment -name LAST_QUARTUS_VERSION 15.1.1
@@ -642,5 +642,7 @@ set_global_assignment -name SYSTEMVERILOG_FILE system/synthesis/submodules/syste
 set_global_assignment -name SYSTEMVERILOG_FILE system/synthesis/submodules/system_mm_interconnect_1_cmd_demux.sv -library system
 set_global_assignment -name SYSTEMVERILOG_FILE system/synthesis/submodules/system_mm_interconnect_1_router_001.sv -library system
 set_global_assignment -name SYSTEMVERILOG_FILE system/synthesis/submodules/system_mm_interconnect_1_router.sv -library system
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name VHDL_FILE system/synthesis/system.vhd -library system
+set_global_assignment -name VERILOG_FILE system/synthesis/system.v -library system
+set_global_assignment -name SIGNALTAP_FILE stp1.stp
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

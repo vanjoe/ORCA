@@ -179,6 +179,27 @@ set_parameter_property ENABLE_EXCEPTIONS ALLOWED_RANGES 0:1
 set_parameter_property ENABLE_EXCEPTIONS HDL_PARAMETER true
 set_display_item_property ENABLE_EXCEPTIONS DISPLAY_HINT boolean
 
+add_parameter ENABLE_EXT_INTERRUPTS natural 0
+set_parameter_property ENABLE_EXT_INTERRUPTS DISPLAY_NAME "Enable Interrupts"
+set_parameter_property ENABLE_EXT_INTERRUPTS DESCRIPTION "Enable handling of external interrupts" 
+set_parameter_property ENABLE_EXT_INTERRUPTS TYPE NATURAL
+set_parameter_property ENABLE_EXT_INTERRUPTS UNITS None
+set_parameter_property ENABLE_EXT_INTERRUPTS ALLOWED_RANGES 0:1
+set_parameter_property ENABLE_EXT_INTERRUPTS HDL_PARAMETER true
+set_display_item_property ENABLE_EXT_INTERRUPTS DISPLAY_HINT boolean
+
+add_parameter          EXT_INTERRUPTS integer 1
+set_parameter_property EXT_INTERRUPTS HDL_PARAMETER false
+set_parameter_property EXT_INTERRUPTS DISPLAY_NAME "       External Interrupts"
+set_parameter_property EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
+set_parameter_property EXT_INTERRUPTS ALLOWED_RANGES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,32}
+
+add_parameter          NUM_EXT_INTERRUPTS integer 1
+set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
+set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES 1:32
+set_parameter_property NUM_EXT_INTERRUPTS visible false
+set_parameter_property NUM_EXT_INTERRUPTS derived true
+
 add_parameter          BRANCH_PREDICTORS natural 0
 set_parameter_property BRANCH_PREDICTORS DEFAULT_VALUE 0
 set_parameter_property BRANCH_PREDICTORS TYPE NATURAL
@@ -214,27 +235,6 @@ set_parameter_property LVE_ENABLE ALLOWED_RANGES 0:1
 set_parameter_property LVE_ENABLE HDL_PARAMETER true
 set_display_item_property LVE_ENABLE DISPLAY_HINT boolean
 
-add_parameter ENABLE_EXT_INTERRUPTS natural 0
-set_parameter_property ENABLE_EXT_INTERRUPTS DISPLAY_NAME "Enable Interrupts"
-set_parameter_property ENABLE_EXT_INTERRUPTS DESCRIPTION "Enable handling of external interrupts" 
-set_parameter_property ENABLE_EXT_INTERRUPTS TYPE NATURAL
-set_parameter_property ENABLE_EXT_INTERRUPTS UNITS None
-set_parameter_property ENABLE_EXT_INTERRUPTS ALLOWED_RANGES 0:1
-set_parameter_property ENABLE_EXT_INTERRUPTS HDL_PARAMETER true
-set_display_item_property ENABLE_EXT_INTERRUPTS DISPLAY_HINT boolean
-
-add_parameter          EXT_INTERRUPTS integer 1
-set_parameter_property EXT_INTERRUPTS HDL_PARAMETER false
-set_parameter_property EXT_INTERRUPTS DISPLAY_NAME "       External Interrupts"
-set_parameter_property EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (minimum 2, maximum 32)."
-set_parameter_property EXT_INTERRUPTS ALLOWED_RANGES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,32}
-
-add_parameter          NUM_EXT_INTERRUPTS integer 1
-set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
-set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES 1:32
-set_parameter_property NUM_EXT_INTERRUPTS visible false
-set_parameter_property NUM_EXT_INTERRUPTS derived true
-
 add_parameter SCRATCHPAD_SIZE integer 64
 set_parameter_property SCRATCHPAD_SIZE DISPLAY_NAME "        Scratchpad size"
 set_parameter_property SCRATCHPAD_SIZE DESCRIPTION "        Scratchpad size"
@@ -248,24 +248,24 @@ set_parameter_property SCRATCHPAD_ADDR_BITS visible false
 set_parameter_property SCRATCHPAD_ADDR_BITS derived true
 
 add_parameter TCRAM_SIZE integer 64
-set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
-set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+set_parameter_property TCRAM_SIZE HDL_PARAMETER true
+set_parameter_property TCRAM_SIZE visible false 
 
 add_parameter CACHE_SIZE integer 64
-set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
-set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+set_parameter_property CACHE_SIZE HDL_PARAMETER true
+set_parameter_property CACHE_SIZE visible false 
 
 add_parameter LINE_SIZE integer 16
-set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
-set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+set_parameter_property LINE_SIZE HDL_PARAMETER true
+set_parameter_property LINE_SIZE visible false 
 
 add_parameter DRAM_WIDTH integer 32
-set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
-set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+set_parameter_property DRAM_WIDTH HDL_PARAMETER true
+set_parameter_property DRAM_WIDTH visible false 
 
 add_parameter BURST_EN integer 0 
-set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
-set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+set_parameter_property BURST_EN HDL_PARAMETER true
+set_parameter_property BURST_EN visible false 
 
 add_parameter POWER_OPTIMIZED natural
 set_parameter_property POWER_OPTIMIZED DEFAULT_VALUE 0
@@ -276,20 +276,12 @@ set_parameter_property POWER_OPTIMIZED ALLOWED_RANGES 0:1
 set_display_item_property POWER_OPTIMIZED DISPLAY_HINT boolean
 
 add_parameter CACHE_ENABLE integer 0 
-set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
-set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
+set_parameter_property CACHE_ENABLE HDL_PARAMETER true
+set_parameter_property CACHE_ENABLE visible false 
 
 add_parameter FAMILY string ALTERA 
-set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
-set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
-
-
-
-
-
-
-
-
+set_parameter_property FAMILY HDL_PARAMETER true
+set_parameter_property FAMILY visible false 
 
 #
 # display items
@@ -318,8 +310,6 @@ set_interface_property scratchpad_clk SVD_ADDRESS_GROUP ""
 
 add_interface_port scratchpad_clk scratchpad_clk clk Input 1
 
-
-
 #
 # connection point reset
 #
@@ -333,7 +323,6 @@ set_interface_property reset CMSIS_SVD_VARIABLES ""
 set_interface_property reset SVD_ADDRESS_GROUP ""
 
 add_interface_port reset reset reset Input 1
-
 
 #
 # connection point data
@@ -595,7 +584,6 @@ add_interface_port scratch avm_scratch_writedata writedata Input register_size
 add_interface_port scratch avm_scratch_waitrequest waitrequest Output 1
 add_interface_port scratch avm_scratch_readdatavalid readdatavalid Output 1
 
-
 #
 # connection point global_interrupts
 #
@@ -651,7 +639,6 @@ add_interface_port unused_wishbone_bus       sp_ACK_O     export26     output 1
 add_interface_port unused_wishbone_bus       sp_CYC_I     export27     input 1
 add_interface_port unused_wishbone_bus       sp_CTI_I     export28     input 3
 add_interface_port unused_wishbone_bus       sp_STALL_O   export29      output 1
-
 
 proc log_out {out_str} {
         set chan [open ~/orca_hw_log.txt a]

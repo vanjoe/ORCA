@@ -47,8 +47,8 @@ ifdef ENABLE_EXCEPTIONS
 	sed -i 's|parameter name="ENABLE_EXCEPTIONS" value=".*" />|parameter name="ENABLE_EXCEPTIONS" value=$(ENABLE_EXCEPTIONS) />|' $(QSYS_FILE)
 endif
 
-$(QIP_FILE):$(QSYS_FILE) ../../rtl/orca_hw.tcl
-	qsys-generate --synthesis=Verilog system.qsys 2>&1 | tee ./system.qsys.log
+$(QIP_FILE): $(QSYS_FILE) ../../rtl/orca_hw.tcl
+	qsys-generate --synthesis=VHDL system.qsys 2>&1 | tee ./system.qsys.log
 
 $(ORCA_SUBMODULE_FILES): system/synthesis/submodules/vblox_orca/% : ../../rtl/% | $(QIP_FILE)
 	 cp $^ $@
@@ -62,17 +62,24 @@ $(TEST_SUBMODULE_FILES): system/synthesis/submodules/% : test_components/%
 
 ifndef NO_SW
 HEX_FILE=test.hex
+ELF_FILE=software/test.elf
 else
 HEX_FILE=
+ELF_FILE=
 endif
 
-$(MAP_RPT_FILE) : $(QIP_FILE) $(SUBMODULE_FILES) $(TOP_LEVEL_FILES)
+$(ELF_FILE) :
+	make -C software/
+$(HEX_FILE) : $(ELF_FILE)
+	../../tools/elf2hex.sh $<
+	mv test.qex test.hex
+$(MAP_RPT_FILE) : $(HEX_FILE) $(QIP_FILE) $(SUBMODULE_FILES) $(TOP_LEVEL_FILES) 
 	quartus_map $(QPF_FILE)
 $(FIT_RPT_FILE) : $(MAP_RPT_FILE)
 	quartus_fit $(QPF_FILE)
 $(STA_RPT_FILE) : $(FIT_RPT_FILE)
 	quartus_sta $(QPF_FILE)
-$(MIF_RPT_FILE) : $(FIT_RPT_FILE) $(HEX_FILE)
+$(MIF_RPT_FILE) : $(FIT_RPT_FILE)
 	quartus_cdb --update_mif $(QPF_FILE)
 $(ASM_RPT_FILE) : $(MIF_RPT_FILE)
 	quartus_asm $(QPF_FILE)
@@ -94,7 +101,7 @@ testbench: system/testbench/mentor/msim_setup.tcl
 system/testbench/mentor/msim_setup.tcl:$(QSYS_FILE) $(RTL_FILES) $(TEST_RTL_FILES)
 	qsys-generate --testbench --testbench-simulation=VHDL $(QSYS_FILE)
 
-sim:system/testbench/mentor/msim_setup.tcl test.hex
+sim: system/testbench/mentor/msim_setup.tcl test.hex
 	vsim -do simulate.tcl
 
 clean:

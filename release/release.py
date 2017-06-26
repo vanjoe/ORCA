@@ -11,7 +11,7 @@ hdl_to_remove = [new_dir+'rtl/lve_ci.vhd', new_dir+'rtl/cache_xilinx.vhd', new_d
 								 new_dir+'rtl/4port_mem_ultraplus.vhd']
 
 print('Cleaning project directories...')
-#helpers.clean_projects(projects_to_copy)
+helpers.clean_projects(projects_to_copy)
 
 print('Cleaning new directory location...')
 helpers.clean_new(new_dir)
