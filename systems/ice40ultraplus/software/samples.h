@@ -1,1 +1,1 @@
-../../software/samples.h
+../../../software/samples.h

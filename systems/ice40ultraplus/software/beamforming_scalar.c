@@ -1,1 +1,1 @@
-../../software/beamforming_scalar.c
+../../../software/beamforming_scalar.c

@@ -381,7 +381,7 @@ begin
       SCRATCHPAD_ADDR_BITS  => 10,
 			BURST_EN							=> 0,
 			POWER_OPTIMIZED				=> 0,
-			CACHE_ENABLED					=> 0,
+			CACHE_ENABLE 					=> 0,
       FAMILY                => "LATTICE")
     port map(
       clk            => clk,

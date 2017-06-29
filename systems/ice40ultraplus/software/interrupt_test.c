@@ -1,1 +1,1 @@
-../../software/interrupt_test.c
+../../../software/interrupt_test.c

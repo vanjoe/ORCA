@@ -1,1 +1,1 @@
-../../software/printf.c
+../../../software/printf.c

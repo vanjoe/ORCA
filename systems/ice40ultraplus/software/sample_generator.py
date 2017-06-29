@@ -1,1 +1,1 @@
-../../software/sample_generator.py
+../../../software/sample_generator.py

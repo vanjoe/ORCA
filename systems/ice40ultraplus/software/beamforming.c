@@ -1,1 +1,1 @@
-../../software/beamforming.c
+../../../software/beamforming.c

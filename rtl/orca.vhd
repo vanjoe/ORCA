@@ -44,36 +44,36 @@ entity orca is
     avm_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     avm_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
     avm_data_read                 : out std_logic;
-    avm_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := x"00000000";
+    avm_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
     avm_data_write                : out std_logic;
     avm_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    avm_data_waitrequest          : in  std_logic                                  := '0';
-    avm_data_readdatavalid        : in  std_logic                                  := '0';
+    avm_data_waitrequest          : in  std_logic := '0';
+    avm_data_readdatavalid        : in  std_logic := '0';
     --avalon instruction bus
     avm_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     avm_instruction_read          : out std_logic;
-    avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := x"00000000";
-    avm_instruction_waitrequest   : in  std_logic                                  := '0';
-    avm_instruction_readdatavalid : in  std_logic                                  := '0';
+    avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    avm_instruction_waitrequest   : in  std_logic := '0';
+    avm_instruction_readdatavalid : in  std_logic := '0';
     --wishbone data bus
     data_ADR_O                    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_DAT_I                    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    data_DAT_I                    : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
     data_DAT_O                    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_WE_O                     : out std_logic;
     data_SEL_O                    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
     data_STB_O                    : out std_logic;
-    data_ACK_I                    : in  std_logic;
+    data_ACK_I                    : in  std_logic := '0';
     data_CYC_O                    : out std_logic;
     data_CTI_O                    : out std_logic_vector(2 downto 0);
-    data_STALL_I                  : in  std_logic;
+    data_STALL_I                  : in  std_logic := '0';
     --wishbone instruction bus
     instr_ADR_O                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instr_DAT_I                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    instr_DAT_I                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
     instr_STB_O                   : out std_logic;
-    instr_ACK_I                   : in  std_logic;
+    instr_ACK_I                   : in  std_logic := '0';
     instr_CYC_O                   : out std_logic;
     instr_CTI_O                   : out std_logic_vector(2 downto 0);
-    instr_STALL_I                 : in  std_logic;
+    instr_STALL_I                 : in  std_logic := '0';
 
     --AXI
     data_AWID    : out std_logic_vector(3 downto 0);
@@ -85,18 +85,18 @@ entity orca is
     data_AWCACHE : out std_logic_vector(3 downto 0);
     data_AWPROT  : out std_logic_vector(2 downto 0);
     data_AWVALID : out std_logic;
-    data_AWREADY : in  std_logic;
+    data_AWREADY : in  std_logic := '0';
 
     data_WID    : out std_logic_vector(3 downto 0);
     data_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
     data_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
     data_WLAST  : out std_logic;
     data_WVALID : out std_logic;
-    data_WREADY : in  std_logic;
+    data_WREADY : in  std_logic := '0';
 
-    data_BID    : in  std_logic_vector(3 downto 0);
-    data_BRESP  : in  std_logic_vector(1 downto 0);
-    data_BVALID : in  std_logic;
+    data_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
+    data_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+    data_BVALID : in  std_logic := '0';
     data_BREADY : out std_logic;
 
     data_ARID    : out std_logic_vector(3 downto 0);
@@ -108,13 +108,13 @@ entity orca is
     data_ARCACHE : out std_logic_vector(3 downto 0);
     data_ARPROT  : out std_logic_vector(2 downto 0);
     data_ARVALID : out std_logic;
-    data_ARREADY : in  std_logic;
+    data_ARREADY : in  std_logic := '0';
 
-    data_RID    : in  std_logic_vector(3 downto 0);
-    data_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
-    data_RRESP  : in  std_logic_vector(1 downto 0);
-    data_RLAST  : in  std_logic;
-    data_RVALID : in  std_logic;
+    data_RID    : in  std_logic_vector(3 downto 0) := (others => '0');
+    data_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
+    data_RRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+    data_RLAST  : in  std_logic := '0';
+    data_RVALID : in  std_logic := '0';
     data_RREADY : out std_logic;
 
     itcram_ARID    : out std_logic_vector(3 downto 0);
@@ -126,13 +126,13 @@ entity orca is
     itcram_ARCACHE : out std_logic_vector(3 downto 0);
     itcram_ARPROT  : out std_logic_vector(2 downto 0);
     itcram_ARVALID : out std_logic;
-    itcram_ARREADY : in  std_logic;
+    itcram_ARREADY : in  std_logic := '0';
 
-    itcram_RID    : in  std_logic_vector(3 downto 0);
-    itcram_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
-    itcram_RRESP  : in  std_logic_vector(1 downto 0);
-    itcram_RLAST  : in  std_logic;
-    itcram_RVALID : in  std_logic;
+    itcram_RID    : in  std_logic_vector(3 downto 0) := (others => '0');
+    itcram_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
+    itcram_RRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+    itcram_RLAST  : in  std_logic := '0';
+    itcram_RVALID : in  std_logic := '0';
     itcram_RREADY : out std_logic;
 
     itcram_AWID    : out std_logic_vector(3 downto 0);
@@ -144,18 +144,18 @@ entity orca is
     itcram_AWCACHE : out std_logic_vector(3 downto 0);
     itcram_AWPROT  : out std_logic_vector(2 downto 0);
     itcram_AWVALID : out std_logic;
-    itcram_AWREADY : in  std_logic;
+    itcram_AWREADY : in  std_logic := '0';
 
     itcram_WID     : out std_logic_vector(3 downto 0);
     itcram_WDATA   : out std_logic_vector(REGISTER_SIZE -1 downto 0);
     itcram_WSTRB   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
     itcram_WLAST   : out std_logic;
     itcram_WVALID  : out std_logic;
-    itcram_WREADY  : in  std_logic;
+    itcram_WREADY  : in  std_logic := '0';
 
-    itcram_BID     : in  std_logic_vector(3 downto 0);
-    itcram_BRESP   : in  std_logic_vector(1 downto 0);
-    itcram_BVALID  : in  std_logic;
+    itcram_BID     : in  std_logic_vector(3 downto 0) := (others => '0');
+    itcram_BRESP   : in  std_logic_vector(1 downto 0) := (others => '0');
+    itcram_BVALID  : in  std_logic := '0';
     itcram_BREADY  : out std_logic;
 
     iram_ARID    : out std_logic_vector(3 downto 0);
@@ -167,13 +167,13 @@ entity orca is
     iram_ARCACHE : out std_logic_vector(3 downto 0);
     iram_ARPROT  : out std_logic_vector(2 downto 0);
     iram_ARVALID : out std_logic;
-    iram_ARREADY : in  std_logic;
+    iram_ARREADY : in  std_logic := '0';
 
-    iram_RID    : in  std_logic_vector(3 downto 0);
-    iram_RDATA  : in  std_logic_vector(DRAM_WIDTH-1 downto 0);
-    iram_RRESP  : in  std_logic_vector(1 downto 0);
-    iram_RLAST  : in  std_logic;
-    iram_RVALID : in  std_logic;
+    iram_RID    : in  std_logic_vector(3 downto 0) := (others => '0');
+    iram_RDATA  : in  std_logic_vector(DRAM_WIDTH-1 downto 0) := (others => '0');
+    iram_RRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+    iram_RLAST  : in  std_logic := '0';
+    iram_RVALID : in  std_logic := '0';
     iram_RREADY : out std_logic;
 
     iram_AWID    : out std_logic_vector(3 downto 0);
@@ -185,41 +185,42 @@ entity orca is
     iram_AWCACHE : out std_logic_vector(3 downto 0);
     iram_AWPROT  : out std_logic_vector(2 downto 0);
     iram_AWVALID : out std_logic;
-    iram_AWREADY : in  std_logic;
+    iram_AWREADY : in  std_logic := '0';
+		
     iram_WID     : out std_logic_vector(3 downto 0);
     iram_WDATA   : out std_logic_vector(DRAM_WIDTH-1 downto 0);
     iram_WSTRB   : out std_logic_vector(DRAM_WIDTH/8 -1 downto 0);
     iram_WLAST   : out std_logic;
     iram_WVALID  : out std_logic;
-    iram_WREADY  : in  std_logic;
-    iram_BID     : in  std_logic_vector(3 downto 0);
-    iram_BRESP   : in  std_logic_vector(1 downto 0);
-    iram_BVALID  : in  std_logic;
+    iram_WREADY  : in  std_logic := '0';
+    iram_BID     : in  std_logic_vector(3 downto 0) := (others => '0');
+    iram_BRESP   : in  std_logic_vector(1 downto 0) := (others => '0');
+    iram_BVALID  : in  std_logic := '0';
     iram_BREADY  : out std_logic;
 
     -------------------------------------------------------------------------------
     -- Scratchpad Slave
     -------------------------------------------------------------------------------
     --avalon
-    avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
-    avm_scratch_byteenable    : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-    avm_scratch_read          : in  std_logic;
+    avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
+    avm_scratch_byteenable    : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0) := (others => '0');
+    avm_scratch_read          : in  std_logic := '0';
     avm_scratch_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    avm_scratch_write         : in  std_logic;
-    avm_scratch_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    avm_scratch_write         : in  std_logic := '0';
+    avm_scratch_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
     avm_scratch_waitrequest   : out std_logic;
     avm_scratch_readdatavalid : out std_logic;
 
     --wishbone
-    sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
+    sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
     sp_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_WE_I    : in  std_logic;
-    sp_SEL_I   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-    sp_STB_I   : in  std_logic;
+    sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    sp_WE_I    : in  std_logic := '0';
+    sp_SEL_I   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0) := (others => '0');
+    sp_STB_I   : in  std_logic := '0';
     sp_ACK_O   : out std_logic;
-    sp_CYC_I   : in  std_logic;
-    sp_CTI_I   : in  std_logic_vector(2 downto 0);
+    sp_CYC_I   : in  std_logic := '0';
+    sp_CTI_I   : in  std_logic_vector(2 downto 0) := (others => '0');
     sp_STALL_O : out std_logic; 
 
     global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')

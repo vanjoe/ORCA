@@ -2224,6 +2224,33 @@ LIST Top_Fabric_Master
 VALUE "<project>/simulation/subsystem.bfm,sim"
 VALUE "<project>/component/work/Top_Fabric_Master/subsystem.bfm,sim"
 ENDLIST
+LIST CoreAXI4Interconnect
+VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AHBModel/AHBL_Master.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/Axi4MasterGen.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/Axi4SlaveGen.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/AxiMaster.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/User_Test.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/DualPort_Ram_SyncWr_ASyncRd.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/run_user_test_ts.do,do"
+ENDLIST
+LIST CoreGPIO
+VALUE "<project>/simulation/coregpio_usertb_apb_master.bfm,sim"
+VALUE "<project>/simulation/coregpio_usertb_include.bfm,sim"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_ahbl.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_ahblapb.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_ahbslave.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_ahbslaveext.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_ahbtoapb.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_apb.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_apbslave.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_apbslaveext.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_apbtoapb.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_main.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/coreparameters.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/test/user/testbench.v,tb_hdl"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/bfmtovec_compile.do,do"
+VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/wave_vlog.do,do"
+ENDLIST
 LIST Top_Fabric_Master_CoreUARTapb_0_CoreUARTapb
 VALUE "<project>/simulation/coreuart_usertb_apb_master.bfm,sim"
 VALUE "<project>/simulation/coreuart_usertb_include.bfm,sim"
@@ -2299,33 +2326,6 @@ VALUE "<project>/component/Actel/DirectCore/CORESPI/5.1.104/rtl/vlog/amba_bfm/bf
 VALUE "<project>/component/Actel/DirectCore/CORESPI/5.1.104/rtl/vlog/test/user/testbench.v,tb_hdl"
 VALUE "<project>/component/Actel/DirectCore/CORESPI/5.1.104/mti/bfmtovec_compile.do,do"
 VALUE "<project>/component/Actel/DirectCore/CORESPI/5.1.104/mti/wave.do,do"
-ENDLIST
-LIST CoreAXI4Interconnect
-VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AHBModel/AHBL_Master.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/Axi4MasterGen.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/Axi4SlaveGen.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/AxiMaster.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/User_Test.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/DualPort_Ram_SyncWr_ASyncRd.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/run_user_test_ts.do,do"
-ENDLIST
-LIST CoreGPIO
-VALUE "<project>/simulation/coregpio_usertb_apb_master.bfm,sim"
-VALUE "<project>/simulation/coregpio_usertb_include.bfm,sim"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_ahbl.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_ahblapb.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_ahbslave.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_ahbslaveext.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_ahbtoapb.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_apb.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_apbslave.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_apbslaveext.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_apbtoapb.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/amba_bfm/bfm_main.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/coreparameters.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/test/user/testbench.v,tb_hdl"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/bfmtovec_compile.do,do"
-VALUE "<project>/component/Actel/DirectCore/CoreGPIO/3.1.101/wave_vlog.do,do"
 ENDLIST
 ENDLIST
 LIST SimulationOptions
@@ -2519,8 +2519,10 @@ LIST UserCustomizedFileList
 ENDLIST
 LIST OpenedFileList
 ORIENTATION;HORIZONTAL
+Reports;Reports;0
+ReportsCurrentItem;Run PROGRAM Action:Top_Fabric_Master_PROGRAM.log
 StartPage;StartPage;0
-ACTIVEVIEW;StartPage
+ACTIVEVIEW;Reports
 ENDLIST
 LIST ModuleSubBlockList
 LIST "absv_unit::work::component_pkg","hdl/absv_unit.vhd","FALSE","FALSE"
@@ -2607,10 +2609,10 @@ ENDLIST
 LIST "cache_xilinx::work","","FALSE","FALSE"
 ENDLIST
 LIST "CDC_FIFO::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4Convertors/CDC_FIFO.v","FALSE","FALSE"
-SUBBLOCK "RAM_BLOCK::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4Convertors/RAM_BLOCK.v","FALSE","FALSE"
 SUBBLOCK "CDC_grayCodeCounter::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4Convertors/CDC_grayCodeCounter.v","FALSE","FALSE"
 SUBBLOCK "CDC_rdCtrl::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4Convertors/CDC_rdCtrl.v","FALSE","FALSE"
 SUBBLOCK "CDC_wrCtrl::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4Convertors/CDC_wrCtrl.v","FALSE","FALSE"
+SUBBLOCK "RAM_BLOCK::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4Convertors/RAM_BLOCK.v","FALSE","FALSE"
 ENDLIST
 LIST "CDC_grayCodeCounter::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4Convertors/CDC_grayCodeCounter.v","FALSE","FALSE"
 SUBBLOCK "Bin2Gray::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4Convertors/Bin2Gray.v","FALSE","FALSE"
@@ -2929,14 +2931,14 @@ SUBBLOCK "hardware_mult::work::component_pkg","hdl/hardware_mult_behav.vhd","FAL
 SUBBLOCK "word_shamt_rom::work::component_pkg","hdl/shamt_roms.vhd","FALSE","FALSE"
 ENDLIST
 LIST "my_mss::work","component/work/my_mss/my_mss.v","TRUE","FALSE"
+SUBBLOCK "CoreResetP::work","component/Actel/DirectCore/CoreResetP/7.1.100/rtl/vlog/core/coreresetp.v","FALSE","FALSE"
+SUBBLOCK "CoreSF2Config::work","component/Actel/DirectCore/CoreSF2Config/3.0.100/rtl/vlog/core/coresf2config.v","FALSE","FALSE"
 SUBBLOCK "my_mss_CCC_0_FCCC::work","component/work/my_mss/CCC_0/my_mss_CCC_0_FCCC.v","FALSE","FALSE"
 SUBBLOCK "my_mss_FABOSC_0_OSC::work","component/work/my_mss/FABOSC_0/my_mss_FABOSC_0_OSC.v","FALSE","FALSE"
 SUBBLOCK "my_mss_MSS::work","component/work/my_mss_MSS/my_mss_MSS.v","TRUE","FALSE"
 SUBBLOCK "CoreAHBLite::COREAHBLITE_LIB","component/Actel/DirectCore/CoreAHBLite/5.2.100/rtl/vlog/core/coreahblite.v","FALSE","FALSE"
 SUBBLOCK "COREAHBTOAPB3::COREAHBTOAPB3_LIB","component/Actel/DirectCore/COREAHBTOAPB3/3.1.100/rtl/vlog/core/coreahbtoapb3.v","FALSE","FALSE"
 SUBBLOCK "CoreAPB3::COREAPB3_LIB","component/Actel/DirectCore/CoreAPB3/4.1.100/rtl/vlog/core/coreapb3.v","FALSE","FALSE"
-SUBBLOCK "CoreResetP::work","component/Actel/DirectCore/CoreResetP/7.1.100/rtl/vlog/core/coreresetp.v","FALSE","FALSE"
-SUBBLOCK "CoreSF2Config::work","component/Actel/DirectCore/CoreSF2Config/3.0.100/rtl/vlog/core/coresf2config.v","FALSE","FALSE"
 ENDLIST
 LIST "my_mss_CCC_0_FCCC::work","component/work/my_mss/CCC_0/my_mss_CCC_0_FCCC.v","FALSE","FALSE"
 ENDLIST
@@ -3121,6 +3123,8 @@ ENDLIST
 LIST "TargetMuxController::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4CrossBar/TargetMuxController.v","FALSE","FALSE"
 ENDLIST
 LIST "Top_Fabric_Master::work","component/work/Top_Fabric_Master/Top_Fabric_Master.v","TRUE","FALSE"
+SUBBLOCK "CoreAXI4Interconnect::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/CoreAxi4Interconnect.v","FALSE","FALSE"
+SUBBLOCK "CoreGPIO::work","component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/core/coregpio.v","FALSE","FALSE"
 SUBBLOCK "Top_Fabric_Master_CoreUARTapb_0_CoreUARTapb::work","component/work/Top_Fabric_Master/CoreUARTapb_0/rtl/vlog/core/CoreUARTapb.v","FALSE","FALSE"
 SUBBLOCK "axi_bram::work","hdl/axi_bram.vhd","FALSE","FALSE"
 SUBBLOCK "axi_to_apb::work","hdl/axi_to_apb.vhd","FALSE","FALSE"
@@ -3130,8 +3134,6 @@ SUBBLOCK "microsemi_wrapper::work","hdl/microsemi_wrapper.vhd","FALSE","FALSE"
 SUBBLOCK "my_mss_top::work","component/work/my_mss_top/my_mss_top.v","TRUE","FALSE"
 SUBBLOCK "vectorblox_mxp::work","hdl/vectorblox_axi.vhd","FALSE","FALSE"
 SUBBLOCK "CORESPI::CORESPI_LIB","component/Actel/DirectCore/CORESPI/5.1.104/rtl/vlog/core/corespi.v","FALSE","FALSE"
-SUBBLOCK "CoreAXI4Interconnect::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/CoreAxi4Interconnect.v","FALSE","FALSE"
-SUBBLOCK "CoreGPIO::work","component/Actel/DirectCore/CoreGPIO/3.1.101/rtl/vlog/core/coregpio.v","FALSE","FALSE"
 ENDLIST
 LIST "Top_Fabric_Master_CoreUARTapb_0_Clock_gen::work","component/work/Top_Fabric_Master/CoreUARTapb_0/rtl/vlog/core/Clock_gen.v","FALSE","FALSE"
 ENDLIST
@@ -3220,9 +3222,9 @@ SUBBLOCK "FifoDualPort::work","component/Actel/DirectCore/CoreAXI4Interconnect/2
 SUBBLOCK "ResetSycnc::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4CrossBar/ResetSycnc.v","FALSE","FALSE"
 ENDLIST
 LIST "Axi4SlaveGen::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/Axi4SlaveGen.v","FALSE","TRUE"
+SUBBLOCK "DualPort_RAM_SyncWr_ASyncRd::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/DualPort_Ram_SyncWr_ASyncRd.v","FALSE","TRUE"
 SUBBLOCK "FifoDualPort::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4CrossBar/FifoDualPort.v","FALSE","FALSE"
 SUBBLOCK "ResetSycnc::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4CrossBar/ResetSycnc.v","FALSE","FALSE"
-SUBBLOCK "DualPort_RAM_SyncWr_ASyncRd::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/DualPort_Ram_SyncWr_ASyncRd.v","FALSE","TRUE"
 ENDLIST
 LIST "AxiMaster::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/AxiMaster.v","FALSE","TRUE"
 SUBBLOCK "Axi4MasterGen::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/sim/AXI4Models/Axi4MasterGen.v","FALSE","TRUE"

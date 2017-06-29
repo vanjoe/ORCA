@@ -90,13 +90,14 @@ def fix_de2(de2_dir, rtl):
 			file_to_write.write(line + '\n')
 	
 def fix_zedboard(zedboard_dir, rtl, hdl_to_remove):
-
+	# Get the file names that we need to remove from the project.
 	i = 0
 	for vhd in hdl_to_remove:
 		f = re.findall(r"[^/.]+\..+", vhd)[0]
 		hdl_to_remove[i] = f
 		i = i + 1
 
+	# Update the component.xml file to reflect the removed hdl files.
 	xml_ns = {'xilinx': 'http://www.xilinx.com',
 						'spirit': 'http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009',
 						'xsi': "http://www.w3.org/2001/XMLSchema-instance"}
@@ -120,10 +121,14 @@ def fix_zedboard(zedboard_dir, rtl, hdl_to_remove):
 	xml_tree.write(os.path.expanduser(rtl + 'component.xml'), encoding = 'UTF-8', \
 		xml_declaration = True)
 
-		
-
-
-
-
-
+	# Fix the design_1.tcl file to disable caches.	
+	file_to_edit = os.path.expanduser(zedboard_dir + '/design_1.tcl')
+	file_to_read = open(file_to_edit, 'r')
+	file_to_read_text = file_to_read.read()
+	file_to_read.close()
+	file_to_read_text = re.sub(r'CONFIG.CACHE_ENABLE {.}', 'CONFIG.CACHE_ENABLE {0}', \
+		file_to_read_text)
+	file_to_write = open(file_to_edit, 'w')
+	file_to_write.write(file_to_read_text)
+	file_to_write.close()
 

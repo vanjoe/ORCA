@@ -1,1 +1,1 @@
-../../software/interrupt.c
+../../../software/interrupt.c
