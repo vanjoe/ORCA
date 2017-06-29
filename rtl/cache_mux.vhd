@@ -6,6 +6,14 @@ library work;
 use work.rv_components.all;
 use work.utils.all;
 
+-- TODO Implement support for pipelined reads and writes through this mux.
+-- One option would be to use a FIFO for the cache select values as well as the address
+-- of the read, and complete all transactions while the FIFO is not empty. The mux should
+-- be able to accept further transactions as long the FIFO is not full.
+-- Another option would be to stop accepting transactions when we change from one bus to 
+-- another, process all remaining transactions to the old bus, then start accepting new
+-- transactions for the new bus.
+
 entity cache_mux is
   generic (
     TCRAM_SIZE    : integer range 64 to 524288 := 32768; -- Byte size of cache
@@ -429,21 +437,23 @@ begin
 
   -- The cache select is latched to determine which port's signals
   -- to return to the master when the slave completes its transaction.
-  process(clk, reset)
+  process(clk)
   begin
-    if (reset = '1') then
-      cache_select_r_l <= '0';
-      cache_select_w_l <= '0';
-      state_r <= IDLE;
-      state_w <= IDLE;
-    elsif rising_edge(clk) then
-      state_r <= next_state_r;
-      state_w <= next_state_w;
-      if (latch_enable_r = '1') then
-        cache_select_r_l <= cache_select_r;
-      end if;
-      if (latch_enable_w = '1') then
-        cache_select_w_l <= cache_select_w;
+    if rising_edge(clk) then
+      if (reset = '1') then
+        cache_select_r_l <= '0';
+        cache_select_w_l <= '0';
+        state_r <= IDLE;
+        state_w <= IDLE;
+      else
+        state_r <= next_state_r;
+        state_w <= next_state_w;
+        if (latch_enable_r = '1') then
+          cache_select_r_l <= cache_select_r;
+        end if;
+        if (latch_enable_w = '1') then
+          cache_select_w_l <= cache_select_w;
+        end if;
       end if;
     end if;
   end process;

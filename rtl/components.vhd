@@ -737,13 +737,14 @@ package rv_components is
 
   component axi_master is
     generic (
+      ADDR_WIDTH    : integer := 32;
       REGISTER_SIZE : integer := 32;
       BYTE_SIZE     : integer := 8
-      );
+    );
 
     port (
-      ACLK    : in std_logic;
-      ARESETN : in std_logic;
+      clk : in std_logic;
+      aresetn : in std_logic;
 
       core_data_address : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       core_data_byteenable : in std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
@@ -787,6 +788,7 @@ package rv_components is
       ARVALID : out std_logic;
       ARREADY : in  std_logic;
 
+<<<<<<< HEAD
       RID    : in  std_logic_vector(3 downto 0);
       RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       RRESP  : in  std_logic_vector(1 downto 0);
@@ -797,6 +799,15 @@ package rv_components is
       NEXT_DATA_IN   : out    std_logic;
       DATA_BURST_NUM : buffer std_logic_vector(3 downto 0)
       );
+=======
+      RID : in std_logic_vector(3 downto 0);
+      RDATA : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      RRESP : in std_logic_vector(1 downto 0);
+      RLAST : in std_logic;
+      RVALID : in std_logic;
+      RREADY : out std_logic
+    );
+>>>>>>> 38a8871... Fixed bug where RVALID on the data bus was locked high. This may be due to previous USB transactions from the other project on the SD card of the Zedboard.
   end component axi_master;
 
 component axi_instruction_master is

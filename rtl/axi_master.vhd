@@ -6,15 +6,16 @@ use work.rv_components.all;
 
 entity axi_master is
   generic (
+    ADDR_WIDTH    : integer := 32;
     REGISTER_SIZE : integer := 32;
-    BYTE_SIZE : integer := 8
+    BYTE_SIZE     : integer := 8
   );
 
   port (
-    ACLK : in std_logic;
-    ARESETN : in std_logic;
+    clk : in std_logic;
+    aresetn : in std_logic;
 
-    core_data_address : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    core_data_address : in std_logic_vector(ADDR_WIDTH-1 downto 0);
     core_data_byteenable : in std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
     core_data_read : in std_logic;
     core_data_readdata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -23,7 +24,7 @@ entity axi_master is
     core_data_ack : out std_logic;
 
     AWID : out std_logic_vector(3 downto 0);
-    AWADDR : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    AWADDR : out std_logic_vector(ADDR_WIDTH-1 downto 0);
     AWLEN : out std_logic_vector(3 downto 0);
     AWSIZE : out std_logic_vector(2 downto 0);
     AWBURST : out std_logic_vector(1 downto 0);
@@ -46,7 +47,7 @@ entity axi_master is
     BREADY : out std_logic;
 
     ARID : out std_logic_vector(3 downto 0);
-    ARADDR : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    ARADDR : out std_logic_vector(ADDR_WIDTH-1 downto 0);
     ARLEN : out std_logic_vector(3 downto 0);
     ARSIZE : out std_logic_vector(2 downto 0);
     ARLOCK : out std_logic_vector(1 downto 0);
@@ -61,271 +62,255 @@ entity axi_master is
     RRESP : in std_logic_vector(1 downto 0);
     RLAST : in std_logic;
     RVALID : in std_logic;
-    RREADY : out std_logic;
-
-    NEXT_DATA_IN : out std_logic;
-    DATA_BURST_NUM : buffer std_logic_vector(3 downto 0)
+    RREADY : out std_logic
   );
     
 end entity axi_master;
 
 architecture rtl of axi_master is
-  type w_state_t is (IDLE_0,
-                     IDLE_1,
-                     WRITE_0,
-                     WRITE_2,
-                     BRESP_0,
-                     BRESP_1);
-  type r_state_t is (READ_0,
-                     READ_1,
-                     READ_2,
-                     READ_3,
-                     READ_4);
-
-  signal write_state : w_state_t;
-  signal read_state : r_state_t;
-  signal w_tr_length : std_logic_vector(3 downto 0);
-  signal r_tr_length : std_logic_vector(3 downto 0);
-  signal AXI_WC_BUSY : std_logic;
-  signal AXI_RC_BUSY : std_logic;
-
-  signal write_finished : std_logic;
-  signal read_finished : std_logic;
-
-  -- 1 transfer
   constant BURST_LEN    : std_logic_vector(3 downto 0) := "0000";
-  -- 4 bytes in transfer
   constant BURST_SIZE   : std_logic_vector(2 downto 0) := "010";
-  -- incremental bursts
   constant BURST_INCR   : std_logic_vector(1 downto 0) := "01";
   constant CACHE_VAL    : std_logic_vector(3 downto 0) := "0011";
   constant PROT_VAL     : std_logic_vector(2 downto 0) := "000";
   constant LOCK_VAL     : std_logic_vector(1 downto 0) := "00";
 
+  type state_r_t is (IDLE, WAITING_AR, READ);
+  type state_w_t is (IDLE, WAITING_AW, WAITING_W, WAITING_BOTH, WRITE); 
+
+  signal state_r : state_r_t;
+  signal state_w : state_w_t;
+  signal next_state_r : state_r_t;
+  signal next_state_w : state_w_t;
+
+  signal latch_enable_r  : std_logic;
+  signal latch_enable_aw : std_logic;
+  signal latch_enable_w  : std_logic;
+
+  signal core_data_address_r_l  : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal core_data_address_w_l  : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal core_data_writedata_l  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal core_data_byteenable_l : std_logic_vector(REGISTER_SIZE/BYTE_SIZE-1 downto 0);
+
 begin
+
+  core_data_readdata <= RDATA;
+  core_data_ack <= (RVALID and RLAST) or BVALID;
+
+  AWID <= (others => '0');
   AWLEN <= BURST_LEN;
+  AWSIZE <= BURST_SIZE;
+  AWBURST <= BURST_INCR;
   AWLOCK <= LOCK_VAL;
   AWCACHE <= CACHE_VAL;
   AWPROT <= PROT_VAL;
-  AWID <= "0000";
-  WID <= "0000";
+  AWBURST <= BURST_INCR;
+
+  WID <= (others => '0');
+
+  ARID <= (others => '0');
   ARLEN <= BURST_LEN;
+  ARSIZE <= BURST_SIZE;
+  ARLOCK <= LOCK_VAL;
   ARCACHE <= CACHE_VAL;
   ARPROT <= PROT_VAL;
-  ARLOCK <= LOCK_VAL;
-  ARID <= "0000";
-  
-  core_data_ack <= read_finished or write_finished; 
+  ARBURST <= BURST_INCR; 
 
-  process(ACLK)
-  variable aw_done : std_logic := '0';
-  variable w_done : std_logic := '0';
+  -- By holding RREADY high, the READ bus will be flushed on startup. 
+  RREADY <= '1';
+
+  process(state_r, core_data_address, core_data_read, core_data_address_r_l,
+          ARREADY, RVALID, RLAST)
   begin
-    if rising_edge(ACLK) then
-      if (ARESETN = '0') then
-        aw_done := '0';
-        w_done := '0';
-        AWSIZE <=  "000";
-        AWBURST <= BURST_INCR;
-        AWVALID <= '0';
-        AWADDR <= (others => '0');
-        WSTRB <= "0000";
-        WVALID <= '0';
-        WLAST <= '0';
-        WDATA <= (others => '0');
-        BREADY <= '0';
-        write_state <= IDLE_0;
-        w_tr_length <= "0000";
-        NEXT_DATA_IN <= '0';
-        write_finished <= '0';
-      else
-        case (write_state) is
-          when IDLE_0 =>
-            write_state <= IDLE_1;
-            w_tr_length <= "0000";
-            w_done := '0';
-            aw_done := '0';
-            write_finished <= '0';
-
-          when IDLE_1 =>
-            BREADY <= '0';
-            w_tr_length <= "0000";
-            write_finished <= '0';
-            w_done := '0';
-            aw_done := '0';
-            if (core_data_write = '1') then
-              -- address bus
-              AWSIZE <= BURST_SIZE;
-              AWBURST <= BURST_INCR;
-              AWADDR <= core_data_address;
-              AWVALID <= '1';
-              -- write bus
-              WSTRB <= core_data_byteenable;
-              WDATA <= core_data_writedata;
-              if (w_tr_length = BURST_LEN) then
-                WLAST <= '1';
-              else
-                WLAST <= '0';
-              end if;
-              WVALID <= '1';
-              write_state <= WRITE_0;
-            else
-              write_state <= IDLE_1;
-            end if;
-          
-          when WRITE_0 =>
-            if (AWREADY = '1') then
-              AWVALID <= '0';
-              aw_done := '1';
-            end if;
-            if (WREADY = '1') then
-              WVALID <= '0';
-              w_done := '1';
-            end if;
-            if ((aw_done = '1') and (w_done = '1')) then
-              aw_done := '0';
-              w_done := '0';
-              NEXT_DATA_IN <= '0';
-              if (w_tr_length = BURST_LEN) then
-                WLAST <= '0';
-                write_state <= BRESP_0;
-              else
-                write_state <= WRITE_2;
-                w_tr_length <= std_logic_vector(unsigned(w_tr_length) + to_unsigned(1, 4)); 
-                NEXT_DATA_IN <= '1';
-              end if;
-            end if;
-
-          when WRITE_2 =>
-            WDATA <= core_data_writedata;
-            WSTRB <= core_data_byteenable;
-            WVALID <= '1';
-            w_done := '0';
-            write_state <= WRITE_0;
-            NEXT_DATA_IN <= '0';
-            if (w_tr_length = BURST_LEN) then
-              WLAST <= '1';
-            else
-              WLAST <= '0';
-            end if;
-
-          when BRESP_0 =>
-            if (BVALID = '1') then
-              BREADY <= '1';
-              write_finished <= '1';
-              write_state <= BRESP_1;
-            else
-              write_state <= BRESP_0;
-            end if;
-
-          when BRESP_1 =>
-            write_finished <= '0';
-            BREADY <= '0';
-            write_state <= IDLE_1;
-            if (core_data_write = '1') then
-              AWSIZE <= BURST_SIZE;
-              AWBURST <= BURST_INCR;
-              AWADDR <= core_data_address;
-              AWVALID <= '1';
-              WSTRB <= core_data_byteenable;
-              WDATA <= core_data_writedata;
-              if (w_tr_length = BURST_LEN) then
-                WLAST <= '1';
-              else
-                WLAST <= '0';
-              end if; 
-              WVALID <= '1';
-              write_state <= WRITE_0;
-            end if;
-             
-        end case;
-      end if;
-    end if;
-  end process;
-
-  process(ACLK)
-  begin
-    if rising_edge(ACLK) then
-      if (ARESETN = '0') then
-        ARSIZE <= "000";
-        ARBURST <= BURST_INCR;
+    case(state_r) is
+      when IDLE =>
+        ARADDR <= core_data_address;
         ARVALID <= '0';
-        RREADY <= '0';
-        ARADDR <= (others => '0');
-        read_state <= READ_0;
-        r_tr_length <= "0000";
-        DATA_BURST_NUM <= "0000";
-        read_finished <= '0';
-      else
-        case (read_state) is
-          when READ_0 =>
-            ARVALID <= '0';
-            RREADY <= '0';
-            r_tr_length <= "0000";
-            DATA_BURST_NUM <= "0000";
-            read_finished <= '0';
-            if (core_data_read = '1') then
-              read_state <= READ_2;
-              ARSIZE <= BURST_SIZE;
-              ARBURST <= BURST_INCR;
-              ARADDR <= core_data_address;
-              RREADY <= '0';
-              ARVALID <= '1';
-            else
-              read_state <= READ_0;
-            end if;
+        --RREADY <= '0';
+        latch_enable_r <= '0';
+        next_state_r <= IDLE;
+        if (core_data_read = '1') then
+          latch_enable_r <= '1';
+          ARVALID <= '1';
+          if (ARREADY = '1') then
+            next_state_r <= READ; 
+          else
+            next_state_r <= WAITING_AR;
+          end if; 
+        end if;
+          
+      when WAITING_AR =>
+        ARADDR <= core_data_address_r_l;
+        ARVALID <= '1';
+        --RREADY <= '0';
+        latch_enable_r <= '0';
+        next_state_r <= WAITING_AR;
+        if (ARREADY = '1') then
+          next_state_r <= READ;
+        end if;
 
-          when READ_1 =>
-            ARSIZE <= BURST_SIZE;
-            ARBURST <= BURST_INCR;
-            ARADDR <= core_data_address;
-            RREADY <= '0';
+      when READ =>
+        ARADDR <= core_data_address;
+        ARVALID <= '0';
+        --RREADY <= '1';
+        latch_enable_r <= '0';
+        next_state_r <= READ;
+        if ((RVALID = '1') and (RLAST = '1')) then
+          if (core_data_read = '1') then
             ARVALID <= '1';
-            read_state <= READ_2;
-
-          when READ_2 =>
             if (ARREADY = '1') then
-              ARVALID <= '0';
-              RREADY <= '1';
-              read_state <= READ_3;
+              next_state_r <= READ;
             else
-              read_state <= READ_2;
+              next_state_r <= WAITING_AR; 
             end if;
+          else
+            next_state_r <= IDLE;
+          end if;
+        end if;
+    end case;
+  end process;
 
-          when READ_3 =>
-            if ((RVALID = '1') and (r_tr_length = BURST_LEN)) then
-              read_state <= READ_4;
-              core_data_readdata <= RDATA;
-              read_finished <= '1';
-              RREADY <= '0';
-              DATA_BURST_NUM <= std_logic_vector(unsigned(DATA_BURST_NUM) + to_unsigned(1, 4));
-            -- BUG: This won't work for burst reads anymore.
-            elsif ((RVALID = '1') and (r_tr_length /= BURST_LEN)) then
-              r_tr_length <= std_logic_vector(unsigned(r_tr_length) + to_unsigned(1, 4));
-              DATA_BURST_NUM <= std_logic_vector(unsigned(DATA_BURST_NUM) + to_unsigned(1, 4));
-              read_state <= READ_3;
-              core_data_readdata <= RDATA;
+  process(state_w, core_data_write, core_data_address, core_data_writedata, 
+          core_data_byteenable, core_data_address_w_l, core_data_writedata_l, 
+          core_data_byteenable_l, AWREADY, WREADY, BVALID)
+  begin
+    case(state_w) is
+      when IDLE =>
+        AWADDR <= core_data_address;
+        WDATA <= core_data_writedata;
+        WSTRB <= core_data_byteenable;
+        WLAST <= '0';
+        AWVALID <= '0';
+        WVALID <= '0';
+        BREADY <= '0';
+        latch_enable_aw <= '0';
+        latch_enable_w <= '0';
+        next_state_w <= IDLE;
+        if (core_data_write = '1') then
+          latch_enable_aw <= '1';
+          latch_enable_w <= '1';
+          AWVALID <= '1';
+          WVALID <= '1';
+          WLAST <= '1';
+          if ((AWREADY = '1') and (WREADY = '1')) then
+            next_state_w <= WRITE;
+          elsif (WREADY = '1') then
+            next_state_w <= WAITING_AW;
+          elsif (AWREADY = '1') then
+            next_state_w <= WAITING_W;
+          else
+            next_state_w <= WAITING_BOTH; 
+          end if;
+        end if;
+
+      when WAITING_AW =>
+        AWADDR <= core_data_address_w_l;
+        WDATA <= core_data_writedata_l;
+        WSTRB <= core_data_byteenable_l;
+        WLAST <= '0';
+        AWVALID <= '1';
+        WVALID <= '0';
+        BREADY <= '0';
+        latch_enable_aw <= '0';
+        latch_enable_w <= '0';
+        next_state_w <= WAITING_AW;
+        if (AWREADY = '1') then
+          next_state_w <= WRITE;
+        end if;
+
+      when WAITING_W =>
+        AWADDR <= core_data_address_w_l;
+        WDATA <= core_data_writedata_l;
+        WSTRB <= core_data_byteenable_l;
+        WLAST <= '1';
+        AWVALID <= '0';
+        WVALID <= '1';
+        BREADY <= '0';
+        latch_enable_aw <= '0';
+        latch_enable_w <= '0';
+        next_state_w <= WAITING_W;
+        if (WREADY = '1') then
+          next_state_w <= WRITE;
+        end if;
+
+      when WAITING_BOTH =>
+        AWADDR <= core_data_address_w_l;
+        WDATA <= core_data_writedata_l;
+        WSTRB <= core_data_byteenable_l;
+        WLAST <= '1';
+        AWVALID <= '1';
+        WVALID <= '1';
+        BREADY <= '0';
+        latch_enable_aw <= '0';
+        latch_enable_w <= '0';
+        next_state_w <= WAITING_BOTH;
+        if ((AWREADY = '1') and (WREADY = '1')) then
+          next_state_w <= WRITE;
+        elsif (WREADY = '1') then
+          next_state_w <= WAITING_AW;
+        elsif (AWREADY = '1') then
+          next_state_w <= WAITING_W;
+        end if;
+        
+      when WRITE =>
+        AWADDR <= core_data_address;
+        WDATA <= core_data_writedata;
+        WSTRB <= core_data_byteenable;
+        WLAST <= '0';
+        AWVALID <= '0';
+        WVALID <= '0';
+        BREADY <= '1';
+        latch_enable_aw <= '0';
+        latch_enable_w <= '0';
+        next_state_w <= WRITE;
+        if (BVALID = '1') then
+          if (core_data_write = '1') then
+            latch_enable_aw <= '1';
+            latch_enable_w <= '1';
+            AWVALID <= '1';
+            WVALID <= '1';
+            WLAST <= '1';
+            if ((AWREADY = '1') and (WREADY = '1')) then
+              next_state_w <= WRITE;
+            elsif (WREADY = '1') then
+              next_state_w <= WAITING_AW;
+            elsif (AWREADY = '1') then
+              next_state_w <= WAITING_W;
             else
-              read_state <= READ_3;
+              next_state_w <= WAITING_BOTH;
             end if;
+          else
+            next_state_w <= IDLE;
+          end if;
+        end if;
+    end case;
+  end process;
 
-          when READ_4 => -- this is here to handle pipelined reads
-            read_finished <= '0';
-            read_state <= READ_0;
-            if (core_data_read = '1') then
-              read_state <= READ_2;
-              ARSIZE <= BURST_SIZE;
-              ARBURST <= BURST_INCR;
-              ARADDR <= core_data_address;
-              RREADY <= '0';
-              ARVALID <= '1';
-            end if;
-            
-
-        end case;
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if (aresetn = '0') then
+        core_data_address_r_l <= (others => '0');
+        core_data_address_w_l <= (others => '0');
+        core_data_writedata_l <= (others => '0');
+        core_data_byteenable_l <= (others => '0');
+        state_r <= IDLE;
+        state_w <= IDLE;
+      else
+        state_r <= next_state_r;
+        state_w <= next_state_w;
+        if (latch_enable_r = '1') then
+          core_data_address_r_l <= core_data_address;
+        end if;
+        if (latch_enable_aw = '1') then
+          core_data_address_w_l <= core_data_address;
+        end if;
+        if (latch_enable_w = '1') then
+          core_data_writedata_l <= core_data_writedata;
+          core_data_byteenable_l <= core_data_byteenable;
+        end if;
       end if;
     end if;
   end process;
-
 
 end architecture;

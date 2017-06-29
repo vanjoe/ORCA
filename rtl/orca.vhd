@@ -465,12 +465,14 @@ begin  -- architecture rtl
 
     data_master : axi_master
       generic map (
+        ADDR_WIDTH    => REGISTER_SIZE,
         REGISTER_SIZE => REGISTER_SIZE,
         BYTE_SIZE     => BYTE_SIZE
       )
       port map (
-        ACLK                    => clk,
-        ARESETN                 => axi_reset,
+        clk                     => clk,
+        aresetn                 => axi_reset,
+
         core_data_address       => core_data_address, 
         core_data_byteenable    => core_data_byteenable,  
         core_data_read          => core_data_read,         
@@ -518,10 +520,7 @@ begin  -- architecture rtl
         RRESP                   => data_RRESP,
         RLAST                   => data_RLAST, 
         RVALID                  => data_RVALID,
-        RREADY                  => data_RREADY,
-
-        NEXT_DATA_IN            => OPEN, 
-        DATA_BURST_NUM          => OPEN 
+        RREADY                  => data_RREADY
       );
 
     -- Instruction read port
@@ -583,41 +582,7 @@ begin  -- architecture rtl
         RREADY                         => instr_RREADY
       );
 
-    --instr_ARID                     <= (others => '0');
-    --instr_ARADDR                   <= core_instruction_address;
-    --instr_ARLEN                    <= BURST_LEN;
-    --instr_ARSIZE                   <= BURST_SIZE;
-    --instr_ARBURST                  <= BURST_INCR;
-    --instr_ARLOCK                   <= (others => '0');
-    --instr_ARCACHE                  <= (others => '0');
-    --instr_ARPROT                   <= (others => '0');
-    --instr_ARVALID                  <= core_instruction_read;
-    --core_instruction_waitrequest   <= not instr_ARREADY;
-    --                                    -- instr_RID
-    --core_instruction_readdata      <= instr_RDATA;
-    --                                    --instr_RRESP
-    --                                    --instr_RLAST
-    --core_instruction_readdatavalid <= instr_RVALID;
-    --instr_RREADY                   <= '1';
-
-
-    --instr_AWID    <= (others => '0');
-    --instr_AWADDR  <= (others => '0');
-    --instr_AWLEN   <= (others => '0');
-    --instr_AWSIZE  <= (others => '0');
-    --instr_AWBURST <= (others => '0');
-    --instr_AWLOCK  <= (others => '0');
-    --instr_AWCACHE <= (others => '0');
-    --instr_AWPROT  <= (others => '0');
-    --instr_AWVALID <= '0';
-    --instr_WID     <= (others => '0');
-    --instr_WDATA   <= (others => '0');
-    --instr_WSTRB   <= (others => '0');
-    --instr_WLAST   <= '0';
-    --instr_WVALID  <= '0';
-    --instr_BREADY  <= '1';
-
-  instruction_cache_mux :  cache_mux
+  instruction_cache_mux : cache_mux
     generic map (
       TCRAM_SIZE => TCRAM_SIZE, 
       ADDR_WIDTH => REGISTER_SIZE,

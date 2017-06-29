@@ -67,22 +67,12 @@ entity axi_instruction_master is
 end entity axi_instruction_master;
 
 architecture rtl of axi_instruction_master is
-  type state_w_t is (IDLE, WAITING_AW, WAITING_W, WRITE);
-  type state_r_t is (IDLE, WAITING_AR, READ);
-
   constant BURST_LEN  : std_logic_vector(3 downto 0) := "0000";
   constant BURST_SIZE : std_logic_vector(2 downto 0) := "010";
   constant BURST_INCR : std_logic_vector(1 downto 0) := "01";
   constant CACHE_VAL  : std_logic_vector(3 downto 0) := "0011";
   constant PROT_VAL   : std_logic_vector(2 downto 0) := "000";
   constant LOCK_VAL   : std_logic_vector(1 downto 0) := "00";
-
-  signal next_state_w : state_w_t;
-  signal next_state_r : state_r_t;
-  signal state_w : state_w_t;
-  signal state_r : state_r_t;
-
-  signal core_instruction_address_l : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
 begin 
 
@@ -115,87 +105,10 @@ begin
 
   core_instruction_readdata <= RDATA;
   core_instruction_readdatavalid <= RVALID;
- 
-  process(state_r, core_instruction_read, core_instruction_address, core_instruction_address_l,
-          ARREADY, RVALID, RLAST)
-  begin
-    case (state_r) is
-      when IDLE =>
-        ARADDR <= core_instruction_address;
-        ARVALID <= '0';
-        RREADY <= '0';
-        core_instruction_waitrequest <= '0';
-        next_state_r <= IDLE;
-        if (core_instruction_read = '1') then
-          ARVALID <= '1';
-          if (ARREADY = '1') then
-            RREADY <= '1';
-            next_state_r <= READ; 
-          else
-            next_state_r <= WAITING_AR;
-          end if; 
-        end if;
-          
-      when WAITING_AR =>
-        ARADDR <= core_instruction_address_l;
-        ARVALID <= '1';
-        RREADY <= '0';
-        core_instruction_waitrequest <= '1';
-        next_state_r <= WAITING_AR;
-        if (ARREADY = '1') then
-          RREADY <= '1';
-          next_state_r <= READ;
-        end if;
+  core_instruction_waitrequest <= core_instruction_read and (not ARREADY); 
 
-      when READ =>
-        ARADDR <= core_instruction_address;
-        ARVALID <= '0';
-        RREADY <= '1';
-        core_instruction_waitrequest <= '0';
-        next_state_r <= READ;
-        if ((RVALID = '1') and (RLAST = '1')) then
-          if (core_instruction_read = '1') then
-            ARVALID <= '1';
-            if (ARREADY = '1') then
-              RREADY <= '1';
-              next_state_r <= READ;
-            else
-              next_state_r <= WAITING_AR; 
-            end if;
-          else
-            next_state_r <= IDLE;
-          end if;
-        else
-          core_instruction_waitrequest <= '1';   
-        end if; 
-    end case;
-  end process;
-
-  -- TODO Stub, implement write master.
-  process(state_w)
-  begin
-    case (state_w) is
-      when IDLE =>
-        next_state_w <= IDLE;
-      when others =>
-        next_state_w <= IDLE;
-    end case;
-  end process;
- 
-  
-  process(clk, aresetn)
-  begin
-    if (aresetn = '0') then
-      state_w <= IDLE;
-      state_r <= IDLE;
-    elsif rising_edge(clk) then
-      state_w <= next_state_w;
-      state_r <= next_state_r;
-      if (((state_r = IDLE) or (state_r = READ)) and (core_instruction_read = '1')) then
-        core_instruction_address_l <= core_instruction_address;
-      end if;
-    end if;
-
-  end process;
+  ARADDR <= core_instruction_address;
+  ARVALID <= core_instruction_read;
+  RREADY <= '1';
 
 end architecture;
