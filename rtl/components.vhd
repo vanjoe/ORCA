@@ -35,7 +35,7 @@ package rv_components is
 			DRAM_WIDTH            : integer                    := 32;
 			BURST_EN              : integer range 0  to 1      := 0;
 			POWER_OPTIMIZED				: integer range 0	 to 1			 := 0;
-			CACHE_ENABLED					: integer range 0 to	1			 := 0;
+			CACHE_ENABLED					: integer range 0  to	1			 := 0;
 			FAMILY                : string                     := "ALTERA");
     port(
       clk            : in std_logic;

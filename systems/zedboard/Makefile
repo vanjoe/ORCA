@@ -1,3 +1,4 @@
+
 PROJECT_TCL=project.tcl
 BD_TCL=design_1.tcl
 PGM_TCL=pgm.tcl
@@ -23,7 +24,7 @@ MMI_FILE=$(BRAM_NAME).mmi
 OUT_BIT=out.bit
 GUI_BIT=$(PROJ_DIR)project.runs/impl_1/design_1_wrapper.bit
 
-all: $(OUT_BIT)
+all:$(OUT_BIT)
 
 $(PROJ_FILE) $(BD_FILE):
 	echo "init_project $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)

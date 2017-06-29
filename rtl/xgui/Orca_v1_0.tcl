@@ -2,31 +2,33 @@
 proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "Component_Name"
   #Adding Page
-  set Page_0 [ipgui::add_page $IPINST -name "Page 0"]
-  ipgui::add_param $IPINST -name "AVALON_ENABLE" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "AXI_ENABLE" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "BRANCH_PREDICTORS" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "BURST_EN" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "BYTE_SIZE" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "CACHE_SIZE" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "COUNTER_LENGTH" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "DIVIDE_ENABLE" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "DRAM_WIDTH" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "ENABLE_EXCEPTIONS" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "ENABLE_EXT_INTERRUPTS" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "FAMILY" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "LINE_SIZE" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "LVE_ENABLE" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "MULTIPLY_ENABLE" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "NUM_EXT_INTERRUPTS" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "PIPELINE_STAGES" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "REGISTER_SIZE" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "RESET_VECTOR" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "SCRATCHPAD_ADDR_BITS" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "SHIFTER_MAX_CYCLES" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "TCRAM_SIZE" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "WISHBONE_ENABLE" -parent ${Page_0}
+  ipgui::add_page $IPINST -name "Page 0"
 
+  ipgui::add_param $IPINST -name "REGISTER_SIZE"
+  ipgui::add_param $IPINST -name "BYTE_SIZE"
+  ipgui::add_param $IPINST -name "AVALON_ENABLE"
+  ipgui::add_param $IPINST -name "WISHBONE_ENABLE"
+  ipgui::add_param $IPINST -name "AXI_ENABLE"
+  ipgui::add_param $IPINST -name "RESET_VECTOR"
+  ipgui::add_param $IPINST -name "MULTIPLY_ENABLE"
+  ipgui::add_param $IPINST -name "DIVIDE_ENABLE"
+  ipgui::add_param $IPINST -name "SHIFTER_MAX_CYCLES"
+  ipgui::add_param $IPINST -name "COUNTER_LENGTH"
+  ipgui::add_param $IPINST -name "ENABLE_EXCEPTIONS"
+  ipgui::add_param $IPINST -name "BRANCH_PREDICTORS"
+  ipgui::add_param $IPINST -name "PIPELINE_STAGES"
+  ipgui::add_param $IPINST -name "LVE_ENABLE"
+  ipgui::add_param $IPINST -name "ENABLE_EXT_INTERRUPTS"
+  ipgui::add_param $IPINST -name "NUM_EXT_INTERRUPTS"
+  ipgui::add_param $IPINST -name "SCRATCHPAD_ADDR_BITS"
+  ipgui::add_param $IPINST -name "TCRAM_SIZE"
+  ipgui::add_param $IPINST -name "CACHE_SIZE"
+  ipgui::add_param $IPINST -name "LINE_SIZE"
+  ipgui::add_param $IPINST -name "DRAM_WIDTH"
+  ipgui::add_param $IPINST -name "BURST_EN"
+  ipgui::add_param $IPINST -name "POWER_OPTIMIZED"
+  ipgui::add_param $IPINST -name "CACHE_ENABLE"
+  ipgui::add_param $IPINST -name "FAMILY"
 
 }
 
@@ -72,6 +74,15 @@ proc update_PARAM_VALUE.BYTE_SIZE { PARAM_VALUE.BYTE_SIZE } {
 
 proc validate_PARAM_VALUE.BYTE_SIZE { PARAM_VALUE.BYTE_SIZE } {
 	# Procedure called to validate BYTE_SIZE
+	return true
+}
+
+proc update_PARAM_VALUE.CACHE_ENABLE { PARAM_VALUE.CACHE_ENABLE } {
+	# Procedure called to update CACHE_ENABLE when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.CACHE_ENABLE { PARAM_VALUE.CACHE_ENABLE } {
+	# Procedure called to validate CACHE_ENABLE
 	return true
 }
 
@@ -180,6 +191,15 @@ proc update_PARAM_VALUE.PIPELINE_STAGES { PARAM_VALUE.PIPELINE_STAGES } {
 
 proc validate_PARAM_VALUE.PIPELINE_STAGES { PARAM_VALUE.PIPELINE_STAGES } {
 	# Procedure called to validate PIPELINE_STAGES
+	return true
+}
+
+proc update_PARAM_VALUE.POWER_OPTIMIZED { PARAM_VALUE.POWER_OPTIMIZED } {
+	# Procedure called to update POWER_OPTIMIZED when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.POWER_OPTIMIZED { PARAM_VALUE.POWER_OPTIMIZED } {
+	# Procedure called to validate POWER_OPTIMIZED
 	return true
 }
 
@@ -346,6 +366,16 @@ proc update_MODELPARAM_VALUE.DRAM_WIDTH { MODELPARAM_VALUE.DRAM_WIDTH PARAM_VALU
 proc update_MODELPARAM_VALUE.BURST_EN { MODELPARAM_VALUE.BURST_EN PARAM_VALUE.BURST_EN } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.BURST_EN}] ${MODELPARAM_VALUE.BURST_EN}
+}
+
+proc update_MODELPARAM_VALUE.POWER_OPTIMIZED { MODELPARAM_VALUE.POWER_OPTIMIZED PARAM_VALUE.POWER_OPTIMIZED } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.POWER_OPTIMIZED}] ${MODELPARAM_VALUE.POWER_OPTIMIZED}
+}
+
+proc update_MODELPARAM_VALUE.CACHE_ENABLE { MODELPARAM_VALUE.CACHE_ENABLE PARAM_VALUE.CACHE_ENABLE } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.CACHE_ENABLE}] ${MODELPARAM_VALUE.CACHE_ENABLE}
 }
 
 proc update_MODELPARAM_VALUE.FAMILY { MODELPARAM_VALUE.FAMILY PARAM_VALUE.FAMILY } {

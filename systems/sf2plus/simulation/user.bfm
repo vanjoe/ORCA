@@ -1,4 +1,0 @@
-include "subsystem.bfm"
-procesdure user_main
-	call subsystem_init;
-return

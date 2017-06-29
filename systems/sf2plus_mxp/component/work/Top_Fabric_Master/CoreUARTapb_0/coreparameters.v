@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------
-// Created by Microsemi SmartDesign Wed Jun 21 15:19:19 2017
+// Created by Microsemi SmartDesign Wed Jun 28 16:15:24 2017
 // Parameters for CoreUARTapb
 //--------------------------------------------------------------------
 

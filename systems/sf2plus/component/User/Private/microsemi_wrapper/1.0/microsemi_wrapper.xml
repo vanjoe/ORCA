@@ -623,11 +623,11 @@
     </spirit:signals>
     <spirit:hwParameters>
       <spirit:hwParameter spirit:id="REGISTER_SIZE" spirit:name="REGISTER_SIZE" spirit:prompt="REGISTER_SIZE:" spirit:dataType="int" spirit:resolve="user">32</spirit:hwParameter>
-      <spirit:hwParameter spirit:id="RESET_VECTOR" spirit:name="RESET_VECTOR" spirit:prompt="RESET_VECTOR:" spirit:dataType="int" spirit:resolve="user">512</spirit:hwParameter>
-      <spirit:hwParameter spirit:id="MULTIPLY_ENABLE" spirit:name="MULTIPLY_ENABLE" spirit:prompt="MULTIPLY_ENABLE:" spirit:dataType="int" spirit:resolve="user" spirit:minimum="0" spirit:maximum="1">0</spirit:hwParameter>
-      <spirit:hwParameter spirit:id="DIVIDE_ENABLE" spirit:name="DIVIDE_ENABLE" spirit:prompt="DIVIDE_ENABLE:" spirit:dataType="int" spirit:resolve="user" spirit:minimum="0" spirit:maximum="1">0</spirit:hwParameter>
+      <spirit:hwParameter spirit:id="RESET_VECTOR" spirit:name="RESET_VECTOR" spirit:prompt="RESET_VECTOR:" spirit:dataType="int" spirit:resolve="user">0</spirit:hwParameter>
+      <spirit:hwParameter spirit:id="MULTIPLY_ENABLE" spirit:name="MULTIPLY_ENABLE" spirit:prompt="MULTIPLY_ENABLE:" spirit:dataType="int" spirit:resolve="user" spirit:minimum="0" spirit:maximum="1">1</spirit:hwParameter>
+      <spirit:hwParameter spirit:id="DIVIDE_ENABLE" spirit:name="DIVIDE_ENABLE" spirit:prompt="DIVIDE_ENABLE:" spirit:dataType="int" spirit:resolve="user" spirit:minimum="0" spirit:maximum="1">1</spirit:hwParameter>
       <spirit:hwParameter spirit:id="SHIFTER_MAX_CYCLES" spirit:name="SHIFTER_MAX_CYCLES" spirit:prompt="SHIFTER_MAX_CYCLES:" spirit:dataType="int" spirit:resolve="user">1</spirit:hwParameter>
-      <spirit:hwParameter spirit:id="COUNTER_LENGTH" spirit:name="COUNTER_LENGTH" spirit:prompt="COUNTER_LENGTH:" spirit:dataType="int" spirit:resolve="user">64</spirit:hwParameter>
+      <spirit:hwParameter spirit:id="COUNTER_LENGTH" spirit:name="COUNTER_LENGTH" spirit:prompt="COUNTER_LENGTH:" spirit:dataType="int" spirit:resolve="user">32</spirit:hwParameter>
       <spirit:hwParameter spirit:id="ENABLE_EXCEPTIONS" spirit:name="ENABLE_EXCEPTIONS" spirit:prompt="ENABLE_EXCEPTIONS:" spirit:dataType="int" spirit:resolve="user">1</spirit:hwParameter>
       <spirit:hwParameter spirit:id="BRANCH_PREDICTORS" spirit:name="BRANCH_PREDICTORS" spirit:prompt="BRANCH_PREDICTORS:" spirit:dataType="int" spirit:resolve="user">0</spirit:hwParameter>
       <spirit:hwParameter spirit:id="PIPELINE_STAGES" spirit:name="PIPELINE_STAGES" spirit:prompt="PIPELINE_STAGES:" spirit:dataType="int" spirit:resolve="user" spirit:minimum="4" spirit:maximum="5">5</spirit:hwParameter>
@@ -636,7 +636,8 @@
       <spirit:hwParameter spirit:id="NUM_EXT_INTERRUPTS" spirit:name="NUM_EXT_INTERRUPTS" spirit:prompt="NUM_EXT_INTERRUPTS:" spirit:dataType="int" spirit:resolve="user" spirit:minimum="1" spirit:maximum="32">1</spirit:hwParameter>
       <spirit:hwParameter spirit:id="SCRATCHPAD_ADDR_BITS" spirit:name="SCRATCHPAD_ADDR_BITS" spirit:prompt="SCRATCHPAD_ADDR_BITS:" spirit:dataType="int" spirit:resolve="user">10</spirit:hwParameter>
       <spirit:hwParameter spirit:id="FORWARD_ALU_ONLY" spirit:name="FORWARD_ALU_ONLY" spirit:prompt="FORWARD_ALU_ONLY:" spirit:dataType="int" spirit:resolve="user" spirit:minimum="0" spirit:maximum="1">1</spirit:hwParameter>
-      <spirit:hwParameter spirit:id="IRAM_SIZE" spirit:name="IRAM_SIZE" spirit:prompt="IRAM_SIZE:" spirit:dataType="int" spirit:resolve="user">8192</spirit:hwParameter>
+      <spirit:hwParameter spirit:id="TCRAM_SIZE" spirit:name="TCRAM_SIZE" spirit:prompt="TCRAM_SIZE:" spirit:dataType="int" spirit:resolve="user">32768</spirit:hwParameter>
+      <spirit:hwParameter spirit:id="POWER_OPTIMIZED" spirit:name="POWER_OPTIMIZED" spirit:prompt="POWER_OPTIMIZED:" spirit:dataType="int" spirit:resolve="user" spirit:minimum="0" spirit:maximum="1">0</spirit:hwParameter>
       <spirit:hwParameter spirit:id="BYTE_SIZE" spirit:name="BYTE_SIZE" spirit:prompt="BYTE_SIZE:" spirit:dataType="int" spirit:resolve="user">8</spirit:hwParameter>
     </spirit:hwParameters>
   </spirit:hwModel>

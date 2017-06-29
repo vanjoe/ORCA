@@ -46,10 +46,10 @@ int main(void) {
 #endif
 
 #if MXP_TEST
-  //printf("\r\n\n\n----MXP TEST----\r\n\n\n");
+  printf("\r\n\n\n----MXP TEST----\r\n\n\n");
   int errors = mxp_test();
-  //printf("MXP errors: %d\r\n", errors);
-  //printf("\r\n\n\n----END MXP TEST----\r\n\n\n");
+  printf("MXP errors: %d\r\n", errors);
+  printf("\r\n\n\n----END MXP TEST----\r\n\n\n");
 #endif
 
   return 1;

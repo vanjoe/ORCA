@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////
-// Created by SmartDesign Tue Jun 20 12:10:50 2017
+// Created by SmartDesign Wed Jun 28 14:26:04 2017
 // Version: v11.7 SP3 11.7.3.8
 //////////////////////////////////////////////////////////////////////
 
@@ -709,9 +709,9 @@ wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave0_ARLEN_0;
 wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave0_AWID;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave0_AWID_0_3to0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave0_AWID_0;
-wire   [7:0]  CoreAXI4Interconnect_0_AXI3mslave0_AWLEN;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave0_AWLEN_0_3to0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave0_AWLEN_0;
+wire   [7:0]  CoreAXI4Interconnect_0_AXI3mslave0_AWLEN;
 wire   [4:4]  CoreAXI4Interconnect_0_AXI3mslave0_BID_0_4to4;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave0_BID_0_3to0;
 wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave0_BID_0;
@@ -769,10 +769,10 @@ wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave7_RID;
 wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave7_WID;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave7_WID_0_3to0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave7_WID_0;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_ARLEN;
 wire   [7:4]  microsemi_wrapper_0_DATA_MASTER_ARLEN_0_7to4;
 wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_ARLEN_0_3to0;
 wire   [7:0]  microsemi_wrapper_0_DATA_MASTER_ARLEN_0;
+wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_ARLEN;
 wire   [7:4]  microsemi_wrapper_0_DATA_MASTER_AWLEN_0_7to4;
 wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_AWLEN_0_3to0;
 wire   [7:0]  microsemi_wrapper_0_DATA_MASTER_AWLEN_0;
@@ -4332,15 +4332,16 @@ microsemi_wrapper #(
         .ENABLE_EXCEPTIONS     ( 1 ),
         .ENABLE_EXT_INTERRUPTS ( 0 ),
         .FORWARD_ALU_ONLY      ( 1 ),
-        .IRAM_SIZE             ( 32768 ),
         .LVE_ENABLE            ( 0 ),
         .MULTIPLY_ENABLE       ( 1 ),
         .NUM_EXT_INTERRUPTS    ( 1 ),
         .PIPELINE_STAGES       ( 5 ),
+        .POWER_OPTIMIZED       ( 0 ),
         .REGISTER_SIZE         ( 32 ),
         .RESET_VECTOR          ( 0 ),
         .SCRATCHPAD_ADDR_BITS  ( 10 ),
-        .SHIFTER_MAX_CYCLES    ( 1 ) )
+        .SHIFTER_MAX_CYCLES    ( 1 ),
+        .TCRAM_SIZE            ( 32768 ) )
 microsemi_wrapper_0(
         // Inputs
         .clk          ( my_mss_top_0_FIC_0_CLK_1 ),
