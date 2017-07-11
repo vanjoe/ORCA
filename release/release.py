@@ -9,6 +9,7 @@ directories_to_copy = ['rtl/', 'sim/', 'tools/']
 hdl_to_stub = [new_dir+'rtl/lve_top.vhd', new_dir+'rtl/lve_ci.vhd', new_dir+'rtl/icache.vhd', new_dir+'rtl/cache_mux.vhd']
 hdl_to_remove = [new_dir+'rtl/lve_ci.vhd', new_dir+'rtl/cache_xilinx.vhd', new_dir+'rtl/spram.v', new_dir+'rtl/4port_mem.vhd', \
 								 new_dir+'rtl/4port_mem_ultraplus.vhd']
+upstream = 'https://github.com/VectorBlox/orca'
 
 print('Cleaning project directories...')
 helpers.clean_projects(projects_to_copy)
@@ -36,3 +37,6 @@ helpers.fix_de2(new_dir + projects_to_copy[2], new_dir + directories_to_copy[0])
 
 print('Fixing zedboard project...')
 helpers.fix_zedboard(new_dir + projects_to_copy[3], new_dir + directories_to_copy[0], hdl_to_remove)
+
+print('Initializing git repo...')
+helpers.setup_git_repo(new_dir, upstream)

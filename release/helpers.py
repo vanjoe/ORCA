@@ -2,6 +2,8 @@ import subprocess
 import os.path
 import xml.etree.ElementTree
 import re
+import glob
+import datetime
 
 def clean_projects(projects_to_copy):
 	for project in projects_to_copy:
@@ -131,4 +133,29 @@ def fix_zedboard(zedboard_dir, rtl, hdl_to_remove):
 	file_to_write = open(file_to_edit, 'w')
 	file_to_write.write(file_to_read_text)
 	file_to_write.close()
+
+def setup_git_repo(new_dir, upstream):
+    saved_working_dir = os.getcwd()
+    
+    os.chdir(os.path.expanduser(new_dir))
+    saved_new_dir = os.getcwd()
+
+    os.chdir('tools/riscv-toolchain/')
+    files_in_dir = glob.glob('*')
+    for f in files_in_dir:
+        if not re.match('build-toolchain.sh', f):
+            if os.path.isdir(f):
+                subprocess.Popen('rm -rf {}'.format(f), shell=True).wait()
+            else:
+                subprocess.Popen('rm -f {}'.format(f), shell=True).wait()
+
+    os.chdir(saved_new_dir)
+    subprocess.Popen('git init', shell=True).wait()
+    subprocess.Popen('git remote add origin {}'.format(upstream), shell=True).wait()
+    subprocess.Popen('git add .', shell=True).wait()
+    subprocess.Popen('git commit -m \'ORCA exported {} \''.format(datetime.datetime.now()), \
+                        shell=True).wait()
+
+    os.chdir(saved_working_dir)
+
 
