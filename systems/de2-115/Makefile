@@ -16,7 +16,8 @@ TEST_FILES+=$(wildcard test_components/*.vhd)
 
 ORCA_SUBMODULE_FILES=$(wildcard system/synthesis/submodules/vblox_orca/*.vhd)
 TEST_SUBMODULE_FILES=$(addprefix system/synthesis/submodules/,$(notdir $(TEST_FILES)))
-SUBMODULE_FILES=$(ORCA_SUBMODULE_FILES) $(TEST_SUBMODULE_FILES)
+JTAG_SUBMODULE_FILES=$(wildcard memory_mapped_reset/*.vhd) 
+SUBMODULE_FILES=$(ORCA_SUBMODULE_FILES) $(TEST_SUBMODULE_FILES) $(JTAG_SUBMODULE_FILES)
 TOP_LEVEL_FILES=$(wildcard *.vhd)
 
 -include config.mk
@@ -98,7 +99,7 @@ sta: $(STA_RPT_FILE)
 
 testbench: system/testbench/mentor/msim_setup.tcl
 
-system/testbench/mentor/msim_setup.tcl:$(QSYS_FILE) $(RTL_FILES) $(TEST_RTL_FILES)
+system/testbench/mentor/msim_setup.tcl:$(QSYS_FILE) $(SUBMODULE_FILES) 
 	qsys-generate --testbench --testbench-simulation=VHDL $(QSYS_FILE)
 
 sim: system/testbench/mentor/msim_setup.tcl test.hex

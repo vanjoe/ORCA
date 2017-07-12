@@ -40,10 +40,11 @@ int main() {
 
   init_printf(0, mputc);
 
-  for(;;) {
-    printf("Hello World\r\n");
-    delayms(100);
-  }
+	for (;;) {
+		printf("Hello World\r\n");
+		delayms(100);
+	}
+
 }
 
 int tohost_exit() {

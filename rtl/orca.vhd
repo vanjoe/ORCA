@@ -32,8 +32,8 @@ entity orca is
     LINE_SIZE             : integer range 16 to 64     := 64;
     DRAM_WIDTH            : integer                    := 32;
     BURST_EN              : integer range 0  to 1      := 0;
-		POWER_OPTIMIZED				: integer range 0  to 1			 := 0;
-		CACHE_ENABLE					: integer range 0  to 1			 := 0;
+	POWER_OPTIMIZED		  : integer range 0  to 1	   := 0;
+	CACHE_ENABLE		  : integer range 0  to 1	   := 0;
     FAMILY                : string                     := "ALTERA");
   port(
     clk            : in std_logic;

@@ -164,6 +164,35 @@
          type = "String";
       }
    }
+   element master_0
+   {
+      datum _sortIndex
+      {
+         value = "11";
+         type = "int";
+      }
+   }
+   element memory_mapped_reset_0
+   {
+      datum _sortIndex
+      {
+         value = "12";
+         type = "int";
+      }
+   }
+   element memory_mapped_reset_0.avalon_slave
+   {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
+      datum baseAddress
+      {
+         value = "268435456";
+         type = "String";
+      }
+   }
    element mm_bridge_0
    {
       datum _sortIndex
@@ -217,6 +246,14 @@
       {
          value = "16777216";
          type = "String";
+      }
+   }
+   element reset_controller_0
+   {
+      datum _sortIndex
+      {
+         value = "13";
+         type = "int";
       }
    }
    element system
@@ -513,6 +550,28 @@
   <parameter name="width" value="32" />
  </module>
  <module
+   name="master_0"
+   kind="altera_jtag_avalon_master"
+   version="15.1"
+   enabled="1">
+  <parameter name="AUTO_DEVICE" value="EP4CE115F29C7" />
+  <parameter name="AUTO_DEVICE_FAMILY" value="Cyclone IV E" />
+  <parameter name="AUTO_DEVICE_SPEEDGRADE" value="7" />
+  <parameter name="COMPONENT_CLOCK" value="0" />
+  <parameter name="FAST_VER" value="0" />
+  <parameter name="FIFO_DEPTHS" value="2" />
+  <parameter name="PLI_PORT" value="50000" />
+  <parameter name="USE_PLI" value="1" />
+ </module>
+ <module
+   name="memory_mapped_reset_0"
+   kind="memory_mapped_reset"
+   version="1.0"
+   enabled="1">
+  <parameter name="ADDR_WIDTH" value="2" />
+  <parameter name="REGISTER_SIZE" value="32" />
+ </module>
+ <module
    name="mm_bridge_0"
    kind="altera_avalon_mm_bridge"
    version="15.1"
@@ -560,6 +619,36 @@
   <parameter name="useNonDefaultInitFile" value="true" />
   <parameter name="useShallowMemBlocks" value="false" />
   <parameter name="writable" value="true" />
+ </module>
+ <module
+   name="reset_controller_0"
+   kind="altera_reset_controller"
+   version="15.1"
+   enabled="1">
+  <parameter name="MIN_RST_ASSERTION_TIME" value="3" />
+  <parameter name="NUM_RESET_INPUTS" value="2" />
+  <parameter name="OUTPUT_RESET_SYNC_EDGES" value="deassert" />
+  <parameter name="RESET_REQUEST_PRESENT" value="0" />
+  <parameter name="RESET_REQ_EARLY_DSRT_TIME" value="1" />
+  <parameter name="RESET_REQ_WAIT_TIME" value="1" />
+  <parameter name="SYNC_DEPTH" value="2" />
+  <parameter name="USE_RESET_REQUEST_IN0" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN1" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN10" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN11" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN12" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN13" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN14" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN15" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN2" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN3" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN4" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN5" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN6" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN7" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN8" value="0" />
+  <parameter name="USE_RESET_REQUEST_IN9" value="0" />
+  <parameter name="USE_RESET_REQUEST_INPUT" value="0" />
  </module>
  <module
    name="vectorblox_orca_0"
@@ -657,6 +746,24 @@
   <parameter name="baseAddress" value="0x0060" />
   <parameter name="defaultConnection" value="false" />
  </connection>
+ <connection
+   kind="avalon"
+   version="15.1"
+   start="master_0.master"
+   end="memory_mapped_reset_0.avalon_slave">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x10000000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.1"
+   start="master_0.master"
+   end="onchip_memory2_0.s2">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
  <connection kind="clock" version="15.1" start="clk_0.clk" end="ledg.clk" />
  <connection kind="clock" version="15.1" start="clk_0.clk" end="ledr.clk" />
  <connection kind="clock" version="15.1" start="clk_0.clk" end="hex_0.clk" />
@@ -665,6 +772,12 @@
  <connection kind="clock" version="15.1" start="clk_0.clk" end="mm_bridge_0.clk" />
  <connection kind="clock" version="15.1" start="clk_0.clk" end="hex_2.clk" />
  <connection kind="clock" version="15.1" start="clk_0.clk" end="hex_3.clk" />
+ <connection kind="clock" version="15.1" start="clk_0.clk" end="master_0.clk" />
+ <connection
+   kind="clock"
+   version="15.1"
+   start="clk_0.clk"
+   end="reset_controller_0.clk" />
  <connection
    kind="clock"
    version="15.1"
@@ -680,27 +793,26 @@
    version="15.1"
    start="clk_0.clk"
    end="vectorblox_orca_0.clock" />
- <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="ledg.reset" />
- <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="ledr.reset" />
- <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="hex_0.reset" />
- <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="hex_1.reset" />
+ <connection
+   kind="clock"
+   version="15.1"
+   start="clk_0.clk"
+   end="memory_mapped_reset_0.clock" />
  <connection
    kind="reset"
    version="15.1"
    start="clk_0.clk_reset"
-   end="jtag_uart_0.reset" />
- <connection
-   kind="reset"
-   version="15.1"
-   start="clk_0.clk_reset"
-   end="vectorblox_orca_0.reset" />
+   end="master_0.clk_reset" />
  <connection
    kind="reset"
    version="15.1"
    start="clk_0.clk_reset"
    end="mm_bridge_0.reset" />
- <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="hex_2.reset" />
- <connection kind="reset" version="15.1" start="clk_0.clk_reset" end="hex_3.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="clk_0.clk_reset"
+   end="memory_mapped_reset_0.reset" />
  <connection
    kind="reset"
    version="15.1"
@@ -711,6 +823,56 @@
    version="15.1"
    start="clk_0.clk_reset"
    end="onchip_memory2_0.reset2" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="clk_0.clk_reset"
+   end="reset_controller_0.reset_in0" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="reset_controller_0.reset_out"
+   end="jtag_uart_0.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="reset_controller_0.reset_out"
+   end="hex_3.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="reset_controller_0.reset_out"
+   end="hex_2.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="reset_controller_0.reset_out"
+   end="hex_1.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="reset_controller_0.reset_out"
+   end="hex_0.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="reset_controller_0.reset_out"
+   end="ledr.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="reset_controller_0.reset_out"
+   end="ledg.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="reset_controller_0.reset_out"
+   end="vectorblox_orca_0.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="memory_mapped_reset_0.reset_source"
+   end="reset_controller_0.reset_in1" />
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.insertDefaultSlave" value="FALSE" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
