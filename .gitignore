@@ -55,6 +55,7 @@ sim/db/*
 
 *.dump
 *.elf
+*.pyc
 
 software/obj/
 *.swp
