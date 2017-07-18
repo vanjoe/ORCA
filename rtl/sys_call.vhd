@@ -295,19 +295,24 @@ begin  -- architecture rtl
   end process;
 
 -------------------------------------------------------------------------------
--- handle external interrupts
+-- Handle External Interrupts
 --
---TODO: (Not yet implemented)
--- nterrupt_processor goes high when pipeline is empty and and interrupt
---is pending
+-- interrupt_processor goes high when pipeline is empty and and interrupt
+-- is pending
 --
---If interrupt is pending and enabled, slip the pipeline.
+-- If interrupt is pending and enabled, slip the pipeline.
+-- interrupt_processor is registered to prevent a combinational loop through
+-- pc_corr_en to the instruction fetch.
 -------------------------------------------------------------------------------
   meipend <= external_interrupts;
-
-  interrupt_processor <= interrupt_pending and pipeline_empty;
   interrupt_pending   <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 else '0';
 
+	process(clk)
+	begin
+		if rising_edge(clk) then
+			interrupt_processor <= interrupt_pending and pipeline_empty;
+		end if;
+	end process;
 
 -----------------------------------------------------------------------------
 -- There are several reasons that sys_calls might send a pc correction

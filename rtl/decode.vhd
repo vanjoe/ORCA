@@ -117,7 +117,7 @@ begin
 
     decode_flushed <= not (valid_input or valid_latch);
 
-    decode_stage : process (clk, reset) is
+    decode_stage : process (clk) is
     begin  -- process decode_stage
       if rising_edge(clk) then          -- rising clock edge
         if not stall = '1' then
