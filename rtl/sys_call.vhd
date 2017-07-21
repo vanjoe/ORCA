@@ -249,7 +249,8 @@ begin -- architecture rtl
           -- A FENCE.I instruction is a pipeline flush.
           was_fence_i <= instruction(12);
         end if;
-      elsif interrupt_processor = '1' and ENABLE_EXCEPTIONS then
+      elsif interrupt_pending = '1' and pipeline_empty = '1' 
+				and interrupt_processor = '0' and ENABLE_EXCEPTIONS then
         mstatus(CSR_MSTATUS_MIE)  <= '0';
         mstatus(CSR_MSTATUS_MPIE) <= '1';
         mcause(mcause'left)       <= '1';
@@ -286,6 +287,10 @@ begin -- architecture rtl
 -- interrupt_processor goes high. At this point, both signals will go low on
 -- the next cycle. This results in the intended behaviour for 
 -- suppress_valid_instr_out in the instruction fetch component.
+--
+-- Once the pipeline is flushed, mepc latches the next instruction program
+-- counter. The instruction fetch program counter is then set to the interrupt
+-- vector on the next cycle.
 --------------------------------------------------------------------------------
   meipend <= external_interrupts;
   interrupt_pending <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 else '0';
