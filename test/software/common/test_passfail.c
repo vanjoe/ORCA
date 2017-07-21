@@ -19,6 +19,10 @@ volatile int *uart = (volatile int*) 0x01000070;
 #endif
 
 #if XILINX
+#define SYS_CLK 25000000 // Hz
+#define UART_INIT() ((void)0)
+#define UART_PUTC(c) do {ChangedPrint(c);} while(0) 
+#define UART_BUSY() 0 
 #endif
 
 #if MICROSEMI

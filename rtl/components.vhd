@@ -18,6 +18,7 @@ package rv_components is
 			AXI_ENABLE      : integer range 0 to 1 := 0;
 
 			RESET_VECTOR          : integer                    := 16#00000000#;
+			INTERRUPT_VECTOR			: integer										 := 16#00000200#;
 			MULTIPLY_ENABLE       : natural range 0  to 1      := 0;
 			DIVIDE_ENABLE         : natural range 0  to 1      := 0;
 			SHIFTER_MAX_CYCLES    : natural                    := 1;
@@ -233,6 +234,7 @@ package rv_components is
     generic (
       REGISTER_SIZE      : integer;
       RESET_VECTOR       : integer;
+			INTERRUPT_VECTOR	 : integer;
       MULTIPLY_ENABLE    : natural range 0 to 1;
       DIVIDE_ENABLE      : natural range 0 to 1;
       SHIFTER_MAX_CYCLES : natural;
@@ -318,7 +320,7 @@ package rv_components is
     generic(
       REGISTER_SIZE       : positive;
       SIGN_EXTENSION_SIZE : positive;
-      RESET_VECTOR        : integer;
+      INTERRUPT_VECTOR    : integer;
       MULTIPLY_ENABLE     : boolean;
       DIVIDE_ENABLE       : boolean;
       SHIFTER_MAX_CYCLES  : natural;
@@ -372,6 +374,7 @@ package rv_components is
       external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       pipeline_empty      : in  std_logic;
       ifetch_next_pc      : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+			fetch_in_flight			: in  std_logic;
       interrupt_pending   : buffer std_logic);
   end component execute;
 
@@ -394,6 +397,7 @@ package rv_components is
       br_taken    : buffer std_logic;
 
       valid_instr_out : out std_logic;
+			fetch_in_flight : out std_logic;
 
       read_address   : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       read_en        : buffer std_logic;
@@ -507,7 +511,7 @@ package rv_components is
   component system_calls is
     generic (
       REGISTER_SIZE     : natural;
-      RESET_VECTOR      : integer;
+      INTERRUPT_VECTOR  : integer;
       COUNTER_LENGTH    : natural;
       ENABLE_EXCEPTIONS : boolean);
     port (

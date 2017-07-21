@@ -10,6 +10,7 @@ proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "WISHBONE_ENABLE"
   ipgui::add_param $IPINST -name "AXI_ENABLE"
   ipgui::add_param $IPINST -name "RESET_VECTOR"
+  ipgui::add_param $IPINST -name "INTERRUPT_VECTOR"
   ipgui::add_param $IPINST -name "MULTIPLY_ENABLE"
   ipgui::add_param $IPINST -name "DIVIDE_ENABLE"
   ipgui::add_param $IPINST -name "SHIFTER_MAX_CYCLES"
@@ -146,6 +147,15 @@ proc update_PARAM_VALUE.FAMILY { PARAM_VALUE.FAMILY } {
 
 proc validate_PARAM_VALUE.FAMILY { PARAM_VALUE.FAMILY } {
 	# Procedure called to validate FAMILY
+	return true
+}
+
+proc update_PARAM_VALUE.INTERRUPT_VECTOR { PARAM_VALUE.INTERRUPT_VECTOR } {
+	# Procedure called to update INTERRUPT_VECTOR when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.INTERRUPT_VECTOR { PARAM_VALUE.INTERRUPT_VECTOR } {
+	# Procedure called to validate INTERRUPT_VECTOR
 	return true
 }
 
@@ -286,6 +296,11 @@ proc update_MODELPARAM_VALUE.AXI_ENABLE { MODELPARAM_VALUE.AXI_ENABLE PARAM_VALU
 proc update_MODELPARAM_VALUE.RESET_VECTOR { MODELPARAM_VALUE.RESET_VECTOR PARAM_VALUE.RESET_VECTOR } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.RESET_VECTOR}] ${MODELPARAM_VALUE.RESET_VECTOR}
+}
+
+proc update_MODELPARAM_VALUE.INTERRUPT_VECTOR { MODELPARAM_VALUE.INTERRUPT_VECTOR PARAM_VALUE.INTERRUPT_VECTOR } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.INTERRUPT_VECTOR}] ${MODELPARAM_VALUE.INTERRUPT_VECTOR}
 }
 
 proc update_MODELPARAM_VALUE.MULTIPLY_ENABLE { MODELPARAM_VALUE.MULTIPLY_ENABLE PARAM_VALUE.MULTIPLY_ENABLE } {

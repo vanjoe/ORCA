@@ -26,11 +26,16 @@ static inline void schedule_interrupt(int cycles)
 }
 
 volatile int interrupt_count;
-void* handle_interrupt(int cause,void* pc)
+int handle_interrupt(int cause, int epc, int regs[32])
 {
+	if (!((cause >> 31) & 0x1)) {
+		// Handle illegal instruction.
+		for (;;);
+	}
+
 	interrupt_count++;
 	schedule_interrupt(-1);//clear interrupt
-	return pc;
+	return epc;
 }
 #define TEST_ATTR static __attribute__((noinline))
 
@@ -146,7 +151,7 @@ int main()
 	do_test(5);
 
 	int i;
-	for(i = 0 ; i< 15;i++){
+	for(i = 0; i < 15; i++) {
 		if (interrupt_latency_test(i))
 			return i+6;
 	}

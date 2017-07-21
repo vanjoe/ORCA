@@ -11,6 +11,7 @@ entity orca_core is
   generic (
     REGISTER_SIZE      : integer;
     RESET_VECTOR       : integer;
+		INTERRUPT_VECTOR	 : integer;
     MULTIPLY_ENABLE    : natural range 0 to 1;
     DIVIDE_ENABLE      : natural range 0 to 1;
     SHIFTER_MAX_CYCLES : natural;
@@ -98,6 +99,7 @@ architecture rtl of orca_core is
   signal data_write_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_read_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
+	signal fetch_in_flight : std_logic;
 
   signal instr_address : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal instr_data    : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -116,7 +118,9 @@ architecture rtl of orca_core is
   signal ifetch_next_pc : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal e_sp_addr : std_logic_vector(CONDITIONAL(LVE_ENABLE = 1, sp_address'length, 0)-1 downto 0);
-begin  -- architecture rtl
+
+begin -- architecture rtl
+
   pipeline_flush <= branch_get_flush(branch_pred_to_instr_fetch);
 
 
@@ -137,6 +141,8 @@ begin  -- architecture rtl
       next_pc_out     => ifetch_next_pc,
       br_taken        => d_br_taken,
       valid_instr_out => if_valid_out,
+			fetch_in_flight => fetch_in_flight,
+
       read_address    => instr_address,
       read_en         => instr_read_en,
       read_data       => instr_data,
@@ -184,7 +190,7 @@ begin  -- architecture rtl
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
-      RESET_VECTOR        => RESET_VECTOR,
+      INTERRUPT_VECTOR    => INTERRUPT_VECTOR,
       MULTIPLY_ENABLE     => MULTIPLY_ENABLE = 1,
       DIVIDE_ENABLE       => DIVIDE_ENABLE = 1,
       POWER_OPTIMIZED     => POWER_OPTIMIZED = 1,
@@ -235,6 +241,7 @@ begin  -- architecture rtl
       -- Interrupt lines
       external_interrupts => ext_int_resized,
       pipeline_empty      => decode_flushed,
+			fetch_in_flight			=> fetch_in_flight,
       interrupt_pending   => e_interrupt_pending);
 
   ext_int_resized <= std_logic_vector(RESIZE(unsigned(external_interrupts), ext_int_resized'length));

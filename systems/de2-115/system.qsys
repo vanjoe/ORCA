@@ -666,7 +666,7 @@
   <parameter name="DIVIDE_ENABLE" value="1" />
   <parameter name="DRAM_WIDTH" value="32" />
   <parameter name="ENABLE_EXCEPTIONS" value="1" />
-  <parameter name="ENABLE_EXT_INTERRUPTS" value="0" />
+  <parameter name="ENABLE_EXT_INTERRUPTS" value="1" />
   <parameter name="EXT_INTERRUPTS" value="1" />
   <parameter name="FAMILY" value="ALTERA" />
   <parameter name="LINE_SIZE" value="16" />

@@ -2,28 +2,33 @@
 #include "main.h"
 #include "cache_test.h"
 
-//void mputc (void* p, char c) {
-//  print_char(c); 
-//}
 
 int main(void) {
-  int i;
 
-  //init_printf(0, mputc);
+	int i = 1000;
+	while(i) {
+		asm volatile("addi %0, %0, -1":"=r"(i):"r"(i));
+	};
 
-  cache_test();
 
-  for (;;) {
-    ChangedPrint("Hello World\r\n");
-    delayms(100);
-    //printf("Hello World\r\n"); 
-  }
 
-  return 1;
+
+
+
+
+
+
+  return i;
 }
 
-int handle_trap(long cause,long epc, long regs[32])
+int handle_interrupt(int cause, int epc, int regs[32])
 {
-	//spin forever
-	for(;;);
+	if (!((cause >> 31) & 0x1)) {
+		// Handle illegal instruction.
+		for (;;);
+	}
+
+	// Handle interrupt	
+	//ChangedPrint("Hello World\r\n");
+	return epc;
 }

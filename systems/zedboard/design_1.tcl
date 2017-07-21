@@ -247,11 +247,12 @@ proc create_root_design { parentCell } {
   set Orca_0 [ create_bd_cell -type ip -vlnv user.org:user:Orca:1.0 Orca_0 ]
   set_property -dict [ list \
 CONFIG.AXI_ENABLE {1} \
-CONFIG.CACHE_ENABLE {1} \
+CONFIG.CACHE_ENABLE {0} \
 CONFIG.CACHE_SIZE {32768} \
 CONFIG.COUNTER_LENGTH {32} \
 CONFIG.DIVIDE_ENABLE {1} \
 CONFIG.DRAM_WIDTH {32} \
+CONFIG.ENABLE_EXT_INTERRUPTS {1} \
 CONFIG.FAMILY {XILINX} \
 CONFIG.LINE_SIZE {16} \
 CONFIG.MULTIPLY_ENABLE {1} \
@@ -274,8 +275,8 @@ CONFIG.NUM_MI {4} \
   # Create instance: axi_mem_intercon_1, and set properties
   set axi_mem_intercon_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_mem_intercon_1 ]
   set_property -dict [ list \
-CONFIG.ENABLE_ADVANCED_OPTIONS {1} \
-CONFIG.ENABLE_PROTOCOL_CHECKERS {1} \
+CONFIG.ENABLE_ADVANCED_OPTIONS {0} \
+CONFIG.ENABLE_PROTOCOL_CHECKERS {0} \
 CONFIG.NUM_MI {1} \
 CONFIG.NUM_SI {2} \
 CONFIG.STRATEGY {0} \
@@ -283,6 +284,12 @@ CONFIG.STRATEGY {0} \
 
   # Create instance: clock
   create_hier_cell_clock [current_bd_instance .] clock
+
+  # Create instance: edge_extender_0, and set properties
+  set edge_extender_0 [ create_bd_cell -type ip -vlnv user.org:user:edge_extender:1.0 edge_extender_0 ]
+
+  # Create instance: fit_timer_0, and set properties
+  set fit_timer_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fit_timer:2.0 fit_timer_0 ]
 
   # Create instance: idram_0, and set properties
   set idram_0 [ create_bd_cell -type ip -vlnv user.org:user:iram:1.0 idram_0 ]
@@ -608,7 +615,13 @@ CONFIG.preset {ZedBoard} \
 
   # Create interface connections
   connect_bd_intf_net -intf_net Orca_0_data [get_bd_intf_pins Orca_0/data] [get_bd_intf_pins axi_mem_intercon/S00_AXI]
+  set_property -dict [ list \
+HDL_ATTRIBUTE.DEBUG {true} \
+ ] [get_bd_intf_nets Orca_0_data]
   connect_bd_intf_net -intf_net Orca_0_instr [get_bd_intf_pins Orca_0/itcram] [get_bd_intf_pins axi_mem_intercon_1/S00_AXI]
+  set_property -dict [ list \
+HDL_ATTRIBUTE.DEBUG {true} \
+ ] [get_bd_intf_nets Orca_0_instr]
   connect_bd_intf_net -intf_net Orca_0_iram [get_bd_intf_pins Orca_0/iram] [get_bd_intf_pins axi_mem_intercon_1/S01_AXI]
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports leds_8bits] [get_bd_intf_pins axi_gpio_0/GPIO]
   connect_bd_intf_net -intf_net axi_mem_intercon_1_M00_AXI [get_bd_intf_pins axi_mem_intercon_1/M00_AXI] [get_bd_intf_pins idram_0/instr]
@@ -620,9 +633,11 @@ CONFIG.preset {ZedBoard} \
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7_0/FIXED_IO]
 
   # Create port connections
-  connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins Orca_0/clk] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins axi_mem_intercon/ACLK] [get_bd_pins axi_mem_intercon/M00_ACLK] [get_bd_pins axi_mem_intercon/M01_ACLK] [get_bd_pins axi_mem_intercon/M02_ACLK] [get_bd_pins axi_mem_intercon/M03_ACLK] [get_bd_pins axi_mem_intercon/S00_ACLK] [get_bd_pins axi_mem_intercon_1/ACLK] [get_bd_pins axi_mem_intercon_1/M00_ACLK] [get_bd_pins axi_mem_intercon_1/S00_ACLK] [get_bd_pins axi_mem_intercon_1/S01_ACLK] [get_bd_pins clock/clk_out] [get_bd_pins idram_0/clk] [get_bd_pins processing_system7_0/S_AXI_GP0_ACLK] [get_bd_pins processing_system7_0/S_AXI_HP0_ACLK]
+  connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins Orca_0/clk] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins axi_mem_intercon/ACLK] [get_bd_pins axi_mem_intercon/M00_ACLK] [get_bd_pins axi_mem_intercon/M01_ACLK] [get_bd_pins axi_mem_intercon/M02_ACLK] [get_bd_pins axi_mem_intercon/M03_ACLK] [get_bd_pins axi_mem_intercon/S00_ACLK] [get_bd_pins axi_mem_intercon_1/ACLK] [get_bd_pins axi_mem_intercon_1/M00_ACLK] [get_bd_pins axi_mem_intercon_1/S00_ACLK] [get_bd_pins axi_mem_intercon_1/S01_ACLK] [get_bd_pins clock/clk_out] [get_bd_pins edge_extender_0/clk] [get_bd_pins fit_timer_0/Clk] [get_bd_pins idram_0/clk] [get_bd_pins processing_system7_0/S_AXI_GP0_ACLK] [get_bd_pins processing_system7_0/S_AXI_HP0_ACLK]
   connect_bd_net -net clock_clk_2x_out -boundary_type upper [get_bd_pins clock/clk_2x_out]
-  connect_bd_net -net clock_peripheral_reset [get_bd_pins Orca_0/reset] [get_bd_pins clock/peripheral_reset] [get_bd_pins idram_0/reset]
+  connect_bd_net -net clock_peripheral_reset [get_bd_pins Orca_0/reset] [get_bd_pins clock/peripheral_reset] [get_bd_pins edge_extender_0/reset] [get_bd_pins fit_timer_0/Rst] [get_bd_pins idram_0/reset]
+  connect_bd_net -net edge_extender_0_interrupt_out [get_bd_pins Orca_0/global_interrupts] [get_bd_pins edge_extender_0/interrupt_out]
+  connect_bd_net -net fit_timer_0_Interrupt [get_bd_pins edge_extender_0/interrupt_in] [get_bd_pins fit_timer_0/Interrupt]
   connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins clock/clk_in1] [get_bd_pins processing_system7_0/FCLK_CLK0]
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins clock/ext_reset_in] [get_bd_pins processing_system7_0/FCLK_RESET0_N]
   connect_bd_net -net rst_clk_wiz_100M_interconnect_aresetn [get_bd_pins axi_mem_intercon/ARESETN] [get_bd_pins axi_mem_intercon_1/ARESETN] [get_bd_pins clock/interconnect_aresetn]
@@ -653,6 +668,4 @@ CONFIG.preset {ZedBoard} \
 
 create_root_design ""
 
-
-common::send_msg_id "BD_TCL-1000" "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 

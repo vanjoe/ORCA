@@ -16,6 +16,7 @@ entity orca is
     AXI_ENABLE      : integer range 0 to 1 := 0;
 
     RESET_VECTOR          : integer                    := 16#00000000#;
+		INTERRUPT_VECTOR			: integer										 := 16#00000200#;
     MULTIPLY_ENABLE       : natural range 0  to 1      := 0;
     DIVIDE_ENABLE         : natural range 0  to 1      := 0;
     SHIFTER_MAX_CYCLES    : natural                    := 1;
@@ -918,6 +919,7 @@ begin  -- architecture rtl
     generic map(
       REGISTER_SIZE      => REGISTER_SIZE,
       RESET_VECTOR       => RESET_VECTOR,
+			INTERRUPT_VECTOR	 => INTERRUPT_VECTOR,
       MULTIPLY_ENABLE    => MULTIPLY_ENABLE,
       DIVIDE_ENABLE      => DIVIDE_ENABLE,
       SHIFTER_MAX_CYCLES => SHIFTER_MAX_CYCLES,

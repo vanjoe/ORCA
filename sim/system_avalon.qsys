@@ -444,19 +444,29 @@
    enabled="1">
   <parameter name="BRANCH_PREDICTION" value="false" />
   <parameter name="BTB_SIZE" value="0" />
+  <parameter name="BURST_EN" value="0" />
   <parameter name="BUS_TYPE" value="Avalon" />
+  <parameter name="BYTE_SIZE" value="8" />
+  <parameter name="CACHE_ENABLE" value="0" />
+  <parameter name="CACHE_SIZE" value="64" />
   <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DIVIDE_ENABLE" value="1" />
+  <parameter name="DRAM_WIDTH" value="32" />
   <parameter name="ENABLE_EXCEPTIONS" value="1" />
+  <parameter name="ENABLE_EXT_INTERRUPTS" value="1" />
   <parameter name="EXT_INTERRUPTS" value="1" />
+  <parameter name="FAMILY" value="ALTERA" />
+	<parameter name="INTERRUPT_VECTOR" value = "512" />
+  <parameter name="LINE_SIZE" value="16" />
   <parameter name="LVE_ENABLE" value="1" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="PIPELINE_STAGES" value="5" />
-  <parameter name="POWER_OPIMIZED" value="0" />
+  <parameter name="POWER_OPTIMIZED" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
-  <parameter name="RESET_VECTOR" value="512" />
+  <parameter name="RESET_VECTOR" value="0" />
   <parameter name="SCRATCHPAD_SIZE" value="64" />
   <parameter name="SHIFTER_MAX_CYCLES" value="32" />
+  <parameter name="TCRAM_SIZE" value="64" />
  </module>
  <connection
    kind="avalon"
@@ -522,8 +532,8 @@
  <connection
    kind="conduit"
    version="15.1"
-   start="interrrupt_gen_0.interrupt_out"
-   end="vectorblox_orca_0.global_interrupts">
+   start="vectorblox_orca_0.global_interrupts"
+   end="interrrupt_gen_0.interrupt_out">
   <parameter name="endPort" value="" />
   <parameter name="endPortLSB" value="0" />
   <parameter name="startPort" value="" />

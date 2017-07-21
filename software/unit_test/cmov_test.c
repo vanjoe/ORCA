@@ -1,7 +1,7 @@
 
 #include "vbx.h"
 
-vbx_lve_t the_mxp;
+vbx_lve_t the_lve;
 
 #define TEST_ATTR static __attribute__((noinline))
 
@@ -38,4 +38,12 @@ int main()
 	do_test(2);
 	return 0;
 
+}
+
+int handle_interrupt(int cause, int epc, int regs[32]) {
+	if (!((cause >> 31) & 0x1)) {
+		// Handle illegal instruction.
+		for (;;);
+	}
+	return epc;
 }

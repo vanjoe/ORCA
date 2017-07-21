@@ -15,7 +15,7 @@ entity execute is
   generic(
     REGISTER_SIZE       : positive;
     SIGN_EXTENSION_SIZE : positive;
-    RESET_VECTOR        : integer;
+    INTERRUPT_VECTOR    : integer;
     POWER_OPTIMIZED     : boolean;
     MULTIPLY_ENABLE     : boolean;
     DIVIDE_ENABLE       : boolean;
@@ -45,11 +45,8 @@ entity execute is
     wb_enable    : buffer std_logic;
     valid_output : buffer std_logic;
 
-
     branch_pred        : out    std_logic_vector(REGISTER_SIZE*2+3 -1 downto 0);
     stall_from_execute : buffer std_logic;
-
-
 
     --memory-bus master
     address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -72,6 +69,7 @@ entity execute is
     external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     pipeline_empty      : in  std_logic;
     ifetch_next_pc      : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+		fetch_in_flight			: in	std_logic;
     interrupt_pending   : buffer std_logic);
 
 
@@ -406,12 +404,12 @@ begin
       read_data      => ls_read_data,
       ack            => ls_ack);
 
-  entire_pipeline_empty <= pipeline_empty and not valid_input;
+  entire_pipeline_empty <= pipeline_empty and not valid_input and not fetch_in_flight;
 
   syscall : system_calls
     generic map (
       REGISTER_SIZE     => REGISTER_SIZE,
-      RESET_VECTOR      => RESET_VECTOR,
+      INTERRUPT_VECTOR  => INTERRUPT_VECTOR,
       ENABLE_EXCEPTIONS => ENABLE_EXCEPTIONS,
       COUNTER_LENGTH    => COUNTER_LENGTH)
     port map (

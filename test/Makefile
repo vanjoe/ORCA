@@ -1,4 +1,4 @@
-BUILD_ARGS=-k -l -s -t -u -v --cfg-file=../../test/build_cfg_orca.py
+BUILD_ARGS=-k -l -v --cfg-file=../../test/build_cfg_orca.py
 -include config.mk
 
 default: builds

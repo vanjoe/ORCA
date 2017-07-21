@@ -1,6 +1,21 @@
 add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/clk}} {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/reset}} {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/valid_input}} {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/pc_current}} {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/instruction}} 
 
-add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_ARADDR}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_ARVALID}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_ARREADY}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_RDATA}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_RVALID}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_RREADY}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/state}}
+#add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_ARADDR}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_ARVALID}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_ARREADY}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_RDATA}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_RVALID}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/dram_RREADY}} {{/design_1_wrapper/design_1_i/Orca_0/U0/axi_enabled/instruction_cache/state}}
+
+add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/syscall/external_interrupts}} 
+add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/syscall/interrupt_pending}} 
+add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/syscall/interrupt_processor}} 
+add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/syscall/mstatus}} 
+add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/syscall/mie}} 
+add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/syscall/meimask}} 
+add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/syscall/meipend}} 
+add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/syscall/pipeline_empty}} 
+add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/syscall/csr_write_val}} 
+add_wave {{/design_1_wrapper/design_1_i/Orca_0/U0/core/X/syscall/instruction}} 
+add_wave {{/design_1_wrapper/design_1_i/fit_timer_0/U0/Interrupt}} 
+add_wave {{/design_1_wrapper/design_1_i/edge_extender_0/U0/interrupt_in}} {{/design_1_wrapper/design_1_i/edge_extender_0/U0/interrupt_out}} 
+add_wave {{/design_1_wrapper/design_1_i/edge_extender_0/U0/register_bank}} 
+add_wave {{/design_1_wrapper/design_1_i/edge_extender_0/U0/reset}} 
 
 restart
 log_wave -r *
@@ -39,5 +54,3 @@ foreach line $data {
     set i [expr {$i + 1}]
   }
 }
-
-run 50 us

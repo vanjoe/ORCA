@@ -18,3 +18,11 @@ int main()
   return 0;
 
 }
+
+int handle_interrupt(int cause, int epc, int regs[32]) {
+	if (!((cause >> 31) & 0x1)) {
+		// Handle illegal instruction.
+		for (;;);
+	}
+	return epc;
+}

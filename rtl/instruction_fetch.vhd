@@ -24,6 +24,7 @@ entity instruction_fetch is
     pc_out          : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     next_pc_out     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     valid_instr_out : out    std_logic;
+		fetch_in_flight	: out		 std_logic;
 
     read_address   : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     read_en        : buffer std_logic;
@@ -56,8 +57,8 @@ architecture rtl of instruction_fetch is
 
   signal suppress_valid_instr_out : std_logic;
   signal dont_increment           : std_logic;
-begin  -- architecture rtl
 
+begin  -- architecture rtl
 
   --unpack branch_pred_data_in
   --branch_pc       <= branch_get_pc(branch_pred);
@@ -71,7 +72,8 @@ begin  -- architecture rtl
   move_to_next_address <= (state = state_1 and read_datavalid = '1' and dont_increment = '0') or
                           (state = state_2 and dont_increment = '0');
 
-
+	-- This stops the pipeline from being marked as empty during multi-cycle reads.
+	fetch_in_flight <= '0' when state = state_2 else '1';
 
   process(clk)
   begin
@@ -114,7 +116,7 @@ begin  -- architecture rtl
   end process;
 
 
-  bramch_pred_proc : process(clk)
+  branch_pred_proc : process(clk)
   begin
     if rising_edge(clk) then
       last_next_address <= next_address;
@@ -184,10 +186,11 @@ begin  -- architecture rtl
 
   next_address <= pc_corr when pc_corr_en = '1' and move_to_next_address else
                   pc_corr_saved when pc_corr_saved_en = '1' and move_to_next_address else
+									pc_corr when pc_corr_en = '1' and interrupt_pending = '1' else
                   predicted_pc  when move_to_next_address else
                   program_counter;
   next_pc_out  <= std_logic_vector(next_address);
-  read_address <= std_logic_vector(program_counter) when state = state_0                           else std_logic_vector(next_address);
-  read_en      <= not reset                         when (state = state_0 or move_to_next_address) else '0';
+  read_address <= std_logic_vector(program_counter) when state = state_0                           		else std_logic_vector(next_address);
+  read_en      <= not reset                         when (state = state_0 or move_to_next_address) 		else '0';
   br_taken     <= '0';
 end architecture rtl;

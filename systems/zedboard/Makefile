@@ -76,5 +76,5 @@ pgm: $(OUT_BIT)
 	echo "pgm_bits $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PGM_TCL)
 
 clean:
-	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) $(MMI_FILE) 
+	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) $(MMI_FILE) *.jou *.log
 	make clean -C $(SW_DIR)

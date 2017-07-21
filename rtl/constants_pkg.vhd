@@ -69,9 +69,10 @@ package constants_pkg is
   constant INSTRUCTION_SIZE : integer := 32;
 
 
-  constant OP_IMM_IMMEDIATE_SIZE : integer                      := 12;
-  constant JAL                   : std_logic_vector(6 downto 0) := "1101111";
-  constant JALR                  : std_logic_vector(6 downto 0) := "1100111";
+  constant OP_IMM_IMMEDIATE_SIZE : integer                      	:= 12;
+	constant CSR_ZIMM							 : std_logic_vector(19 downto 15) := (others => '0');	
+  constant JAL                   : std_logic_vector(6 downto 0) 	:= "1101111";
+  constant JALR                  : std_logic_vector(6 downto 0) 	:= "1100111";
 
   constant CSR_ADDRESS      : std_logic_vector(31 downto 20) := (others => '0');
   constant CSR_MSTATUS      : std_logic_vector(11 downto 0)  := x"300";
@@ -98,11 +99,11 @@ package constants_pkg is
   constant CSR_MCAUSE_EBREAK  : integer := 3;
   constant CSR_MCAUSE_MECALL  : integer := 11;
 
-  constant CSRRW_FUNC3 : std_logic_vector(2 downto 0) := "001";
-  constant CSRRS_FUNC3 : std_logic_vector(2 downto 0) := "010";
-  constant CSRRC_FUNC3 : std_logic_vector(2 downto 0) := "011";
-
-
+  constant CSRRW_FUNC3  : std_logic_vector(2 downto 0) := "001";
+  constant CSRRS_FUNC3  : std_logic_vector(2 downto 0) := "010";
+	constant CSRRSI_FUNC3 : std_logic_vector(2 downto 0) := "110";
+  constant CSRRC_FUNC3  : std_logic_vector(2 downto 0) := "011";
+	constant CSRRCI_FUNC3 : std_logic_vector(2 downto 0) := "111";
 
   constant SYSTEM_MINOR_OP : std_logic_vector(31 downto 20) := (others => '0');
   constant SYSTEM_NOT_CSR  : std_logic_vector(19 downto 7)  := (others => '0');

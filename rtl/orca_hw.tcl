@@ -132,6 +132,14 @@ set_parameter_property RESET_VECTOR UNITS None
 set_parameter_property RESET_VECTOR HDL_PARAMETER true
 set_display_item_property RESET_VECTOR DISPLAY_HINT hexadecimal
 
+add_parameter INTERRUPT_VECTOR NATURAL 512
+set_parameter_property INTERRUPT_VECTOR DEFAULT_VALUE 512
+set_parameter_property INTERRUPT_VECTOR DISPLAY_NAME "Interrupt Vector"
+set_parameter_property INTERRUPT_VECTOR TYPE integer
+set_parameter_property INTERRUPT_VECTOR UNITS None
+set_parameter_property INTERRUPT_VECTOR HDL_PARAMETER true
+set_display_item_property INTERRUPT_VECTOR DISPLAY_HINT hexadecimal
+
 add_parameter MULTIPLY_ENABLE natural 1
 set_parameter_property MULTIPLY_ENABLE DEFAULT_VALUE 1
 set_parameter_property MULTIPLY_ENABLE DISPLAY_NAME "Hardware Multiply"

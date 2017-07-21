@@ -8,7 +8,8 @@ _start:
   la sp, _end_of_memory
 
 	// Enable interrupts.
-  csrsi mstatus, 0x8 
+	li x1, 0x00000008
+  csrs mstatus, x1 
 
 	// Enable all interrupt masks.
 	// Note: our meimask csr is non-standard.
@@ -55,6 +56,10 @@ _isr:
   sw x30, 30*REGBYTES(sp)
   sw x31, 31*REGBYTES(sp)
 
+	// Clear the MPIE bit.
+	li a0, 0x00000080
+	csrc mstatus, a0
+
 	// Prepare the input registers for the interrupt handler.
   csrr a0, mcause
   csrr a1, mepc
@@ -96,4 +101,6 @@ _isr:
 
   addi sp, sp, 272
 
+	// Re-enable interrupts.
+  csrs mstatus, 0x00000008
   mret
