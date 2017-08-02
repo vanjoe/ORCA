@@ -38,7 +38,7 @@ then
 	 python $OPCODES_PY_FILE > opcodes-lve
 
 	 RISCV_OPC_H=binutils-$BINUTILS_VERSION/include/opcode/riscv-opc.h
-	 cat opcodes-lve | python $SCRIPT_DIR/riscv-opcodes/parse-opcodes -c | grep "#define \(MATCH_V\|MASK_V\)" > riscv-lve.h
+	 cat opcodes-lve | python riscv-opcodes/parse-opcodes -c | grep "#define \(MATCH_V\|MASK_V\)" > riscv-lve.h
 	 mv riscv-lve.h  $(dirname $RISCV_OPC_H)
 	 sed -i '/#define RISCV_ENCODING_H/a #include "riscv-lve.h"'  $RISCV_OPC_H
 
@@ -52,7 +52,7 @@ fi
 
 #binutils
 (
-
+	 rm -rf build-binutils
 	 mkdir build-binutils
 	 cd build-binutils
 	 ../binutils-$BINUTILS_VERSION/configure --prefix=$RISCV_INSTALL --with-abi=ilp32 --target=riscv32-unknown-elf --disable-multilib
@@ -62,6 +62,7 @@ fi
 
 #gcc
 (
+	 rm -rf build-gcc
 	 mkdir -p build-gcc
 	 cd build-gcc
 	 ../gcc-$GCC_VERSION/configure --prefix=$RISCV_INSTALL --target=riscv32-unknown-elf --with-abi=ilp32 --enable-languages=c,c++ --disable-multilib
