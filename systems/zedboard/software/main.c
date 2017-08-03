@@ -10,6 +10,7 @@ int main(void) {
 		delayms(1000);
 	}
 
+	ChangedPrint("Left while(1)\r\n");
 	int i = 1000;
 	while(i) {
 		asm volatile("addi %0, %0, -1":"=r"(i):"r"(i));
@@ -17,9 +18,8 @@ int main(void) {
   return i;
 }
 
-int handle_interrupt(int cause, int epc, int regs[32])
-{
-	return epc;
+int handle_interrupt(int cause, int epc, int regs[32]) {
+
 	if (!((cause >> 31) & 0x1)) {
 		// Handle illegal instruction.
 		ChangedPrint("Illegal Instruction\r\n");
@@ -27,6 +27,6 @@ int handle_interrupt(int cause, int epc, int regs[32])
 	}
 
 	// Handle interrupt	
-	ChangedPrint("Hello World\r\n");
+	ChangedPrint("\r\nTook Interrupt\r\n");
 	return epc;
 }

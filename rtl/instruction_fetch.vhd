@@ -207,12 +207,18 @@ begin  -- architecture rtl
   valid_instr_out <= (read_datavalid or valid_instr_out_saved) and not (suppress_valid_instr_out or pc_corr_en or interrupt_pending);
 
 
-  next_address <= pc_corr_interrupt_saved when pc_corr_interrupt_saved_en = '1' and interrupt_pending = '1' else
-									pc_corr when pc_corr_en = '1' and move_to_next_address else
-                  pc_corr_saved when pc_corr_saved_en = '1' and move_to_next_address else
+--  next_address <= pc_corr_interrupt_saved when pc_corr_interrupt_saved_en = '1' and interrupt_pending = '1' else
+--									pc_corr when pc_corr_en = '1' and move_to_next_address else
+--                  pc_corr_saved when pc_corr_saved_en = '1' and move_to_next_address else
+--
+--                  predicted_pc when move_to_next_address else
+--                  program_counter;
 
-                  predicted_pc  when move_to_next_address else
-                  program_counter;
+	next_address <= pc_corr_saved when pc_corr_saved_en = '1' and (move_to_next_address or interrupt_pending = '1') else
+									pc_corr when pc_corr_en = '1' and (move_to_next_address or interrupt_pending = '1') else
+									predicted_pc when move_to_next_address else
+									program_counter;
+
   next_pc_out  <= std_logic_vector(next_address);
   read_address <= std_logic_vector(program_counter) when state = state_0                           		else std_logic_vector(next_address);
   read_en      <= not reset                         when (state = state_0 or move_to_next_address) 		else '0';

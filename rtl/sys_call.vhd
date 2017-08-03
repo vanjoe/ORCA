@@ -249,13 +249,18 @@ begin -- architecture rtl
           -- A FENCE.I instruction is a pipeline flush.
           was_fence_i <= instruction(12);
         end if;
-      elsif interrupt_pending = '1' and pipeline_empty = '1' 
-				and interrupt_processor = '0' and ENABLE_EXCEPTIONS then
-        mstatus(CSR_MSTATUS_MIE)  <= '0';
-        mstatus(CSR_MSTATUS_MPIE) <= '1';
-        mcause(mcause'left)       <= '1';
-        mcause(3 downto 0)        <= std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, 4));
-				mepc <= instruction_fetch_pc;
+      elsif interrupt_pending = '1' and pipeline_empty = '1' and ENABLE_EXCEPTIONS then
+				-- Latch in mepc the cycle before interrupt_processor goes high.
+				-- When interrupt_processor goes high, the next_pc of the instruction fetch will 
+				-- be corrected to the interrupt reset vector.
+				if interrupt_processor /= '1' then
+					mepc <= instruction_fetch_pc;
+				elsif interrupt_processor = '1' then
+					mstatus(CSR_MSTATUS_MIE)  <= '0';
+					mstatus(CSR_MSTATUS_MPIE) <= '1';
+					mcause(mcause'left)       <= '1';
+					mcause(3 downto 0)        <= std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, 4));
+				end if;
       end if;
 
       if reset = '1' then
