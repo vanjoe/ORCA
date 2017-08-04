@@ -312,7 +312,7 @@ CONFIG.STRATEGY {0} \
   # Create instance: fit_timer_0, and set properties
   set fit_timer_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fit_timer:2.0 fit_timer_0 ]
   set_property -dict [ list \
-CONFIG.C_NO_CLOCKS {400} \
+CONFIG.C_NO_CLOCKS {50000000} \
  ] $fit_timer_0
 
   # Create instance: idram_0, and set properties
@@ -639,13 +639,7 @@ CONFIG.preset {ZedBoard} \
 
   # Create interface connections
   connect_bd_intf_net -intf_net Orca_0_data [get_bd_intf_pins Orca_0/data] [get_bd_intf_pins axi_mem_intercon/S00_AXI]
-  set_property -dict [ list \
-HDL_ATTRIBUTE.DEBUG {true} \
- ] [get_bd_intf_nets Orca_0_data]
   connect_bd_intf_net -intf_net Orca_0_instr [get_bd_intf_pins Orca_0/itcram] [get_bd_intf_pins axi_mem_intercon_1/S00_AXI]
-  set_property -dict [ list \
-HDL_ATTRIBUTE.DEBUG {true} \
- ] [get_bd_intf_nets Orca_0_instr]
   connect_bd_intf_net -intf_net Orca_0_iram [get_bd_intf_pins Orca_0/iram] [get_bd_intf_pins axi_mem_intercon_1/S01_AXI]
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports leds_8bits] [get_bd_intf_pins axi_gpio_0/GPIO]
   connect_bd_intf_net -intf_net axi_mem_intercon_1_M00_AXI [get_bd_intf_pins axi_mem_intercon_1/M00_AXI] [get_bd_intf_pins idram_0/instr]

@@ -155,6 +155,7 @@ def setup_git_repo(new_dir, upstream):
     subprocess.Popen('git add .', shell=True).wait()
     subprocess.Popen('git commit -m \'ORCA exported {} \''.format(datetime.datetime.now()), \
                         shell=True).wait()
+    subprocess.Popen('git remote set-url origin https://github.com/VectorBlox/orca', shell=True).wait()
 
     os.chdir(saved_working_dir)
 

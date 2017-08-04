@@ -48,9 +48,6 @@ architecture rtl of instruction_fetch is
   signal pc_corr_saved    : unsigned(REGISTER_SIZE-1 downto 0);
   signal pc_corr_saved_en : std_logic;
 
-  signal pc_corr_interrupt_saved    : unsigned(REGISTER_SIZE-1 downto 0);
-  signal pc_corr_interrupt_saved_en : std_logic;
-
   signal instr_out_saved       : std_logic_vector(instr_out'range);
   signal valid_instr_out_saved : std_logic;
 
@@ -145,22 +142,6 @@ begin  -- architecture rtl
     end if;
   end process;
 
-	pc_corr_interrupt_proc : process(clk)
-	begin
-		if rising_edge(clk) then
-			if reset = '1' then
-				pc_corr_interrupt_saved <= (others => '0');
-				pc_corr_interrupt_saved_en <= '0';
-			elsif interrupt_pending = '1' and pc_corr_en = '1' then
-				pc_corr_interrupt_saved <= pc_corr;
-				pc_corr_interrupt_saved_en <= '1';
-			elsif interrupt_pending = '0' and pc_corr_interrupt_saved_en = '1' then
-				pc_corr_interrupt_saved <= (others => '0');
-				pc_corr_interrupt_saved_en <= '0';
-			end if;
-		end if;
-	end process;
-
   program_counter_transition : process(clk)
   begin
     if rising_edge(clk) then
@@ -206,13 +187,6 @@ begin  -- architecture rtl
   instr_out       <= read_data when valid_instr_out_saved = '0' else instr_out_saved;
   valid_instr_out <= (read_datavalid or valid_instr_out_saved) and not (suppress_valid_instr_out or pc_corr_en or interrupt_pending);
 
-
---  next_address <= pc_corr_interrupt_saved when pc_corr_interrupt_saved_en = '1' and interrupt_pending = '1' else
---									pc_corr when pc_corr_en = '1' and move_to_next_address else
---                  pc_corr_saved when pc_corr_saved_en = '1' and move_to_next_address else
---
---                  predicted_pc when move_to_next_address else
---                  program_counter;
 
 	next_address <= pc_corr_saved when pc_corr_saved_en = '1' and (move_to_next_address or interrupt_pending = '1') else
 									pc_corr when pc_corr_en = '1' and (move_to_next_address or interrupt_pending = '1') else
