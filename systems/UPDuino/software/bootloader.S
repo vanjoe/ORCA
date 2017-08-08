@@ -2,7 +2,7 @@
 #include "system.h"
 
 .section ".init"
-nop
+j _boot
 
 
 .ALIGN (9)

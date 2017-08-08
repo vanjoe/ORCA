@@ -1,4 +1,5 @@
 #include "uart.h"
+#include "system.h"
 #define BIT_BANG_UART 0
 
 #if BIT_BANG_UART
@@ -42,7 +43,7 @@ void mputc(void* p, char c){
 //
 // UART stuff
 //////////////////////
-#define  UART_BASE ((volatile int*) 0x08000000)
+#define  UART_BASE ((volatile int*) UART_ADDR)
 
 volatile int*  UART_DATA=UART_BASE;
 volatile int*  UART_LCR=UART_BASE+3;

@@ -4,9 +4,9 @@
 #define BOOTMEM_ADDR    0
 #define BOOTMEM_SIZE    1024
 #define IMEM_ADDR       0x10000
-#define IMEM_SIZE       64*1024
+#define IMEM_SIZE       2*1024
 #define DMEM_ADDR       0x20000
-#define DMEM_SIZE       64*1024
+#define DMEM_SIZE       1*1024
 #define UART_ADDR       0x30000
 #define UART_SIZE       1024
 #define PIO_ADDR        0x40000
