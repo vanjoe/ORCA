@@ -1,22 +1,22 @@
 
 proc com {} {
     set fileset [list \
-                     ../rtl/utils.vhd                   \
-							../rtl/constants_pkg.vhd \
-                     ../rtl/components.vhd              \
-                     ../rtl/alu.vhd                     \
-                     ../rtl/branch_unit.vhd             \
-                     ../rtl/decode.vhd                  \
-                     ../rtl/execute.vhd                 \
-                     ../rtl/instruction_fetch.vhd       \
-                     ../rtl/load_store_unit.vhd         \
-                     ../rtl/register_file.vhd           \
-                     ../rtl/orca.vhd                    \
-                     ../rtl/orca_core.vhd               \
-                     ../rtl/sys_call.vhd                \
-                     ../rtl/lve_ci.vhd                 \
-                     ../rtl/lve_top.vhd                 \
-                     ../rtl/4port_mem_ultraplus.vhd               \
+                     ../../rtl/utils.vhd                   \
+							../../rtl/constants_pkg.vhd \
+                     ../../rtl/components.vhd              \
+                     ../../rtl/alu.vhd                     \
+                     ../../rtl/branch_unit.vhd             \
+                     ../../rtl/decode.vhd                  \
+                     ../../rtl/execute.vhd                 \
+                     ../../rtl/instruction_fetch.vhd       \
+                     ../../rtl/load_store_unit.vhd         \
+                     ../../rtl/register_file.vhd           \
+                     ../../rtl/orca.vhd                    \
+                     ../../rtl/orca_core.vhd               \
+                     ../../rtl/sys_call.vhd                \
+                     ../../rtl/lve_ci.vhd                 \
+                     ../../rtl/lve_top.vhd                 \
+                     ../../rtl/4port_mem_ultraplus.vhd               \
                      hdl/top_util_pkg.vhd               \
                      hdl/top_component_pkg.vhd          \
                      hdl/wb_ram.vhd                     \
@@ -34,9 +34,9 @@ proc com {} {
                      hdl/uart_rd1042/txmitt.vhd         \
                      hdl/pmod_mic/pmod_mic_wb.vhd       \
                      hdl/pmod_mic/pmod_mic_ref_comp.vhd \
-                     osc_hf_sim.vhd                     \
                      hdl/i2s_interface/i2s_decode.vhd   \
                      hdl/i2s_interface/i2s_wb.vhd       \
+							osc_hf.vhd \
                      top.vhd                            \
 							hdl/i2s_tx/i2s_codec.vhd       \
 							hdl/i2s_tx/tx_i2s_pack.vhd		 \
