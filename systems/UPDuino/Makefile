@@ -79,7 +79,8 @@ syn: $(EDF)
 
 
 clean:
-	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem *_Implmnt
+	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem *_Implmnt $(FINAL_BITFILE)
+	rm -rf stdout.log stdout.log.bak synlog.tcl bootmem.bin flash.bin
 
 clean-all: clean
 	make -C software clean
