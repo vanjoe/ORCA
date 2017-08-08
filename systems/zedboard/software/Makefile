@@ -1,10 +1,18 @@
-all:
-AS_SRCS=crt.S
-AS_SRCS+=cache_test.S
+#Optionally add sources here/set SW_PROJECT variable
+-include config.mk
 
-C_SRCS=
-C_SRCS+=main.c
-C_SRCS+=uart.c
+all:
+AS_SRCS += crt.S
+C_SRCS  += uart.c
+
+ifeq ($(SW_PROJ), cache_test)
+  AS_SRCS += cache_test.S
+  C_SRCS  += cache_test_main.c
+else ifeq ($(C_SRCS), uart.c)
+  C_SRCS  += hello_world.c
+endif
+
+
 
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
@@ -42,18 +50,21 @@ $(TARGET).hex: $(TARGET).elf
 	$(OBJCOPY) -O ihex $< $@
 $(TARGET).mem: $(TARGET).bin
 	 head -c $$((0x100)) /dev/zero | cat - $< | xxd -g1 -c4 | awk '{print $$5$$4$$3$$2}' > $@
-hex_to_coe :
+hex_to_coe: hex_to_coe.cpp
 	g++ hex_to_coe.cpp -o hex_to_coe
 $(TARGET).coe: $(TARGET).hex hex_to_coe
 	./hex_to_coe
 
-.phony:all clean
 ifndef FORMAT
 FORMAT=elf
 endif
+.PHONY: all
 all: $(TARGET).$(FORMAT) $(TARGET).hex $(TARGET).mem $(TARGET).coe
 
+.PHONY: clean
 clean:
 	rm -rf obj $(TARGET).elf $(TARGET).dump $(TARGET).bin $(TARGET).hex $(TARGET).mif $(TARGET).mem $(TARGET).coe hex_to_coe
 
 -include $(wildcard obj/*.d)
+
+.DELETE_ON_ERROR:

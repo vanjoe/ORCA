@@ -208,7 +208,7 @@ begin
       RAM_WIDTH => RAM_WIDTH,
       BYTE_SIZE => BYTE_SIZE)
     port map (
-      clock    => clk,
+      clk    => clk,
 
       address  => address,
       data_in  => wdata,

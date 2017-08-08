@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <string>
 
-#define MAX_ADDRESS 0xFFFF
+#define MAX_ADDRESS 0x3FFF
 #define BUFFER_SIZE (MAX_ADDRESS+1)
 
 using namespace std;
@@ -39,7 +39,7 @@ int main() {
   assert (!fin.fail());
   getline(fin, line);
   while (!fin.eof()) {     //if not at end of file, continue reading numbers
-    cout << line << endl;
+    //    cout << line << endl;
 		switch (line[8]) {
 			case '0': {
 				/* This is data */
@@ -59,7 +59,7 @@ int main() {
 				break;
 			}
 			case '1': {
-				cout << "File complete." << endl;
+				cout << "Finished reading test.hex" << endl;
 				break;
 			}
       case '2': {
@@ -98,4 +98,5 @@ int main() {
   }
 
   fout.close();
+  cout << "Finished writing test.coe" << endl;
 }

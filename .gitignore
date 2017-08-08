@@ -76,3 +76,6 @@ transcript
 
 *.jou
 *.log
+
+.Xil/
+vivado_*.str

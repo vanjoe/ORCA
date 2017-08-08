@@ -12,7 +12,7 @@ entity bram_microsemi is
     BYTE_SIZE       : integer := 8
     );
   port (
-    clock    : in  std_logic;
+    clk    : in  std_logic;
 
     address  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
     data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
@@ -68,9 +68,9 @@ begin
 
   byte_we3 <= we and be(3);
   data_byte_we3 <= data_we and data_be(3);
-  process (clock)
+  process (clk)
   begin
-    if rising_edge(clock) then
+    if rising_edge(clk) then
       reg_address3 <= address;
       if byte_we3 = '1' then
         ram3(to_integer(unsigned(address))) <= data_in(31 downto 24);
@@ -85,9 +85,9 @@ begin
 
   byte_we2 <= we and be(2);
   data_byte_we2 <= data_we and data_be(2);
-  process (clock)
+  process (clk)
   begin
-    if rising_edge(clock) then
+    if rising_edge(clk) then
       reg_address2 <= address;
       if byte_we2 = '1' then
         ram2(to_integer(unsigned(address))) <= data_in(23 downto 16);
@@ -102,9 +102,9 @@ begin
 
   byte_we1 <= we and be(1);
   data_byte_we1 <= data_we and data_be(1);
-  process (clock)
+  process (clk)
   begin
-    if rising_edge(clock) then
+    if rising_edge(clk) then
       reg_address1 <= address;
       if byte_we1 = '1' then
         ram1(to_integer(unsigned(address))) <= data_in(15 downto 8);
@@ -119,9 +119,9 @@ begin
 
   byte_we0 <= we and be(0);
   data_byte_we0 <= data_we and data_be(0);
-  process (clock)
+  process (clk)
   begin
-    if rising_edge(clock) then
+    if rising_edge(clk) then
       reg_address0 <= address;
       if byte_we0 = '1' then
         ram0(to_integer(unsigned(address))) <= data_in(7 downto 0);

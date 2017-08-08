@@ -13,7 +13,7 @@ entity idram_xilinx is
     BYTE_SIZE       : integer := 8
     );
   port (
-    clock    : in  std_logic;
+    clk    : in  std_logic;
 
     instr_address  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
     instr_data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
@@ -62,7 +62,7 @@ begin
       port map (
         address_a => instr_address,
         address_b => data_address,
-        clock => clock,
+        clk => clk,
         data_a => data_a(i),
         data_b => data_b(i),
         wren_a => wren_a(i),

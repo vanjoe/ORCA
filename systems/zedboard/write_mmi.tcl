@@ -171,3 +171,10 @@ proc mmi_wrapper {proj_dir proj_name cell_name} {
   write_mmi $cell_name
   close_project
 }
+
+if {$argc > 0} {
+    regsub -all {\\\{} $argv "{" argv
+    regsub -all {\\\}} $argv "}" argv
+    puts "Executing [set argv]"
+    eval [set argv]
+}

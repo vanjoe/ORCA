@@ -480,6 +480,8 @@ begin
     lve_alu_source_valid <= '0';
     lve_alu_data1        <= (others => '-');
     lve_alu_data2        <= (others => '-');
+    sp_readdata          <= (others => '-');
+    sp_ack               <= '-';
   end generate n_enable_lve;
 
   ls_read_data <= readdata;

@@ -3,7 +3,7 @@
 proc init_project { proj_dir proj_name} {
 	 create_project $proj_name $proj_dir -part xc7z020clg484-1
 	 set_property BOARD_PART em.avnet.com:zed:part0:1.3 [current_project]
-	 set_property ip_repo_paths ../../rtl/ [current_fileset]
+	 set_property ip_repo_paths "../../rtl/ ip/" [current_fileset]
 	 update_ip_catalog
 	 close_project
 }
@@ -20,12 +20,13 @@ proc create_bd {proj_dir proj_name bd_file} {
 }
 
 #creates .hwdef
-proc generate_bd_design {proj_dir proj_name } {
+proc generate_bd_design {proj_dir proj_name bd_tcl_name} {
 	 open_project $proj_dir/$proj_name.xpr
 	 set bd_design [glob $proj_dir/$proj_name.srcs/[current_fileset]/bd/*/*.bd]
 	 open_bd_design $bd_design
 	 generate_target all [get_files  $bd_design ]
 	 export_ip_user_files -of_objects [get_files $bd_design] -no_script -force -quiet
+	 write_bd_tcl $bd_tcl_name
 	 close_project
 }
 
@@ -51,8 +52,10 @@ proc export_bitstream {proj_dir proj_name } {
 	 file  copy -force [glob $proj_dir/$proj_name.runs/[current_run]/*.bit] $proj_name.bit
 	 close_project
 }
-#init_project prj_dir prj_name
-#create_bd prj_dir prj_name design_1.tcl
-#generate_bd_design prj_dir prj_name
-#project_synth prj_dir prj_name
-#project_impl prj_dir prj_name
+
+if {$argc > 0} {
+    regsub -all {\\\{} $argv "{" argv
+    regsub -all {\\\}} $argv "}" argv
+    puts "Executing [set argv]"
+    eval [set argv]
+}

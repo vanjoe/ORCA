@@ -22,13 +22,13 @@ proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "ENABLE_EXT_INTERRUPTS"
   ipgui::add_param $IPINST -name "NUM_EXT_INTERRUPTS"
   ipgui::add_param $IPINST -name "SCRATCHPAD_ADDR_BITS"
-  ipgui::add_param $IPINST -name "TCRAM_SIZE"
-  ipgui::add_param $IPINST -name "CACHE_SIZE"
-  ipgui::add_param $IPINST -name "LINE_SIZE"
+  ipgui::add_param $IPINST -name "IUC_ADDR_BASE"
+  ipgui::add_param $IPINST -name "IUC_ADDR_LAST"
+  ipgui::add_param $IPINST -name "ICACHE_SIZE"
+  ipgui::add_param $IPINST -name "ICACHE_LINE_SIZE"
   ipgui::add_param $IPINST -name "DRAM_WIDTH"
   ipgui::add_param $IPINST -name "BURST_EN"
   ipgui::add_param $IPINST -name "POWER_OPTIMIZED"
-  ipgui::add_param $IPINST -name "CACHE_ENABLE"
   ipgui::add_param $IPINST -name "FAMILY"
 
 }
@@ -78,21 +78,12 @@ proc validate_PARAM_VALUE.BYTE_SIZE { PARAM_VALUE.BYTE_SIZE } {
 	return true
 }
 
-proc update_PARAM_VALUE.CACHE_ENABLE { PARAM_VALUE.CACHE_ENABLE } {
-	# Procedure called to update CACHE_ENABLE when any of the dependent parameters in the arguments change
+proc update_PARAM_VALUE.ICACHE_SIZE { PARAM_VALUE.ICACHE_SIZE } {
+	# Procedure called to update ICACHE_SIZE when any of the dependent parameters in the arguments change
 }
 
-proc validate_PARAM_VALUE.CACHE_ENABLE { PARAM_VALUE.CACHE_ENABLE } {
-	# Procedure called to validate CACHE_ENABLE
-	return true
-}
-
-proc update_PARAM_VALUE.CACHE_SIZE { PARAM_VALUE.CACHE_SIZE } {
-	# Procedure called to update CACHE_SIZE when any of the dependent parameters in the arguments change
-}
-
-proc validate_PARAM_VALUE.CACHE_SIZE { PARAM_VALUE.CACHE_SIZE } {
-	# Procedure called to validate CACHE_SIZE
+proc validate_PARAM_VALUE.ICACHE_SIZE { PARAM_VALUE.ICACHE_SIZE } {
+	# Procedure called to validate ICACHE_SIZE
 	return true
 }
 
@@ -159,12 +150,12 @@ proc validate_PARAM_VALUE.INTERRUPT_VECTOR { PARAM_VALUE.INTERRUPT_VECTOR } {
 	return true
 }
 
-proc update_PARAM_VALUE.LINE_SIZE { PARAM_VALUE.LINE_SIZE } {
-	# Procedure called to update LINE_SIZE when any of the dependent parameters in the arguments change
+proc update_PARAM_VALUE.ICACHE_LINE_SIZE { PARAM_VALUE.ICACHE_LINE_SIZE } {
+	# Procedure called to update ICACHE_LINE_SIZE when any of the dependent parameters in the arguments change
 }
 
-proc validate_PARAM_VALUE.LINE_SIZE { PARAM_VALUE.LINE_SIZE } {
-	# Procedure called to validate LINE_SIZE
+proc validate_PARAM_VALUE.ICACHE_LINE_SIZE { PARAM_VALUE.ICACHE_LINE_SIZE } {
+	# Procedure called to validate ICACHE_LINE_SIZE
 	return true
 }
 
@@ -249,12 +240,21 @@ proc validate_PARAM_VALUE.SHIFTER_MAX_CYCLES { PARAM_VALUE.SHIFTER_MAX_CYCLES } 
 	return true
 }
 
-proc update_PARAM_VALUE.TCRAM_SIZE { PARAM_VALUE.TCRAM_SIZE } {
-	# Procedure called to update TCRAM_SIZE when any of the dependent parameters in the arguments change
+proc update_PARAM_VALUE.IUC_ADDR_BASE { PARAM_VALUE.IUC_ADDR_BASE } {
+	# Procedure called to update IUC_ADDR_BASE when any of the dependent parameters in the arguments change
 }
 
-proc validate_PARAM_VALUE.TCRAM_SIZE { PARAM_VALUE.TCRAM_SIZE } {
-	# Procedure called to validate TCRAM_SIZE
+proc validate_PARAM_VALUE.IUC_ADDR_BASE { PARAM_VALUE.IUC_ADDR_BASE } {
+	# Procedure called to validate IUC_ADDR_BASE
+	return true
+}
+
+proc update_PARAM_VALUE.IUC_ADDR_LAST { PARAM_VALUE.IUC_ADDR_LAST } {
+	# Procedure called to update IUC_ADDR_LAST when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.IUC_ADDR_LAST { PARAM_VALUE.IUC_ADDR_LAST } {
+	# Procedure called to validate IUC_ADDR_LAST
 	return true
 }
 
@@ -358,19 +358,24 @@ proc update_MODELPARAM_VALUE.SCRATCHPAD_ADDR_BITS { MODELPARAM_VALUE.SCRATCHPAD_
 	set_property value [get_property value ${PARAM_VALUE.SCRATCHPAD_ADDR_BITS}] ${MODELPARAM_VALUE.SCRATCHPAD_ADDR_BITS}
 }
 
-proc update_MODELPARAM_VALUE.TCRAM_SIZE { MODELPARAM_VALUE.TCRAM_SIZE PARAM_VALUE.TCRAM_SIZE } {
+proc update_MODELPARAM_VALUE.IUC_ADDR_BASE { MODELPARAM_VALUE.IUC_ADDR_BASE PARAM_VALUE.IUC_ADDR_BASE } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.TCRAM_SIZE}] ${MODELPARAM_VALUE.TCRAM_SIZE}
+	set_property value [get_property value ${PARAM_VALUE.IUC_ADDR_BASE}] ${MODELPARAM_VALUE.IUC_ADDR_BASE}
 }
 
-proc update_MODELPARAM_VALUE.CACHE_SIZE { MODELPARAM_VALUE.CACHE_SIZE PARAM_VALUE.CACHE_SIZE } {
-	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.CACHE_SIZE}] ${MODELPARAM_VALUE.CACHE_SIZE}
+proc update_MODELPARAM_VALUE.IUC_ADDR_LAST { MODELPARAM_VALUE.IUC_ADDR_LAST PARAM_VALUE.IUC_ADDR_LAST } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) lastd on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.IUC_ADDR_LAST}] ${MODELPARAM_VALUE.IUC_ADDR_LAST}
 }
 
-proc update_MODELPARAM_VALUE.LINE_SIZE { MODELPARAM_VALUE.LINE_SIZE PARAM_VALUE.LINE_SIZE } {
+proc update_MODELPARAM_VALUE.ICACHE_SIZE { MODELPARAM_VALUE.ICACHE_SIZE PARAM_VALUE.ICACHE_SIZE } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.LINE_SIZE}] ${MODELPARAM_VALUE.LINE_SIZE}
+	set_property value [get_property value ${PARAM_VALUE.ICACHE_SIZE}] ${MODELPARAM_VALUE.ICACHE_SIZE}
+}
+
+proc update_MODELPARAM_VALUE.ICACHE_LINE_SIZE { MODELPARAM_VALUE.ICACHE_LINE_SIZE PARAM_VALUE.ICACHE_LINE_SIZE } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.ICACHE_LINE_SIZE}] ${MODELPARAM_VALUE.ICACHE_LINE_SIZE}
 }
 
 proc update_MODELPARAM_VALUE.DRAM_WIDTH { MODELPARAM_VALUE.DRAM_WIDTH PARAM_VALUE.DRAM_WIDTH } {
@@ -386,11 +391,6 @@ proc update_MODELPARAM_VALUE.BURST_EN { MODELPARAM_VALUE.BURST_EN PARAM_VALUE.BU
 proc update_MODELPARAM_VALUE.POWER_OPTIMIZED { MODELPARAM_VALUE.POWER_OPTIMIZED PARAM_VALUE.POWER_OPTIMIZED } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.POWER_OPTIMIZED}] ${MODELPARAM_VALUE.POWER_OPTIMIZED}
-}
-
-proc update_MODELPARAM_VALUE.CACHE_ENABLE { MODELPARAM_VALUE.CACHE_ENABLE PARAM_VALUE.CACHE_ENABLE } {
-	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.CACHE_ENABLE}] ${MODELPARAM_VALUE.CACHE_ENABLE}
 }
 
 proc update_MODELPARAM_VALUE.FAMILY { MODELPARAM_VALUE.FAMILY PARAM_VALUE.FAMILY } {

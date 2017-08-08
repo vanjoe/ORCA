@@ -11,3 +11,10 @@ proc pgm_bits {proj_dir proj_name} {
 	program_hw_devices [lindex [get_hw_devices xc7z020_1] 0]
 	close_project
 }
+
+if {$argc > 0} {
+    regsub -all {\\\{} $argv "{" argv
+    regsub -all {\\\}} $argv "}" argv
+    puts "Executing [set argv]"
+    eval [set argv]
+}

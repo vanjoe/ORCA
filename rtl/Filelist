@@ -14,4 +14,10 @@ lve_top.vhd
 register_file.vhd
 sys_call.vhd
 orca_core.vhd
+bram_tdp_behav.vhd
+cache.vhd
+icache.vhd
+cache_mux.vhd
+a4l_master.vhd
+a4l_instruction_master.vhd
 orca.vhd
