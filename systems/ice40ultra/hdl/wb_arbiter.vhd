@@ -69,13 +69,13 @@ architecture rtl of wb_arbiter is
     ps : PORT_SEL_T)
     return std_logic_vector is
   begin
-    if ps = SLAVE0 then
-      return s0;
+    if ps = SLAVE2 then
+      return s2;
     end if;
     if ps = SLAVE1 then
       return s1;
     end if;
-    return s2;
+    return s0;
 
   end function;
 

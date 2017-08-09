@@ -1,0 +1,21 @@
+# ##############################################################################
+
+# iCEcube PCF
+
+# Version:            2017.01.27914
+
+# File Generated:     Aug 4 2017 15:39:40
+
+# Family & Device:    iCE40UP5K
+
+# Package:            SG48
+
+# ##############################################################################
+
+###IOSet List 5
+set_io spi_miso 14
+set_io spi_mosi 17
+set_io spi_sclk 15
+set_io spi_ss 16
+set_io txd 23
+

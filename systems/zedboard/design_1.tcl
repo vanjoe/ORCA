@@ -297,7 +297,7 @@ CONFIG.STRATEGY {0} \
   # Create instance: fit_timer, and set properties
   set fit_timer [ create_bd_cell -type ip -vlnv xilinx.com:ip:fit_timer:2.0 fit_timer ]
   set_property -dict [ list \
-CONFIG.C_NO_CLOCKS {2147483647} \
+CONFIG.C_NO_CLOCKS {50000000} \
  ] $fit_timer
 
   # Create instance: idram, and set properties

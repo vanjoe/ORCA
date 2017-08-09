@@ -13,13 +13,13 @@
 
 static inline void schedule_interrupt(int cycles)
 {
-	//when an integer is written to the INT_GEN_REGISTER,
-	//an iterrupt will be triggered that many cycles from now.
-	//if the number is negative, no interrupt will occur
+	// When an integer is written to the INT_GEN_REGISTER,
+	// an interrupt will be triggered that many cycles from now.
+	// if the number is negative, no interrupt will occur.
 
-	// Note that an interrupt must clear flush the popeling, before the
-	//processor can be interrupted, so if the next instruction disables
-	//interrupts, the interrupt will probably not be taken
+	// Note that an interrupt must clear flush the pipeline, before the
+	// processor can be interrupted, so if the next instruction disables
+	// interrupts, the interrupt will probably not be taken.
 
 	volatile int*  INT_GEN_REGISTER = (volatile int*)(0x01000000);
 	*INT_GEN_REGISTER = cycles;

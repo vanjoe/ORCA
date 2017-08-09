@@ -1,0 +1,11 @@
+bootmem.mem
+flash.mem
+ice40ultraplus_Implmnt/
+init_03.imem
+init_07.imem
+init_11.imem
+init_15.imem
+software/obj/
+software/sys_clk.h
+stdout.log.bak
+synlog.tcl

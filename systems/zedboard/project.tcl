@@ -1,7 +1,7 @@
 
 #creates .xpr
 proc init_project { proj_dir proj_name} {
-	 create_project $proj_name $proj_dir -part xc7z020clg484-1
+	 create_project $proj_name $proj_dir -part xc7z020clg484-1 -force
 	 set_property BOARD_PART em.avnet.com:zed:part0:1.3 [current_project]
 	 set_property ip_repo_paths "../../rtl/ ip/" [current_fileset]
 	 update_ip_catalog
