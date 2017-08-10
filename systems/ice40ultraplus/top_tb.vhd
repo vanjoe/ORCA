@@ -62,7 +62,6 @@ architecture rtl of top_tb is
 
   signal pclk_count : integer := -35000;
 
-
   component m25p80 is
     generic (
       -- memory file to be loaded
@@ -82,12 +81,24 @@ architecture rtl of top_tb is
 
   end component;
 
+component uart_rx_tb is
+  generic (
+    BAUD_RATE   : integer := 115200;
+    OUTPUT_FILE : string  := "uart.out");
+  port (
+    rxd : in std_logic);
+end component;
+
 begin
   process
   begin
     ovm_pclk <= not ovm_pclk;
     wait for (PCLK_PERIOD/2);
   end process;
+
+  rx: component uart_rx_tb
+    port map(
+     rxd => txd);
 
   dut : component verilog_top
 
