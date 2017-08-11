@@ -64,7 +64,7 @@ void test_fail(void) {
 		// The risc-v tests fail immediately once an
 		// error has occured, so there will never be
 		// more than one error at a time.
-		printf("\nTest failed with 1 error.");	
+		printf("\nTest failed with 1 error.\n");	
 		mputc(0, 4);
 	}
 }

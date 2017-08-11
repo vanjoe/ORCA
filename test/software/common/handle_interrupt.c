@@ -14,7 +14,7 @@ int handle_interrupt(int cause, int epc, int regs[32])
 	return epc;
 }
 
-inline void schedule_interrupt(int cycles)
+void schedule_interrupt(int cycles)
 {
 	// When an integer is written to the INT_GEN_REGISTER,
 	// an interrupt will be triggered that many cycles from now.

@@ -19,7 +19,7 @@ ARCH=rv32im
 LVE_EXT=xlve
 RISCV_PREFIX ?= riscv$(XLEN)-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
-RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -march=$(ARCH) -Wa,-march=$(ARCH)$(LVE_EXT) -Wall
+RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostartfiles -march=$(ARCH) -Wa,-march=$(ARCH)$(LVE_EXT) -Wall
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump --disassemble-all --disassemble-zeroes 
 
 

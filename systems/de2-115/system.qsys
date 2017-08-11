@@ -676,6 +676,7 @@
   <parameter name="POWER_OPTIMIZED" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="0" />
+	<parameter name="INTERRUPT_VECTOR" value="512" />
   <parameter name="SCRATCHPAD_SIZE" value="64" />
   <parameter name="SHIFTER_MAX_CYCLES" value="1" />
   <parameter name="TCRAM_SIZE" value="64" />

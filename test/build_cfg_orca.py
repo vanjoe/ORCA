@@ -50,65 +50,7 @@ NOTIFY_LIST = ['ryan@vectorblox.com']
 # environment variable or configure PATH so that the subscription
 # edition of quartus is used instead of the web edition.
 
-DE2_BUILDS = \
-    [Alt_Mxp_BuildCfg('de2',  1, 1, 64, 8, 'BYTE'),
-     Alt_Mxp_BuildCfg('de2', 16, 1, 64, 8, 'BYTE')]
-
-# de4_230 memory controller has a 256-bit data bus (8 memory lanes).
-DE4_230_BUILDS = \
-    [Alt_Mxp_BuildCfg('de4_230',  1, 8, 64, 4, 'BYTE', skip_sw_tests=True, use_lic=True),
-     Alt_Mxp_BuildCfg('de4_230',  8, 8, 64, 4, 'BYTE', use_lic=True),
-     Alt_Mxp_BuildCfg('de4_230', 16, 8, 64, 4, 'BYTE', use_lic=True)]
-
-VEEK_BUILDS = \
-    [
-    Alt_Mxp_BuildCfg('veek_bare',  1, 1, 64, 8, 'BYTE'),
-    Alt_Mxp_BuildCfg('veek_bare',  2, 1, 64, 8, 'BYTE'),
-    Alt_Mxp_BuildCfg('veek_bare',  2, 2, 64, 8, 'BYTE'),
-    Alt_Mxp_BuildCfg('veek_bare',  4, 1, 64, 8, 'BYTE'),
-    Alt_Mxp_BuildCfg('veek_bare',  4, 2, 64, 8, 'BYTE'),
-    Alt_Mxp_BuildCfg('veek_bare',  4, 4, 64, 8, 'BYTE'),
-    Alt_Mxp_BuildCfg('veek_bare',  8, 1, 64, 8, 'BYTE'),
-    Alt_Mxp_BuildCfg('veek_bare',  8, 2, 64, 8, 'BYTE'),
-    Alt_Mxp_BuildCfg('veek_bare',  8, 4, 64, 8, 'BYTE'),
-    Alt_Mxp_BuildCfg('veek_bare', 16, 1, 64, 8, 'BYTE'),
-    Alt_Mxp_BuildCfg('veek_bare', 16, 2, 64, 8, 'BYTE'),
-    Alt_Mxp_BuildCfg('veek_bare', 16, 4, 64, 8, 'BYTE'),
-    ]
-
-MEDIA_TPAD_BUILDS_120 = \
-    [Alt_Mxp_BuildCfg('media_tpad',  1, 1, 64, 8, 'BYTE', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad',  2, 1, 64, 8, 'BYTE', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad',  4, 1, 64, 8, 'BYTE', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad',  8, 1, 64, 8, 'BYTE', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad', 16, 1, 64, 8, 'BYTE', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad',  1, 1, 64, 8, 'HALF', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad',  2, 1, 64, 8, 'HALF', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad',  4, 1, 64, 8, 'HALF', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad',  8, 1, 64, 8, 'HALF', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad', 16, 1, 64, 8, 'HALF', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad',  1, 1, 64, 8, 'WORD', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad',  2, 1, 64, 8, 'WORD', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad',  4, 1, 64, 8, 'WORD', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad',  8, 1, 64, 8, 'WORD', opt_sysid='_120MHz'),
-     Alt_Mxp_BuildCfg('media_tpad', 16, 1, 64, 8, 'WORD', opt_sysid='_120MHz')]
-
-MEDIA_TPAD_BUILDS_TEST = \
-    [Alt_Mxp_BuildCfg('media_tpad',  1, 1, 64,  8, 'BYTE'),
-     Alt_Mxp_BuildCfg('media_tpad',  1, 1, 64, 16, 'BYTE', 15, 7, 3)]
-
-MEDIA_TPAD_ENET_BUILDS = \
-    [Alt_Mxp_BuildCfg('media_tpad_enet',  1, 1, 64, 8, 'BYTE'),
-     Alt_Mxp_BuildCfg('media_tpad_enet', 16, 1, 64, 8, 'BYTE')]
-
-# sim system assumes 8KB scratch at the moment
-SIM_BUILDS = \
-    [Alt_Mxp_BuildCfg('sim',  1, 1, 8, 8, 'BYTE'),
-     Alt_Mxp_BuildCfg('sim', 16, 1, 8, 8, 'BYTE')]
-
-TPAD_BUILDS = \
-    [Alt_Mxp_BuildCfg('tpad',  1, 1, 64, 8, 'BYTE'),
-     Alt_Mxp_BuildCfg('tpad', 16, 1, 64, 8, 'BYTE')]
+ZEDBOARD_UART_CFG = Xil_Uart_Cfg('/dev/ttyACM0', 115200)
 
 ORCA_BUILDS = \
     [Alt_Orca_BuildCfg(system='de2-115',
@@ -121,7 +63,7 @@ ORCA_BUILDS = \
                        branch_predictors=0,
                        pipeline_stages=5,
                        lve_enable=0,
-                       enable_ext_interrupts=0,
+                       enable_ext_interrupts=1,
                        num_ext_interrupts=1,
                        scratchpad_addr_bits=10,
                        tcram_size=64,
@@ -142,7 +84,7 @@ ORCA_BUILDS = \
                        branch_predictors=0,
                        pipeline_stages=5,
                        lve_enable=0,
-                       enable_ext_interrupts=0,
+                       enable_ext_interrupts=1,
                        num_ext_interrupts=1,
                        scratchpad_addr_bits=10,
                        tcram_size=64,
@@ -151,7 +93,10 @@ ORCA_BUILDS = \
                        dram_width=32,
                        burst_en=0,
                        power_optimized=0,
-                       cache_enable=1),
+                       cache_enable=1,
+                       zynq='arm',
+                       vivado=True,
+                       uart_cfg=ZEDBOARD_UART_CFG),
 
      Mcsm_Orca_BuildCfg(system='sf2plus',
                         reset_vector=0,
