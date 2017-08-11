@@ -1,12 +1,12 @@
 #!/usr/bin/env python2.7
 try:
     import mpsse
-except e:
+except ImportError as e:
     import sys
-    sys.stderr("Need mpsse module, available at: "+
-               "https://code.google.com/archive/p/libmpsse/")
-    raise e
-#mpsse
+    sys.stderr.write("Need mpsse module, available at: "+
+               "https://code.google.com/archive/p/libmpsse/\n")
+    sys.exit(-1)
+
 def command(func):
     def func_wrapper(self,*args,**kwargs):
         self.dev.Start()
