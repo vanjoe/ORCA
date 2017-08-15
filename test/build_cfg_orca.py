@@ -12,8 +12,8 @@ QSUB_QLIST = 'main.q'
 # You don't need to add your own e-mail address if you have registered it
 # with git.
 #
-NOTIFY_LIST = ['ryan@vectorblox.com']
-
+#NOTIFY_LIST = ['ryan@vectorblox.com']
+NOTIFY_LIST = []
 ###########################################################################
 # If more than one programming cable is connected to the local PC,
 # specify which one you want used by quartus_pgm, nios2-download and
@@ -140,7 +140,7 @@ ORCA_BUILDS = \
                        power_optimized=0,
                        cache_enable=0)]
 
-                        
+
 BUILDS = ORCA_BUILDS
 
 ###########################################################################
