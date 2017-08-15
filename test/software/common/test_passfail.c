@@ -1,7 +1,8 @@
 #include "test_passfail.h"
 #include "printf.h"
+#include "uart.h"
 
-#define ALTERA 1
+#define ALTERA 0
 #define XILINX 0
 #define MICROSEMI 0
 #define LATTICE 0
@@ -16,13 +17,16 @@ volatile int *uart = (volatile int*) 0x01000070;
 #define UART_INIT() ((void)0)
 #define UART_PUTC(c) do {*((char*)uart) = (c);} while(0)
 #define UART_BUSY() ((uart[1]&0xFFFF0000) == 0)
+#define orca_printf printf
 #endif
 
 #if XILINX
 #define SYS_CLK 25000000 // Hz
 #define UART_INIT() ((void)0)
-#define UART_PUTC(c) do {ChangedPrint(c);} while(0)
-#define UART_BUSY() 0
+#define UART_PUTC(c) do {print_char(c);} while(0) 
+#define UART_BUSY() 0 
+#define orca_printf ChangedPrint
+
 #endif
 
 #if MICROSEMI
@@ -52,7 +56,7 @@ char stack_space[1024];
 void test_pass(void) {
 	init_printf(0, mputc);
 	while (1) {
-		printf("\nTest passed!\n");
+		orca_printf("\nTest passed!\n");
 		mputc(0, 4);
 		delayus(1E6);
 	}
@@ -64,7 +68,7 @@ void test_fail(void) {
 		// The risc-v tests fail immediately once an
 		// error has occured, so there will never be
 		// more than one error at a time.
-		printf("\nTest failed with 1 error.\n");
+		orca_printf("\nTest failed with 1 error.\n");	
 		mputc(0, 4);
 		delayus(1E6);
 	}

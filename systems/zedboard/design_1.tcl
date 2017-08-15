@@ -158,6 +158,7 @@ proc create_hier_cell_clock { parentCell nameHier } {
   # Create interface pins
 
   # Create pins
+  create_bd_pin -dir I -type rst aux_reset_in
   create_bd_pin -dir O clk_2x_out
   create_bd_pin -dir I -type clk clk_in1
   create_bd_pin -dir O -type clk clk_out
@@ -189,8 +190,12 @@ CONFIG.RESET_TYPE {ACTIVE_LOW} \
 
   # Create instance: rst_clk_wiz_100M, and set properties
   set rst_clk_wiz_100M [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_clk_wiz_100M ]
+  set_property -dict [ list \
+CONFIG.C_AUX_RESET_HIGH {1} \
+ ] $rst_clk_wiz_100M
 
   # Create port connections
+  connect_bd_net -net aux_reset_in_1 [get_bd_pins aux_reset_in] [get_bd_pins rst_clk_wiz_100M/aux_reset_in]
   connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins clk_out] [get_bd_pins clk_wiz/clk_out1] [get_bd_pins rst_clk_wiz_100M/slowest_sync_clk]
   connect_bd_net -net clk_wiz_clk_out2 [get_bd_pins clk_2x_out] [get_bd_pins clk_wiz/clk_out2]
   connect_bd_net -net clk_wiz_locked [get_bd_pins clk_wiz/locked] [get_bd_pins rst_clk_wiz_100M/dcm_locked]
@@ -246,39 +251,33 @@ proc create_root_design { parentCell } {
   # Create instance: Orca_0, and set properties
   set Orca_0 [ create_bd_cell -type ip -vlnv user.org:user:Orca:1.0 Orca_0 ]
   set_property -dict [ list \
+CONFIG.AVALON_ENABLE {0} \
 CONFIG.AXI_ENABLE {1} \
+CONFIG.BRANCH_PREDICTORS {0} \
+CONFIG.BURST_EN {0} \
+CONFIG.BYTE_SIZE {8} \
 CONFIG.CACHE_ENABLE {0} \
 CONFIG.CACHE_SIZE {32768} \
 CONFIG.COUNTER_LENGTH {32} \
 CONFIG.DIVIDE_ENABLE {1} \
 CONFIG.DRAM_WIDTH {32} \
+CONFIG.ENABLE_EXCEPTIONS {1} \
 CONFIG.ENABLE_EXT_INTERRUPTS {1} \
 CONFIG.FAMILY {XILINX} \
+CONFIG.INTERRUPT_VECTOR {512} \
 CONFIG.LINE_SIZE {16} \
+CONFIG.LVE_ENABLE {0} \
 CONFIG.MULTIPLY_ENABLE {1} \
+CONFIG.NUM_EXT_INTERRUPTS {1} \
+CONFIG.PIPELINE_STAGES {5} \
+CONFIG.POWER_OPTIMIZED {0} \
+CONFIG.REGISTER_SIZE {32} \
+CONFIG.RESET_VECTOR {0} \
+CONFIG.SCRATCHPAD_ADDR_BITS {10} \
+CONFIG.SHIFTER_MAX_CYCLES {1} \
 CONFIG.TCRAM_SIZE {64} \
+CONFIG.WISHBONE_ENABLE {0} \
  ] $Orca_0
-
-  set_property -dict [ list \
-CONFIG.SUPPORTS_NARROW_BURST {1} \
-CONFIG.NUM_READ_OUTSTANDING {2} \
-CONFIG.NUM_WRITE_OUTSTANDING {2} \
-CONFIG.MAX_BURST_LENGTH {16} \
- ] [get_bd_intf_pins /Orca_0/data]
-
-  set_property -dict [ list \
-CONFIG.SUPPORTS_NARROW_BURST {1} \
-CONFIG.NUM_READ_OUTSTANDING {2} \
-CONFIG.NUM_WRITE_OUTSTANDING {2} \
-CONFIG.MAX_BURST_LENGTH {16} \
- ] [get_bd_intf_pins /Orca_0/iram]
-
-  set_property -dict [ list \
-CONFIG.SUPPORTS_NARROW_BURST {1} \
-CONFIG.NUM_READ_OUTSTANDING {2} \
-CONFIG.NUM_WRITE_OUTSTANDING {2} \
-CONFIG.MAX_BURST_LENGTH {16} \
- ] [get_bd_intf_pins /Orca_0/itcram]
 
   # Create instance: axi_gpio_0, and set properties
   set axi_gpio_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio_0 ]
@@ -291,6 +290,7 @@ CONFIG.USE_BOARD_FLOW {true} \
   set axi_mem_intercon [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_mem_intercon ]
   set_property -dict [ list \
 CONFIG.NUM_MI {4} \
+CONFIG.NUM_SI {1} \
  ] $axi_mem_intercon
 
   # Create instance: axi_mem_intercon_1, and set properties

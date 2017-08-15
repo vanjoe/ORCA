@@ -35,7 +35,7 @@ vpath %.c $(src_dir)
 define compile_template_S
 
 $$($(1)_p_tests): $(1)-p-%: $(1)/%.S
-	$$(RISCV_GCC) $$(RISCV_GCC_OPTS) -I$(src_dir)/../common/env/p -I$(src_dir)/../common/macros/scalar -I$(src_dir)/../common -T$(src_dir)/../common/link.ld $$< -o $$@
+	$$(RISCV_GCC) $$(RISCV_GCC_OPTS) -I$(src_dir)/../common/env/p -I$(src_dir)/../common/macros/scalar -I$(src_dir)/../common -T$(src_dir)/../common/link.ld $(src_dir)/../common/*.c $$< -o $$@
 $(1)_tests += $$($(1)_p_tests)
 
 $(1)_tests_dump = $$(addsuffix .dump, $$($(1)_tests))
@@ -51,7 +51,7 @@ endef
 define compile_template_c
 
 $$($(1)_p_tests): $(1)-p-%: $(1)/%.c
-	$$(RISCV_GCC) $$(RISCV_GCC_OPTS) -I$(src_dir)/../common/env/p -I$(src_dir)/../common/macros/scalar -I$(src_dir)/../common -T$(src_dir)/../common/link.ld ../common/crt.S $$< -o $$@
+	$$(RISCV_GCC) $$(RISCV_GCC_OPTS) -I$(src_dir)/../common/env/p -I$(src_dir)/../common/macros/scalar -I$(src_dir)/../common -T$(src_dir)/../common/link.ld ../common/crt.S $(src_dir)/../common/*.c $$< -o $$@
 $(1)_tests += $$($(1)_p_tests)
 
 $(1)_tests_dump = $$(addsuffix .dump, $$($(1)_tests))

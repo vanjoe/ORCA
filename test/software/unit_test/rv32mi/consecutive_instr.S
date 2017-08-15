@@ -20,7 +20,7 @@ test_2: /*consecutive shifts*/
 test_3: /*consecutive loads*/
 		  la      x1, data_3_0
 		  la      x2, data_3_1
-        lw      x3, 0(x1)
+      lw      x3, 0(x1)
 		  lw      x4, 0(x2)
 		  addi    x28,x0,3
 		  li      x29,0xAAAAAAAA
@@ -33,7 +33,7 @@ test_4: /*consecutive stores*/
 		  la      x2, data_4_1
 		  li      x3,0xAAAAAAAA
 		  li      x4,0xBBBBBBBB
-        sw      x3, 0(x1)
+      sw      x3, 0(x1)
 		  sw      x4, 0(x2)
 		  addi    x28,x0,4
 		  lw      x5, 0(x1)

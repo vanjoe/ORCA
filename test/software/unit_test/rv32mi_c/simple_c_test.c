@@ -1,4 +1,7 @@
-
+#include "printf.h"
+#include "uart.h"
+#include "test_passfail.h"
+#include "handle_interrupt.h"
 
 int test_2()
 {
@@ -8,21 +11,15 @@ int test_2()
 }
 
 //this macro runs the test, and returns the test number on failure
-#define do_test(i) do{if ( test_##i () ) return i;}while(0)
+#define do_test(i) do { if ( test_##i () ) { test_fail(); return i; } } while(0)
 
 int main()
 {
 
   do_test(2);
 
+	test_pass();
   return 0;
 
 }
 
-int handle_interrupt(int cause, int epc, int regs[32]) {
-	if (!((cause >> 31) & 0x1)) {
-		// Handle illegal instruction.
-		for (;;);
-	}
-	return epc;
-}
