@@ -132,8 +132,7 @@ XIL_BD_FILE=$(XIL_PROJ_DIR)/$(XIL_PROJ_NAME).srcs/sources_1/bd/design_1/design_1
 XIL_BLOCK_DESIGN_GEN_STAMP=$(XIL_BD_FILE).gen_stamp
 XIL_HWDEF_FILE=$(XIL_PROJ_DIR)/$(XIL_PROJ_NAME).srcs/sources_1/bd/design_1/design_1.hwdef
 XIL_SYNTH_LOG=$(XIL_PROJ_DIR)/$(XIL_PROJ_NAME).runs/synth_1/runme.log
-XIL_IMPL_LOG=$(XIL_PROJ_DIR)/$(XIL_PROJ_NAME).runs/impl_1/runme.log
-XIL_IMPL_DESIGN_STAMP=$(XIL_IMPL_LOG).impl_stamp
+XIL_IMPL_TIMING_RPT=$(XIL_PROJ_DIR)/$(XIL_PROJ_NAME).runs/impl_1/design_1_wrapper_timing_summary_routed.rpt
 XIL_VIVADO=vivado -mode tcl -nolog -nojournal
 
 XIL_MMI_TCL=write_mmi.tcl
@@ -152,14 +151,14 @@ $(XIL_BLOCK_DESIGN_GEN_STAMP): $(XIL_BD_FILE)
 $(XIL_SYNTH_LOG): $(XIL_BLOCK_DESIGN_GEN_STAMP) 
 	echo "project_synth $(XIL_PROJ_DIR) $(XIL_PROJ_NAME)" | $(XIL_VIVADO) -source $(XIL_PROJECT_TCL)
 
-$(XIL_IMPL_DESIGN_STAMP): $(XIL_SYNTH_LOG)
+$(XIL_IMPL_TIMING_RPT): $(XIL_SYNTH_LOG)
 	echo "project_impl $(XIL_PROJ_DIR) $(XIL_PROJ_NAME)" | $(XIL_VIVADO) -source $(XIL_PROJECT_TCL)
 	touch $@
 
-$(XIL_PROJ_NAME).bit: $(XIL_IMPL_DESIGN_STAMP)
+$(XIL_PROJ_NAME).bit: $(XIL_IMPL_TIMING_RPT)
 	echo "export_bit $(XIL_PROJ_DIR) $(XIL_PROJ_NAME)" | $(XIL_VIVADO) -source $(XIL_PROJECT_TCL)
 
-$(XIL_MMI_FILE): $(XIL_IMPL_DESIGN_STAMP) 
+$(XIL_MMI_FILE): $(XIL_IMPL_TIMING_RPT) 
 	echo "mmi_wrapper $(XIL_PROJ_DIR) $(XIL_PROJ_NAME) $(XIL_BRAM_NAME)" | $(XIL_VIVADO) -source $(XIL_MMI_TCL)
 
 $(XIL_OUT_BIT): $(XIL_PROJ_NAME).bit $(XIL_MMI_FILE)

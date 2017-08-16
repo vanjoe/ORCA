@@ -15,7 +15,7 @@ BD_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/design_1/design_1.bd
 BLOCK_DESIGN_GEN_STAMP=$(BD_FILE).gen_stamp
 HWDEF_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/design_1/design_1.hwdef
 SYNTH_LOG=$(PROJ_DIR)/$(PROJ_NAME).runs/synth_1/runme.log
-IMPL_LOG=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/runme.log
+IMPL_TIMING_RPT=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/design_1_wrapper_timing_summary_routed.rpt
 VIVADO=vivado -mode tcl -nolog -nojournal
 
 MMI_TCL=write_mmi.tcl
@@ -37,13 +37,13 @@ $(BLOCK_DESIGN_GEN_STAMP): $(BD_FILE)
 $(SYNTH_LOG): $(BLOCK_DESIGN_GEN_STAMP) 
 	echo "project_synth $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
 
-$(IMPL_LOG): $(SYNTH_LOG)
+$(IMPL_TIMING_RPT): $(SYNTH_LOG)
 	echo "project_impl $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
 
-$(PROJ_NAME).bit: $(IMPL_LOG)
+$(PROJ_NAME).bit: $(IMPL_TIMING_RPT)
 	echo "export_bit $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
 
-$(MMI_FILE): $(IMPL_LOG) 
+$(MMI_FILE): $(IMPL_TIMING_RPT) 
 	echo "mmi_wrapper $(PROJ_DIR) $(PROJ_NAME) $(BRAM_NAME)" | $(VIVADO) -source $(MMI_TCL)
 
 $(ELF_FILE):
@@ -73,7 +73,7 @@ trigger_bitstream:
   	--out $(OUT_BIT) 
 
 pgm: $(OUT_BIT)
-	echo "pgm_bits $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PGM_TCL)
+	echo "pgm_bits $(PROJ_DIR) $(PROJ_NAME) $(OUT_BIT)" | $(VIVADO) -source $(PGM_TCL)
 
 clean:
 	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) $(MMI_FILE) *.jou *.log
