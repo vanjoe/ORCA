@@ -52,11 +52,10 @@ void mputc(void *p, char c) {
 	UART_PUTC(c);
 }
 
-char stack_space[1024];
 void test_pass(void) {
 	init_printf(0, mputc);
 	while (1) {
-		orca_printf("\nTest passed!\n");
+		orca_printf("\r\nTest passed!\r\n");
 		mputc(0, 4);
 		delayus(1E6);
 	}
@@ -68,7 +67,7 @@ void test_fail(void) {
 		// The risc-v tests fail immediately once an
 		// error has occured, so there will never be
 		// more than one error at a time.
-		orca_printf("\nTest failed with 1 error.\n");	
+		orca_printf("\r\nTest failed with 1 error.\r\n");	
 		mputc(0, 4);
 		delayus(1E6);
 	}
