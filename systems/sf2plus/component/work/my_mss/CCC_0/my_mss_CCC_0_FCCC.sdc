@@ -1,6 +1,6 @@
 set_component my_mss_CCC_0_FCCC
 # Microsemi Corp.
-# Date: 2017-Jun-28 13:57:53
+# Date: 2017-Aug-16 15:59:01
 #
 
 create_clock -period 20 [ get_pins { CCC_INST/RCOSC_25_50MHZ } ]
