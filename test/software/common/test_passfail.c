@@ -1,13 +1,14 @@
 #include "test_passfail.h"
 #include "printf.h"
+#include "uart.h"
 
-#define ALTERA 1
+#define ALTERA 0
 #define XILINX 0
 #define MICROSEMI 0
 #define LATTICE 0
 
 // UART I/O is family specific.
-// Edit the family above in to reflect the family 
+// Edit the family above in to reflect the family
 // being tested.
 
 #if ALTERA
@@ -16,13 +17,16 @@ volatile int *uart = (volatile int*) 0x01000070;
 #define UART_INIT() ((void)0)
 #define UART_PUTC(c) do {*((char*)uart) = (c);} while(0)
 #define UART_BUSY() ((uart[1]&0xFFFF0000) == 0)
+#define orca_printf printf
 #endif
 
 #if XILINX
 #define SYS_CLK 25000000 // Hz
 #define UART_INIT() ((void)0)
-#define UART_PUTC(c) do {ChangedPrint(c);} while(0) 
+#define UART_PUTC(c) do {print_char(c);} while(0) 
 #define UART_BUSY() 0 
+#define orca_printf ChangedPrint
+
 #endif
 
 #if MICROSEMI
@@ -45,26 +49,26 @@ static void delayus(int us) {
 
 void mputc(void *p, char c) {
 	while(UART_BUSY());
-	UART_PUTC(c);	
+	UART_PUTC(c);
 }
 
 void test_pass(void) {
 	init_printf(0, mputc);
 	while (1) {
-		delayus(1E6);
-		printf("\nTest passed!\n");
+		orca_printf("\r\nTest passed!\r\n");
 		mputc(0, 4);
+		delayus(1E6);
 	}
 }
 
 void test_fail(void) {
 	init_printf(0, mputc);
 	while (1) {
-		delayus(1E6);
 		// The risc-v tests fail immediately once an
 		// error has occured, so there will never be
 		// more than one error at a time.
-		printf("\nTest failed with 1 error.");	
+		orca_printf("\r\nTest failed with 1 error.\r\n");	
 		mputc(0, 4);
+		delayus(1E6);
 	}
 }

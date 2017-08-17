@@ -19,7 +19,7 @@ entity idram is
     clk   : in std_logic;
     reset : in std_logic;
 
-    instr_AWID    : in std_logic_vector(4 downto 0);
+    instr_AWID    : in std_logic_vector(13 downto 0);
     instr_AWADDR  : in std_logic_vector(ADDR_WIDTH-1 downto 0);
     instr_AWLEN   : in std_logic_vector(7-(4*(INSTR_PORT_TYPE mod 2)) downto 0);
     instr_AWSIZE  : in std_logic_vector(2 downto 0);
@@ -31,19 +31,19 @@ entity idram is
     instr_AWVALID : in  std_logic;
     instr_AWREADY : out std_logic;
 
-    instr_WID    : in  std_logic_vector(4 downto 0);
+    instr_WID    : in  std_logic_vector(13 downto 0);
     instr_WDATA  : in  std_logic_vector(RAM_WIDTH -1 downto 0);
     instr_WSTRB  : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE -1 downto 0);
     instr_WLAST  : in  std_logic;
     instr_WVALID : in  std_logic;
     instr_WREADY : out std_logic;
 
-    instr_BID    : out std_logic_vector(4 downto 0);
+    instr_BID    : out std_logic_vector(13 downto 0);
     instr_BRESP  : out std_logic_vector(1 downto 0);
     instr_BVALID : out std_logic;
     instr_BREADY : in  std_logic;
 
-    instr_ARID    : in  std_logic_vector(4 downto 0);
+    instr_ARID    : in  std_logic_vector(13 downto 0);
     instr_ARADDR  : in  std_logic_vector(ADDR_WIDTH -1 downto 0);
     instr_ARLEN   : in  std_logic_vector(7-(4*(INSTR_PORT_TYPE mod 2)) downto 0);
     instr_ARSIZE  : in  std_logic_vector(2 downto 0);
@@ -54,14 +54,14 @@ entity idram is
     instr_ARVALID : in  std_logic;
     instr_ARREADY : out std_logic;
 
-    instr_RID    : out std_logic_vector(4 downto 0);
+    instr_RID    : out std_logic_vector(13 downto 0);
     instr_RDATA  : out std_logic_vector(RAM_WIDTH -1 downto 0);
     instr_RRESP  : out std_logic_vector(1 downto 0);
     instr_RLAST  : out std_logic;
     instr_RVALID : out std_logic;
     instr_RREADY : in  std_logic;
 
-    data_AWID    : in std_logic_vector(4 downto 0);
+    data_AWID    : in std_logic_vector(13 downto 0);
     data_AWADDR  : in std_logic_vector(ADDR_WIDTH-1 downto 0);
     data_AWLEN   : in std_logic_vector(7-(4*(DATA_PORT_TYPE mod 2)) downto 0);
     data_AWSIZE  : in std_logic_vector(2 downto 0);
@@ -73,19 +73,19 @@ entity idram is
     data_AWVALID : in  std_logic;
     data_AWREADY : out std_logic;
 
-    data_WID    : in  std_logic_vector(4 downto 0);
+    data_WID    : in  std_logic_vector(13 downto 0);
     data_WDATA  : in  std_logic_vector(RAM_WIDTH -1 downto 0);
     data_WSTRB  : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE -1 downto 0);
     data_WLAST  : in  std_logic;
     data_WVALID : in  std_logic;
     data_WREADY : out std_logic;
 
-    data_BID    : out std_logic_vector(4 downto 0);
+    data_BID    : out std_logic_vector(13 downto 0);
     data_BRESP  : out std_logic_vector(1 downto 0);
     data_BVALID : out std_logic;
     data_BREADY : in  std_logic;
 
-    data_ARID    : in  std_logic_vector(4 downto 0);
+    data_ARID    : in  std_logic_vector(13 downto 0);
     data_ARADDR  : in  std_logic_vector(ADDR_WIDTH -1 downto 0);
     data_ARLEN   : in  std_logic_vector(7-(4*(DATA_PORT_TYPE mod 2)) downto 0);
     data_ARSIZE  : in  std_logic_vector(2 downto 0);
@@ -96,7 +96,7 @@ entity idram is
     data_ARVALID : in  std_logic;
     data_ARREADY : out std_logic;
 
-    data_RID    : out std_logic_vector(4 downto 0);
+    data_RID    : out std_logic_vector(13 downto 0);
     data_RDATA  : out std_logic_vector(RAM_WIDTH -1 downto 0);
     data_RRESP  : out std_logic_vector(1 downto 0);
     data_RLAST  : out std_logic;

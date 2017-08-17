@@ -53,6 +53,24 @@ To begin triggering an ILA core right at startup (rather than on user input),
 4) Program the device using out.bit in the orca/zedboard directory, as well as
 the debug nets in the orca/zedboard/project/project.runs/impl1/ subdirectory.
 
+## ILA Troubleshooting
+It is fairly common for an ila core (or other JTAG component) to not be visible
+on the Vivado hardware server. One possible cause of this issue is that the Zynq PS
+may not have been properly initialized. To remedy this, before flashing the FPGA 
+bitstream, first run the following:
+`xsdb xsdb_fix.tcl`
+This initializes the PS, and it should allow for the ila core to be recongnized.
+
+## JTAG Frequency
+It is sometimes possible that the JTAG frequency is too fast for the debug JTAG cores
+in the design. This can cause JTAG data (for example, ila data) to become corrupted.
+A possible fix for this issue is to reduce the JTAG frequency. To do this, in the side panel
+under Program and Debug, select Open Target -> Open New Target..., then select the local server
+option from the drop down menu. Click next, and now a drop down menu should appear that shows 
+the acceptable JTAG frequencies. The default should be 15 MHz. Select a lower frequency (5 MHz
+should be fine). Click next, then finish.
+
+
 ## Interrupts
 
 Right now, the ORCA will respond to a vector of level-sensitive interrupts as

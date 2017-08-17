@@ -1,9 +1,9 @@
-proc pgm_bits {proj_dir proj_name} {
+proc pgm_bits {proj_dir proj_name bitstream} {
 	open_project $proj_dir/$proj_name.xpr
 	open_hw
 	connect_hw_server
 	open_hw_target
-	set_property PROGRAM.FILE {out.bit} [get_hw_devices xc7z020_1]
+	set_property PROGRAM.FILE $bitstream [get_hw_devices xc7z020_1]
 	set_property PROBES.FILE {} [get_hw_devices xc7z020_1]
 	set_property FULL_PROBES.FILE {} [get_hw_devices xc7z020_1]
 	current_hw_device [get_hw_devices xc7z020_1]
