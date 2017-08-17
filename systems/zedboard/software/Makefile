@@ -1,5 +1,6 @@
 #Optionally add sources here/set SW_PROJECT variable
 -include config.mk
+-include ../config.mk
 
 all:
 AS_SRCS += crt.S
@@ -12,7 +13,9 @@ else ifeq ($(C_SRCS), uart.c)
   C_SRCS  += hello_world.c
 endif
 
-
+#These should come from the BSP
+IDRAM_BASE_ADDRESS ?= 0x00000000
+IDRAM_MAX_ADDRESS  ?= 0x0001FFFF
 
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
@@ -53,7 +56,7 @@ $(TARGET).mem: $(TARGET).bin
 hex_to_coe: hex_to_coe.cpp
 	g++ hex_to_coe.cpp -o hex_to_coe
 $(TARGET).coe: $(TARGET).hex hex_to_coe
-	./hex_to_coe
+	./hex_to_coe $(IDRAM_BASE_ADDRESS) $(IDRAM_MAX_ADDRESS)
 
 ifndef FORMAT
 FORMAT=elf

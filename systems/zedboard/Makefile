@@ -1,9 +1,10 @@
-BD_NAME=design_1
-PROJECT_TCL=project.tcl
-BD_TCL=$(BD_NAME).tcl
-PGM_TCL=pgm.tcl
+-include config.mk
 
-PROJ_DIR=project/
+BD_NAME      = design_1
+PROJECT_TCL  = project.tcl
+BD_TCL      ?= $(BD_NAME).tcl
+
+PROJ_DIR=project
 PROJ_NAME=project
 
 SW_DIR=software
@@ -15,12 +16,13 @@ BD_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/$(BD_NAME).bd
 HWH_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/hw_handoff/$(BD_NAME).hwh
 SYNTH_DCP=$(PROJ_DIR)/$(PROJ_NAME).runs/synth_1/$(BD_NAME)_wrapper.dcp
 IMPL_BIT=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.bit
-VIVADO=vivado -mode tcl -nolog -nojournal
 
 MMI_TCL=write_mmi.tcl
 BRAM_NAME=idram_gen
 MMI_FILE=$(BRAM_NAME).mmi
 OUT_BIT=out.bit
+
+PGM_TCL=pgm.tcl
 
 .PHONY: all
 all: $(OUT_BIT)
@@ -51,8 +53,12 @@ $(SYNTH_DCP): $(HWH_FILE)
 $(IMPL_BIT): $(SYNTH_DCP)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs project_impl $(PROJ_DIR) $(PROJ_NAME)
 
-$(MMI_FILE): $(IMPL_BIT) 
-	$(VIVADO_SOURCE) $(MMI_TCL) -tclargs mmi_wrapper $(PROJ_DIR) $(PROJ_NAME) $(BRAM_NAME)
+#These should come from the BSP
+IDRAM_BASE_ADDRESS ?= 0x00000000
+IDRAM_MAX_ADDRESS  ?= 0x0001FFFF
+
+$(MMI_FILE): $(IMPL_BIT) $(MMI_TCL)
+	$(VIVADO_SOURCE) $(MMI_TCL) -tclargs mmi_wrapper $(PROJ_DIR) $(PROJ_NAME) $(BRAM_NAME) $(IDRAM_BASE_ADDRESS)
 
 $(ELF_FILE)::
 	make -C $(SW_DIR)
@@ -78,7 +84,7 @@ pgm: $(OUT_BIT)
 
 .PHONY: clean
 clean:
-	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) $(MMI_FILE) *.jou *.log
+	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) $(MMI_FILE) *.jou *.log tmp.* vivado_pid*.zip export_sim/
 	make clean -C $(SW_DIR)
 
 .DELETE_ON_ERROR:

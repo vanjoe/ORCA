@@ -1,5 +1,6 @@
 /* For this test, the cache size should be set to 256 bytes,
- * the cache line size should be set to 16 bytes, as well as the TCRAM size should 
+
+        * the cache line size should be set to 16 bytes, as well as the TCRAM size should 
  * be set to 64 bytes.
  * In the future, consider automating this by using rdtime as a cycle count to 
  * ensure single cycle accesses are performed at the correct times.
@@ -12,7 +13,7 @@
 .align 8
 cache_test:
   // This will first test a miss on invalid data, then consecutive hits. 
-  li a0, -1
+  li a0, 9
   li a1, 1
   li a2, 1 
   addi a1, a1, 0
@@ -76,5 +77,21 @@ fail5:
   li a0, 5
   ret
 fail:
-  li a0, -1
+  li a0, 8
   ret
+
+.globl idram_timing_loop
+.type idram_timing_loop, @function
+        
+//These get copied into cacheable/uncacheable memory for testing timing
+idram_timing_loop:
+  beq  a0, x0, idram_timing_loop_ret
+  addi a0, a0, -1
+  jal  x0, idram_timing_loop
+idram_timing_loop_ret:
+  ret
+
+.globl idram_timing_loop_end
+.type idram_timing_loop_end, @object
+idram_timing_loop_end:
+.word 0

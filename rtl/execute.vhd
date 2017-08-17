@@ -15,7 +15,7 @@ entity execute is
   generic(
     REGISTER_SIZE       : positive;
     SIGN_EXTENSION_SIZE : positive;
-    INTERRUPT_VECTOR    : integer;
+    INTERRUPT_VECTOR    : std_logic_vector(31 downto 0);
     POWER_OPTIMIZED     : boolean;
     MULTIPLY_ENABLE     : boolean;
     DIVIDE_ENABLE       : boolean;
@@ -66,10 +66,10 @@ entity execute is
     sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     sp_ack       : out std_logic;
 
-    external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    pipeline_empty      : in  std_logic;
-    ifetch_next_pc      : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-		fetch_in_flight			: in	std_logic;
+    external_interrupts : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    pipeline_empty      : in     std_logic;
+    ifetch_next_pc      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    fetch_in_flight     : in     std_logic;
     interrupt_pending   : buffer std_logic);
 
 

@@ -124,21 +124,17 @@ set_parameter_property WISHBONE_ENABLE HDL_PARAMETER true
 set_parameter_property WISHBONE_ENABLE visible false
 set_parameter_property WISHBONE_ENABLE derived true
 
-add_parameter RESET_VECTOR NATURAL 0 
-set_parameter_property RESET_VECTOR DEFAULT_VALUE 0
+add_parameter RESET_VECTOR Std_Logic_Vector 32'h00000000
+set_parameter_property RESET_VECTOR DEFAULT_VALUE 32'h00000000
 set_parameter_property RESET_VECTOR DISPLAY_NAME "Reset Vector"
-set_parameter_property RESET_VECTOR TYPE integer
 set_parameter_property RESET_VECTOR UNITS None
 set_parameter_property RESET_VECTOR HDL_PARAMETER true
-set_display_item_property RESET_VECTOR DISPLAY_HINT hexadecimal
 
-add_parameter INTERRUPT_VECTOR NATURAL 512
-set_parameter_property INTERRUPT_VECTOR DEFAULT_VALUE 512
+add_parameter INTERRUPT_VECTOR Std_Logic_Vector 32'h00000200
+set_parameter_property INTERRUPT_VECTOR DEFAULT_VALUE 32'h00000200
 set_parameter_property INTERRUPT_VECTOR DISPLAY_NAME "Interrupt Vector"
-set_parameter_property INTERRUPT_VECTOR TYPE integer
 set_parameter_property INTERRUPT_VECTOR UNITS None
 set_parameter_property INTERRUPT_VECTOR HDL_PARAMETER true
-set_display_item_property INTERRUPT_VECTOR DISPLAY_HINT hexadecimal
 
 add_parameter MULTIPLY_ENABLE natural 1
 set_parameter_property MULTIPLY_ENABLE DEFAULT_VALUE 1
@@ -255,11 +251,11 @@ set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
 set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
 set_parameter_property SCRATCHPAD_ADDR_BITS derived true
 
-add_parameter IUC_ADDR_BASE NATURAL 0
+add_parameter IUC_ADDR_BASE Std_Logic_Vector 32'h00000000
 set_parameter_property IUC_ADDR_BASE HDL_PARAMETER true
 set_parameter_property IUC_ADDR_BASE visible false 
 
-add_parameter IUC_ADDR_LAST NATURAL 0
+add_parameter IUC_ADDR_LAST Std_Logic_Vector 32'h00000000
 set_parameter_property IUC_ADDR_LAST HDL_PARAMETER true
 set_parameter_property IUC_ADDR_LAST visible false 
 

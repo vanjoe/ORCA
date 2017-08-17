@@ -12,4 +12,5 @@ void XUARTChanged_SendByte(volatile void *BaseAddress, uint8_t Data);
 void outbyte(char c);
 void ChangedPrint(char *ptr);
 void print_char(char c);
-void ps7_printf(char *format, ...);
+void print_hex(uint32_t value);
+

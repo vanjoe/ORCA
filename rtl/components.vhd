@@ -7,204 +7,221 @@ use work.utils.all;
 use work.constants_pkg.all;
 
 package rv_components is
-
   component orca is
     generic (
-      REGISTER_SIZE   : integer              := 32;
-      BYTE_SIZE       : integer              := 8;
+      REGISTER_SIZE : positive range 32 to 32 := 32;
+
       --BUS Select
       AVALON_ENABLE   : integer range 0 to 1 := 0;
       WISHBONE_ENABLE : integer range 0 to 1 := 0;
       AXI_ENABLE      : integer range 0 to 1 := 0;
 
-      RESET_VECTOR          : integer                    := 16#00000000#;
-      INTERRUPT_VECTOR      : integer                    := 16#00000200#;
-      MULTIPLY_ENABLE       : natural range 0 to 1       := 0;
-      DIVIDE_ENABLE         : natural range 0 to 1       := 0;
-      SHIFTER_MAX_CYCLES    : natural                    := 1;
-      COUNTER_LENGTH        : natural                    := 0;
-      ENABLE_EXCEPTIONS     : natural                    := 1;
-      BRANCH_PREDICTORS     : natural                    := 0;
-      PIPELINE_STAGES       : natural range 4 to 5       := 5;
-      LVE_ENABLE            : natural range 0 to 1       := 0;
-      ENABLE_EXT_INTERRUPTS : natural range 0 to 1       := 0;
-      NUM_EXT_INTERRUPTS    : integer range 1 to 32      := 1;
-      SCRATCHPAD_ADDR_BITS  : integer                    := 10;
-      TCRAM_SIZE            : integer range 64 to 524288 := 32768;
-      CACHE_SIZE            : integer range 64 to 524288 := 32768;
-      LINE_SIZE             : integer range 16 to 64     := 64;
-      DRAM_WIDTH            : integer                    := 32;
-      BURST_EN              : integer range 0 to 1       := 0;
-      POWER_OPTIMIZED       : integer range 0 to 1       := 0;
-      CACHE_ENABLE          : integer range 0 to 1       := 0;
-      FAMILY                : string                     := "ALTERA");
-    port (
+      RESET_VECTOR          : std_logic_vector(31 downto 0) := X"00000000";
+      INTERRUPT_VECTOR      : std_logic_vector(31 downto 0) := X"00000200";
+      MULTIPLY_ENABLE       : natural range 0 to 1          := 0;
+      DIVIDE_ENABLE         : natural range 0 to 1          := 0;
+      SHIFTER_MAX_CYCLES    : natural                       := 1;
+      COUNTER_LENGTH        : natural                       := 0;
+      ENABLE_EXCEPTIONS     : natural                       := 1;
+      BRANCH_PREDICTORS     : natural                       := 0;
+      PIPELINE_STAGES       : natural range 4 to 5          := 5;
+      LVE_ENABLE            : natural range 0 to 1          := 0;
+      ENABLE_EXT_INTERRUPTS : natural range 0 to 1          := 0;
+      NUM_EXT_INTERRUPTS    : integer range 1 to 32         := 1;
+      SCRATCHPAD_ADDR_BITS  : integer                       := 10;
+      IUC_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
+      IUC_ADDR_LAST         : std_logic_vector(31 downto 0) := X"00000000";
+      ICACHE_SIZE           : natural                       := 8192;
+      ICACHE_LINE_SIZE      : integer range 16 to 256       := 32;
+      DRAM_WIDTH            : integer                       := 32;
+      BURST_EN              : integer range 0 to 1          := 0;
+      POWER_OPTIMIZED       : integer range 0 to 1          := 0;
+      FAMILY                : string                        := "ALTERA");
+    port(
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
 
-      --avalon data bus
-      avm_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      avm_data_read                 : out std_logic;
-      avm_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-      avm_data_write                : out std_logic;
-      avm_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_data_waitrequest          : in  std_logic                                  := '0';
-      avm_data_readdatavalid        : in  std_logic                                  := '0';
-      --avalon instruction bus
+      -------------------------------------------------------------------------------
+      --AVALON
+      -------------------------------------------------------------------------------
+      --Avalon data master
+      avm_data_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      avm_data_byteenable    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      avm_data_read          : out std_logic;
+      avm_data_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+      avm_data_write         : out std_logic;
+      avm_data_writedata     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      avm_data_waitrequest   : in  std_logic                                  := '0';
+      avm_data_readdatavalid : in  std_logic                                  := '0';
+
+      --Avalon instruction master
       avm_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       avm_instruction_read          : out std_logic;
       avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
       avm_instruction_waitrequest   : in  std_logic                                  := '0';
       avm_instruction_readdatavalid : in  std_logic                                  := '0';
-      --wishbone data bus
-      data_ADR_O                    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_DAT_I                    : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-      data_DAT_O                    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_WE_O                     : out std_logic;
-      data_SEL_O                    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      data_STB_O                    : out std_logic;
-      data_ACK_I                    : in  std_logic                                  := '0';
-      data_CYC_O                    : out std_logic;
-      data_CTI_O                    : out std_logic_vector(2 downto 0);
-      data_STALL_I                  : in  std_logic                                  := '0';
-      --wishbone instruction bus
-      instr_ADR_O                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instr_DAT_I                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-      instr_STB_O                   : out std_logic;
-      instr_ACK_I                   : in  std_logic                                  := '0';
-      instr_CYC_O                   : out std_logic;
-      instr_CTI_O                   : out std_logic_vector(2 downto 0);
-      instr_STALL_I                 : in  std_logic                                  := '0';
 
+      -------------------------------------------------------------------------------
+      --WISHBONE
+      -------------------------------------------------------------------------------
+      --WISHBONE data master
+      data_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+      data_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_WE_O    : out std_logic;
+      data_SEL_O   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      data_STB_O   : out std_logic;
+      data_ACK_I   : in  std_logic                                  := '0';
+      data_CYC_O   : out std_logic;
+      data_CTI_O   : out std_logic_vector(2 downto 0);
+      data_STALL_I : in  std_logic                                  := '0';
+
+      --WISHBONE instruction master
+      instr_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instr_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+      instr_STB_O   : out std_logic;
+      instr_ACK_I   : in  std_logic                                  := '0';
+      instr_CYC_O   : out std_logic;
+      instr_CTI_O   : out std_logic_vector(2 downto 0);
+      instr_STALL_I : in  std_logic                                  := '0';
+
+      -------------------------------------------------------------------------------
       --AXI
-      data_AWID    : out std_logic_vector(3 downto 0);
-      data_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      data_AWLEN   : out std_logic_vector(3 downto 0);
-      data_AWSIZE  : out std_logic_vector(2 downto 0);
-      data_AWBURST : out std_logic_vector(1 downto 0);
-      data_AWLOCK  : out std_logic_vector(1 downto 0);
-      data_AWCACHE : out std_logic_vector(3 downto 0);
-      data_AWPROT  : out std_logic_vector(2 downto 0);
-      data_AWVALID : out std_logic;
-      data_AWREADY : in  std_logic := '0';
+      -------------------------------------------------------------------------------
+      --AXI4-Lite uncached data master
+      --A full AXI3 interface is exposed for systems that require it, but
+      --only the A4L signals are needed
+      DUC_AWID    : out std_logic_vector(3 downto 0);
+      DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      DUC_AWLEN   : out std_logic_vector(3 downto 0);
+      DUC_AWSIZE  : out std_logic_vector(2 downto 0);
+      DUC_AWBURST : out std_logic_vector(1 downto 0);
+      DUC_AWLOCK  : out std_logic_vector(1 downto 0);
+      DUC_AWCACHE : out std_logic_vector(3 downto 0);
+      DUC_AWPROT  : out std_logic_vector(2 downto 0);
+      DUC_AWVALID : out std_logic;
+      DUC_AWREADY : in  std_logic := '0';
 
-      data_WID    : out std_logic_vector(3 downto 0);
-      data_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      data_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      data_WLAST  : out std_logic;
-      data_WVALID : out std_logic;
-      data_WREADY : in  std_logic := '0';
+      DUC_WID    : out std_logic_vector(3 downto 0);
+      DUC_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      DUC_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      DUC_WLAST  : out std_logic;
+      DUC_WVALID : out std_logic;
+      DUC_WREADY : in  std_logic := '0';
 
-      data_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
-      data_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
-      data_BVALID : in  std_logic                    := '0';
-      data_BREADY : out std_logic;
+      DUC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
+      DUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+      DUC_BVALID : in  std_logic                    := '0';
+      DUC_BREADY : out std_logic;
 
-      data_ARID    : out std_logic_vector(3 downto 0);
-      data_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      data_ARLEN   : out std_logic_vector(3 downto 0);
-      data_ARSIZE  : out std_logic_vector(2 downto 0);
-      data_ARBURST : out std_logic_vector(1 downto 0);
-      data_ARLOCK  : out std_logic_vector(1 downto 0);
-      data_ARCACHE : out std_logic_vector(3 downto 0);
-      data_ARPROT  : out std_logic_vector(2 downto 0);
-      data_ARVALID : out std_logic;
-      data_ARREADY : in  std_logic := '0';
+      DUC_ARID    : out std_logic_vector(3 downto 0);
+      DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      DUC_ARLEN   : out std_logic_vector(3 downto 0);
+      DUC_ARSIZE  : out std_logic_vector(2 downto 0);
+      DUC_ARBURST : out std_logic_vector(1 downto 0);
+      DUC_ARLOCK  : out std_logic_vector(1 downto 0);
+      DUC_ARCACHE : out std_logic_vector(3 downto 0);
+      DUC_ARPROT  : out std_logic_vector(2 downto 0);
+      DUC_ARVALID : out std_logic;
+      DUC_ARREADY : in  std_logic := '0';
 
-      data_RID    : in  std_logic_vector(3 downto 0)                := (others => '0');
-      data_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
-      data_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '0');
-      data_RLAST  : in  std_logic                                   := '0';
-      data_RVALID : in  std_logic                                   := '0';
-      data_RREADY : out std_logic;
+      DUC_RID    : in  std_logic_vector(3 downto 0)                := (others => '0');
+      DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
+      DUC_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '0');
+      DUC_RLAST  : in  std_logic                                   := '0';
+      DUC_RVALID : in  std_logic                                   := '0';
+      DUC_RREADY : out std_logic;
 
-      itcram_ARID    : out std_logic_vector(3 downto 0);
-      itcram_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      itcram_ARLEN   : out std_logic_vector(3 downto 0);
-      itcram_ARSIZE  : out std_logic_vector(2 downto 0);
-      itcram_ARBURST : out std_logic_vector(1 downto 0);
-      itcram_ARLOCK  : out std_logic_vector(1 downto 0);
-      itcram_ARCACHE : out std_logic_vector(3 downto 0);
-      itcram_ARPROT  : out std_logic_vector(2 downto 0);
-      itcram_ARVALID : out std_logic;
-      itcram_ARREADY : in  std_logic := '0';
+      --AXI4-Lite uncached instruction master
+      --A full AXI3 interface is exposed for systems that require it, but
+      --only the A4L signals are needed
+      IUC_ARID    : out std_logic_vector(3 downto 0);
+      IUC_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      IUC_ARLEN   : out std_logic_vector(3 downto 0);
+      IUC_ARSIZE  : out std_logic_vector(2 downto 0);
+      IUC_ARBURST : out std_logic_vector(1 downto 0);
+      IUC_ARLOCK  : out std_logic_vector(1 downto 0);
+      IUC_ARCACHE : out std_logic_vector(3 downto 0);
+      IUC_ARPROT  : out std_logic_vector(2 downto 0);
+      IUC_ARVALID : out std_logic;
+      IUC_ARREADY : in  std_logic := '0';
 
-      itcram_RID    : in  std_logic_vector(3 downto 0)                := (others => '0');
-      itcram_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
-      itcram_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '0');
-      itcram_RLAST  : in  std_logic                                   := '0';
-      itcram_RVALID : in  std_logic                                   := '0';
-      itcram_RREADY : out std_logic;
+      IUC_RID    : in  std_logic_vector(3 downto 0)                := (others => '0');
+      IUC_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
+      IUC_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '0');
+      IUC_RLAST  : in  std_logic                                   := '0';
+      IUC_RVALID : in  std_logic                                   := '0';
+      IUC_RREADY : out std_logic;
 
-      itcram_AWID    : out std_logic_vector(3 downto 0);
-      itcram_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      itcram_AWLEN   : out std_logic_vector(3 downto 0);
-      itcram_AWSIZE  : out std_logic_vector(2 downto 0);
-      itcram_AWBURST : out std_logic_vector(1 downto 0);
-      itcram_AWLOCK  : out std_logic_vector(1 downto 0);
-      itcram_AWCACHE : out std_logic_vector(3 downto 0);
-      itcram_AWPROT  : out std_logic_vector(2 downto 0);
-      itcram_AWVALID : out std_logic;
-      itcram_AWREADY : in  std_logic := '0';
+      IUC_AWID    : out std_logic_vector(3 downto 0);
+      IUC_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      IUC_AWLEN   : out std_logic_vector(3 downto 0);
+      IUC_AWSIZE  : out std_logic_vector(2 downto 0);
+      IUC_AWBURST : out std_logic_vector(1 downto 0);
+      IUC_AWLOCK  : out std_logic_vector(1 downto 0);
+      IUC_AWCACHE : out std_logic_vector(3 downto 0);
+      IUC_AWPROT  : out std_logic_vector(2 downto 0);
+      IUC_AWVALID : out std_logic;
+      IUC_AWREADY : in  std_logic := '0';
 
-      itcram_WID    : out std_logic_vector(3 downto 0);
-      itcram_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      itcram_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-      itcram_WLAST  : out std_logic;
-      itcram_WVALID : out std_logic;
-      itcram_WREADY : in  std_logic := '0';
+      IUC_WID    : out std_logic_vector(3 downto 0);
+      IUC_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      IUC_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      IUC_WLAST  : out std_logic;
+      IUC_WVALID : out std_logic;
+      IUC_WREADY : in  std_logic := '0';
 
-      itcram_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
-      itcram_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
-      itcram_BVALID : in  std_logic                    := '0';
-      itcram_BREADY : out std_logic;
+      IUC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
+      IUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+      IUC_BVALID : in  std_logic                    := '0';
+      IUC_BREADY : out std_logic;
 
-      iram_ARID    : out std_logic_vector(3 downto 0);
-      iram_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      iram_ARLEN   : out std_logic_vector(3 downto 0);
-      iram_ARSIZE  : out std_logic_vector(2 downto 0);
-      iram_ARBURST : out std_logic_vector(1 downto 0);
-      iram_ARLOCK  : out std_logic_vector(1 downto 0);
-      iram_ARCACHE : out std_logic_vector(3 downto 0);
-      iram_ARPROT  : out std_logic_vector(2 downto 0);
-      iram_ARVALID : out std_logic;
-      iram_ARREADY : in  std_logic := '0';
+      --AXI3 cacheable instruction master
+      IC_ARID    : out std_logic_vector(3 downto 0);
+      IC_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      IC_ARLEN   : out std_logic_vector(3 downto 0);
+      IC_ARSIZE  : out std_logic_vector(2 downto 0);
+      IC_ARBURST : out std_logic_vector(1 downto 0);
+      IC_ARLOCK  : out std_logic_vector(1 downto 0);
+      IC_ARCACHE : out std_logic_vector(3 downto 0);
+      IC_ARPROT  : out std_logic_vector(2 downto 0);
+      IC_ARVALID : out std_logic;
+      IC_ARREADY : in  std_logic := '0';
 
-      iram_RID    : in  std_logic_vector(3 downto 0)            := (others => '0');
-      iram_RDATA  : in  std_logic_vector(DRAM_WIDTH-1 downto 0) := (others => '0');
-      iram_RRESP  : in  std_logic_vector(1 downto 0)            := (others => '0');
-      iram_RLAST  : in  std_logic                               := '0';
-      iram_RVALID : in  std_logic                               := '0';
-      iram_RREADY : out std_logic;
+      IC_RID    : in  std_logic_vector(3 downto 0)            := (others => '0');
+      IC_RDATA  : in  std_logic_vector(DRAM_WIDTH-1 downto 0) := (others => '0');
+      IC_RRESP  : in  std_logic_vector(1 downto 0)            := (others => '0');
+      IC_RLAST  : in  std_logic                               := '0';
+      IC_RVALID : in  std_logic                               := '0';
+      IC_RREADY : out std_logic;
 
-      iram_AWID    : out std_logic_vector(3 downto 0);
-      iram_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      iram_AWLEN   : out std_logic_vector(3 downto 0);
-      iram_AWSIZE  : out std_logic_vector(2 downto 0);
-      iram_AWBURST : out std_logic_vector(1 downto 0);
-      iram_AWLOCK  : out std_logic_vector(1 downto 0);
-      iram_AWCACHE : out std_logic_vector(3 downto 0);
-      iram_AWPROT  : out std_logic_vector(2 downto 0);
-      iram_AWVALID : out std_logic;
-      iram_AWREADY : in  std_logic := '0';
+      IC_AWID    : out std_logic_vector(3 downto 0);
+      IC_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      IC_AWLEN   : out std_logic_vector(3 downto 0);
+      IC_AWSIZE  : out std_logic_vector(2 downto 0);
+      IC_AWBURST : out std_logic_vector(1 downto 0);
+      IC_AWLOCK  : out std_logic_vector(1 downto 0);
+      IC_AWCACHE : out std_logic_vector(3 downto 0);
+      IC_AWPROT  : out std_logic_vector(2 downto 0);
+      IC_AWVALID : out std_logic;
+      IC_AWREADY : in  std_logic := '0';
 
-      iram_WID    : out std_logic_vector(3 downto 0);
-      iram_WDATA  : out std_logic_vector(DRAM_WIDTH-1 downto 0);
-      iram_WSTRB  : out std_logic_vector(DRAM_WIDTH/8 -1 downto 0);
-      iram_WLAST  : out std_logic;
-      iram_WVALID : out std_logic;
-      iram_WREADY : in  std_logic                    := '0';
-      iram_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
-      iram_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
-      iram_BVALID : in  std_logic                    := '0';
-      iram_BREADY : out std_logic;
+      IC_WID    : out std_logic_vector(3 downto 0);
+      IC_WDATA  : out std_logic_vector(DRAM_WIDTH-1 downto 0);
+      IC_WSTRB  : out std_logic_vector(DRAM_WIDTH/8 -1 downto 0);
+      IC_WLAST  : out std_logic;
+      IC_WVALID : out std_logic;
+      IC_WREADY : in  std_logic                    := '0';
+      IC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
+      IC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+      IC_BVALID : in  std_logic                    := '0';
+      IC_BREADY : out std_logic;
 
       -------------------------------------------------------------------------------
       -- Scratchpad Slave
       -------------------------------------------------------------------------------
-      --avalon
+      --Avalon scratchpad slave
       avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
       avm_scratch_byteenable    : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0)     := (others => '0');
       avm_scratch_read          : in  std_logic                                         := '0';
@@ -214,7 +231,7 @@ package rv_components is
       avm_scratch_waitrequest   : out std_logic;
       avm_scratch_readdatavalid : out std_logic;
 
-      --wishbone
+      --WISHBONE scratchpad slave
       sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
       sp_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)        := (others => '0');
@@ -226,6 +243,9 @@ package rv_components is
       sp_CTI_I   : in  std_logic_vector(2 downto 0)                      := (others => '0');
       sp_STALL_O : out std_logic;
 
+      -------------------------------------------------------------------------------
+      -- Interrupts
+      -------------------------------------------------------------------------------
       global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
       );
   end component orca;
@@ -233,8 +253,8 @@ package rv_components is
   component orca_core is
     generic (
       REGISTER_SIZE      : integer;
-      RESET_VECTOR       : integer;
-      INTERRUPT_VECTOR   : integer;
+      RESET_VECTOR       : std_logic_vector(31 downto 0);
+      INTERRUPT_VECTOR   : std_logic_vector(31 downto 0);
       MULTIPLY_ENABLE    : natural range 0 to 1;
       DIVIDE_ENABLE      : natural range 0 to 1;
       SHIFTER_MAX_CYCLES : natural;
@@ -243,8 +263,8 @@ package rv_components is
       ENABLE_EXCEPTIONS  : natural;
       BRANCH_PREDICTORS  : natural;
       PIPELINE_STAGES    : natural range 4 to 5;
-      LVE_ENABLE         : natural range 0 to 1;
       NUM_EXT_INTERRUPTS : integer range 0 to 32;
+      LVE_ENABLE         : natural range 0 to 1;
       SCRATCHPAD_SIZE    : integer;
       FAMILY             : string);
     port(
@@ -320,7 +340,7 @@ package rv_components is
     generic(
       REGISTER_SIZE       : positive;
       SIGN_EXTENSION_SIZE : positive;
-      INTERRUPT_VECTOR    : integer;
+      INTERRUPT_VECTOR    : std_logic_vector(31 downto 0);
       MULTIPLY_ENABLE     : boolean;
       DIVIDE_ENABLE       : boolean;
       SHIFTER_MAX_CYCLES  : natural;
@@ -381,29 +401,29 @@ package rv_components is
   component instruction_fetch is
     generic (
       REGISTER_SIZE     : positive;
-      RESET_VECTOR      : integer;
-      BRANCH_PREDICTORS : natural);
+      RESET_VECTOR      : std_logic_vector(31 downto 0);
+      BRANCH_PREDICTORS : natural
+      );
     port (
       clk                : in std_logic;
       reset              : in std_logic;
       downstream_stalled : in std_logic;
       interrupt_pending  : in std_logic;
+      branch_pred        : in std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
 
-      branch_pred : in std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
-
-      instr_out   : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      pc_out      : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      next_pc_out : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      br_taken    : buffer std_logic;
-
-      valid_instr_out : out std_logic;
-      fetch_in_flight : out std_logic;
+      br_taken        : buffer std_logic;
+      instr_out       : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      pc_out          : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+      next_pc_out     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+      valid_instr_out : out    std_logic;
+      fetch_in_flight : out    std_logic;
 
       read_address   : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       read_en        : buffer std_logic;
       read_data      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       read_datavalid : in     std_logic;
-      read_wait      : in     std_logic);
+      read_wait      : in     std_logic
+      );
   end component instruction_fetch;
 
   component arithmetic_unit is
@@ -511,32 +531,39 @@ package rv_components is
   component system_calls is
     generic (
       REGISTER_SIZE     : natural;
-      INTERRUPT_VECTOR  : integer;
-      COUNTER_LENGTH    : natural;
-      ENABLE_EXCEPTIONS : boolean);
+      INTERRUPT_VECTOR  : std_logic_vector(31 downto 0);
+      ENABLE_EXCEPTIONS : boolean := true;
+      COUNTER_LENGTH    : natural
+      );
     port (
       clk         : in  std_logic;
       reset       : in  std_logic;
       valid       : in  std_logic;
       stall_in    : in  std_logic;
+      stall_out   : out std_logic;
       rs1_data    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      stall_out   : out std_logic;
-      wb_data     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      wb_enable   : out std_logic;
+
+      wb_data   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      wb_enable : out std_logic;
 
       current_pc    : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      pc_correction : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
+      pc_correction : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       pc_corr_en    : buffer std_logic;
 
+      -- The interrupt_pending signal goes to the Instruction Fetch stage.
       interrupt_pending   : buffer std_logic;
-      pipeline_empty      : in     std_logic;
       external_interrupts : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      -- Signals when an interrupt may proceed.
+      pipeline_empty      : in     std_logic;
 
-
+      -- These signals are used to tell the interrupt handler which instruction
+      -- to return to upon exit. They are sourced from the instruction fetch
+      -- stage of the processor.
       instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      br_bad_predict       : in std_logic;
-      br_new_pc            : in std_logic_vector(REGISTER_SIZE-1 downto 0)
+
+      br_bad_predict : in std_logic;
+      br_new_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0)
       );
   end component system_calls;
 
@@ -647,64 +674,102 @@ package rv_components is
       );
   end component;
 
-  component iram is
+  component idram is
     generic (
-      SIZE      : integer := 4096;
-      RAM_WIDTH : integer := 32;
-      BYTE_SIZE : integer := 8);
+      --Port types: 0 = AXI4Lite, 1 = AXI3, 2 = AXI4
+      INSTR_PORT_TYPE : natural range 0 to 2 := 0;
+      DATA_PORT_TYPE  : natural range 0 to 2 := 0;
+      SIZE            : integer              := 32768;
+      RAM_WIDTH       : integer              := 32;
+      ADDR_WIDTH      : integer              := 32;
+      BYTE_SIZE       : integer              := 8);
     port (
       clk   : in std_logic;
       reset : in std_logic;
 
-      addr     : in  std_logic_vector(RAM_WIDTH-1 downto 0);
-      wdata    : in  std_logic_vector(RAM_WIDTH-1 downto 0);
-      wen      : in  std_logic;
-      byte_sel : in  std_logic_vector(RAM_WIDTH/8-1 downto 0);
-      strb     : in  std_logic;
-      ack      : out std_logic;
-      rdata    : out std_logic_vector(RAM_WIDTH-1 downto 0);
+      instr_AWID    : in std_logic_vector(4 downto 0);
+      instr_AWADDR  : in std_logic_vector(ADDR_WIDTH-1 downto 0);
+      instr_AWLEN   : in std_logic_vector(7-(4*(INSTR_PORT_TYPE mod 2)) downto 0);
+      instr_AWSIZE  : in std_logic_vector(2 downto 0);
+      instr_AWBURST : in std_logic_vector(1 downto 0);
 
-      ram_AWID    : in std_logic_vector(3 downto 0);
-      ram_AWADDR  : in std_logic_vector(RAM_WIDTH-1 downto 0);
-      ram_AWLEN   : in std_logic_vector(3 downto 0);
-      ram_AWSIZE  : in std_logic_vector(2 downto 0);
-      ram_AWBURST : in std_logic_vector(1 downto 0);
+      instr_AWLOCK  : in  std_logic_vector(1 downto 0);
+      instr_AWCACHE : in  std_logic_vector(3 downto 0);
+      instr_AWPROT  : in  std_logic_vector(2 downto 0);
+      instr_AWVALID : in  std_logic;
+      instr_AWREADY : out std_logic;
 
-      ram_AWLOCK  : in  std_logic_vector(1 downto 0);
-      ram_AWCACHE : in  std_logic_vector(3 downto 0);
-      ram_AWPROT  : in  std_logic_vector(2 downto 0);
-      ram_AWVALID : in  std_logic;
-      ram_AWREADY : out std_logic;
+      instr_WID    : in  std_logic_vector(4 downto 0);
+      instr_WDATA  : in  std_logic_vector(RAM_WIDTH -1 downto 0);
+      instr_WSTRB  : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE -1 downto 0);
+      instr_WLAST  : in  std_logic;
+      instr_WVALID : in  std_logic;
+      instr_WREADY : out std_logic;
 
-      ram_WID    : in  std_logic_vector(3 downto 0);
-      ram_WDATA  : in  std_logic_vector(RAM_WIDTH -1 downto 0);
-      ram_WSTRB  : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE -1 downto 0);
-      ram_WLAST  : in  std_logic;
-      ram_WVALID : in  std_logic;
-      ram_WREADY : out std_logic;
+      instr_BID    : out std_logic_vector(4 downto 0);
+      instr_BRESP  : out std_logic_vector(1 downto 0);
+      instr_BVALID : out std_logic;
+      instr_BREADY : in  std_logic;
 
-      ram_BID    : out std_logic_vector(3 downto 0);
-      ram_BRESP  : out std_logic_vector(1 downto 0);
-      ram_BVALID : out std_logic;
-      ram_BREADY : in  std_logic;
+      instr_ARID    : in  std_logic_vector(4 downto 0);
+      instr_ARADDR  : in  std_logic_vector(ADDR_WIDTH -1 downto 0);
+      instr_ARLEN   : in  std_logic_vector(7-(4*(INSTR_PORT_TYPE mod 2)) downto 0);
+      instr_ARSIZE  : in  std_logic_vector(2 downto 0);
+      instr_ARBURST : in  std_logic_vector(1 downto 0);
+      instr_ARLOCK  : in  std_logic_vector(1 downto 0);
+      instr_ARCACHE : in  std_logic_vector(3 downto 0);
+      instr_ARPROT  : in  std_logic_vector(2 downto 0);
+      instr_ARVALID : in  std_logic;
+      instr_ARREADY : out std_logic;
 
-      ram_ARID    : in  std_logic_vector(3 downto 0);
-      ram_ARADDR  : in  std_logic_vector(RAM_WIDTH -1 downto 0);
-      ram_ARLEN   : in  std_logic_vector(3 downto 0);
-      ram_ARSIZE  : in  std_logic_vector(2 downto 0);
-      ram_ARBURST : in  std_logic_vector(1 downto 0);
-      ram_ARLOCK  : in  std_logic_vector(1 downto 0);
-      ram_ARCACHE : in  std_logic_vector(3 downto 0);
-      ram_ARPROT  : in  std_logic_vector(2 downto 0);
-      ram_ARVALID : in  std_logic;
-      ram_ARREADY : out std_logic;
+      instr_RID    : out std_logic_vector(4 downto 0);
+      instr_RDATA  : out std_logic_vector(RAM_WIDTH -1 downto 0);
+      instr_RRESP  : out std_logic_vector(1 downto 0);
+      instr_RLAST  : out std_logic;
+      instr_RVALID : out std_logic;
+      instr_RREADY : in  std_logic;
 
-      ram_RID    : out std_logic_vector(3 downto 0);
-      ram_RDATA  : out std_logic_vector(RAM_WIDTH -1 downto 0);
-      ram_RRESP  : out std_logic_vector(1 downto 0);
-      ram_RLAST  : out std_logic;
-      ram_RVALID : out std_logic;
-      ram_RREADY : in  std_logic
+      data_AWID    : in std_logic_vector(4 downto 0);
+      data_AWADDR  : in std_logic_vector(ADDR_WIDTH-1 downto 0);
+      data_AWLEN   : in std_logic_vector(7-(4*(DATA_PORT_TYPE mod 2)) downto 0);
+      data_AWSIZE  : in std_logic_vector(2 downto 0);
+      data_AWBURST : in std_logic_vector(1 downto 0);
+
+      data_AWLOCK  : in  std_logic_vector(1 downto 0);
+      data_AWCACHE : in  std_logic_vector(3 downto 0);
+      data_AWPROT  : in  std_logic_vector(2 downto 0);
+      data_AWVALID : in  std_logic;
+      data_AWREADY : out std_logic;
+
+      data_WID    : in  std_logic_vector(4 downto 0);
+      data_WDATA  : in  std_logic_vector(RAM_WIDTH -1 downto 0);
+      data_WSTRB  : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE -1 downto 0);
+      data_WLAST  : in  std_logic;
+      data_WVALID : in  std_logic;
+      data_WREADY : out std_logic;
+
+      data_BID    : out std_logic_vector(4 downto 0);
+      data_BRESP  : out std_logic_vector(1 downto 0);
+      data_BVALID : out std_logic;
+      data_BREADY : in  std_logic;
+
+      data_ARID    : in  std_logic_vector(4 downto 0);
+      data_ARADDR  : in  std_logic_vector(ADDR_WIDTH -1 downto 0);
+      data_ARLEN   : in  std_logic_vector(7-(4*(DATA_PORT_TYPE mod 2)) downto 0);
+      data_ARSIZE  : in  std_logic_vector(2 downto 0);
+      data_ARBURST : in  std_logic_vector(1 downto 0);
+      data_ARLOCK  : in  std_logic_vector(1 downto 0);
+      data_ARCACHE : in  std_logic_vector(3 downto 0);
+      data_ARPROT  : in  std_logic_vector(2 downto 0);
+      data_ARVALID : in  std_logic;
+      data_ARREADY : out std_logic;
+
+      data_RID    : out std_logic_vector(4 downto 0);
+      data_RDATA  : out std_logic_vector(RAM_WIDTH -1 downto 0);
+      data_RRESP  : out std_logic_vector(1 downto 0);
+      data_RLAST  : out std_logic;
+      data_RVALID : out std_logic;
+      data_RREADY : in  std_logic
       );
   end component;
 
@@ -1045,8 +1110,8 @@ package rv_components is
 
   component cache_mux is
     generic (
-      UC_ADDR_BASE  : natural := 0;
-      UC_ADDR_LAST  : natural := 0;
+      UC_ADDR_BASE  : std_logic_vector(31 downto 0);
+      UC_ADDR_LAST  : std_logic_vector(31 downto 0);
       ADDR_WIDTH    : integer := 32;
       REGISTER_SIZE : integer := 32;
       BYTE_SIZE     : integer := 8
@@ -1115,31 +1180,26 @@ package rv_components is
       cache_RVALID : in  std_logic;
       cache_RREADY : out std_logic;
 
-      uc_AWID   : out std_logic_vector(3 downto 0);
       uc_AWADDR : out std_logic_vector(ADDR_WIDTH-1 downto 0);
 
       uc_AWPROT  : out std_logic_vector(2 downto 0);
       uc_AWVALID : out std_logic;
       uc_AWREADY : in  std_logic;
 
-      uc_WID    : out std_logic_vector(3 downto 0);
       uc_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
       uc_WSTRB  : out std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
       uc_WVALID : out std_logic;
       uc_WREADY : in  std_logic;
 
-      uc_BID    : in  std_logic_vector(3 downto 0);
       uc_BRESP  : in  std_logic_vector(1 downto 0);
       uc_BVALID : in  std_logic;
       uc_BREADY : out std_logic;
 
-      uc_ARID    : out std_logic_vector(3 downto 0);
       uc_ARADDR  : out std_logic_vector(ADDR_WIDTH -1 downto 0);
       uc_ARPROT  : out std_logic_vector(2 downto 0);
       uc_ARVALID : out std_logic;
       uc_ARREADY : in  std_logic;
 
-      uc_RID    : in  std_logic_vector(3 downto 0);
       uc_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
       uc_RRESP  : in  std_logic_vector(1 downto 0);
       uc_RVALID : in  std_logic;

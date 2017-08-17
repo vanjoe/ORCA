@@ -4,7 +4,7 @@
 #This only supports data width of 32 bits.
 
 
-proc write_mmi {cell_name} {
+proc write_mmi {cell_name start_address} {
 	set proj [current_project]
 	set filename "${cell_name}.mmi"
 	set fileout [open $filename "w"]
@@ -41,7 +41,7 @@ proc write_mmi {cell_name} {
 			set bram_range [expr {$bram_range + 4096}]	
 		}
 	}
-	puts $fileout "    <AddressSpace Name=\"$cell_name\" Begin=\"0\" End=\"[expr {$bram_range - 1}]\">"
+    puts $fileout "    <AddressSpace Name=\"$cell_name\" Begin=\"[expr {$start_address}]\" End=\"[expr {$start_address + $bram_range - 1}]\">"
 
 	set bram [llength $cell_name_bram]
 	if {$bram >= 32} {
@@ -165,10 +165,10 @@ proc export2sdk {} {
 	}
 }
 
-proc mmi_wrapper {proj_dir proj_name cell_name} {
+proc mmi_wrapper {proj_dir proj_name cell_name start_address} {
   open_project $proj_dir/$proj_name.xpr
   open_run impl_1
-  write_mmi $cell_name
+  write_mmi $cell_name $start_address
   close_project
 }
 

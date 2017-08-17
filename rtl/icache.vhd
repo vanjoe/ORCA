@@ -110,8 +110,6 @@ architecture rtl of icache is
   constant BLOCK_NEXT_START  : std_logic_vector(BLOCK_OFFSET_LEFT-1 downto 0) := std_logic_vector(to_unsigned(BYTES_PER_DRAM, BLOCK_OFFSET_LEFT));
   constant BLOCK_END         : std_logic_vector(BLOCK_OFFSET_LEFT-1 downto 0) := (others => '1');
 
-  signal burst_size : std_logic_vector(2 downto 0);
-
   type state_r_t is (IDLE, READ_CACHE, CACHE_MISSED);
   signal state_r        : state_r_t;
   signal next_state_r   : state_r_t;
@@ -146,10 +144,6 @@ begin
 
   burst_disabled : if BURST_EN = 0 generate
   begin
-    burst_size <= "111" when (DRAM_WIDTH = 128)
-                  else "110" when (DRAM_WIDTH = 64)
-                  else "101";
-
     orca_BID    <= (others => '0');
     orca_BVALID <= '0';
 
@@ -164,7 +158,7 @@ begin
 
     dram_AWID    <= (others => '0');
     dram_AWLEN   <= BURST_LEN;
-    dram_AWSIZE  <= burst_size;
+    dram_AWSIZE  <= std_logic_vector(to_unsigned(log2(DRAM_WIDTH/8), 3));
     dram_AWBURST <= BURST_INCR;
     dram_AWLOCK  <= LOCK_VAL;
     dram_AWCACHE <= CACHE_VAL;
@@ -174,7 +168,7 @@ begin
 
     dram_ARID    <= (others => '0');
     dram_ARLEN   <= BURST_LEN;
-    dram_ARSIZE  <= burst_size;
+    dram_ARSIZE  <= std_logic_vector(to_unsigned(log2(DRAM_WIDTH/8), 3));
     dram_ARBURST <= BURST_INCR;
     dram_ARLOCK  <= LOCK_VAL;
     dram_ARCACHE <= CACHE_VAL;

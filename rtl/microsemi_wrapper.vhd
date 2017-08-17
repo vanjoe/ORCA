@@ -492,6 +492,8 @@ begin
 
   iram : entity work.iram(rtl)
     generic map (
+      INSTR_PORT_TYPE => 1,
+      DATA_PORT_TYPE  => 1,
       SIZE => TCRAM_SIZE,
       RAM_WIDTH => REGISTER_SIZE,
       BYTE_SIZE => BYTE_SIZE 

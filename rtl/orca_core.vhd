@@ -7,15 +7,14 @@ use work.utils.all;
 use work.constants_pkg.all;
 
 entity orca_core is
-
   generic (
     REGISTER_SIZE      : integer;
-    RESET_VECTOR       : integer;
-		INTERRUPT_VECTOR	 : integer;
+    RESET_VECTOR       : std_logic_vector(31 downto 0);
+    INTERRUPT_VECTOR   : std_logic_vector(31 downto 0);
     MULTIPLY_ENABLE    : natural range 0 to 1;
     DIVIDE_ENABLE      : natural range 0 to 1;
     SHIFTER_MAX_CYCLES : natural;
-    POWER_OPTIMIZED    : natural range 0 to 1 := 0;
+    POWER_OPTIMIZED    : natural range 0 to 1           := 0;
     COUNTER_LENGTH     : natural;
     ENABLE_EXCEPTIONS  : natural;
     BRANCH_PREDICTORS  : natural;
@@ -24,39 +23,38 @@ entity orca_core is
     LVE_ENABLE         : natural range 0 to 1;
     SCRATCHPAD_SIZE    : integer;
     FAMILY             : string);
+  port(
+    clk            : in std_logic;
+    scratchpad_clk : in std_logic;
+    reset          : in std_logic;
 
-  port(clk            : in std_logic;
-       scratchpad_clk : in std_logic;
-       reset          : in std_logic;
+    --avalon master bus
+    core_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    core_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    core_data_read                 : out std_logic;
+    core_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
+    core_data_write                : out std_logic;
+    core_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    core_data_ack                  : in  std_logic                                  := '0';
+    --avalon master bus
+    core_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    core_instruction_read          : out std_logic;
+    core_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
+    core_instruction_waitrequest   : in  std_logic                                  := '0';
+    core_instruction_readdatavalid : in  std_logic                                  := '0';
 
-       --avalon master bus
-       core_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-       core_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-       core_data_read                 : out std_logic;
-       core_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
-       core_data_write                : out std_logic;
-       core_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-       core_data_ack                  : in  std_logic                                  := '0';
-       --avalon master bus
-       core_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-       core_instruction_read          : out std_logic;
-       core_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
-       core_instruction_waitrequest   : in  std_logic                                  := '0';
-       core_instruction_readdatavalid : in  std_logic                                  := '0';
+    --memory-bus scratchpad-slave
+    sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+    sp_byte_en   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    sp_write_en  : in  std_logic;
+    sp_read_en   : in  std_logic;
+    sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    sp_ack       : out std_logic;
 
-       --memory-bus scratchpad-slave
-       sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-       sp_byte_en   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-       sp_write_en  : in  std_logic;
-       sp_read_en   : in  std_logic;
-       sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-       sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-       sp_ack       : out std_logic;
-
-       external_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
-       );
-
-end entity Orca_core;
+    external_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
+    );
+end entity orca_core;
 
 architecture rtl of orca_core is
   constant SIGN_EXTENSION_SIZE : integer := 20;
@@ -99,7 +97,7 @@ architecture rtl of orca_core is
   signal data_write_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_read_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-	signal fetch_in_flight : std_logic;
+  signal fetch_in_flight : std_logic;
 
   signal instr_address : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal instr_data    : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -119,7 +117,7 @@ architecture rtl of orca_core is
 
   signal e_sp_addr : std_logic_vector(CONDITIONAL(LVE_ENABLE = 1, sp_address'length, 0)-1 downto 0);
 
-begin -- architecture rtl
+begin  -- architecture rtl
 
   pipeline_flush <= branch_get_flush(branch_pred_to_instr_fetch);
 
@@ -128,7 +126,8 @@ begin -- architecture rtl
     generic map (
       REGISTER_SIZE     => REGISTER_SIZE,
       RESET_VECTOR      => RESET_VECTOR,
-      BRANCH_PREDICTORS => BRANCH_PREDICTORS)
+      BRANCH_PREDICTORS => BRANCH_PREDICTORS
+      )
     port map (
       clk                => clk,
       reset              => reset,
@@ -141,13 +140,13 @@ begin -- architecture rtl
       next_pc_out     => ifetch_next_pc,
       br_taken        => d_br_taken,
       valid_instr_out => if_valid_out,
-			fetch_in_flight => fetch_in_flight,
+      fetch_in_flight => fetch_in_flight,
 
-      read_address    => instr_address,
-      read_en         => instr_read_en,
-      read_data       => instr_data,
-      read_datavalid  => instr_readvalid,
-      read_wait       => instr_read_wait);
+      read_address   => instr_address,
+      read_en        => instr_read_en,
+      read_data      => instr_data,
+      read_datavalid => instr_readvalid,
+      read_wait      => instr_read_wait);
 
   d_valid <= if_valid_out and not pipeline_flush;
 
@@ -241,7 +240,7 @@ begin -- architecture rtl
       -- Interrupt lines
       external_interrupts => ext_int_resized,
       pipeline_empty      => decode_flushed,
-			fetch_in_flight			=> fetch_in_flight,
+      fetch_in_flight     => fetch_in_flight,
       interrupt_pending   => e_interrupt_pending);
 
   ext_int_resized <= std_logic_vector(RESIZE(unsigned(external_interrupts), ext_int_resized'length));

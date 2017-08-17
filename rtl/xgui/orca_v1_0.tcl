@@ -5,7 +5,6 @@ proc init_gui { IPINST } {
   ipgui::add_page $IPINST -name "Page 0"
 
   ipgui::add_param $IPINST -name "REGISTER_SIZE"
-  ipgui::add_param $IPINST -name "BYTE_SIZE"
   ipgui::add_param $IPINST -name "AVALON_ENABLE"
   ipgui::add_param $IPINST -name "WISHBONE_ENABLE"
   ipgui::add_param $IPINST -name "AXI_ENABLE"
@@ -66,15 +65,6 @@ proc update_PARAM_VALUE.BURST_EN { PARAM_VALUE.BURST_EN } {
 
 proc validate_PARAM_VALUE.BURST_EN { PARAM_VALUE.BURST_EN } {
 	# Procedure called to validate BURST_EN
-	return true
-}
-
-proc update_PARAM_VALUE.BYTE_SIZE { PARAM_VALUE.BYTE_SIZE } {
-	# Procedure called to update BYTE_SIZE when any of the dependent parameters in the arguments change
-}
-
-proc validate_PARAM_VALUE.BYTE_SIZE { PARAM_VALUE.BYTE_SIZE } {
-	# Procedure called to validate BYTE_SIZE
 	return true
 }
 
@@ -271,11 +261,6 @@ proc validate_PARAM_VALUE.WISHBONE_ENABLE { PARAM_VALUE.WISHBONE_ENABLE } {
 proc update_MODELPARAM_VALUE.REGISTER_SIZE { MODELPARAM_VALUE.REGISTER_SIZE PARAM_VALUE.REGISTER_SIZE } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.REGISTER_SIZE}] ${MODELPARAM_VALUE.REGISTER_SIZE}
-}
-
-proc update_MODELPARAM_VALUE.BYTE_SIZE { MODELPARAM_VALUE.BYTE_SIZE PARAM_VALUE.BYTE_SIZE } {
-	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.BYTE_SIZE}] ${MODELPARAM_VALUE.BYTE_SIZE}
 }
 
 proc update_MODELPARAM_VALUE.AVALON_ENABLE { MODELPARAM_VALUE.AVALON_ENABLE PARAM_VALUE.AVALON_ENABLE } {

@@ -8,34 +8,34 @@ use work.utils.all;
 
 entity orca is
   generic (
-    REGISTER_SIZE   : integer              := 32;
-    BYTE_SIZE       : integer              := 8;
+    REGISTER_SIZE : positive range 32 to 32 := 32;
+
     --BUS Select
     AVALON_ENABLE   : integer range 0 to 1 := 0;
     WISHBONE_ENABLE : integer range 0 to 1 := 0;
     AXI_ENABLE      : integer range 0 to 1 := 0;
 
-    RESET_VECTOR          : integer                 := 16#00000000#;
-    INTERRUPT_VECTOR      : integer                 := 16#00000200#;
-    MULTIPLY_ENABLE       : natural range 0 to 1    := 0;
-    DIVIDE_ENABLE         : natural range 0 to 1    := 0;
-    SHIFTER_MAX_CYCLES    : natural                 := 1;
-    COUNTER_LENGTH        : natural                 := 0;
-    ENABLE_EXCEPTIONS     : natural                 := 1;
-    BRANCH_PREDICTORS     : natural                 := 0;
-    PIPELINE_STAGES       : natural range 4 to 5    := 5;
-    LVE_ENABLE            : natural range 0 to 1    := 0;
-    ENABLE_EXT_INTERRUPTS : natural range 0 to 1    := 0;
-    NUM_EXT_INTERRUPTS    : integer range 1 to 32   := 1;
-    SCRATCHPAD_ADDR_BITS  : integer                 := 10;
-    IUC_ADDR_BASE         : natural                 := 0;
-    IUC_ADDR_LAST         : natural                 := 0;
-    ICACHE_SIZE           : natural                 := 8192;
-    ICACHE_LINE_SIZE      : integer range 16 to 256 := 32;
-    DRAM_WIDTH            : integer                 := 32;
-    BURST_EN              : integer range 0 to 1    := 0;
-    POWER_OPTIMIZED       : integer range 0 to 1    := 0;
-    FAMILY                : string                  := "ALTERA");
+    RESET_VECTOR          : std_logic_vector(31 downto 0) := X"00000000";
+    INTERRUPT_VECTOR      : std_logic_vector(31 downto 0) := X"00000200";
+    MULTIPLY_ENABLE       : natural range 0 to 1          := 0;
+    DIVIDE_ENABLE         : natural range 0 to 1          := 0;
+    SHIFTER_MAX_CYCLES    : natural                       := 1;
+    COUNTER_LENGTH        : natural                       := 0;
+    ENABLE_EXCEPTIONS     : natural                       := 1;
+    BRANCH_PREDICTORS     : natural                       := 0;
+    PIPELINE_STAGES       : natural range 4 to 5          := 5;
+    LVE_ENABLE            : natural range 0 to 1          := 0;
+    ENABLE_EXT_INTERRUPTS : natural range 0 to 1          := 0;
+    NUM_EXT_INTERRUPTS    : integer range 1 to 32         := 1;
+    SCRATCHPAD_ADDR_BITS  : integer                       := 10;
+    IUC_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
+    IUC_ADDR_LAST         : std_logic_vector(31 downto 0) := X"00000000";
+    ICACHE_SIZE           : natural                       := 8192;
+    ICACHE_LINE_SIZE      : integer range 16 to 256       := 32;
+    DRAM_WIDTH            : integer                       := 32;
+    BURST_EN              : integer range 0 to 1          := 0;
+    POWER_OPTIMIZED       : integer range 0 to 1          := 0;
+    FAMILY                : string                        := "ALTERA");
   port(
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
@@ -45,14 +45,14 @@ entity orca is
     --AVALON
     -------------------------------------------------------------------------------
     --Avalon data master
-    avm_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    avm_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-    avm_data_read                 : out std_logic;
-    avm_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-    avm_data_write                : out std_logic;
-    avm_data_writedata            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    avm_data_waitrequest          : in  std_logic                                  := '0';
-    avm_data_readdatavalid        : in  std_logic                                  := '0';
+    avm_data_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    avm_data_byteenable    : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+    avm_data_read          : out std_logic;
+    avm_data_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    avm_data_write         : out std_logic;
+    avm_data_writedata     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    avm_data_waitrequest   : in  std_logic                                  := '0';
+    avm_data_readdatavalid : in  std_logic                                  := '0';
 
     --Avalon instruction master
     avm_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -65,25 +65,25 @@ entity orca is
     --WISHBONE
     -------------------------------------------------------------------------------
     --WISHBONE data master
-    data_ADR_O                    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_DAT_I                    : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-    data_DAT_O                    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_WE_O                     : out std_logic;
-    data_SEL_O                    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
-    data_STB_O                    : out std_logic;
-    data_ACK_I                    : in  std_logic                                  := '0';
-    data_CYC_O                    : out std_logic;
-    data_CTI_O                    : out std_logic_vector(2 downto 0);
-    data_STALL_I                  : in  std_logic                                  := '0';
+    data_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    data_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    data_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    data_WE_O    : out std_logic;
+    data_SEL_O   : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+    data_STB_O   : out std_logic;
+    data_ACK_I   : in  std_logic                                  := '0';
+    data_CYC_O   : out std_logic;
+    data_CTI_O   : out std_logic_vector(2 downto 0);
+    data_STALL_I : in  std_logic                                  := '0';
 
     --WISHBONE instruction master
-    instr_ADR_O                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instr_DAT_I                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-    instr_STB_O                   : out std_logic;
-    instr_ACK_I                   : in  std_logic                                  := '0';
-    instr_CYC_O                   : out std_logic;
-    instr_CTI_O                   : out std_logic_vector(2 downto 0);
-    instr_STALL_I                 : in  std_logic                                  := '0';
+    instr_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    instr_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    instr_STB_O   : out std_logic;
+    instr_ACK_I   : in  std_logic                                  := '0';
+    instr_CYC_O   : out std_logic;
+    instr_CTI_O   : out std_logic_vector(2 downto 0);
+    instr_STALL_I : in  std_logic                                  := '0';
 
     -------------------------------------------------------------------------------
     --AXI
@@ -92,7 +92,7 @@ entity orca is
     --A full AXI3 interface is exposed for systems that require it, but
     --only the A4L signals are needed
     DUC_AWID    : out std_logic_vector(3 downto 0);
-    DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+    DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     DUC_AWLEN   : out std_logic_vector(3 downto 0);
     DUC_AWSIZE  : out std_logic_vector(2 downto 0);
     DUC_AWBURST : out std_logic_vector(1 downto 0);
@@ -103,8 +103,8 @@ entity orca is
     DUC_AWREADY : in  std_logic := '0';
 
     DUC_WID    : out std_logic_vector(3 downto 0);
-    DUC_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-    DUC_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    DUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    DUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     DUC_WLAST  : out std_logic;
     DUC_WVALID : out std_logic;
     DUC_WREADY : in  std_logic := '0';
@@ -115,7 +115,7 @@ entity orca is
     DUC_BREADY : out std_logic;
 
     DUC_ARID    : out std_logic_vector(3 downto 0);
-    DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+    DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     DUC_ARLEN   : out std_logic_vector(3 downto 0);
     DUC_ARSIZE  : out std_logic_vector(2 downto 0);
     DUC_ARBURST : out std_logic_vector(1 downto 0);
@@ -125,18 +125,18 @@ entity orca is
     DUC_ARVALID : out std_logic;
     DUC_ARREADY : in  std_logic := '0';
 
-    DUC_RID    : in  std_logic_vector(3 downto 0)                := (others => '0');
-    DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
-    DUC_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '0');
-    DUC_RLAST  : in  std_logic                                   := '0';
-    DUC_RVALID : in  std_logic                                   := '0';
+    DUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
+    DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    DUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
+    DUC_RLAST  : in  std_logic                                  := '0';
+    DUC_RVALID : in  std_logic                                  := '0';
     DUC_RREADY : out std_logic;
 
     --AXI4-Lite uncached instruction master
     --A full AXI3 interface is exposed for systems that require it, but
     --only the A4L signals are needed
     IUC_ARID    : out std_logic_vector(3 downto 0);
-    IUC_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+    IUC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     IUC_ARLEN   : out std_logic_vector(3 downto 0);
     IUC_ARSIZE  : out std_logic_vector(2 downto 0);
     IUC_ARBURST : out std_logic_vector(1 downto 0);
@@ -146,15 +146,15 @@ entity orca is
     IUC_ARVALID : out std_logic;
     IUC_ARREADY : in  std_logic := '0';
 
-    IUC_RID    : in  std_logic_vector(3 downto 0)                := (others => '0');
-    IUC_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
-    IUC_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '0');
-    IUC_RLAST  : in  std_logic                                   := '0';
-    IUC_RVALID : in  std_logic                                   := '0';
+    IUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
+    IUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    IUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
+    IUC_RLAST  : in  std_logic                                  := '0';
+    IUC_RVALID : in  std_logic                                  := '0';
     IUC_RREADY : out std_logic;
 
     IUC_AWID    : out std_logic_vector(3 downto 0);
-    IUC_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+    IUC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     IUC_AWLEN   : out std_logic_vector(3 downto 0);
     IUC_AWSIZE  : out std_logic_vector(2 downto 0);
     IUC_AWBURST : out std_logic_vector(1 downto 0);
@@ -165,8 +165,8 @@ entity orca is
     IUC_AWREADY : in  std_logic := '0';
 
     IUC_WID    : out std_logic_vector(3 downto 0);
-    IUC_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-    IUC_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    IUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    IUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     IUC_WLAST  : out std_logic;
     IUC_WVALID : out std_logic;
     IUC_WREADY : in  std_logic := '0';
@@ -178,7 +178,7 @@ entity orca is
 
     --AXI3 cacheable instruction master
     IC_ARID    : out std_logic_vector(3 downto 0);
-    IC_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+    IC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     IC_ARLEN   : out std_logic_vector(3 downto 0);
     IC_ARSIZE  : out std_logic_vector(2 downto 0);
     IC_ARBURST : out std_logic_vector(1 downto 0);
@@ -196,7 +196,7 @@ entity orca is
     IC_RREADY : out std_logic;
 
     IC_AWID    : out std_logic_vector(3 downto 0);
-    IC_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+    IC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     IC_AWLEN   : out std_logic_vector(3 downto 0);
     IC_AWSIZE  : out std_logic_vector(2 downto 0);
     IC_AWBURST : out std_logic_vector(1 downto 0);
@@ -208,7 +208,7 @@ entity orca is
 
     IC_WID    : out std_logic_vector(3 downto 0);
     IC_WDATA  : out std_logic_vector(DRAM_WIDTH-1 downto 0);
-    IC_WSTRB  : out std_logic_vector(DRAM_WIDTH/8 -1 downto 0);
+    IC_WSTRB  : out std_logic_vector((DRAM_WIDTH/8)-1 downto 0);
     IC_WLAST  : out std_logic;
     IC_WVALID : out std_logic;
     IC_WREADY : in  std_logic                    := '0';
@@ -222,7 +222,7 @@ entity orca is
     -------------------------------------------------------------------------------
     --Avalon scratchpad slave
     avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
-    avm_scratch_byteenable    : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0)     := (others => '0');
+    avm_scratch_byteenable    : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0)    := (others => '0');
     avm_scratch_read          : in  std_logic                                         := '0';
     avm_scratch_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     avm_scratch_write         : in  std_logic                                         := '0';
@@ -235,7 +235,7 @@ entity orca is
     sp_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)        := (others => '0');
     sp_WE_I    : in  std_logic                                         := '0';
-    sp_SEL_I   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0)     := (others => '0');
+    sp_SEL_I   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0)    := (others => '0');
     sp_STB_I   : in  std_logic                                         := '0';
     sp_ACK_O   : out std_logic;
     sp_CYC_I   : in  std_logic                                         := '0';
@@ -247,12 +247,11 @@ entity orca is
     -------------------------------------------------------------------------------
     global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
     );
-
 end entity orca;
 
 architecture rtl of orca is
   signal core_data_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_byteenable : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal core_data_byteenable : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
   signal core_data_read       : std_logic;
   signal core_data_readdata   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal core_data_write      : std_logic;
@@ -266,7 +265,7 @@ architecture rtl of orca is
   signal core_instruction_readdatavalid : std_logic;
 
   signal sp_address   : std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
-  signal sp_byte_en   : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal sp_byte_en   : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
   signal sp_write_en  : std_logic;
   signal sp_read_en   : std_logic;
   signal sp_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -402,7 +401,7 @@ begin  -- architecture rtl
 
     signal instr_WID    : std_logic_vector(3 downto 0);
     signal instr_WDATA  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-    signal instr_WSTRB  : std_logic_vector(REGISTER_SIZE/BYTE_SIZE-1 downto 0);
+    signal instr_WSTRB  : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     signal instr_WVALID : std_logic;
     signal instr_WREADY : std_logic;
 
@@ -418,7 +417,7 @@ begin  -- architecture rtl
     signal instr_ARREADY : std_logic;
 
     signal instr_RID    : std_logic_vector(3 downto 0);
-    signal instr_RDATA  : std_logic_vector(REGISTER_SIZE -1 downto 0);
+    signal instr_RDATA  : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal instr_RRESP  : std_logic_vector(1 downto 0);
     signal instr_RVALID : std_logic;
     signal instr_RREADY : std_logic;
@@ -465,7 +464,7 @@ begin  -- architecture rtl
       generic map (
         ADDR_WIDTH    => REGISTER_SIZE,
         REGISTER_SIZE => REGISTER_SIZE,
-        BYTE_SIZE     => BYTE_SIZE
+        BYTE_SIZE     => 8
         )
       port map (
         clk     => clk,
@@ -508,7 +507,7 @@ begin  -- architecture rtl
     instruction_master : a4l_instruction_master
       generic map (
         REGISTER_SIZE => REGISTER_SIZE,
-        BYTE_SIZE     => BYTE_SIZE
+        BYTE_SIZE     => 8
         )
       port map (
         clk                            => clk,
@@ -554,8 +553,8 @@ begin  -- architecture rtl
       signal cache_AWREADY : std_logic;
 
       signal cache_WID    : std_logic_vector(3 downto 0);
-      signal cache_WDATA  : std_logic_vector(REGISTER_SIZE -1 downto 0);
-      signal cache_WSTRB  : std_logic_vector(REGISTER_SIZE/BYTE_SIZE-1 downto 0);
+      signal cache_WDATA  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+      signal cache_WSTRB  : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
       signal cache_WVALID : std_logic;
       signal cache_WREADY : std_logic;
 
@@ -571,7 +570,7 @@ begin  -- architecture rtl
       signal cache_ARREADY : std_logic;
 
       signal cache_RID    : std_logic_vector(3 downto 0);
-      signal cache_RDATA  : std_logic_vector(REGISTER_SIZE -1 downto 0);
+      signal cache_RDATA  : std_logic_vector(REGISTER_SIZE-1 downto 0);
       signal cache_RRESP  : std_logic_vector(1 downto 0);
       signal cache_RVALID : std_logic;
       signal cache_RREADY : std_logic;
@@ -583,7 +582,7 @@ begin  -- architecture rtl
           UC_ADDR_LAST  => IUC_ADDR_LAST,
           ADDR_WIDTH    => REGISTER_SIZE,
           REGISTER_SIZE => REGISTER_SIZE,
-          BYTE_SIZE     => BYTE_SIZE
+          BYTE_SIZE     => 8
           )
         port map (
           clk   => clk,
@@ -647,30 +646,25 @@ begin  -- architecture rtl
           cache_RVALID => cache_RVALID,
           cache_RREADY => cache_RREADY,
 
-          uc_AWID    => IUC_AWID,
           uc_AWADDR  => IUC_AWADDR,
           uc_AWPROT  => IUC_AWPROT,
           uc_AWVALID => IUC_AWVALID,
           uc_AWREADY => IUC_AWREADY,
 
-          uc_WID    => IUC_WID,
           uc_WDATA  => IUC_WDATA,
           uc_WSTRB  => IUC_WSTRB,
           uc_WVALID => IUC_WVALID,
           uc_WREADY => IUC_WREADY,
 
-          uc_BID    => IUC_BID,
           uc_BRESP  => IUC_BRESP,
           uc_BVALID => IUC_BVALID,
           uc_BREADY => IUC_BREADY,
 
-          uc_ARID    => IUC_ARID,
           uc_ARADDR  => IUC_ARADDR,
           uc_ARPROT  => IUC_ARPROT,
           uc_ARVALID => IUC_ARVALID,
           uc_ARREADY => IUC_ARREADY,
 
-          uc_RID    => IUC_RID,
           uc_RDATA  => IUC_RDATA,
           uc_RRESP  => IUC_RRESP,
           uc_RVALID => IUC_RVALID,
@@ -684,7 +678,7 @@ begin  -- architecture rtl
           ADDR_WIDTH => REGISTER_SIZE,
           ORCA_WIDTH => REGISTER_SIZE,
           DRAM_WIDTH => DRAM_WIDTH,
-          BYTE_SIZE  => BYTE_SIZE,
+          BYTE_SIZE  => 8,
           BURST_EN   => BURST_EN,
           FAMILY     => FAMILY
           )

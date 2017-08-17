@@ -2,7 +2,7 @@
 <spirit:component xmlns:xilinx="http://www.xilinx.com" xmlns:spirit="http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <spirit:vendor>user.org</spirit:vendor>
   <spirit:library>user</spirit:library>
-  <spirit:name>Orca</spirit:name>
+  <spirit:name>orca</spirit:name>
   <spirit:version>1.0</spirit:version>
   <spirit:busInterfaces>
     <spirit:busInterface>
@@ -170,7 +170,7 @@
       <spirit:vendorExtensions>
         <xilinx:busInterfaceInfo>
           <xilinx:enablement>
-            <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="BUSIF_ENABLEMENT.data" xilinx:dependency="$AXI_ENABLE = 1">false</xilinx:isEnabled>
+            <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="BUSIF_ENABLEMENT.DUC" xilinx:dependency="$AXI_ENABLE = 1">false</xilinx:isEnabled>
           </xilinx:enablement>
         </xilinx:busInterfaceInfo>
       </spirit:vendorExtensions>
@@ -593,7 +593,7 @@
       <spirit:vendorExtensions>
         <xilinx:busInterfaceInfo>
           <xilinx:enablement>
-            <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="BUSIF_ENABLEMENT.ic" xilinx:dependency="$AXI_ENABLE = 1">false</xilinx:isEnabled>
+            <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="BUSIF_ENABLEMENT.IC" xilinx:dependency="$AXI_ENABLE = 1">false</xilinx:isEnabled>
           </xilinx:enablement>
         </xilinx:busInterfaceInfo>
       </spirit:vendorExtensions>
@@ -674,7 +674,7 @@
       <spirit:vendorExtensions>
         <xilinx:busInterfaceInfo>
           <xilinx:enablement>
-            <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="BUSIF_ENABLEMENT.iuc" xilinx:dependency="$AXI_ENABLE = 1">false</xilinx:isEnabled>
+            <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="BUSIF_ENABLEMENT.IUC" xilinx:dependency="$AXI_ENABLE = 1">false</xilinx:isEnabled>
           </xilinx:enablement>
         </xilinx:busInterfaceInfo>
       </spirit:vendorExtensions>
@@ -704,7 +704,7 @@
         <spirit:displayName>Synthesis</spirit:displayName>
         <spirit:envIdentifier>:vivado.xilinx.com:synthesis</spirit:envIdentifier>
         <spirit:language>VHDL</spirit:language>
-        <spirit:modelName>Orca</spirit:modelName>
+        <spirit:modelName>orca</spirit:modelName>
         <spirit:fileSetRef>
           <spirit:localName>xilinx_anylanguagesynthesis_view_fileset</spirit:localName>
         </spirit:fileSetRef>
@@ -720,7 +720,7 @@
         <spirit:displayName>Simulation</spirit:displayName>
         <spirit:envIdentifier>:vivado.xilinx.com:simulation</spirit:envIdentifier>
         <spirit:language>VHDL</spirit:language>
-        <spirit:modelName>Orca</spirit:modelName>
+        <spirit:modelName>orca</spirit:modelName>
         <spirit:fileSetRef>
           <spirit:localName>xilinx_anylanguagebehavioralsimulation_view_fileset</spirit:localName>
         </spirit:fileSetRef>
@@ -4173,11 +4173,6 @@
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.REGISTER_SIZE">32</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
-        <spirit:name>BYTE_SIZE</spirit:name>
-        <spirit:displayName>Byte Size</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.BYTE_SIZE">8</spirit:value>
-      </spirit:modelParameter>
-      <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>AVALON_ENABLE</spirit:name>
         <spirit:displayName>Avalon Enable</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.AVALON_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
@@ -4192,15 +4187,15 @@
         <spirit:displayName>Axi Enable</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.AXI_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
       </spirit:modelParameter>
-      <spirit:modelParameter spirit:dataType="integer">
+      <spirit:modelParameter spirit:dataType="std_logic_vector">
         <spirit:name>RESET_VECTOR</spirit:name>
         <spirit:displayName>Reset Vector</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.RESET_VECTOR">0</spirit:value>
+        <spirit:value spirit:format="bitString" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.RESET_VECTOR" spirit:bitStringLength="32">0x00000000</spirit:value>
       </spirit:modelParameter>
-      <spirit:modelParameter spirit:dataType="integer">
+      <spirit:modelParameter spirit:dataType="std_logic_vector">
         <spirit:name>INTERRUPT_VECTOR</spirit:name>
         <spirit:displayName>Interrupt Vector</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.INTERRUPT_VECTOR">512</spirit:value>
+        <spirit:value spirit:format="bitString" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.INTERRUPT_VECTOR" spirit:bitStringLength="32">0x00000200</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>MULTIPLY_ENABLE</spirit:name>
@@ -4257,15 +4252,15 @@
         <spirit:displayName>Scratchpad Addr Bits</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.SCRATCHPAD_ADDR_BITS">10</spirit:value>
       </spirit:modelParameter>
-      <spirit:modelParameter spirit:dataType="integer">
+      <spirit:modelParameter spirit:dataType="std_logic_vector">
         <spirit:name>IUC_ADDR_BASE</spirit:name>
         <spirit:displayName>First Uncached Instruction Address</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IUC_ADDR_BASE" spirit:minimum="0" spirit:rangeType="long">0</spirit:value>
+        <spirit:value spirit:format="bitString" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IUC_ADDR_BASE" spirit:bitStringLength="32">0x00000000</spirit:value>
       </spirit:modelParameter>
-      <spirit:modelParameter spirit:dataType="integer">
+      <spirit:modelParameter spirit:dataType="std_logic_vector">
         <spirit:name>IUC_ADDR_LAST</spirit:name>
         <spirit:displayName>Last Uncached Instruction Address</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IUC_ADDR_LAST" spirit:minimum="0" spirit:rangeType="long">0</spirit:value>
+        <spirit:value spirit:format="bitString" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IUC_ADDR_LAST" spirit:bitStringLength="32">0x00000000</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>ICACHE_SIZE</spirit:name>
@@ -4295,7 +4290,7 @@
       <spirit:modelParameter spirit:dataType="string">
         <spirit:name>FAMILY</spirit:name>
         <spirit:displayName>Family</spirit:displayName>
-        <spirit:value spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.FAMILY">ALTERA</spirit:value>
+        <spirit:value spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.FAMILY">XILINX</spirit:value>
       </spirit:modelParameter>
     </spirit:modelParameters>
   </spirit:model>
@@ -4327,11 +4322,12 @@
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>bram_tdp_behav.vhd</spirit:name>
+        <spirit:name>a4l_instruction_master.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
+        <spirit:userFileType>CHECKSUM_16002df8</spirit:userFileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>bram_xilinx.vhd</spirit:name>
+        <spirit:name>bram_tdp_behav.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
@@ -4389,11 +4385,6 @@
       <spirit:file>
         <spirit:name>orca.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>a4l_instruction_master.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_16002df8</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
@@ -4423,11 +4414,11 @@
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>bram_tdp_behav.vhd</spirit:name>
+        <spirit:name>a4l_instruction_master.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>bram_xilinx.vhd</spirit:name>
+        <spirit:name>bram_tdp_behav.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
@@ -4486,36 +4477,27 @@
         <spirit:name>orca.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
-      <spirit:file>
-        <spirit:name>a4l_instruction_master.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-      </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
       <spirit:name>xilinx_xpgui_view_fileset</spirit:name>
       <spirit:file>
-        <spirit:name>xgui/Orca_v1_0.tcl</spirit:name>
+        <spirit:name>xgui/orca_v1_0.tcl</spirit:name>
         <spirit:fileType>tclSource</spirit:fileType>
         <spirit:userFileType>CHECKSUM_1dc081fc</spirit:userFileType>
         <spirit:userFileType>XGUI_VERSION_2</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
   </spirit:fileSets>
-  <spirit:description>Orca_v1_0</spirit:description>
+  <spirit:description>orca_v1_0</spirit:description>
   <spirit:parameters>
     <spirit:parameter>
       <spirit:name>Component_Name</spirit:name>
-      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.Component_Name" spirit:order="1">Orca_v1_0</spirit:value>
+      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.Component_Name" spirit:order="1">orca_v1_0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>REGISTER_SIZE</spirit:name>
       <spirit:displayName>Register Size</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.REGISTER_SIZE">32</spirit:value>
-    </spirit:parameter>
-    <spirit:parameter>
-      <spirit:name>BYTE_SIZE</spirit:name>
-      <spirit:displayName>Byte Size</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.BYTE_SIZE">8</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>AVALON_ENABLE</spirit:name>
@@ -4535,12 +4517,12 @@
     <spirit:parameter>
       <spirit:name>RESET_VECTOR</spirit:name>
       <spirit:displayName>Reset Vector</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.RESET_VECTOR">0</spirit:value>
+        <spirit:value spirit:format="bitString" spirit:resolve="user" spirit:id="PARAM_VALUE.RESET_VECTOR" spirit:bitStringLength="32">0x00000000</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>INTERRUPT_VECTOR</spirit:name>
       <spirit:displayName>Interrupt Vector</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.INTERRUPT_VECTOR">512</spirit:value>
+        <spirit:value spirit:format="bitString" spirit:resolve="user" spirit:id="PARAM_VALUE.INTERRUPT_VECTOR" spirit:bitStringLength="32">0x00000200</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>MULTIPLY_ENABLE</spirit:name>
@@ -4600,12 +4582,12 @@
     <spirit:parameter>
       <spirit:name>IUC_ADDR_BASE</spirit:name>
       <spirit:displayName>First Uncached Instruction Address</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.IUC_ADDR_BASE" spirit:minimum="0" spirit:rangeType="long">0</spirit:value>
+        <spirit:value spirit:format="bitString" spirit:resolve="user" spirit:id="PARAM_VALUE.IUC_ADDR_BASE" spirit:bitStringLength="32">0x00000000</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>IUC_ADDR_LAST</spirit:name>
       <spirit:displayName>Last Uncached Instruction Address</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.IUC_ADDR_LAST" spirit:minimum="0" spirit:rangeType="long">0</spirit:value>
+        <spirit:value spirit:format="bitString" spirit:resolve="user" spirit:id="PARAM_VALUE.IUC_ADDR_LAST" spirit:bitStringLength="32">0x00000000</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>ICACHE_SIZE</spirit:name>
@@ -4635,7 +4617,7 @@
     <spirit:parameter>
       <spirit:name>FAMILY</spirit:name>
       <spirit:displayName>Family</spirit:displayName>
-      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.FAMILY">ALTERA</spirit:value>
+      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.FAMILY">XILINX</spirit:value>
     </spirit:parameter>
   </spirit:parameters>
   <spirit:vendorExtensions>
@@ -4664,12 +4646,12 @@
       <xilinx:taxonomies>
         <xilinx:taxonomy>/UserIP</xilinx:taxonomy>
       </xilinx:taxonomies>
-      <xilinx:displayName>Orca_v1_0</xilinx:displayName>
+      <xilinx:displayName>Orca</xilinx:displayName>
       <xilinx:definitionSource>package_project</xilinx:definitionSource>
       <xilinx:coreRevision>18</xilinx:coreRevision>
       <xilinx:coreCreationDateTime>2017-07-18T18:41:29Z</xilinx:coreCreationDateTime>
       <xilinx:tags>
-        <xilinx:tag xilinx:name="user.org:user:Orca:1.0_ARCHIVE_LOCATION">/nfs/home/ryan/orca/rtl</xilinx:tag>
+        <xilinx:tag xilinx:name="user.org:user:orca:1.0_ARCHIVE_LOCATION">/nfs/home/ryan/orca/rtl</xilinx:tag>
       </xilinx:tags>
     </xilinx:coreExtensions>
     <xilinx:packagingInfo>

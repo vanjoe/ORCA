@@ -79,3 +79,5 @@ transcript
 
 .Xil/
 vivado_*.str
+vivado_pid*.zip
+export_sim/
