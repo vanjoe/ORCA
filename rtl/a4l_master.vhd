@@ -120,7 +120,8 @@ begin
         next_state_r   <= READ;
         if RVALID = '1' then
           if (core_data_read = '1') then
-            ARVALID <= '1';
+            latch_enable_r <= '1';
+            ARVALID        <= '1';
             if (ARREADY = '1') then
               next_state_r <= READ;
             else

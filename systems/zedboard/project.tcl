@@ -25,7 +25,6 @@ proc generate_bd_design {proj_dir proj_name bd_tcl_name} {
 	 set bd_design [glob $proj_dir/$proj_name.srcs/[current_fileset]/bd/*/*.bd]
 	 open_bd_design $bd_design
 	 generate_target all [get_files  $bd_design ]
-	 export_ip_user_files -of_objects [get_files $bd_design] -no_script -force -quiet
 	 write_bd_tcl $bd_tcl_name
 	 close_project
 }

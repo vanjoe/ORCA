@@ -80,7 +80,7 @@ $(OUT_BIT): $(IMPL_BIT) $(MMI_FILE) $(ELF_FILE)
 
 .PHONY: pgm
 pgm: $(OUT_BIT)
-	$(VIVADO_SOURCE) $(PGM_TCL) -tclargs pgm_bits $(PROJ_DIR) $(PROJ_NAME)
+	xmd -tcl $(PGM_TCL) $(OUT_BIT) ps7_init.tcl arm.elf
 
 .PHONY: clean
 clean:

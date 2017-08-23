@@ -7,8 +7,8 @@ proc reset_sim { } {
     upgrade_ip [get_ips *]
     report_ip_status -name ip_status
     generate_target simulation [get_files *design_1.bd]
-    export_ip_user_files -of_objects [get_files *design_1.bd] -no_script -force -quiet
-    export_simulation -of_objects [get_files *design_1.bd] -directory project/project.ip_user_files/sim_scripts -ip_user_files_dir project/project.ip_user_files -ipstatic_source_dir project.ip_user_files/ipstatic -lib_map_path [list {modelsim=project.cache/compile_simlib/modelsim} {questa=project.cache/compile_simlib/questa} {ies=project.cache/compile_simlib/ies} {vcs=project.cache/compile_simlib/vcs} {riviera=project.cache/compile_simlib/riviera}] -use_ip_compiled_libs -force -quiet
+#    export_ip_user_files -of_objects [get_files *design_1.bd] -no_script -force -quiet
+#    export_simulation -of_objects [get_files *design_1.bd] -directory project/project.ip_user_files/sim_scripts -ip_user_files_dir project/project.ip_user_files -ipstatic_source_dir project.ip_user_files/ipstatic -lib_map_path [list {modelsim=project.cache/compile_simlib/modelsim} {questa=project.cache/compile_simlib/questa} {ies=project.cache/compile_simlib/ies} {vcs=project.cache/compile_simlib/vcs} {riviera=project.cache/compile_simlib/riviera}] -use_ip_compiled_libs -force -quiet
 }
 
 proc start_sim { {run_time 0} } {
