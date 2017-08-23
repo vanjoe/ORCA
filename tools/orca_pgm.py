@@ -14,6 +14,7 @@ def script_usage(script_name):
     print 'Currently altera and xilinx are the only families supported.'
     print '[--base_address=<base_address>] the starting address of the code in ORCA\'s memory.'
     print '[--reset_address=<reset_address>] the address of the memory-mapped reset signal.'
+    print '[--end_address=<end_address>] the address of the end of memory.'
     print '[--device=<device_number>] the target device number (xilinx specific)'
     print '[--project_file=] the project file to open (xilinx specific)'
 
@@ -26,22 +27,34 @@ if __name__ == '__main__':
     program_file = sys.argv[1]
 
     try:
-        opts, args = getopt.getopt(sys.argv[2:], '', ['family=', 'base_address=', 'reset_address='])
+        opts, args = getopt.getopt(sys.argv[2:], '', ['family=', 'base_address=', 'reset_address=', 'device=', 'project_file=', 'end_address='])
     except getopt.GetoptError:
         script_usage(sys.argv[0])
         sys.exit(2)
 	
     base_address = 0x00000000
     reset_address = 0x10000000	
+    end_address = 0x00010000
     family = 'altera'
     device = 'xc7z020_1'
     project_file = 'project/project.xpr'
 
     for o, a in opts:
         if o == '--base_address':
-            base_address = int(a)
+            if ('0x' in a) or ('0X' in a):
+                base_address = int(a, 16)
+            else:
+                base_address = int(a)
         elif o == '--reset_address':
-            reset_address = int(a)
+            if ('0x' in a) or ('0X' in a):
+                reset_address = int(a, 16)
+            else:
+                reset_address = int(a)
+        elif o == '--end_address':
+            if ('0x' in a) or ('0X' in a):
+                end_address = int(a, 16)
+            else:
+                end_address = int(a)
         elif o == '--family':
             family = a
         elif o == '--device':
@@ -60,6 +73,7 @@ if __name__ == '__main__':
         tcl_script.write('master_write_32 $jtag_master %#010x %#010x\n' % (reset_address, 1))
         bin_file = open(program_file, 'rb') 
 
+        current_address = 0x00000000
         while 1:
             word = bin_file.read(4)
             if word == '':
@@ -72,6 +86,11 @@ if __name__ == '__main__':
                 little_endian_word |= ((word & 0x0000ff00) << 8)
                 little_endian_word |= ((word & 0x000000ff) << 24)
                 tcl_script.write('lappend values %#010x\n' % little_endian_word) 
+                current_address += 4
+
+        # Write over the rest of remaining memory with zeroes.
+        for i in range(current_address, end_address, 4):
+            tcl_script.write('lappend values %#010x\n' % 0x00000000)
 
         tcl_script.write('master_write_32 $jtag_master %#010x $values\n' % base_address)
         tcl_script.write('master_write_32 $jtag_master %#010x %#010x\n' % (reset_address, 0))
@@ -83,6 +102,7 @@ if __name__ == '__main__':
         system_console = '/nfs/opt/altera/15.1/quartus/sopc_builder/bin/system-console' 
         subprocess.Popen('{} --cli --script={}'.format(system_console, script_name), shell=True).wait()
 
+    # Note: JTAG does not currently work on the xilinx family of devices.
     elif family == 'xilinx':
         script_name = 'jtag_init.tcl'
         tcl_script = open(script_name, 'w')

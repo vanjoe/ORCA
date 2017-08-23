@@ -30,6 +30,14 @@ volatile int *uart = (volatile int*) 0x01000070;
 #endif
 
 #if MICROSEMI
+#define SYS_CLK 20000000 // Hz
+#define UART_INIT() ((void)0)
+#define UART_BASE  ((volatile int*) (0x30000000))
+#define UART_DATA UART_BASE
+#define UART_LSR   ((volatile int*) (0x30000010))
+#define UART_PUTC(c) do{*UART_DATA = (c);} while(0)
+#define UART_BUSY() (!((*UART_LSR) & 0x01))
+#define orca_printf printf
 #endif
 
 #if LATTICE

@@ -47,10 +47,6 @@ if { $argc != 1 } {
 		puts "Placing and Routing..."
 		run_tool -name {PLACEROUTE}
 
-	} elseif {$arg eq "verify_timing"} {
-		puts "Verifying Timing..."
-		run_tool -name {VERIFYTIMING}
-
 	} elseif {$arg eq "gen_prog_data"} {
 		puts "Generating Programming Data..."
 		run_tool -name {GENERATEPROGRAMMINGDATA}
@@ -62,10 +58,6 @@ if { $argc != 1 } {
 	} elseif {$arg eq "program"} {
 		puts "Programming Device..."
 		run_tool -name {PROGRAMDEVICE}
-
-	} elseif {$arg eq "clean_bit"} {
-		puts "Cleaning Programming Tool..."
-		clean_tool -name {PROGRAMDEVICE} 
 
 	} else {
 		puts "Unrecognized command."
