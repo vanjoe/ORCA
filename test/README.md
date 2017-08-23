@@ -21,6 +21,9 @@ for Altera targets, run:
 for Xilinx targets, run:
 `source /nfs/opt/xilinx/Vivado/latest/settings64.sh`
 `export XILINXD_LICENSE_FILE=2100@vax`	
+
+for Microsemi targets, run:
+`source /nfs/opt/microsemi/Libero.sh`
 	 
 ## ORCA Build Configuration
 --------------------------------------------------

@@ -51,6 +51,26 @@ NOTIFY_LIST = []
 # edition of quartus is used instead of the web edition.
 
 ZEDBOARD_UART_CFG = Xil_Uart_Cfg('/dev/ttyACM0', 115200)
+M2S150_UART_CFG = Mcsm_Uart_Cfg('/dev/ttyUSB2', 115200)
+
+TEST_IGNORE_LIST = [
+    'unit_test',
+    'rv32mi*',
+    'rv32si*',
+    'rv32ua*',
+    'rv32uc*',
+    'rv32uf*',
+#    'rv32um*',
+#    'rv32ui-p-sw',
+#    'rv32ui-p-b*',
+#    'rv32ui-p-a*',
+#    'rv32ui-p-f*',
+#    'rv32ui-p-j*',
+#    'rv32ui-p-l*',
+#    'rv32ui-p-o*',
+#    'rv32ui-p-s*',
+#    'rv32ui-p-x*'
+]
 
 ORCA_BUILDS = \
     [Alt_Orca_BuildCfg(system='de2-115',
@@ -117,7 +137,8 @@ ORCA_BUILDS = \
                         dram_width=32,
                         burst_en=0,
                         power_optimized=0,
-                        cache_enable=0),
+                        cache_enable=0,
+                        uart_cfg=M2S150_UART_CFG),
 
      Lat_Orca_BuildCfg(system='ice40ultra',
                        reset_vector=0,

@@ -74,7 +74,8 @@ $(ELF_FILE) :
 $(HEX_FILE) : $(ELF_FILE)
 	../../tools/elf2hex.sh $<
 	mv test.qex test.hex
-$(MAP_RPT_FILE) : $(HEX_FILE) $(QIP_FILE) $(SUBMODULE_FILES) $(TOP_LEVEL_FILES) 
+
+$(MAP_RPT_FILE) : $(QIP_FILE) $(SUBMODULE_FILES) $(TOP_LEVEL_FILES) 
 	quartus_map $(QPF_FILE)
 $(FIT_RPT_FILE) : $(MAP_RPT_FILE)
 	quartus_fit $(QPF_FILE)

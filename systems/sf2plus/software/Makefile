@@ -38,6 +38,7 @@ $(TARGET).bin: $(TARGET).elf
 	$(OBJCOPY) -O binary $< $@
 $(TARGET).hex: $(TARGET).elf
 	$(OBJCOPY) -O ihex $< $@
+	cp $@ ../$@
 $(TARGET).mem: $(TARGET).bin
 	 head -c $$((0x100)) /dev/zero | cat - $< | xxd -g1 -c4 | awk '{print $$5$$4$$3$$2}' > $@
 

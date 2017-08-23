@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////
-// Created by SmartDesign Wed Jun 28 13:57:56 2017
+// Created by SmartDesign Wed Aug 16 15:59:04 2017
 // Version: v11.7 SP3 11.7.3.8
 //////////////////////////////////////////////////////////////////////
 
@@ -263,13 +263,13 @@ wire   [31:0] PRDATAS16_const_net_0;
 //--------------------------------------------------------------------
 // Bus Interface Nets Declarations - Unequal Pin Widths
 //--------------------------------------------------------------------
+wire          CoreAHBLite_0_AHBmslave16_HRESP;
 wire   [1:1]  CoreAHBLite_0_AHBmslave16_HRESP_0_1to1;
 wire   [0:0]  CoreAHBLite_0_AHBmslave16_HRESP_0_0to0;
 wire   [1:0]  CoreAHBLite_0_AHBmslave16_HRESP_0;
-wire          CoreAHBLite_0_AHBmslave16_HRESP;
+wire   [2:0]  CoreAHBLite_0_AHBmslave16_HSIZE;
 wire   [1:0]  CoreAHBLite_0_AHBmslave16_HSIZE_0_1to0;
 wire   [1:0]  CoreAHBLite_0_AHBmslave16_HSIZE_0;
-wire   [2:0]  CoreAHBLite_0_AHBmslave16_HSIZE;
 wire   [15:2] CoreSF2Config_0_MDDR_APBmslave_PADDR;
 wire   [10:2] CoreSF2Config_0_MDDR_APBmslave_PADDR_0_10to2;
 wire   [10:2] CoreSF2Config_0_MDDR_APBmslave_PADDR_0;
