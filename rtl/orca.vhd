@@ -32,8 +32,8 @@ entity orca is
     IUC_ADDR_LAST         : std_logic_vector(31 downto 0) := X"00000000";
     ICACHE_SIZE           : natural                       := 8192;
     ICACHE_LINE_SIZE      : integer range 16 to 256       := 32;
-    DRAM_WIDTH            : integer                       := 32;
-    BURST_EN              : integer range 0 to 1          := 0;
+    ICACHE_EXTERNAL_WIDTH : integer                       := 32;
+    ICACHE_BURST_EN       : integer range 0 to 1          := 0;
     POWER_OPTIMIZED       : integer range 0 to 1          := 0;
     FAMILY                : string                        := "ALTERA");
   port(
@@ -188,11 +188,11 @@ entity orca is
     IC_ARVALID : out std_logic;
     IC_ARREADY : in  std_logic := '0';
 
-    IC_RID    : in  std_logic_vector(3 downto 0)            := (others => '0');
-    IC_RDATA  : in  std_logic_vector(DRAM_WIDTH-1 downto 0) := (others => '0');
-    IC_RRESP  : in  std_logic_vector(1 downto 0)            := (others => '0');
-    IC_RLAST  : in  std_logic                               := '0';
-    IC_RVALID : in  std_logic                               := '0';
+    IC_RID    : in  std_logic_vector(3 downto 0)                       := (others => '0');
+    IC_RDATA  : in  std_logic_vector(ICACHE_EXTERNAL_WIDTH-1 downto 0) := (others => '0');
+    IC_RRESP  : in  std_logic_vector(1 downto 0)                       := (others => '0');
+    IC_RLAST  : in  std_logic                                          := '0';
+    IC_RVALID : in  std_logic                                          := '0';
     IC_RREADY : out std_logic;
 
     IC_AWID    : out std_logic_vector(3 downto 0);
@@ -207,8 +207,8 @@ entity orca is
     IC_AWREADY : in  std_logic := '0';
 
     IC_WID    : out std_logic_vector(3 downto 0);
-    IC_WDATA  : out std_logic_vector(DRAM_WIDTH-1 downto 0);
-    IC_WSTRB  : out std_logic_vector((DRAM_WIDTH/8)-1 downto 0);
+    IC_WDATA  : out std_logic_vector(ICACHE_EXTERNAL_WIDTH-1 downto 0);
+    IC_WSTRB  : out std_logic_vector((ICACHE_EXTERNAL_WIDTH/8)-1 downto 0);
     IC_WLAST  : out std_logic;
     IC_WVALID : out std_logic;
     IC_WREADY : in  std_logic                    := '0';
@@ -673,14 +673,14 @@ begin  -- architecture rtl
 
       instruction_cache : icache
         generic map (
-          CACHE_SIZE => ICACHE_SIZE,       -- Byte size of cache
-          LINE_SIZE  => ICACHE_LINE_SIZE,  -- Bytes per cache line 
-          ADDR_WIDTH => REGISTER_SIZE,
-          ORCA_WIDTH => REGISTER_SIZE,
-          DRAM_WIDTH => DRAM_WIDTH,
-          BYTE_SIZE  => 8,
-          BURST_EN   => BURST_EN,
-          FAMILY     => FAMILY
+          CACHE_SIZE     => ICACHE_SIZE,       -- Byte size of cache
+          LINE_SIZE      => ICACHE_LINE_SIZE,  -- Bytes per cache line 
+          ADDR_WIDTH     => REGISTER_SIZE,
+          ORCA_WIDTH     => REGISTER_SIZE,
+          EXTERNAL_WIDTH => ICACHE_EXTERNAL_WIDTH,
+          BYTE_SIZE      => 8,
+          BURST_EN       => ICACHE_BURST_EN,
+          FAMILY         => FAMILY
           )
         port map (
           clk   => clk,

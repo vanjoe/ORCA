@@ -9,7 +9,7 @@
    (((BYTES) << 0)  & 0x000FF000) |             \
    0x6F);
 
-#define USE_ONCHIP_MEM 1
+#define USE_ONCHIP_MEM 0
 
 #define WAIT_SECONDS_BEFORE_START 0
 
@@ -18,7 +18,7 @@
 #define RUN_CACHED_LOOP  1
 #define RUN_CACHE_MISSES 1
 
-#define LOOP_RUNS 1024
+#define LOOP_RUNS 256
 
 #define ICACHE_SIZE      8192
 #define ICACHE_LINE_SIZE 16
@@ -119,7 +119,7 @@ int main(void) {
 
 #if RUN_CACHE_MISSES
   {
-    ChangedPrint("Cach misses:\r\n");
+    ChangedPrint("Cache misses:\r\n");
     uint32_t *function_copy_ptr = (uint32_t *)(&idram_timing_loop);
     uint32_t *function_copy_end = &idram_timing_loop_end;
     uint32_t timing_loop_size   = (uint32_t)(function_copy_end-function_copy_ptr);

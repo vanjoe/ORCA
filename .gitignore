@@ -81,3 +81,4 @@ transcript
 vivado_*.str
 vivado_pid*.zip
 export_sim/
+hw_ila*.btree

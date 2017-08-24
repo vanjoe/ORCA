@@ -33,8 +33,8 @@ package rv_components is
       IUC_ADDR_LAST         : std_logic_vector(31 downto 0) := X"00000000";
       ICACHE_SIZE           : natural                       := 8192;
       ICACHE_LINE_SIZE      : integer range 16 to 256       := 32;
-      DRAM_WIDTH            : integer                       := 32;
-      BURST_EN              : integer range 0 to 1          := 0;
+      ICACHE_EXTERNAL_WIDTH : integer                       := 32;
+      ICACHE_BURST_EN       : integer range 0 to 1          := 0;
       POWER_OPTIMIZED       : integer range 0 to 1          := 0;
       FAMILY                : string                        := "ALTERA");
     port(
@@ -47,7 +47,7 @@ package rv_components is
       -------------------------------------------------------------------------------
       --Avalon data master
       avm_data_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_data_byteenable    : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      avm_data_byteenable    : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
       avm_data_read          : out std_logic;
       avm_data_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
       avm_data_write         : out std_logic;
@@ -70,7 +70,7 @@ package rv_components is
       data_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
       data_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       data_WE_O    : out std_logic;
-      data_SEL_O   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      data_SEL_O   : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
       data_STB_O   : out std_logic;
       data_ACK_I   : in  std_logic                                  := '0';
       data_CYC_O   : out std_logic;
@@ -93,7 +93,7 @@ package rv_components is
       --A full AXI3 interface is exposed for systems that require it, but
       --only the A4L signals are needed
       DUC_AWID    : out std_logic_vector(3 downto 0);
-      DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       DUC_AWLEN   : out std_logic_vector(3 downto 0);
       DUC_AWSIZE  : out std_logic_vector(2 downto 0);
       DUC_AWBURST : out std_logic_vector(1 downto 0);
@@ -104,8 +104,8 @@ package rv_components is
       DUC_AWREADY : in  std_logic := '0';
 
       DUC_WID    : out std_logic_vector(3 downto 0);
-      DUC_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      DUC_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      DUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      DUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
       DUC_WLAST  : out std_logic;
       DUC_WVALID : out std_logic;
       DUC_WREADY : in  std_logic := '0';
@@ -116,7 +116,7 @@ package rv_components is
       DUC_BREADY : out std_logic;
 
       DUC_ARID    : out std_logic_vector(3 downto 0);
-      DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       DUC_ARLEN   : out std_logic_vector(3 downto 0);
       DUC_ARSIZE  : out std_logic_vector(2 downto 0);
       DUC_ARBURST : out std_logic_vector(1 downto 0);
@@ -126,18 +126,18 @@ package rv_components is
       DUC_ARVALID : out std_logic;
       DUC_ARREADY : in  std_logic := '0';
 
-      DUC_RID    : in  std_logic_vector(3 downto 0)                := (others => '0');
-      DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
-      DUC_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '0');
-      DUC_RLAST  : in  std_logic                                   := '0';
-      DUC_RVALID : in  std_logic                                   := '0';
+      DUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
+      DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+      DUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
+      DUC_RLAST  : in  std_logic                                  := '0';
+      DUC_RVALID : in  std_logic                                  := '0';
       DUC_RREADY : out std_logic;
 
       --AXI4-Lite uncached instruction master
       --A full AXI3 interface is exposed for systems that require it, but
       --only the A4L signals are needed
       IUC_ARID    : out std_logic_vector(3 downto 0);
-      IUC_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      IUC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       IUC_ARLEN   : out std_logic_vector(3 downto 0);
       IUC_ARSIZE  : out std_logic_vector(2 downto 0);
       IUC_ARBURST : out std_logic_vector(1 downto 0);
@@ -147,15 +147,15 @@ package rv_components is
       IUC_ARVALID : out std_logic;
       IUC_ARREADY : in  std_logic := '0';
 
-      IUC_RID    : in  std_logic_vector(3 downto 0)                := (others => '0');
-      IUC_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
-      IUC_RRESP  : in  std_logic_vector(1 downto 0)                := (others => '0');
-      IUC_RLAST  : in  std_logic                                   := '0';
-      IUC_RVALID : in  std_logic                                   := '0';
+      IUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
+      IUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+      IUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
+      IUC_RLAST  : in  std_logic                                  := '0';
+      IUC_RVALID : in  std_logic                                  := '0';
       IUC_RREADY : out std_logic;
 
       IUC_AWID    : out std_logic_vector(3 downto 0);
-      IUC_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      IUC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       IUC_AWLEN   : out std_logic_vector(3 downto 0);
       IUC_AWSIZE  : out std_logic_vector(2 downto 0);
       IUC_AWBURST : out std_logic_vector(1 downto 0);
@@ -166,8 +166,8 @@ package rv_components is
       IUC_AWREADY : in  std_logic := '0';
 
       IUC_WID    : out std_logic_vector(3 downto 0);
-      IUC_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-      IUC_WSTRB  : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+      IUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      IUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
       IUC_WLAST  : out std_logic;
       IUC_WVALID : out std_logic;
       IUC_WREADY : in  std_logic := '0';
@@ -179,7 +179,7 @@ package rv_components is
 
       --AXI3 cacheable instruction master
       IC_ARID    : out std_logic_vector(3 downto 0);
-      IC_ARADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      IC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       IC_ARLEN   : out std_logic_vector(3 downto 0);
       IC_ARSIZE  : out std_logic_vector(2 downto 0);
       IC_ARBURST : out std_logic_vector(1 downto 0);
@@ -189,15 +189,15 @@ package rv_components is
       IC_ARVALID : out std_logic;
       IC_ARREADY : in  std_logic := '0';
 
-      IC_RID    : in  std_logic_vector(3 downto 0)            := (others => '0');
-      IC_RDATA  : in  std_logic_vector(DRAM_WIDTH-1 downto 0) := (others => '0');
-      IC_RRESP  : in  std_logic_vector(1 downto 0)            := (others => '0');
-      IC_RLAST  : in  std_logic                               := '0';
-      IC_RVALID : in  std_logic                               := '0';
+      IC_RID    : in  std_logic_vector(3 downto 0)                       := (others => '0');
+      IC_RDATA  : in  std_logic_vector(ICACHE_EXTERNAL_WIDTH-1 downto 0) := (others => '0');
+      IC_RRESP  : in  std_logic_vector(1 downto 0)                       := (others => '0');
+      IC_RLAST  : in  std_logic                                          := '0';
+      IC_RVALID : in  std_logic                                          := '0';
       IC_RREADY : out std_logic;
 
       IC_AWID    : out std_logic_vector(3 downto 0);
-      IC_AWADDR  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
+      IC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       IC_AWLEN   : out std_logic_vector(3 downto 0);
       IC_AWSIZE  : out std_logic_vector(2 downto 0);
       IC_AWBURST : out std_logic_vector(1 downto 0);
@@ -208,8 +208,8 @@ package rv_components is
       IC_AWREADY : in  std_logic := '0';
 
       IC_WID    : out std_logic_vector(3 downto 0);
-      IC_WDATA  : out std_logic_vector(DRAM_WIDTH-1 downto 0);
-      IC_WSTRB  : out std_logic_vector(DRAM_WIDTH/8 -1 downto 0);
+      IC_WDATA  : out std_logic_vector(ICACHE_EXTERNAL_WIDTH-1 downto 0);
+      IC_WSTRB  : out std_logic_vector((ICACHE_EXTERNAL_WIDTH/8)-1 downto 0);
       IC_WLAST  : out std_logic;
       IC_WVALID : out std_logic;
       IC_WREADY : in  std_logic                    := '0';
@@ -223,7 +223,7 @@ package rv_components is
       -------------------------------------------------------------------------------
       --Avalon scratchpad slave
       avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
-      avm_scratch_byteenable    : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0)     := (others => '0');
+      avm_scratch_byteenable    : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0)    := (others => '0');
       avm_scratch_read          : in  std_logic                                         := '0';
       avm_scratch_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       avm_scratch_write         : in  std_logic                                         := '0';
@@ -236,7 +236,7 @@ package rv_components is
       sp_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)        := (others => '0');
       sp_WE_I    : in  std_logic                                         := '0';
-      sp_SEL_I   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0)     := (others => '0');
+      sp_SEL_I   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0)    := (others => '0');
       sp_STB_I   : in  std_logic                                         := '0';
       sp_ACK_O   : out std_logic;
       sp_CYC_I   : in  std_logic                                         := '0';
@@ -991,14 +991,14 @@ package rv_components is
 
   component icache is
     generic (
-      CACHE_SIZE : natural                  := 32768;  -- Byte size of cache
-      LINE_SIZE  : positive range 16 to 256 := 32;     -- Bytes per cache line 
-      ADDR_WIDTH : integer                  := 32;
-      ORCA_WIDTH : integer                  := 32;
-      DRAM_WIDTH : integer                  := 32;
-      BYTE_SIZE  : integer                  := 8;
-      BURST_EN   : integer                  := 0;
-      FAMILY     : string                   := "ALTERA"
+      CACHE_SIZE     : natural                  := 32768;  -- Byte size of cache
+      LINE_SIZE      : positive range 16 to 256 := 32;  -- Bytes per cache line 
+      ADDR_WIDTH     : integer                  := 32;
+      ORCA_WIDTH     : integer                  := 32;
+      EXTERNAL_WIDTH : integer                  := 32;
+      BYTE_SIZE      : integer                  := 8;
+      BURST_EN       : integer                  := 0;
+      FAMILY         : string                   := "ALTERA"
       );
     port (
       clk   : in std_logic;
@@ -1011,8 +1011,8 @@ package rv_components is
       orca_AWREADY : out std_logic;
 
       orca_WID    : in  std_logic_vector(3 downto 0);
-      orca_WDATA  : in  std_logic_vector(ORCA_WIDTH -1 downto 0);
-      orca_WSTRB  : in  std_logic_vector(ORCA_WIDTH/BYTE_SIZE -1 downto 0);
+      orca_WDATA  : in  std_logic_vector(ORCA_WIDTH-1 downto 0);
+      orca_WSTRB  : in  std_logic_vector((ORCA_WIDTH/BYTE_SIZE)-1 downto 0);
       orca_WVALID : in  std_logic;
       orca_WREADY : out std_logic;
 
@@ -1022,13 +1022,13 @@ package rv_components is
       orca_BREADY : in  std_logic;
 
       orca_ARID    : in  std_logic_vector(3 downto 0);
-      orca_ARADDR  : in  std_logic_vector(ADDR_WIDTH -1 downto 0);
+      orca_ARADDR  : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
       orca_ARPROT  : in  std_logic_vector(2 downto 0);
       orca_ARVALID : in  std_logic;
       orca_ARREADY : out std_logic;
 
       orca_RID    : out std_logic_vector(3 downto 0);
-      orca_RDATA  : out std_logic_vector(ORCA_WIDTH -1 downto 0);
+      orca_RDATA  : out std_logic_vector(ORCA_WIDTH-1 downto 0);
       orca_RRESP  : out std_logic_vector(1 downto 0);
       orca_RVALID : out std_logic;
       orca_RREADY : in  std_logic;
@@ -1046,8 +1046,8 @@ package rv_components is
       dram_AWREADY : in  std_logic;
 
       dram_WID    : out std_logic_vector(3 downto 0);
-      dram_WDATA  : out std_logic_vector(DRAM_WIDTH -1 downto 0);
-      dram_WSTRB  : out std_logic_vector(DRAM_WIDTH/BYTE_SIZE -1 downto 0);
+      dram_WDATA  : out std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
+      dram_WSTRB  : out std_logic_vector((EXTERNAL_WIDTH/BYTE_SIZE)-1 downto 0);
       dram_WLAST  : out std_logic;
       dram_WVALID : out std_logic;
       dram_WREADY : in  std_logic;
@@ -1058,7 +1058,7 @@ package rv_components is
       dram_BREADY : out std_logic;
 
       dram_ARID    : out std_logic_vector(3 downto 0);
-      dram_ARADDR  : out std_logic_vector(ADDR_WIDTH -1 downto 0);
+      dram_ARADDR  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
       dram_ARLEN   : out std_logic_vector(3 downto 0);
       dram_ARSIZE  : out std_logic_vector(2 downto 0);
       dram_ARBURST : out std_logic_vector(1 downto 0);
@@ -1069,7 +1069,7 @@ package rv_components is
       dram_ARREADY : in  std_logic;
 
       dram_RID    : in  std_logic_vector(3 downto 0);
-      dram_RDATA  : in  std_logic_vector(DRAM_WIDTH -1 downto 0);
+      dram_RDATA  : in  std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
       dram_RRESP  : in  std_logic_vector(1 downto 0);
       dram_RLAST  : in  std_logic;
       dram_RVALID : in  std_logic;

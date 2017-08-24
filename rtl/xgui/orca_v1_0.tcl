@@ -25,8 +25,8 @@ proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "IUC_ADDR_LAST"
   ipgui::add_param $IPINST -name "ICACHE_SIZE"
   ipgui::add_param $IPINST -name "ICACHE_LINE_SIZE"
-  ipgui::add_param $IPINST -name "DRAM_WIDTH"
-  ipgui::add_param $IPINST -name "BURST_EN"
+  ipgui::add_param $IPINST -name "ICACHE_EXTERNAL_WIDTH"
+  ipgui::add_param $IPINST -name "ICACHE_BURST_EN"
   ipgui::add_param $IPINST -name "POWER_OPTIMIZED"
   ipgui::add_param $IPINST -name "FAMILY"
 
@@ -59,12 +59,12 @@ proc validate_PARAM_VALUE.BRANCH_PREDICTORS { PARAM_VALUE.BRANCH_PREDICTORS } {
 	return true
 }
 
-proc update_PARAM_VALUE.BURST_EN { PARAM_VALUE.BURST_EN } {
-	# Procedure called to update BURST_EN when any of the dependent parameters in the arguments change
+proc update_PARAM_VALUE.ICACHE_BURST_EN { PARAM_VALUE.ICACHE_BURST_EN } {
+	# Procedure called to update ICACHE_BURST_EN when any of the dependent parameters in the arguments change
 }
 
-proc validate_PARAM_VALUE.BURST_EN { PARAM_VALUE.BURST_EN } {
-	# Procedure called to validate BURST_EN
+proc validate_PARAM_VALUE.ICACHE_BURST_EN { PARAM_VALUE.ICACHE_BURST_EN } {
+	# Procedure called to validate ICACHE_BURST_EN
 	return true
 }
 
@@ -95,12 +95,12 @@ proc validate_PARAM_VALUE.DIVIDE_ENABLE { PARAM_VALUE.DIVIDE_ENABLE } {
 	return true
 }
 
-proc update_PARAM_VALUE.DRAM_WIDTH { PARAM_VALUE.DRAM_WIDTH } {
-	# Procedure called to update DRAM_WIDTH when any of the dependent parameters in the arguments change
+proc update_PARAM_VALUE.ICACHE_EXTERNAL_WIDTH { PARAM_VALUE.ICACHE_EXTERNAL_WIDTH } {
+	# Procedure called to update ICACHE_EXTERNAL_WIDTH when any of the dependent parameters in the arguments change
 }
 
-proc validate_PARAM_VALUE.DRAM_WIDTH { PARAM_VALUE.DRAM_WIDTH } {
-	# Procedure called to validate DRAM_WIDTH
+proc validate_PARAM_VALUE.ICACHE_EXTERNAL_WIDTH { PARAM_VALUE.ICACHE_EXTERNAL_WIDTH } {
+	# Procedure called to validate ICACHE_EXTERNAL_WIDTH
 	return true
 }
 
@@ -363,14 +363,14 @@ proc update_MODELPARAM_VALUE.ICACHE_LINE_SIZE { MODELPARAM_VALUE.ICACHE_LINE_SIZ
 	set_property value [get_property value ${PARAM_VALUE.ICACHE_LINE_SIZE}] ${MODELPARAM_VALUE.ICACHE_LINE_SIZE}
 }
 
-proc update_MODELPARAM_VALUE.DRAM_WIDTH { MODELPARAM_VALUE.DRAM_WIDTH PARAM_VALUE.DRAM_WIDTH } {
+proc update_MODELPARAM_VALUE.ICACHE_EXTERNAL_WIDTH { MODELPARAM_VALUE.ICACHE_EXTERNAL_WIDTH PARAM_VALUE.ICACHE_EXTERNAL_WIDTH } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.DRAM_WIDTH}] ${MODELPARAM_VALUE.DRAM_WIDTH}
+	set_property value [get_property value ${PARAM_VALUE.ICACHE_EXTERNAL_WIDTH}] ${MODELPARAM_VALUE.ICACHE_EXTERNAL_WIDTH}
 }
 
-proc update_MODELPARAM_VALUE.BURST_EN { MODELPARAM_VALUE.BURST_EN PARAM_VALUE.BURST_EN } {
+proc update_MODELPARAM_VALUE.ICACHE_BURST_EN { MODELPARAM_VALUE.ICACHE_BURST_EN PARAM_VALUE.ICACHE_BURST_EN } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.BURST_EN}] ${MODELPARAM_VALUE.BURST_EN}
+	set_property value [get_property value ${PARAM_VALUE.ICACHE_BURST_EN}] ${MODELPARAM_VALUE.ICACHE_BURST_EN}
 }
 
 proc update_MODELPARAM_VALUE.POWER_OPTIMIZED { MODELPARAM_VALUE.POWER_OPTIMIZED PARAM_VALUE.POWER_OPTIMIZED } {
