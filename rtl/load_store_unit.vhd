@@ -8,8 +8,8 @@ use work.constants_pkg.all;
 entity load_store_unit is
   generic (
     REGISTER_SIZE       : integer;
-    SIGN_EXTENSION_SIZE : integer);
-
+    SIGN_EXTENSION_SIZE : integer
+    );
   port (
     clk            : in     std_logic;
     reset          : in     std_logic;
@@ -22,15 +22,15 @@ entity load_store_unit is
     stalled        : buffer std_logic;
     data_out       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_enable    : out    std_logic;
---memory-bus
+    --memory-bus
     address        : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    byte_en        : out    std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    byte_en        : out    std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     write_en       : buffer std_logic;
     read_en        : buffer std_logic;
     write_data     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     read_data      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    ack            : in     std_logic);
-
+    ack            : in     std_logic
+    );
 end entity load_store_unit;
 
 architecture rtl of load_store_unit is
@@ -71,19 +71,19 @@ architecture rtl of load_store_unit is
   signal expecting_r_ack : std_logic;
   signal expecting_w_ack : std_logic;
   signal expecting_ack   : std_logic;
-  signal write_instr     : boolean;
-  signal read_instr      : boolean;
+  signal write_instr     : std_logic;
+  signal read_instr      : std_logic;
 begin
 
   --prepare memory signals
   opcode <= instruction(6 downto 0);
   fun3   <= instruction(14 downto 12);
 
-  write_instr <= opcode = STORE_INSTR and valid = '1';
-  read_instr  <= opcode = LOAD_INSTR and valid = '1';
+  write_instr <= '1' when opcode = STORE_INSTR else '0';
+  read_instr  <= '1' when opcode = LOAD_INSTR  else '0';
 
-  write_en <= valid when write_instr and stall_to_lsu = '0' else '0';
-  read_en  <= valid when read_instr and stall_to_lsu = '0'  else '0';
+  write_en <= valid when write_instr = '1' and stall_to_lsu = '0' else '0';
+  read_en  <= valid when read_instr = '1' and stall_to_lsu = '0'  else '0';
 
   imm <= instruction(31 downto 25) & instruction(11 downto 7) when instruction(5) = '1'
          else instruction(31 downto 20);
@@ -116,7 +116,10 @@ begin
   --align to word boundary
   address    <= address_unaligned(REGISTER_SIZE-1 downto 2) & "00";
 
-  stalled <= '1' when ((expecting_r_ack and not ack) = '1') or ((expecting_w_ack and not ack) = '1' and (read_instr or write_instr)) else '0';
+  stalled <= not ack when
+             (expecting_r_ack = '1' or
+              (expecting_w_ack = '1' and valid = '1' and (read_instr = '1' or write_instr = '1'))) else
+             '0';
 
   expecting_ack <= expecting_r_ack or expecting_w_ack;
 
@@ -125,7 +128,6 @@ begin
   latched_inputs : process(clk)
   begin
     if rising_edge(clk) then
-      --expecting w ack
       if expecting_ack = '0' or ack = '1' then
         alignment    <= address_unaligned(1 downto 0);
         latched_fun3 <= fun3;
@@ -136,8 +138,7 @@ begin
       if read_en = '1' then
         expecting_r_ack <= '1';
       end if;
-      --expecting w ack
-      if expecting_w_ack = '1' and ack = '1'  then
+      if expecting_w_ack = '1' and ack = '1' then
         expecting_w_ack <= '0';
       end if;
       if write_en = '1' then

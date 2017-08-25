@@ -7,23 +7,23 @@ use work.utils.all;
 
 entity bram_microsemi is
   generic (
-    RAM_DEPTH       : integer := 1024; -- this is the maximum
-    RAM_WIDTH       : integer := 32;
-    BYTE_SIZE       : integer := 8
+    RAM_DEPTH : integer := 1024;        -- this is the maximum
+    RAM_WIDTH : integer := 32;
+    BYTE_SIZE : integer := 8
     );
   port (
-    clk    : in  std_logic;
+    clk : in std_logic;
 
     address  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
     data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
     we       : in  std_logic;
-    be       : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE-1 downto 0);
+    be       : in  std_logic_vector((RAM_WIDTH/BYTE_SIZE)-1 downto 0);
     readdata : out std_logic_vector(RAM_WIDTH-1 downto 0);
 
     data_address  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
     data_data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
     data_we       : in  std_logic;
-    data_be       : in  std_logic_vector(RAM_WIDTH/BYTE_SIZE-1 downto 0);
+    data_be       : in  std_logic_vector((RAM_WIDTH/BYTE_SIZE)-1 downto 0);
     data_readdata : out std_logic_vector(RAM_WIDTH-1 downto 0)
     );
 end entity bram_microsemi;
@@ -31,30 +31,30 @@ end entity bram_microsemi;
 architecture rtl of bram_microsemi is
   type ram_type is array (RAM_DEPTH-1 downto 0) of std_logic_vector(BYTE_SIZE-1 downto 0);
 
-  signal ram3     : ram_type := (others => (others => '0'));
-  signal byte_we3 : std_logic;
-  signal data_byte_we3 : std_logic;
-  signal reg_address3 : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
+  signal ram3              : ram_type := (others => (others => '0'));
+  signal byte_we3          : std_logic;
+  signal data_byte_we3     : std_logic;
+  signal reg_address3      : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
   signal reg_data_address3 : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
-  signal ram2     : ram_type := (others => (others => '0'));
-  signal byte_we2 : std_logic;
-  signal data_byte_we2 : std_logic;
-  signal reg_address2 : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
+  signal ram2              : ram_type := (others => (others => '0'));
+  signal byte_we2          : std_logic;
+  signal data_byte_we2     : std_logic;
+  signal reg_address2      : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
   signal reg_data_address2 : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
-  signal ram1     : ram_type := (others => (others => '0'));
-  signal byte_we1 : std_logic;
-  signal data_byte_we1 : std_logic;
-  signal reg_address1 : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
+  signal ram1              : ram_type := (others => (others => '0'));
+  signal byte_we1          : std_logic;
+  signal data_byte_we1     : std_logic;
+  signal reg_address1      : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
   signal reg_data_address1 : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
-  signal ram0     : ram_type := (others => (others => '0'));
-  signal byte_we0 : std_logic;
-  signal data_byte_we0 : std_logic;
-  signal reg_address0 : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
+  signal ram0              : ram_type := (others => (others => '0'));
+  signal byte_we0          : std_logic;
+  signal data_byte_we0     : std_logic;
+  signal reg_address0      : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
   signal reg_data_address0 : std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
 
   -- Uses RAM1K18
-  attribute syn_ramstyle : string;
-  attribute syn_preserve : boolean;
+  attribute syn_ramstyle         : string;
+  attribute syn_preserve         : boolean;
   attribute syn_ramstyle of ram3 : signal is "lsram";
   attribute syn_preserve of ram3 : signal is true;
   attribute syn_ramstyle of ram2 : signal is "lsram";
@@ -66,7 +66,7 @@ architecture rtl of bram_microsemi is
 
 begin
 
-  byte_we3 <= we and be(3);
+  byte_we3      <= we and be(3);
   data_byte_we3 <= data_we and data_be(3);
   process (clk)
   begin
@@ -83,7 +83,7 @@ begin
     end if;
   end process;
 
-  byte_we2 <= we and be(2);
+  byte_we2      <= we and be(2);
   data_byte_we2 <= data_we and data_be(2);
   process (clk)
   begin
@@ -100,7 +100,7 @@ begin
     end if;
   end process;
 
-  byte_we1 <= we and be(1);
+  byte_we1      <= we and be(1);
   data_byte_we1 <= data_we and data_be(1);
   process (clk)
   begin
@@ -117,7 +117,7 @@ begin
     end if;
   end process;
 
-  byte_we0 <= we and be(0);
+  byte_we0      <= we and be(0);
   data_byte_we0 <= data_we and data_be(0);
   process (clk)
   begin
@@ -126,19 +126,19 @@ begin
       if byte_we0 = '1' then
         ram0(to_integer(unsigned(address))) <= data_in(7 downto 0);
       end if;
-      
+
       reg_data_address0 <= data_address;
       if data_byte_we0 = '1' then
         ram0(to_integer(unsigned(data_address))) <= data_data_in(7 downto 0);
       end if;
     end if;
   end process;
-  
-  readdata <= ram3(to_integer(unsigned(reg_address3))) & 
+
+  readdata <= ram3(to_integer(unsigned(reg_address3))) &
               ram2(to_integer(unsigned(reg_address2))) &
               ram1(to_integer(unsigned(reg_address1))) &
               ram0(to_integer(unsigned(reg_address0)));
-  data_readdata <= ram3(to_integer(unsigned(reg_data_address3))) & 
+  data_readdata <= ram3(to_integer(unsigned(reg_data_address3))) &
                    ram2(to_integer(unsigned(reg_data_address2))) &
                    ram1(to_integer(unsigned(reg_data_address1))) &
                    ram0(to_integer(unsigned(reg_data_address0)));

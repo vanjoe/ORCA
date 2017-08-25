@@ -10,13 +10,12 @@ entity a4l_master is
     REGISTER_SIZE : integer := 32;
     BYTE_SIZE     : integer := 8
     );
-
   port (
     clk     : in std_logic;
     aresetn : in std_logic;
 
     core_data_address    : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
-    core_data_byteenable : in  std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+    core_data_byteenable : in  std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
     core_data_read       : in  std_logic;
     core_data_readdata   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     core_data_write      : in  std_logic;
@@ -28,7 +27,7 @@ entity a4l_master is
     AWVALID : out std_logic;
     AWREADY : in  std_logic;
 
-    WSTRB  : out std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+    WSTRB  : out std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
     WVALID : out std_logic;
     WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     WREADY : in  std_logic;

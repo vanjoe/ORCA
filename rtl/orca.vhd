@@ -35,8 +35,9 @@ entity orca is
     ICACHE_EXTERNAL_WIDTH : integer                       := 32;
     ICACHE_BURST_EN       : integer range 0 to 1          := 0;
     POWER_OPTIMIZED       : integer range 0 to 1          := 0;
-    FAMILY                : string                        := "ALTERA");
-  port(
+    FAMILY                : string                        := "ALTERA"
+    );
+  port (
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
     reset          : in std_logic;

@@ -10,13 +10,14 @@ use work.constants_pkg.all;
 use work.rv_components.all;
 
 entity lve_top is
-  generic(
+  generic (
     REGISTER_SIZE    : natural;
     SLAVE_DATA_WIDTH : natural := 32;
     POWER_OPTIMIZED  : boolean;
     SCRATCHPAD_SIZE  : integer := 1024;
-    FAMILY           : string  := "ALTERA");
-  port(
+    FAMILY           : string  := "ALTERA"
+    );
+  port (
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
     reset          : in std_logic;
@@ -29,12 +30,12 @@ entity lve_top is
     slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
     slave_read_en  : in  std_logic;
     slave_write_en : in  std_logic;
-    slave_byte_en  : in  std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
+    slave_byte_en  : in  std_logic_vector((SLAVE_DATA_WIDTH/8)-1 downto 0);
     slave_data_in  : in  std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
     slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
     slave_ack      : out std_logic;
 
-    stall_from_lve       : out    std_logic;
+    lve_executing        : out    std_logic;
     lve_alu_data1        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     lve_alu_data2        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     lve_alu_op_size      : out    std_logic_vector(1 downto 0);
@@ -126,7 +127,7 @@ architecture rtl of lve_top is
   signal slave_address_reg  : std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
   signal slave_read_en_reg  : std_logic;
   signal slave_write_en_reg : std_logic;
-  signal slave_byte_en_reg  : std_logic_vector(SLAVE_DATA_WIDTH/8 -1 downto 0);
+  signal slave_byte_en_reg  : std_logic_vector((SLAVE_DATA_WIDTH/8)-1 downto 0);
   signal slave_data_in_reg  : std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
 
 
@@ -271,7 +272,7 @@ begin
 
   end process;
 
-  stall_from_lve <= valid_lve_instr and not is_prefix when first_element = '1' or (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
+  lve_executing <= valid_lve_instr and not is_prefix when first_element = '1' or (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
 
   rd_en <= valid_lve_instr when external_port_enable = '0' and (read_vector_length > 1 or first_element = '1') else '0';
 

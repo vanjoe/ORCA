@@ -16,8 +16,8 @@ entity arithmetic_unit is
     POWER_OPTIMIZED     : boolean;
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
-    FAMILY              : string := "ALTERA");
-
+    FAMILY              : string := "ALTERA"
+    );
   port (
     clk                : in  std_logic;
     valid_instr        : in  std_logic;
@@ -39,7 +39,6 @@ entity arithmetic_unit is
     lve_data2        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     lve_source_valid : in std_logic
     );
-
 end entity arithmetic_unit;
 
 architecture rtl of arithmetic_unit is
@@ -626,7 +625,7 @@ begin  -- architecture rtl
   begin
     count_sub4 <= count -4;
     shift4     <= not count_sub4(count_sub4'left);
-    count_next <= count_sub4                when shift4 = '1' else count -1;
+    count_next <= count_sub4                when shift4 = '1' else count-1;
     left_nxt   <= SHIFT_LEFT(left_tmp, 4)   when shift4 = '1' else SHIFT_LEFT(left_tmp, 1);
     right_nxt  <= SHIFT_RIGHT(right_tmp, 4) when shift4 = '1' else SHIFT_RIGHT(right_tmp, 1);
 
@@ -695,7 +694,7 @@ begin  -- architecture rtl
             when RUNNING =>
               left_tmp  <= left_nxt;
               right_tmp <= right_nxt;
-              count     <= count -1;
+              count     <= count-1;
               if count = 1 then
                 shifted_result_valid <= '1';
                 state                <= DONE;
@@ -768,8 +767,8 @@ begin  -- architecture rtl
   div_neg_op1 <= not unsigned_div when signed(rs1_data) < 0 else '0';
   div_neg_op2 <= not unsigned_div when signed(rs2_data) < 0 else '0';
 
-  min_signed(min_signed'left)             <= '1';
-  min_signed(min_signed'left -1 downto 0) <= (others => '0');
+  min_signed(min_signed'left)            <= '1';
+  min_signed(min_signed'left-1 downto 0) <= (others => '0');
 
   div_zero <= rs2_data = to_unsigned(0, REGISTER_SIZE);
   div_overflow <= (rs1_data = min_signed and

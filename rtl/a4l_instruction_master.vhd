@@ -26,7 +26,7 @@ entity a4l_instruction_master is
     AWVALID : out std_logic;
     AWREADY : in  std_logic;
 
-    WSTRB  : out std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+    WSTRB  : out std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
     WVALID : out std_logic;
     WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     WREADY : in  std_logic;

@@ -18,7 +18,7 @@ entity instruction_fetch is
     reset              : in std_logic;
     downstream_stalled : in std_logic;
     interrupt_pending  : in std_logic;
-    branch_pred        : in std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
+    branch_pred        : in std_logic_vector((REGISTER_SIZE*2)+3-1 downto 0);
 
     br_taken        : buffer std_logic;
     instr_out       : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -53,9 +53,9 @@ architecture rtl of instruction_fetch is
   signal instr_out_saved       : std_logic_vector(instr_out'range);
   signal valid_instr_out_saved : std_logic;
 
-  signal predicted_pc      : unsigned(REGISTER_SIZE -1 downto 0);
-  signal next_address      : unsigned(REGISTER_SIZE -1 downto 0);
-  signal last_next_address : unsigned(REGISTER_SIZE -1 downto 0);
+  signal predicted_pc      : unsigned(REGISTER_SIZE-1 downto 0);
+  signal next_address      : unsigned(REGISTER_SIZE-1 downto 0);
+  signal last_next_address : unsigned(REGISTER_SIZE-1 downto 0);
 
   signal suppress_valid_instr_out : std_logic;
   signal dont_increment           : std_logic;

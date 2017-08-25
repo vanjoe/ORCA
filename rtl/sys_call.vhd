@@ -5,10 +5,12 @@ use work.constants_pkg.all;
 
 entity instruction_legal is
   generic (
-    CHECK_LEGAL_INSTRUCTIONS : boolean);
+    CHECK_LEGAL_INSTRUCTIONS : boolean
+    );
   port (
     instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    legal       : out std_logic);
+    legal       : out std_logic
+    );
 end entity;
 
 architecture rtl of instruction_legal is
@@ -57,8 +59,8 @@ entity system_calls is
     rs1_data    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
-    wb_data   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_enable : out std_logic;
+    data_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    data_enable : out std_logic;
 
     current_pc    : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     pc_correction : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -81,13 +83,14 @@ entity system_calls is
 end entity system_calls;
 
 architecture rtl of system_calls is
-
   component instruction_legal is
     generic (
-      check_legal_instructions : boolean);
+      check_legal_instructions : boolean
+      );
     port (
       instruction : in  std_logic_vector(instruction_size-1 downto 0);
-      legal       : out std_logic);
+      legal       : out std_logic
+      );
   end component;
 
   -- CSR signals. These are initialized to zero so that if any bits are never
@@ -187,8 +190,8 @@ begin  -- architecture rtl
   process(clk)
   begin
     if rising_edge(clk) then
-      wb_enable   <= '0';
-      wb_data     <= csr_read_val;
+      data_enable <= '0';
+      data_out    <= csr_read_val;
       pc_add_4    <= std_logic_vector(unsigned(current_pc) + 4);
       was_mret    <= '0';
       was_fence_i <= '0';
@@ -208,7 +211,7 @@ begin  -- architecture rtl
                                         -----------------------------------------------------------------------------
             -- CSR Read/Write
             -----------------------------------------------------------------------------
-            wb_enable <= '1';
+            data_enable <= '1';
 
             -- Disable csr writes if exceptions are not enabled.
             if ENABLE_EXCEPTIONS then

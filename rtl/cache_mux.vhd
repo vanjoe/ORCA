@@ -34,8 +34,8 @@ entity cache_mux is
     in_AWREADY : buffer std_logic;
 
     in_WID    : in     std_logic_vector(3 downto 0);
-    in_WDATA  : in     std_logic_vector(REGISTER_SIZE -1 downto 0);
-    in_WSTRB  : in     std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+    in_WDATA  : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    in_WSTRB  : in     std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
     in_WVALID : in     std_logic;
     in_WREADY : buffer std_logic;
 
@@ -45,13 +45,13 @@ entity cache_mux is
     in_BREADY : in     std_logic;
 
     in_ARID    : in     std_logic_vector(3 downto 0);
-    in_ARADDR  : in     std_logic_vector(ADDR_WIDTH -1 downto 0);
+    in_ARADDR  : in     std_logic_vector(ADDR_WIDTH-1 downto 0);
     in_ARPROT  : in     std_logic_vector(2 downto 0);
     in_ARVALID : in     std_logic;
     in_ARREADY : buffer std_logic;
 
     in_RID    : out    std_logic_vector(3 downto 0);
-    in_RDATA  : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
+    in_RDATA  : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     in_RRESP  : out    std_logic_vector(1 downto 0);
     in_RVALID : buffer std_logic;
     in_RREADY : in     std_logic;
@@ -64,8 +64,8 @@ entity cache_mux is
     cache_AWREADY : in  std_logic;
 
     cache_WID    : out std_logic_vector(3 downto 0);
-    cache_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-    cache_WSTRB  : out std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+    cache_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    cache_WSTRB  : out std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
     cache_WVALID : out std_logic;
     cache_WREADY : in  std_logic;
 
@@ -75,13 +75,13 @@ entity cache_mux is
     cache_BREADY : out std_logic;
 
     cache_ARID    : out std_logic_vector(3 downto 0);
-    cache_ARADDR  : out std_logic_vector(ADDR_WIDTH -1 downto 0);
+    cache_ARADDR  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
     cache_ARPROT  : out std_logic_vector(2 downto 0);
     cache_ARVALID : out std_logic;
     cache_ARREADY : in  std_logic;
 
     cache_RID    : in  std_logic_vector(3 downto 0);
-    cache_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+    cache_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     cache_RRESP  : in  std_logic_vector(1 downto 0);
     cache_RVALID : in  std_logic;
     cache_RREADY : out std_logic;
@@ -92,8 +92,8 @@ entity cache_mux is
     uc_AWVALID : out std_logic;
     uc_AWREADY : in  std_logic;
 
-    uc_WDATA  : out std_logic_vector(REGISTER_SIZE -1 downto 0);
-    uc_WSTRB  : out std_logic_vector(REGISTER_SIZE/BYTE_SIZE -1 downto 0);
+    uc_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    uc_WSTRB  : out std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
     uc_WVALID : out std_logic;
     uc_WREADY : in  std_logic;
 
@@ -101,12 +101,12 @@ entity cache_mux is
     uc_BVALID : in  std_logic;
     uc_BREADY : out std_logic;
 
-    uc_ARADDR  : out std_logic_vector(ADDR_WIDTH -1 downto 0);
+    uc_ARADDR  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
     uc_ARPROT  : out std_logic_vector(2 downto 0);
     uc_ARVALID : out std_logic;
     uc_ARREADY : in  std_logic;
 
-    uc_RDATA  : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+    uc_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     uc_RRESP  : in  std_logic_vector(1 downto 0);
     uc_RVALID : in  std_logic;
     uc_RREADY : out std_logic

@@ -117,7 +117,7 @@ package body utils is
     end if;
   end conditional;
 
-    function conditional (
+  function conditional (
     a        :    boolean;
     if_true  : in signed;
     if_false : in signed)

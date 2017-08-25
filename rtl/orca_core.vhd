@@ -14,7 +14,7 @@ entity orca_core is
     MULTIPLY_ENABLE    : natural range 0 to 1;
     DIVIDE_ENABLE      : natural range 0 to 1;
     SHIFTER_MAX_CYCLES : natural;
-    POWER_OPTIMIZED    : natural range 0 to 1           := 0;
+    POWER_OPTIMIZED    : natural range 0 to 1 := 0;
     COUNTER_LENGTH     : natural;
     ENABLE_EXCEPTIONS  : natural;
     BRANCH_PREDICTORS  : natural;
@@ -22,7 +22,8 @@ entity orca_core is
     NUM_EXT_INTERRUPTS : integer range 0 to 32;
     LVE_ENABLE         : natural range 0 to 1;
     SCRATCHPAD_SIZE    : integer;
-    FAMILY             : string);
+    FAMILY             : string
+    );
   port(
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
@@ -30,7 +31,7 @@ entity orca_core is
 
     --avalon master bus
     core_data_address              : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    core_data_byteenable           : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    core_data_byteenable           : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     core_data_read                 : out std_logic;
     core_data_readdata             : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => 'X');
     core_data_write                : out std_logic;
@@ -45,7 +46,7 @@ entity orca_core is
 
     --memory-bus scratchpad-slave
     sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-    sp_byte_en   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    sp_byte_en   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     sp_write_en  : in  std_logic;
     sp_read_en   : in  std_logic;
     sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -63,7 +64,7 @@ architecture rtl of orca_core is
   signal if_valid_out : std_logic;
 
   --signals going into decode
-  signal d_instr     : std_logic_vector(INSTRUCTION_SIZE -1 downto 0);
+  signal d_instr     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
   signal d_pc        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal d_br_taken  : std_logic;
   signal d_valid     : std_logic;
@@ -72,10 +73,9 @@ architecture rtl of orca_core is
   signal wb_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal wb_sel         : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal wb_en          : std_logic;
-  signal wb_valid       : std_logic;
   --signals going into execute
-  signal e_instr        : std_logic_vector(INSTRUCTION_SIZE -1 downto 0);
-  signal e_subseq_instr : std_logic_vector(INSTRUCTION_SIZE -1 downto 0);
+  signal e_instr        : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal e_subseq_instr : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
   signal e_subseq_valid : std_logic;
   signal e_pc           : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal e_br_taken     : std_logic;
@@ -91,7 +91,7 @@ architecture rtl of orca_core is
   signal pipeline_flush : std_logic;
 
   signal data_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_byte_en    : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal data_byte_en    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
   signal data_write_en   : std_logic;
   signal data_read_en    : std_logic;
   signal data_write_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -167,7 +167,6 @@ begin  -- architecture rtl
       wb_sel         => wb_sel,
       wb_data        => wb_data,
       wb_enable      => wb_en,
-      wb_valid       => wb_valid,
       --output signals
       rs1_data       => rs1_data,
       rs2_data       => rs2_data,
@@ -214,7 +213,6 @@ begin  -- architecture rtl
       wb_sel             => wb_sel,
       wb_data            => wb_data,
       wb_enable          => wb_en,
-      valid_output       => wb_valid,
       branch_pred        => branch_pred_to_instr_fetch,
       ifetch_next_pc     => ifetch_next_pc,
       stall_from_execute => execute_stalled,

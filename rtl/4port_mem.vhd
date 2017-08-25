@@ -5,26 +5,23 @@ library work;
 use work.utils.all;
 
 entity true_dual_port_ram_single_clock is
-
   generic
     (
       DATA_WIDTH : natural := 8;
       ADDR_WIDTH : natural := 6
       );
-
   port
     (
       clk    : in  std_logic;
-      addr_a : in  natural range 0 to 2**ADDR_WIDTH - 1;
-      addr_b : in  natural range 0 to 2**ADDR_WIDTH - 1;
-      data_a : in  std_logic_vector((DATA_WIDTH-1) downto 0);
-      data_b : in  std_logic_vector((DATA_WIDTH-1) downto 0);
+      addr_a : in  natural range 0 to (2**ADDR_WIDTH)-1;
+      addr_b : in  natural range 0 to (2**ADDR_WIDTH)-1;
+      data_a : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+      data_b : in  std_logic_vector(DATA_WIDTH-1 downto 0);
       we_a   : in  std_logic := '1';
       we_b   : in  std_logic := '1';
-      q_a    : out std_logic_vector((DATA_WIDTH -1) downto 0);
-      q_b    : out std_logic_vector((DATA_WIDTH -1) downto 0)
+      q_a    : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      q_b    : out std_logic_vector(DATA_WIDTH-1 downto 0)
       );
-
 end true_dual_port_ram_single_clock;
 
 architecture rtl of true_dual_port_ram_single_clock is
@@ -76,11 +73,10 @@ library work;
 use work.utils.all;
 
 entity ram_2port is
-
   generic (
     MEM_DEPTH : natural := 1024;
-    MEM_WIDTH : natural := 32);
-
+    MEM_WIDTH : natural := 32
+    );
   port (
     clk       : in  std_logic;
     byte_en0  : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
@@ -94,34 +90,29 @@ entity ram_2port is
     addr1     : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
     data_in1  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
     data_out1 : out std_logic_vector(MEM_WIDTH-1 downto 0)
-
     );
-
 end entity ram_2port;
 
 
 architecture behav of ram_2port is
   component true_dual_port_ram_single_clock is
-
     generic
       (
         DATA_WIDTH : natural := 8;
         ADDR_WIDTH : natural := 6
         );
-
     port
       (
         clk    : in  std_logic;
-        addr_a : in  natural range 0 to 2**ADDR_WIDTH - 1;
-        addr_b : in  natural range 0 to 2**ADDR_WIDTH - 1;
-        data_a : in  std_logic_vector((DATA_WIDTH-1) downto 0);
-        data_b : in  std_logic_vector((DATA_WIDTH-1) downto 0);
+        addr_a : in  natural range 0 to (2**ADDR_WIDTH)-1;
+        addr_b : in  natural range 0 to (2**ADDR_WIDTH)-1;
+        data_a : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+        data_b : in  std_logic_vector(DATA_WIDTH-1 downto 0);
         we_a   : in  std_logic := '1';
         we_b   : in  std_logic := '1';
-        q_a    : out std_logic_vector((DATA_WIDTH -1) downto 0);
-        q_b    : out std_logic_vector((DATA_WIDTH -1) downto 0)
+        q_a    : out std_logic_vector(DATA_WIDTH-1 downto 0);
+        q_b    : out std_logic_vector(DATA_WIDTH-1 downto 0)
         );
-
   end component;
 
 begin
@@ -180,44 +171,46 @@ library work;
 use work.utils.all;
 
 entity ram_4port is
-  generic(
-    MEM_DEPTH : natural;
-    MEM_WIDTH : natural;
+  generic (
+    MEM_DEPTH       : natural;
+    MEM_WIDTH       : natural;
     POWER_OPTIMIZED : boolean;
-    FAMILY    : string := "ALTERA");
-  port(
-    clk            : in  std_logic;
-    scratchpad_clk : in  std_logic;
-    reset          : in  std_logic;
+    FAMILY          : string := "ALTERA"
+    );
+  port (
+    clk            : in std_logic;
+    scratchpad_clk : in std_logic;
+    reset          : in std_logic;
 
     pause_lve_in  : in  std_logic;
     pause_lve_out : out std_logic;
                                         --read source A
-    raddr0         : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-    ren0           : in  std_logic;
-    scalar_value   : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-    scalar_enable  : in  std_logic;
-    data_out0      : out std_logic_vector(MEM_WIDTH-1 downto 0);
+    raddr0        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+    ren0          : in  std_logic;
+    scalar_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+    scalar_enable : in  std_logic;
+    data_out0     : out std_logic_vector(MEM_WIDTH-1 downto 0);
                                         --read source B
-    raddr1      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-    ren1        : in  std_logic;
-    enum_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-    enum_enable : in  std_logic;
-    data_out1   : out std_logic_vector(MEM_WIDTH-1 downto 0);
-    ack01       : out std_logic;
+    raddr1        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+    ren1          : in  std_logic;
+    enum_value    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+    enum_enable   : in  std_logic;
+    data_out1     : out std_logic_vector(MEM_WIDTH-1 downto 0);
+    ack01         : out std_logic;
                                         --write dest
-    waddr2      : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-    byte_en2    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-    wen2        : in  std_logic;
-    data_in2    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+    waddr2        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+    byte_en2      : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
+    wen2          : in  std_logic;
+    data_in2      : in  std_logic_vector(MEM_WIDTH-1 downto 0);
                                         --external slave port
-    rwaddr3     : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-    wen3        : in  std_logic;
-    ren3        : in  std_logic;        --cannot be asserted same cycle as wen3
-    byte_en3    : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-    data_in3    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-    ack3        : out std_logic;
-    data_out3   : out std_logic_vector(MEM_WIDTH-1 downto 0));
+    rwaddr3       : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
+    wen3          : in  std_logic;
+    ren3          : in  std_logic;      --cannot be asserted same cycle as wen3
+    byte_en3      : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
+    data_in3      : in  std_logic_vector(MEM_WIDTH-1 downto 0);
+    ack3          : out std_logic;
+    data_out3     : out std_logic_vector(MEM_WIDTH-1 downto 0)
+    );
 end entity;
 
 architecture rtl of ram_4port is
