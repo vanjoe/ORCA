@@ -7,7 +7,7 @@ import binascii
 
 def script_usage(script_name):
     print 'Usage: {} program_file [--base_address=] [--reset_address=]'.format(script_name)
-    print '[--device=] [--project_file=]'
+    print '[--device=] [--project_file=] [--output_file=]'
     print
     print 'program_file the bin file you wish to program.'
     print '[--family=<family_name>] the name of the target fpga family.' 
@@ -16,7 +16,9 @@ def script_usage(script_name):
     print '[--reset_address=<reset_address>] the address of the memory-mapped reset signal.'
     print '[--end_address=<end_address>] the address of the end of memory.'
     print '[--device=<device_number>] the target device number (xilinx specific)'
-    print '[--project_file=] the project file to open (xilinx specific)'
+    print '[--project_file=<project_file>] the project file to open (xilinx specific)'
+    print '[--debug_nets=<nets_file>] the debug netlist file for connecting to ILAs and JTAG (xilinx specific)'
+    print '[--output_file=<output_file>] the output jtag file name'
 
 if __name__ == '__main__':
 
@@ -27,7 +29,7 @@ if __name__ == '__main__':
     program_file = sys.argv[1]
 
     try:
-        opts, args = getopt.getopt(sys.argv[2:], '', ['family=', 'base_address=', 'reset_address=', 'device=', 'project_file=', 'end_address='])
+        opts, args = getopt.getopt(sys.argv[2:], '', ['family=', 'base_address=', 'reset_address=', 'device=', 'project_file=', 'end_address=', 'debug_nets=', 'output_file='])
     except getopt.GetoptError:
         script_usage(sys.argv[0])
         sys.exit(2)
@@ -38,6 +40,8 @@ if __name__ == '__main__':
     family = 'altera'
     device = 'xc7z020_1'
     project_file = 'project/project.xpr'
+    debug_nets = 'project/project.runs/impl_1/debug_nets.ltx'
+    output_file = 'jtag_init.tcl'
 
     for o, a in opts:
         if o == '--base_address':
@@ -61,12 +65,16 @@ if __name__ == '__main__':
             device = a
         elif o == '--project_file':
             project_file = a
+        elif o == '--debug_nets':
+            debug_nets = a
+        elif o == '--output_file':
+            output_file = a
         else:
             print 'Error: Unrecognized option {}'.format(o)
             sys.exit(2)
 
     if family == 'altera':
-        script_name = 'jtag_init.tcl'
+        script_name = output_file
         tcl_script = open(script_name, 'w')
         tcl_script.write('set jtag_master [lindex [get_service_paths master] 0]\n')
         tcl_script.write('open_service master $jtag_master\n')
@@ -104,20 +112,32 @@ if __name__ == '__main__':
 
     # Note: JTAG does not currently work on the xilinx family of devices.
     elif family == 'xilinx':
-        script_name = 'jtag_init.tcl'
+        script_name = output_file
         tcl_script = open(script_name, 'w')
-        tcl_script.write('open_project {}\n'.format(project_file))
-        tcl_script.write('connect_hw_server\n')
-        tcl_script.write('open_hw_target\n')
-        tcl_script.write('current_hw_device [get_hw_devices xc7z020_1]\n')
-        tcl_script.write('refresh_hw_device [lindex [get_hw_devices xc7z020_1] 0]\n')
-        tcl_script.write('reset_hw_axi [get_hw_axis hw_axi_1]\n')
-        tcl_script.write('create_hw_axi_txn write_txn [get_hw_axis hw_axi_1] -type WRITE ')
-        tcl_script.write('-address {} -len 1 -data 00000001\n'.format(reset_address))
+
+        write_count = 0
+        
+        tcl_script.write('proc orca_pgm {} {\n')
+        tcl_script.write('\topen_project {}\n'.format(project_file))
+        tcl_script.write('\topen_hw\n')
+        tcl_script.write('\tconnect_hw_server\n')
+        tcl_script.write('\tcurrent_hw_target [get_hw_targets */xilinx_tcf/Digilent/*]\n')
+        tcl_script.write('\tset_property PARAM.FREQUENCY 5000000 [get_hw_targets */xilinx_tcf/Digilent/*]\n')
+        tcl_script.write('\topen_hw_target\n')
+        tcl_script.write('\tset_property PROBES.FILE {{{}}} [get_hw_devices {}]\n'.format(debug_nets, device))
+        tcl_script.write('\tcurrent_hw_device [get_hw_devices {}]\n'.format(device))
+        tcl_script.write('\trefresh_hw_device [get_hw_devices {}]\n'.format(device))
+        tcl_script.write('\treset_hw_axi [get_hw_axis]\n')
+        tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
+        tcl_script.write('-address {:08x} -len 1 -data 0x00000001\n'.format(reset_address))
+        tcl_script.write('\tcreate_hw_axi_txn rd_{} [get_hw_axis hw_axi_1] -type read '.format(write_count))
+        tcl_script.write('-address {:08x} -len 1\n'.format(reset_address))
+        write_count += 1  
+
         bin_file = open(program_file, 'rb')
 
+        current_address = 0x00000000
         while 1:
-            address = base_address
             word = bin_file.read(4)
             if word == '':
                 break
@@ -128,16 +148,41 @@ if __name__ == '__main__':
                 little_endian_word |= ((word & 0x00ff0000) >> 8)
                 little_endian_word |= ((word & 0x0000ff00) << 8)
                 little_endian_word |= ((word & 0x000000ff) << 24)
-                tcl_script.write('create_hw_axi_txn write_txn [get_hw_axis hw_axi_1] -type WRITE ')
-                tcl_script.write('-address {} -len 1 -data {}\n'.format(address, little_endian_word))
-                address += 4
+                tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
+                tcl_script.write('-address {:08x} -len 1 -data {:08x}\n'.format(current_address, little_endian_word))
+                tcl_script.write('\tcreate_hw_axi_txn rd_{} [get_hw_axis hw_axi_1] -type read '.format(write_count))
+                tcl_script.write('-address {:08x} -len 1\n'.format(current_address))
+                write_count += 1
+                current_address += 4
 
-        tcl_script.write('create_hw_axi_txn write_txn [get_hw_axis hw_axi_1] -type WRITE ')
-        tcl_script.write('-address {} -len 1 -data 00000000\n'.format(reset_address))
-        tcl_script.write('close_project')
+        for i in range(current_address, end_address, 4):
+            tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
+            tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(i))
+            tcl_script.write('\tcreate_hw_axi_txn rd_{} [get_hw_axis hw_axi_1] -type read '.format(write_count))
+            tcl_script.write('-address {:08x} -len 1\n'.format(reset_address))
+            write_count += 1
+
+        tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
+        tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(reset_address))
+        tcl_script.write('\tcreate_hw_axi_txn rd_{} [get_hw_axis hw_axi_1] -type read '.format(write_count))
+        tcl_script.write('-address {:08x} -len 1\n'.format(reset_address))
+        write_count += 1
+
+        for i in range(0, write_count):
+            tcl_script.write('\trun_hw_axi wr_{}\n'.format(i))
+            tcl_script.write('\trun_hw_axi rd_{}\n'.format(i))
+
+        tcl_script.write('\tclose_hw\n')
+        tcl_script.write('\tclose_project\n')
+        tcl_script.write('}\n')
 
         bin_file.close()
         tcl_script.close()
+
+        vivado_cmd = 'vivado -mode tcl -nolog -nojournal'
+        tcl_src = tcl_script.name
+        cmd = 'echo "orca_pgm" | {} -source {}'.format(vivado_cmd, tcl_src)
+        subprocess.Popen(cmd, shell=True).wait()
 
     else:
         print 'Error: {} is not a supported family.'.format(family)

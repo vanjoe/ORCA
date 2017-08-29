@@ -60,16 +60,16 @@ TEST_IGNORE_LIST = [
     'rv32ua*',
     'rv32uc*',
     'rv32uf*',
-#    'rv32um*',
-#    'rv32ui-p-sw',
-#    'rv32ui-p-b*',
-#    'rv32ui-p-a*',
-#    'rv32ui-p-f*',
+    'rv32um*',
+    'rv32ui-p-sw',
+    'rv32ui-p-b*',
+    'rv32ui-p-a*',
+    'rv32ui-p-f*',
 #    'rv32ui-p-j*',
-#    'rv32ui-p-l*',
-#    'rv32ui-p-o*',
-#    'rv32ui-p-s*',
-#    'rv32ui-p-x*'
+    'rv32ui-p-l*',
+    'rv32ui-p-o*',
+    'rv32ui-p-s*',
+    'rv32ui-p-x*'
 ]
 
 ORCA_BUILDS = \

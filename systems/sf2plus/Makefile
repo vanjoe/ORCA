@@ -6,6 +6,8 @@ INIT_CONFIG_XML=designer/Top_Fabric_Master/Top_Fabric_Master_init_config.xml
 BITSTREAM_LOG=designer/Top_Fabric_Master/Top_Fabric_Master_fp/Top_Fabric_Master_generateBitstream.log
 HEX_FILE=test.hex
 
+all: $(BITSTREAM_LOG)
+
 $(HEX_FILE):
 	make -C software
 
