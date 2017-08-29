@@ -1,9 +1,10 @@
+-include config.mk
 
-PROJECT_TCL=project.tcl
-BD_TCL=design_1.tcl
-PGM_TCL=pgm.tcl
+BD_NAME      = design_1
+PROJECT_TCL  = project.tcl
+BD_TCL      ?= $(BD_NAME).tcl
 
-PROJ_DIR=project/
+PROJ_DIR=project
 PROJ_NAME=project
 
 SW_DIR=software
@@ -11,72 +12,79 @@ ELF_FILE=$(SW_DIR)/test.elf
 MEM_FILE=$(SW_DIR)/test.mem
 
 PROJ_FILE=$(PROJ_DIR)/$(PROJ_NAME).xpr
-BD_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/design_1/design_1.bd
-BLOCK_DESIGN_GEN_STAMP=$(BD_FILE).gen_stamp
-IMPL_STAMP=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/impl_1.impl_stamp
-HWDEF_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/design_1/design_1.hwdef
-SYNTH_LOG=$(PROJ_DIR)/$(PROJ_NAME).runs/synth_1/runme.log
-IMPL_TIMING_RPT=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/design_1_wrapper_timing_summary_routed.rpt
-VIVADO=vivado -mode tcl -nolog -nojournal
+BD_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/$(BD_NAME).bd
+HWH_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/hw_handoff/$(BD_NAME).hwh
+SYNTH_DCP=$(PROJ_DIR)/$(PROJ_NAME).runs/synth_1/$(BD_NAME)_wrapper.dcp
+IMPL_BIT=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.bit
 
 MMI_TCL=write_mmi.tcl
 BRAM_NAME=idram_gen
 MMI_FILE=$(BRAM_NAME).mmi
 OUT_BIT=out.bit
-GUI_BIT=$(PROJ_DIR)project.runs/impl_1/design_1_wrapper.bit
 
-all:$(OUT_BIT)
+PGM_TCL=pgm.tcl
 
-$(PROJ_FILE) $(BD_FILE):
-	echo "init_project $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
-	echo "create_bd $(PROJ_DIR) $(PROJ_NAME) $(BD_TCL)" | $(VIVADO) -source $(PROJECT_TCL)
+.PHONY: all
+all: $(OUT_BIT)
 
-$(BLOCK_DESIGN_GEN_STAMP): $(BD_FILE)
-	echo "generate_bd_design $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
+VIVADO_SOURCE=vivado -nojournal -nolog -mode batch -source
+
+
+$(PROJ_FILE) $(BD_FILE): $(PROJECT_TCL) $(BD_TCL)
+	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs init_project $(PROJ_DIR) $(PROJ_NAME)
+	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs create_bd $(PROJ_DIR) $(PROJ_NAME) $(BD_TCL)
+
+.PHONY: archiveBD
+archiveBD: $(HWH_FILE)
+
+$(HWH_FILE): $(BD_FILE)
+	rm -f tmp.$(BD_TCL)
+	rm -f $@
+	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs generate_bd_design $(PROJ_DIR) $(PROJ_NAME) tmp.$(BD_TCL)
+	[ -e tmp.$(BD_TCL) ]
+	[ -e $@ ]
+	mv tmp.$(BD_TCL) $(BD_TCL)
+	touch $<
 	touch $@
 
-$(SYNTH_LOG): $(BLOCK_DESIGN_GEN_STAMP) 
-	echo "project_synth $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
+$(SYNTH_DCP): $(HWH_FILE)
+	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs project_synth $(PROJ_DIR) $(PROJ_NAME)
 
-$(IMPL_STAMP): $(SYNTH_LOG)
-	echo "project_impl $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
-	touch $@
+$(IMPL_BIT): $(SYNTH_DCP)
+	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs project_impl $(PROJ_DIR) $(PROJ_NAME)
 
-$(PROJ_NAME).bit: $(IMPL_STAMP)
-	echo "export_bit $(PROJ_DIR) $(PROJ_NAME)" | $(VIVADO) -source $(PROJECT_TCL)
+#These should come from the BSP
+IDRAM_BASE_ADDRESS ?= 0x00000000
+IDRAM_MAX_ADDRESS  ?= 0x0001FFFF
 
-$(MMI_FILE): $(IMPL_TIMING_RPT) 
-	echo "mmi_wrapper $(PROJ_DIR) $(PROJ_NAME) $(BRAM_NAME)" | $(VIVADO) -source $(MMI_TCL)
+$(MMI_FILE): $(IMPL_BIT) $(MMI_TCL)
+	$(VIVADO_SOURCE) $(MMI_TCL) -tclargs mmi_wrapper $(PROJ_DIR) $(PROJ_NAME) $(BRAM_NAME) $(IDRAM_BASE_ADDRESS)
 
-$(ELF_FILE):
+$(ELF_FILE)::
 	make -C $(SW_DIR)
 
-$(OUT_BIT): $(PROJ_NAME).bit $(MMI_FILE) $(ELF_FILE)
-	updatemem -force --meminfo $(MMI_FILE) \
-  	--data $(ELF_FILE) \
-  	--bit $(PROJ_NAME).bit \
-  	--proc dummy \
-  	--out $(OUT_BIT) 
+.PHONY: gui
+gui: $(BD_FILE)
+	vivado -nolog -nojournal $(PROJ_FILE) &
 
-bitstream: 
-	make -C $(SW_DIR)
-	updatemem -force --meminfo $(MMI_FILE) \
-  	--data $(ELF_FILE) \
-  	--bit $(GUI_BIT) \
-  	--proc dummy \
-  	--out $(OUT_BIT) 
-    
-trigger_bitstream: 
-	make -C $(SW_DIR)
-	updatemem -force --meminfo $(MMI_FILE) \
-  	--data $(ELF_FILE) \
-  	--bit trig_at_startup.bit \
-  	--proc dummy \
-  	--out $(OUT_BIT) 
+.PHONY: bitstream
+bitstream: $(OUT_BIT)
 
+$(OUT_BIT): $(IMPL_BIT) $(MMI_FILE) $(ELF_FILE)
+	updatemem -force --meminfo $(MMI_FILE) \
+	--data $(ELF_FILE) \
+	--bit $(IMPL_BIT) \
+	--proc dummy \
+	--out $(OUT_BIT) 
+	rm -f updatemem_*.backup.*
+
+.PHONY: pgm
 pgm: $(OUT_BIT)
-	echo "pgm_bits $(PROJ_DIR) $(PROJ_NAME) $(OUT_BIT)" | $(VIVADO) -source $(PGM_TCL)
+	xmd -tcl $(PGM_TCL) $(OUT_BIT) ps7_init.tcl arm.elf
 
+.PHONY: clean
 clean:
-	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) $(MMI_FILE) *.jou *.log
+	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) $(MMI_FILE) *.jou *.log tmp.* vivado_pid*.zip export_sim/
 	make clean -C $(SW_DIR)
+
+.DELETE_ON_ERROR:

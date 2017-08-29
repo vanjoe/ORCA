@@ -5,12 +5,10 @@ use work.constants_pkg.all;
 --use IEEE.std_logic_arith.all;
 
 entity branch_unit is
-
-
   generic (
     REGISTER_SIZE       : integer;
-    SIGN_EXTENSION_SIZE : integer);
-
+    SIGN_EXTENSION_SIZE : integer
+    );
   port (
     clk            : in  std_logic;
     stall          : in  std_logic;
@@ -26,7 +24,7 @@ entity branch_unit is
     --unconditional jumps store return address in rd, output return address
     -- on data_out lines
     data_out       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_out_en    : out std_logic;
+    data_enable    : out std_logic;
     new_pc         : out std_logic_vector(REGISTER_SIZE-1 downto 0);  --next pc
     is_branch      : out std_logic;
     br_taken_out   : out std_logic;
@@ -36,10 +34,7 @@ end entity branch_unit;
 
 
 architecture latch_middle of branch_unit is
-
   constant OP_IMM_IMMEDIATE_SIZE : integer := 12;
-
-
 
   --these are one bit larget than a register
   signal op1      : signed(REGISTER_SIZE downto 0);
@@ -72,19 +67,15 @@ architecture latch_middle of branch_unit is
   signal data_en_latch      : std_logic;
 
   signal branch_taken_or_jump : std_logic;
-  signal is_jal_op               : std_logic;
-  signal is_jalr_op              : std_logic;
-  signal is_br_op                : std_logic;
+  signal is_jal_op            : std_logic;
+  signal is_jalr_op           : std_logic;
+  signal is_br_op             : std_logic;
 begin  -- architecture
-
-
   with func3 select
     msb_mask <=
     '0' when BLTU_OP,
     '0' when BGEU_OP,
     '1' when others;
-
-
 
   op1 <= signed((msb_mask and rs1_data(rs1_data'left)) & rs1_data);
   op2 <= signed((msb_mask and rs2_data(rs2_data'left)) & rs2_data);
@@ -107,9 +98,9 @@ begin  -- architecture
                     instr(7) & instr(30 downto 25) &instr(11 downto 8) & "0");
 
   jalr_imm <= unsigned(sign_extension(REGISTER_SIZE-12-1 downto 0) &
-                       instr(31 downto 21) & "0") ;
+                       instr(31 downto 21) & "0");
   jal_imm <= unsigned(RESIZE(signed(instr(31) & instr(19 downto 12) & instr(20) &
-                                    instr(30 downto 21)&"0"),REGISTER_SIZE));
+                                    instr(30 downto 21)&"0"), REGISTER_SIZE));
 
   branch_target  <= b_imm + unsigned(current_pc);
   nbranch_target <= to_unsigned(4, REGISTER_SIZE) + unsigned(current_pc);
@@ -141,8 +132,8 @@ begin  -- architecture
           is_jalr_op <= '0';
           is_br_op   <= '0';
 
-          if opcode = JAL_OP then    is_jal_op   <= '1'; end if;
-          if opcode = JALR_OP then   is_jalr_op <= '1'; end if;
+          if opcode = JAL_OP then is_jal_op   <= '1'; end if;
+          if opcode = JALR_OP then is_jalr_op <= '1'; end if;
           if opcode = BRANCH_OP then is_br_op <= '1'; end if;
 
           nbranch_latch <= nbranch_target;
@@ -152,15 +143,13 @@ begin  -- architecture
   end process;
 
 
-  data_out_en <= valid_branch_instr and (is_jal_op or is_jalr_op);
+  data_enable <= valid_branch_instr and (is_jal_op or is_jalr_op);
 
   branch_taken_or_jump <= (branch_taken_latch and is_br_op) or is_jal_op or is_jalr_op;
   br_taken_out         <= valid_branch_instr and branch_taken_or_jump;
   bad_predict          <= valid_branch_instr when br_taken_latch /= branch_taken_or_jump or is_jalr_op = '1' else '0';
-  is_branch            <= valid_branch_instr when is_jal_op = '1' or is_br_op = '1'                             else '0';
+  is_branch            <= valid_branch_instr when is_jal_op = '1' or is_br_op = '1'                          else '0';
 
   new_pc   <= std_logic_vector(target_pc_latch) when branch_taken_or_jump = '1' else std_logic_vector(nbranch_latch);
   data_out <= std_logic_vector(nbranch_latch);
-
-
 end architecture;

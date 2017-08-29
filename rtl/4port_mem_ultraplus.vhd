@@ -8,12 +8,11 @@ library work;
 use work.utils.all;
 
 entity ram_1port is
-
   generic (
     MEM_DEPTH : natural := 1024;
     MEM_WIDTH : natural := 32;
-    FAMILY    : string  := "ALTERA");
-
+    FAMILY    : string  := "ALTERA"
+    );
   port (
     clk        : in  std_logic;
     byte_en_d1 : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
@@ -23,7 +22,6 @@ entity ram_1port is
     data_in_d1 : in  std_logic_vector(MEM_WIDTH-1 downto 0);
     data_out   : out std_logic_vector(MEM_WIDTH-1 downto 0)
     );
-
 end entity ram_1port;
 
 
@@ -56,9 +54,9 @@ begin
       if rising_edge(clk) then
         Q        <= ram(to_integer(unsigned(addr_d1)));
         data_out <= Q;
-        for b in 0 to MEM_WIDTH/8 -1 loop
+        for b in 0 to (MEM_WIDTH/8)-1 loop
           if wr_en_d1 = '1' and byte_en_d1(b) = '1' then
-            ram(to_integer(unsigned(addr_d1)))((b+1)*8 -1 downto b*8) <= data_in_d1(8*(b+1)-1 downto 8*b);
+            ram(to_integer(unsigned(addr_d1)))(((b+1)*8)-1 downto b*8) <= data_in_d1(8*(b+1)-1 downto 8*b);
           end if;
         end loop;  -- b
       end if;
@@ -151,12 +149,13 @@ library work;
 use work.utils.all;
 
 entity ram_4port is
-  generic(
+  generic (
     MEM_DEPTH       : natural;
     MEM_WIDTH       : natural;
     POWER_OPTIMIZED : boolean;
-    FAMILY          : string := "ALTERA");
-  port(
+    FAMILY          : string := "ALTERA"
+    );
+  port (
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
     reset          : in std_logic;

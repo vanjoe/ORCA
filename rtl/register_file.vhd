@@ -12,14 +12,14 @@ entity register_file is
   port(
     clk         : in std_logic;
     valid_input : in std_logic;
-    rs1_sel     : in std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
-    rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
-    wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
-    wb_data     : in std_logic_vector(REGISTER_SIZE -1 downto 0);
+    rs1_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    wb_data     : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     wb_enable   : in std_logic;
 
-    rs1_data : buffer std_logic_vector(REGISTER_SIZE -1 downto 0);
-    rs2_data : buffer std_logic_vector(REGISTER_SIZE -1 downto 0)
+    rs1_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0)
     );
 end;
 
@@ -39,37 +39,37 @@ architecture rtl of register_file is
   signal we                 : std_logic;
 
 --These aliases are useful during simulation of software.
-  alias ra  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_RA ));
-  alias sp  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_SP ));
-  alias gp  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_GP ));
-  alias tp  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_TP ));
-  alias t0  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T0 ));
-  alias t1  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T1 ));
-  alias t2  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T2 ));
-  alias s0  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S0 ));
-  alias s1  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S1 ));
-  alias a0  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A0 ));
-  alias a1  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A1 ));
-  alias a2  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A2 ));
-  alias a3  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A3 ));
-  alias a4  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A4 ));
-  alias a5  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A5 ));
-  alias a6  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A6 ));
-  alias a7  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A7 ));
-  alias s2  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S2 ));
-  alias s3  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S3 ));
-  alias s4  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S4 ));
-  alias s5  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S5 ));
-  alias s6  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S6 ));
-  alias s7  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S7 ));
-  alias s8  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S8 ));
-  alias s9  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S9 ));
+  alias ra  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_RA));
+  alias sp  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_SP));
+  alias gp  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_GP));
+  alias tp  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_TP));
+  alias t0  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T0));
+  alias t1  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T1));
+  alias t2  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T2));
+  alias s0  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S0));
+  alias s1  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S1));
+  alias a0  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A0));
+  alias a1  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A1));
+  alias a2  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A2));
+  alias a3  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A3));
+  alias a4  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A4));
+  alias a5  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A5));
+  alias a6  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A6));
+  alias a7  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_A7));
+  alias s2  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S2));
+  alias s3  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S3));
+  alias s4  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S4));
+  alias s5  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S5));
+  alias s6  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S6));
+  alias s7  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S7));
+  alias s8  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S8));
+  alias s9  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S9));
   alias s10 : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S10));
   alias s11 : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_S11));
-  alias t3  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T3 ));
-  alias t4  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T4 ));
-  alias t5  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T5 ));
-  alias t6  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T6 ));
+  alias t3  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T3));
+  alias t4  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T4));
+  alias t5  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T5));
+  alias t6  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T6));
 
 begin
 

@@ -5,10 +5,12 @@ use work.constants_pkg.all;
 
 entity instruction_legal is
   generic (
-    CHECK_LEGAL_INSTRUCTIONS : boolean);
+    CHECK_LEGAL_INSTRUCTIONS : boolean
+    );
   port (
     instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    legal       : out std_logic);
+    legal       : out std_logic
+    );
 end entity;
 
 architecture rtl of instruction_legal is
@@ -42,29 +44,27 @@ use ieee.numeric_std.all;
 use work.constants_pkg.all;
 
 entity system_calls is
-
   generic (
     REGISTER_SIZE     : natural;
-    INTERRUPT_VECTOR  : integer;
+    INTERRUPT_VECTOR  : std_logic_vector(31 downto 0);
     ENABLE_EXCEPTIONS : boolean := true;
-    COUNTER_LENGTH    : natural);
-
+    COUNTER_LENGTH    : natural
+    );
   port (
-    clk         : in std_logic;
-    reset       : in std_logic;
-    valid       : in std_logic;
-    stall_in    : in std_logic;
+    clk         : in  std_logic;
+    reset       : in  std_logic;
+    valid       : in  std_logic;
+    stall_in    : in  std_logic;
     stall_out   : out std_logic;
-    rs1_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    rs1_data    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
-    wb_data   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_enable : out std_logic;
+    data_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    data_enable : out std_logic;
 
     current_pc    : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    pc_correction : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
+    pc_correction : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     pc_corr_en    : buffer std_logic;
-
 
     -- The interrupt_pending signal goes to the Instruction Fetch stage.
     interrupt_pending   : buffer std_logic;
@@ -78,18 +78,19 @@ entity system_calls is
     instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     br_bad_predict : in std_logic;
-    br_new_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0));
-
+    br_new_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0)
+    );
 end entity system_calls;
 
 architecture rtl of system_calls is
-
   component instruction_legal is
     generic (
-      check_legal_instructions : boolean);
+      check_legal_instructions : boolean
+      );
     port (
       instruction : in  std_logic_vector(instruction_size-1 downto 0);
-      legal       : out std_logic);
+      legal       : out std_logic
+      );
   end component;
 
   -- CSR signals. These are initialized to zero so that if any bits are never
@@ -107,7 +108,7 @@ architecture rtl of system_calls is
 
   alias csr_select is instruction(CSR_ADDRESS'range);
   alias func3 is instruction(INSTR_FUNC3'range);
-	alias imm is instruction(CSR_ZIMM'range);
+  alias imm is instruction(CSR_ZIMM'range);
 
   signal bit_sel       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal csr_read_val  : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -124,7 +125,7 @@ architecture rtl of system_calls is
 
   signal time_counter : unsigned(63 downto 0);
 
-begin -- architecture rtl
+begin  -- architecture rtl
 
   instr_check : instruction_legal
     generic map (
@@ -150,56 +151,56 @@ begin -- architecture rtl
 
   with csr_select select
     csr_read_val <=
-			mstatus  when CSR_MSTATUS,
-			mepc     when CSR_MEPC,
-			mcause   when CSR_MCAUSE,
-			mbadaddr when CSR_MBADADDR,
-			mip      when CSR_MIP,
-			meimask  when CSR_MEIMASK,
-			meipend  when CSR_MEIPEND,
-			mtime    when CSR_MTIME,
-			mtimeh   when CSR_MTIMEH,
-			mtime    when CSR_UTIME,
-			mtimeh   when CSR_UTIMEH,
+    mstatus  when CSR_MSTATUS,
+    mepc     when CSR_MEPC,
+    mcause   when CSR_MCAUSE,
+    mbadaddr when CSR_MBADADDR,
+    mip      when CSR_MIP,
+    meimask  when CSR_MEIMASK,
+    meipend  when CSR_MEIPEND,
+    mtime    when CSR_MTIME,
+    mtimeh   when CSR_MTIMEH,
+    mtime    when CSR_UTIME,
+    mtimeh   when CSR_UTIMEH,
 
-			(others => '0') when others;
+    (others => '0') when others;
 
   bit_sel <= rs1_data;
 
   with func3 select
     csr_write_val <=
-			rs1_data                     																		
-				when CSRRW_FUNC3,
-			csr_read_val or bit_sel
-				when CSRRS_FUNC3,
-			csr_read_val(31 downto 5) & (csr_read_val(CSR_ZIMM'length-1 downto 0) or imm) 
-				when CSRRSI_FUNC3,	
-			csr_read_val and not bit_sel 																		
-				when CSRRC_FUNC3,
-			csr_read_val(31 downto 5) & (csr_read_val(CSR_ZIMM'length-1 downto 0) and not imm)
-				when CSRRCI_FUNC3,
-			csr_read_val
-				when others;
+    rs1_data
+    when CSRRW_FUNC3,
+    csr_read_val or bit_sel
+    when CSRRS_FUNC3,
+    csr_read_val(31 downto 5) & (csr_read_val(CSR_ZIMM'length-1 downto 0) or imm)
+    when CSRRSI_FUNC3,
+    csr_read_val and not bit_sel
+    when CSRRC_FUNC3,
+    csr_read_val(31 downto 5) & (csr_read_val(CSR_ZIMM'length-1 downto 0) and not imm)
+    when CSRRCI_FUNC3,
+    csr_read_val
+    when others;
 
   stall_out <= '1' when (instruction(MAJOR_OP'range) = SYSTEM_OP and
                          csr_select = CSR_SLEEP and
-                         valid ='1' and
-                         csr_write_val /= mtime ) else '0';
+                         valid = '1' and
+                         csr_write_val /= mtime) else '0';
 
   process(clk)
   begin
     if rising_edge(clk) then
-      wb_enable   <= '0';
-      wb_data     <= csr_read_val;
+      data_enable <= '0';
+      data_out    <= csr_read_val;
       pc_add_4    <= std_logic_vector(unsigned(current_pc) + 4);
       was_mret    <= '0';
       was_fence_i <= '0';
       was_illegal <= '0';
       if valid = '1' then
         if legal_instr /= '1' and ENABLE_EXCEPTIONS then
-					-----------------------------------------------------------------------------
+                                        -----------------------------------------------------------------------------
           -- Handle Illegal Instructions
-					-----------------------------------------------------------------------------
+          -----------------------------------------------------------------------------
           mstatus(CSR_MSTATUS_MIE)  <= '0';
           mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
           mcause                    <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, mcause'length));
@@ -207,10 +208,10 @@ begin -- architecture rtl
           was_illegal               <= '1';
         elsif instruction(MAJOR_OP'range) = SYSTEM_OP and stall_in = '0' then
           if func3 /= "000" then
-						-----------------------------------------------------------------------------
+                                        -----------------------------------------------------------------------------
             -- CSR Read/Write
-						-----------------------------------------------------------------------------
-            wb_enable <= '1';
+            -----------------------------------------------------------------------------
+            data_enable <= '1';
 
             -- Disable csr writes if exceptions are not enabled.
             if ENABLE_EXCEPTIONS then
@@ -227,18 +228,18 @@ begin -- architecture rtl
                   mbadaddr <= csr_write_val;
                 when CSR_MEIMASK =>
                   meimask <= csr_write_val;
-								-- Note that mip and meipend are read-only registers.
+                                        -- Note that mip and meipend are read-only registers.
                 when others => null;
               end case;
 
             end if;
           elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
-						-----------------------------------------------------------------------------
+                                        -----------------------------------------------------------------------------
             -- Other System Instructions (mret)
-						-----------------------------------------------------------------------------
+            -----------------------------------------------------------------------------
             if instruction(31 downto 30) = "00" and instruction(27 downto 20) = "00000010" then
               -- We only have one privilege level (M), so treat all [USHM]RET instructions 
-							-- as the same.
+              -- as the same.
               mstatus(CSR_MSTATUS_MIE)  <= mstatus(CSR_MSTATUS_MPIE);
               mstatus(CSR_MSTATUS_MPIE) <= '0';
               was_mret                  <= '1';
@@ -250,17 +251,17 @@ begin -- architecture rtl
           was_fence_i <= instruction(12);
         end if;
       elsif interrupt_pending = '1' and pipeline_empty = '1' and ENABLE_EXCEPTIONS then
-				-- Latch in mepc the cycle before interrupt_processor goes high.
-				-- When interrupt_processor goes high, the next_pc of the instruction fetch will 
-				-- be corrected to the interrupt reset vector.
-				if interrupt_processor /= '1' then
-					mepc <= instruction_fetch_pc;
-				elsif interrupt_processor = '1' then
-					mstatus(CSR_MSTATUS_MIE)  <= '0';
-					mstatus(CSR_MSTATUS_MPIE) <= '1';
-					mcause(mcause'left)       <= '1';
-					mcause(3 downto 0)        <= std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, 4));
-				end if;
+        -- Latch in mepc the cycle before interrupt_processor goes high.
+        -- When interrupt_processor goes high, the next_pc of the instruction fetch will 
+        -- be corrected to the interrupt reset vector.
+        if interrupt_processor /= '1' then
+          mepc <= instruction_fetch_pc;
+        elsif interrupt_processor = '1' then
+          mstatus(CSR_MSTATUS_MIE)  <= '0';
+          mstatus(CSR_MSTATUS_MPIE) <= '1';
+          mcause(mcause'left)       <= '1';
+          mcause(3 downto 0)        <= std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, 4));
+        end if;
       end if;
 
       if reset = '1' then
@@ -271,7 +272,7 @@ begin -- architecture rtl
           mepc                      <= (others => '0');
           mcause                    <= (others => '0');
           meimask                   <= (others => '0');
-					-- Note that mip and meipend are read-only registers.
+                                        -- Note that mip and meipend are read-only registers.
         end if;
       end if;
     end if;
@@ -297,23 +298,23 @@ begin -- architecture rtl
 -- counter. The instruction fetch program counter is then set to the interrupt
 -- vector on the next cycle.
 --------------------------------------------------------------------------------
-  meipend <= external_interrupts;
+  meipend           <= external_interrupts;
   interrupt_pending <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 else '0';
 
-	process(clk)
-	begin
-		if rising_edge(clk) then
-			if reset = '1' then
-				interrupt_processor <= '0';
-			else
-				if interrupt_processor = '1' then
-					interrupt_processor <= '0';
-				else
-					interrupt_processor <= interrupt_pending and pipeline_empty;
-				end if;
-			end if;
-		end if;
-	end process;
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if reset = '1' then
+        interrupt_processor <= '0';
+      else
+        if interrupt_processor = '1' then
+          interrupt_processor <= '0';
+        else
+          interrupt_processor <= interrupt_pending and pipeline_empty;
+        end if;
+      end if;
+    end if;
+  end process;
 
 -----------------------------------------------------------------------------
 -- There are several reasons that sys_calls might send a pc correction
@@ -326,8 +327,8 @@ begin -- architecture rtl
   pc_corr_en <= was_fence_i or was_mret or was_illegal or interrupt_processor;
 
   pc_correction <= pc_add_4 when was_fence_i = '1' else
-                   std_logic_vector(to_unsigned(INTERRUPT_VECTOR, pc_correction'length)) when was_illegal = '1' or interrupt_processor = '1' else
-                   mepc                                                              		 when was_mret = '1' else
+                   INTERRUPT_VECTOR(REGISTER_SIZE-1 downto 0) when was_illegal = '1' or interrupt_processor = '1' else
+                   mepc                                       when was_mret = '1' else
                    (others => '-');
 
 end architecture rtl;

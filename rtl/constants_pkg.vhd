@@ -69,30 +69,30 @@ package constants_pkg is
   constant INSTRUCTION_SIZE : integer := 32;
 
 
-  constant OP_IMM_IMMEDIATE_SIZE : integer                      	:= 12;
-	constant CSR_ZIMM							 : std_logic_vector(19 downto 15) := (others => '0');	
-  constant JAL                   : std_logic_vector(6 downto 0) 	:= "1101111";
-  constant JALR                  : std_logic_vector(6 downto 0) 	:= "1100111";
+  constant OP_IMM_IMMEDIATE_SIZE : integer                        := 12;
+  constant CSR_ZIMM              : std_logic_vector(19 downto 15) := (others => '0');
+  constant JAL                   : std_logic_vector(6 downto 0)   := "1101111";
+  constant JALR                  : std_logic_vector(6 downto 0)   := "1100111";
 
-  constant CSR_ADDRESS      : std_logic_vector(31 downto 20) := (others => '0');
-  constant CSR_MSTATUS      : std_logic_vector(11 downto 0)  := x"300";
-  constant CSR_MIE          : std_logic_vector(11 downto 0)  := x"304";
-  constant CSR_MEPC         : std_logic_vector(11 downto 0)  := x"341";
-  constant CSR_MCAUSE       : std_logic_vector(11 downto 0)  := x"342";
-  constant CSR_MBADADDR     : std_logic_vector(11 downto 0)  := x"304";
-  constant CSR_MIP          : std_logic_vector(11 downto 0)  := x"344";
-  constant CSR_MTIME        : std_logic_vector(11 downto 0)  := x"F01";
-  constant CSR_MTIMEH       : std_logic_vector(11 downto 0)  := x"F81";
-  constant CSR_UTIME        : std_logic_vector(11 downto 0)  := x"C01";
-  constant CSR_UTIMEH       : std_logic_vector(11 downto 0)  := x"C81";
-  constant CSR_SLEEP        : std_logic_vector(11 downto 0)  := x"800";
+  constant CSR_ADDRESS  : std_logic_vector(31 downto 20) := (others => '0');
+  constant CSR_MSTATUS  : std_logic_vector(11 downto 0)  := x"300";
+  constant CSR_MIE      : std_logic_vector(11 downto 0)  := x"304";
+  constant CSR_MEPC     : std_logic_vector(11 downto 0)  := x"341";
+  constant CSR_MCAUSE   : std_logic_vector(11 downto 0)  := x"342";
+  constant CSR_MBADADDR : std_logic_vector(11 downto 0)  := x"304";
+  constant CSR_MIP      : std_logic_vector(11 downto 0)  := x"344";
+  constant CSR_MTIME    : std_logic_vector(11 downto 0)  := x"F01";
+  constant CSR_MTIMEH   : std_logic_vector(11 downto 0)  := x"F81";
+  constant CSR_UTIME    : std_logic_vector(11 downto 0)  := x"C01";
+  constant CSR_UTIMEH   : std_logic_vector(11 downto 0)  := x"C81";
+  constant CSR_SLEEP    : std_logic_vector(11 downto 0)  := x"800";
 
   --NON-STANDARD
-  constant CSR_MEIMASK      : std_logic_vector(11 downto 0)  := x"7C0";
-  constant CSR_MEIPEND      : std_logic_vector(11 downto 0)  := x"FC0";
+  constant CSR_MEIMASK      : std_logic_vector(11 downto 0) := x"7C0";
+  constant CSR_MEIPEND      : std_logic_vector(11 downto 0) := x"FC0";
   --CSR BITS
-  constant CSR_MSTATUS_MIE  : integer                        := 3;
-  constant CSR_MSTATUS_MPIE : integer                        := 7;
+  constant CSR_MSTATUS_MIE  : integer                       := 3;
+  constant CSR_MSTATUS_MPIE : integer                       := 7;
 
   --constant CSR_MCAUSE_MEXT    : integer := 16#8000000B#;
   constant CSR_MCAUSE_ILLEGAL : integer := 2;
@@ -101,9 +101,9 @@ package constants_pkg is
 
   constant CSRRW_FUNC3  : std_logic_vector(2 downto 0) := "001";
   constant CSRRS_FUNC3  : std_logic_vector(2 downto 0) := "010";
-	constant CSRRSI_FUNC3 : std_logic_vector(2 downto 0) := "110";
+  constant CSRRSI_FUNC3 : std_logic_vector(2 downto 0) := "110";
   constant CSRRC_FUNC3  : std_logic_vector(2 downto 0) := "011";
-	constant CSRRCI_FUNC3 : std_logic_vector(2 downto 0) := "111";
+  constant CSRRCI_FUNC3 : std_logic_vector(2 downto 0) := "111";
 
   constant SYSTEM_MINOR_OP : std_logic_vector(31 downto 20) := (others => '0');
   constant SYSTEM_NOT_CSR  : std_logic_vector(19 downto 7)  := (others => '0');

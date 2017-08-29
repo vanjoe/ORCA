@@ -27,7 +27,7 @@ entity bram_xilinx is
     (
       address_a  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
       address_b  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
-      clock      : in  std_logic;
+      clk        : in  std_logic;
       data_a     : in  std_logic_vector(RAM_WIDTH-1 downto 0);
       data_b     : in  std_logic_vector(RAM_WIDTH-1 downto 0);
       wren_a     : in  std_logic;
@@ -50,9 +50,9 @@ architecture rtl of bram_xilinx is
 
 begin
 
-  process (clock)
+  process (clk)
   begin
-    if clock'event and clock = '1' then
+    if clk'event and clk = '1' then
       if (en_a = '1') then
         -- NOTE: read assignment must come before write assignment to correctly
         -- model read-first synchronization.
@@ -64,9 +64,9 @@ begin
     end if;
   end process;
 
-  process (clock)
+  process (clk)
   begin
-    if clock'event and clock = '1' then
+    if clk'event and clk = '1' then
       if (en_b = '1') then
         readdata_b <= ram(conv_integer(address_b));
         if wren_b = '1' then

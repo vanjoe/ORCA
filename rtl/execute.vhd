@@ -15,7 +15,7 @@ entity execute is
   generic(
     REGISTER_SIZE       : positive;
     SIGN_EXTENSION_SIZE : positive;
-    INTERRUPT_VECTOR    : integer;
+    INTERRUPT_VECTOR    : std_logic_vector(31 downto 0);
     POWER_OPTIMIZED     : boolean;
     MULTIPLY_ENABLE     : boolean;
     DIVIDE_ENABLE       : boolean;
@@ -23,7 +23,8 @@ entity execute is
     COUNTER_LENGTH      : natural;
     ENABLE_EXCEPTIONS   : boolean;
     SCRATCHPAD_SIZE     : integer;
-    FAMILY              : string);
+    FAMILY              : string
+    );
   port(
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
@@ -40,17 +41,16 @@ entity execute is
     rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     sign_extension : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
 
-    wb_sel       : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    wb_data      : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_enable    : buffer std_logic;
-    valid_output : buffer std_logic;
+    wb_sel    : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    wb_data   : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    wb_enable : buffer std_logic;
 
-    branch_pred        : out    std_logic_vector(REGISTER_SIZE*2+3 -1 downto 0);
+    branch_pred        : out    std_logic_vector((REGISTER_SIZE*2)+3-1 downto 0);
     stall_from_execute : buffer std_logic;
 
     --memory-bus master
     address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    byte_en   : out std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    byte_en   : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     write_en  : out std_logic;
     read_en   : out std_logic;
     writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -59,20 +59,19 @@ entity execute is
 
     --memory-bus scratchpad-slave
     sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-    sp_byte_en   : in  std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+    sp_byte_en   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     sp_write_en  : in  std_logic;
     sp_read_en   : in  std_logic;
     sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     sp_ack       : out std_logic;
 
-    external_interrupts : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    pipeline_empty      : in  std_logic;
-    ifetch_next_pc      : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-		fetch_in_flight			: in	std_logic;
-    interrupt_pending   : buffer std_logic);
-
-
+    external_interrupts : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    pipeline_empty      : in     std_logic;
+    ifetch_next_pc      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    fetch_in_flight     : in     std_logic;
+    interrupt_pending   : buffer std_logic
+    );
 end entity execute;
 
 architecture behavioural of execute is
@@ -89,7 +88,7 @@ architecture behavioural of execute is
   signal stall_from_syscall : std_logic;
 
   signal ls_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ls_byte_en    : std_logic_vector(REGISTER_SIZE/8 -1 downto 0);
+  signal ls_byte_en    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
   signal ls_write_en   : std_logic;
   signal ls_read_en    : std_logic;
   signal ls_write_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -136,7 +135,7 @@ architecture behavioural of execute is
   signal fwd_en   : std_logic;
   signal fwd_mux  : std_logic;
 
-  signal stall_from_lve       : std_logic;
+  signal lve_executing        : std_logic;
   signal lve_alu_data1        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lve_alu_data2        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lve_alu_source_valid : std_logic;
@@ -144,8 +143,6 @@ architecture behavioural of execute is
 
   signal valid_instr : std_logic;
   signal rd_latch    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-
-  signal valid_input_latched : std_logic;
 
 
   constant ZERO : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := (others => '0');
@@ -232,27 +229,24 @@ begin
     br_data_out  when "10",
     alu_data_out when others;
 
-  wb_enable <= sys_data_enable or ld_data_enable or br_data_enable or (alu_data_out_valid and (not stall_from_lve)) when wb_sel /= ZERO else '0';
-  wb_sel    <= rd_latch;
+  wb_enable <= (sys_data_enable or
+                ld_data_enable or
+                br_data_enable or
+                (alu_data_out_valid and (not lve_executing)))
+               when wb_sel /= ZERO else
+               '0';
+  wb_sel <= rd_latch;
 
   fwd_data <= sys_data_out when sys_data_enable = '1' else
               alu_data_out when alu_data_out_valid = '1' else
               br_data_out;
 
-  --use_after_produce_stall <= wb_enable and valid_input and use_after_produce_stall_mask;
-
-  stalled_component  <= ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve or stall_from_syscall;
+  stalled_component  <= ls_unit_waiting or stall_from_alu or use_after_produce_stall or lve_executing or stall_from_syscall;
   stall_to_lve       <= (ls_unit_waiting or use_after_produce_stall);
   stall_to_alu       <= (ls_unit_waiting or use_after_produce_stall);
   stall_from_execute <= stalled_component and valid_input;
   stall_to_lsu       <= stalled_component;
   stall_to_syscall   <= stalled_component;
-
-  --TODO clean this up.
-  -- There was a bug here that valid output would not go high if a load was followed
-  -- by a pipeline bubble, the "or ld_data_enable" belwo fixes that, but it
-  -- doesn't seem to be the right fix.
-  valid_output <= valid_input_latched or ls_ack;
 
   process(clk)
     variable current_alu  : boolean;
@@ -262,10 +256,8 @@ begin
     variable rd_latch_var : std_logic_vector(rd'range);
   begin
     if rising_edge(clk) then
-
-      valid_input_latched <= valid_input and not stall_from_execute;
       --calculate where the next forward data will go
-      current_alu         := opcode = LUI_OP or
+      current_alu := opcode = LUI_OP or
                      opcode = AUIPC_OP or
                      opcode = ALU_OP or
                      opcode = ALUI_OP;
@@ -373,7 +365,7 @@ begin
       less_than      => less_than,
       sign_extension => sign_extension,
       data_out       => br_data_out,
-      data_out_en    => br_data_enable,
+      data_enable    => br_data_enable,
       new_pc         => br_new_pc,
       is_branch      => is_branch,
       br_taken_out   => br_taken_out,
@@ -422,8 +414,8 @@ begin
 
       rs1_data    => rs1_data_fwd,
       instruction => instruction,
-      wb_data     => sys_data_out,
-      wb_enable   => sys_data_enable,
+      data_out    => sys_data_out,
+      data_enable => sys_data_enable,
 
       current_pc    => pc_current,
       pc_correction => syscall_target,
@@ -463,7 +455,7 @@ begin
         slave_data_out => sp_readdata,
         slave_ack      => sp_ack,
 
-        stall_from_lve       => stall_from_lve,
+        lve_executing        => lve_executing,
         lve_alu_data1        => lve_alu_data1,
         lve_alu_data2        => lve_alu_data2,
         lve_alu_op_size      => simd_op_size,
@@ -475,11 +467,13 @@ begin
   end generate enable_lve;
 
   n_enable_lve : if not LVE_ENABLE generate
-    stall_from_lve       <= '0';
+    lve_executing        <= '0';
     simd_op_size         <= LVE_WORD_SIZE;
     lve_alu_source_valid <= '0';
     lve_alu_data1        <= (others => '-');
     lve_alu_data2        <= (others => '-');
+    sp_readdata          <= (others => '-');
+    sp_ack               <= '-';
   end generate n_enable_lve;
 
   ls_read_data <= readdata;
@@ -520,12 +514,10 @@ begin
   begin
     if rising_edge(clk) then
 
-      if valid_output = '1' and DEBUG_WRITEBACK then
+      if wb_enable = '1' and DEBUG_WRITEBACK then
         write(my_line, string'("WRITEBACK: PC = "));
         hwrite(my_line, last_valid_pc);
-        if wb_enable = '1' then
-          shadow_registers(to_integer(unsigned(wb_sel))) := wb_data;
-        end if;
+        shadow_registers(to_integer(unsigned(wb_sel))) := wb_data;
         write(my_line, string'(" REGISTERS = {"));
         for i in shadow_registers'range loop
           hwrite(my_line, shadow_registers(i));
