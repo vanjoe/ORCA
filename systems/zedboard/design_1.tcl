@@ -244,33 +244,27 @@ proc create_root_design { parentCell } {
   # Create ports
 
   # Create instance: Orca_0, and set properties
-  set Orca_0 [ create_bd_cell -type ip -vlnv user.org:user:Orca:1.0 Orca_0 ]
+  set Orca_0 [ create_bd_cell -type ip -vlnv user.org:user:orca:1.0 Orca_0 ]
   set_property -dict [ list \
 CONFIG.AVALON_ENABLE {0} \
 CONFIG.AXI_ENABLE {1} \
 CONFIG.BRANCH_PREDICTORS {0} \
-CONFIG.BURST_EN {0} \
-CONFIG.BYTE_SIZE {8} \
-CONFIG.CACHE_ENABLE {0} \
-CONFIG.CACHE_SIZE {32768} \
 CONFIG.COUNTER_LENGTH {32} \
 CONFIG.DIVIDE_ENABLE {1} \
-CONFIG.DRAM_WIDTH {32} \
 CONFIG.ENABLE_EXCEPTIONS {1} \
 CONFIG.ENABLE_EXT_INTERRUPTS {0} \
 CONFIG.FAMILY {XILINX} \
-CONFIG.INTERRUPT_VECTOR {512} \
-CONFIG.LINE_SIZE {16} \
+CONFIG.ICACHE_SIZE {0} \
+CONFIG.INTERRUPT_VECTOR {0x00000200} \
 CONFIG.LVE_ENABLE {0} \
 CONFIG.MULTIPLY_ENABLE {1} \
 CONFIG.NUM_EXT_INTERRUPTS {1} \
 CONFIG.PIPELINE_STAGES {5} \
 CONFIG.POWER_OPTIMIZED {0} \
 CONFIG.REGISTER_SIZE {32} \
-CONFIG.RESET_VECTOR {0} \
+CONFIG.RESET_VECTOR {0x00000000} \
 CONFIG.SCRATCHPAD_ADDR_BITS {10} \
 CONFIG.SHIFTER_MAX_CYCLES {1} \
-CONFIG.TCRAM_SIZE {64} \
 CONFIG.WISHBONE_ENABLE {0} \
  ] $Orca_0
 
@@ -314,7 +308,7 @@ CONFIG.C_NO_CLOCKS {50000000} \
  ] $fit_timer_0
 
   # Create instance: idram_0, and set properties
-  set idram_0 [ create_bd_cell -type ip -vlnv user.org:user:iram:1.0 idram_0 ]
+  set idram_0 [ create_bd_cell -type ip -vlnv user.org:user:idram:1.0 idram_0 ]
   set_property -dict [ list \
 CONFIG.SIZE {131072} \
  ] $idram_0
@@ -642,9 +636,8 @@ CONFIG.preset {ZedBoard} \
  ] $processing_system7_0
 
   # Create interface connections
-  connect_bd_intf_net -intf_net Orca_0_data [get_bd_intf_pins Orca_0/data] [get_bd_intf_pins axi_mem_intercon/S00_AXI]
-  connect_bd_intf_net -intf_net Orca_0_instr [get_bd_intf_pins Orca_0/itcram] [get_bd_intf_pins axi_mem_intercon_1/S00_AXI]
-  connect_bd_intf_net -intf_net Orca_0_iram [get_bd_intf_pins Orca_0/iram] [get_bd_intf_pins axi_mem_intercon_1/S01_AXI]
+  connect_bd_intf_net -intf_net Orca_0_data [get_bd_intf_pins Orca_0/DUC] [get_bd_intf_pins axi_mem_intercon/S00_AXI]
+  connect_bd_intf_net -intf_net Orca_0_instr [get_bd_intf_pins Orca_0/IUC] [get_bd_intf_pins axi_mem_intercon_1/S00_AXI]
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports leds_8bits] [get_bd_intf_pins axi_gpio_0/GPIO]
   connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_pins axi_interconnect_0/M00_AXI] [get_bd_intf_pins axi_mem_intercon_1/S02_AXI]
   connect_bd_intf_net -intf_net axi_interconnect_0_M01_AXI [get_bd_intf_pins axi_interconnect_0/M01_AXI] [get_bd_intf_pins jtag_reset_0/aximm_1]
@@ -670,14 +663,13 @@ CONFIG.preset {ZedBoard} \
   connect_bd_net -net rst_clk_wiz_100M_interconnect_aresetn [get_bd_pins axi_interconnect_0/ARESETN] [get_bd_pins axi_interconnect_0/M00_ARESETN] [get_bd_pins axi_interconnect_0/M01_ARESETN] [get_bd_pins axi_interconnect_0/S00_ARESETN] [get_bd_pins axi_mem_intercon/ARESETN] [get_bd_pins axi_mem_intercon/M00_ARESETN] [get_bd_pins axi_mem_intercon/M01_ARESETN] [get_bd_pins axi_mem_intercon/M02_ARESETN] [get_bd_pins axi_mem_intercon/M03_ARESETN] [get_bd_pins axi_mem_intercon/S00_ARESETN] [get_bd_pins axi_mem_intercon_1/ARESETN] [get_bd_pins axi_mem_intercon_1/M00_ARESETN] [get_bd_pins axi_mem_intercon_1/S00_ARESETN] [get_bd_pins axi_mem_intercon_1/S01_ARESETN] [get_bd_pins axi_mem_intercon_1/S02_ARESETN] [get_bd_pins clock/interconnect_aresetn] [get_bd_pins jtag_axi_0/aresetn]
 
   # Create address segments
-  create_bd_addr_seg -range 0x00010000 -offset 0x40000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] SEG_axi_gpio_0_Reg
-  create_bd_addr_seg -range 0x00080000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/iram] [get_bd_addr_segs idram_0/instr/reg0] SEG_idram_0_reg0
-  create_bd_addr_seg -range 0x00080000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/itcram] [get_bd_addr_segs idram_0/instr/reg0] SEG_idram_0_reg0
-  create_bd_addr_seg -range 0x00080000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs idram_0/data/reg0] SEG_iram_0_reg0
-  create_bd_addr_seg -range 0x10000000 -offset 0x10000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs processing_system7_0/S_AXI_GP0/GP0_DDR_LOWOCM] SEG_processing_system7_0_GP0_DDR_LOWOCM
-  create_bd_addr_seg -range 0x00400000 -offset 0xE0000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs processing_system7_0/S_AXI_GP0/GP0_IOP] SEG_processing_system7_0_GP0_IOP
-  create_bd_addr_seg -range 0x01000000 -offset 0xFC000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs processing_system7_0/S_AXI_GP0/GP0_QSPI_LINEAR] SEG_processing_system7_0_GP0_QSPI_LINEAR
-  create_bd_addr_seg -range 0x20000000 -offset 0x80000000 [get_bd_addr_spaces Orca_0/data] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] SEG_processing_system7_0_HP0_DDR_LOWOCM
+  create_bd_addr_seg -range 0x00010000 -offset 0x40000000 [get_bd_addr_spaces Orca_0/DUC] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] SEG_axi_gpio_0_Reg
+  create_bd_addr_seg -range 0x00080000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/IUC] [get_bd_addr_segs idram_0/instr/reg0] SEG_idram_0_reg0
+  create_bd_addr_seg -range 0x00080000 -offset 0x00000000 [get_bd_addr_spaces Orca_0/DUC] [get_bd_addr_segs idram_0/data/reg0] SEG_iram_0_reg0
+  create_bd_addr_seg -range 0x10000000 -offset 0x10000000 [get_bd_addr_spaces Orca_0/DUC] [get_bd_addr_segs processing_system7_0/S_AXI_GP0/GP0_DDR_LOWOCM] SEG_processing_system7_0_GP0_DDR_LOWOCM
+  create_bd_addr_seg -range 0x00400000 -offset 0xE0000000 [get_bd_addr_spaces Orca_0/DUC] [get_bd_addr_segs processing_system7_0/S_AXI_GP0/GP0_IOP] SEG_processing_system7_0_GP0_IOP
+  create_bd_addr_seg -range 0x01000000 -offset 0xFC000000 [get_bd_addr_spaces Orca_0/DUC] [get_bd_addr_segs processing_system7_0/S_AXI_GP0/GP0_QSPI_LINEAR] SEG_processing_system7_0_GP0_QSPI_LINEAR
+  create_bd_addr_seg -range 0x20000000 -offset 0x80000000 [get_bd_addr_spaces Orca_0/DUC] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] SEG_processing_system7_0_HP0_DDR_LOWOCM
   create_bd_addr_seg -range 0x00080000 -offset 0x00000000 [get_bd_addr_spaces jtag_axi_0/Data] [get_bd_addr_segs idram_0/instr/reg0] SEG_idram_0_reg0
   create_bd_addr_seg -range 0x00010000 -offset 0x10000000 [get_bd_addr_spaces jtag_axi_0/Data] [get_bd_addr_segs jtag_reset_0/aximm_1/Reg] SEG_jtag_reset_0_Reg
 
