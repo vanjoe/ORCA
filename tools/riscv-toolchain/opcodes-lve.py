@@ -55,14 +55,14 @@ arith_instr=[instruction("vadd"     ,0,0,0,0),
              #instruction('vsetup_msk_nz'  ,1,0,1,4),
              #instruction('vsetup_msk_z'   ,1,0,1,5),
              #
-             #instruction('vcustom0' ,1,1,0,0),
-             #instruction('vcustom1' ,1,1,0,1),
-             #instruction('vcustom2' ,1,1,0,2),
-             #instruction('vcustom3' ,1,1,0,3),
-             #instruction('vcustom4' ,1,1,0,4),
-             #instruction('vcustom5' ,1,1,0,5),
-             #instruction('vcustom6' ,1,1,0,6),
-             #instruction('vcustom7' ,1,1,0,7),
+             #instruction('vcustom8'  ,1,1,0,0),
+             #instruction('vcustom9'  ,1,1,0,1),
+             #instruction('vcustom10' ,1,1,0,2),
+             #instruction('vcustom11' ,1,1,0,3),
+             #instruction('vcustom12' ,1,1,0,4),
+             #instruction('vcustom13' ,1,1,0,5),
+             #instruction('vcustom14' ,1,1,0,6),
+             #instruction('vcustom15' ,1,1,0,7),
 
 ]
 type_bits={'vv':0,
@@ -100,6 +100,7 @@ def generate_arithmetic_instr( define_file,lve_extension_file):
         else:
             return 0xFFFFFFFFFE00707F
 
+
     def make_match( instruction_tpl,
                     acc,
                     type_spec,
@@ -134,9 +135,8 @@ def generate_arithmetic_instr( define_file,lve_extension_file):
             instruction|= sign_bits[srca_sign] <<37
             instruction|= sign_bits[srcb_sign] <<38
 
-
-
         return instruction
+
 
     for ai in arith_instr:
         for acc in acc_bits:
