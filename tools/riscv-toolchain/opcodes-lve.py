@@ -143,11 +143,10 @@ def generate_arithmetic_instr( define_file,lve_extension_file):
             for type_spec in type_bits:
                 for sd,sa,sb in itertools.product(sign_bits.keys(),repeat=3):
                     for dsz,asz,bsz in itertools.product(size_bits.keys(),repeat=3):
-                        name="{name}.{type}{size}{sign}{acc}".format(name=ai.name,
-                                                                     type=type_spec,
-                                                                     size=dsz+asz+bsz,
-                                                                     sign=sd+sa+sb,
-                                                                     acc=acc)
+                        name="{name}.{type}{size}{acc}".format(name=ai.name,
+                                                               type=type_spec,
+                                                               size=dsz+sd+asz+sa+bsz+sb,
+                                                               acc=acc)
                         uname=name.replace('.','_').upper()
                         mask=make_mask(ai,asz,bsz,dsz,sa,sb,sd)
                         match=make_match(instruction_tpl=ai,
