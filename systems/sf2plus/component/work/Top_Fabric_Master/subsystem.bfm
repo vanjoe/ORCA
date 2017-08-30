@@ -1,5 +1,5 @@
 #===========================================================
-# Created by Microsemi SmartDesign Wed Aug 16 15:59:21 2017
+# Created by Microsemi SmartDesign Wed Aug 30 14:20:51 2017
 #
 # Syntax: 
 # ------- 
@@ -36,7 +36,7 @@ memmap my_mss_MSS_0 0x40020800;
 #-----------------------------------------------------------
 # Secondary subsystems.  To test this subsystem, uncomment the following code.
 #-----------------------------------------------------------
-# memmap microsemi_wrapper_0_BL_SLAVE 0x10000000;
+# memmap microsemi_wrapper_0_NVM_SLAVE 0x10000000;
 # memmap my_mss_MSS_0_FIC_0_AHB_SLAVE 0x00000000;
 #-----------------------------------------------------------
 # Include resource scriptlets

@@ -8,7 +8,7 @@ use work.top_util_pkg.all;
 entity fabric_master is
   generic (
     WORD_SIZE : integer := 32;
-    IRAM_SIZE : integer := 8192 -- bytes
+    IRAM_SIZE : integer := 65536 -- bytes
   );
   port (
 
