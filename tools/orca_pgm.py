@@ -81,7 +81,7 @@ if __name__ == '__main__':
         tcl_script.write('master_write_32 $jtag_master %#010x %#010x\n' % (reset_address, 1))
         bin_file = open(program_file, 'rb') 
 
-        current_address = 0x00000000
+        current_address = base_address
         while 1:
             word = bin_file.read(4)
             if word == '':
@@ -130,13 +130,11 @@ if __name__ == '__main__':
         tcl_script.write('\treset_hw_axi [get_hw_axis]\n')
         tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
         tcl_script.write('-address {:08x} -len 1 -data 0x00000001\n'.format(reset_address))
-        tcl_script.write('\tcreate_hw_axi_txn rd_{} [get_hw_axis hw_axi_1] -type read '.format(write_count))
-        tcl_script.write('-address {:08x} -len 1\n'.format(reset_address))
         write_count += 1  
 
         bin_file = open(program_file, 'rb')
 
-        current_address = 0x00000000
+        current_address = base_address
         while 1:
             word = bin_file.read(4)
             if word == '':
@@ -150,27 +148,20 @@ if __name__ == '__main__':
                 little_endian_word |= ((word & 0x000000ff) << 24)
                 tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
                 tcl_script.write('-address {:08x} -len 1 -data {:08x}\n'.format(current_address, little_endian_word))
-                tcl_script.write('\tcreate_hw_axi_txn rd_{} [get_hw_axis hw_axi_1] -type read '.format(write_count))
-                tcl_script.write('-address {:08x} -len 1\n'.format(current_address))
                 write_count += 1
                 current_address += 4
 
         for i in range(current_address, end_address, 4):
             tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
             tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(i))
-            tcl_script.write('\tcreate_hw_axi_txn rd_{} [get_hw_axis hw_axi_1] -type read '.format(write_count))
-            tcl_script.write('-address {:08x} -len 1\n'.format(reset_address))
             write_count += 1
 
         tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
         tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(reset_address))
-        tcl_script.write('\tcreate_hw_axi_txn rd_{} [get_hw_axis hw_axi_1] -type read '.format(write_count))
-        tcl_script.write('-address {:08x} -len 1\n'.format(reset_address))
         write_count += 1
 
         for i in range(0, write_count):
             tcl_script.write('\trun_hw_axi wr_{}\n'.format(i))
-            tcl_script.write('\trun_hw_axi rd_{}\n'.format(i))
 
         tcl_script.write('\tclose_hw\n')
         tcl_script.write('\tclose_project\n')

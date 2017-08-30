@@ -15,45 +15,27 @@ entity jtag_reset is
     sys_reset   : in std_logic;
     orca_reset  : out std_logic;
 
-    AWID    : in std_logic_vector(2 downto 0);
     AWADDR  : in std_logic_vector(ADDR_WIDTH -1 downto 0);
-    AWLEN   : in std_logic_vector(3 downto 0);
-    AWSIZE  : in std_logic_vector(2 downto 0);
-    AWBURST : in std_logic_vector(1 downto 0); 
-
-    AWLOCK  : in std_logic_vector(1 downto 0);
-    AWCACHE : in std_logic_vector(3 downto 0);
     AWPROT  : in std_logic_vector(2 downto 0);
     AWVALID : in std_logic;
     AWREADY : out std_logic;
 
-    WID     : in std_logic_vector(2 downto 0);
     WDATA   : in std_logic_vector(BUS_WIDTH -1 downto 0);
     WSTRB   : in std_logic_vector(BUS_WIDTH/BYTE_SIZE -1 downto 0);
-    WLAST   : in std_logic;
     WVALID  : in std_logic;
     WREADY  : out std_logic;
 
-    BID     : out std_logic_vector(2 downto 0);
     BRESP   : out std_logic_vector(1 downto 0);
     BVALID  : out std_logic;
     BREADY  : in std_logic;
 
-    ARID    : in std_logic_vector(2 downto 0);
     ARADDR  : in std_logic_vector(ADDR_WIDTH -1 downto 0);
-    ARLEN   : in std_logic_vector(3 downto 0);
-    ARSIZE  : in std_logic_vector(2 downto 0);
-    ARBURST : in std_logic_vector(1 downto 0);
-    ARLOCK  : in std_logic_vector(1 downto 0);
-    ARCACHE : in std_logic_vector(3 downto 0);
     ARPROT  : in std_logic_vector(2 downto 0);
     ARVALID : in std_logic;
     ARREADY : out std_logic;
 
-    RID     : out std_logic_vector(2 downto 0);
     RDATA   : out std_logic_vector(BUS_WIDTH -1 downto 0);
     RRESP   : out std_logic_vector(1 downto 0);
-    RLAST   : out std_logic;
     RVALID  : out std_logic;
     RREADY  : in std_logic
   );
@@ -81,22 +63,13 @@ begin
     if rising_edge(clk) then
       if sys_reset = '1' then
         jtag_reset_reg <= '0';
-
         state <= IDLE;
-
-        BID <= (others => '0');
-        RID <= (others => '0');
 
       else
         state <= next_state;
 
         if (AWVALID = '1') and (WVALID = '1') then
           jtag_reset_reg <= WDATA(0); 
-          BID <= AWID;
-        end if;
-
-        if ARVALID = '1' then
-          RID <= ARID;
         end if;
 
       end if;
@@ -111,7 +84,6 @@ begin
     ARREADY <= '0';
     BVALID <= '0';
     RVALID <= '0';
-    RLAST <= '0';
 
     case (state) is 
       when IDLE =>
@@ -136,7 +108,6 @@ begin
 
       when READ =>
         RVALID <= '1';
-        RLAST <= '1';
         if RREADY = '1' then
           next_state <= IDLE;
         else

@@ -259,7 +259,7 @@ add_parameter IUC_ADDR_LAST Std_Logic_Vector 32'h00000000
 set_parameter_property IUC_ADDR_LAST HDL_PARAMETER true
 set_parameter_property IUC_ADDR_LAST visible false 
 
-add_parameter ICACHE_SIZE NATURAL 8192
+add_parameter ICACHE_SIZE NATURAL 0
 set_parameter_property ICACHE_SIZE HDL_PARAMETER true
 set_parameter_property ICACHE_SIZE visible false 
 
