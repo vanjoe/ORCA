@@ -141,9 +141,10 @@ architecture rtl of idram is
 begin
   instr_RRESP            <= (others => '0');
   instr_BRESP            <= (others => '0');
-  instr_ARREADY_internal <= (not instr_read_resp_stalled);
+  instr_ARREADY_internal <= (not reset) and (not instr_read_resp_stalled);
   instr_ARREADY          <= instr_ARREADY_internal;
-  instr_AWREADY_internal <= ((not instr_ARREADY_internal) or (not instr_ARVALID)) and (not instr_write_resp_stalled);
+  instr_AWREADY_internal <= (not reset) and
+                            (((not instr_ARREADY_internal) or (not instr_ARVALID)) and (not instr_write_resp_stalled));
   instr_AWREADY          <= instr_AWREADY_internal;
   instr_WREADY_internal  <= instr_AWREADY_internal;
   instr_WREADY           <= instr_WREADY_internal;
@@ -162,9 +163,10 @@ begin
 
   data_RRESP            <= (others => '0');
   data_BRESP            <= (others => '0');
-  data_ARREADY_internal <= (not data_read_resp_stalled);
+  data_ARREADY_internal <= (not reset) and (not data_read_resp_stalled);
   data_ARREADY          <= data_ARREADY_internal;
-  data_AWREADY_internal <= ((not data_ARREADY_internal) or (not data_ARVALID)) and (not data_write_resp_stalled);
+  data_AWREADY_internal <= (not reset) and
+                           (((not data_ARREADY_internal) or (not data_ARVALID)) and (not data_write_resp_stalled));
   data_AWREADY          <= data_AWREADY_internal;
   data_WREADY_internal  <= data_AWREADY_internal;
   data_WREADY           <= data_WREADY_internal;

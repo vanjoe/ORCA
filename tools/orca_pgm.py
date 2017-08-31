@@ -118,7 +118,7 @@ if __name__ == '__main__':
         write_count = 0
         
         tcl_script.write('proc orca_pgm {} {\n')
-        tcl_script.write('\topen_project {}\n'.format(project_file))
+#        tcl_script.write('\topen_project {}\n'.format(project_file))
         tcl_script.write('\topen_hw\n')
         tcl_script.write('\tconnect_hw_server\n')
         tcl_script.write('\tcurrent_hw_target [get_hw_targets */xilinx_tcf/Digilent/*]\n')
@@ -129,7 +129,13 @@ if __name__ == '__main__':
         tcl_script.write('\trefresh_hw_device [get_hw_devices {}]\n'.format(device))
         tcl_script.write('\treset_hw_axi [get_hw_axis]\n')
         tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
-        tcl_script.write('-address {:08x} -len 1 -data 0x00000001\n'.format(reset_address))
+        tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(reset_address+8))
+        write_count += 1  
+        tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
+        tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(reset_address))
+        write_count += 1  
+        tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
+        tcl_script.write('-address {:08x} -len 1 -data 0x00000001\n'.format(reset_address+8))
         write_count += 1  
 
         bin_file = open(program_file, 'rb')
@@ -157,14 +163,14 @@ if __name__ == '__main__':
             write_count += 1
 
         tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
-        tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(reset_address))
+        tcl_script.write('-address {:08x} -len 1 -data 0x00000001\n'.format(reset_address))
         write_count += 1
 
         for i in range(0, write_count):
             tcl_script.write('\trun_hw_axi wr_{}\n'.format(i))
 
         tcl_script.write('\tclose_hw\n')
-        tcl_script.write('\tclose_project\n')
+#        tcl_script.write('\tclose_project\n')
         tcl_script.write('}\n')
 
         bin_file.close()

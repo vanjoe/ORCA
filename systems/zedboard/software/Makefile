@@ -14,8 +14,8 @@ else ifeq ($(C_SRCS), uart.c)
 endif
 
 #These should come from the BSP
-IDRAM_BASE_ADDRESS ?= 0x00000000
-IDRAM_MAX_ADDRESS  ?= 0x0001FFFF
+IDRAM_BASE_ADDRESS ?= 0xC0000000
+IDRAM_MAX_ADDRESS  ?= 0xC001FFFF
 
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))

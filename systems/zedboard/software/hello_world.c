@@ -3,16 +3,10 @@
 
 int main(void) {
 
-	while(1) {
-		ChangedPrint("Hello World\r\n");
-		delayms(1000);
-	}
+  ChangedPrint("Hello World\r\n");
 
-	int i = 1000;
-	while(i) {
-		asm volatile("addi %0, %0, -1":"=r"(i):"r"(i));
-	};
-  return i;
+	while(1){
+	}
 }
 
 int handle_interrupt(int cause, int epc, int regs[32])
@@ -25,6 +19,6 @@ int handle_interrupt(int cause, int epc, int regs[32])
 	}
 
 	// Handle interrupt	
-	ChangedPrint("Hello World\r\n");
+	ChangedPrint("Interrupt handled\r\n");
 	return epc;
 }
