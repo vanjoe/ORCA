@@ -22,6 +22,8 @@ enum {
 	VOR,   ///< Bitwise OR of two src operands
 	VXOR,  ///< Bitwise XOR of two src operands
 	VADD,  ///< Adds the two src operands, carry flag generated
+	VADDFXP,
+	VSUBFXP,
 	VSUB,  ///< Subtracts the two src operands, borrow flag generated
 	VADDC, ///< Adds the two src operands, performs
 	VSUBB, ///< Subtracts the two src operands, performs
@@ -44,6 +46,8 @@ enum {
 	VABSDIFF, ///< Calculates the absolute difference between the two src operands
 	VSLTU,
 	VSLT,
+	VSGTU,
+	VSGT,
 	VSRA,
 	VSRL,
 	VSLL,

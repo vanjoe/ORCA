@@ -45,7 +45,8 @@ then
 	 mv lve-extensions.h $(dirname $RISCV_OPC_C)
 	 sed -i 's/#include "lve-extensions.h"//' $RISCV_OPC_C
 	 sed -i  '/\ Terminate the list.  /i#include "lve-extensions.h"' $RISCV_OPC_C
-
+	 #allow extensions to be passed int -march
+	 sed -i "s/if (\*p)/if (\*p \&\& *p != 'x')/" gcc-$GCC_VERSION/gcc/common/config/riscv/riscv-common.c
 fi
 #bash;exit 0
 

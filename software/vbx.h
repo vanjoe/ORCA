@@ -1,11 +1,12 @@
 #ifndef VBX_H
 #define VBX_H
 
-
+#include <assert.h>
 #include "vbx_types.h"
+#include "vbx_macros.h"
 #include "vbx_cproto.h"
 
-#include "vbx_macros.h"
+
 
 
 void init_lve();
