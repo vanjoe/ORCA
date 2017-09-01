@@ -1,4 +1,5 @@
 idram_gen.mmi
+jtag_init.tcl
 
 project/
 *.bit

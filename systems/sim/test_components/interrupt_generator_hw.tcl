@@ -12,7 +12,7 @@
 #
 # request TCL package from ACDS 15.1
 #
-package require -exact qsys 15.1
+package require -exact qsys 15.0
 
 
 #

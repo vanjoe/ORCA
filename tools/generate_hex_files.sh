@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPTDIR=$(dirname $0)
+SCRIPTDIR=$(readlink -f $(dirname $0))
 
 if which mif2hex >/dev/null
 then
@@ -13,15 +13,19 @@ fi
 echo "initializing git submodules containing tests, and building them"
 (cd $SCRIPTDIR ;git submodule update --init $SCRIPTDIR/riscv-toolchain/riscv-tools/)
 
-pushd $SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/
-  git submodule update --init --recursive .
-  sed -i 's/. = 0x80000000/. = 0x00000200/' env/p/link.ld
-  sed -i 's/.tohost.*$//' env/p/link.ld
-  sed -i 's/ ecall/fence.i;ecall/' env/p/riscv_test.h
-  ./configure --with-xlen=32 2>&1
-  make clean 2 >/dev/null 2>&1
-  make -k isa -j10 >/dev/null 2>&1
-popd
+(
+	 cd $SCRIPTDIR/riscv-toolchain/riscv-tools/
+	 rm -rf riscv-tests
+	 git checkout riscv-tests
+	 git submodule update --init --recursive riscv-tests
+	 cd riscv-tests
+	 sed -i 's/. = 0x80000000/. = 0x00000000/' env/p/link.ld
+	 sed -i 's/.tohost.*$//' env/p/link.ld
+	 sed -i 's/ ecall/fence.i;ecall/' env/p/riscv_test.h
+	 ./configure --with-xlen=32 2>&1
+	 make clean 2 >/dev/null 2>&1
+	 make -k isa -j10 >/dev/null 2>&1
+)
 
 TEST_DIR=$SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/isa
 
@@ -32,7 +36,7 @@ make -C $SCRIPTDIR/../software/unit_test
 
 
 
-SOFTWARE_DIR=../software
+SOFTWARE_DIR=${SCRIPTDIR}/../software
 #all files that aren't dump or hex (the hex files are not correctly formatted)
 FILES=$(ls ${TEST_DIR}/rv32u?-p-* | grep -v dump | grep -v hex)
 ORCA_FILES=$(find  ${SOFTWARE_DIR}/unit_test -iname "*.elf" )
@@ -60,7 +64,7 @@ do
 		  $OBJCOPY  -O binary $f $BIN_FILE
 		  $OBJDUMP --disassemble-all -Mnumeric,no-aliases $f > test/$(basename $f).dump
 
-		  python ../tools/bin2mif.py $BIN_FILE 0x200 > $MIF_FILE || exit -1
+		  python $SCRIPTDIR/bin2mif.py $BIN_FILE 0x0 > $MIF_FILE || exit -1
 		  mif2hex $MIF_FILE $QEX_FILE >/dev/null 2>&1 || exit -1
 		  sed -e 's/://' -e 's/\(..\)/\1 /g'  $QEX_FILE >$SPLIT_FILE
 		  awk '{if (NF == 9) print $5$6$7$8}' $SPLIT_FILE > $MEM_FILE

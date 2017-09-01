@@ -362,7 +362,7 @@
     </spirit:signals>
     <spirit:hwParameters>
       <spirit:hwParameter spirit:id="WORD_SIZE" spirit:name="WORD_SIZE" spirit:prompt="WORD_SIZE:" spirit:dataType="int" spirit:resolve="user">32</spirit:hwParameter>
-      <spirit:hwParameter spirit:id="IRAM_SIZE" spirit:name="IRAM_SIZE" spirit:prompt="IRAM_SIZE:" spirit:dataType="int" spirit:resolve="user">8192</spirit:hwParameter>
+      <spirit:hwParameter spirit:id="IRAM_SIZE" spirit:name="IRAM_SIZE" spirit:prompt="IRAM_SIZE:" spirit:dataType="int" spirit:resolve="user">65536</spirit:hwParameter>
     </spirit:hwParameters>
   </spirit:hwModel>
   <spirit:choices>

@@ -7,70 +7,75 @@ use work.rv_components.all;
 entity microsemi_wrapper is
   generic
     (
-      REGISTER_SIZE         : integer               := 32;
-      RESET_VECTOR          : natural               := 16#00000000#;
-      MULTIPLY_ENABLE       : natural range 0 to 1  := 1;
-      DIVIDE_ENABLE         : natural range 0 to 1  := 1;
-      SHIFTER_MAX_CYCLES    : natural               := 1;
-      COUNTER_LENGTH        : natural               := 32;
-      ENABLE_EXCEPTIONS     : natural               := 1;
-      BRANCH_PREDICTORS     : natural               := 0;
-      PIPELINE_STAGES       : natural range 4 to 5  := 5;
-      LVE_ENABLE            : natural range 0 to 1  := 0;
-      ENABLE_EXT_INTERRUPTS : natural range 0 to 1  := 0;
-      NUM_EXT_INTERRUPTS    : natural range 1 to 32 := 1;
-      SCRATCHPAD_ADDR_BITS  : integer               := 10;
-      FORWARD_ALU_ONLY      : natural range 0 to 1  := 1;
-      TCRAM_SIZE            : natural               := 32768;
-      POWER_OPTIMIZED       : integer range 0 to 1  := 0;
-      BYTE_SIZE             : integer               := 8
+      REGISTER_SIZE         : integer                       := 32;
+      RESET_VECTOR          : natural                       := 16#00000000#;
+      INTERRUPT_VECTOR      : natural                       := 16#00000200#;
+      MULTIPLY_ENABLE       : natural range 0 to 1          := 1;
+      DIVIDE_ENABLE         : natural range 0 to 1          := 1;
+      SHIFTER_MAX_CYCLES    : natural                       := 1;
+      COUNTER_LENGTH        : natural                       := 32;
+      ENABLE_EXCEPTIONS     : natural                       := 1;
+      BRANCH_PREDICTORS     : natural                       := 0;
+      PIPELINE_STAGES       : natural range 4 to 5          := 5;
+      LVE_ENABLE            : natural range 0 to 1          := 0;
+      ENABLE_EXT_INTERRUPTS : natural range 0 to 1          := 0;
+      NUM_EXT_INTERRUPTS    : natural range 1 to 32         := 1;
+      SCRATCHPAD_ADDR_BITS  : integer                       := 10;
+      IUC_ADDR_BASE         : natural                       := 0;
+      IUC_ADDR_LAST         : natural                       := 0;
+      ICACHE_SIZE           : natural                       := 0;
+      ICACHE_LINE_SIZE      : integer range 16 to 256       := 32;
+      ICACHE_EXTERNAL_WIDTH : integer                       := 32;
+      ICACHE_BURST_EN       : integer                       := 0;
+      POWER_OPTIMIZED       : integer range 0 to 1          := 0;
+      TCRAM_SIZE            : natural range 8192 to 65536   := 65536
       );
   port (
     clk    : in std_logic;
     clk_2x : in std_logic;
     reset  : in std_logic;
 
-    data_AWID    : out std_logic_vector(3 downto 0);
-    data_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_AWLEN   : out std_logic_vector(3 downto 0);
-    data_AWSIZE  : out std_logic_vector(2 downto 0);
-    data_AWBURST : out std_logic_vector(1 downto 0);
+    DUC_AWID    : out std_logic_vector(3 downto 0);
+    DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    DUC_AWLEN   : out std_logic_vector(3 downto 0);
+    DUC_AWSIZE  : out std_logic_vector(2 downto 0);
+    DUC_AWBURST : out std_logic_vector(1 downto 0);
 
-    data_AWLOCK  : out std_logic_vector(1 downto 0);
-    data_AWCACHE : out std_logic_vector(3 downto 0);
-    data_AWPROT  : out std_logic_vector(2 downto 0);
-    data_AWVALID : out std_logic;
-    data_AWREADY : in  std_logic;
+    DUC_AWLOCK  : out std_logic_vector(1 downto 0);
+    DUC_AWCACHE : out std_logic_vector(3 downto 0);
+    DUC_AWPROT  : out std_logic_vector(2 downto 0);
+    DUC_AWVALID : out std_logic;
+    DUC_AWREADY : in  std_logic;
 
-    data_WID    : out std_logic_vector(3 downto 0);
-    data_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_WSTRB  : out std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
-    data_WLAST  : out std_logic;
-    data_WVALID : out std_logic;
-    data_WREADY : in  std_logic;
+    DUC_WID    : out std_logic_vector(3 downto 0);
+    DUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    DUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+    DUC_WLAST  : out std_logic;
+    DUC_WVALID : out std_logic;
+    DUC_WREADY : in  std_logic;
 
-    data_BID    : in  std_logic_vector(3 downto 0);
-    data_BRESP  : in  std_logic_vector(1 downto 0);
-    data_BVALID : in  std_logic;
-    data_BREADY : out std_logic;
+    DUC_BID    : in  std_logic_vector(3 downto 0);
+    DUC_BRESP  : in  std_logic_vector(1 downto 0);
+    DUC_BVALID : in  std_logic;
+    DUC_BREADY : out std_logic;
 
-    data_ARID    : out std_logic_vector(3 downto 0);
-    data_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_ARLEN   : out std_logic_vector(3 downto 0);
-    data_ARSIZE  : out std_logic_vector(2 downto 0);
-    data_ARBURST : out std_logic_vector(1 downto 0);
-    data_ARLOCK  : out std_logic_vector(1 downto 0);
-    data_ARCACHE : out std_logic_vector(3 downto 0);
-    data_ARPROT  : out std_logic_vector(2 downto 0);
-    data_ARVALID : out std_logic;
-    data_ARREADY : in  std_logic;
+    DUC_ARID    : out std_logic_vector(3 downto 0);
+    DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    DUC_ARLEN   : out std_logic_vector(3 downto 0);
+    DUC_ARSIZE  : out std_logic_vector(2 downto 0);
+    DUC_ARBURST : out std_logic_vector(1 downto 0);
+    DUC_ARLOCK  : out std_logic_vector(1 downto 0);
+    DUC_ARCACHE : out std_logic_vector(3 downto 0);
+    DUC_ARPROT  : out std_logic_vector(2 downto 0);
+    DUC_ARVALID : out std_logic;
+    DUC_ARREADY : in  std_logic;
 
-    data_RID    : in  std_logic_vector(3 downto 0);
-    data_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_RRESP  : in  std_logic_vector(1 downto 0);
-    data_RLAST  : in  std_logic;
-    data_RVALID : in  std_logic;
-    data_RREADY : out std_logic;
+    DUC_RID    : in  std_logic_vector(3 downto 0);
+    DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    DUC_RRESP  : in  std_logic_vector(1 downto 0);
+    DUC_RLAST  : in  std_logic;
+    DUC_RVALID : in  std_logic;
+    DUC_RREADY : out std_logic;
 
     ram_AWID    : in std_logic_vector(3 downto 0);
     ram_AWADDR  : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -86,7 +91,7 @@ entity microsemi_wrapper is
 
     ram_WID    : in  std_logic_vector(3 downto 0);
     ram_WDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    ram_WSTRB  : in  std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
+    ram_WSTRB  : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     ram_WLAST  : in  std_logic;
     ram_WVALID : in  std_logic;
     ram_WREADY : out std_logic;
@@ -134,42 +139,42 @@ end entity microsemi_wrapper;
 architecture rtl of microsemi_wrapper is
   signal orca_reset : std_logic;
 
-  signal itcram_AWID    : std_logic_vector(3 downto 0);
-  signal itcram_AWADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal itcram_AWLEN   : std_logic_vector(3 downto 0);
-  signal itcram_AWSIZE  : std_logic_vector(2 downto 0);
-  signal itcram_AWBURST : std_logic_vector(1 downto 0);
-  signal itcram_AWLOCK  : std_logic_vector(1 downto 0);
-  signal itcram_AWCACHE : std_logic_vector(3 downto 0);
-  signal itcram_AWPROT  : std_logic_vector(2 downto 0);
-  signal itcram_AWVALID : std_logic;
-  signal itcram_AWREADY : std_logic;
-  signal itcram_WID     : std_logic_vector(3 downto 0);
-  signal itcram_WDATA   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal itcram_WSTRB   : std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
-  signal itcram_WLAST   : std_logic;
-  signal itcram_WVALID  : std_logic;
-  signal itcram_WREADY  : std_logic;
-  signal itcram_BID     : std_logic_vector(3 downto 0);
-  signal itcram_BRESP   : std_logic_vector(1 downto 0);
-  signal itcram_BVALID  : std_logic;
-  signal itcram_BREADY  : std_logic;
-  signal itcram_ARID    : std_logic_vector(3 downto 0);
-  signal itcram_ARADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal itcram_ARLEN   : std_logic_vector(3 downto 0);
-  signal itcram_ARSIZE  : std_logic_vector(2 downto 0);
-  signal itcram_ARBURST : std_logic_vector(1 downto 0);
-  signal itcram_ARLOCK  : std_logic_vector(1 downto 0);
-  signal itcram_ARCACHE : std_logic_vector(3 downto 0);
-  signal itcram_ARPROT  : std_logic_vector(2 downto 0);
-  signal itcram_ARVALID : std_logic;
-  signal itcram_ARREADY : std_logic;
-  signal itcram_RID     : std_logic_vector(3 downto 0);
-  signal itcram_RDATA   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal itcram_RRESP   : std_logic_vector(1 downto 0);
-  signal itcram_RLAST   : std_logic;
-  signal itcram_RVALID  : std_logic;
-  signal itcram_RREADY  : std_logic;
+  signal IUC_AWID    : std_logic_vector(3 downto 0);
+  signal IUC_AWADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal IUC_AWLEN   : std_logic_vector(3 downto 0);
+  signal IUC_AWSIZE  : std_logic_vector(2 downto 0);
+  signal IUC_AWBURST : std_logic_vector(1 downto 0);
+  signal IUC_AWLOCK  : std_logic_vector(1 downto 0);
+  signal IUC_AWCACHE : std_logic_vector(3 downto 0);
+  signal IUC_AWPROT  : std_logic_vector(2 downto 0);
+  signal IUC_AWVALID : std_logic;
+  signal IUC_AWREADY : std_logic;
+  signal IUC_WID     : std_logic_vector(3 downto 0);
+  signal IUC_WDATA   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal IUC_WSTRB   : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+  signal IUC_WLAST   : std_logic;
+  signal IUC_WVALID  : std_logic;
+  signal IUC_WREADY  : std_logic;
+  signal IUC_BID     : std_logic_vector(3 downto 0);
+  signal IUC_BRESP   : std_logic_vector(1 downto 0);
+  signal IUC_BVALID  : std_logic;
+  signal IUC_BREADY  : std_logic;
+  signal IUC_ARID    : std_logic_vector(3 downto 0);
+  signal IUC_ARADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal IUC_ARLEN   : std_logic_vector(3 downto 0);
+  signal IUC_ARSIZE  : std_logic_vector(2 downto 0);
+  signal IUC_ARBURST : std_logic_vector(1 downto 0);
+  signal IUC_ARLOCK  : std_logic_vector(1 downto 0);
+  signal IUC_ARCACHE : std_logic_vector(3 downto 0);
+  signal IUC_ARPROT  : std_logic_vector(2 downto 0);
+  signal IUC_ARVALID : std_logic;
+  signal IUC_ARREADY : std_logic;
+  signal IUC_RID     : std_logic_vector(3 downto 0);
+  signal IUC_RDATA   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal IUC_RRESP   : std_logic_vector(1 downto 0);
+  signal IUC_RLAST   : std_logic;
+  signal IUC_RVALID  : std_logic;
+  signal IUC_RREADY  : std_logic;
 
   -- APB bus
   signal nvm_addr     : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -185,14 +190,14 @@ architecture rtl of microsemi_wrapper is
   signal iram_addr         : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal iram_wdata        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal iram_wen          : std_logic;
-  signal iram_byte_sel     : std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
+  signal iram_byte_sel     : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
   signal iram_strb         : std_logic;
   signal iram_ack          : std_logic;
   signal iram_rdata        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_ram_addr     : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_ram_wdata    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal data_ram_wen      : std_logic;
-  signal data_ram_byte_sel : std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
+  signal data_ram_byte_sel : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
   signal data_ram_strb     : std_logic;
   signal data_ram_ack      : std_logic;
   signal data_ram_rdata    : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -216,11 +221,11 @@ begin
   rv : entity work.orca(rtl)
     generic map (
       REGISTER_SIZE         => REGISTER_SIZE,
-      BYTE_SIZE             => BYTE_SIZE,
       AVALON_ENABLE         => 0,
       WISHBONE_ENABLE       => 0,
       AXI_ENABLE            => 1,
-      RESET_VECTOR          => RESET_VECTOR,
+      RESET_VECTOR          => std_logic_vector(to_unsigned(RESET_VECTOR, 32)),
+      INTERRUPT_VECTOR      => std_logic_vector(to_unsigned(INTERRUPT_VECTOR, 32)),
       MULTIPLY_ENABLE       => MULTIPLY_ENABLE,
       DIVIDE_ENABLE         => DIVIDE_ENABLE,
       SHIFTER_MAX_CYCLES    => SHIFTER_MAX_CYCLES,
@@ -232,15 +237,18 @@ begin
       ENABLE_EXT_INTERRUPTS => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
       SCRATCHPAD_ADDR_BITS  => SCRATCHPAD_ADDR_BITS,
-      TCRAM_SIZE            => TCRAM_SIZE,
+      IUC_ADDR_BASE         => std_logic_vector(to_unsigned(IUC_ADDR_BASE, 32)),
+      IUC_ADDR_LAST         => std_logic_vector(to_unsigned(IUC_ADDR_BASE, 32)),
+      ICACHE_SIZE           => ICACHE_SIZE,
+      ICACHE_LINE_SIZE      => ICACHE_LINE_SIZE,
+      ICACHE_BURST_EN       => ICACHE_BURST_EN,
       POWER_OPTIMIZED       => POWER_OPTIMIZED,
-      CACHE_ENABLE          => 0,
-      -- Hardcoded because string generics not supported by Libero
+      -- Hardcoded because string generics are not supported by Libero.
       FAMILY                => "MICROSEMI")
     port map (
       clk            => clk,
       scratchpad_clk => clk_2x,
-      reset          => orca_reset,  -- while the iram is being initialized, don't start
+      reset          => orca_reset,  -- While the iram is being initialized, don't start.
 
       avm_data_address       => open,
       avm_data_byteenable    => open,
@@ -276,128 +284,128 @@ begin
       instr_CTI_O   => open,
       instr_STALL_I => '-',
 
-      data_AWID    => data_AWID,
-      data_AWADDR  => data_AWADDR,
-      data_AWLEN   => data_AWLEN,
-      data_AWSIZE  => data_AWSIZE,
-      data_AWBURST => data_AWBURST,
-      data_AWLOCK  => data_AWLOCK,
-      data_AWCACHE => data_AWCACHE,
-      data_AWPROT  => data_AWPROT,
-      data_AWVALID => data_AWVALID,
-      data_AWREADY => data_AWREADY,
+      DUC_AWID    => DUC_AWID,
+      DUC_AWADDR  => DUC_AWADDR,
+      DUC_AWLEN   => DUC_AWLEN,
+      DUC_AWSIZE  => DUC_AWSIZE,
+      DUC_AWBURST => DUC_AWBURST,
+      DUC_AWLOCK  => DUC_AWLOCK,
+      DUC_AWCACHE => DUC_AWCACHE,
+      DUC_AWPROT  => DUC_AWPROT,
+      DUC_AWVALID => DUC_AWVALID,
+      DUC_AWREADY => DUC_AWREADY,
 
-      data_WID    => data_WID,
-      data_WDATA  => data_WDATA,
-      data_WSTRB  => data_WSTRB,
-      data_WLAST  => data_WLAST,
-      data_WVALID => data_WVALID,
-      data_WREADY => data_WREADY,
+      DUC_WID    => DUC_WID,
+      DUC_WDATA  => DUC_WDATA,
+      DUC_WSTRB  => DUC_WSTRB,
+      DUC_WLAST  => DUC_WLAST,
+      DUC_WVALID => DUC_WVALID,
+      DUC_WREADY => DUC_WREADY,
 
-      data_BID    => data_BID,
-      data_BRESP  => data_BRESP,
-      data_BVALID => data_BVALID,
-      data_BREADY => data_BREADY,
+      DUC_BID    => DUC_BID,
+      DUC_BRESP  => DUC_BRESP,
+      DUC_BVALID => DUC_BVALID,
+      DUC_BREADY => DUC_BREADY,
 
-      data_ARID    => data_ARID,
-      data_ARADDR  => data_ARADDR,
-      data_ARLEN   => data_ARLEN,
-      data_ARSIZE  => data_ARSIZE,
-      data_ARBURST => data_ARBURST,
-      data_ARLOCK  => data_ARLOCK,
-      data_ARCACHE => data_ARCACHE,
-      data_ARPROT  => data_ARPROT,
-      data_ARVALID => data_ARVALID,
-      data_ARREADY => data_ARREADY,
+      DUC_ARID    => DUC_ARID,
+      DUC_ARADDR  => DUC_ARADDR,
+      DUC_ARLEN   => DUC_ARLEN,
+      DUC_ARSIZE  => DUC_ARSIZE,
+      DUC_ARBURST => DUC_ARBURST,
+      DUC_ARLOCK  => DUC_ARLOCK,
+      DUC_ARCACHE => DUC_ARCACHE,
+      DUC_ARPROT  => DUC_ARPROT,
+      DUC_ARVALID => DUC_ARVALID,
+      DUC_ARREADY => DUC_ARREADY,
 
-      data_RID    => data_RID,
-      data_RDATA  => data_RDATA,
-      data_RRESP  => data_RRESP,
-      data_RLAST  => data_RLAST,
-      data_RVALID => data_RVALID,
-      data_RREADY => data_RREADY,
+      DUC_RID    => DUC_RID,
+      DUC_RDATA  => DUC_RDATA,
+      DUC_RRESP  => DUC_RRESP,
+      DUC_RLAST  => DUC_RLAST,
+      DUC_RVALID => DUC_RVALID,
+      DUC_RREADY => DUC_RREADY,
 
-      itcram_ARID    => itcram_ARID,
-      itcram_ARADDR  => itcram_ARADDR,
-      itcram_ARLEN   => itcram_ARLEN,
-      itcram_ARSIZE  => itcram_ARSIZE,
-      itcram_ARBURST => itcram_ARBURST,
-      itcram_ARLOCK  => itcram_ARLOCK,
-      itcram_ARCACHE => itcram_ARCACHE,
-      itcram_ARPROT  => itcram_ARPROT,
-      itcram_ARVALID => itcram_ARVALID,
-      itcram_ARREADY => itcram_ARREADY,
+      IUC_ARID    => IUC_ARID,
+      IUC_ARADDR  => IUC_ARADDR,
+      IUC_ARLEN   => IUC_ARLEN,
+      IUC_ARSIZE  => IUC_ARSIZE,
+      IUC_ARBURST => IUC_ARBURST,
+      IUC_ARLOCK  => IUC_ARLOCK,
+      IUC_ARCACHE => IUC_ARCACHE,
+      IUC_ARPROT  => IUC_ARPROT,
+      IUC_ARVALID => IUC_ARVALID,
+      IUC_ARREADY => IUC_ARREADY,
 
-      itcram_RID    => itcram_RID,
-      itcram_RDATA  => itcram_RDATA,
-      itcram_RRESP  => itcram_RRESP,
-      itcram_RLAST  => itcram_RLAST,
-      itcram_RVALID => itcram_RVALID,
-      itcram_RREADY => itcram_RREADY,
+      IUC_RID    => IUC_RID,
+      IUC_RDATA  => IUC_RDATA,
+      IUC_RRESP  => IUC_RRESP,
+      IUC_RLAST  => IUC_RLAST,
+      IUC_RVALID => IUC_RVALID,
+      IUC_RREADY => IUC_RREADY,
 
-      itcram_AWID    => itcram_AWID,
-      itcram_AWADDR  => itcram_AWADDR,
-      itcram_AWLEN   => itcram_AWLEN,
-      itcram_AWSIZE  => itcram_AWSIZE,
-      itcram_AWBURST => itcram_AWBURST,
-      itcram_AWLOCK  => itcram_AWLOCK,
-      itcram_AWCACHE => itcram_AWCACHE,
-      itcram_AWPROT  => itcram_AWPROT,
-      itcram_AWVALID => itcram_AWVALID,
-      itcram_AWREADY => itcram_AWREADY,
+      IUC_AWID    => IUC_AWID,
+      IUC_AWADDR  => IUC_AWADDR,
+      IUC_AWLEN   => IUC_AWLEN,
+      IUC_AWSIZE  => IUC_AWSIZE,
+      IUC_AWBURST => IUC_AWBURST,
+      IUC_AWLOCK  => IUC_AWLOCK,
+      IUC_AWCACHE => IUC_AWCACHE,
+      IUC_AWPROT  => IUC_AWPROT,
+      IUC_AWVALID => IUC_AWVALID,
+      IUC_AWREADY => IUC_AWREADY,
 
-      itcram_WID    => itcram_WID,
-      itcram_WDATA  => itcram_WDATA,
-      itcram_WSTRB  => itcram_WSTRB,
-      itcram_WLAST  => itcram_WLAST,
-      itcram_WVALID => itcram_WVALID,
-      itcram_WREADY => itcram_WREADY,
+      IUC_WID    => IUC_WID,
+      IUC_WDATA  => IUC_WDATA,
+      IUC_WSTRB  => IUC_WSTRB,
+      IUC_WLAST  => IUC_WLAST,
+      IUC_WVALID => IUC_WVALID,
+      IUC_WREADY => IUC_WREADY,
 
-      itcram_BID    => itcram_BID,
-      itcram_BRESP  => itcram_BRESP,
-      itcram_BVALID => itcram_BVALID,
-      itcram_BREADY => itcram_BREADY,
+      IUC_BID    => IUC_BID,
+      IUC_BRESP  => IUC_BRESP,
+      IUC_BVALID => IUC_BVALID,
+      IUC_BREADY => IUC_BREADY,
 
-      iram_ARID    => open,
-      iram_ARADDR  => open,
-      iram_ARLEN   => open,
-      iram_ARSIZE  => open,
-      iram_ARBURST => open,
-      iram_ARLOCK  => open,
-      iram_ARCACHE => open,
-      iram_ARPROT  => open,
-      iram_ARVALID => open,
-      iram_ARREADY => '-',
+      IC_ARID    => open,
+      IC_ARADDR  => open,
+      IC_ARLEN   => open,
+      IC_ARSIZE  => open,
+      IC_ARBURST => open,
+      IC_ARLOCK  => open,
+      IC_ARCACHE => open,
+      IC_ARPROT  => open,
+      IC_ARVALID => open,
+      IC_ARREADY => '-',
 
-      iram_RID    => (others => '-'),
-      iram_RDATA  => (others => '-'),
-      iram_RRESP  => (others => '-'),
-      iram_RLAST  => '-',
-      iram_RVALID => '-',
-      iram_RREADY => open,
+      IC_RID    => (others => '-'),
+      IC_RDATA  => (others => '-'),
+      IC_RRESP  => (others => '-'),
+      IC_RLAST  => '-',
+      IC_RVALID => '-',
+      IC_RREADY => open,
 
-      iram_AWID    => open,
-      iram_AWADDR  => open,
-      iram_AWLEN   => open,
-      iram_AWSIZE  => open,
-      iram_AWBURST => open,
-      iram_AWLOCK  => open,
-      iram_AWCACHE => open,
-      iram_AWPROT  => open,
-      iram_AWVALID => open,
-      iram_AWREADY => '-',
+      IC_AWID    => open,
+      IC_AWADDR  => open,
+      IC_AWLEN   => open,
+      IC_AWSIZE  => open,
+      IC_AWBURST => open,
+      IC_AWLOCK  => open,
+      IC_AWCACHE => open,
+      IC_AWPROT  => open,
+      IC_AWVALID => open,
+      IC_AWREADY => '-',
 
-      iram_WID    => open,
-      iram_WDATA  => open,
-      iram_WSTRB  => open,
-      iram_WLAST  => open,
-      iram_WVALID => open,
-      iram_WREADY => '-',
+      IC_WID    => open,
+      IC_WDATA  => open,
+      IC_WSTRB  => open,
+      IC_WLAST  => open,
+      IC_WVALID => open,
+      IC_WREADY => '-',
 
-      iram_BID    => (others => '-'),
-      iram_BRESP  => (others => '-'),
-      iram_BVALID => '-',
-      iram_BREADY => open,
+      IC_BID    => (others => '-'),
+      IC_BRESP  => (others => '-'),
+      IC_BVALID => '-',
+      IC_BREADY => open,
 
       avm_scratch_address       => (others => '-'),
       avm_scratch_byteenable    => (others => '-'),
@@ -436,23 +444,23 @@ begin
       nvm_ack      => nvm_ack,
       nvm_rdata    => nvm_rdata,
 
-      user_ARREADY => itcram_ARREADY,
-      user_ARADDR  => itcram_ARADDR,
-      user_ARVALID => itcram_ARVALID,
+      user_ARREADY => IUC_ARREADY,
+      user_ARADDR  => IUC_ARADDR,
+      user_ARVALID => IUC_ARVALID,
 
-      user_RREADY => itcram_RREADY,
-      user_RDATA  => itcram_RDATA,
-      user_RVALID => itcram_RVALID,
+      user_RREADY => IUC_RREADY,
+      user_RDATA  => IUC_RDATA,
+      user_RVALID => IUC_RVALID,
 
-      user_AWADDR  => itcram_AWADDR,
-      user_AWVALID => itcram_AWVALID,
-      user_AWREADY => itcram_AWREADY,
+      user_AWADDR  => IUC_AWADDR,
+      user_AWVALID => IUC_AWVALID,
+      user_AWREADY => IUC_AWREADY,
 
-      user_WDATA  => itcram_WDATA,
-      user_WVALID => itcram_WVALID,
+      user_WDATA  => IUC_WDATA,
+      user_WVALID => IUC_WVALID,
 
-      user_BREADY => itcram_BREADY,
-      user_BVALID => itcram_BVALID,
+      user_BREADY => IUC_BREADY,
+      user_BVALID => IUC_BVALID,
 
       SEL          => SEL,
       ram_addr     => iram_addr,
@@ -491,11 +499,9 @@ begin
 
   iram : entity work.iram(rtl)
     generic map (
-      INSTR_PORT_TYPE => 1,
-      DATA_PORT_TYPE  => 1,
       SIZE            => TCRAM_SIZE,
       RAM_WIDTH       => REGISTER_SIZE,
-      BYTE_SIZE       => BYTE_SIZE
+      BYTE_SIZE       => 8
       )
     port map (
       clk   => clk,

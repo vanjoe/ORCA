@@ -128,12 +128,14 @@ add_parameter RESET_VECTOR Std_Logic_Vector 32'h00000000
 set_parameter_property RESET_VECTOR DEFAULT_VALUE 32'h00000000
 set_parameter_property RESET_VECTOR DISPLAY_NAME "Reset Vector"
 set_parameter_property RESET_VECTOR UNITS None
+set_parameter_property RESET_VECTOR WIDTH 32
 set_parameter_property RESET_VECTOR HDL_PARAMETER true
 
 add_parameter INTERRUPT_VECTOR Std_Logic_Vector 32'h00000200
 set_parameter_property INTERRUPT_VECTOR DEFAULT_VALUE 32'h00000200
 set_parameter_property INTERRUPT_VECTOR DISPLAY_NAME "Interrupt Vector"
 set_parameter_property INTERRUPT_VECTOR UNITS None
+set_parameter_property INTERRUPT_VECTOR WIDTH 32
 set_parameter_property INTERRUPT_VECTOR HDL_PARAMETER true
 
 add_parameter MULTIPLY_ENABLE natural 1
@@ -252,10 +254,18 @@ set_parameter_property SCRATCHPAD_ADDR_BITS visible false
 set_parameter_property SCRATCHPAD_ADDR_BITS derived true
 
 add_parameter IUC_ADDR_BASE Std_Logic_Vector 32'h00000000
+set_parameter_property IUC_ADDR_BASE DEFAULT_VALUE 32'h00000000
+set_parameter_property IUC_ADDR_BASE DISPLAY_NAME "Uncached Start Address"
+set_parameter_property IUC_ADDR_BASE UNITS None
+set_parameter_property IUC_ADDR_BASE WIDTH 32
 set_parameter_property IUC_ADDR_BASE HDL_PARAMETER true
 set_parameter_property IUC_ADDR_BASE visible false 
 
 add_parameter IUC_ADDR_LAST Std_Logic_Vector 32'h00000000
+set_parameter_property IUC_ADDR_LAST DEFAULT_VALUE 32'h00000000
+set_parameter_property IUC_ADDR_LAST DISPLAY_NAME "Uncached End Address"
+set_parameter_property IUC_ADDR_LAST UNITS None
+set_parameter_property IUC_ADDR_LAST WIDTH 32
 set_parameter_property IUC_ADDR_LAST HDL_PARAMETER true
 set_parameter_property IUC_ADDR_LAST visible false 
 
@@ -267,13 +277,13 @@ add_parameter ICACHE_LINE_SIZE NATURAL 32
 set_parameter_property ICACHE_LINE_SIZE HDL_PARAMETER true
 set_parameter_property ICACHE_LINE_SIZE visible false 
 
-add_parameter DRAM_WIDTH integer 32
-set_parameter_property DRAM_WIDTH HDL_PARAMETER true
-set_parameter_property DRAM_WIDTH visible false 
+add_parameter ICACHE_EXTERNAL_WIDTH integer 32 
+set_parameter_property ICACHE_EXTERNAL_WIDTH HDL_PARAMETER true
+set_parameter_property ICACHE_EXTERNAL_WIDTH visible false 
 
-add_parameter BURST_EN integer 0 
-set_parameter_property BURST_EN HDL_PARAMETER true
-set_parameter_property BURST_EN visible false 
+add_parameter ICACHE_BURST_EN integer 0 
+set_parameter_property ICACHE_BURST_EN HDL_PARAMETER true
+set_parameter_property ICACHE_BURST_EN visible false 
 
 add_parameter POWER_OPTIMIZED natural
 set_parameter_property POWER_OPTIMIZED DEFAULT_VALUE 0
@@ -282,10 +292,6 @@ set_parameter_property POWER_OPTIMIZED DESCRIPTION "Improve power usage at the e
 set_parameter_property POWER_OPTIMIZED HDL_PARAMETER true
 set_parameter_property POWER_OPTIMIZED ALLOWED_RANGES 0:1
 set_display_item_property POWER_OPTIMIZED DISPLAY_HINT boolean
-
-add_parameter CACHE_ENABLE integer 0 
-set_parameter_property CACHE_ENABLE HDL_PARAMETER true
-set_parameter_property CACHE_ENABLE visible false 
 
 add_parameter FAMILY string ALTERA 
 set_parameter_property FAMILY HDL_PARAMETER true

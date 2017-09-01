@@ -38,7 +38,9 @@ $(TARGET).elf: $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
 $(TARGET).bin: $(TARGET).elf
 	$(OBJCOPY) -O binary $< $@
 $(TARGET).hex: $(TARGET).elf
-	$(OBJCOPY) -O ihex $< $@
+	../../../tools/elf2hex.sh test.elf
+	cp test.qex ../test.hex
+
 $(TARGET).mem: $(TARGET).bin
 	 head -c $$((0x100)) /dev/zero | cat - $< | xxd -g1 -c4 | awk '{print $$5$$4$$3$$2}' > $@
 
