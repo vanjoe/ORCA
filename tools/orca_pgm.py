@@ -112,13 +112,18 @@ if __name__ == '__main__':
 
     # Note: JTAG does not currently work on the xilinx family of devices.
     elif family == 'xilinx':
+        BURST_LENGTH = 256
         script_name = output_file
         tcl_script = open(script_name, 'w')
 
-        write_count = 0
+        init_write_count    = 0
+        file_write_count    = 0
+        padding_write_count = 0
+        ending_write_count  = 0
         
         tcl_script.write('proc orca_pgm {} {\n')
 #        tcl_script.write('\topen_project {}\n'.format(project_file))
+        tcl_script.write('\tset_msg_config -id "Labtoolstcl 44-481" -suppress\n')
         tcl_script.write('\topen_hw\n')
         tcl_script.write('\tconnect_hw_server\n')
         tcl_script.write('\tcurrent_hw_target [get_hw_targets */xilinx_tcf/Digilent/*]\n')
@@ -128,57 +133,85 @@ if __name__ == '__main__':
         tcl_script.write('\tcurrent_hw_device [get_hw_devices {}]\n'.format(device))
         tcl_script.write('\trefresh_hw_device [get_hw_devices {}]\n'.format(device))
         tcl_script.write('\treset_hw_axi [get_hw_axis]\n')
-        tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
+        tcl_script.write('\tcreate_hw_axi_txn init_{} [get_hw_axis hw_axi_1] -type write '.format(init_write_count))
         tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(reset_address+8))
-        write_count += 1  
-        tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
+        init_write_count += 1  
+        tcl_script.write('\tcreate_hw_axi_txn init_{} [get_hw_axis hw_axi_1] -type write '.format(init_write_count))
         tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(reset_address))
-        write_count += 1  
-        tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
+        init_write_count += 1  
+        tcl_script.write('\tcreate_hw_axi_txn init_{} [get_hw_axis hw_axi_1] -type write '.format(init_write_count))
         tcl_script.write('-address {:08x} -len 1 -data 0x00000001\n'.format(reset_address+8))
-        write_count += 1  
+        init_write_count += 1  
 
         bin_file = open(program_file, 'rb')
 
         current_address = base_address
-        while 1:
-            word = bin_file.read(4)
-            if word == '':
-                break
-            else:
-                word = int(binascii.hexlify(word), 16)
-                little_endian_word = 0
-                little_endian_word |= ((word & 0xff000000) >> 24)
-                little_endian_word |= ((word & 0x00ff0000) >> 8)
-                little_endian_word |= ((word & 0x0000ff00) << 8)
-                little_endian_word |= ((word & 0x000000ff) << 24)
-                tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
-                tcl_script.write('-address {:08x} -len 1 -data {:08x}\n'.format(current_address, little_endian_word))
-                write_count += 1
-                current_address += 4
+        end_of_file = False
+        while not end_of_file:
+            data_string = ''
+            for word in range(0, BURST_LENGTH):
+                if not end_of_file:
+                    file_data = bin_file.read(4)
+                    if file_data == '':
+                        file_data = '00000000'
+                        end_of_file = True
+                        if word == 0:
+                            break
+                hex_data = int(binascii.hexlify(file_data), 16)
+                little_endian_data = 0
+                little_endian_data |= ((hex_data & 0xff000000) >> 24)
+                little_endian_data |= ((hex_data & 0x00ff0000) >> 8)
+                little_endian_data |= ((hex_data & 0x0000ff00) << 8)
+                little_endian_data |= ((hex_data & 0x000000ff) << 24)
+                if word != 0:
+                    data_string = '_' + data_string
+                data_string = '{:08x}'.format(little_endian_data) + data_string
+            if data_string != '':    
+                tcl_script.write('\tcreate_hw_axi_txn file_{} [get_hw_axis hw_axi_1] -type write '.format(file_write_count))
+                tcl_script.write('-address {:08x} -len {:d} -data {{'.format(current_address, BURST_LENGTH) + data_string + '}\n')
+                file_write_count += 1
+                current_address += 4*BURST_LENGTH
 
-        for i in range(current_address, end_address, 4):
-            tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
-            tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(i))
-            write_count += 1
+        if current_address > end_address:
+            print 'Error: file length of {:d} bytes is greater than the size of instruction memory ({:d} bytes).'.format(current_address-base_address, end_address-base_address)
+            sys.exit(2)
+        file_end_address = current_address
+        while current_address < end_address:
+            tcl_script.write('\tcreate_hw_axi_txn padding_{} [get_hw_axis hw_axi_1] -type write '.format(padding_write_count))
+            tcl_script.write('-address {:08x} -len {:d}\n'.format(current_address, BURST_LENGTH))
+            padding_write_count += 1
+            current_address += 4*BURST_LENGTH
 
-        tcl_script.write('\tcreate_hw_axi_txn wr_{} [get_hw_axis hw_axi_1] -type write '.format(write_count))
+        tcl_script.write('\tcreate_hw_axi_txn ending_{} [get_hw_axis hw_axi_1] -type write '.format(ending_write_count))
         tcl_script.write('-address {:08x} -len 1 -data 0x00000001\n'.format(reset_address))
-        write_count += 1
+        ending_write_count += 1
 
-        for i in range(0, write_count):
-            tcl_script.write('\trun_hw_axi wr_{}\n'.format(i))
+        tcl_script.write('\tputs "Resetting system..."\n')
+        for i in range(0, init_write_count):
+            tcl_script.write('\trun_hw_axi init_{}\n'.format(i))
+        tcl_script.write('\tputs "Writing {:d} bytes from input file to {:08X}..."\n'.format(file_end_address-base_address, base_address))
+        for i in range(0, file_write_count):
+            tcl_script.write('\trun_hw_axi file_{}\n'.format(i))
+        if file_end_address < end_address:
+            tcl_script.write('\tputs "Writing {:d} bytes of 0 to the rest of instruction memory ({:08X} to {:08X})..."\n'.format(end_address-file_end_address, file_end_address, end_address))
+        for i in range(0, padding_write_count):
+            tcl_script.write('\trun_hw_axi padding_{}\n'.format(i))
+        tcl_script.write('\tputs "Clearing resets..."\n')
+        for i in range(0, ending_write_count):
+            tcl_script.write('\trun_hw_axi ending_{}\n'.format(i))
+        tcl_script.write('\tputs "Done."\n')
 
         tcl_script.write('\tclose_hw\n')
 #        tcl_script.write('\tclose_project\n')
         tcl_script.write('}\n')
+        tcl_script.write('orca_pgm\n')
 
         bin_file.close()
         tcl_script.close()
 
-        vivado_cmd = 'vivado -mode tcl -nolog -nojournal'
+        vivado_cmd = 'vivado -mode batch -nolog -nojournal'
         tcl_src = tcl_script.name
-        cmd = 'echo "orca_pgm" | {} -source {}'.format(vivado_cmd, tcl_src)
+        cmd = '{} -source {}'.format(vivado_cmd, tcl_src)
         subprocess.Popen(cmd, shell=True).wait()
 
     else:

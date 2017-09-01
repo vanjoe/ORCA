@@ -54,6 +54,7 @@ $(IMPL_BIT): $(SYNTH_DCP)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs project_impl $(PROJ_DIR) $(PROJ_NAME)
 
 #These should come from the BSP
+JTAG_RESET_BASE_ADDRESS ?= 0x40000000
 IDRAM_BASE_ADDRESS ?= 0xC0000000
 IDRAM_MAX_ADDRESS  ?= 0xC001FFFF
 
@@ -81,6 +82,11 @@ $(OUT_BIT): $(IMPL_BIT) $(MMI_FILE) $(ELF_FILE)
 .PHONY: pgm
 pgm: $(OUT_BIT)
 	xmd -tcl $(PGM_TCL) $(OUT_BIT) ps7_init.tcl arm.elf
+
+.PHONY: run
+run::
+	$(MAKE) -C software test.bin
+	python orca_pgm.py software/test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_MAX_ADDRESS) + 1))` --device=xc7z020_1 --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
 
 .PHONY: clean
 clean:
