@@ -306,6 +306,7 @@ package rv_components is
     generic(
       REGISTER_SIZE       : positive;
       SIGN_EXTENSION_SIZE : positive;
+      LVE_ENABLE          : boolean;
       PIPELINE_STAGES     : natural range 1 to 2;
       FAMILY              : string := "ALTERA"
       );
@@ -325,6 +326,7 @@ package rv_components is
       --output signals
       rs1_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs3_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
       sign_extension : out    std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       --inputs just for carrying to next pipeline stage
       br_taken_in    : in     std_logic;
@@ -367,6 +369,7 @@ package rv_components is
 
       rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs3_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       sign_extension : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
 
       wb_sel    : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
@@ -520,19 +523,21 @@ package rv_components is
   component register_file
     generic(
       REGISTER_SIZE      : positive;
-      REGISTER_NAME_SIZE : positive
-      );
+      REGISTER_NAME_SIZE : positive;
+      READ_PORTS         : positive);
     port(
       clk         : in std_logic;
       valid_input : in std_logic;
       rs1_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := (others => '-');
+      rs3_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := (others => '-');
       wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
       wb_data     : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       wb_enable   : in std_logic;
 
       rs1_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0)
+      rs2_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs3_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0)
       );
   end component register_file;
 
@@ -609,14 +614,17 @@ package rv_components is
       FAMILY           : string  := "ALTERA"
       );
     port (
-      clk            : in std_logic;
-      scratchpad_clk : in std_logic;
-      reset          : in std_logic;
-      instruction    : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      valid_instr    : in std_logic;
-      stall_to_lve   : in std_logic;
-      rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      clk            : in  std_logic;
+      scratchpad_clk : in  std_logic;
+      reset          : in  std_logic;
+      instruction    : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      valid_instr    : in  std_logic;
+      stall_out      : out std_logic;
+      stall_to_lve   : in  std_logic;
+      rs1_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs2_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs3_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      wb_data        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
       slave_read_en  : in  std_logic;
@@ -1002,7 +1010,7 @@ package rv_components is
   component icache is
     generic (
       CACHE_SIZE     : natural                  := 32768;  -- Byte size of cache
-      LINE_SIZE      : positive range 16 to 256 := 32;  -- Bytes per cache line 
+      LINE_SIZE      : positive range 16 to 256 := 32;  -- Bytes per cache line
       ADDR_WIDTH     : integer                  := 32;
       ORCA_WIDTH     : integer                  := 32;
       EXTERNAL_WIDTH : integer                  := 32;

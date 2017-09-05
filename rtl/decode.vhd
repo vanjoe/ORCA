@@ -5,10 +5,12 @@ use IEEE.NUMERIC_STD.all;
 library work;
 use work.rv_components.all;
 use work.constants_pkg.all;
+use work.utils.all;
 entity decode is
   generic(
     REGISTER_SIZE       : positive;
     SIGN_EXTENSION_SIZE : positive;
+    LVE_ENABLE          : boolean;
     PIPELINE_STAGES     : natural range 1 to 2;
     FAMILY              : string := "ALTERA"
     );
@@ -28,6 +30,7 @@ entity decode is
     --output signals
     rs1_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs3_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     sign_extension : out    std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     --inputs just for carrying to next pipeline stage
     br_taken_in    : in     std_logic;
@@ -45,13 +48,17 @@ end;
 architecture rtl of decode is
   signal rs1   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal rs2   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal rs3   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal rs1_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal rs2_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal rs3_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
   signal rs1_reg : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal outreg1 : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs2_reg : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal outreg2 : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs3_reg : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal outreg3 : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal br_taken_latch : std_logic;
   signal pc_next_latch  : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -63,60 +70,66 @@ architecture rtl of decode is
   signal i_rd  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal i_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal i_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal i_rs3 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
   signal il_rd     : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal il_rs1    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal il_rs2    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal il_rs3    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal il_opcode : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
   signal wb_sel_int    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal wb_data_int   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal wb_enable_int : std_logic;
+
+  constant REG_READ_PORTS : positive := CONDITIONAL(LVE_ENABLE, 3, 2);
 begin
 
   register_file_1 : register_file
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
-      REGISTER_NAME_SIZE => REGISTER_NAME_SIZE)
+      REGISTER_NAME_SIZE => REGISTER_NAME_SIZE,
+      READ_PORTS         => REG_READ_PORTS)
     port map(
       clk         => clk,
       valid_input => valid_input,
       rs1_sel     => rs1,
       rs2_sel     => rs2,
+      rs3_sel     => rs3,
       wb_sel      => wb_sel_int,
       wb_data     => wb_data_int,
       wb_enable   => wb_enable_int,
       rs1_data    => rs1_reg,
-      rs2_data    => rs2_reg
+      rs2_data    => rs2_reg,
+      rs3_data    => rs3_reg
       );
 
-  reg_rst : if true generate
-  -- This is to handle Microsemi board's inability to initialize RAM to zero on startup.
-  begin
-    reg_rst_en : if FAMILY = "MICROSEMI" generate
-      wb_sel_int    <= wb_sel    when reset = '0' else (others => '0');
-      wb_data_int   <= wb_data   when reset = '0' else (others => '0');
-      wb_enable_int <= wb_enable when reset = '0' else '1';
+  reg_rst_en : if FAMILY = "MICROSEMI" generate
+    wb_sel_int    <= wb_sel    when reset = '0' else (others => '0');
+    wb_data_int   <= wb_data   when reset = '0' else (others => '0');
+    wb_enable_int <= wb_enable when reset = '0' else '1';
 
-    end generate reg_rst_en;
-    reg_rst_nen : if FAMILY /= "MICROSEMI" generate
-      wb_sel_int    <= wb_sel;
-      wb_data_int   <= wb_data;
-      wb_enable_int <= wb_enable;
-    end generate reg_rst_nen;
+  end generate reg_rst_en;
+  reg_rst_nen : if FAMILY /= "MICROSEMI" generate
+    wb_sel_int    <= wb_sel;
+    wb_data_int   <= wb_data;
+    wb_enable_int <= wb_enable;
+  end generate reg_rst_nen;
 
-  end generate reg_rst;
+
 
   two_cycle : if PIPELINE_STAGES = 2 generate
     rs1 <= instruction(REGISTER_RS1'range) when stall = '0' else instr_latch(REGISTER_RS1'range);
     rs2 <= instruction(REGISTER_RS2'range) when stall = '0' else instr_latch(REGISTER_RS2'range);
+    rs3 <= instruction(REGISTER_RD'range)  when stall = '0' else instr_latch(REGISTER_RD'range);
 
     rs1_p <= instr_latch(REGISTER_RS1'range) when stall = '0' else instr_out(REGISTER_RS1'range);
     rs2_p <= instr_latch(REGISTER_RS2'range) when stall = '0' else instr_out(REGISTER_RS2'range);
+    rs3_p <= instr_latch(REGISTER_RD'range)  when stall = '0' else instr_out(REGISTER_RD'range);
 
     decode_flushed <= not (valid_input or valid_latch);
 
-    decode_stage : process (clk) is
+    process (clk) is
     begin  -- process decode_stage
       if rising_edge(clk) then          -- rising clock edge
         if not stall = '1' then
@@ -145,23 +158,30 @@ begin
         elsif stall = '0' then
           outreg2 <= rs2_reg;
         end if;
+        if wb_sel = rs3_p and wb_enable = '1' then
+          outreg3 <= wb_data;
+        elsif stall = '0' then
+          outreg3 <= rs3_reg;
+        end if;
 
         if reset = '1' or flush = '1' then
           valid_output <= '0';
           valid_latch  <= '0';
         end if;
       end if;
-    end process decode_stage;
+    end process;
     subseq_instr <= instr_latch;
     subseq_valid <= valid_latch;
     rs1_data     <= outreg1;
     rs2_data     <= outreg2;
+    rs3_data     <= outreg3;
   end generate two_cycle;
 
 
   one_cycle : if PIPELINE_STAGES = 1 generate
-    rs1 <= instruction(19 downto 15) when stall = '0' else instr_out(19 downto 15);
-    rs2 <= instruction(24 downto 20) when stall = '0' else instr_out(24 downto 20);
+    rs1 <= instruction(19 downto 15)      when stall = '0' else instr_out(19 downto 15);
+    rs2 <= instruction(24 downto 20)      when stall = '0' else instr_out(24 downto 20);
+    rs3 <= instruction(REGISTER_RD'range) when stall = '0' else instr_latch(REGISTER_RD'range);
 
     decode_flushed <= not valid_input;
     decode_stage : process (clk, reset) is
@@ -187,6 +207,7 @@ begin
     subseq_valid <= valid_input;
     rs1_data     <= rs1_reg;
     rs2_data     <= rs2_reg;
+    rs3_data     <= rs3_reg;
   end generate one_cycle;
 
 end architecture;

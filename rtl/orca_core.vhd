@@ -86,6 +86,7 @@ architecture rtl of orca_core is
   signal execute_stalled : std_logic;
   signal rs1_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs2_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs3_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sign_extension  : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
 
   signal pipeline_flush : std_logic;
@@ -155,6 +156,7 @@ begin  -- architecture rtl
       REGISTER_SIZE       => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
       PIPELINE_STAGES     => PIPELINE_STAGES-3,
+      LVE_ENABLE          => LVE_ENABLE = 1,
       FAMILY              => FAMILY)
     port map(
       clk            => clk,
@@ -170,6 +172,7 @@ begin  -- architecture rtl
       --output signals
       rs1_data       => rs1_data,
       rs2_data       => rs2_data,
+      rs3_data       => rs3_data,
       sign_extension => sign_extension,
       --inputs just for carrying to next pipeline stage
       br_taken_in    => d_br_taken,
@@ -209,6 +212,7 @@ begin  -- architecture rtl
       subseq_valid       => e_subseq_valid,
       rs1_data           => rs1_data,
       rs2_data           => rs2_data,
+      rs3_data           => rs3_data,
       sign_extension     => sign_extension,
       wb_sel             => wb_sel,
       wb_data            => wb_data,

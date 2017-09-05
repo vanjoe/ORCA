@@ -39,6 +39,7 @@ entity execute is
 
     rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs3_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     sign_extension : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
 
     wb_sel    : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
@@ -123,6 +124,7 @@ architecture behavioural of execute is
 
   signal rs1_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs2_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs3_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal alu_rs1_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal alu_rs2_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -140,6 +142,7 @@ architecture behavioural of execute is
   signal lve_alu_data2        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lve_alu_source_valid : std_logic;
   signal stall_to_lve         : std_logic;
+  signal stall_from_lve       : std_logic;
 
   signal valid_instr : std_logic;
   signal rd_latch    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
@@ -150,6 +153,7 @@ architecture behavioural of execute is
   type fwd_mux_t is (ALU_FWD, NO_FWD);
   signal rs1_mux : fwd_mux_t;
   signal rs2_mux : fwd_mux_t;
+  signal rs3_mux : fwd_mux_t;
 
   signal finished_instr : std_logic;
 
@@ -159,8 +163,10 @@ architecture behavioural of execute is
   signal br_taken_out          : std_logic;
 
 
-  alias ni_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(19 downto 15);
-  alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
+  alias ni_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(REGISTER_RS1'range);
+  alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(REGISTER_RS2'range);
+  alias ni_rs3 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(REGISTER_RD'range);
+  alias ni_opc : std_logic_vector(MAJOR_OP'range) is subseq_instr(MAJOR_OP'range);
 
   constant LVE_ENABLE : boolean := SCRATCHPAD_SIZE /= 0;
 
@@ -190,6 +196,10 @@ begin
     rs2_data_fwd <=
     alu_data_out when ALU_FWD,
     rs2_data     when others;
+  with rs3_mux select
+    rs3_data_fwd <=
+    alu_data_out when ALU_FWD,
+    rs3_data     when others;
 
 
 
@@ -241,7 +251,7 @@ begin
               alu_data_out when alu_data_out_valid = '1' else
               br_data_out;
 
-  stalled_component  <= ls_unit_waiting or stall_from_alu or use_after_produce_stall or lve_executing or stall_from_syscall;
+  stalled_component  <= ls_unit_waiting or stall_from_alu or use_after_produce_stall or stall_from_lve or stall_from_syscall;
   stall_to_lve       <= (ls_unit_waiting or use_after_produce_stall);
   stall_to_alu       <= (ls_unit_waiting or use_after_produce_stall);
   stall_from_execute <= stalled_component and valid_input;
@@ -253,6 +263,7 @@ begin
     variable no_fwd_path  : boolean;
     variable rs1_mux_var  : fwd_mux_t;
     variable rs2_mux_var  : fwd_mux_t;
+    variable rs3_mux_var  : fwd_mux_t;
     variable rd_latch_var : std_logic_vector(rd'range);
   begin
     if rising_edge(clk) then
@@ -264,6 +275,7 @@ begin
 
       rs1_mux_var := NO_FWD;
       rs2_mux_var := NO_FWD;
+      rs3_mux_var := NO_FWD;
       if (current_alu) and valid_instr = '1' and stalled_component = '0' then
         if rd = ni_rs1 and rd /= ZERO then
           rs1_mux_var := ALU_FWD;
@@ -271,6 +283,11 @@ begin
         if rd = ni_rs2 and rd /= ZERO then
           rs2_mux_var := ALU_FWD;
         end if;
+
+        if LVE_ENABLE and ni_opc = LVE_OP and rd = ni_rs3 and rd /= ZERO then
+          rs3_mux_var := ALU_FWD;
+        end if;
+
       end if;
 
       rd_latch_var := rd_latch;
@@ -313,6 +330,7 @@ begin
       rd_latch <= rd_latch_var;
       rs1_mux  <= rs1_mux_var;
       rs2_mux  <= rs2_mux_var;
+      rs3_mux  <= rs3_mux_var;
     end if;
   end process;
 
@@ -444,9 +462,11 @@ begin
         reset          => reset,
         instruction    => instruction,
         valid_instr    => valid_instr,
+        stall_out      => stall_from_lve,
         stall_to_lve   => stall_to_lve,
         rs1_data       => rs1_data_fwd,
         rs2_data       => rs2_data_fwd,
+        rs3_data       => rs3_data_fwd,
         slave_address  => sp_address,
         slave_read_en  => sp_read_en,
         slave_write_en => sp_write_en,
@@ -468,6 +488,7 @@ begin
 
   n_enable_lve : if not LVE_ENABLE generate
     lve_executing        <= '0';
+    stall_from_lve       <= '0';
     simd_op_size         <= LVE_WORD_SIZE;
     lve_alu_source_valid <= '0';
     lve_alu_data1        <= (others => '-');
