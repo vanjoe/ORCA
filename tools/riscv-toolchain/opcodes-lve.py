@@ -113,7 +113,7 @@ def generate_arithmetic_instr( define_file,lve_extension_file):
         dest_size_bits= (size_bits[dest_size]&1) | ((size_bits[dest_size]&2) << 1)
         instruction = 0
         #32bit instruction
-        instruction |= (0xB << 0)
+        instruction |= 0x2B
         instruction |= (instruction_tpl.bit14_12 << 12)
         instruction |= (instruction_tpl.bit25 << 25)
         instruction |= (type_bits[type_spec] << 26)
@@ -176,7 +176,7 @@ def generate_special_instr( define_file,lve_extension_file):
     special_inst = [instruction('vbx_set_vl',0,'"s,t,d"'),
                     instruction('vbx_set_2d',1,'"s,t,d"'),
                     instruction('vbx_set_3d',2,'"s,t,d"'),
-                    instruction('vbx_get',3,'"s,t,d"'),
+                    instruction('vbx_get',3,'"d,s,t"'),
                     instruction('vbx_dma_tohost',4,'"s,t,d"'),
                     instruction('vbx_dma_tovec',5,'"s,t,d"'),
                     instruction('vbx_dma_2dstart',6,'"s,t,d"')]
@@ -184,7 +184,7 @@ def generate_special_instr( define_file,lve_extension_file):
 
     for si in special_inst:
         mask=0xFE00707F
-        match=0x4E00700B | (si.bit28_26 <<26)
+        match=0x4200702B | (si.bit28_26 <<26)
         name = si.name
         uname = name.upper()
         ext = "lve"
