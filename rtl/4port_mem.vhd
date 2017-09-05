@@ -264,6 +264,7 @@ architecture rtl of ram_4port is
 
   signal pause_lve_internal : std_logic;
 
+  signal enum_value_latch : std_logic_vector(enum_value'range);
   --pipeline bits
   signal read3_ack0 : std_logic;
   signal read3_ack1 : std_logic;
@@ -333,14 +334,15 @@ begin  -- architecture rtl
           data_out0 <= scalar_value;
         end if;
         if enum_enable = '1' then
-          data_out1 <= enum_value;
+          data_out1 <= enum_value_latch;
         end if;
-
+        enum_value_latch <= enum_value;
         ack01 <= read_ack;
       end if;
 
     end if;
   end process;
+
 
   -- Adding this in to match ice40ultraplus lve ram behaviour.
   process(clk)

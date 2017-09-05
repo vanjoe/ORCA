@@ -25,6 +25,10 @@ extern vbx_lve_t the_lve;
 static inline void vbx_set_vl(unsigned vl,unsigned nrows){
 	asm volatile("vbx_set_vl %0, %1, zero"::"r"(vl),"r"(nrows));
 }
+static inline void vbx_set_2d(int incrd,int incra,int incrb){
+	asm volatile("vbx_set_2d %0, %1, %2"::"r"(incrd),"r"(incra),"r"(incrb));
+}
+
 #define vbx_set_vl_1(vl) vbx_set_vl(vl,1)
 #define vbx_set_vl_2(vl,rows) vbx_set_vl(vl,rows)
 
@@ -32,6 +36,7 @@ static inline void vbx_set_vl(unsigned vl,unsigned nrows){
 #define vbx_set_vl(...) vbx_set_vl_X(,##__VA_ARGS__,      \
                                      vbx_set_vl_2(__VA_ARGS__),\
                                      vbx_set_vl_1(__VA_ARGS__))
+#define vbx_set_2D(...) vbx_set_2d(__VA_ARGS__)
 
 typedef enum{
 	VBX_STATE_VECTOR_LENGTH=0,
