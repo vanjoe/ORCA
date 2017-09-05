@@ -1,5 +1,5 @@
 
-#include "vbx.h"
+#include "../vbx.h"
 
 vbx_lve_t the_lve;
 
@@ -52,13 +52,14 @@ TEST_ATTR int test_4()
   vbx_word_t* dest=((vbx_word_t*)SCRATCHPAD_BASE);
   dest[0]=1;
   //TEST a load word right before a vector instruction
-  asm volatile("\n\
+  /*
+  asm volatile("\n	  \
    mv a0,%0\n									\
 	lw a0,  0(a0)\n										\
    vtype.www	a0,x0\n										\
    vadd.se.1d.sss	%0,%1\n									\
 ": : "r"(dest),"r"(vbx_get_vl()) : "a0","memory");
-
+  */
   for( int i=0;i<vlen;i++){
 	 if ( dest[i] != (i+1) ){
 		return 1; //TEST FAIL

@@ -12,7 +12,7 @@ typedef int16_t vbx_half_t;   ///< 2-byte half
 typedef int8_t vbx_byte_t;    ///< byte
 typedef void vbx_void_t;      ///< void, used for generic pointers
 typedef struct{char k;} vbx_enum_t; ///< Enumerated type, used for type checking c/cpp
-static vbx_enum_t vbx_ENUM __attribute__((unused));
+static vbx_enum_t* vbx_ENUM __attribute__((unused));
 //
 
 typedef

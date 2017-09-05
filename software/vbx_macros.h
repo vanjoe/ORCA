@@ -9,16 +9,9 @@ extern vbx_lve_t the_lve;
 
 #define max(a,b) ((a)<(b) ?(b):(a))
 #define min(a,b) ((a)>(b) ?(b):(a))
-#define riscv_vector_asm_(vinstr,src_t,op_sz,dim,acc,sign,sync,vlen,dest,srca,srcb) \
-	do{ \
-		asm( "vtype."#op_sz sync " %0, %1\n\t" \
-		     #vinstr"."#src_t"."#dim"d."#sign acc " %2,%3" ::,"r"(vlen):"memory"); \
-	}while(0)
-#define riscv_vector_asm(vinstr,src_t,op_sz,dim,acc,sign,sync,vlen,dest,srca,srcb) \
-	riscv_vector_asm_(vinstr,src_t,op_sz,dim,acc,sign,sync,vlen,dest,srca,srcb) \
 
 #define vbxasm_(acc,vmode, vinstr,dest,srca,srcb)	  \
-	asm(#vinstr "." #vmode acc " %2, %0, %1\n":: "r"(srca),"r"(srcb),"r"(dest))
+	asm volatile(#vinstr "." #vmode acc " %0, %1, %2\n":: "r"(dest),"r"(srca),"r"(srcb))
 
 
 
@@ -29,11 +22,37 @@ extern vbx_lve_t the_lve;
 			vbxasm_("",__VA_ARGS__); \
 		}}while(0)
 
-static inline void vbx_set_vl(unsigned vl){
-	the_lve.vl = vl;
+static inline void vbx_set_vl(unsigned vl,unsigned nrows){
+	asm volatile("vbx_set_vl %0, %1, zero"::"r"(vl),"r"(nrows));
 }
+#define vbx_set_vl_1(vl) vbx_set_vl(vl,1)
+#define vbx_set_vl_2(vl,rows) vbx_set_vl(vl,rows)
+
+#define vbx_set_vl_X(x,A,B,FUNC, ...)  FUNC
+#define vbx_set_vl(...) vbx_set_vl_X(,##__VA_ARGS__,      \
+                                     vbx_set_vl_2(__VA_ARGS__),\
+                                     vbx_set_vl_1(__VA_ARGS__))
+
+typedef enum{
+	VBX_STATE_VECTOR_LENGTH=0,
+	VBX_STATE_NROWS=1,
+	VBX_STATE_NMATS=2,
+	VBX_STATE_INCRA_2D=3,
+	VBX_STATE_INCRB_2D=4,
+	VBX_STATE_INCRD_2D=5,
+	VBX_STATE_INCRA_3D=6,
+	VBX_STATE_INCRB_3D=7,
+	VBX_STATE_INCRD_3D=8
+
+}state_e;
+static inline vbx_uword_t vbx_get_state(state_e reg){
+	vbx_uword_t ret;
+	asm volatile("vbx_get %0, %1, zero"::"r"(ret),"r"(reg));
+	return ret;
+}
+
 static inline int vbx_get_vl(){
-	return the_lve.stride_and_vl;
+	return vbx_get_state(VBX_STATE_VECTOR_LENGTH);
 }
 
 static inline void* vbx_sp_alloc(unsigned sz){
