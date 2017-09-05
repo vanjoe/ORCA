@@ -115,6 +115,7 @@ architecture rtl of lve_top is
   signal slave_byte_en_reg  : std_logic_vector((SLAVE_DATA_WIDTH/8)-1 downto 0);
   signal slave_data_in_reg  : std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
 
+  signal zero_length_vector : std_logic;
 
 begin
   valid_lve_instr     <= valid_instr when instr_major_op = LVE_OP else '0';
@@ -131,6 +132,7 @@ begin
           when "000" =>
             vector_length <= unsigned(rs1_data(ptr'range));
             num_rows      <= unsigned(rs2_data(ptr'range));
+            zero_length_vector <= bool_to_sl(unsigned(rs2_data(ptr'range)) = 0 or unsigned(rs1_data(ptr'range)) = 0);
           when "001" =>
             srca_incr <= unsigned(rs1_data(ptr'range));
             srcb_incr <= unsigned(rs2_data(ptr'range));
@@ -139,6 +141,8 @@ begin
             null;
         end case;
       end if;
+
+
     end if;
   end process;
 
@@ -149,7 +153,7 @@ begin
   loop_proc : process(clk)
   begin
     if rising_edge(clk) then
-      if valid_lve_instr = '1' and opcode5 /= "11111" then
+      if valid_lve_instr = '1' and opcode5 /= "11111" and zero_length_vector = '0' then
 
         srca_ptr   <= srca_ptr_next;
         srcb_ptr   <= srcb_ptr_next;
@@ -187,7 +191,7 @@ begin
           first_elem <= '1';
         end if;
 
-        if first_elem = '1' then
+        if first_elem  = '1'then
           elems_left_read  <= vector_length-1;
           rows_left_read   <= num_rows-1;
           elems_left_write <= vector_length-1;
@@ -223,7 +227,7 @@ begin
   dest_ptr_next <= dest_ptr+CONDITIONAL(acc_enable = '1', 0, 4) when elems_left_write /= 0 else
                    dest_row_ptr+dest_incr;
 
-  stall_out     <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write);
+  stall_out     <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector;
   lve_executing <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and not first_elem;
 
 
