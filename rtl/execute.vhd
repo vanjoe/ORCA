@@ -103,6 +103,7 @@ architecture behavioural of execute is
   signal ld_data_out  : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal upp_data_out : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sys_data_out : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lve_data_out : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal br_data_enable     : std_logic;
   signal alu_data_out_valid : std_logic;
@@ -467,6 +468,7 @@ begin
         rs1_data       => rs1_data_fwd,
         rs2_data       => rs2_data_fwd,
         rs3_data       => rs3_data_fwd,
+        wb_data        => lve_data_out,
         slave_address  => sp_address,
         slave_read_en  => sp_read_en,
         slave_write_en => sp_write_en,

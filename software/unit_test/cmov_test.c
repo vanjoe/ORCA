@@ -33,8 +33,6 @@ TEST_ATTR int test_2()
 
 int main()
 {
-	the_lve.stride =1;
-
 	do_test(2);
 	return 0;
 

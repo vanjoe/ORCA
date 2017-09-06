@@ -1,8 +1,6 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.numeric_std.all;
-use IEEE.STD_LOGIC_TEXTIO.all;
-use STD.TEXTIO.all;
 
 library work;
 use work.utils.all;
@@ -28,7 +26,7 @@ entity lve_top is
     rs1_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs3_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_data        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    wb_data        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
     slave_read_en  : in  std_logic;
@@ -51,39 +49,38 @@ end entity;
 
 architecture rtl of lve_top is
   signal valid_lve_instr : std_logic;
+  --parts of the instruction
   alias instr_major_op   : std_logic_vector is instruction(MAJOR_OP'range);
   alias scalar_enable    : std_logic is instruction(26);
   alias enum_enable      : std_logic is instruction(27);
   alias acc_enable       : std_logic is instruction(28);
+  signal opcode5         : std_logic_vector(4 downto 0);
 
-  alias rs1 : std_logic_vector is instruction(REGISTER_RS1'range);
-  alias rs2 : std_logic_vector is instruction(REGISTER_RS2'range);
-  alias rs3 : std_logic_vector is instruction(REGISTER_RD'range);
-
-  signal opcode5 : std_logic_vector(4 downto 0);
-
+  --create symbol wit correct range for later use
   signal ptr : std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
 
-  signal vector_length : unsigned(ptr'range);
-  signal num_rows      : unsigned(ptr'range);
-  signal dest_incr     : unsigned(ptr'range);
-  signal srca_incr     : unsigned(ptr'range);
-  signal srcb_incr     : unsigned(ptr'range);
+  --vector_length state
+  signal vector_length      : unsigned(ptr'range);
+  signal num_rows           : unsigned(ptr'range);
+  signal dest_incr          : unsigned(ptr'range);
+  signal srca_incr          : unsigned(ptr'range);
+  signal srcb_incr          : unsigned(ptr'range);
+  signal zero_length_vector : std_logic;  --don't do anything for zero length vector
 
+  --counters
   signal elems_left_read  : unsigned(ptr'range);
   signal elems_left_write : unsigned(ptr'range);
   signal rows_left_read   : unsigned(ptr'range);
   signal rows_left_write  : unsigned(ptr'range);
+  signal enum_value       : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal external_port_enable : std_logic;
-  signal ci_pause             : std_logic;
-  signal srca_ptr             : unsigned(ptr'range);
-  signal srcb_ptr             : unsigned(ptr'range);
-  signal dest_ptr             : unsigned(ptr'range);
-  signal srca_row_ptr         : unsigned(ptr'range);
-  signal srcb_row_ptr         : unsigned(ptr'range);
-  signal dest_row_ptr         : unsigned(ptr'range);
-
+  --pointers
+  signal srca_ptr          : unsigned(ptr'range);
+  signal srcb_ptr          : unsigned(ptr'range);
+  signal dest_ptr          : unsigned(ptr'range);
+  signal srca_row_ptr      : unsigned(ptr'range);
+  signal srcb_row_ptr      : unsigned(ptr'range);
+  signal dest_row_ptr      : unsigned(ptr'range);
   signal srca_ptr_next     : unsigned(ptr'range);
   signal srcb_ptr_next     : unsigned(ptr'range);
   signal dest_ptr_next     : unsigned(ptr'range);
@@ -91,31 +88,43 @@ architecture rtl of lve_top is
   signal srcb_row_ptr_next : unsigned(ptr'range);
   signal dest_row_ptr_next : unsigned(ptr'range);
 
+
+  --accumulator registers
+  signal result_muxed    : unsigned(REGISTER_SIZE-1 downto 0);
   signal accumulator     : unsigned(REGISTER_SIZE-1 downto 0);
   signal accumulator_reg : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal op5_alu        : std_logic;
-  signal first_elem     : std_logic;
-  signal done_read      : std_logic;
-  signal done_write     : std_logic;
-  signal wr_data_ready  : std_logic;
-  signal writeback_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  --misc FSM state
+  signal op5_alu    : std_logic;
+  signal first_elem : std_logic;
+  signal done_read  : std_logic;
+  signal done_write : std_logic;
 
+  --scratchpad
+  signal wr_data_ready    : std_logic;
+  signal writeback_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rd_en            : std_logic;
   signal scalar_value     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal enum_value       : unsigned(REGISTER_SIZE-1 downto 0);
   signal srca_data_read   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal srcb_data_read   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lve_source_valid : std_logic;
+  signal wb_en            : std_logic;
+
+  --Move instruction signals
+  signal mov_result_valid : std_logic;
+  signal mov_wb_en        : std_logic;
+  signal mov_data_out     : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+  --external pointer
+  signal external_port_enable : std_logic;
+  signal ci_pause             : std_logic;
+  signal slave_address_reg    : std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+  signal slave_read_en_reg    : std_logic;
+  signal slave_write_en_reg   : std_logic;
+  signal slave_byte_en_reg    : std_logic_vector((SLAVE_DATA_WIDTH/8)-1 downto 0);
+  signal slave_data_in_reg    : std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
 
 
-  signal slave_address_reg  : std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-  signal slave_read_en_reg  : std_logic;
-  signal slave_write_en_reg : std_logic;
-  signal slave_byte_en_reg  : std_logic_vector((SLAVE_DATA_WIDTH/8)-1 downto 0);
-  signal slave_data_in_reg  : std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
-
-  signal zero_length_vector : std_logic;
 
 begin
   valid_lve_instr     <= valid_instr when instr_major_op = LVE_OP else '0';
@@ -123,6 +132,9 @@ begin
   opcode5(3)          <= instruction(25);
   opcode5(2 downto 0) <= instruction(14 downto 12);
 
+  -----------------------------------------------------------------------------
+  -- Handle set and get instructions here
+  -----------------------------------------------------------------------------
   set_vl_proc : process (clk)
   begin  -- process
     if rising_edge(clk) then
@@ -130,8 +142,8 @@ begin
         --secial instruction
         case instruction(28 downto 26) is
           when "000" =>
-            vector_length <= unsigned(rs1_data(ptr'range));
-            num_rows      <= unsigned(rs2_data(ptr'range));
+            vector_length      <= unsigned(rs1_data(ptr'range));
+            num_rows           <= unsigned(rs2_data(ptr'range));
             zero_length_vector <= bool_to_sl(unsigned(rs2_data(ptr'range)) = 0 or unsigned(rs1_data(ptr'range)) = 0);
           when "001" =>
             srca_incr <= unsigned(rs1_data(ptr'range));
@@ -149,7 +161,9 @@ begin
   op5_alu <= bool_to_sl (opcode5(4) = '0' or
                          opcode5 = "10000" or  -- vsub
                          opcode5 = "10101");   --vshra
-
+  -------------------------------------------------------------------------------
+  -- handle scratchpad looping here
+  -------------------------------------------------------------------------------
   loop_proc : process(clk)
   begin
     if rising_edge(clk) then
@@ -191,7 +205,7 @@ begin
           first_elem <= '1';
         end if;
 
-        if first_elem  = '1'then
+        if first_elem = '1'then
           elems_left_read  <= vector_length-1;
           rows_left_read   <= num_rows-1;
           elems_left_write <= vector_length-1;
@@ -231,18 +245,58 @@ begin
   lve_executing <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and not first_elem;
 
 
-  wr_data_ready <= lve_alu_result_valid and not done_write;
+  wr_data_ready <= (mov_result_valid or lve_alu_result_valid) and not done_write;
+  wb_en         <= ((mov_result_valid and mov_wb_en) or lve_alu_result_valid) and not done_write;
 
-  accumulator <= accumulator_reg + unsigned(lve_alu_result);
+  accumulator <= accumulator_reg + result_muxed;
 
   scalar_value         <= rs1_data;
   external_port_enable <= slave_read_en or slave_write_en;
   rd_en                <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and not done_read;
 
 
-  mov : process(clk)
+  -----------------------------------------------------------------------------
+  -- CMV, MOV, SGT instructions are not handled by the riscv alu, so add extra
+  -- logic here.
+  -----------------------------------------------------------------------------
+  mov_sgt_instr : process(clk)
+    variable sgt_a, sgt_b : signed(REGISTER_SIZE downto 0);
+    variable sgt_msb_msk  : std_logic;
+    variable is_zero      : boolean;
   begin
     if rising_edge(clk) then
+      sgt_msb_msk      := not opcode5(0);
+      sgt_a            := signed((sgt_msb_msk and srca_data_read(srca_data_read'left)) & srca_data_read);
+      sgt_b            := signed((sgt_msb_msk and srcb_data_read(srcb_data_read'left)) & srcb_data_read);
+      is_zero          := srcb_data_read = x"00000000";
+      mov_data_out     <= srca_data_read;
+      mov_wb_en        <= '0';
+      mov_result_valid <= '0';
+      if lve_source_valid = '1' then
+        if opcode5 = "11000" then               --cmv_nz
+          if not is_zero then
+            mov_wb_en <= '1';
+          end if;
+          mov_result_valid <= '1';
+        elsif opcode5 = "11001" then            --cmv_z
+          if is_zero then
+            mov_wb_en <= '1';
+          end if;
+          mov_result_valid <= '1';
+        elsif opcode5 = "11010"then             --mov
+          mov_wb_en        <= '1';
+          mov_result_valid <= '1';
+        elsif opcode5(4 downto 1) = "1001"then  --sgt[u]
+          mov_data_out <= std_logic_vector(to_signed(0, mov_data_out'length));
+          if sgt_a > sgt_b then
+            mov_data_out <= std_logic_vector(to_signed(1, mov_data_out'length));
+          end if;
+          mov_wb_en        <= '1';
+          mov_result_valid <= '1';
+        end if;
+
+      end if;
+
     end if;
   end process;
 
@@ -286,7 +340,7 @@ begin
 
       waddr2   => std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
       byte_en2 => "1111",
-      wen2     => wr_data_ready,
+      wen2     => wb_en,
       data_in2 => std_logic_vector(writeback_data),
 
       rwaddr3   => slave_address_reg(log2(SCRATCHPAD_SIZE)-1 downto 2),
@@ -300,9 +354,11 @@ begin
   lve_alu_data1        <= srca_data_read;
   lve_alu_data2        <= srcb_data_read;
   lve_alu_op_size      <= "10";
-  lve_alu_source_valid <= lve_source_valid;
+  lve_alu_source_valid <= lve_source_valid and op5_alu;
   writeback_data       <= std_logic_vector(accumulator) when acc_enable = '1' else
-                    lve_alu_result;
+                          std_logic_vector(result_muxed);
+  result_muxed <= unsigned(lve_alu_result) when lve_alu_result_valid = '1' else
+                  unsigned(mov_data_out);
 
 
 end architecture;
