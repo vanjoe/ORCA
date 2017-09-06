@@ -4,8 +4,7 @@
 -include config.mk
 C_MAIN?=main.c
 OBJDUMP_STYLE?=--disassemble-all
-ARCH?=rv32im
-LVE_EXT=xlve
+ARCH?=rv32imxlve
 RISCV_OLEVEL?=-O2
 RISCV_CFLAGS?=
 
@@ -25,7 +24,7 @@ CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
-CFLAGS=-march=$(ARCH) -Wa,-march=$(ARCH)$(LVE_EXT) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation -mno-div
+CFLAGS=-march=$(ARCH)$  $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation -mno-div
 LD_FLAGS= -static -nostartfiles -march=$(ARCH)
 
 TARGET=test

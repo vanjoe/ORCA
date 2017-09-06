@@ -24,7 +24,7 @@ MEM_FILE?=software/test.mem
 
 HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../../rtl/*.vhd) ./top.vhd ./top_top.v
 
-all:  bits programmer.xcf
+all:  bits
 
 IMEM_BASE=0
 IMEM_LEN=8192

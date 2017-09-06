@@ -509,7 +509,7 @@ begin
     rv : component orca
       generic map (
         REGISTER_SIZE        => REGISTER_SIZE,
-        RESET_VECTOR         => 0,
+        RESET_VECTOR         => x"00000000",
         WISHBONE_ENABLE      => 1,
         MULTIPLY_ENABLE      => 1,
         DIVIDE_ENABLE        => 0,
