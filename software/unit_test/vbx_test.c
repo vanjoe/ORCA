@@ -132,6 +132,30 @@ TEST_ATTR int test_7()
 
 }
 
+TEST_ATTR int test_8()
+{
+	//2d instruction test
+	int test_length=10;
+	vbx_half_t* v_input=SCRATCHPAD_BASE;
+	vbx_word_t* v_output=(vbx_word_t*)(v_input+test_length);
+	int i,errors=0;
+	for(i=0;i<test_length;i++){
+		v_input[i]=i;
+	}
+
+	vbx_set_vl(1,test_length/2);
+	vbx_set_2D(8,0,4);
+	vbx(SVW,VAND, v_output,0xFFFF,   (vbx_word_t*)v_input);
+	vbx(SVW,VMULH,v_output+1,(1<<16),(vbx_word_t*)v_input);
+
+	for(i=0;i<test_length;i++){
+		if(v_output[i]!=i){
+			return 1;
+		}
+	}
+
+	return errors;
+}
 
 
 //this macro runs the test, and returns the test number on failure
@@ -139,13 +163,13 @@ TEST_ATTR int test_7()
 
 int main()
 {
-	the_lve.stride =1;
 	do_test(2);
 	do_test(3);
 	do_test(4);
 	do_test(5);
 	do_test(6);
 	do_test(7);
+	do_test(8);
 	return 0;
 
 }

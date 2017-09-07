@@ -84,9 +84,6 @@ architecture rtl of lve_top is
   signal srca_ptr_next     : unsigned(ptr'range);
   signal srcb_ptr_next     : unsigned(ptr'range);
   signal dest_ptr_next     : unsigned(ptr'range);
-  signal srca_row_ptr_next : unsigned(ptr'range);
-  signal srcb_row_ptr_next : unsigned(ptr'range);
-  signal dest_row_ptr_next : unsigned(ptr'range);
 
 
   --accumulator registers
@@ -109,8 +106,9 @@ architecture rtl of lve_top is
   signal srcb_data_read   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lve_source_valid : std_logic;
   signal wb_en            : std_logic;
+  signal wb_byte_en       : std_logic_vector(3 downto 0);
 
-  --Move instruction signals
+--Move instruction signals
   signal mov_result_valid : std_logic;
   signal mov_wb_en        : std_logic;
   signal mov_data_out     : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -124,6 +122,12 @@ architecture rtl of lve_top is
   signal slave_byte_en_reg    : std_logic_vector((SLAVE_DATA_WIDTH/8)-1 downto 0);
   signal slave_data_in_reg    : std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
 
+  signal ci_func      : VCUSTOM_ENUM;
+  signal ci_byte_en   : std_logic_vector(3 downto 0);
+  signal ci_valid_in  : std_logic;
+  signal ci_valid_out : std_logic;
+  signal ci_data_out  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ci_we        : std_logic;
 
 
 begin
@@ -142,9 +146,9 @@ begin
         --secial instruction
         case instruction(28 downto 26) is
           when "000" =>
-            vector_length      <= unsigned(rs1_data(ptr'range));
-            num_rows           <= unsigned(rs2_data(ptr'range));
-            zero_length_vector <= bool_to_sl(unsigned(rs2_data(ptr'range)) = 0 or unsigned(rs1_data(ptr'range)) = 0);
+            vector_length      <= unsigned(rs3_data(ptr'range));
+            num_rows           <= unsigned(rs1_data(ptr'range));
+            zero_length_vector <= bool_to_sl(unsigned(rs3_data(ptr'range)) = 0 or unsigned(rs1_data(ptr'range)) = 0);
           when "001" =>
             srca_incr <= unsigned(rs1_data(ptr'range));
             srcb_incr <= unsigned(rs2_data(ptr'range));
@@ -179,7 +183,7 @@ begin
           if rows_left_read = 0 then
             done_read <= '1';
           else
-            elems_left_read <= vector_length;
+            elems_left_read <= vector_length-1;
             rows_left_read  <= rows_left_read -1;
             srca_row_ptr    <= srca_ptr_next;
             srcb_row_ptr    <= srcb_ptr_next;
@@ -195,8 +199,9 @@ begin
             if rows_left_write = 0 then
               done_write <= '1';
             else
-              elems_left_write <= vector_length;
+              elems_left_write <= vector_length-1;
               rows_left_write  <= rows_left_write -1;
+              dest_row_ptr <= dest_ptr_next;
             end if;
           end if;
         end if;
@@ -217,11 +222,13 @@ begin
           srca_row_ptr <= unsigned(rs1_data(ptr'range));
           srcb_row_ptr <= unsigned(rs2_data(ptr'range));
 
-          dest_ptr   <= unsigned(rs3_data(ptr'range));
-          first_elem <= '0';
-          done_write <= '0';
-          done_read  <= '0';
-          enum_value <= (others => '0');
+          dest_ptr     <= unsigned(rs3_data(ptr'range));
+          dest_row_ptr <= unsigned(rs3_data(ptr'range));
+
+          first_elem   <= '0';
+          done_write   <= '0';
+          done_read    <= '0';
+          enum_value   <= (others => '0');
         end if;
       end if;
       if reset = '1' then
@@ -299,6 +306,47 @@ begin
 
     end if;
   end process;
+  with opcode5 select
+    ci_func <=
+    VCUSTOM0 when "11011",
+    VCUSTOM1 when "11100",
+    VCUSTOM2 when "11101",
+    VCUSTOM3 when "11110",
+    VCUSTOM4 when "10001",
+    VCUSTOM5 when "10100",
+    VCUSTOM6 when "10110",
+    VCUSTOM7 when others;
+
+  with opcode5 select
+    wb_byte_en <=
+    ci_byte_en when "11011",
+    ci_byte_en when "11100",
+    ci_byte_en when "11101",
+    ci_byte_en when "11110",
+    ci_byte_en when "10001",
+    ci_byte_en when "10100",
+    ci_byte_en when "10110",
+    ci_byte_en when "10111",
+    "1111"     when others;
+
+
+  ci : lve_ci
+    generic map (
+      REGISTER_SIZE => REGISTER_SIZE)
+    port map (
+      clk              => clk,
+      reset            => reset,
+      func             => ci_func,
+      pause            => ci_pause,
+      valid_in         => ci_valid_in,
+      data1_in         => srca_data_read,
+      data2_in         => srcb_data_read,
+      align1_in        => rs1_data(1 downto 0),
+      align2_in        => rs1_data(1 downto 0),
+      valid_out        => ci_valid_out,
+      write_enable_out => ci_we,
+      byte_en_out      => ci_byte_en,
+      data_out         => ci_data_out);
 
   process(clk)
   begin
@@ -339,7 +387,7 @@ begin
       ack01       => lve_source_valid,
 
       waddr2   => std_logic_vector(dest_ptr(log2(SCRATCHPAD_SIZE)-1 downto 2)),
-      byte_en2 => "1111",
+      byte_en2 => wb_byte_en,
       wen2     => wb_en,
       data_in2 => std_logic_vector(writeback_data),
 
@@ -356,7 +404,7 @@ begin
   lve_alu_op_size      <= "10";
   lve_alu_source_valid <= lve_source_valid and op5_alu;
   writeback_data       <= std_logic_vector(accumulator) when acc_enable = '1' else
-                          std_logic_vector(result_muxed);
+                    std_logic_vector(result_muxed);
   result_muxed <= unsigned(lve_alu_result) when lve_alu_result_valid = '1' else
                   unsigned(mov_data_out);
 

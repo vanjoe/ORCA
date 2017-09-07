@@ -580,6 +580,7 @@ package rv_components is
       );
   end component system_calls;
 
+  type VCUSTOM_ENUM is (VCUSTOM0, VCUSTOM1, VCUSTOM2, VCUSTOM3, VCUSTOM4, VCUSTOM5, VCUSTOM6, VCUSTOM7);
   component lve_ci is
     generic (
       REGISTER_SIZE : positive := 32
@@ -590,7 +591,7 @@ package rv_components is
 
       pause : in std_logic;
 
-      func3 : in std_logic_vector(2 downto 0);
+      func : in VCUSTOM_ENUM;
 
       valid_in : in std_logic;
       data1_in : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -600,6 +601,7 @@ package rv_components is
       align2_in : in std_logic_vector(1 downto 0);
 
       valid_out        : out std_logic;
+      byte_en_out      : out std_logic_vector(3 downto 0);
       write_enable_out : out std_logic;
       data_out         : out std_logic_vector(REGISTER_SIZE-1 downto 0)
       );

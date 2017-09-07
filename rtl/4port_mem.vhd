@@ -132,7 +132,7 @@ begin
 
   begin
     wen0     <= wr_en0 and byte_en0(byte);
-    wen1     <= wr_en1 and byte_en0(byte);
+    wen1     <= wr_en1 and byte_en1(byte);
     byte_in0 <= data_in0((byte+1)*8-1 downto byte*8);
     byte_in1 <= data_in1((byte+1)*8-1 downto byte*8);
 
