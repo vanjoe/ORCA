@@ -252,8 +252,8 @@ begin
   lve_executing <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and not first_elem;
 
 
-  wr_data_ready <= (mov_result_valid or lve_alu_result_valid) and not done_write;
-  wb_en         <= ((mov_result_valid and mov_wb_en) or lve_alu_result_valid) and not done_write;
+  wr_data_ready <= (mov_result_valid or lve_alu_result_valid or ci_valid_out) and not done_write;
+  wb_en         <= ((mov_result_valid and mov_wb_en) or (ci_valid_out and ci_we) or lve_alu_result_valid) and not done_write;
 
   accumulator <= accumulator_reg + result_muxed;
 
@@ -328,6 +328,18 @@ begin
     ci_byte_en when "10110",
     ci_byte_en when "10111",
     "1111"     when others;
+
+  with opcode5 select
+    ci_valid_in <=
+    lve_source_valid when "11011",
+    lve_source_valid when "11100",
+    lve_source_valid when "11101",
+    lve_source_valid when "11110",
+    lve_source_valid when "10001",
+    lve_source_valid when "10100",
+    lve_source_valid when "10110",
+    lve_source_valid when "10111",
+    '0'     when others;
 
 
   ci : lve_ci
@@ -406,6 +418,7 @@ begin
   writeback_data       <= std_logic_vector(accumulator) when acc_enable = '1' else
                     std_logic_vector(result_muxed);
   result_muxed <= unsigned(lve_alu_result) when lve_alu_result_valid = '1' else
+                  unsigned(ci_data_out) when ci_valid_out = '1' else
                   unsigned(mov_data_out);
 
 
