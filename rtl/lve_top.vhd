@@ -146,9 +146,9 @@ begin
         --secial instruction
         case instruction(28 downto 26) is
           when "000" =>
-            vector_length      <= unsigned(rs3_data(ptr'range));
-            num_rows           <= unsigned(rs1_data(ptr'range));
-            zero_length_vector <= bool_to_sl(unsigned(rs3_data(ptr'range)) = 0 or unsigned(rs1_data(ptr'range)) = 0);
+            vector_length      <= unsigned(rs1_data(ptr'range));
+            num_rows           <= unsigned(rs2_data(ptr'range));
+            zero_length_vector <= bool_to_sl(unsigned(rs2_data(ptr'range)) = 0 or unsigned(rs1_data(ptr'range)) = 0);
           when "001" =>
             srca_incr <= unsigned(rs1_data(ptr'range));
             srcb_incr <= unsigned(rs2_data(ptr'range));

@@ -811,7 +811,7 @@ __attribute__((always_inline)) static inline void vbx_VVWWWSSS(int modify, vinst
 		vbxasm(modify, VVWWWSSS, VMUL, v_out, v_in1, v_in2 );
 		break;
 	case VMULHI:
-		vbxasm(modify, VVWWWSSS, VMULHI, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VMULH, v_out, v_in1, v_in2 );
 		break;
 	case VMULFXP:
 		vbxasm(modify, VVWWWSSS, VMULFXP, v_out, v_in1, v_in2 );
@@ -835,7 +835,7 @@ __attribute__((always_inline)) static inline void vbx_VVWWWSSS(int modify, vinst
 		vbxasm(modify, VVWWWSSS, VSHL, v_out, v_in1, v_in2 );
 		break;
 	case VSHR:
-		vbxasm(modify, VVWWWSSS, VSHR, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VSRA, v_out, v_in1, v_in2 );
 		break;
 	case VMOV:
 		vbxasm(modify, VVWWWSSS, VMOV, v_out, v_in1, 0 );
@@ -915,124 +915,124 @@ __attribute__((always_inline)) static inline void vbx_VVWWWUUU(int modify, vinst
 	switch(v_op)
 	{
 	case VADD:
-		vbxasm(modify, VVWWWUUU, VADD, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VADD, v_out, v_in1, v_in2 );
 		break;
 	case VSUB:
-		vbxasm(modify, VVWWWUUU, VSUB, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VSUB, v_out, v_in1, v_in2 );
 		break;
 	case VADDFXP:
-		vbxasm(modify, VVWWWUUU, VADDFXP, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VADDFXP, v_out, v_in1, v_in2 );
 		break;
 	case VSUBFXP:
-		vbxasm(modify, VVWWWUUU, VSUBFXP, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VSUBFXP, v_out, v_in1, v_in2 );
 		break;
 	case VADDC:
-		vbxasm(modify, VVWWWUUU, VADDC, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VADDC, v_out, v_in1, v_in2 );
 		break;
 	case VSUBB:
-		vbxasm(modify, VVWWWUUU, VSUBB, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VSUBB, v_out, v_in1, v_in2 );
 		break;
 	case VABSDIFF:
-		vbxasm(modify, VVWWWUUU, VABSDIFF, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VABSDIFF, v_out, v_in1, v_in2 );
 		break;
 	case VMUL:
-		vbxasm(modify, VVWWWUUU, VMUL, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VMUL, v_out, v_in1, v_in2 );
 		break;
 	case VMULHI:
-		vbxasm(modify, VVWWWUUU, VMULHI, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VMULHU, v_out, v_in1, v_in2 );
 		break;
 	case VMULFXP:
-		vbxasm(modify, VVWWWUUU, VMULFXP, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VMULFXP, v_out, v_in1, v_in2 );
 		break;
 	case VSLT:
-		vbxasm(modify, VVWWWUUU, VSLT, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VSLTU, v_out, v_in1, v_in2 );
 		break;
 	case VSGT:
-		vbxasm(modify, VVWWWUUU, VSGT, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VSGTU, v_out, v_in1, v_in2 );
 		break;
 	case VAND:
-		vbxasm(modify, VVWWWUUU, VAND, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VAND, v_out, v_in1, v_in2 );
 		break;
 	case VOR:
-		vbxasm(modify, VVWWWUUU, VOR, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VOR, v_out, v_in1, v_in2 );
 		break;
 	case VXOR:
-		vbxasm(modify, VVWWWUUU, VXOR, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VXOR, v_out, v_in1, v_in2 );
 		break;
 	case VSHL:
-		vbxasm(modify, VVWWWUUU, VSHL, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VSHL, v_out, v_in1, v_in2 );
 		break;
 	case VSHR:
-		vbxasm(modify, VVWWWUUU, VSHR, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VSRL, v_out, v_in1, v_in2 );
 		break;
 	case VMOV:
-		vbxasm(modify, VVWWWUUU, VMOV, v_out, v_in1, 0 );
+		vbxasm(modify, VVWWWSSS, VMOV, v_out, v_in1, 0 );
 		break;
 	case VCMV_LEZ:
-		vbxasm(modify, VVWWWUUU, VCMV_LEZ, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCMV_LEZ, v_out, v_in1, v_in2 );
 		break;
 	case VCMV_GTZ:
-		vbxasm(modify, VVWWWUUU, VCMV_GTZ, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCMV_GTZ, v_out, v_in1, v_in2 );
 		break;
 	case VCMV_LTZ:
-		vbxasm(modify, VVWWWUUU, VCMV_LTZ, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCMV_LTZ, v_out, v_in1, v_in2 );
 		break;
 	case VCMV_GEZ:
-		vbxasm(modify, VVWWWUUU, VCMV_GEZ, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCMV_GEZ, v_out, v_in1, v_in2 );
 		break;
 	case VCMV_Z:
-		vbxasm(modify, VVWWWUUU, VCMV_Z, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCMV_Z, v_out, v_in1, v_in2 );
 		break;
 	case VCMV_NZ:
-		vbxasm(modify, VVWWWUUU, VCMV_NZ, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCMV_NZ, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM0:
-		vbxasm(modify, VVWWWUUU, VCUSTOM0, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM0, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM1:
-		vbxasm(modify, VVWWWUUU, VCUSTOM1, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM1, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM2:
-		vbxasm(modify, VVWWWUUU, VCUSTOM2, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM2, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM3:
-		vbxasm(modify, VVWWWUUU, VCUSTOM3, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM3, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM4:
-		vbxasm(modify, VVWWWUUU, VCUSTOM4, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM4, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM5:
-		vbxasm(modify, VVWWWUUU, VCUSTOM5, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM5, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM6:
-		vbxasm(modify, VVWWWUUU, VCUSTOM6, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM6, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM7:
-		vbxasm(modify, VVWWWUUU, VCUSTOM7, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM7, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM8:
-		vbxasm(modify, VVWWWUUU, VCUSTOM8, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM8, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM9:
-		vbxasm(modify, VVWWWUUU, VCUSTOM9, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM9, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM10:
-		vbxasm(modify, VVWWWUUU, VCUSTOM10, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM10, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM11:
-		vbxasm(modify, VVWWWUUU, VCUSTOM11, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM11, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM12:
-		vbxasm(modify, VVWWWUUU, VCUSTOM12, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM12, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM13:
-		vbxasm(modify, VVWWWUUU, VCUSTOM13, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM13, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM14:
-		vbxasm(modify, VVWWWUUU, VCUSTOM14, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM14, v_out, v_in1, v_in2 );
 		break;
 	case VCUSTOM15:
-		vbxasm(modify, VVWWWUUU, VCUSTOM15, v_out, v_in1, v_in2 );
+		vbxasm(modify, VVWWWSSS, VCUSTOM15, v_out, v_in1, v_in2 );
 		break;
 	default:
 		break;
@@ -1067,7 +1067,7 @@ __attribute__((always_inline)) static inline void vbx_SVWWWSSS(int modify, vinst
 		vbxasm(modify, SVWWWSSS, VMUL, v_out, s_in1, v_in2 );
 		break;
 	case VMULHI:
-		vbxasm(modify, SVWWWSSS, VMULHI, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VMULH, v_out, s_in1, v_in2 );
 		break;
 	case VMULFXP:
 		vbxasm(modify, SVWWWSSS, VMULFXP, v_out, s_in1, v_in2 );
@@ -1091,7 +1091,7 @@ __attribute__((always_inline)) static inline void vbx_SVWWWSSS(int modify, vinst
 		vbxasm(modify, SVWWWSSS, VSHL, v_out, s_in1, v_in2 );
 		break;
 	case VSHR:
-		vbxasm(modify, SVWWWSSS, VSHR, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VSRA, v_out, s_in1, v_in2 );
 		break;
 	case VMOV:
 		vbxasm(modify, SVWWWSSS, VMOV, v_out, s_in1, 0 );
@@ -1171,124 +1171,124 @@ __attribute__((always_inline)) static inline void vbx_SVWWWUUU(int modify, vinst
 	switch(v_op)
 	{
 	case VADD:
-		vbxasm(modify, SVWWWUUU, VADD, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VADD, v_out, s_in1, v_in2 );
 		break;
 	case VSUB:
-		vbxasm(modify, SVWWWUUU, VSUB, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VSUB, v_out, s_in1, v_in2 );
 		break;
 	case VADDFXP:
-		vbxasm(modify, SVWWWUUU, VADDFXP, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VADDFXP, v_out, s_in1, v_in2 );
 		break;
 	case VSUBFXP:
-		vbxasm(modify, SVWWWUUU, VSUBFXP, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VSUBFXP, v_out, s_in1, v_in2 );
 		break;
 	case VADDC:
-		vbxasm(modify, SVWWWUUU, VADDC, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VADDC, v_out, s_in1, v_in2 );
 		break;
 	case VSUBB:
-		vbxasm(modify, SVWWWUUU, VSUBB, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VSUBB, v_out, s_in1, v_in2 );
 		break;
 	case VABSDIFF:
-		vbxasm(modify, SVWWWUUU, VABSDIFF, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VABSDIFF, v_out, s_in1, v_in2 );
 		break;
 	case VMUL:
-		vbxasm(modify, SVWWWUUU, VMUL, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VMUL, v_out, s_in1, v_in2 );
 		break;
 	case VMULHI:
-		vbxasm(modify, SVWWWUUU, VMULHI, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VMULHU, v_out, s_in1, v_in2 );
 		break;
 	case VMULFXP:
-		vbxasm(modify, SVWWWUUU, VMULFXP, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VMULFXP, v_out, s_in1, v_in2 );
 		break;
 	case VSLT:
-		vbxasm(modify, SVWWWUUU, VSLT, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VSLTU, v_out, s_in1, v_in2 );
 		break;
 	case VSGT:
-		vbxasm(modify, SVWWWUUU, VSGT, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VSGTU, v_out, s_in1, v_in2 );
 		break;
 	case VAND:
-		vbxasm(modify, SVWWWUUU, VAND, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VAND, v_out, s_in1, v_in2 );
 		break;
 	case VOR:
-		vbxasm(modify, SVWWWUUU, VOR, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VOR, v_out, s_in1, v_in2 );
 		break;
 	case VXOR:
-		vbxasm(modify, SVWWWUUU, VXOR, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VXOR, v_out, s_in1, v_in2 );
 		break;
 	case VSHL:
-		vbxasm(modify, SVWWWUUU, VSHL, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VSHL, v_out, s_in1, v_in2 );
 		break;
 	case VSHR:
-		vbxasm(modify, SVWWWUUU, VSHR, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VSRL, v_out, s_in1, v_in2 );
 		break;
 	case VMOV:
-		vbxasm(modify, SVWWWUUU, VMOV, v_out, s_in1, 0 );
+		vbxasm(modify, SVWWWSSS, VMOV, v_out, s_in1, 0 );
 		break;
 	case VCMV_LEZ:
-		vbxasm(modify, SVWWWUUU, VCMV_LEZ, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCMV_LEZ, v_out, s_in1, v_in2 );
 		break;
 	case VCMV_GTZ:
-		vbxasm(modify, SVWWWUUU, VCMV_GTZ, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCMV_GTZ, v_out, s_in1, v_in2 );
 		break;
 	case VCMV_LTZ:
-		vbxasm(modify, SVWWWUUU, VCMV_LTZ, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCMV_LTZ, v_out, s_in1, v_in2 );
 		break;
 	case VCMV_GEZ:
-		vbxasm(modify, SVWWWUUU, VCMV_GEZ, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCMV_GEZ, v_out, s_in1, v_in2 );
 		break;
 	case VCMV_Z:
-		vbxasm(modify, SVWWWUUU, VCMV_Z, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCMV_Z, v_out, s_in1, v_in2 );
 		break;
 	case VCMV_NZ:
-		vbxasm(modify, SVWWWUUU, VCMV_NZ, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCMV_NZ, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM0:
-		vbxasm(modify, SVWWWUUU, VCUSTOM0, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM0, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM1:
-		vbxasm(modify, SVWWWUUU, VCUSTOM1, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM1, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM2:
-		vbxasm(modify, SVWWWUUU, VCUSTOM2, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM2, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM3:
-		vbxasm(modify, SVWWWUUU, VCUSTOM3, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM3, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM4:
-		vbxasm(modify, SVWWWUUU, VCUSTOM4, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM4, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM5:
-		vbxasm(modify, SVWWWUUU, VCUSTOM5, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM5, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM6:
-		vbxasm(modify, SVWWWUUU, VCUSTOM6, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM6, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM7:
-		vbxasm(modify, SVWWWUUU, VCUSTOM7, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM7, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM8:
-		vbxasm(modify, SVWWWUUU, VCUSTOM8, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM8, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM9:
-		vbxasm(modify, SVWWWUUU, VCUSTOM9, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM9, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM10:
-		vbxasm(modify, SVWWWUUU, VCUSTOM10, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM10, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM11:
-		vbxasm(modify, SVWWWUUU, VCUSTOM11, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM11, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM12:
-		vbxasm(modify, SVWWWUUU, VCUSTOM12, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM12, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM13:
-		vbxasm(modify, SVWWWUUU, VCUSTOM13, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM13, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM14:
-		vbxasm(modify, SVWWWUUU, VCUSTOM14, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM14, v_out, s_in1, v_in2 );
 		break;
 	case VCUSTOM15:
-		vbxasm(modify, SVWWWUUU, VCUSTOM15, v_out, s_in1, v_in2 );
+		vbxasm(modify, SVWWWSSS, VCUSTOM15, v_out, s_in1, v_in2 );
 		break;
 	default:
 		break;
@@ -1323,7 +1323,7 @@ __attribute__((always_inline)) static inline void vbx_VSWWWSSS(int modify, vinst
 		vbxasm(modify, SVWWWSSS, VMUL, v_out, s_in2, v_in1 );
 		break;
 	case VMULHI:
-		vbxasm(modify, SVWWWSSS, VMULHI, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VMULH, v_out, s_in2, v_in1 );
 		break;
 	case VMULFXP:
 		vbxasm(modify, SVWWWSSS, VMULFXP, v_out, s_in2, v_in1 );
@@ -1347,7 +1347,7 @@ __attribute__((always_inline)) static inline void vbx_VSWWWSSS(int modify, vinst
 		vbxasm(modify, SVWWWSSS,VMUL, v_out, (1<<s_in2), v_in1);
 		break;
 	case VSHR:
-		if(s_in2){vbxasm( modify, SVWWWSSS,VMULHI,v_out,(1<<((max(sizeof(*v_out),sizeof(*v_in1))*8)-(s_in2))),v_in1);}else {vbxasm(modify, SVWWWSSS,VADD, v_out, 0, v_in1);};
+		vbxasm(modify, SVWWWSSS, VSRA, v_out, s_in2, v_in1 );
 		break;
 	case VMOV:
 		vbxasm(modify, SVWWWSSS, VMOV, v_out, s_in2, 0 );
@@ -1427,124 +1427,124 @@ __attribute__((always_inline)) static inline void vbx_VSWWWUUU(int modify, vinst
 	switch(v_op)
 	{
 	case VADD:
-		vbxasm(modify, SVWWWUUU, VADD, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VADD, v_out, s_in2, v_in1 );
 		break;
 	case VSUB:
-		vbxasm(modify, SVWWWUUU,VADD, v_out, -s_in2, v_in1);
+		vbxasm(modify, SVWWWSSS,VADD, v_out, -s_in2, v_in1);
 		break;
 	case VADDFXP:
-		vbxasm(modify, SVWWWUUU, VADDFXP, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VADDFXP, v_out, s_in2, v_in1 );
 		break;
 	case VSUBFXP:
-		vbxasm(modify, SVWWWUUU,VADD, v_out, -s_in2, v_in1);
+		vbxasm(modify, SVWWWSSS,VADD, v_out, -s_in2, v_in1);
 		break;
 	case VADDC:
-		vbxasm(modify, SVWWWUUU, VADDC, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VADDC, v_out, s_in2, v_in1 );
 		break;
 	case VSUBB:
-		vbxasm(modify, SVWWWUUU,VADD, v_out, -s_in2, v_in1);
+		vbxasm(modify, SVWWWSSS,VADD, v_out, -s_in2, v_in1);
 		break;
 	case VABSDIFF:
-		vbxasm(modify, SVWWWUUU, VABSDIFF, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VABSDIFF, v_out, s_in2, v_in1 );
 		break;
 	case VMUL:
-		vbxasm(modify, SVWWWUUU, VMUL, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VMUL, v_out, s_in2, v_in1 );
 		break;
 	case VMULHI:
-		vbxasm(modify, SVWWWUUU, VMULHI, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VMULHU, v_out, s_in2, v_in1 );
 		break;
 	case VMULFXP:
-		vbxasm(modify, SVWWWUUU, VMULFXP, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VMULFXP, v_out, s_in2, v_in1 );
 		break;
 	case VSLT:
-		vbxasm(modify, SVWWWUUU,VSGT, v_out, s_in2, v_in1);
+		vbxasm(modify, SVWWWSSS,VSGT, v_out, s_in2, v_in1);
 		break;
 	case VSGT:
-		vbxasm(modify, SVWWWUUU,VSLT, v_out, s_in2, v_in1);
+		vbxasm(modify, SVWWWSSS,VSLT, v_out, s_in2, v_in1);
 		break;
 	case VAND:
-		vbxasm(modify, SVWWWUUU, VAND, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VAND, v_out, s_in2, v_in1 );
 		break;
 	case VOR:
-		vbxasm(modify, SVWWWUUU, VOR, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VOR, v_out, s_in2, v_in1 );
 		break;
 	case VXOR:
-		vbxasm(modify, SVWWWUUU, VXOR, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VXOR, v_out, s_in2, v_in1 );
 		break;
 	case VSHL:
-		vbxasm(modify, SVWWWUUU,VMUL, v_out, (1<<s_in2), v_in1);
+		vbxasm(modify, SVWWWSSS,VMUL, v_out, (1<<s_in2), v_in1);
 		break;
 	case VSHR:
-		if(s_in2){vbxasm( modify, SVWWWUUU,VMULHI,v_out,(1<<((max(sizeof(*v_out),sizeof(*v_in1))*8)-(s_in2))),v_in1);}else {vbxasm(modify, SVWWWUUU,VADD, v_out, 0, v_in1);};
+		vbxasm(modify, SVWWWSSS, VSRL, v_out, s_in2, v_in1 );
 		break;
 	case VMOV:
-		vbxasm(modify, SVWWWUUU, VMOV, v_out, s_in2, 0 );
+		vbxasm(modify, SVWWWSSS, VMOV, v_out, s_in2, 0 );
 		break;
 	case VCMV_LEZ:
-		vbxasm(modify, SVWWWUUU, VCMV_LEZ, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VCMV_LEZ, v_out, s_in2, v_in1 );
 		break;
 	case VCMV_GTZ:
-		vbxasm(modify, SVWWWUUU, VCMV_GTZ, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VCMV_GTZ, v_out, s_in2, v_in1 );
 		break;
 	case VCMV_LTZ:
-		vbxasm(modify, SVWWWUUU, VCMV_LTZ, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VCMV_LTZ, v_out, s_in2, v_in1 );
 		break;
 	case VCMV_GEZ:
-		vbxasm(modify, SVWWWUUU, VCMV_GEZ, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VCMV_GEZ, v_out, s_in2, v_in1 );
 		break;
 	case VCMV_Z:
-		vbxasm(modify, SVWWWUUU, VCMV_Z, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VCMV_Z, v_out, s_in2, v_in1 );
 		break;
 	case VCMV_NZ:
-		vbxasm(modify, SVWWWUUU, VCMV_NZ, v_out, s_in2, v_in1 );
+		vbxasm(modify, SVWWWSSS, VCMV_NZ, v_out, s_in2, v_in1 );
 		break;
 	case VCUSTOM0:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM1:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM2:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM3:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM4:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM5:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM6:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM7:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM8:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM9:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM10:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM11:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM12:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM13:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM14:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	case VCUSTOM15:
-		assert(0&&"modify, SVWWWUUU cannot use psuedo-op specifier ");;
+		assert(0&&"modify, SVWWWSSS cannot use psuedo-op specifier ");;
 		break;
 	default:
 		break;
@@ -1579,7 +1579,7 @@ __attribute__((always_inline)) static inline void vbx_VEWWWSSS(int modify, vinst
 		vbxasm(modify, VEWWWSSS, VMUL, v_out, v_in1, 0 );
 		break;
 	case VMULHI:
-		vbxasm(modify, VEWWWSSS, VMULHI, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VMULH, v_out, v_in1, 0 );
 		break;
 	case VMULFXP:
 		vbxasm(modify, VEWWWSSS, VMULFXP, v_out, v_in1, 0 );
@@ -1603,7 +1603,7 @@ __attribute__((always_inline)) static inline void vbx_VEWWWSSS(int modify, vinst
 		vbxasm(modify, VEWWWSSS, VSHL, v_out, v_in1, 0 );
 		break;
 	case VSHR:
-		vbxasm(modify, VEWWWSSS, VSHR, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VSRA, v_out, v_in1, 0 );
 		break;
 	case VMOV:
 		vbxasm(modify, VEWWWSSS, VMOV, v_out, v_in1, 0 );
@@ -1683,124 +1683,124 @@ __attribute__((always_inline)) static inline void vbx_VEWWWUUU(int modify, vinst
 	switch(v_op)
 	{
 	case VADD:
-		vbxasm(modify, VEWWWUUU, VADD, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VADD, v_out, v_in1, 0 );
 		break;
 	case VSUB:
-		vbxasm(modify, VEWWWUUU, VSUB, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VSUB, v_out, v_in1, 0 );
 		break;
 	case VADDFXP:
-		vbxasm(modify, VEWWWUUU, VADDFXP, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VADDFXP, v_out, v_in1, 0 );
 		break;
 	case VSUBFXP:
-		vbxasm(modify, VEWWWUUU, VSUBFXP, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VSUBFXP, v_out, v_in1, 0 );
 		break;
 	case VADDC:
-		vbxasm(modify, VEWWWUUU, VADDC, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VADDC, v_out, v_in1, 0 );
 		break;
 	case VSUBB:
-		vbxasm(modify, VEWWWUUU, VSUBB, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VSUBB, v_out, v_in1, 0 );
 		break;
 	case VABSDIFF:
-		vbxasm(modify, VEWWWUUU, VABSDIFF, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VABSDIFF, v_out, v_in1, 0 );
 		break;
 	case VMUL:
-		vbxasm(modify, VEWWWUUU, VMUL, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VMUL, v_out, v_in1, 0 );
 		break;
 	case VMULHI:
-		vbxasm(modify, VEWWWUUU, VMULHI, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VMULHU, v_out, v_in1, 0 );
 		break;
 	case VMULFXP:
-		vbxasm(modify, VEWWWUUU, VMULFXP, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VMULFXP, v_out, v_in1, 0 );
 		break;
 	case VSLT:
-		vbxasm(modify, VEWWWUUU, VSLT, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VSLTU, v_out, v_in1, 0 );
 		break;
 	case VSGT:
-		vbxasm(modify, VEWWWUUU, VSGT, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VSGTU, v_out, v_in1, 0 );
 		break;
 	case VAND:
-		vbxasm(modify, VEWWWUUU, VAND, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VAND, v_out, v_in1, 0 );
 		break;
 	case VOR:
-		vbxasm(modify, VEWWWUUU, VOR, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VOR, v_out, v_in1, 0 );
 		break;
 	case VXOR:
-		vbxasm(modify, VEWWWUUU, VXOR, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VXOR, v_out, v_in1, 0 );
 		break;
 	case VSHL:
-		vbxasm(modify, VEWWWUUU, VSHL, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VSHL, v_out, v_in1, 0 );
 		break;
 	case VSHR:
-		vbxasm(modify, VEWWWUUU, VSHR, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VSRL, v_out, v_in1, 0 );
 		break;
 	case VMOV:
-		vbxasm(modify, VEWWWUUU, VMOV, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VMOV, v_out, v_in1, 0 );
 		break;
 	case VCMV_LEZ:
-		vbxasm(modify, VEWWWUUU, VCMV_LEZ, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCMV_LEZ, v_out, v_in1, 0 );
 		break;
 	case VCMV_GTZ:
-		vbxasm(modify, VEWWWUUU, VCMV_GTZ, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCMV_GTZ, v_out, v_in1, 0 );
 		break;
 	case VCMV_LTZ:
-		vbxasm(modify, VEWWWUUU, VCMV_LTZ, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCMV_LTZ, v_out, v_in1, 0 );
 		break;
 	case VCMV_GEZ:
-		vbxasm(modify, VEWWWUUU, VCMV_GEZ, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCMV_GEZ, v_out, v_in1, 0 );
 		break;
 	case VCMV_Z:
-		vbxasm(modify, VEWWWUUU, VCMV_Z, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCMV_Z, v_out, v_in1, 0 );
 		break;
 	case VCMV_NZ:
-		vbxasm(modify, VEWWWUUU, VCMV_NZ, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCMV_NZ, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM0:
-		vbxasm(modify, VEWWWUUU, VCUSTOM0, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM0, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM1:
-		vbxasm(modify, VEWWWUUU, VCUSTOM1, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM1, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM2:
-		vbxasm(modify, VEWWWUUU, VCUSTOM2, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM2, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM3:
-		vbxasm(modify, VEWWWUUU, VCUSTOM3, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM3, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM4:
-		vbxasm(modify, VEWWWUUU, VCUSTOM4, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM4, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM5:
-		vbxasm(modify, VEWWWUUU, VCUSTOM5, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM5, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM6:
-		vbxasm(modify, VEWWWUUU, VCUSTOM6, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM6, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM7:
-		vbxasm(modify, VEWWWUUU, VCUSTOM7, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM7, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM8:
-		vbxasm(modify, VEWWWUUU, VCUSTOM8, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM8, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM9:
-		vbxasm(modify, VEWWWUUU, VCUSTOM9, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM9, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM10:
-		vbxasm(modify, VEWWWUUU, VCUSTOM10, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM10, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM11:
-		vbxasm(modify, VEWWWUUU, VCUSTOM11, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM11, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM12:
-		vbxasm(modify, VEWWWUUU, VCUSTOM12, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM12, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM13:
-		vbxasm(modify, VEWWWUUU, VCUSTOM13, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM13, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM14:
-		vbxasm(modify, VEWWWUUU, VCUSTOM14, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM14, v_out, v_in1, 0 );
 		break;
 	case VCUSTOM15:
-		vbxasm(modify, VEWWWUUU, VCUSTOM15, v_out, v_in1, 0 );
+		vbxasm(modify, VEWWWSSS, VCUSTOM15, v_out, v_in1, 0 );
 		break;
 	default:
 		break;
@@ -1835,7 +1835,7 @@ __attribute__((always_inline)) static inline void vbx_SEWWWSSS(int modify, vinst
 		vbxasm(modify, SEWWWSSS, VMUL, v_out, s_in1, 0 );
 		break;
 	case VMULHI:
-		vbxasm(modify, SEWWWSSS, VMULHI, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VMULH, v_out, s_in1, 0 );
 		break;
 	case VMULFXP:
 		vbxasm(modify, SEWWWSSS, VMULFXP, v_out, s_in1, 0 );
@@ -1859,7 +1859,7 @@ __attribute__((always_inline)) static inline void vbx_SEWWWSSS(int modify, vinst
 		vbxasm(modify, SEWWWSSS, VSHL, v_out, s_in1, 0 );
 		break;
 	case VSHR:
-		vbxasm(modify, SEWWWSSS, VSHR, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VSRA, v_out, s_in1, 0 );
 		break;
 	case VMOV:
 		vbxasm(modify, SEWWWSSS, VMOV, v_out, s_in1, 0 );
@@ -1939,124 +1939,124 @@ __attribute__((always_inline)) static inline void vbx_SEWWWUUU(int modify, vinst
 	switch(v_op)
 	{
 	case VADD:
-		vbxasm(modify, SEWWWUUU, VADD, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VADD, v_out, s_in1, 0 );
 		break;
 	case VSUB:
-		vbxasm(modify, SEWWWUUU, VSUB, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VSUB, v_out, s_in1, 0 );
 		break;
 	case VADDFXP:
-		vbxasm(modify, SEWWWUUU, VADDFXP, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VADDFXP, v_out, s_in1, 0 );
 		break;
 	case VSUBFXP:
-		vbxasm(modify, SEWWWUUU, VSUBFXP, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VSUBFXP, v_out, s_in1, 0 );
 		break;
 	case VADDC:
-		vbxasm(modify, SEWWWUUU, VADDC, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VADDC, v_out, s_in1, 0 );
 		break;
 	case VSUBB:
-		vbxasm(modify, SEWWWUUU, VSUBB, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VSUBB, v_out, s_in1, 0 );
 		break;
 	case VABSDIFF:
-		vbxasm(modify, SEWWWUUU, VABSDIFF, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VABSDIFF, v_out, s_in1, 0 );
 		break;
 	case VMUL:
-		vbxasm(modify, SEWWWUUU, VMUL, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VMUL, v_out, s_in1, 0 );
 		break;
 	case VMULHI:
-		vbxasm(modify, SEWWWUUU, VMULHI, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VMULHU, v_out, s_in1, 0 );
 		break;
 	case VMULFXP:
-		vbxasm(modify, SEWWWUUU, VMULFXP, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VMULFXP, v_out, s_in1, 0 );
 		break;
 	case VSLT:
-		vbxasm(modify, SEWWWUUU, VSLT, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VSLTU, v_out, s_in1, 0 );
 		break;
 	case VSGT:
-		vbxasm(modify, SEWWWUUU, VSGT, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VSGTU, v_out, s_in1, 0 );
 		break;
 	case VAND:
-		vbxasm(modify, SEWWWUUU, VAND, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VAND, v_out, s_in1, 0 );
 		break;
 	case VOR:
-		vbxasm(modify, SEWWWUUU, VOR, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VOR, v_out, s_in1, 0 );
 		break;
 	case VXOR:
-		vbxasm(modify, SEWWWUUU, VXOR, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VXOR, v_out, s_in1, 0 );
 		break;
 	case VSHL:
-		vbxasm(modify, SEWWWUUU, VSHL, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VSHL, v_out, s_in1, 0 );
 		break;
 	case VSHR:
-		vbxasm(modify, SEWWWUUU, VSHR, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VSRL, v_out, s_in1, 0 );
 		break;
 	case VMOV:
-		vbxasm(modify, SEWWWUUU, VMOV, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VMOV, v_out, s_in1, 0 );
 		break;
 	case VCMV_LEZ:
-		vbxasm(modify, SEWWWUUU, VCMV_LEZ, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCMV_LEZ, v_out, s_in1, 0 );
 		break;
 	case VCMV_GTZ:
-		vbxasm(modify, SEWWWUUU, VCMV_GTZ, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCMV_GTZ, v_out, s_in1, 0 );
 		break;
 	case VCMV_LTZ:
-		vbxasm(modify, SEWWWUUU, VCMV_LTZ, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCMV_LTZ, v_out, s_in1, 0 );
 		break;
 	case VCMV_GEZ:
-		vbxasm(modify, SEWWWUUU, VCMV_GEZ, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCMV_GEZ, v_out, s_in1, 0 );
 		break;
 	case VCMV_Z:
-		vbxasm(modify, SEWWWUUU, VCMV_Z, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCMV_Z, v_out, s_in1, 0 );
 		break;
 	case VCMV_NZ:
-		vbxasm(modify, SEWWWUUU, VCMV_NZ, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCMV_NZ, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM0:
-		vbxasm(modify, SEWWWUUU, VCUSTOM0, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM0, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM1:
-		vbxasm(modify, SEWWWUUU, VCUSTOM1, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM1, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM2:
-		vbxasm(modify, SEWWWUUU, VCUSTOM2, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM2, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM3:
-		vbxasm(modify, SEWWWUUU, VCUSTOM3, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM3, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM4:
-		vbxasm(modify, SEWWWUUU, VCUSTOM4, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM4, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM5:
-		vbxasm(modify, SEWWWUUU, VCUSTOM5, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM5, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM6:
-		vbxasm(modify, SEWWWUUU, VCUSTOM6, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM6, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM7:
-		vbxasm(modify, SEWWWUUU, VCUSTOM7, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM7, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM8:
-		vbxasm(modify, SEWWWUUU, VCUSTOM8, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM8, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM9:
-		vbxasm(modify, SEWWWUUU, VCUSTOM9, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM9, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM10:
-		vbxasm(modify, SEWWWUUU, VCUSTOM10, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM10, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM11:
-		vbxasm(modify, SEWWWUUU, VCUSTOM11, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM11, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM12:
-		vbxasm(modify, SEWWWUUU, VCUSTOM12, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM12, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM13:
-		vbxasm(modify, SEWWWUUU, VCUSTOM13, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM13, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM14:
-		vbxasm(modify, SEWWWUUU, VCUSTOM14, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM14, v_out, s_in1, 0 );
 		break;
 	case VCUSTOM15:
-		vbxasm(modify, SEWWWUUU, VCUSTOM15, v_out, s_in1, 0 );
+		vbxasm(modify, SEWWWSSS, VCUSTOM15, v_out, s_in1, 0 );
 		break;
 	default:
 		break;
