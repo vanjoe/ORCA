@@ -29,7 +29,8 @@ enum {
 	VSUBB, ///< Subtracts the two src operands, performs
 	VMUL,  ///< Multiplies the two src operands, saves lower result to dst
 	VMULLO=VMUL, ///< Multiplies the two src operands, saves lower result to dst
-	VMULHI, ///< Multiplies the two src operands, saves upper result to dst
+	VMULH,
+	VMULHI=VMULH, ///< Multiplies the two src operands, saves upper result to dst
 	VMULFXP,///< Fix-point multiply, where the number of fractional bits is set at compile time
 	VSHL,  ///< Shifts src operand to left by given amount
 	VSHR,  ///< Shifts src operand to right by given amount
@@ -51,7 +52,7 @@ enum {
 	VSRA,
 	VSRL,
 	VSLL,
-	VMULH,
+
 	VCUSTOM0, ///<
 	VCUSTOM=VCUSTOM0, ///<
 	VCUSTOM1, ///<
@@ -111,13 +112,8 @@ typedef struct {
 	/* char        fxp_word_frac_bits; ///< Num of fractional bit used with @ref vbx_word_t or @ref vbx_uword_t data types */
 	/* char        fxp_half_frac_bits; ///< Num of fractional bit used with @ref vbx_half_t or @ref vbx_uhalf_t data types */
 	/* char        fxp_byte_frac_bits; ///< Num of fractional bit used with vbx_byte_t or f vbx_ubyte_t data types */
-	union{
-		int stride_and_vl;
-		struct {
-			int vl :16;
-			int stride: 16;
-		};
-	};
+	int vl;
+
 	/* MXP flags */
 	char  init;
 	char* sp_ptr;

@@ -58,7 +58,7 @@ TEST_ATTR int test_4()
 	asm volatile("\n	  \
    mv a0,%0\n									\
 	lw a0,  0(a0)\n										\
-   vadd.sewswsws %0, a0,zero \n	  \
+   vadd.sewwwsss %0, a0,zero \n	  \
 ": : "r"(dest) : "a0","memory");
 
 	for( int i=0;i<vlen;i++){

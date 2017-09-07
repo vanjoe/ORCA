@@ -3,7 +3,7 @@
 vbx_lve_t the_lve;
 
 void init_lve(){
-	the_lve.stride=1;
+
 	the_lve.sp_ptr=SCRATCHPAD_BASE;
 	the_lve.sp_base=SCRATCHPAD_BASE;
 

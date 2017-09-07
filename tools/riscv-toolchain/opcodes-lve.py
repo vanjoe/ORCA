@@ -16,6 +16,7 @@ arith_instr=[instruction("vadd"     ,0,0,0,0),
              instruction("vand"     ,0,0,0,7),
              instruction("vmul"     ,0,0,1,0),
              instruction("vmulh"    ,0,0,1,1),
+             instruction("vmulhi"   ,0,0,1,1),#alias
              instruction("vmulhsu"  ,0,0,1,2),
              instruction("vmulhu"   ,0,0,1,3),
              instruction("vdiv"     ,0,0,1,4),
@@ -145,7 +146,7 @@ def generate_arithmetic_instr( define_file,lve_extension_file):
                     for dsz,asz,bsz in itertools.product(size_bits.keys(),repeat=3):
                         name="{name}.{type}{size}{acc}".format(name=ai.name,
                                                                type=type_spec,
-                                                               size=dsz+sd+asz+sa+bsz+sb,
+                                                               size=dsz+asz+bsz+sd+sa+sb,
                                                                acc=acc)
                         uname=name.replace('.','_').upper()
                         mask=make_mask(ai,asz,bsz,dsz,sa,sb,sd)
@@ -173,13 +174,13 @@ def generate_arithmetic_instr( define_file,lve_extension_file):
 
 def generate_special_instr( define_file,lve_extension_file):
     instruction = namedtuple('instruction',['name','bit28_26','registers'])
-    special_inst = [instruction('vbx_set_vl',0,'"s,t,d"'),
-                    instruction('vbx_set_2d',1,'"s,t,d"'),
-                    instruction('vbx_set_3d',2,'"s,t,d"'),
+    special_inst = [instruction('vbx_set_vl',0,'"d,s,t"'),
+                    instruction('vbx_set_2d',1,'"d,s,t"'),
+                    instruction('vbx_set_3d',2,'"d,s,t"'),
                     instruction('vbx_get',3,'"d,s,t"'),
-                    instruction('vbx_dma_tohost',4,'"s,t,d"'),
-                    instruction('vbx_dma_tovec',5,'"s,t,d"'),
-                    instruction('vbx_dma_2dstart',6,'"s,t,d"')]
+                    instruction('vbx_dma_tohost',4,'"d,s,t"'),
+                    instruction('vbx_dma_tovec',5,'"d,s,t"'),
+                    instruction('vbx_dma_2dstart',6,'"d,s,t"')]
     special_inst_template='{{"{name}", "X{ext}", {regs}, MATCH_{uname}, MASK_{uname}, match_opcode, 0 }},\n'
 
     for si in special_inst:
