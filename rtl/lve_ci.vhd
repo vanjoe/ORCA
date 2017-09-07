@@ -84,15 +84,16 @@ begin
                 data1_in(7 downto 0);
 
   cust0_out_data <= cust0_byte &cust0_byte &cust0_byte &cust0_byte;
-
-  with data2_in(1 downto 0) select
-    cust0_byte_en <=
-    "0001" when "00",
-    "0010" when "01",
-    "0100" when "10",
-    "1000" when others;
-
-
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if func = VCUSTOM0 and valid_in = '1' then
+        cust0_byte_en <= cust0_byte_en(2 downto 0) & cust0_byte_en(3);
+      elsif pause = '0' then
+        cust0_byte_en <= "0001";
+      end if;
+    end if;
+  end process;
 
 
   -----------------------------------------------------------------------------

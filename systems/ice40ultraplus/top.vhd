@@ -265,9 +265,9 @@ architecture rtl of vhdl_top is
 
   signal cam_dat_internal : std_logic_vector(7 downto 0);
 
-  signal pio_in  : std_logic_vector(31 downto 0);
-  signal pio_out : std_logic_vector(31 downto 0);
-  signal pio_oe  : std_logic_vector(31 downto 0);
+  signal pio_in  : std_logic_vector(4+(1-USE_UART) downto 0);
+  signal pio_out : std_logic_vector(4+(1-USE_UART) downto 0);
+  signal pio_oe  : std_logic_vector(4+(1-USE_UART) downto 0);
 begin
 
   pwm_counter : process (osc_clk) is
@@ -793,14 +793,14 @@ begin
 
   the_sccb_pio : wb_pio
     generic map (
-      DATA_WIDTH => 32
+      DATA_WIDTH => 5+(1-USE_UART)
       )
     port map(
       clk_i => clk,
       rst_i => reset,
 
       adr_i   => sccb_pio_adr_i,
-      dat_i   => sccb_pio_dat_i,
+      dat_i   => sccb_pio_dat_i(4+(1-USE_UART) downto 0),
       we_i    => sccb_pio_we_i,
       cyc_i   => sccb_pio_cyc_i,
       stb_i   => sccb_pio_stb_i,
@@ -810,7 +810,7 @@ begin
       lock_i  => sccb_pio_lock_i,
       ack_o   => sccb_pio_ack_o,
       stall_o => sccb_pio_stall_o,
-      data_o  => sccb_pio_dat_o,
+      data_o  => sccb_pio_dat_o(4+(1-USE_UART) downto 0),
       err_o   => sccb_pio_err_o,
       rty_o   => sccb_pio_rty_o,
 
@@ -819,6 +819,7 @@ begin
       input     => pio_in
 
       );
+  sccb_pio_dat_o(sccb_pio_dat_o'left downto 4+(1-USE_UART)+1 ) <= (others => '0');
   sccb_sda  <= pio_out(0) when pio_oe(0) = '1' else 'Z';
   pio_in(0) <= sccb_sda;
 
@@ -833,7 +834,7 @@ begin
 
   led       <= 'Z' when (pio_out(4) and led_counter(15) and led_counter(14)) = '1' else '0';
   pio_in(4) <= pio_out(4);
-  pio_in(31 downto 5) <= (others => '0');
+
   no_cam_gen : if USE_CAM = 0 generate
     cam_sp_ADR_O <= (others => '0');
     cam_sp_DAT_O <= (others => '0');
