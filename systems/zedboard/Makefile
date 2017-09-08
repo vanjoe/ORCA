@@ -1,15 +1,15 @@
 -include config.mk
 
-BD_NAME      = design_1
-PROJECT_TCL  = project.tcl
+BD_NAME     ?= design_1
+PROJECT_TCL ?= project.tcl
 BD_TCL      ?= $(BD_NAME).tcl
 
-PROJ_DIR=project
-PROJ_NAME=project
+PROJ_DIR  ?= project
+PROJ_NAME ?= project
 
-SW_DIR=software
-ELF_FILE=$(SW_DIR)/test.elf
-MEM_FILE=$(SW_DIR)/test.mem
+SW_DIR   ?= software
+ELF_FILE ?= $(SW_DIR)/test.elf
+MEM_FILE ?= $(SW_DIR)/test.mem
 
 PROJ_FILE=$(PROJ_DIR)/$(PROJ_NAME).xpr
 BD_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/$(BD_NAME).bd
@@ -71,13 +71,18 @@ gui: $(BD_FILE)
 .PHONY: bitstream
 bitstream: $(OUT_BIT)
 
+ifeq ($(ELF_FILE), NONE)
+$(OUT_BIT): $(IMPL_BIT)
+	cp $(IMPL_BIT) $(OUT_BIT)
+else #ifeq ($(ELF_FILE), NONE)
 $(OUT_BIT): $(IMPL_BIT) $(MMI_FILE) $(ELF_FILE)
 	updatemem -force --meminfo $(MMI_FILE) \
-	--data $(ELF_FILE) \
-	--bit $(IMPL_BIT) \
-	--proc dummy \
-	--out $(OUT_BIT) 
+	--data $(ELF_FILE)                     \
+	--bit $(IMPL_BIT)                      \
+	--proc dummy                           \
+	--out $(OUT_BIT)
 	rm -f updatemem_*.backup.*
+endif #else #ifeq ($(ELF_FILE), NONE)
 
 .PHONY: pgm
 pgm: $(OUT_BIT)

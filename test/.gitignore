@@ -1,0 +1,4 @@
+software/riscv-tests/
+build_cfg_*.py
+test_config.mk
+/builds/

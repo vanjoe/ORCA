@@ -1,5 +1,7 @@
-BUILD_ARGS= -k -l -u -v --cfg-file=../../test/build_cfg_orca.py
+-include test_config.mk
 -include config.mk
+CFG_FILE   ?= ../../test/build_cfg_orca.py
+BUILD_ARGS ?= -k -l -u -v --cfg-file=$(CFG_FILE)
 
 default: builds
 
@@ -113,59 +115,6 @@ $(ALT_SOF_FILE) : $(ALT_STA_RPT_FILE)
 	cp $(ALT_OUTPUT_DIR)$@ $@
 
 altera: $(ALT_SOF_FILE)
-
-################################################################################
-
-XIL_PROJECT_TCL=project.tcl
-XIL_BD_TCL=design_1.tcl
-XIL_PGM_TCL=pgm.tcl
-
-XIL_PROJ_DIR=project
-XIL_PROJ_NAME=project
-
-XIL_SW_DIR=software
-XIL_ELF_FILE=$(XIL_SW_DIR)/test.elf
-XIL_MEM_FILE=$(XIL_SW_DIR)/test.mem
-
-XIL_PROJ_FILE=$(XIL_PROJ_DIR)/$(XIL_PROJ_NAME).xpr
-XIL_BD_FILE=$(XIL_PROJ_DIR)/$(XIL_PROJ_NAME).srcs/sources_1/bd/design_1/design_1.bd
-XIL_BLOCK_DESIGN_GEN_STAMP=$(XIL_BD_FILE).gen_stamp
-XIL_IMPL_STAMP=$(XIL_BD_FILE).impl_stamp
-XIL_HWDEF_FILE=$(XIL_PROJ_DIR)/$(XIL_PROJ_NAME).srcs/sources_1/bd/design_1/design_1.hwdef
-XIL_SYNTH_LOG=$(XIL_PROJ_DIR)/$(XIL_PROJ_NAME).runs/synth_1/runme.log
-XIL_IMPL_TIMING_RPT=$(XIL_PROJ_DIR)/$(XIL_PROJ_NAME).runs/impl_1/design_1_wrapper_timing_summary_routed.rpt
-XIL_VIVADO=vivado -mode tcl -nolog -nojournal
-
-XIL_MMI_TCL=write_mmi.tcl
-XIL_BRAM_NAME=idram_gen
-XIL_MMI_FILE=$(BRAM_NAME).mmi
-XIL_OUT_BIT=out.bit
-
-$(XIL_PROJ_FILE) $(XIL_BD_FILE):
-	echo "init_project $(XIL_PROJ_DIR) $(XIL_PROJ_NAME)" | $(XIL_VIVADO) -source $(XIL_PROJECT_TCL)
-	echo "create_bd $(XIL_PROJ_DIR) $(XIL_PROJ_NAME) $(XIL_BD_TCL)" | $(XIL_VIVADO) -source $(XIL_PROJECT_TCL)
-
-$(XIL_BLOCK_DESIGN_GEN_STAMP): $(XIL_BD_FILE)
-	echo "generate_bd_design $(XIL_PROJ_DIR) $(XIL_PROJ_NAME)" | $(XIL_VIVADO) -source $(XIL_PROJECT_TCL)
-	touch $@
-
-$(XIL_SYNTH_LOG): $(XIL_BLOCK_DESIGN_GEN_STAMP) 
-	echo "project_synth $(XIL_PROJ_DIR) $(XIL_PROJ_NAME)" | $(XIL_VIVADO) -source $(XIL_PROJECT_TCL)
-
-$(XIL_IMPL_STAMP): $(XIL_SYNTH_LOG)
-	echo "project_impl $(XIL_PROJ_DIR) $(XIL_PROJ_NAME)" | $(XIL_VIVADO) -source $(XIL_PROJECT_TCL)
-	touch $@
-
-$(XIL_PROJ_NAME).bit: $(XIL_IMPL_STAMP)
-	echo "export_bit $(XIL_PROJ_DIR) $(XIL_PROJ_NAME)" | $(XIL_VIVADO) -source $(XIL_PROJECT_TCL)
-
-$(XIL_MMI_FILE): $(XIL_IMPL_TIMING_RPT) 
-	echo "mmi_wrapper $(XIL_PROJ_DIR) $(XIL_PROJ_NAME) $(XIL_BRAM_NAME)" | $(XIL_VIVADO) -source $(XIL_MMI_TCL)
-
-$(XIL_OUT_BIT): $(XIL_PROJ_NAME).bit $(XIL_MMI_FILE)
-	cp $(XIL_PROJ_NAME).bit $(XIL_OUT_BIT)
-
-xilinx: $(XIL_OUT_BIT)
 
 ################################################################################
 
