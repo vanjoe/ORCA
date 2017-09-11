@@ -17,7 +17,7 @@ $(SYSTEM)/simulation/mentor/msim_setup.tcl: $(QSYS_FILE)
 	(cd $(SYSTEM)/simulation/submodules/vblox_orca; for i in *.vhd; do if [ -f ../../../../rtl/$$i ] ; then ln -sf ../../../../rtl/$$i $$i; fi; done; )
 
 test/rv32ui-p-add.qex:
-	../tools/generate_hex_files.sh
+	../../tools/generate_hex_files.sh
 
 $(SIM_FILE):simulate.tcl
 	sed 's/system/system_$(BUS_TYPE)/g' $^ > $@
