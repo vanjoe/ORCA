@@ -16,8 +16,7 @@ arith_instr=[instruction("vadd"     ,0,0,0,0),
              instruction("vand"     ,0,0,0,7),
              instruction("vmul"     ,0,0,1,0),
              instruction("vmulh"    ,0,0,1,1),
-             instruction("vmulhi"   ,0,0,1,1),#alias
-             instruction("vmulhsu"  ,0,0,1,2),
+             instruction("vmulhus"  ,0,0,1,2), #oposite order of riscv
              instruction("vmulhu"   ,0,0,1,3),
              instruction("vdiv"     ,0,0,1,4),
              instruction("vdivu"    ,0,0,1,5),
@@ -174,7 +173,7 @@ def generate_arithmetic_instr( define_file,lve_extension_file):
 
 def generate_special_instr( define_file,lve_extension_file):
     instruction = namedtuple('instruction',['name','bit28_26','registers'])
-    special_inst = [instruction('vbx_set_vl',0,'"d,s,t"'),
+    special_inst = [instruction('vbx_set_vl',0,'"s,t,d"'),
                     instruction('vbx_set_2d',1,'"d,s,t"'),
                     instruction('vbx_set_3d',2,'"d,s,t"'),
                     instruction('vbx_get',3,'"d,s,t"'),
