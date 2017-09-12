@@ -1,9 +1,5 @@
 all:
 
-RISCV_TOOLS_DIR=$(abspath ../../tools/riscv-toolchain/riscv-tools)
-RISCV_TESTS_DIR=$(RISCV_TOOLS_DIR)/riscv-tests
-RISCV_ENV_DIR=$(RISCV_TESTS_DIR)/env/p
-
 ARCH=rv32im
 LVE_EXT=xlve
 PREFIX=riscv32-unknown-elf-

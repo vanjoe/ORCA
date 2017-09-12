@@ -10,37 +10,32 @@ else
 fi
 
 
-echo "initializing git submodules containing tests, and building them"
-(cd $SCRIPTDIR ;git submodule update --init $SCRIPTDIR/riscv-toolchain/riscv-tools/)
-
 (
-	 cd $SCRIPTDIR/riscv-toolchain/riscv-tools/
 	 rm -rf riscv-tests
-	 git checkout riscv-tests
-	 git submodule update --init --recursive riscv-tests
-	 cd riscv-tests
+	 git clone https://github.com/riscv/riscv-tests
+	 cd riscv-tests/
+	 git checkout 6a1a38d421fd3e24bdc179d58d33572636b903b2
+	 git submodule update --init --recursive
 	 sed -i 's/. = 0x80000000/. = 0x00000000/' env/p/link.ld
 	 sed -i 's/.tohost.*$//' env/p/link.ld
 	 sed -i 's/ ecall/fence.i;ecall/' env/p/riscv_test.h
 	 ./configure --with-xlen=32 2>&1
-	 make clean 2 >/dev/null 2>&1
+	 make clean &>/dev/null
 	 make -k isa -j10 >/dev/null 2>&1
 )
 
-TEST_DIR=$SCRIPTDIR/riscv-toolchain/riscv-tools/riscv-tests/isa
-
-#build vectorblox unit tests
-make -C $SCRIPTDIR/../software/unit_test
-
-
-
-
-
-SOFTWARE_DIR=${SCRIPTDIR}/../software
-#all files that aren't dump or hex (the hex files are not correctly formatted)
+TEST_DIR=riscv-tests/isa
 FILES=$(ls ${TEST_DIR}/rv32u?-p-* | grep -v dump | grep -v hex)
-ORCA_FILES=$(find  ${SOFTWARE_DIR}/unit_test -iname "*.elf" )
+#build vectorblox unit tests
+if [ -d $SCRIPTDIR/../software/unit_test ]
+then
+	 make -C $SCRIPTDIR/../software/unit_test
 
+	 SOFTWARE_DIR=${SCRIPTDIR}/../software
+	 #all files that aren't dump or hex (the hex files are not correctly formatted)
+
+	 FILES="$FILES $(find  ${SOFTWARE_DIR}/unit_test -iname "*.elf" )"
+fi
 
 PREFIX=riscv32-unknown-elf
 OBJDUMP=$PREFIX-objdump
@@ -50,7 +45,7 @@ mkdir -p test
 
 
 #MEM files are for lattice boards, the hex files are for altera boards
-for f in $FILES $ORCA_FILES
+for f in $FILES
 do
 
 	 BIN_FILE=test/$(basename $f).bin
