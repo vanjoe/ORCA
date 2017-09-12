@@ -41,12 +41,13 @@ $(C_OBJ_FILES): obj/%.c.o : %.c
 $(S_OBJ_FILES): obj/%.S.o : %.S
 	$(CC) $(CFLAGS) -c $< -o $@
 
-LD_SCRIPT=link.ld
+LD_SCRIPT=../link.ld
 LIBC=
 
 $(TARGET).elf: $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
 	$(CC) -T $(LD_SCRIPT) $(S_OBJ_FILES)  $(C_OBJ_FILES)  -o $@ $(LD_FLAGS)
-	$(OBJDUMP)   -D test.elf > test.dump
+$(TARGET).dump: $(TARGET).elf
+	$(OBJDUMP) -D $(TARGET).elf > $(TARGET).dump
 $(TARGET).bin: $(TARGET).elf
 	$(OBJCOPY) -O binary $< $@
 $(TARGET).hex: $(TARGET).elf
@@ -62,7 +63,7 @@ ifndef FORMAT
 FORMAT=elf
 endif
 .PHONY: all
-all: $(TARGET).$(FORMAT) $(TARGET).hex $(TARGET).mem $(TARGET).coe
+all: $(TARGET).$(FORMAT) $(TARGET).hex $(TARGET).mem $(TARGET).coe $(TARGET).dump
 
 .PHONY: clean
 clean:

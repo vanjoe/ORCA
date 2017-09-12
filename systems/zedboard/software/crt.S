@@ -1,6 +1,6 @@
 #define REGBYTES 4
 
-.section .init
+.section .text.init
   
 .globl _start
 _start:

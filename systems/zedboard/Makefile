@@ -17,6 +17,7 @@ HWH_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/hw_handoff/$(BD_N
 SYNTH_DCP=$(PROJ_DIR)/$(PROJ_NAME).runs/synth_1/$(BD_NAME)_wrapper.dcp
 IMPL_BIT=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.bit
 
+RESOURCE_TCL=report_resource_usage.tcl
 MMI_TCL=write_mmi.tcl
 BRAM_NAME=idram_gen
 MMI_FILE=$(BRAM_NAME).mmi
@@ -25,7 +26,7 @@ OUT_BIT=out.bit
 PGM_TCL=pgm.tcl
 
 .PHONY: all
-all: $(OUT_BIT)
+all: $(OUT_BIT) resource_utilization.rpt
 
 VIVADO_SOURCE=vivado -nojournal -nolog -mode batch -source
 
@@ -84,14 +85,21 @@ $(OUT_BIT): $(IMPL_BIT) $(MMI_FILE) $(ELF_FILE)
 	rm -f updatemem_*.backup.*
 endif #else #ifeq ($(ELF_FILE), NONE)
 
+resource_utilization.rpt: $(IMPL_BIT) $(RESOURCE_TCL)
+	$(VIVADO_SOURCE) $(RESOURCE_TCL) -tclargs report_resources $(PROJ_DIR) $(PROJ_NAME) $@
+
 .PHONY: pgm
 pgm: $(OUT_BIT)
 	xmd -tcl $(PGM_TCL) $(OUT_BIT) ps7_init.tcl arm.elf
 
 .PHONY: run
 run::
+ifeq ($(ELF_FILE), NONE)
+	python orca_pgm.py test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_MAX_ADDRESS) + 1))` --device=xc7z020_1 --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
+else #ifeq ($(ELF_FILE), NONE)
 	$(MAKE) -C software test.bin
 	python orca_pgm.py software/test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_MAX_ADDRESS) + 1))` --device=xc7z020_1 --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
+endif #else #ifeq ($(ELF_FILE), NONE)
 
 .PHONY: clean
 clean:
