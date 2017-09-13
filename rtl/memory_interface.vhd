@@ -16,15 +16,16 @@ entity memory_interface is
     WISHBONE_ENABLE : integer range 0 to 1 := 0;
     AXI_ENABLE      : integer range 0 to 1 := 0;
 
-    DATA_REQUEST_REGISTER  : natural range 0 to 2          := 1;
-    DATA_RETURN_REGISTER   : natural range 0 to 1          := 0;
-    IUC_ADDR_BASE          : std_logic_vector(31 downto 0) := X"00000000";
-    IUC_ADDR_LAST          : std_logic_vector(31 downto 0) := X"00000000";
-    ICACHE_SIZE            : natural                       := 8192;
-    ICACHE_LINE_SIZE       : integer range 16 to 256       := 32;
-    ICACHE_EXTERNAL_WIDTH  : integer                       := 32;
-    ICACHE_MAX_BURSTLENGTH : positive                      := 16;
-    ICACHE_BURST_EN        : integer range 0 to 1          := 0
+    WISHBONE_SINGLE_CYCLE_READS : natural range 0 to 1          := 0;
+    DATA_REQUEST_REGISTER       : natural range 0 to 2          := 1;
+    DATA_RETURN_REGISTER        : natural range 0 to 1          := 0;
+    IUC_ADDR_BASE               : std_logic_vector(31 downto 0) := X"00000000";
+    IUC_ADDR_LAST               : std_logic_vector(31 downto 0) := X"00000000";
+    ICACHE_SIZE                 : natural                       := 8192;
+    ICACHE_LINE_SIZE            : integer range 16 to 256       := 32;
+    ICACHE_EXTERNAL_WIDTH       : integer                       := 32;
+    ICACHE_MAX_BURSTLENGTH      : positive                      := 16;
+    ICACHE_BURST_EN             : integer range 0 to 1          := 0
     );
   port (
     clk            : in std_logic;
@@ -634,8 +635,14 @@ begin  -- architecture rtl
   begin
     awaiting_ack <= reading or writing;
 
-    data_oimm_readdata      <= data_DAT_I when delayed_readdatavalid = '0' else delayed_readdata;
-    data_oimm_readdatavalid <= (data_ACK_I and reading) or delayed_readdatavalid;
+    no_single_cycle_gen: if WISHBONE_SINGLE_CYCLE_READS = 0 generate
+      data_oimm_readdata      <= data_DAT_I;
+      data_oimm_readdatavalid <= data_ACK_I and reading;
+    end generate no_single_cycle_gen;
+    single_cycle_gen: if WISHBONE_SINGLE_CYCLE_READS /= 0 generate
+      data_oimm_readdata      <= data_DAT_I when delayed_readdatavalid = '0' else delayed_readdata;
+      data_oimm_readdatavalid <= (data_ACK_I and reading) or delayed_readdatavalid;
+    end generate single_cycle_gen;
     data_oimm_waitrequest   <= data_STALL_I or (awaiting_ack and (not data_ACK_I));
     data_ADR_O              <= data_oimm_address;
     data_STB_O              <= data_oimm_requestvalid and ((not awaiting_ack) or data_ACK_I);
@@ -646,6 +653,7 @@ begin  -- architecture rtl
     process(clk)
     begin
       if rising_edge(clk) then
+        delayed_readdata      <= data_DAT_I;
         delayed_readdatavalid <= '0';
         if data_ACK_I = '1' then
           reading <= '0';

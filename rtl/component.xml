@@ -4318,7 +4318,7 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>ICACHE_SIZE</spirit:name>
         <spirit:displayName>Instruction Cache Size</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.ICACHE_SIZE" spirit:minimum="0" spirit:rangeType="long">32768</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.ICACHE_SIZE" spirit:minimum="0" spirit:rangeType="long">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>ICACHE_LINE_SIZE</spirit:name>

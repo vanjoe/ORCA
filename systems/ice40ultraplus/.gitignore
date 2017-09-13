@@ -2,3 +2,7 @@ programmer.xcf
 program_flash.xcf
 /init.mem/
 /flash.mem
+/imem.mem
+/dmem.mem
+/ice40ultraplus_Implmnt/
+/synlog.tcl

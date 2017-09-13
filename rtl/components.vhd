@@ -25,13 +25,15 @@ package rv_components is
       ENABLE_EXCEPTIONS     : natural                       := 1;
       BRANCH_PREDICTORS     : natural                       := 0;
       PIPELINE_STAGES       : natural range 4 to 5          := 5;
+      DATA_REQUEST_REGISTER : natural range 0 to 2          := 1;
+      DATA_RETURN_REGISTER  : natural range 0 to 1          := 0;
       LVE_ENABLE            : natural range 0 to 1          := 0;
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1          := 0;
       NUM_EXT_INTERRUPTS    : integer range 1 to 32         := 1;
       SCRATCHPAD_ADDR_BITS  : integer                       := 10;
       IUC_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
       IUC_ADDR_LAST         : std_logic_vector(31 downto 0) := X"00000000";
-      ICACHE_SIZE           : natural                       := 8192;
+      ICACHE_SIZE           : natural                       := 0;
       ICACHE_LINE_SIZE      : integer range 16 to 256       := 32;
       ICACHE_EXTERNAL_WIDTH : integer                       := 32;
       ICACHE_BURST_EN       : integer range 0 to 1          := 0;
@@ -261,15 +263,16 @@ package rv_components is
       WISHBONE_ENABLE : integer range 0 to 1 := 0;
       AXI_ENABLE      : integer range 0 to 1 := 0;
 
-      DATA_REQUEST_REGISTER  : natural range 0 to 2          := 1;
-      DATA_RETURN_REGISTER   : natural range 0 to 1          := 0;
-      IUC_ADDR_BASE          : std_logic_vector(31 downto 0) := X"00000000";
-      IUC_ADDR_LAST          : std_logic_vector(31 downto 0) := X"00000000";
-      ICACHE_SIZE            : natural                       := 8192;
-      ICACHE_LINE_SIZE       : integer range 16 to 256       := 32;
-      ICACHE_EXTERNAL_WIDTH  : integer                       := 32;
-      ICACHE_MAX_BURSTLENGTH : positive                      := 16;
-      ICACHE_BURST_EN        : integer range 0 to 1          := 0
+      WISHBONE_SINGLE_CYCLE_READS : natural range 0 to 1          := 0;
+      DATA_REQUEST_REGISTER       : natural range 0 to 2          := 1;
+      DATA_RETURN_REGISTER        : natural range 0 to 1          := 0;
+      IUC_ADDR_BASE               : std_logic_vector(31 downto 0) := X"00000000";
+      IUC_ADDR_LAST               : std_logic_vector(31 downto 0) := X"00000000";
+      ICACHE_SIZE                 : natural                       := 8192;
+      ICACHE_LINE_SIZE            : integer range 16 to 256       := 32;
+      ICACHE_EXTERNAL_WIDTH       : integer                       := 32;
+      ICACHE_MAX_BURSTLENGTH      : positive                      := 16;
+      ICACHE_BURST_EN             : integer range 0 to 1          := 0
       );
     port (
       clk            : in std_logic;
@@ -704,16 +707,16 @@ package rv_components is
       FAMILY              : string := "ALTERA"
       );
     port (
-      clk             : in  std_logic;
-      valid_instr     : in  std_logic;
-      simd_op_size    : in  std_logic_vector(1 downto 0);
+      clk                : in  std_logic;
+      valid_instr        : in  std_logic;
+      simd_op_size       : in  std_logic_vector(1 downto 0);
       stall_from_execute : in  std_logic;
-      rs1_data        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      sign_extension  : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-      program_counter : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_out        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      sign_extension     : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+      program_counter    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       data_out_valid : out std_logic;
       less_than      : out std_logic;

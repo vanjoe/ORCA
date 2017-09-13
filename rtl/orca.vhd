@@ -32,7 +32,7 @@ entity orca is
     SCRATCHPAD_ADDR_BITS  : integer                       := 10;
     IUC_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
     IUC_ADDR_LAST         : std_logic_vector(31 downto 0) := X"00000000";
-    ICACHE_SIZE           : natural                       := 8192;
+    ICACHE_SIZE           : natural                       := 0;
     ICACHE_LINE_SIZE      : integer range 16 to 256       := 32;
     ICACHE_EXTERNAL_WIDTH : integer                       := 32;
     ICACHE_BURST_EN       : integer range 0 to 1          := 0;
@@ -343,15 +343,17 @@ begin  -- architecture rtl
       WISHBONE_ENABLE => WISHBONE_ENABLE,
       AXI_ENABLE      => AXI_ENABLE,
 
-      DATA_REQUEST_REGISTER  => DATA_REQUEST_REGISTER,
-      DATA_RETURN_REGISTER   => DATA_RETURN_REGISTER,
-      IUC_ADDR_BASE          => IUC_ADDR_BASE,
-      IUC_ADDR_LAST          => IUC_ADDR_LAST,
-      ICACHE_SIZE            => ICACHE_SIZE,
-      ICACHE_LINE_SIZE       => ICACHE_LINE_SIZE,
-      ICACHE_EXTERNAL_WIDTH  => ICACHE_EXTERNAL_WIDTH,
-      ICACHE_MAX_BURSTLENGTH => ICACHE_MAX_BURSTLENGTH,
-      ICACHE_BURST_EN        => ICACHE_BURST_EN
+      WISHBONE_SINGLE_CYCLE_READS => 0,  --For now assumed not supported; can be
+                                         --brought to top level if needed
+      DATA_REQUEST_REGISTER       => DATA_REQUEST_REGISTER,
+      DATA_RETURN_REGISTER        => DATA_RETURN_REGISTER,
+      IUC_ADDR_BASE               => IUC_ADDR_BASE,
+      IUC_ADDR_LAST               => IUC_ADDR_LAST,
+      ICACHE_SIZE                 => ICACHE_SIZE,
+      ICACHE_LINE_SIZE            => ICACHE_LINE_SIZE,
+      ICACHE_EXTERNAL_WIDTH       => ICACHE_EXTERNAL_WIDTH,
+      ICACHE_MAX_BURSTLENGTH      => ICACHE_MAX_BURSTLENGTH,
+      ICACHE_BURST_EN             => ICACHE_BURST_EN
       )
     port map (
       clk            => clk,
