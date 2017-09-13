@@ -1,15 +1,6 @@
 #!/bin/bash
 SCRIPTDIR=$(readlink -f $(dirname $0))
 
-if which mif2hex >/dev/null
-then
-	 :
-else
-	 echo "ERROR: Cant find command mif2hex, have you loaded nios2 tools? Exiting." >&2
-	 exit -1;
-fi
-
-
 (
 	 rm -rf riscv-tests
 	 git clone https://github.com/riscv/riscv-tests
@@ -59,8 +50,7 @@ do
 		  $OBJCOPY  -O binary $f $BIN_FILE
 		  $OBJDUMP --disassemble-all -Mnumeric,no-aliases $f > test/$(basename $f).dump
 
-		  python $SCRIPTDIR/bin2mif.py $BIN_FILE 0x0 > $MIF_FILE || exit -1
-		  mif2hex $MIF_FILE $QEX_FILE >/dev/null 2>&1 || exit -1
+		  python $SCRIPTDIR/bin2hex.py $BIN_FILE -a 0x0 > $QEX_FILE || exit -1
 		  sed -e 's/://' -e 's/\(..\)/\1 /g'  $QEX_FILE >$SPLIT_FILE
 		  awk '{if (NF == 9) print $5$6$7$8}' $SPLIT_FILE > $MEM_FILE
 		 # rm -f $MIF_FILE $SPLIT_FILE

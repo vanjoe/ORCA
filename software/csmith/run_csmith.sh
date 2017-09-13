@@ -20,7 +20,6 @@ mkdir -p $compile_dir
 OUT_C=$compile_dir/csmith-riscv-seed$SEED.c
 ELF_FILE=$compile_dir/csmith-riscv-seed$SEED
 BIN_FILE=$ELF_FILE.bin
-MIF_FILE=${BIN_FILE/bin/mif}
 HEX_FILE=${BIN_FILE/bin/hex}
 DUMP_FILE=${BIN_FILE/bin/dump}
 
@@ -34,10 +33,9 @@ OBJS="$compile_dir/csmith-riscv-crt.o  $compile_dir/csmith-riscv-help.o  $compil
 riscv32-unknown-elf-gcc -O2 -nostdlib  -T ${SCRIPTDIR}/link_csmith.ld  $OBJS -o $ELF_FILE  -march=rv32im -static -nostartfiles  -lgcc
 riscv32-unknown-elf-objcopy -O binary $ELF_FILE $BIN_FILE
 riscv32-unknown-elf-objdump --source --disassemble-all $ELF_FILE > $DUMP_FILE
-python $SCRIPTDIR/../../tools/bin2mif.py $BIN_FILE 0  > $MIF_FILE
-mif2hex $MIF_FILE $HEX_FILE >/dev/null 2>&1
+python $SCRIPTDIR/../../tools/bin2hex.py $BIN_FILE --address 0  > $HEX_FILE
 
-rm $BIN_FILE $MIF_FILE system_csmith/simulation/mentor/test.hex
+rm $BIN_FILE system_csmith/simulation/mentor/test.hex
 mv $HEX_FILE system_csmith/simulation/mentor/test.hex
 
 
