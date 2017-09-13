@@ -596,6 +596,12 @@
           </spirit:physicalPort>
         </spirit:portMap>
       </spirit:portMaps>
+      <spirit:parameters>
+        <spirit:parameter>
+          <spirit:name>READ_WRITE_MODE</spirit:name>
+          <spirit:value spirit:id="BUSIFPARAM_VALUE.IC.READ_WRITE_MODE">READ_ONLY</spirit:value>
+        </spirit:parameter>
+      </spirit:parameters>
       <spirit:vendorExtensions>
         <xilinx:busInterfaceInfo>
           <xilinx:enablement>
@@ -612,6 +618,94 @@
         <spirit:addressSpaceRef spirit:addressSpaceRef="IUC"/>
       </spirit:master>
       <spirit:portMaps>
+        <spirit:portMap>
+          <spirit:logicalPort>
+            <spirit:name>AWADDR</spirit:name>
+          </spirit:logicalPort>
+          <spirit:physicalPort>
+            <spirit:name>IUC_AWADDR</spirit:name>
+          </spirit:physicalPort>
+        </spirit:portMap>
+        <spirit:portMap>
+          <spirit:logicalPort>
+            <spirit:name>AWPROT</spirit:name>
+          </spirit:logicalPort>
+          <spirit:physicalPort>
+            <spirit:name>IUC_AWPROT</spirit:name>
+          </spirit:physicalPort>
+        </spirit:portMap>
+        <spirit:portMap>
+          <spirit:logicalPort>
+            <spirit:name>AWVALID</spirit:name>
+          </spirit:logicalPort>
+          <spirit:physicalPort>
+            <spirit:name>IUC_AWVALID</spirit:name>
+          </spirit:physicalPort>
+        </spirit:portMap>
+        <spirit:portMap>
+          <spirit:logicalPort>
+            <spirit:name>AWREADY</spirit:name>
+          </spirit:logicalPort>
+          <spirit:physicalPort>
+            <spirit:name>IUC_AWREADY</spirit:name>
+          </spirit:physicalPort>
+        </spirit:portMap>
+        <spirit:portMap>
+          <spirit:logicalPort>
+            <spirit:name>WDATA</spirit:name>
+          </spirit:logicalPort>
+          <spirit:physicalPort>
+            <spirit:name>IUC_WDATA</spirit:name>
+          </spirit:physicalPort>
+        </spirit:portMap>
+        <spirit:portMap>
+          <spirit:logicalPort>
+            <spirit:name>WSTRB</spirit:name>
+          </spirit:logicalPort>
+          <spirit:physicalPort>
+            <spirit:name>IUC_WSTRB</spirit:name>
+          </spirit:physicalPort>
+        </spirit:portMap>
+        <spirit:portMap>
+          <spirit:logicalPort>
+            <spirit:name>WVALID</spirit:name>
+          </spirit:logicalPort>
+          <spirit:physicalPort>
+            <spirit:name>IUC_WVALID</spirit:name>
+          </spirit:physicalPort>
+        </spirit:portMap>
+        <spirit:portMap>
+          <spirit:logicalPort>
+            <spirit:name>WREADY</spirit:name>
+          </spirit:logicalPort>
+          <spirit:physicalPort>
+            <spirit:name>IUC_WREADY</spirit:name>
+          </spirit:physicalPort>
+        </spirit:portMap>
+        <spirit:portMap>
+          <spirit:logicalPort>
+            <spirit:name>BRESP</spirit:name>
+          </spirit:logicalPort>
+          <spirit:physicalPort>
+            <spirit:name>IUC_BRESP</spirit:name>
+          </spirit:physicalPort>
+        </spirit:portMap>
+        <spirit:portMap>
+          <spirit:logicalPort>
+            <spirit:name>BVALID</spirit:name>
+          </spirit:logicalPort>
+          <spirit:physicalPort>
+            <spirit:name>IUC_BVALID</spirit:name>
+          </spirit:physicalPort>
+        </spirit:portMap>
+        <spirit:portMap>
+          <spirit:logicalPort>
+            <spirit:name>BREADY</spirit:name>
+          </spirit:logicalPort>
+          <spirit:physicalPort>
+            <spirit:name>IUC_BREADY</spirit:name>
+          </spirit:physicalPort>
+        </spirit:portMap>
         <spirit:portMap>
           <spirit:logicalPort>
             <spirit:name>ARADDR</spirit:name>
@@ -677,6 +771,12 @@
           </spirit:physicalPort>
         </spirit:portMap>
       </spirit:portMaps>
+      <spirit:parameters>
+        <spirit:parameter>
+          <spirit:name>READ_WRITE_MODE</spirit:name>
+          <spirit:value spirit:id="BUSIFPARAM_VALUE.IUC.READ_WRITE_MODE">READ_ONLY</spirit:value>
+        </spirit:parameter>
+      </spirit:parameters>
       <spirit:vendorExtensions>
         <xilinx:busInterfaceInfo>
           <xilinx:enablement>
@@ -2514,13 +2614,6 @@
             <spirit:defaultValue spirit:format="long">0</spirit:defaultValue>
           </spirit:driver>
         </spirit:wire>
-        <spirit:vendorExtensions>
-          <xilinx:portInfo>
-            <xilinx:enablement>
-              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.IUC_AWADDR" xilinx:dependency="false">false</xilinx:isEnabled>
-            </xilinx:enablement>
-          </xilinx:portInfo>
-        </spirit:vendorExtensions>
       </spirit:port>
       <spirit:port>
         <spirit:name>IUC_AWLEN</spirit:name>
@@ -2676,13 +2769,6 @@
             <spirit:defaultValue spirit:format="long">0</spirit:defaultValue>
           </spirit:driver>
         </spirit:wire>
-        <spirit:vendorExtensions>
-          <xilinx:portInfo>
-            <xilinx:enablement>
-              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.IUC_AWPROT" xilinx:dependency="false">false</xilinx:isEnabled>
-            </xilinx:enablement>
-          </xilinx:portInfo>
-        </spirit:vendorExtensions>
       </spirit:port>
       <spirit:port>
         <spirit:name>IUC_AWVALID</spirit:name>
@@ -2699,13 +2785,6 @@
             <spirit:defaultValue spirit:format="long">0</spirit:defaultValue>
           </spirit:driver>
         </spirit:wire>
-        <spirit:vendorExtensions>
-          <xilinx:portInfo>
-            <xilinx:enablement>
-              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.IUC_AWVALID" xilinx:dependency="false">false</xilinx:isEnabled>
-            </xilinx:enablement>
-          </xilinx:portInfo>
-        </spirit:vendorExtensions>
       </spirit:port>
       <spirit:port>
         <spirit:name>IUC_AWREADY</spirit:name>
@@ -2722,13 +2801,6 @@
             <spirit:defaultValue spirit:format="long">0</spirit:defaultValue>
           </spirit:driver>
         </spirit:wire>
-        <spirit:vendorExtensions>
-          <xilinx:portInfo>
-            <xilinx:enablement>
-              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.IUC_AWREADY" xilinx:dependency="false">false</xilinx:isEnabled>
-            </xilinx:enablement>
-          </xilinx:portInfo>
-        </spirit:vendorExtensions>
       </spirit:port>
       <spirit:port>
         <spirit:name>IUC_WID</spirit:name>
@@ -2776,13 +2848,6 @@
             <spirit:defaultValue spirit:format="long">0</spirit:defaultValue>
           </spirit:driver>
         </spirit:wire>
-        <spirit:vendorExtensions>
-          <xilinx:portInfo>
-            <xilinx:enablement>
-              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.IUC_WDATA" xilinx:dependency="false">false</xilinx:isEnabled>
-            </xilinx:enablement>
-          </xilinx:portInfo>
-        </spirit:vendorExtensions>
       </spirit:port>
       <spirit:port>
         <spirit:name>IUC_WSTRB</spirit:name>
@@ -2803,13 +2868,6 @@
             <spirit:defaultValue spirit:format="long">0</spirit:defaultValue>
           </spirit:driver>
         </spirit:wire>
-        <spirit:vendorExtensions>
-          <xilinx:portInfo>
-            <xilinx:enablement>
-              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.IUC_WSTRB" xilinx:dependency="false">false</xilinx:isEnabled>
-            </xilinx:enablement>
-          </xilinx:portInfo>
-        </spirit:vendorExtensions>
       </spirit:port>
       <spirit:port>
         <spirit:name>IUC_WLAST</spirit:name>
@@ -2849,13 +2907,6 @@
             <spirit:defaultValue spirit:format="long">0</spirit:defaultValue>
           </spirit:driver>
         </spirit:wire>
-        <spirit:vendorExtensions>
-          <xilinx:portInfo>
-            <xilinx:enablement>
-              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.IUC_WVALID" xilinx:dependency="false">false</xilinx:isEnabled>
-            </xilinx:enablement>
-          </xilinx:portInfo>
-        </spirit:vendorExtensions>
       </spirit:port>
       <spirit:port>
         <spirit:name>IUC_WREADY</spirit:name>
@@ -2872,13 +2923,6 @@
             <spirit:defaultValue spirit:format="long">0</spirit:defaultValue>
           </spirit:driver>
         </spirit:wire>
-        <spirit:vendorExtensions>
-          <xilinx:portInfo>
-            <xilinx:enablement>
-              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.IUC_WREADY" xilinx:dependency="false">false</xilinx:isEnabled>
-            </xilinx:enablement>
-          </xilinx:portInfo>
-        </spirit:vendorExtensions>
       </spirit:port>
       <spirit:port>
         <spirit:name>IUC_BID</spirit:name>
@@ -2972,13 +3016,6 @@
             <spirit:defaultValue spirit:format="long">0</spirit:defaultValue>
           </spirit:driver>
         </spirit:wire>
-        <spirit:vendorExtensions>
-          <xilinx:portInfo>
-            <xilinx:enablement>
-              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.IUC_BREADY" xilinx:dependency="false">false</xilinx:isEnabled>
-            </xilinx:enablement>
-          </xilinx:portInfo>
-        </spirit:vendorExtensions>
       </spirit:port>
       <spirit:port>
         <spirit:name>IC_ARID</spirit:name>
@@ -4234,6 +4271,16 @@
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.BRANCH_PREDICTORS" spirit:minimum="0">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>DATA_REQUEST_REGISTER</spirit:name>
+        <spirit:displayName>Data Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DATA_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">1</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>DATA_RETURN_REGISTER</spirit:name>
+        <spirit:displayName>Data Return Register</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DATA_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1">0</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>PIPELINE_STAGES</spirit:name>
         <spirit:displayName>Pipeline Stages</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.PIPELINE_STAGES" spirit:minimum="4" spirit:maximum="5" spirit:rangeType="long">5</spirit:value>
@@ -4328,9 +4375,8 @@
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>a4l_instruction_master.vhd</spirit:name>
+        <spirit:name>axi_master.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_16002df8</spirit:userFileType>
       </spirit:file>
       <spirit:file>
         <spirit:name>bram_tdp_behav.vhd</spirit:name>
@@ -4386,6 +4432,10 @@
       </spirit:file>
       <spirit:file>
         <spirit:name>sys_call.vhd</spirit:name>
+        <spirit:fileType>vhdlSource</spirit:fileType>
+      </spirit:file>
+      <spirit:file>
+        <spirit:name>memory_interface.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
@@ -4420,7 +4470,7 @@
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>a4l_instruction_master.vhd</spirit:name>
+        <spirit:name>axi_master.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
@@ -4477,6 +4527,10 @@
       </spirit:file>
       <spirit:file>
         <spirit:name>sys_call.vhd</spirit:name>
+        <spirit:fileType>vhdlSource</spirit:fileType>
+      </spirit:file>
+      <spirit:file>
+        <spirit:name>memory_interface.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
@@ -4559,6 +4613,16 @@
       <spirit:name>BRANCH_PREDICTORS</spirit:name>
       <spirit:displayName>Branch Predictors</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.BRANCH_PREDICTORS" spirit:minimum="0" spirit:rangeType="long">0</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>DATA_REQUEST_REGISTER</spirit:name>
+      <spirit:displayName>Data Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DATA_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">1</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>DATA_RETURN_REGISTER</spirit:name>
+      <spirit:displayName>Data Return Register</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DATA_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>PIPELINE_STAGES</spirit:name>

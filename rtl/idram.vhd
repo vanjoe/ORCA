@@ -13,8 +13,7 @@ entity idram is
     DATA_PORT_TYPE  : natural range 0 to 2 := 0;
     SIZE            : integer              := 32768;
     RAM_WIDTH       : integer              := 32;
-    ADDR_WIDTH      : integer              := 32;
-    BYTE_SIZE       : integer              := 8
+    ADDR_WIDTH      : integer              := 32
     );
   port (
     clk   : in std_logic;
@@ -34,7 +33,7 @@ entity idram is
 
     instr_WID    : in  std_logic_vector(13 downto 0);
     instr_WDATA  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
-    instr_WSTRB  : in  std_logic_vector((RAM_WIDTH/BYTE_SIZE)-1 downto 0);
+    instr_WSTRB  : in  std_logic_vector((RAM_WIDTH/8)-1 downto 0);
     instr_WLAST  : in  std_logic;
     instr_WVALID : in  std_logic;
     instr_WREADY : out std_logic;
@@ -76,7 +75,7 @@ entity idram is
 
     data_WID    : in  std_logic_vector(13 downto 0);
     data_WDATA  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
-    data_WSTRB  : in  std_logic_vector((RAM_WIDTH/BYTE_SIZE)-1 downto 0);
+    data_WSTRB  : in  std_logic_vector((RAM_WIDTH/8)-1 downto 0);
     data_WLAST  : in  std_logic;
     data_WVALID : in  std_logic;
     data_WREADY : out std_logic;
@@ -234,8 +233,8 @@ begin
   ram : component idram_xilinx
     generic map (
       RAM_DEPTH => SIZE/4,
-      RAM_WIDTH => RAM_WIDTH,
-      BYTE_SIZE => BYTE_SIZE)
+      RAM_WIDTH => RAM_WIDTH
+      )
     port map (
       clk => clk,
 

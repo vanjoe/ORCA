@@ -1402,12 +1402,12 @@ STATE="utd"
 TIME="1502994695"
 SIZE="371"
 ENDFILE
-VALUE "<project>/hdl/a4l_instruction_master.vhd,hdl"
+VALUE "<project>/hdl/a4l_master.vhd,hdl"
 STATE="utd"
 TIME="1504030848"
-SIZE="2153"
+SIZE="8775"
 ENDFILE
-VALUE "<project>/hdl/a4l_master.vhd,hdl"
+VALUE "<project>/hdl/axi_master.vhd,hdl"
 STATE="utd"
 TIME="1504030848"
 SIZE="8775"
@@ -2650,9 +2650,8 @@ SmartDesign;Top_Fabric_Master;0
 ACTIVEVIEW;Top_Fabric_Master
 ENDLIST
 LIST ModuleSubBlockList
-LIST "a4l_instruction_master::work::rv_components","hdl/a4l_instruction_master.vhd","FALSE","FALSE"
-ENDLIST
 LIST "a4l_master::work::rv_components","hdl/a4l_master.vhd","FALSE","FALSE"
+LIST "axi_master::work::rv_components","hdl/axi_master.vhd","FALSE","FALSE"
 ENDLIST
 LIST "AddressController::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4CrossBar/AddressController.v","FALSE","FALSE"
 SUBBLOCK "MasterControl::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4CrossBar/MasterControl.v","FALSE","FALSE"
@@ -2929,8 +2928,8 @@ LIST "my_mss_top::work","component/work/my_mss_top/my_mss_top.v","TRUE","FALSE"
 SUBBLOCK "my_mss::work","component/work/my_mss/my_mss.v","TRUE","FALSE"
 ENDLIST
 LIST "orca::work::rv_components","hdl/orca.vhd","FALSE","FALSE"
-SUBBLOCK "a4l_instruction_master::work::rv_components","hdl/a4l_instruction_master.vhd","FALSE","FALSE"
 SUBBLOCK "a4l_master::work::rv_components","hdl/a4l_master.vhd","FALSE","FALSE"
+SUBBLOCK "axi_master::work::rv_components","hdl/axi_master.vhd","FALSE","FALSE"
 SUBBLOCK "cache_mux::work::rv_components","hdl/cache_mux.vhd","FALSE","FALSE"
 SUBBLOCK "icache::work::rv_components","hdl/icache.vhd","FALSE","FALSE"
 SUBBLOCK "orca_core::work::rv_components","hdl/orca_core.vhd","FALSE","FALSE"
@@ -2989,8 +2988,8 @@ ENDLIST
 LIST "RoundRobinArb::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4CrossBar/RoundRobinArb.v","FALSE","FALSE"
 ENDLIST
 LIST "rv_components::work","hdl/components.vhd","FALSE","FALSE"
-SUBBLOCK "a4l_instruction_master::work::rv_components","hdl/a4l_instruction_master.vhd","FALSE","FALSE"
 SUBBLOCK "a4l_master::work::rv_components","hdl/a4l_master.vhd","FALSE","FALSE"
+SUBBLOCK "axi_master::work::rv_components","hdl/axi_master.vhd","FALSE","FALSE"
 SUBBLOCK "arithmetic_unit::work::rv_components","hdl/alu.vhd","FALSE","FALSE"
 SUBBLOCK "bram_microsemi::work::rv_components","hdl/bram_microsemi.vhd","FALSE","FALSE"
 SUBBLOCK "bram_tdp_behav::work","","FALSE","FALSE"

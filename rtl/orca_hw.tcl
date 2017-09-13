@@ -58,6 +58,8 @@ add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
 add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
 add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
+add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
+add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL Orca
@@ -79,21 +81,14 @@ add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
 add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
 add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
+add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
+add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
 
 #
 # parameters
 #
 add_parameter REGISTER_SIZE INTEGER 32
 set_parameter_property REGISTER_SIZE DEFAULT_VALUE 32
-set_parameter_property REGISTER_SIZE DISPLAY_NAME REGISTER_SIZE
-set_parameter_property REGISTER_SIZE TYPE INTEGER
-set_parameter_property REGISTER_SIZE UNITS None
-set_parameter_property REGISTER_SIZE ALLOWED_RANGES {32}
-set_parameter_property REGISTER_SIZE HDL_PARAMETER true
-set_parameter_property REGISTER_SIZE visible false
-
-add_parameter BYTE_SIZE INTEGER 8 
-set_parameter_property REGISTER_SIZE DEFAULT_VALUE 8 
 set_parameter_property REGISTER_SIZE DISPLAY_NAME REGISTER_SIZE
 set_parameter_property REGISTER_SIZE TYPE INTEGER
 set_parameter_property REGISTER_SIZE UNITS None
@@ -223,6 +218,20 @@ set_parameter_property BTB_SIZE HDL_PARAMETER false
 set_parameter_property BTB_SIZE DISPLAY_NAME "        Branch Target Buffer Size"
 set_parameter_property BTB_SIZE DISPLAY_UNITS entries
 set_parameter_property BTB_SIZE visible false
+
+add_parameter          DATA_REQUEST_REGSTER natural 0
+set_parameter_property DATA_REQUEST_REGSTER HDL_PARAMETER true
+set_parameter_property DATA_REQUEST_REGSTER DISPLAY_NAME "Data Request Register"
+set_parameter_property DATA_REQUEST_REGSTER DESCRIPTION "Register data master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property DATA_REQUEST_REGSTER ALLOWED_RANGES {0,2}
+
+add_parameter          DATA_RETURN_REGSTER natural 0
+set_parameter_property DATA_RETURN_REGSTER HDL_PARAMETER true
+set_parameter_property DATA_RETURN_REGSTER DISPLAY_NAME "Data Return Register"
+set_parameter_property DATA_RETURN_REGSTER DESCRIPTION "Register data master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property DATA_RETURN_REGSTER ALLOWED_RANGES {0,1}
 
 add_parameter          PIPELINE_STAGES natural 5
 set_parameter_property PIPELINE_STAGES HDL_PARAMETER true

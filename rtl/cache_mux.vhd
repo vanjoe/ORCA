@@ -16,229 +16,98 @@ use work.utils.all;
 
 entity cache_mux is
   generic (
-    UC_ADDR_BASE  : std_logic_vector(31 downto 0);
-    UC_ADDR_LAST  : std_logic_vector(31 downto 0);
-    ADDR_WIDTH    : integer := 32;
-    REGISTER_SIZE : integer := 32;
-    BYTE_SIZE     : integer := 8
+    UC_ADDR_BASE    : std_logic_vector(31 downto 0);
+    UC_ADDR_LAST    : std_logic_vector(31 downto 0);
+    MAX_BURST_BEATS : positive := 16;
+    ADDR_WIDTH      : integer  := 32;
+    DATA_WIDTH      : integer  := 32
     );
   port (
     clk   : in std_logic;
     reset : in std_logic;
 
-    in_AWID   : in std_logic_vector(3 downto 0);
-    in_AWADDR : in std_logic_vector(ADDR_WIDTH-1 downto 0);
+    --Orca-internal memory-mapped slave
+    oimm_address       : in     std_logic_vector(ADDR_WIDTH-1 downto 0);
+    oimm_byteenable    : in     std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+    oimm_requestvalid  : in     std_logic;
+    oimm_readnotwrite  : in     std_logic;
+    oimm_writedata     : in     std_logic_vector(DATA_WIDTH-1 downto 0);
+    oimm_readdata      : out    std_logic_vector(DATA_WIDTH-1 downto 0);
+    oimm_readdatavalid : buffer std_logic;
+    oimm_waitrequest   : buffer std_logic;
 
-    in_AWPROT  : in     std_logic_vector(2 downto 0);
-    in_AWVALID : in     std_logic;
-    in_AWREADY : buffer std_logic;
+    --Cache interface Orca-internal memory-mapped master
+    cacheint_oimm_address       : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    cacheint_oimm_byteenable    : out std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+    cacheint_oimm_requestvalid  : out std_logic;
+    cacheint_oimm_readnotwrite  : out std_logic;
+    cacheint_oimm_writedata     : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    cacheint_oimm_readdata      : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+    cacheint_oimm_readdatavalid : in  std_logic;
+    cacheint_oimm_waitrequest   : in  std_logic;
 
-    in_WID    : in     std_logic_vector(3 downto 0);
-    in_WDATA  : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    in_WSTRB  : in     std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
-    in_WVALID : in     std_logic;
-    in_WREADY : buffer std_logic;
-
-    in_BID    : out    std_logic_vector(3 downto 0);
-    in_BRESP  : out    std_logic_vector(1 downto 0);
-    in_BVALID : buffer std_logic;
-    in_BREADY : in     std_logic;
-
-    in_ARID    : in     std_logic_vector(3 downto 0);
-    in_ARADDR  : in     std_logic_vector(ADDR_WIDTH-1 downto 0);
-    in_ARPROT  : in     std_logic_vector(2 downto 0);
-    in_ARVALID : in     std_logic;
-    in_ARREADY : buffer std_logic;
-
-    in_RID    : out    std_logic_vector(3 downto 0);
-    in_RDATA  : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    in_RRESP  : out    std_logic_vector(1 downto 0);
-    in_RVALID : buffer std_logic;
-    in_RREADY : in     std_logic;
-
-    cache_AWID   : out std_logic_vector(3 downto 0);
-    cache_AWADDR : out std_logic_vector(ADDR_WIDTH-1 downto 0);
-
-    cache_AWPROT  : out std_logic_vector(2 downto 0);
-    cache_AWVALID : out std_logic;
-    cache_AWREADY : in  std_logic;
-
-    cache_WID    : out std_logic_vector(3 downto 0);
-    cache_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    cache_WSTRB  : out std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
-    cache_WVALID : out std_logic;
-    cache_WREADY : in  std_logic;
-
-    cache_BID    : in  std_logic_vector(3 downto 0);
-    cache_BRESP  : in  std_logic_vector(1 downto 0);
-    cache_BVALID : in  std_logic;
-    cache_BREADY : out std_logic;
-
-    cache_ARID    : out std_logic_vector(3 downto 0);
-    cache_ARADDR  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
-    cache_ARPROT  : out std_logic_vector(2 downto 0);
-    cache_ARVALID : out std_logic;
-    cache_ARREADY : in  std_logic;
-
-    cache_RID    : in  std_logic_vector(3 downto 0);
-    cache_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    cache_RRESP  : in  std_logic_vector(1 downto 0);
-    cache_RVALID : in  std_logic;
-    cache_RREADY : out std_logic;
-
-    uc_AWADDR : out std_logic_vector(ADDR_WIDTH-1 downto 0);
-
-    uc_AWPROT  : out std_logic_vector(2 downto 0);
-    uc_AWVALID : out std_logic;
-    uc_AWREADY : in  std_logic;
-
-    uc_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    uc_WSTRB  : out std_logic_vector((REGISTER_SIZE/BYTE_SIZE)-1 downto 0);
-    uc_WVALID : out std_logic;
-    uc_WREADY : in  std_logic;
-
-    uc_BRESP  : in  std_logic_vector(1 downto 0);
-    uc_BVALID : in  std_logic;
-    uc_BREADY : out std_logic;
-
-    uc_ARADDR  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
-    uc_ARPROT  : out std_logic_vector(2 downto 0);
-    uc_ARVALID : out std_logic;
-    uc_ARREADY : in  std_logic;
-
-    uc_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    uc_RRESP  : in  std_logic_vector(1 downto 0);
-    uc_RVALID : in  std_logic;
-    uc_RREADY : out std_logic
+    --Uncached Orca-internal memory-mapped master
+    uc_oimm_address       : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    uc_oimm_byteenable    : out std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+    uc_oimm_requestvalid  : out std_logic;
+    uc_oimm_readnotwrite  : out std_logic;
+    uc_oimm_writedata     : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    uc_oimm_readdata      : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+    uc_oimm_readdatavalid : in  std_logic;
+    uc_oimm_waitrequest   : in  std_logic
     );
 end entity cache_mux;
 
 architecture rtl of cache_mux is
-  signal cache_select_r            : std_logic;
-  signal cache_select_w            : std_logic;
-  signal ar_sent                   : std_logic;
-  signal aw_sent                   : std_logic;
-  signal w_sent                    : std_logic;
-  signal aw_sent_cache_select_w    : std_logic;
-  signal cache_select_w_held       : std_logic;
-  signal cache_select_w_held_valid : std_logic;
-  signal read_stall                : std_logic;
+  signal cache_select : std_logic;
+  signal reading      : std_logic;
+  signal read_stall   : std_logic;
 begin
 
-  cache_AWID   <= in_AWID;
-  cache_AWADDR <= in_AWADDR;
+  cacheint_oimm_address    <= oimm_address;
+  cacheint_oimm_byteenable <= oimm_byteenable;
+  cacheint_oimm_writedata  <= oimm_writedata;
 
-  cache_AWPROT <= in_AWPROT;
-
-  cache_WID   <= in_WID;
-  cache_WDATA <= in_WDATA;
-  cache_WSTRB <= in_WSTRB;
-
-  cache_BREADY <= in_BREADY;
-
-  cache_ARID   <= in_ARID;
-  cache_ARADDR <= in_ARADDR;
-  cache_ARPROT <= in_ARPROT;
-
-  uc_AWADDR <= in_AWADDR;
-
-  uc_AWPROT <= in_AWPROT;
-
-  uc_WDATA <= in_WDATA;
-  uc_WSTRB <= in_WSTRB;
-
-  uc_BREADY <= in_BREADY;
-
-  uc_ARADDR <= in_ARADDR;
-  uc_ARPROT <= in_ARPROT;
+  uc_oimm_address    <= oimm_address;
+  uc_oimm_byteenable <= oimm_byteenable;
+  uc_oimm_writedata  <= oimm_writedata;
 
   no_uncacheable_gen : if UC_ADDR_BASE = UC_ADDR_LAST generate
-    cache_select_r            <= '1';
-    cache_select_w            <= '1';
-    cache_select_w_held       <= '1';
-    cache_select_w_held_valid <= '1';
+    cache_select <= '1';
   end generate no_uncacheable_gen;
   has_uncacheable_gen : if UC_ADDR_BASE /= UC_ADDR_LAST generate
-    cache_select_r <=
-      '0' when ((unsigned(in_ARADDR) >= unsigned(UC_ADDR_BASE(ADDR_WIDTH-1 downto 0))) and
-                (unsigned(in_ARADDR) <= unsigned(UC_ADDR_LAST(ADDR_WIDTH-1 downto 0)))) else
+    cache_select <=
+      '0' when ((unsigned(oimm_address) >= unsigned(UC_ADDR_BASE(ADDR_WIDTH-1 downto 0))) and
+                (unsigned(oimm_address) <= unsigned(UC_ADDR_LAST(ADDR_WIDTH-1 downto 0)))) else
       '1';
-    cache_select_w <=
-      '0' when ((unsigned(in_AWADDR) >= unsigned(UC_ADDR_BASE(ADDR_WIDTH-1 downto 0))) and
-                (unsigned(in_AWADDR) <= unsigned(UC_ADDR_LAST(ADDR_WIDTH-1 downto 0)))) else
-      '1';
-    cache_select_w_held       <= cache_select_w when aw_sent = '0' else aw_sent_cache_select_w;
-    cache_select_w_held_valid <= aw_sent or in_AWVALID;
   end generate has_uncacheable_gen;
 
-  --Assumes only one read in flight and no extraneous responses coming in
-  read_stall <= ar_sent and (not (in_RVALID and in_RREADY));
-  in_ARREADY <= cache_ARREADY and (not read_stall) when cache_select_r = '1' else
-                uc_ARREADY and (not read_stall);
+  --Assumes only one read request in flight and no extraneous responses coming in.
+  read_stall       <= reading and (not oimm_readdatavalid);
+  oimm_waitrequest <= cacheint_oimm_waitrequest or read_stall when cache_select = '1' else
+                      uc_oimm_waitrequest or read_stall;
 
-  in_RID    <= cache_RID   when cache_RVALID = '1' else (others => '0');
-  in_RDATA  <= cache_RDATA when cache_RVALID = '1' else uc_RDATA;
-  in_RRESP  <= cache_RRESP when cache_RVALID = '1' else uc_RRESP;
-  in_RVALID <= cache_RVALID or uc_RVALID;
+  oimm_readdata      <= cacheint_oimm_readdata when cacheint_oimm_readdatavalid = '1' else uc_oimm_readdata;
+  oimm_readdatavalid <= cacheint_oimm_readdatavalid or uc_oimm_readdatavalid;
 
-  cache_ARVALID <= in_ARVALID and (not read_stall) when cache_select_r = '1' else '0';
-  cache_RREADY  <= in_RREADY;
+  cacheint_oimm_requestvalid <= oimm_requestvalid and (not read_stall) and cache_select;
+  cacheint_oimm_readnotwrite <= oimm_readnotwrite;
 
-  uc_ARVALID <= in_ARVALID and (not read_stall) when cache_select_r = '0' else '0';
-  uc_RREADY  <= in_RREADY;
-
-  --Assumes only one write in flight and no extraneous responses coming in
-  --Note that this waits for BRESP which is technically correct but might be
-  --unnecessary on some systems.
-  in_AWREADY <= cache_AWREADY and ((in_BVALID and in_BREADY) or (not aw_sent))
-                when cache_select_w = '1' else
-                uc_AWREADY and ((in_BVALID and in_BREADY) or (not aw_sent));
-
-  in_WREADY <= cache_WREADY and ((in_BVALID and in_BREADY) or (not w_sent)) and cache_select_w_held_valid when
-               cache_select_w_held = '1' else
-               uc_WREADY and ((in_BVALID and in_BREADY) or (not w_sent)) and cache_select_w_held_valid;
-
-  in_BID    <= cache_BID   when cache_BVALID = '1' else (others => '0');
-  in_BRESP  <= cache_BRESP when cache_BVALID = '1' else uc_BRESP;
-  in_BVALID <= cache_BVALID or uc_BVALID;
-
-  cache_AWVALID <= in_AWVALID when cache_select_w = '1' else '0';
-  cache_WVALID  <= in_WVALID and cache_select_w_held_valid when
-                  cache_select_w_held = '1' else
-                  '0';
-
-  uc_AWVALID <= in_AWVALID when cache_select_w = '0' else '0';
-  uc_WVALID  <= in_WVALID and cache_select_w_held_valid when
-               cache_select_w_held = '0' else
-               '0';
+  uc_oimm_requestvalid <= oimm_requestvalid and (not read_stall) and (not cache_select);
+  uc_oimm_readnotwrite <= oimm_readnotwrite;
 
   process(clk)
   begin
     if rising_edge(clk) then
-      if in_RVALID = '1' and in_RREADY = '1' then
-        ar_sent <= '0';
+      if oimm_readdatavalid = '1' then
+        reading <= '0';
       end if;
-      if in_BVALID = '1' and in_BREADY = '1' then
-        aw_sent <= '0';
-        w_sent  <= '0';
-      end if;
-
-      if in_ARVALID = '1' and in_ARREADY = '1' then
-        ar_sent <= '1';
-      end if;
-      if in_AWVALID = '1' and in_AWREADY = '1' then
-        aw_sent                <= '1';
-        aw_sent_cache_select_w <= cache_select_w;
-      end if;
-      if in_WVALID = '1' and in_WREADY = '1' then
-        w_sent <= '1';
+      if oimm_requestvalid = '1' and oimm_readnotwrite = '1' and oimm_waitrequest = '0' then
+        reading <= '1';
       end if;
 
       if reset = '1' then
-        ar_sent                <= '0';
-        aw_sent                <= '0';
-        w_sent                 <= '0';
-        aw_sent_cache_select_w <= '1';
+        reading <= '0';
       end if;
     end if;
   end process;

@@ -54,7 +54,6 @@ entity system_calls is
     clk         : in  std_logic;
     reset       : in  std_logic;
     valid       : in  std_logic;
-    stall_in    : in  std_logic;
     stall_out   : out std_logic;
     rs1_data    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -206,7 +205,7 @@ begin  -- architecture rtl
           mcause                    <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, mcause'length));
           mepc                      <= current_pc;
           was_illegal               <= '1';
-        elsif instruction(MAJOR_OP'range) = SYSTEM_OP and stall_in = '0' then
+        elsif instruction(MAJOR_OP'range) = SYSTEM_OP then
           if func3 /= "000" then
                                         -----------------------------------------------------------------------------
             -- CSR Read/Write

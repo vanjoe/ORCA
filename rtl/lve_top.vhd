@@ -23,7 +23,6 @@ entity lve_top is
     reset          : in std_logic;
     instruction    : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     valid_instr    : in std_logic;
-    stall_to_lve   : in std_logic;
     rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
@@ -46,7 +45,6 @@ entity lve_top is
 end entity;
 
 architecture rtl of lve_top is
-
   constant CUSTOM0 : std_logic_vector(6 downto 0) := "0101011";
 
   alias is_prefix : std_logic is instruction(27);
@@ -215,7 +213,7 @@ begin
   begin
     if rising_edge(clk) then
 
-      if valid_lve_instr = '1' and not stall_to_lve = '1' then
+      if valid_lve_instr = '1' then
 
         if lve_result_valid = '1' then
           if acc = '0' then
@@ -382,17 +380,16 @@ begin
       data_out         => ci_result
       );
 
-
   scalar_enable <= srca_s;
   enum_enable   <= srcb_e;
-
 
   scratchpad_memory : ram_4port
     generic map (
       MEM_WIDTH       => 32,
       MEM_DEPTH       => SCRATCHPAD_SIZE/4,
       POWER_OPTIMIZED => POWER_OPTIMIZED,
-      FAMILY          => FAMILY)
+      FAMILY          => FAMILY
+      )
     port map (
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
@@ -425,6 +422,7 @@ begin
       byte_en3  => slave_byte_en_reg,
       data_in3  => slave_data_in_reg,
       ack3      => slave_ack,
-      data_out3 => slave_data_out);
+      data_out3 => slave_data_out
+      );
 
 end architecture;

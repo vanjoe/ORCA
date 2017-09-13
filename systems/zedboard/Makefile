@@ -90,7 +90,7 @@ resource_utilization.rpt: $(IMPL_BIT) $(RESOURCE_TCL)
 
 .PHONY: pgm
 pgm: $(OUT_BIT)
-	xmd -tcl $(PGM_TCL) $(OUT_BIT) ps7_init.tcl arm.elf
+	xsdb $(PGM_TCL) $(OUT_BIT) ps7_init.tcl arm.elf
 
 .PHONY: run
 run::
@@ -103,7 +103,7 @@ endif #else #ifeq ($(ELF_FILE), NONE)
 
 .PHONY: clean
 clean:
-	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) $(MMI_FILE) *.jou *.log tmp.* vivado_pid*.zip export_sim/
+	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) $(MMI_FILE) *.jou *.log tmp.* vivado_pid* export_sim/
 	make clean -C $(SW_DIR)
 
 .DELETE_ON_ERROR:

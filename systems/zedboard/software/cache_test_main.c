@@ -9,7 +9,7 @@
    (((BYTES) << 0)  & 0x000FF000) |             \
    0x6F);
 
-#define USE_ONCHIP_MEM 0
+#define USE_ONCHIP_MEM 1
 
 #define WAIT_SECONDS_BEFORE_START 0
 

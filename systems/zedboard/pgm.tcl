@@ -1,6 +1,7 @@
 #Connect and reset
-connect arm hw
-stop
+connect
+target -set -filter {name =~ "ARM*#1"}
+catch { stop } error
 rst -srst
 
 #source ps7_init.tcl
@@ -14,4 +15,4 @@ dow [lindex $argv 2]
 #con
 
 #program bitstream
-fpga -f [lindex $argv 0]
+fpga -partial -file [lindex $argv 0]

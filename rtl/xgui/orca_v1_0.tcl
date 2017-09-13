@@ -16,6 +16,8 @@ proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "COUNTER_LENGTH"
   ipgui::add_param $IPINST -name "ENABLE_EXCEPTIONS"
   ipgui::add_param $IPINST -name "BRANCH_PREDICTORS"
+  ipgui::add_param $IPINST -name "DATA_REQUEST_REGISTER"
+  ipgui::add_param $IPINST -name "DATA_RETURN_REGISTER"
   ipgui::add_param $IPINST -name "PIPELINE_STAGES"
   ipgui::add_param $IPINST -name "LVE_ENABLE"
   ipgui::add_param $IPINST -name "ENABLE_EXT_INTERRUPTS"
@@ -56,6 +58,24 @@ proc update_PARAM_VALUE.BRANCH_PREDICTORS { PARAM_VALUE.BRANCH_PREDICTORS } {
 
 proc validate_PARAM_VALUE.BRANCH_PREDICTORS { PARAM_VALUE.BRANCH_PREDICTORS } {
 	# Procedure called to validate BRANCH_PREDICTORS
+	return true
+}
+
+proc update_PARAM_VALUE.DATA_REQUEST_REGISTER { PARAM_VALUE.DATA_REQUEST_REGISTER } {
+	# Procedure called to update DATA_REQUEST_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.DATA_REQUEST_REGISTER { PARAM_VALUE.DATA_REQUEST_REGISTER } {
+	# Procedure called to validate DATA_REQUEST_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.DATA_RETURN_REGISTER { PARAM_VALUE.DATA_RETURN_REGISTER } {
+	# Procedure called to update DATA_RETURN_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.DATA_RETURN_REGISTER { PARAM_VALUE.DATA_RETURN_REGISTER } {
+	# Procedure called to validate DATA_RETURN_REGISTER
 	return true
 }
 
@@ -316,6 +336,16 @@ proc update_MODELPARAM_VALUE.ENABLE_EXCEPTIONS { MODELPARAM_VALUE.ENABLE_EXCEPTI
 proc update_MODELPARAM_VALUE.BRANCH_PREDICTORS { MODELPARAM_VALUE.BRANCH_PREDICTORS PARAM_VALUE.BRANCH_PREDICTORS } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.BRANCH_PREDICTORS}] ${MODELPARAM_VALUE.BRANCH_PREDICTORS}
+}
+
+proc update_MODELPARAM_VALUE.DATA_REQUEST_REGISTER { MODELPARAM_VALUE.DATA_REQUEST_REGISTER PARAM_VALUE.DATA_REQUEST_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.DATA_REQUEST_REGISTER}] ${MODELPARAM_VALUE.DATA_REQUEST_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.DATA_RETURN_REGISTER { MODELPARAM_VALUE.DATA_RETURN_REGISTER PARAM_VALUE.DATA_RETURN_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.DATA_RETURN_REGISTER}] ${MODELPARAM_VALUE.DATA_RETURN_REGISTER}
 }
 
 proc update_MODELPARAM_VALUE.PIPELINE_STAGES { MODELPARAM_VALUE.PIPELINE_STAGES PARAM_VALUE.PIPELINE_STAGES } {

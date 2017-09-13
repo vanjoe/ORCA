@@ -24,6 +24,8 @@ entity orca is
     ENABLE_EXCEPTIONS     : natural                       := 1;
     BRANCH_PREDICTORS     : natural                       := 0;
     PIPELINE_STAGES       : natural range 4 to 5          := 5;
+    DATA_REQUEST_REGISTER : natural range 0 to 2          := 1;
+    DATA_RETURN_REGISTER  : natural range 0 to 1          := 0;
     LVE_ENABLE            : natural range 0 to 1          := 0;
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1          := 0;
     NUM_EXT_INTERRUPTS    : integer range 1 to 32         := 1;
@@ -251,19 +253,24 @@ entity orca is
 end entity orca;
 
 architecture rtl of orca is
-  signal core_data_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_byteenable : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-  signal core_data_read       : std_logic;
-  signal core_data_readdata   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_write      : std_logic;
-  signal core_data_writedata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_data_ack        : std_logic;
+  --Currently only AXI3 supported so fix I$ burstlength to 16 max
+  constant ICACHE_MAX_BURSTLENGTH : positive := 16;
 
-  signal core_instruction_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_instruction_read          : std_logic;
-  signal core_instruction_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal core_instruction_waitrequest   : std_logic;
-  signal core_instruction_readdatavalid : std_logic;
+  signal lsu_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lsu_oimm_byteenable    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+  signal lsu_oimm_requestvalid  : std_logic;
+  signal lsu_oimm_readnotwrite  : std_logic;
+  signal lsu_oimm_writedata     : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lsu_oimm_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lsu_oimm_readdatavalid : std_logic;
+  signal lsu_oimm_waitrequest   : std_logic;
+
+  signal ifetch_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ifetch_oimm_requestvalid  : std_logic;
+  signal ifetch_oimm_readnotwrite  : std_logic;
+  signal ifetch_oimm_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ifetch_oimm_waitrequest   : std_logic;
+  signal ifetch_oimm_readdatavalid : std_logic;
 
   signal sp_address   : std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
   signal sp_byte_en   : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
@@ -272,560 +279,9 @@ architecture rtl of orca is
   signal sp_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sp_readdata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sp_ack       : std_logic;
-
 begin  -- architecture rtl
-  assert (AVALON_ENABLE + WISHBONE_ENABLE + AXI_ENABLE = 1) report "Exactly one bus type must be enabled" severity failure;
-
-  -----------------------------------------------------------------------------
-  -- AVALON
-  -----------------------------------------------------------------------------
-  avalon_enabled : if AVALON_ENABLE = 1 generate
-    signal is_writing : std_logic;
-    signal is_reading : std_logic;
-    signal write_ack  : std_logic;
-
-    signal ack_mask : std_logic;
-  begin
-    core_data_readdata <= avm_data_readdata;
-
-    core_data_ack  <= avm_data_readdatavalid or write_ack;
-    avm_data_write <= is_writing;
-    avm_data_read  <= is_reading;
-    process(clk)
-
-    begin
-      if rising_edge(clk) then
-
-        if (is_writing or is_reading) = '1' and avm_data_waitrequest = '1' then
-
-        else
-          is_reading          <= core_data_read;
-          avm_data_address    <= core_data_address;
-          is_writing          <= core_data_write;
-          avm_data_writedata  <= core_data_writedata;
-          avm_data_byteenable <= core_data_byteenable;
-        end if;
-
-        write_ack <= '0';
-        if is_writing = '1' and avm_data_waitrequest = '0' then
-          write_ack <= '1';
-        end if;
-      end if;
-
-    end process;
-
-    avm_instruction_address        <= core_instruction_address;
-    avm_instruction_read           <= core_instruction_read;
-    core_instruction_readdata      <= avm_instruction_readdata;
-    core_instruction_waitrequest   <= avm_instruction_waitrequest;
-    core_instruction_readdatavalid <= avm_instruction_readdatavalid;
-
-    sp_address              <= avm_scratch_address;
-    sp_byte_en              <= avm_scratch_byteenable;
-    sp_read_en              <= avm_scratch_read;
-    sp_write_en             <= avm_scratch_write;
-    sp_writedata            <= avm_scratch_writedata;
-    avm_scratch_readdata    <= sp_readdata;
-    avm_scratch_waitrequest <= '0';
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        if sp_ack = '1' then
-          ack_mask <= '0';
-        end if;
-        if sp_read_en = '1' then
-          ack_mask <= '1';
-        end if;
-      end if;
-    end process;
-    avm_scratch_readdatavalid <= sp_ack and ack_mask;
-
-  end generate avalon_enabled;
-
-  -----------------------------------------------------------------------------
-  -- WISHBONE
-  -----------------------------------------------------------------------------
-  wishbone_enabled : if WISHBONE_ENABLE = 1 generate
-    signal is_read_transaction : std_logic;
-  begin
-    core_data_readdata <= data_DAT_I;
-    core_data_ack      <= data_ACK_I;
-
-    instr_ADR_O                    <= core_instruction_address;
-    instr_CYC_O                    <= core_instruction_read;
-    instr_STB_O                    <= core_instruction_read;
-    core_instruction_readdata      <= instr_DAT_I;
-    core_instruction_waitrequest   <= instr_STALL_I;
-    core_instruction_readdatavalid <= instr_ACK_I;
-
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        if data_STALL_I = '0' then
-          data_ADR_O <= core_data_address;
-          data_SEL_O <= core_data_byteenable;
-          data_CYC_O <= core_data_read or core_data_write;
-          data_STB_O <= core_data_read or core_data_write;
-          data_WE_O  <= core_data_write;
-          data_DAT_O <= core_data_writedata;
-        end if;
-      end if;
-    end process;
-
-    --scrachpad slave
-    sp_address   <= sp_ADR_I;
-    sp_DAT_O     <= sp_readdata;
-    sp_writedata <= sp_DAT_I;
-    sp_write_en  <= sp_WE_I and sp_STB_I and sp_CYC_I;
-    sp_read_en   <= not sp_WE_I and sp_STB_I and sp_CYC_I;
-    sp_byte_en   <= sp_SEL_I;
-    sp_ACK_O     <= sp_ack;
-    sp_STALL_O   <= '0';
-
-
-  end generate wishbone_enabled;
-
-  axi_enabled : if AXI_ENABLE = 1 generate
-    constant A4L_BURST_LEN  : std_logic_vector(3 downto 0) := "0000";
-    constant A4L_BURST_SIZE : std_logic_vector(2 downto 0) := std_logic_vector(to_unsigned(log2(REGISTER_SIZE/8), 3));
-    constant A4L_BURST_INCR : std_logic_vector(1 downto 0) := "01";
-    constant A4L_LOCK_VAL   : std_logic_vector(1 downto 0) := "00";
-    constant A4L_CACHE_VAL  : std_logic_vector(3 downto 0) := "0000";
-
-    signal axi_resetn : std_logic;
-
-    signal instr_AWID    : std_logic_vector(3 downto 0);
-    signal instr_AWADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-    signal instr_AWPROT  : std_logic_vector(2 downto 0);
-    signal instr_AWVALID : std_logic;
-    signal instr_AWREADY : std_logic;
-
-    signal instr_WID    : std_logic_vector(3 downto 0);
-    signal instr_WDATA  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-    signal instr_WSTRB  : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-    signal instr_WVALID : std_logic;
-    signal instr_WREADY : std_logic;
-
-    signal instr_BID    : std_logic_vector(3 downto 0);
-    signal instr_BRESP  : std_logic_vector(1 downto 0);
-    signal instr_BVALID : std_logic;
-    signal instr_BREADY : std_logic;
-
-    signal instr_ARID    : std_logic_vector(3 downto 0);
-    signal instr_ARADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-    signal instr_ARPROT  : std_logic_vector(2 downto 0);
-    signal instr_ARVALID : std_logic;
-    signal instr_ARREADY : std_logic;
-
-    signal instr_RID    : std_logic_vector(3 downto 0);
-    signal instr_RDATA  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-    signal instr_RRESP  : std_logic_vector(1 downto 0);
-    signal instr_RVALID : std_logic;
-    signal instr_RREADY : std_logic;
-
-    signal core_instruction_write     : std_logic;
-    signal core_instruction_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  begin
-    axi_resetn                 <= not reset;
-    core_instruction_write     <= '0';
-    core_instruction_writedata <= (others => '0');
-
-    --Uncached bus signals are AXI4L, translate to AXI3 if needed
-    DUC_AWID    <= (others => '0');
-    DUC_AWLEN   <= A4L_BURST_LEN;
-    DUC_AWSIZE  <= A4L_BURST_SIZE;
-    DUC_AWBURST <= A4L_BURST_INCR;
-    DUC_AWLOCK  <= A4L_LOCK_VAL;
-    DUC_AWCACHE <= A4L_CACHE_VAL;
-    DUC_WID     <= (others => '0');
-    DUC_WLAST   <= '1';
-    DUC_ARID    <= (others => '0');
-    DUC_ARLEN   <= A4L_BURST_LEN;
-    DUC_ARSIZE  <= A4L_BURST_SIZE;
-    DUC_ARBURST <= A4L_BURST_INCR;
-    DUC_ARLOCK  <= A4L_LOCK_VAL;
-    DUC_ARCACHE <= A4L_CACHE_VAL;
-
-    IUC_AWID    <= (others => '0');
-    IUC_AWLEN   <= A4L_BURST_LEN;
-    IUC_AWSIZE  <= A4L_BURST_SIZE;
-    IUC_AWBURST <= A4L_BURST_INCR;
-    IUC_AWLOCK  <= A4L_LOCK_VAL;
-    IUC_AWCACHE <= A4L_CACHE_VAL;
-    IUC_WID     <= (others => '0');
-    IUC_WLAST   <= '1';
-    IUC_ARID    <= (others => '0');
-    IUC_ARLEN   <= A4L_BURST_LEN;
-    IUC_ARSIZE  <= A4L_BURST_SIZE;
-    IUC_ARBURST <= A4L_BURST_INCR;
-    IUC_ARLOCK  <= A4L_LOCK_VAL;
-    IUC_ARCACHE <= A4L_CACHE_VAL;
-
-    data_master : a4l_master
-      generic map (
-        ADDR_WIDTH    => REGISTER_SIZE,
-        REGISTER_SIZE => REGISTER_SIZE,
-        BYTE_SIZE     => 8
-        )
-      port map (
-        clk     => clk,
-        aresetn => axi_resetn,
-
-        core_data_address    => core_data_address,
-        core_data_byteenable => core_data_byteenable,
-        core_data_read       => core_data_read,
-        core_data_readdata   => core_data_readdata,
-        core_data_write      => core_data_write,
-        core_data_writedata  => core_data_writedata,
-        core_data_ack        => core_data_ack,
-
-        AWADDR  => DUC_AWADDR,
-        AWPROT  => DUC_AWPROT,
-        AWVALID => DUC_AWVALID,
-        AWREADY => DUC_AWREADY,
-
-        WSTRB  => DUC_WSTRB,
-        WVALID => DUC_WVALID,
-        WDATA  => DUC_WDATA,
-        WREADY => DUC_WREADY,
-
-        BRESP  => DUC_BRESP,
-        BVALID => DUC_BVALID,
-        BREADY => DUC_BREADY,
-
-        ARADDR  => DUC_ARADDR,
-        ARPROT  => DUC_ARPROT,
-        ARVALID => DUC_ARVALID,
-        ARREADY => DUC_ARREADY,
-
-        RDATA  => DUC_RDATA,
-        RRESP  => DUC_RRESP,
-        RVALID => DUC_RVALID,
-        RREADY => DUC_RREADY
-        );
-
-    -- Instruction read port
-    instruction_master : a4l_instruction_master
-      generic map (
-        REGISTER_SIZE => REGISTER_SIZE,
-        BYTE_SIZE     => 8
-        )
-      port map (
-        clk                            => clk,
-        aresetn                        => axi_resetn,
-        core_instruction_address       => core_instruction_address,
-        core_instruction_read          => core_instruction_read,
-        core_instruction_readdata      => core_instruction_readdata,
-        core_instruction_readdatavalid => core_instruction_readdatavalid,
-        core_instruction_write         => core_instruction_write,
-        core_instruction_writedata     => core_instruction_writedata,
-        core_instruction_waitrequest   => core_instruction_waitrequest,
-
-        AWADDR  => instr_AWADDR,
-        AWPROT  => instr_AWPROT,
-        AWVALID => instr_AWVALID,
-        AWREADY => instr_AWREADY,
-
-        WSTRB  => instr_WSTRB,
-        WVALID => instr_WVALID,
-        WDATA  => instr_WDATA,
-        WREADY => instr_WREADY,
-
-        BRESP  => instr_BRESP,
-        BVALID => instr_BVALID,
-        BREADY => instr_BREADY,
-
-        ARADDR  => instr_ARADDR,
-        ARPROT  => instr_ARPROT,
-        ARVALID => instr_ARVALID,
-        ARREADY => instr_ARREADY,
-
-        RDATA  => instr_RDATA,
-        RRESP  => instr_RRESP,
-        RVALID => instr_RVALID,
-        RREADY => instr_RREADY
-        );
-
-    instruction_cache : if ICACHE_SIZE /= 0 generate
-      signal cache_AWID    : std_logic_vector(3 downto 0);
-      signal cache_AWADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-      signal cache_AWPROT  : std_logic_vector(2 downto 0);
-      signal cache_AWVALID : std_logic;
-      signal cache_AWREADY : std_logic;
-
-      signal cache_WID    : std_logic_vector(3 downto 0);
-      signal cache_WDATA  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-      signal cache_WSTRB  : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-      signal cache_WVALID : std_logic;
-      signal cache_WREADY : std_logic;
-
-      signal cache_BID    : std_logic_vector(3 downto 0);
-      signal cache_BRESP  : std_logic_vector(1 downto 0);
-      signal cache_BVALID : std_logic;
-      signal cache_BREADY : std_logic;
-
-      signal cache_ARID    : std_logic_vector(3 downto 0);
-      signal cache_ARADDR  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-      signal cache_ARPROT  : std_logic_vector(2 downto 0);
-      signal cache_ARVALID : std_logic;
-      signal cache_ARREADY : std_logic;
-
-      signal cache_RID    : std_logic_vector(3 downto 0);
-      signal cache_RDATA  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-      signal cache_RRESP  : std_logic_vector(1 downto 0);
-      signal cache_RVALID : std_logic;
-      signal cache_RREADY : std_logic;
-    begin
-
-      instruction_cache_mux : cache_mux
-        generic map (
-          UC_ADDR_BASE  => IUC_ADDR_BASE,
-          UC_ADDR_LAST  => IUC_ADDR_LAST,
-          ADDR_WIDTH    => REGISTER_SIZE,
-          REGISTER_SIZE => REGISTER_SIZE,
-          BYTE_SIZE     => 8
-          )
-        port map (
-          clk   => clk,
-          reset => reset,
-
-          in_AWID    => instr_AWID,
-          in_AWADDR  => instr_AWADDR,
-          in_AWPROT  => instr_AWPROT,
-          in_AWVALID => instr_AWVALID,
-          in_AWREADY => instr_AWREADY,
-
-          in_WID    => instr_WID,
-          in_WDATA  => instr_WDATA,
-          in_WSTRB  => instr_WSTRB,
-          in_WVALID => instr_WVALID,
-          in_WREADY => instr_WREADY,
-
-          in_BID    => instr_BID,
-          in_BRESP  => instr_BRESP,
-          in_BVALID => instr_BVALID,
-          in_BREADY => instr_BREADY,
-
-          in_ARID    => instr_ARID,
-          in_ARADDR  => instr_ARADDR,
-          in_ARPROT  => instr_ARPROT,
-          in_ARVALID => instr_ARVALID,
-          in_ARREADY => instr_ARREADY,
-
-          in_RID    => instr_RID,
-          in_RDATA  => instr_RDATA,
-          in_RRESP  => instr_RRESP,
-          in_RVALID => instr_RVALID,
-          in_RREADY => instr_RREADY,
-
-          cache_AWID    => cache_AWID,
-          cache_AWADDR  => cache_AWADDR,
-          cache_AWPROT  => cache_AWPROT,
-          cache_AWVALID => cache_AWVALID,
-          cache_AWREADY => cache_AWREADY,
-
-          cache_WID    => cache_WID,
-          cache_WDATA  => cache_WDATA,
-          cache_WSTRB  => cache_WSTRB,
-          cache_WVALID => cache_WVALID,
-          cache_WREADY => cache_WREADY,
-
-          cache_BID    => cache_BID,
-          cache_BRESP  => cache_BRESP,
-          cache_BVALID => cache_BVALID,
-          cache_BREADY => cache_BREADY,
-
-          cache_ARID    => cache_ARID,
-          cache_ARADDR  => cache_ARADDR,
-          cache_ARPROT  => cache_ARPROT,
-          cache_ARVALID => cache_ARVALID,
-          cache_ARREADY => cache_ARREADY,
-
-          cache_RID    => cache_RID,
-          cache_RDATA  => cache_RDATA,
-          cache_RRESP  => cache_RRESP,
-          cache_RVALID => cache_RVALID,
-          cache_RREADY => cache_RREADY,
-
-          uc_AWADDR  => IUC_AWADDR,
-          uc_AWPROT  => IUC_AWPROT,
-          uc_AWVALID => IUC_AWVALID,
-          uc_AWREADY => IUC_AWREADY,
-
-          uc_WDATA  => IUC_WDATA,
-          uc_WSTRB  => IUC_WSTRB,
-          uc_WVALID => IUC_WVALID,
-          uc_WREADY => IUC_WREADY,
-
-          uc_BRESP  => IUC_BRESP,
-          uc_BVALID => IUC_BVALID,
-          uc_BREADY => IUC_BREADY,
-
-          uc_ARADDR  => IUC_ARADDR,
-          uc_ARPROT  => IUC_ARPROT,
-          uc_ARVALID => IUC_ARVALID,
-          uc_ARREADY => IUC_ARREADY,
-
-          uc_RDATA  => IUC_RDATA,
-          uc_RRESP  => IUC_RRESP,
-          uc_RVALID => IUC_RVALID,
-          uc_RREADY => IUC_RREADY
-          );
-
-      instruction_cache : icache
-        generic map (
-          CACHE_SIZE     => ICACHE_SIZE,       -- Byte size of cache
-          LINE_SIZE      => ICACHE_LINE_SIZE,  -- Bytes per cache line 
-          ADDR_WIDTH     => REGISTER_SIZE,
-          ORCA_WIDTH     => REGISTER_SIZE,
-          EXTERNAL_WIDTH => ICACHE_EXTERNAL_WIDTH,
-          BYTE_SIZE      => 8,
-          BURST_EN       => ICACHE_BURST_EN,
-          FAMILY         => FAMILY
-          )
-        port map (
-          clk   => clk,
-          reset => reset,
-
-          orca_AWID    => cache_AWID,
-          orca_AWADDR  => cache_AWADDR,
-          orca_AWPROT  => cache_AWPROT,
-          orca_AWVALID => cache_AWVALID,
-          orca_AWREADY => cache_AWREADY,
-
-          orca_WID    => cache_WID,
-          orca_WDATA  => cache_WDATA,
-          orca_WSTRB  => cache_WSTRB,
-          orca_WVALID => cache_WVALID,
-          orca_WREADY => cache_WREADY,
-
-          orca_BID    => cache_BID,
-          orca_BRESP  => cache_BRESP,
-          orca_BVALID => cache_BVALID,
-          orca_BREADY => cache_BREADY,
-
-          orca_ARID    => cache_ARID,
-          orca_ARADDR  => cache_ARADDR,
-          orca_ARPROT  => cache_ARPROT,
-          orca_ARVALID => cache_ARVALID,
-          orca_ARREADY => cache_ARREADY,
-
-          orca_RID    => cache_RID,
-          orca_RDATA  => cache_RDATA,
-          orca_RRESP  => cache_RRESP,
-          orca_RVALID => cache_RVALID,
-          orca_RREADY => cache_RREADY,
-
-          dram_AWID    => IC_AWID,
-          dram_AWADDR  => IC_AWADDR,
-          dram_AWLEN   => IC_AWLEN,
-          dram_AWSIZE  => IC_AWSIZE,
-          dram_AWBURST => IC_AWBURST,
-
-          dram_AWLOCK  => IC_AWLOCK,
-          dram_AWCACHE => IC_AWCACHE,
-          dram_AWPROT  => IC_AWPROT,
-          dram_AWVALID => IC_AWVALID,
-          dram_AWREADY => IC_AWREADY,
-
-          dram_WID    => IC_WID,
-          dram_WDATA  => IC_WDATA,
-          dram_WSTRB  => IC_WSTRB,
-          dram_WLAST  => IC_WLAST,
-          dram_WVALID => IC_WVALID,
-          dram_WREADY => IC_WREADY,
-
-          dram_BID    => IC_BID,
-          dram_BRESP  => IC_BRESP,
-          dram_BVALID => IC_BVALID,
-          dram_BREADY => IC_BREADY,
-
-          dram_ARID    => IC_ARID,
-          dram_ARADDR  => IC_ARADDR,
-          dram_ARLEN   => IC_ARLEN,
-          dram_ARSIZE  => IC_ARSIZE,
-          dram_ARBURST => IC_ARBURST,
-          dram_ARLOCK  => IC_ARLOCK,
-          dram_ARCACHE => IC_ARCACHE,
-          dram_ARPROT  => IC_ARPROT,
-          dram_ARVALID => IC_ARVALID,
-          dram_ARREADY => IC_ARREADY,
-
-          dram_RID    => IC_RID,
-          dram_RDATA  => IC_RDATA,
-          dram_RRESP  => IC_RRESP,
-          dram_RLAST  => IC_RLAST,
-          dram_RVALID => IC_RVALID,
-          dram_RREADY => IC_RREADY
-          );
-    end generate instruction_cache;
-
-    no_instruction_cache : if ICACHE_SIZE = 0 generate
-    begin
-      IC_AWID    <= (others => '0');
-      IC_AWADDR  <= (others => '0');
-      IC_AWLEN   <= (others => '0');
-      IC_AWSIZE  <= (others => '0');
-      IC_AWBURST <= (others => '0');
-
-      IC_AWLOCK  <= (others => '0');
-      IC_AWCACHE <= (others => '0');
-      IC_AWPROT  <= (others => '0');
-      IC_AWVALID <= '0';
-
-      IC_WID    <= (others => '0');
-      IC_WDATA  <= (others => '0');
-      IC_WSTRB  <= (others => '0');
-      IC_WLAST  <= '0';
-      IC_WVALID <= '0';
-
-      IC_BREADY <= '0';
-
-      IC_ARID    <= (others => '0');
-      IC_ARADDR  <= (others => '0');
-      IC_ARLEN   <= (others => '0');
-      IC_ARSIZE  <= (others => '0');
-      IC_ARBURST <= (others => '0');
-      IC_ARLOCK  <= (others => '0');
-      IC_ARCACHE <= (others => '0');
-      IC_ARPROT  <= (others => '0');
-      IC_ARVALID <= '0';
-
-      IC_RREADY <= '0';
-
-      IUC_AWID      <= instr_AWID;
-      IUC_AWADDR    <= instr_AWADDR;
-      IUC_AWPROT    <= instr_AWPROT;
-      IUC_AWVALID   <= instr_AWVALID;
-      instr_AWREADY <= IUC_AWREADY;
-
-      IUC_WID      <= instr_WID;
-      IUC_WDATA    <= instr_WDATA;
-      IUC_WSTRB    <= instr_WSTRB;
-      IUC_WVALID   <= instr_WVALID;
-      instr_WREADY <= IUC_WREADY;
-
-      instr_BID    <= IUC_BID;
-      instr_BRESP  <= IUC_BRESP;
-      instr_BVALID <= IUC_BVALID;
-      IUC_BREADY   <= instr_BREADY;
-
-      IUC_ARID      <= instr_ARID;
-      IUC_ARADDR    <= instr_ARADDR;
-      IUC_ARPROT    <= instr_ARPROT;
-      IUC_ARVALID   <= instr_ARVALID;
-      instr_ARREADY <= IUC_ARREADY;
-
-      instr_RID    <= IUC_RID;
-      instr_RDATA  <= IUC_RDATA;
-      instr_RRESP  <= IUC_RRESP;
-      instr_RVALID <= IUC_RVALID;
-      IUC_RREADY   <= instr_RREADY;
-    end generate no_instruction_cache;
-  end generate axi_enabled;
-
   core : orca_core
-    generic map(
+    generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
       RESET_VECTOR       => RESET_VECTOR,
       INTERRUPT_VECTOR   => INTERRUPT_VECTOR,
@@ -839,30 +295,34 @@ begin  -- architecture rtl
       PIPELINE_STAGES    => PIPELINE_STAGES,
       LVE_ENABLE         => LVE_ENABLE,
       NUM_EXT_INTERRUPTS => CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0),
-      SCRATCHPAD_SIZE    => CONDITIONAL(LVE_ENABLE = 1, 2**SCRATCHPAD_ADDR_BITS, 0),
-      FAMILY             => FAMILY)
-
-    port map(
+      SCRATCHPAD_SIZE    => 2**SCRATCHPAD_ADDR_BITS,
+      FAMILY             => FAMILY
+      )
+    port map (
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
 
-                                        --avalon master bus
-      core_data_address              => core_data_address,
-      core_data_byteenable           => core_data_byteenable,
-      core_data_read                 => core_data_read,
-      core_data_readdata             => core_data_readdata,
-      core_data_write                => core_data_write,
-      core_data_writedata            => core_data_writedata,
-      core_data_ack                  => core_data_ack,
-                                        --avalon master bus
-      core_instruction_address       => core_instruction_address,
-      core_instruction_read          => core_instruction_read,
-      core_instruction_readdata      => core_instruction_readdata,
-      core_instruction_waitrequest   => core_instruction_waitrequest,
-      core_instruction_readdatavalid => core_instruction_readdatavalid,
+      --Instruction memory-mapped master
+      ifetch_oimm_address       => ifetch_oimm_address,
+      ifetch_oimm_requestvalid  => ifetch_oimm_requestvalid,
+      ifetch_oimm_readnotwrite  => ifetch_oimm_readnotwrite,
+      ifetch_oimm_readdata      => ifetch_oimm_readdata,
+      ifetch_oimm_waitrequest   => ifetch_oimm_waitrequest,
+      ifetch_oimm_readdatavalid => ifetch_oimm_readdatavalid,
 
-      sp_address   => sp_address(CONDITIONAL(LVE_ENABLE = 1, SCRATCHPAD_ADDR_BITS, 0)-1 downto 0),
+      --Data memory-mapped master
+      lsu_oimm_address       => lsu_oimm_address,
+      lsu_oimm_byteenable    => lsu_oimm_byteenable,
+      lsu_oimm_requestvalid  => lsu_oimm_requestvalid,
+      lsu_oimm_readnotwrite  => lsu_oimm_readnotwrite,
+      lsu_oimm_writedata     => lsu_oimm_writedata,
+      lsu_oimm_readdata      => lsu_oimm_readdata,
+      lsu_oimm_readdatavalid => lsu_oimm_readdatavalid,
+      lsu_oimm_waitrequest   => lsu_oimm_waitrequest,
+
+      --Scratchpad memory-mapped slave
+      sp_address   => sp_address,
       sp_byte_en   => sp_byte_en,
       sp_write_en  => sp_write_en,
       sp_read_en   => sp_read_en,
@@ -870,6 +330,261 @@ begin  -- architecture rtl
       sp_readdata  => sp_readdata,
       sp_ack       => sp_ack,
 
-      external_interrupts => global_interrupts(CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0)-1 downto 0));
+      external_interrupts => global_interrupts(CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0)-1 downto 0)
+      );
+
+  the_memory_interface : memory_interface
+    generic map (
+      REGISTER_SIZE        => REGISTER_SIZE,
+      SCRATCHPAD_ADDR_BITS => SCRATCHPAD_ADDR_BITS,
+
+      --BUS Select
+      AVALON_ENABLE   => AVALON_ENABLE,
+      WISHBONE_ENABLE => WISHBONE_ENABLE,
+      AXI_ENABLE      => AXI_ENABLE,
+
+      DATA_REQUEST_REGISTER  => DATA_REQUEST_REGISTER,
+      DATA_RETURN_REGISTER   => DATA_RETURN_REGISTER,
+      IUC_ADDR_BASE          => IUC_ADDR_BASE,
+      IUC_ADDR_LAST          => IUC_ADDR_LAST,
+      ICACHE_SIZE            => ICACHE_SIZE,
+      ICACHE_LINE_SIZE       => ICACHE_LINE_SIZE,
+      ICACHE_EXTERNAL_WIDTH  => ICACHE_EXTERNAL_WIDTH,
+      ICACHE_MAX_BURSTLENGTH => ICACHE_MAX_BURSTLENGTH,
+      ICACHE_BURST_EN        => ICACHE_BURST_EN
+      )
+    port map (
+      clk            => clk,
+      scratchpad_clk => scratchpad_clk,
+      reset          => reset,
+
+      --Instruction memory-mapped master
+      ifetch_oimm_address       => ifetch_oimm_address,
+      ifetch_oimm_requestvalid  => ifetch_oimm_requestvalid,
+      ifetch_oimm_readnotwrite  => ifetch_oimm_readnotwrite,
+      ifetch_oimm_readdata      => ifetch_oimm_readdata,
+      ifetch_oimm_waitrequest   => ifetch_oimm_waitrequest,
+      ifetch_oimm_readdatavalid => ifetch_oimm_readdatavalid,
+
+      --Data memory-mapped master
+      lsu_oimm_address       => lsu_oimm_address,
+      lsu_oimm_byteenable    => lsu_oimm_byteenable,
+      lsu_oimm_requestvalid  => lsu_oimm_requestvalid,
+      lsu_oimm_readnotwrite  => lsu_oimm_readnotwrite,
+      lsu_oimm_writedata     => lsu_oimm_writedata,
+      lsu_oimm_readdata      => lsu_oimm_readdata,
+      lsu_oimm_readdatavalid => lsu_oimm_readdatavalid,
+      lsu_oimm_waitrequest   => lsu_oimm_waitrequest,
+
+      --Scratchpad memory-mapped slave
+      sp_address   => sp_address,
+      sp_byte_en   => sp_byte_en,
+      sp_write_en  => sp_write_en,
+      sp_read_en   => sp_read_en,
+      sp_writedata => sp_writedata,
+      sp_readdata  => sp_readdata,
+      sp_ack       => sp_ack,
+
+      -------------------------------------------------------------------------------
+      --AVALON
+      -------------------------------------------------------------------------------
+      --Avalon data master
+      avm_data_address       => avm_data_address,
+      avm_data_byteenable    => avm_data_byteenable,
+      avm_data_read          => avm_data_read,
+      avm_data_readdata      => avm_data_readdata,
+      avm_data_write         => avm_data_write,
+      avm_data_writedata     => avm_data_writedata,
+      avm_data_waitrequest   => avm_data_waitrequest,
+      avm_data_readdatavalid => avm_data_readdatavalid,
+
+      --Avalon instruction master
+      avm_instruction_address       => avm_instruction_address,
+      avm_instruction_read          => avm_instruction_read,
+      avm_instruction_readdata      => avm_instruction_readdata,
+      avm_instruction_waitrequest   => avm_instruction_waitrequest,
+      avm_instruction_readdatavalid => avm_instruction_readdatavalid,
+
+      -------------------------------------------------------------------------------
+      --WISHBONE
+      -------------------------------------------------------------------------------
+      --WISHBONE data master
+      data_ADR_O   => data_ADR_O,
+      data_DAT_I   => data_DAT_I,
+      data_DAT_O   => data_DAT_O,
+      data_WE_O    => data_WE_O,
+      data_SEL_O   => data_SEL_O,
+      data_STB_O   => data_STB_O,
+      data_ACK_I   => data_ACK_I,
+      data_CYC_O   => data_CYC_O,
+      data_CTI_O   => data_CTI_O,
+      data_STALL_I => data_STALL_I,
+
+      --WISHBONE instruction master
+      instr_ADR_O   => instr_ADR_O,
+      instr_DAT_I   => instr_DAT_I,
+      instr_STB_O   => instr_STB_O,
+      instr_ACK_I   => instr_ACK_I,
+      instr_CYC_O   => instr_CYC_O,
+      instr_CTI_O   => instr_CTI_O,
+      instr_STALL_I => instr_STALL_I,
+
+      -------------------------------------------------------------------------------
+      --AXI
+      -------------------------------------------------------------------------------
+      --AXI4-Lite uncached data master
+      --A full AXI3 interface is exposed for systems that require it, but
+      --only the A4L signals are needed
+      DUC_AWID    => DUC_AWID,
+      DUC_AWADDR  => DUC_AWADDR,
+      DUC_AWLEN   => DUC_AWLEN,
+      DUC_AWSIZE  => DUC_AWSIZE,
+      DUC_AWBURST => DUC_AWBURST,
+      DUC_AWLOCK  => DUC_AWLOCK,
+      DUC_AWCACHE => DUC_AWCACHE,
+      DUC_AWPROT  => DUC_AWPROT,
+      DUC_AWVALID => DUC_AWVALID,
+      DUC_AWREADY => DUC_AWREADY,
+
+      DUC_WID    => DUC_WID,
+      DUC_WDATA  => DUC_WDATA,
+      DUC_WSTRB  => DUC_WSTRB,
+      DUC_WLAST  => DUC_WLAST,
+      DUC_WVALID => DUC_WVALID,
+      DUC_WREADY => DUC_WREADY,
+
+      DUC_BID    => DUC_BID,
+      DUC_BRESP  => DUC_BRESP,
+      DUC_BVALID => DUC_BVALID,
+      DUC_BREADY => DUC_BREADY,
+
+      DUC_ARID    => DUC_ARID,
+      DUC_ARADDR  => DUC_ARADDR,
+      DUC_ARLEN   => DUC_ARLEN,
+      DUC_ARSIZE  => DUC_ARSIZE,
+      DUC_ARBURST => DUC_ARBURST,
+      DUC_ARLOCK  => DUC_ARLOCK,
+      DUC_ARCACHE => DUC_ARCACHE,
+      DUC_ARPROT  => DUC_ARPROT,
+      DUC_ARVALID => DUC_ARVALID,
+      DUC_ARREADY => DUC_ARREADY,
+
+      DUC_RID    => DUC_RID,
+      DUC_RDATA  => DUC_RDATA,
+      DUC_RRESP  => DUC_RRESP,
+      DUC_RLAST  => DUC_RLAST,
+      DUC_RVALID => DUC_RVALID,
+      DUC_RREADY => DUC_RREADY,
+
+      --AXI4-Lite uncached instruction master
+      --A full AXI3 interface is exposed for systems that require it, but
+      --only the A4L signals are needed
+      IUC_ARID    => IUC_ARID,
+      IUC_ARADDR  => IUC_ARADDR,
+      IUC_ARLEN   => IUC_ARLEN,
+      IUC_ARSIZE  => IUC_ARSIZE,
+      IUC_ARBURST => IUC_ARBURST,
+      IUC_ARLOCK  => IUC_ARLOCK,
+      IUC_ARCACHE => IUC_ARCACHE,
+      IUC_ARPROT  => IUC_ARPROT,
+      IUC_ARVALID => IUC_ARVALID,
+      IUC_ARREADY => IUC_ARREADY,
+
+      IUC_RID    => IUC_RID,
+      IUC_RDATA  => IUC_RDATA,
+      IUC_RRESP  => IUC_RRESP,
+      IUC_RLAST  => IUC_RLAST,
+      IUC_RVALID => IUC_RVALID,
+      IUC_RREADY => IUC_RREADY,
+
+      IUC_AWID    => IUC_AWID,
+      IUC_AWADDR  => IUC_AWADDR,
+      IUC_AWLEN   => IUC_AWLEN,
+      IUC_AWSIZE  => IUC_AWSIZE,
+      IUC_AWBURST => IUC_AWBURST,
+      IUC_AWLOCK  => IUC_AWLOCK,
+      IUC_AWCACHE => IUC_AWCACHE,
+      IUC_AWPROT  => IUC_AWPROT,
+      IUC_AWVALID => IUC_AWVALID,
+      IUC_AWREADY => IUC_AWREADY,
+
+      IUC_WID    => IUC_WID,
+      IUC_WDATA  => IUC_WDATA,
+      IUC_WSTRB  => IUC_WSTRB,
+      IUC_WLAST  => IUC_WLAST,
+      IUC_WVALID => IUC_WVALID,
+      IUC_WREADY => IUC_WREADY,
+
+      IUC_BID    => IUC_BID,
+      IUC_BRESP  => IUC_BRESP,
+      IUC_BVALID => IUC_BVALID,
+      IUC_BREADY => IUC_BREADY,
+
+      --AXI3 cacheable instruction master
+      IC_ARID    => IC_ARID,
+      IC_ARADDR  => IC_ARADDR,
+      IC_ARLEN   => IC_ARLEN,
+      IC_ARSIZE  => IC_ARSIZE,
+      IC_ARBURST => IC_ARBURST,
+      IC_ARLOCK  => IC_ARLOCK,
+      IC_ARCACHE => IC_ARCACHE,
+      IC_ARPROT  => IC_ARPROT,
+      IC_ARVALID => IC_ARVALID,
+      IC_ARREADY => IC_ARREADY,
+
+      IC_RID    => IC_RID,
+      IC_RDATA  => IC_RDATA,
+      IC_RRESP  => IC_RRESP,
+      IC_RLAST  => IC_RLAST,
+      IC_RVALID => IC_RVALID,
+      IC_RREADY => IC_RREADY,
+
+      IC_AWID    => IC_AWID,
+      IC_AWADDR  => IC_AWADDR,
+      IC_AWLEN   => IC_AWLEN,
+      IC_AWSIZE  => IC_AWSIZE,
+      IC_AWBURST => IC_AWBURST,
+      IC_AWLOCK  => IC_AWLOCK,
+      IC_AWCACHE => IC_AWCACHE,
+      IC_AWPROT  => IC_AWPROT,
+      IC_AWVALID => IC_AWVALID,
+      IC_AWREADY => IC_AWREADY,
+
+      IC_WID    => IC_WID,
+      IC_WDATA  => IC_WDATA,
+      IC_WSTRB  => IC_WSTRB,
+      IC_WLAST  => IC_WLAST,
+      IC_WVALID => IC_WVALID,
+      IC_WREADY => IC_WREADY,
+      IC_BID    => IC_BID,
+      IC_BRESP  => IC_BRESP,
+      IC_BVALID => IC_BVALID,
+      IC_BREADY => IC_BREADY,
+
+      -------------------------------------------------------------------------------
+      -- Scratchpad Slave
+      -------------------------------------------------------------------------------
+      --Avalon scratchpad slave
+      avm_scratch_address       => avm_scratch_address,
+      avm_scratch_byteenable    => avm_scratch_byteenable,
+      avm_scratch_read          => avm_scratch_read,
+      avm_scratch_readdata      => avm_scratch_readdata,
+      avm_scratch_write         => avm_scratch_write,
+      avm_scratch_writedata     => avm_scratch_writedata,
+      avm_scratch_waitrequest   => avm_scratch_waitrequest,
+      avm_scratch_readdatavalid => avm_scratch_readdatavalid,
+
+      --WISHBONE scratchpad slave
+      sp_ADR_I   => sp_ADR_I,
+      sp_DAT_O   => sp_DAT_O,
+      sp_DAT_I   => sp_DAT_I,
+      sp_WE_I    => sp_WE_I,
+      sp_SEL_I   => sp_SEL_I,
+      sp_STB_I   => sp_STB_I,
+      sp_ACK_O   => sp_ACK_O,
+      sp_CYC_I   => sp_CYC_I,
+      sp_CTI_I   => sp_CTI_I,
+      sp_STALL_O => sp_STALL_O
+      );
 
 end architecture rtl;

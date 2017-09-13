@@ -22,6 +22,7 @@ entity execute is
     SHIFTER_MAX_CYCLES  : natural;
     COUNTER_LENGTH      : natural;
     ENABLE_EXCEPTIONS   : boolean;
+    LVE_ENABLE          : natural;
     SCRATCHPAD_SIZE     : integer;
     FAMILY              : string
     );
@@ -48,16 +49,17 @@ entity execute is
     branch_pred        : out    std_logic_vector((REGISTER_SIZE*2)+3-1 downto 0);
     stall_from_execute : buffer std_logic;
 
-    --memory-bus master
-    address   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    byte_en   : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-    write_en  : out std_logic;
-    read_en   : out std_logic;
-    writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_ack  : in  std_logic;
+    --Data Orca-internal memory-mapped master
+    lsu_oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lsu_oimm_byteenable    : out    std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+    lsu_oimm_requestvalid  : buffer std_logic;
+    lsu_oimm_readnotwrite  : buffer std_logic;
+    lsu_oimm_writedata     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lsu_oimm_readdata      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lsu_oimm_readdatavalid : in     std_logic;
+    lsu_oimm_waitrequest   : in     std_logic;
 
-    --memory-bus scratchpad-slave
+    --Scratchpad memory-mapped slave
     sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
     sp_byte_en   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     sp_write_en  : in  std_logic;
@@ -84,16 +86,8 @@ architecture behavioural of execute is
   signal predict_corr    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal predict_corr_en : std_logic;
 
-  signal stall_to_syscall   : std_logic;
+  signal stall_to_execute   : std_logic;
   signal stall_from_syscall : std_logic;
-
-  signal ls_address    : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ls_byte_en    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-  signal ls_write_en   : std_logic;
-  signal ls_read_en    : std_logic;
-  signal ls_write_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ls_read_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ls_ack        : std_logic;
 
 
   -- various writeback sources
@@ -111,7 +105,6 @@ architecture behavioural of execute is
   signal less_than          : std_logic;
   signal wb_mux             : std_logic_vector(1 downto 0);
 
-  signal stall_to_alu   : std_logic;
   signal stall_from_alu : std_logic;
 
   signal br_bad_predict : std_logic;
@@ -127,8 +120,8 @@ architecture behavioural of execute is
   signal alu_rs1_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal alu_rs2_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal stall_to_lsu    : std_logic;
-  signal ls_unit_waiting : std_logic;
+  signal writeback_stall_from_lsu : std_logic;
+  signal stall_from_lsu           : std_logic;
 
   signal fwd_sel  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal fwd_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -139,13 +132,12 @@ architecture behavioural of execute is
   signal lve_alu_data1        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lve_alu_data2        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lve_alu_source_valid : std_logic;
-  signal stall_to_lve         : std_logic;
 
   signal valid_instr : std_logic;
   signal rd_latch    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
 
-  constant ZERO : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := (others => '0');
+  constant R_ZERO : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := (others => '0');
 
   type fwd_mux_t is (ALU_FWD, NO_FWD);
   signal rs1_mux : fwd_mux_t;
@@ -153,25 +145,20 @@ architecture behavioural of execute is
 
   signal finished_instr : std_logic;
 
-
   signal entire_pipeline_empty : std_logic;
   signal is_branch             : std_logic;
   signal br_taken_out          : std_logic;
 
+  alias subseq_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(19 downto 15);
+  alias subseq_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
 
-  alias ni_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(19 downto 15);
-  alias ni_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
+  signal use_after_produce_stall : std_logic;
 
-  constant LVE_ENABLE : boolean := SCRATCHPAD_SIZE /= 0;
-
-  signal use_after_produce_stall      : std_logic;
-  signal use_after_produce_stall_mask : std_logic;
-
-  signal stalled_component : std_logic;
-  signal simd_op_size      : std_logic_vector(1 downto 0);
-
+  signal simd_op_size : std_logic_vector(1 downto 0);
 begin
-  valid_instr <= valid_input and not use_after_produce_stall;
+  --These stalls happen during the writeback cycle
+  stall_to_execute <= use_after_produce_stall or writeback_stall_from_lsu;
+  valid_instr      <= valid_input and (not stall_to_execute);
   -----------------------------------------------------------------------------
   -- REGISTER FORWADING
   -- Knowing the next instruction coming downt the pipeline, we can
@@ -193,10 +180,10 @@ begin
 
 
 
-  alu_rs1_data <= rs1_data_fwd when not LVE_ENABLE else
+  alu_rs1_data <= rs1_data_fwd when LVE_ENABLE = 0 else
                   lve_alu_data1 when lve_alu_source_valid = '1' else
                   alu_data_out  when rs1_mux = ALU_FWD else rs1_data;
-  alu_rs2_data <= rs2_data_fwd when not LVE_ENABLE else
+  alu_rs2_data <= rs2_data_fwd when LVE_ENABLE = 0 else
                   lve_alu_data2 when lve_alu_source_valid = '1' else
                   alu_data_out  when rs2_mux = ALU_FWD else rs2_data;
 
@@ -233,7 +220,7 @@ begin
                 ld_data_enable or
                 br_data_enable or
                 (alu_data_out_valid and (not lve_executing)))
-               when wb_sel /= ZERO else
+               when wb_sel /= R_ZERO else
                '0';
   wb_sel <= rd_latch;
 
@@ -241,78 +228,66 @@ begin
               alu_data_out when alu_data_out_valid = '1' else
               br_data_out;
 
-  stalled_component  <= ls_unit_waiting or stall_from_alu or use_after_produce_stall or lve_executing or stall_from_syscall;
-  stall_to_lve       <= (ls_unit_waiting or use_after_produce_stall);
-  stall_to_alu       <= (ls_unit_waiting or use_after_produce_stall);
-  stall_from_execute <= stalled_component and valid_input;
-  stall_to_lsu       <= stalled_component;
-  stall_to_syscall   <= stalled_component;
+  stall_from_execute <= valid_input and (stall_to_execute or
+                                         stall_from_lsu or
+                                         stall_from_alu or
+                                         lve_executing or
+                                         stall_from_syscall);
 
   process(clk)
-    variable current_alu  : boolean;
     variable no_fwd_path  : boolean;
     variable rs1_mux_var  : fwd_mux_t;
     variable rs2_mux_var  : fwd_mux_t;
     variable rd_latch_var : std_logic_vector(rd'range);
   begin
     if rising_edge(clk) then
-      --calculate where the next forward data will go
-      current_alu := opcode = LUI_OP or
-                     opcode = AUIPC_OP or
-                     opcode = ALU_OP or
-                     opcode = ALUI_OP;
-
       rs1_mux_var := NO_FWD;
       rs2_mux_var := NO_FWD;
-      if (current_alu) and valid_instr = '1' and stalled_component = '0' then
-        if rd = ni_rs1 and rd /= ZERO then
-          rs1_mux_var := ALU_FWD;
-        end if;
-        if rd = ni_rs2 and rd /= ZERO then
-          rs2_mux_var := ALU_FWD;
-        end if;
-      end if;
 
       rd_latch_var := rd_latch;
-      if (ls_unit_waiting or stall_from_alu) = '0' and valid_input = '1' then
+      no_fwd_path  := false;
+      if valid_instr = '1' and stall_from_execute = '0' then
         rd_latch_var := rd;
         --load, csr_read, jal[r] are the only instructions that writeback but
         --don't forward. Of these only csr_read and loads don't flush the
         --pipeline so these are the ones we concern ourselves with here.
         no_fwd_path  := opcode = LOAD_OP or opcode = SYSTEM_OP;
+
+        if (opcode = LUI_OP or
+            opcode = AUIPC_OP or
+            opcode = ALU_OP or
+            opcode = ALUI_OP) then
+          if rd = subseq_rs1 and rd /= R_ZERO then
+            rs1_mux_var := ALU_FWD;
+          end if;
+          if rd = subseq_rs2 and rd /= R_ZERO then
+            rs2_mux_var := ALU_FWD;
+          end if;
+        end if;
       end if;
 
       -------------------------------------------------------------------------------
       -- Generate use after produce stall
-      --
-      -- 1. normally it is low
-      -- 2. if it was previously set, and a stall is happening in syscall
-      --        (impossible ) or loadstore it should stay high
-      -- 3. if there next instruction depends on this instruction and there is
-      --       no forward path it shoud go high unless it high and wb_enable is
-      --       high
-      --
-      --  Note this looks pretty complex, but it compiles down to about 20
-      --  LUTs (on a CYCLONEIV)
       -------------------------------------------------------------------------------
-
-
-      use_after_produce_stall <= '0';
-      if use_after_produce_stall = '1' and ls_unit_waiting = '1' then
-        use_after_produce_stall <= '1';
+      if stall_to_execute = '0' or wb_enable = '1' then
+        if ((rd_latch_var = subseq_rs1 or rd_latch_var = subseq_rs2) and
+            rd_latch_var /= R_ZERO and
+            subseq_valid = '1' and
+            no_fwd_path) then
+          use_after_produce_stall <= '1';
+        else
+          use_after_produce_stall <= '0';
+        end if;
       end if;
 
-      if ((rd_latch_var = ni_rs1 or rd_latch_var = ni_rs2) and
-          rd_latch_var /= ZERO and
-          subseq_valid = '1' and
-          no_fwd_path and
-          not (use_after_produce_stall = '1' and wb_enable = '1'))then
-        use_after_produce_stall <= '1';
-      end if;
 
       rd_latch <= rd_latch_var;
       rs1_mux  <= rs1_mux_var;
       rs2_mux  <= rs2_mux_var;
+
+      if reset = '1' then
+        use_after_produce_stall <= '0';
+      end if;
     end if;
   end process;
 
@@ -328,10 +303,9 @@ begin
       FAMILY              => FAMILY)
     port map (
       clk                => clk,
-      stall_to_alu       => stall_to_alu,
-      stall_from_execute => stall_from_execute,
       valid_instr        => valid_instr,
       simd_op_size       => simd_op_size,
+      stall_from_execute => stall_from_execute,
       rs1_data           => alu_rs1_data,
       rs2_data           => alu_rs2_data,
       instruction        => instruction,
@@ -356,7 +330,7 @@ begin
       clk            => clk,
       reset          => reset,
       valid          => valid_instr,
-      stall          => stalled_component,
+      stall          => stall_to_execute,
       rs1_data       => rs1_data_fwd,
       rs2_data       => rs2_data_fwd,
       current_pc     => pc_current,
@@ -376,25 +350,27 @@ begin
       REGISTER_SIZE       => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE)
     port map(
-      clk            => clk,
-      reset          => reset,
-      valid          => valid_instr,
-      stall_to_lsu   => stall_to_lsu,
-      rs1_data       => rs1_data_fwd,
-      rs2_data       => rs2_data_fwd,
-      instruction    => instruction,
-      sign_extension => sign_extension,
-      stalled        => ls_unit_waiting,
-      data_out       => ld_data_out,
-      data_enable    => ld_data_enable,
-      --memory bus
-      address        => ls_address,
-      byte_en        => ls_byte_en,
-      write_en       => ls_write_en,
-      read_en        => ls_read_en,
-      write_data     => ls_write_data,
-      read_data      => ls_read_data,
-      ack            => ls_ack);
+      clk                      => clk,
+      reset                    => reset,
+      valid                    => valid_instr,
+      rs1_data                 => rs1_data_fwd,
+      rs2_data                 => rs2_data_fwd,
+      instruction              => instruction,
+      sign_extension           => sign_extension,
+      writeback_stall_from_lsu => writeback_stall_from_lsu,
+      stall_from_lsu           => stall_from_lsu,
+      data_out                 => ld_data_out,
+      data_enable              => ld_data_enable,
+
+      oimm_address       => lsu_oimm_address,
+      oimm_byteenable    => lsu_oimm_byteenable,
+      oimm_requestvalid  => lsu_oimm_requestvalid,
+      oimm_readnotwrite  => lsu_oimm_readnotwrite,
+      oimm_writedata     => lsu_oimm_writedata,
+      oimm_readdata      => lsu_oimm_readdata,
+      oimm_readdatavalid => lsu_oimm_readdatavalid,
+      oimm_waitrequest   => lsu_oimm_waitrequest
+      );
 
   entire_pipeline_empty <= pipeline_empty and not valid_input and not fetch_in_flight;
 
@@ -409,7 +385,6 @@ begin
       reset => reset,
       valid => valid_instr,
 
-      stall_in  => stall_to_syscall,
       stall_out => stall_from_syscall,
 
       rs1_data    => rs1_data_fwd,
@@ -429,7 +404,7 @@ begin
       br_bad_predict       => br_bad_predict,
       br_new_pc            => br_new_pc);
 
-  enable_lve : if LVE_ENABLE generate
+  enable_lve : if LVE_ENABLE /= 0 generate
   begin
     lve : lve_top
       generic map (
@@ -444,7 +419,6 @@ begin
         reset          => reset,
         instruction    => instruction,
         valid_instr    => valid_instr,
-        stall_to_lve   => stall_to_lve,
         rs1_data       => rs1_data_fwd,
         rs2_data       => rs2_data_fwd,
         slave_address  => sp_address,
@@ -466,7 +440,7 @@ begin
 
   end generate enable_lve;
 
-  n_enable_lve : if not LVE_ENABLE generate
+  n_enable_lve : if LVE_ENABLE = 0 generate
     lve_executing        <= '0';
     simd_op_size         <= LVE_WORD_SIZE;
     lve_alu_source_valid <= '0';
@@ -475,15 +449,6 @@ begin
     sp_readdata          <= (others => '-');
     sp_ack               <= '-';
   end generate n_enable_lve;
-
-  ls_read_data <= readdata;
-  ls_ack       <= data_ack;
-
-  byte_en   <= ls_byte_en;
-  address   <= ls_address;
-  write_en  <= ls_write_en;
-  read_en   <= ls_read_en;
-  writedata <= ls_write_data;
 
 
 

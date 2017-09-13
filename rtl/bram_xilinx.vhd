@@ -52,7 +52,7 @@ begin
 
   process (clk)
   begin
-    if clk'event and clk = '1' then
+    if rising_edge(clk) then
       if (en_a = '1') then
         -- NOTE: read assignment must come before write assignment to correctly
         -- model read-first synchronization.
@@ -66,7 +66,7 @@ begin
 
   process (clk)
   begin
-    if clk'event and clk = '1' then
+    if rising_edge(clk) then
       if (en_b = '1') then
         readdata_b <= ram(conv_integer(address_b));
         if wren_b = '1' then

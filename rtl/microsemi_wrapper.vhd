@@ -500,8 +500,7 @@ begin
   iram : entity work.iram(rtl)
     generic map (
       SIZE            => TCRAM_SIZE,
-      RAM_WIDTH       => REGISTER_SIZE,
-      BYTE_SIZE       => 8
+      RAM_WIDTH       => REGISTER_SIZE
       )
     port map (
       clk   => clk,

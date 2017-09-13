@@ -9,8 +9,7 @@ use work.rv_components.all;
 entity idram_xilinx is
   generic (
     RAM_DEPTH : integer := 1024;
-    RAM_WIDTH : integer := 32;
-    BYTE_SIZE : integer := 8
+    RAM_WIDTH : integer := 32
     );
   port (
     clk : in std_logic;
@@ -19,21 +18,21 @@ entity idram_xilinx is
     instr_data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
     instr_we       : in  std_logic;
     instr_en       : in  std_logic;
-    instr_be       : in  std_logic_vector((RAM_WIDTH/BYTE_SIZE)-1 downto 0);
+    instr_be       : in  std_logic_vector((RAM_WIDTH/8)-1 downto 0);
     instr_readdata : out std_logic_vector(RAM_WIDTH-1 downto 0);
 
     data_address  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
     data_data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
     data_we       : in  std_logic;
     data_en       : in  std_logic;
-    data_be       : in  std_logic_vector((RAM_WIDTH/BYTE_SIZE)-1 downto 0);
+    data_be       : in  std_logic_vector((RAM_WIDTH/8)-1 downto 0);
     data_readdata : out std_logic_vector(RAM_WIDTH-1 downto 0)
     );
 end entity idram_xilinx;
 
 architecture rtl of idram_xilinx is
   type en_t is array (0 to 3) of std_logic;
-  type data_t is array (0 to 3) of std_logic_vector(BYTE_SIZE-1 downto 0);
+  type data_t is array (0 to 3) of std_logic_vector(8-1 downto 0);
   signal wren_a     : en_t;
   signal wren_b     : en_t;
   signal en_a       : en_t;
@@ -51,13 +50,13 @@ begin
     en_a(i)   <= instr_en and instr_be(i);
     en_b(i)   <= data_en and data_be(i);
 
-    data_a(i) <= instr_data_in((i+1)*BYTE_SIZE-1 downto i*BYTE_SIZE);
-    data_b(i) <= data_data_in((i+1)*BYTE_SIZE-1 downto i*BYTE_SIZE);
+    data_a(i) <= instr_data_in(((i+1)*8)-1 downto i*8);
+    data_b(i) <= data_data_in(((i+1)*8)-1 downto i*8);
 
     bram : component bram_xilinx
       generic map (
         RAM_DEPTH => RAM_DEPTH,
-        RAM_WIDTH => BYTE_SIZE
+        RAM_WIDTH => 8
         )
       port map (
         address_a  => instr_address,
