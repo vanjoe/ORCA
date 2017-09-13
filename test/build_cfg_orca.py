@@ -54,22 +54,33 @@ ZEDBOARD_UART_CFG = Xil_Uart_Cfg('/dev/ttyACM0', 115200)
 M2S150_UART_CFG = Mcsm_Uart_Cfg('/dev/ttyUSB2', 115200)
 
 TEST_IGNORE_LIST = [
-    'unit_test',
-    'rv32mi*',
-    'rv32si*',
-    'rv32ua*',
-    'rv32uc*',
-    'rv32uf*',
-    'rv32um*',
-    'rv32ui-p-sw',
-    'rv32ui-p-b*',
-    'rv32ui-p-a*',
-    'rv32ui-p-f*',
-#    'rv32ui-p-j*',
-    'rv32ui-p-l*',
-    'rv32ui-p-o*',
-    'rv32ui-p-s*',
-    'rv32ui-p-x*'
+    #Should probably work but don't yet
+    'rv*-fence_i',           #FENCE.I
+    'rv*-consecutive_instr', #Consectutive shifts/loads/stores (VBX)
+
+    #Should work on LVE systems (untested)
+    'rv*-vbx_test',          #LVE (VBX)
+    'rv*-cmov_test',         #LVE CMOV (VBX)
+    
+    #Requires traps that aren't set up (may also be unsupported and/or broken)
+    'rv*-interrupt_test',    #Interrupt test (VBX)
+    'rv*-ilegal',            #Illegal instructions
+    'rv*-ma_fetch',          #Misaligned instruction fetch
+    'rv*-scall',             #Syscall trap
+    'rv*-shamt',             #slli with shamt[4/5] illegal instruction
+
+    #May someday be supported
+    'rv*-csr',               #CSRs; we do not support them all
+    'rv*-ma_addr',           #Misaligned addresses; not yet supported but should be as a parameter
+    'rv*-rvc',               #Compressed instruction corner cases
+    
+    #Will likely never be supported
+    'rv*-mcsr',              #M-mode CSRs; not supported
+    'rv*-sbreak',            #Syscall breakpoint; not supported
+    'rv*-dirty',             #VM referenced/dirty bits
+    'rv*-amo*_w',            #Atomic instructions
+    'rv*-lrsc',              #Load reserved/store conditional
+    'rv32uf-*',              #Floating point
 ]
 
 ORCA_BUILDS = \
