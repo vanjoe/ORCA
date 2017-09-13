@@ -276,7 +276,7 @@
   <parameter name="initMemContent" value="true" />
   <parameter name="initializationFileName" value="test.hex" />
   <parameter name="instanceID" value="NONE" />
-  <parameter name="memorySize" value="65536" />
+  <parameter name="memorySize" value="262144" />
   <parameter name="readDuringWriteMode" value="DONT_CARE" />
   <parameter name="resetrequest_enabled" value="true" />
   <parameter name="simAllowMRAMContentsFile" value="false" />
@@ -304,13 +304,24 @@
   <parameter name="BRANCH_PREDICTION" value="false" />
   <parameter name="BTB_SIZE" value="0" />
   <parameter name="BUS_TYPE" value="Avalon" />
+  <parameter name="BYTE_SIZE" value="8" />
   <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DIVIDE_ENABLE" value="1" />
+  <parameter name="ENABLE_EXCEPTIONS" value="1" />
+  <parameter name="ENABLE_EXT_INTERRUPTS" value="0" />
+  <parameter name="EXT_INTERRUPTS" value="1" />
+  <parameter name="FAMILY" value="ALTERA" />
+  <parameter name="ICACHE_BURST_EN" value="0" />
+  <parameter name="ICACHE_EXTERNAL_WIDTH" value="32" />
+  <parameter name="ICACHE_LINE_SIZE" value="32" />
+  <parameter name="ICACHE_SIZE" value="0" />
+  <parameter name="INTERRUPT_VECTOR" value="512" />
+  <parameter name="IUC_ADDR_BASE" value="0" />
+  <parameter name="IUC_ADDR_LAST" value="0" />
   <parameter name="LVE_ENABLE" value="0" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
-  <parameter name="NUM_EXT_INTERRUPTS" value="2" />
   <parameter name="PIPELINE_STAGES" value="4" />
-  <parameter name="PLIC_ENABLE" value="0" />
+  <parameter name="POWER_OPTIMIZED" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="-2147483648" />
   <parameter name="SCRATCHPAD_SIZE" value="1024" />
