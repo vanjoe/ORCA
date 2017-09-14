@@ -14,6 +14,12 @@ void ChangedPrint(char *ptr) {
   while (*ptr) {
     outbyte(*ptr++);
   }
+  flush_uart();
+}
+
+void flush_uart(void){
+  while(!XUartChanged_IsTransmitEmpty((volatile void *)0xE0001000)){
+  }
 }
 
 void print_char(char c) {

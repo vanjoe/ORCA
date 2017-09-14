@@ -31,8 +31,13 @@
 
 #include "printf.h"
 
+#include "uart.h"
+void zedboard_putc(void *putp, char c){
+  print_char(c);
+}
+
 typedef void (*putcf) (void*,char);
-static putcf stdout_putf;
+static putcf stdout_putf=&zedboard_putc;
 static void* stdout_putp;
 volatile int* mem=(volatile int*)4;
 
@@ -224,6 +229,7 @@ void tfp_printf(char *fmt, ...)
 	va_start(va,fmt);
 	tfp_format(stdout_putp,stdout_putf,fmt,va);
 	va_end(va);
+  flush_uart();
 }
 
 static void putcp(void* p,char c)

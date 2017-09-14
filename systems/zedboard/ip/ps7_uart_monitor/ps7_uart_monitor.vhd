@@ -81,7 +81,14 @@ begin  -- architecture rtl
   s_axi_bresp   <= m_axi_bresp   when bypass = '0' else (others => '0');
   s_axi_bvalid  <= m_axi_bvalid  when bypass = '0' else bypass_bvalid;
   s_axi_arready <= m_axi_arready when bypass = '0' else '1';
-  s_axi_rdata   <= m_axi_rdata   when bypass = '0' else (others => '0');
+
+  s_axi_rdata(C_S_AXI_DATA_WIDTH-1 downto 4) <= m_axi_rdata(C_S_AXI_DATA_WIDTH-1 downto 4) when bypass = '0' else
+                                                (others => '0');
+  s_axi_rdata(3) <= m_axi_rdata(3) when bypass = '0' else
+                    '1';
+  s_axi_rdata(2 downto 0) <= m_axi_rdata(2 downto 0) when bypass = '0' else
+                             (others => '0');
+
   s_axi_rresp   <= m_axi_rresp   when bypass = '0' else (others => '0');
   s_axi_rvalid  <= m_axi_rvalid  when bypass = '0' else bypass_rvalid;
   m_axi_awaddr  <= s_axi_awaddr;
@@ -108,8 +115,8 @@ begin  -- architecture rtl
   -----------------------------------------------------------------------------
 --pragma translate_off
   process(axi_aclk)
-    file uart_file : text open write_mode is "ps7_uart.log";
-    variable line_to_output : line;
+    file uart_file            : text open write_mode is "ps7_uart.log";
+    variable line_to_output   : line;
     variable string_to_output : string(1 to 1);
   begin
     if rising_edge(axi_aclk) then

@@ -6,7 +6,9 @@ all:
 AS_SRCS += crt.S
 C_SRCS  += uart.c
 
-ifeq ($(SW_PROJ), cache_test)
+ifeq ($(SW_PROJ), dhrystone)
+  C_SRCS  += dhry_1.c dhry_2.c printf.c malloc.c orca_time.c
+else ifeq ($(SW_PROJ), cache_test)
   AS_SRCS += cache_test.S
   C_SRCS  += cache_test_main.c
 else ifeq ($(C_SRCS), uart.c)
