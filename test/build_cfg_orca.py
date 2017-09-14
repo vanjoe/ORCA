@@ -56,7 +56,6 @@ M2S150_UART_CFG = Mcsm_Uart_Cfg('/dev/ttyUSB2', 115200)
 TEST_IGNORE_LIST = [
     #Should probably work but don't yet
     'rv*-fence_i',           #FENCE.I
-    'rv*-consecutive_instr', #Consectutive shifts/loads/stores (VBX)
 
     #Should work on LVE systems (untested)
     'rv*-vbx_test',          #LVE (VBX)
@@ -64,7 +63,7 @@ TEST_IGNORE_LIST = [
     
     #Requires traps that aren't set up (may also be unsupported and/or broken)
     'rv*-interrupt_test',    #Interrupt test (VBX)
-    'rv*-ilegal',            #Illegal instructions
+    'rv*-illegal',           #Illegal instructions
     'rv*-ma_fetch',          #Misaligned instruction fetch
     'rv*-scall',             #Syscall trap
     'rv*-shamt',             #slli with shamt[4/5] illegal instruction
