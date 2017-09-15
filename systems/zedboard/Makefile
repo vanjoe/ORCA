@@ -95,10 +95,10 @@ pgm: $(OUT_BIT)
 .PHONY: run
 run::
 ifeq ($(ELF_FILE), NONE)
-	python orca_pgm.py test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_MAX_ADDRESS) + 1))` --device=xc7z020_1 --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
+	python orca_pgm.py test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_MAX_ADDRESS) + 1))` --device=xc7z* --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
 else #ifeq ($(ELF_FILE), NONE)
 	$(MAKE) -C software test.bin
-	python orca_pgm.py software/test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_MAX_ADDRESS) + 1))` --device=xc7z020_1 --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
+	python orca_pgm.py software/test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_MAX_ADDRESS) + 1))` --device=xc7z* --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
 endif #else #ifeq ($(ELF_FILE), NONE)
 
 .PHONY: clean
