@@ -55,31 +55,31 @@ M2S150_UART_CFG = Mcsm_Uart_Cfg('/dev/ttyUSB2', 115200)
 
 TEST_IGNORE_LIST = [
     #Should probably work but don't yet
-    'rv*-fence_i',           #FENCE.I
+    'rv.*-fence_i',           #FENCE.I
 
     #Should work on LVE systems (untested)
-    'rv*-vbx_test',          #LVE (VBX)
-    'rv*-cmov_test',         #LVE CMOV (VBX)
+    'rv.*-vbx_test',          #LVE (VBX)
+    'rv.*-cmov_test',         #LVE CMOV (VBX)
     
     #Requires traps that aren't set up (may also be unsupported and/or broken)
-    'rv*-interrupt_test',    #Interrupt test (VBX)
-    'rv*-illegal',           #Illegal instructions
-    'rv*-ma_fetch',          #Misaligned instruction fetch
-    'rv*-scall',             #Syscall trap
-    'rv*-shamt',             #slli with shamt[4/5] illegal instruction
+    'rv.*-interrupt_test',    #Interrupt test (VBX)
+    'rv.*-illegal',           #Illegal instructions
+    'rv.*-ma_fetch',          #Misaligned instruction fetch
+    'rv.*-scall',             #Syscall trap
+    'rv.*-shamt',             #slli with shamt[4/5] illegal instruction
 
     #May someday be supported
-    'rv*-csr',               #CSRs; we do not support them all
-    'rv*-ma_addr',           #Misaligned addresses; not yet supported but should be as a parameter
-    'rv*-rvc',               #Compressed instruction corner cases
+    'rv.*-csr',               #CSRs; we do not support them all
+    'rv.*-ma_addr',           #Misaligned addresses; not yet supported but should be as a parameter
+    'rv.*-rvc',               #Compressed instruction corner cases
     
     #Will likely never be supported
-    'rv*-mcsr',              #M-mode CSRs; not supported
-    'rv*-sbreak',            #Syscall breakpoint; not supported
-    'rv*-dirty',             #VM referenced/dirty bits
-    'rv*-amo*_w',            #Atomic instructions
-    'rv*-lrsc',              #Load reserved/store conditional
-    'rv32uf-*',              #Floating point
+    'rv.*-mcsr',              #M-mode CSRs; not supported
+    'rv.*-sbreak',            #Syscall breakpoint; not supported
+    'rv.*-dirty',             #VM referenced/dirty bits
+    'rv.*-amo.*_w',            #Atomic instructions
+    'rv.*-lrsc',              #Load reserved/store conditional
+    'rv32uf-.*',              #Floating point
 ]
 
 ORCA_BUILDS = \
@@ -89,7 +89,7 @@ ORCA_BUILDS = \
                        multiply_enable=1,
                        divide_enable=1,
                        shifter_max_cycles=1,
-                       counter_length=64,
+                       counter_length=32,
                        enable_exceptions=1,
                        branch_predictors=0,
                        pipeline_stages=5,
@@ -136,7 +136,7 @@ ORCA_BUILDS = \
                         multiply_enable=1,
                         divide_enable=1,
                         shifter_max_cycles=1,
-                        counter_length=64,
+                        counter_length=32,
                         enable_exceptions=1,
                         branch_predictors=0,
                         pipeline_stages=5,
@@ -204,15 +204,15 @@ BUILDS = ORCA_BUILDS
 
 ###########################################################################
 # By default, all tests in software/test and software/hwtest are run.
-# You can specify a list of tests to ignore (not run). Glob-style
-# wildcards are allowed.
+# You can specify a list of tests to ignore (not run). Regular expressions
+# are allowed.
 #
 # TEST_IGNORE_LIST = [
-#     'test/*',
-#     'hwtest/stream*',
+#     'test/.*',
+#     'hwtest/stream.*',
 #     ]
 #
-# TEST_IGNORE_LIST = ['hwtest/*']
+# TEST_IGNORE_LIST = ['hwtest/.*']
 
 ###########################################################################
 # Optionally specify a test timeout value in seconds.
