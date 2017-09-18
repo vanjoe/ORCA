@@ -85,3 +85,4 @@ hw_ila*.btree
 
 tools/jtag_init.tcl
 
+nohup.out
