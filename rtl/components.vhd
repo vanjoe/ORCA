@@ -807,6 +807,7 @@ package rv_components is
     generic (
       REGISTER_SIZE     : natural;
       INTERRUPT_VECTOR  : std_logic_vector(31 downto 0);
+      POWER_OPTIMIZED   : boolean;
       ENABLE_EXCEPTIONS : boolean := true;
       COUNTER_LENGTH    : natural
       );

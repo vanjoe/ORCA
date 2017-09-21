@@ -73,7 +73,7 @@ entity ps7_uart_monitor is
 end entity ps7_uart_monitor;
 
 architecture rtl of ps7_uart_monitor is
-  signal bypass_rvalid : std_logic;
+  signal bypass_rvalid : std_logic_vector(15 downto 0);
   signal bypass_bvalid : std_logic;
 begin  -- architecture rtl
   s_axi_awready <= m_axi_awready when bypass = '0' else s_axi_wvalid;
@@ -90,7 +90,7 @@ begin  -- architecture rtl
                              (others => '0');
 
   s_axi_rresp   <= m_axi_rresp   when bypass = '0' else (others => '0');
-  s_axi_rvalid  <= m_axi_rvalid  when bypass = '0' else bypass_rvalid;
+  s_axi_rvalid  <= m_axi_rvalid  when bypass = '0' else bypass_rvalid(bypass_rvalid'left);
   m_axi_awaddr  <= s_axi_awaddr;
   m_axi_awvalid <= s_axi_awvalid when bypass = '0' else '0';
   m_axi_wdata   <= s_axi_wdata;
@@ -104,8 +104,9 @@ begin  -- architecture rtl
   process (axi_aclk) is
   begin  -- process
     if axi_aclk'event and axi_aclk = '1' then  -- rising clock edge
-      bypass_rvalid <= s_axi_arvalid;
-      bypass_bvalid <= s_axi_wvalid and s_axi_awvalid;
+      bypass_rvalid(0)                           <= s_axi_arvalid;
+      bypass_rvalid(bypass_rvalid'left downto 1) <= bypass_rvalid(bypass_rvalid'left-1 downto 0);
+      bypass_bvalid                              <= s_axi_wvalid and s_axi_awvalid;
     end if;
   end process;
 
