@@ -10,7 +10,7 @@ add_file -vhdl -lib work "../ice40ultra/hdl/osc_hf.vhd"
 add_file -vhdl -lib work "../ice40ultra/hdl/top_component_pkg.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/wb_ram.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/wb_arbiter.vhd" 
-add_file -vhdl -lib work "../ice40ultra/hdl/wb_cam.vhd" 
+add_file -vhdl -lib work "../ice40ultra/hdl/wb_cam_hm01b0.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/wb_flash_dma.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/wb_pio.vhd" 
 add_file -vhdl -lib work "../ice40ultra/hdl/wb_splitter.vhd" 
@@ -33,6 +33,7 @@ add_file -vhdl -lib work "../../rtl/instruction_fetch.vhd"
 add_file -vhdl -lib work "../../rtl/load_store_unit.vhd" 
 add_file -vhdl -lib work "../../rtl/lve_ci.vhd" 
 add_file -vhdl -lib work "../../rtl/lve_top.vhd" 
+add_file -vhdl -lib work "../../rtl/memory_interface.vhd" 
 add_file -vhdl -lib work "../../rtl/utils.vhd" 
 add_file -vhdl -lib work "../../rtl/sys_call.vhd" 
 add_file -vhdl -lib work "../../rtl/register_file.vhd" 
@@ -54,7 +55,7 @@ set_option -project_relative_includes 1
 
 #
 #implementation parameter settings
-set_option -hdl_param -set USE_PLL  0
+set_option -hdl_param -set USE_PLL  2
 set_option -hdl_param -set USE_CAM  1
 set_option -hdl_param -set USE_UART 0
 set_option -hdl_param -set USE_LVE  1
@@ -62,7 +63,7 @@ set_option -hdl_param -set USE_LVE  1
 #device options
 set_option -technology SBTiCE40UP
 set_option -part iCE40UP5K
-set_option -package UWG30
+set_option -package SG48
 set_option -speed_grade 
 set_option -part_companion ""
 
@@ -103,4 +104,5 @@ set_option -write_apr_constraint 1
 
 #set result format/file last
 project -result_file "ice40ultraplus_Implmnt/ice40ultraplus.edf"
-impl -active "ice40ultraplus_Implmnt"
+impl -active ice40ultraplus_Implmnt
+project -run synthesis -clean

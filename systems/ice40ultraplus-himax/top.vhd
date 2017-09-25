@@ -23,7 +23,6 @@ entity vhdl_top is
 
     --uart
     txd : out std_logic;
-    rxd : out std_logic;
 
     --led
     led : out std_logic;
@@ -514,7 +513,7 @@ begin
         MULTIPLY_ENABLE       => 1,
         DATA_REQUEST_REGISTER => 0,
         DIVIDE_ENABLE         => 0,
-        POWER_OPTIMIZED       => 1,
+        POWER_OPTIMIZED       => 0,
         SHIFTER_MAX_CYCLES    => 32,
         COUNTER_LENGTH        => 32,
         PIPELINE_STAGES       => 4,
