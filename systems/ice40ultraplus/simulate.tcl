@@ -15,6 +15,7 @@ proc com {} {
                      ../../rtl/orca_core.vhd               \
                      ../../rtl/sys_call.vhd                \
                      ../../rtl/lve_ci.vhd                 \
+                     ../../rtl/memory_interface.vhd \
                      ../../rtl/lve_top.vhd                 \
                      ../../rtl/4port_mem_ultraplus.vhd               \
                      hdl/top_util_pkg.vhd               \
