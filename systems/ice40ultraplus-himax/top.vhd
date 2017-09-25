@@ -572,7 +572,7 @@ begin
         DIVIDE_ENABLE         => 0,
         SHIFTER_MAX_CYCLES    => 32,
         COUNTER_LENGTH        => 32,
-        PIPELINE_STAGES       => 4,
+        PIPELINE_STAGES       => 5,
         LVE_ENABLE            => 0,
         ENABLE_EXCEPTIONS     => 0,
         NUM_EXT_INTERRUPTS    => 2,
@@ -848,7 +848,7 @@ begin
     ovm_dma_done <= '1';
   end generate no_cam_gen;
   cam_gen : if USE_CAM /= 0 generate
-    cam_ctrl : wb_cam
+    cam_ctrl : entity work.wb_cam(greyscale)
       port map(
         clk_i => clk,
         rst_i => reset,
