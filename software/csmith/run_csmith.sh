@@ -14,7 +14,7 @@ SEED=$1
 compile_dir=csmith-compile/
 mkdir -p $compile_dir
 #compile host
-/nfs/opt/csmith-2.2.0/bin/csmith -s $SEED | gcc -O2 -m32 -w -xc - -I /nfs/opt/csmith-2.2.0/include/csmith-2.2.0/ -o $compile_dir/csmith-host-seed$SEED
+/nfs/opt/csmith-2.2.0/bin/csmith --no-packed-struct -s $SEED | gcc -O2 -m32 -w -xc - -I /nfs/opt/csmith-2.2.0/include/csmith-2.2.0/ -o $compile_dir/csmith-host-seed$SEED
 
 #compile risc-v
 OUT_C=$compile_dir/csmith-riscv-seed$SEED.c
@@ -23,7 +23,7 @@ BIN_FILE=$ELF_FILE.bin
 HEX_FILE=${BIN_FILE/bin/hex}
 DUMP_FILE=${BIN_FILE/bin/dump}
 
-/nfs/opt/csmith-2.2.0/bin/csmith -s $SEED > $OUT_C
+/nfs/opt/csmith-2.2.0/bin/csmith --no-packed-struct -s $SEED > $OUT_C
 sed -i 's/return 0/return (crc32_context ^ 0xFFFFFFFFUL)/' $OUT_C
 
 riscv32-unknown-elf-gcc -g -O2 -w -c -nostdlib -march=rv32im -xc $OUT_C -I /nfs/opt/csmith-2.2.0/include/csmith-2.2.0/ -o $compile_dir/csmith-riscv-seed$SEED.o

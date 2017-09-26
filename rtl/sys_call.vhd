@@ -209,10 +209,12 @@ begin  -- architecture rtl
           was_illegal               <= '1';
         elsif instruction(MAJOR_OP'range) = SYSTEM_OP then
           if func3 /= "000" then
-                                        -----------------------------------------------------------------------------
+            -----------------------------------------------------------------------------
             -- CSR Read/Write
             -----------------------------------------------------------------------------
-            data_enable <= '1';
+            if csr_select /= CSR_SLEEP then
+              data_enable <= '1';
+            end if;
 
             -- Disable csr writes if exceptions are not enabled.
             if ENABLE_EXCEPTIONS then

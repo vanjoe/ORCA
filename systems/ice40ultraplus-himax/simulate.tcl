@@ -21,7 +21,7 @@ proc com {} {
                      hdl/top_util_pkg.vhd               \
                      hdl/top_component_pkg.vhd          \
                      hdl/wb_ram.vhd                     \
-                     hdl/wb_cam.vhd                     \
+                     hdl/wb_cam_hm01b0.vhd              \
                      hdl/wb_arbiter.vhd                 \
                      hdl/wb_splitter.vhd                \
                      hdl/wb_pio.vhd                     \
@@ -53,6 +53,7 @@ proc com {} {
                      hdl/i2s_tx/tx_i2s_topm.vhd         \
                      hdl/wb_flash_dma.vhd               \
                      hdl/spi_master/wb_spi_simple.vhd   \
+							hdl/hm01b0.vhd                     \
                      hdl/fmf/gen_utils.vhd              \
                      hdl/fmf/switch_pkg.vhd             \
                      hdl/fmf/conversions.vhd            \
