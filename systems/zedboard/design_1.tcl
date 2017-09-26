@@ -1059,7 +1059,7 @@ CONFIG.FAMILY {XILINX} \
 CONFIG.ICACHE_BURST_EN {1} \
 CONFIG.ICACHE_EXTERNAL_WIDTH {32} \
 CONFIG.ICACHE_LINE_SIZE {16} \
-CONFIG.ICACHE_SIZE {8192} \
+CONFIG.ICACHE_SIZE {0} \
 CONFIG.INTERRUPT_VECTOR {0xC0000200} \
 CONFIG.IUC_ADDR_BASE {0x80000000} \
 CONFIG.IUC_ADDR_LAST {0xFFFFFFFF} \
@@ -1148,8 +1148,7 @@ CONFIG.CONST_VAL {0} \
   connect_bd_intf_net -intf_net jtag_axi_M_AXI [get_bd_intf_pins axi_interconnect_jtag/S00_AXI] [get_bd_intf_pins jtag_axi/M_AXI]
   connect_bd_intf_net -intf_net orca_DUC [get_bd_intf_pins axi_crossbar_data_uncacheable/S00_AXI] [get_bd_intf_pins orca/DUC]
 connect_bd_intf_net -intf_net [get_bd_intf_nets orca_DUC] [get_bd_intf_pins orca/DUC] [get_bd_intf_pins system_ila_orca_masters/SLOT_2_AXI]
-  connect_bd_intf_net -intf_net orca_IC [get_bd_intf_pins axi_interconnect_instruction_cached/S00_AXI] [get_bd_intf_pins orca/IC]
-connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IC] [get_bd_intf_pins orca/IC] [get_bd_intf_pins system_ila_orca_masters/SLOT_1_AXI]
+connect_bd_intf_net -intf_net orca_IC [get_bd_intf_pins axi_interconnect_instruction_cached/S00_AXI] [get_bd_intf_pins system_ila_orca_masters/SLOT_1_AXI]
   connect_bd_intf_net -intf_net orca_IUC [get_bd_intf_pins axi_crossbar_idram_instruction_port/S00_AXI] [get_bd_intf_pins orca/IUC]
 connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IUC] [get_bd_intf_pins orca/IUC] [get_bd_intf_pins system_ila_orca_masters/SLOT_0_AXI]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7/DDR]
@@ -1182,17 +1181,14 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IUC] [get_bd_intf_pins orca
   create_bd_addr_seg -range 0x00400000 -offset 0xE0000000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_IOP] SEG_processing_system7_0_GP0_IOP
   create_bd_addr_seg -range 0x01000000 -offset 0xFC000000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_QSPI_LINEAR] SEG_processing_system7_0_GP0_QSPI_LINEAR
   create_bd_addr_seg -range 0x20000000 -offset 0x00000000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs processing_system7/S_AXI_HP1/HP1_DDR_LOWOCM] SEG_processing_system7_0_HP1_DDR_LOWOCM
-  create_bd_addr_seg -range 0x00020000 -offset 0xD0000000 [get_bd_addr_spaces orca/IC] [get_bd_addr_segs axi_bram_ctrl_onchip_A4/S_AXI/Mem0] SEG_axi_bram_ctrl_onchip_A4_Mem0
   create_bd_addr_seg -range 0x00020000 -offset 0xD0000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs axi_bram_ctrl_onchip_A4L/S_AXI/Mem0] SEG_axi_bram_ctrl_onchip_Mem0
   create_bd_addr_seg -range 0x00010000 -offset 0xFFFF0000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs axi_gpio_leds/S_AXI/Reg] SEG_axi_gpio_leds_Reg
   create_bd_addr_seg -range 0x10000000 -offset 0xC0000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs idram/data/reg0] SEG_idram_reg0
-  create_bd_addr_seg -range 0x10000000 -offset 0xC0000000 [get_bd_addr_spaces orca/IC] [get_bd_addr_segs idram/instr/reg0] SEG_idram_reg0
   create_bd_addr_seg -range 0x10000000 -offset 0xC0000000 [get_bd_addr_spaces orca/IUC] [get_bd_addr_segs idram/instr/reg0] SEG_idram_reg0
   create_bd_addr_seg -range 0x20000000 -offset 0x80000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_DDR_LOWOCM] SEG_processing_system7_0_GP0_DDR_LOWOCM
   create_bd_addr_seg -range 0x00400000 -offset 0xE0000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_IOP] SEG_processing_system7_0_GP0_IOP
   create_bd_addr_seg -range 0x01000000 -offset 0xFC000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_QSPI_LINEAR] SEG_processing_system7_0_GP0_QSPI_LINEAR
   create_bd_addr_seg -range 0x20000000 -offset 0x00000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs processing_system7/S_AXI_HP1/HP1_DDR_LOWOCM] SEG_processing_system7_0_HP1_DDR_LOWOCM
-  create_bd_addr_seg -range 0x20000000 -offset 0x00000000 [get_bd_addr_spaces orca/IC] [get_bd_addr_segs processing_system7/S_AXI_HP0/HP0_DDR_LOWOCM] SEG_processing_system7_HP0_DDR_LOWOCM
 
 
   # Restore current instance
