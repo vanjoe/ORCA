@@ -27,9 +27,9 @@ SECTIONS
 
   /* text: test code section */
   . = 0x000;
-  .init . :
+  .text.init . :
   {
-	  *(.init)
+	  *(.text.init)
   }>IMEM
   .text :
   {

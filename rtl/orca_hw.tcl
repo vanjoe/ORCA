@@ -219,19 +219,19 @@ set_parameter_property BTB_SIZE DISPLAY_NAME "        Branch Target Buffer Size"
 set_parameter_property BTB_SIZE DISPLAY_UNITS entries
 set_parameter_property BTB_SIZE visible false
 
-add_parameter          DATA_REQUEST_REGSTER natural 0
-set_parameter_property DATA_REQUEST_REGSTER HDL_PARAMETER true
-set_parameter_property DATA_REQUEST_REGSTER DISPLAY_NAME "Data Request Register"
-set_parameter_property DATA_REQUEST_REGSTER DESCRIPTION "Register data master request for higher fmax.  \
+add_parameter          DATA_REQUEST_REGISTER natural 0
+set_parameter_property DATA_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DATA_REQUEST_REGISTER DISPLAY_NAME "Data Request Register"
+set_parameter_property DATA_REQUEST_REGISTER DESCRIPTION "Register data master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property DATA_REQUEST_REGSTER ALLOWED_RANGES {0,2}
+set_parameter_property DATA_REQUEST_REGISTER ALLOWED_RANGES {0,2}
 
-add_parameter          DATA_RETURN_REGSTER natural 0
-set_parameter_property DATA_RETURN_REGSTER HDL_PARAMETER true
-set_parameter_property DATA_RETURN_REGSTER DISPLAY_NAME "Data Return Register"
-set_parameter_property DATA_RETURN_REGSTER DESCRIPTION "Register data master readdata for higher fmax \
+add_parameter          DATA_RETURN_REGISTER natural 0
+set_parameter_property DATA_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DATA_RETURN_REGISTER DISPLAY_NAME "Data Return Register"
+set_parameter_property DATA_RETURN_REGISTER DESCRIPTION "Register data master readdata for higher fmax \
 at the cost of higher load latency."
-set_parameter_property DATA_RETURN_REGSTER ALLOWED_RANGES {0,1}
+set_parameter_property DATA_RETURN_REGISTER ALLOWED_RANGES {0,1}
 
 add_parameter          PIPELINE_STAGES natural 5
 set_parameter_property PIPELINE_STAGES HDL_PARAMETER true

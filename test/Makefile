@@ -1,120 +1,9 @@
 -include test_config.mk
 -include config.mk
 CFG_FILE   ?= ../../test/build_cfg_orca.py
-BUILD_ARGS ?= -k -l -u -v --cfg-file=$(CFG_FILE)
+BUILD_ARGS ?= -k --cfg-file=$(CFG_FILE) $(EXTRA_BUILD_ARGS)
 
 default: builds
-
-################################################################################
-
-ALT_QSYS_FILE=system.qsys
-ALT_QPF_FILE=system.qpf
-ALT_QSF_FILE=system.qsf
-ALT_SDC_FILE=system.sdc
-ALT_HEX_FILE=test.hex
-ALT_QUARTUS_FILES=$(ALT_QPF_FILE) $(ALT_QSF_FILE) $(ALT_QWS_FILE) $(ALT_SDC_FILE)
-ALT_QIP_FILE=system/synthesis/system.qip
-ALT_SIP_FILE=system/synthesis/system.sip
-ALT_SOF_FILE=system.sof
-
-ALT_OUTPUT_DIR=output_files/
-ALT_MAP_RPT_FILE=$(ALT_OUTPUT_DIR)system.map.rpt
-ALT_FIT_RPT_FILE=$(ALT_OUTPUT_DIR)system.fit.rpt
-ALT_MIF_RPT_FILE=$(ALT_OUTPUT_DIR)system.mif_update.rpt
-ALT_ASM_RPT_FILE=$(ALT_OUTPUT_DIR)system.asm.rpt
-ALT_STA_RPT_FILE=$(ALT_OUTPUT_DIR)system.sta.rpt
-
-ALT_RTL_DIR=../../../../rtl/
-ALT_RTL_TCL=$(ALT_RTL_DIR)orca_hw.tcl
-ALT_SYSTEM_DIR=../../../../systems/$(ALT_SYSTEM)/
-ALT_ORCA_SUBMODULE_FILES=$(wildcard system/synthesis/submodules/vblox_orca/*.vhd)
-ALT_TOP_LEVEL_FILES=$(notdir $(wildcard $(ALT_SYSTEM_DIR)*.vhd))
-ALT_HDL_FILES=$(ALT_ORCA_SUBMODULE_FILES) $(ALT_TOP_LEVEL_FILES)
-ALT_SYSTEM_FILES=$(notdir $(wildcard $(ALT_SYSTEM_DIR)system.*))
-ALT_CONFIG_FILE=config.mk
-
-system.%: $(ALT_SYSTEM_DIR)system.% 
-	cp $< $@
-$(ALT_ORCA_SUBMODULE_FILES): system/synthesis/submodules/vblox_orca/% : $(ALT_RTL_DIR)% | $(ALT_QIP_FILE)
-	cp $^ $@
-%.vhd: $(ALT_SYSTEM_DIR)%.vhd
-	cp $< $@
-
-$(ALT_QSYS_FILE) : $(ALT_CONFIG_FILE)
-	cp $(ALT_SYSTEM_DIR)$@ $@
-ifdef RESET_VECTOR
-	sed -i 's/parameter name="RESET_VECTOR" value=".*"/parameter name="RESET_VECTOR" value="$(ALT_RESET_VECTOR)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef MULTIPLY_ENABLE
-	sed -i 's/parameter name="MULTIPLY_ENABLE" value=".*"/parameter name="MULTIPLY_ENABLE" value="$(ALT_MULTIPLY_ENABLE)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef DIVIDE_ENABLE
-	sed -i 's/parameter name="DIVIDE_ENABLE" value=".*"/parameter name="DIVIDE_ENABLE" value="$(ALT_DIVIDE_ENABLE)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef SHIFTER_MAX_CYCLES
-	sed -i 's/parameter name="SHIFTER_MAX_CYCLES" value=".*"/parameter name="SHIFTER_MAX_CYCLES" value="$(ALT_SHIFTER_MAX_CYCLES)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef COUNTER_LENGTH
-	sed -i 's/parameter name="COUNTER_LENGTH" value=".*"/parameter name="COUNTER_LENGTH" value="$(ALT_COUNTER_LENGTH)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef ENABLE_EXCEPTIONS
-	sed -i 's/parameter name="ENABLE_EXCEPTIONS" value=".*"/parameter name="ENABLE_EXCEPTIONS" value="$(ALT_ENABLE_EXCEPTIONS)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef BRANCH_PREDICTORS
-	sed -i 's/parameter name="BRANCH_PREDICTORS" value=".*"/parameter name="BRANCH_PREDICTORS" value="$(ALT_BRANCH_PREDICTORS)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef PIPELINE_STAGES
-	sed -i 's/parameter name="PIPELINE_STAGES" value=".*"/parameter name="PIPELINE_STAGES" value="$(ALT_PIPELINE_STAGES)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef LVE_ENABLE
-	sed -i 's/parameter name="LVE_ENABLE" value=".*"/parameter name="LVE_ENABLE" value="$(ALT_LVE_ENABLE)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef ENABLE_EXT_INTERRUPTS
-	sed -i 's/parameter name="ENABLE_EXT_INTERRUPTS" value=".*"/parameter name="ENABLE_EXT_INTERRUPTS" value="$(ALT_ENABLE_EXT_INTERRUPTS)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef NUM_EXT_INTERRUPTS
-	sed -i 's/parameter name="NUM_EXT_INTERRUPTS" value=".*"/parameter name="NUM_EXT_INTERRUPTS" value="$(ALT_NUM_EXT_INTERRUPTS)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef SCRATCHPAD_ADDR_BITS
-	sed -i 's/parameter name="SCRATCHPAD_ADDR_BITS" value=".*"/parameter name="SCRATCHPAD_ADDR_BITS" value="$(ALT_SCRATCHPAD_ADDR_BITS)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef TCRAM_SIZE
-	sed -i 's/parameter name="TCRAM_SIZE" value=".*"/parameter name="TCRAM_SIZE" value="$(ALT_TCRAM_SIZE)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef CACHE_SIZE
-	sed -i 's/parameter name="CACHE_SIZE" value=".*"/parameter name="CACHE_SIZE" value="$(ALT_CACHE_SIZE)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef LINE_SIZE
-	sed -i 's/parameter name="LINE_SIZE" value=".*"/parameter name="LINE_SIZE" value="$(ALT_LINE_SIZE)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef DRAM_WIDTH
-	sed -i 's/parameter name="DRAM_WIDTH" value=".*"/parameter name="DRAM_WIDTH" value="$(ALT_DRAM_WIDTH)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef BURST_EN
-	sed -i 's/parameter name="BURST_EN" value=".*"/parameter name="BURST_EN" value="$(ALT_BURST_EN)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef POWER_OPTIMIZED
-	sed -i 's/parameter name="POWER_OPTIMIZED" value=".*"/parameter name="POWER_OPTIMIZED" value="$(ALT_POWER_OPTIMIZED)"/g' $(ALT_QSYS_FILE)
-endif
-ifdef CACHE_ENABLE
-	sed -i 's/parameter name="CACHE_ENABLE" value=".*"/parameter name="CACHE_ENABLE" value="$(ALT_CACHE_ENABLE)"/g' $(ALT_QSYS_FILE)
-endif
-$(ALT_QIP_FILE) : $(ALT_QSYS_FILE) $(ALT_RTL_TCL) | $(ALT_QSF_FILE) $(ALT_SDC_FILE)
-	qsys-generate --synthesis=VHDL system.qsys
-$(ALT_MAP_RPT_FILE) : $(ALT_QIP_FILE) $(ALT_HDL_FILES)
-	quartus_map $(ALT_QPF_FILE)
-$(ALT_FIT_RPT_FILE) : $(ALT_MAP_RPT_FILE)
-	quartus_fit $(ALT_QPF_FILE)
-$(ALT_MIF_RPT_FILE) : $(ALT_FIT_RPT_FILE)
-	quartus_cdb --update_mif $(ALT_QPF_FILE)
-$(ALT_ASM_RPT_FILE) : $(ALT_MIF_RPT_FILE)
-	quartus_asm $(ALT_QPF_FILE)
-$(ALT_STA_RPT_FILE) : $(ALT_ASM_RPT_FILE)
-	quartus_sta $(ALT_QPF_FILE)
-$(ALT_SOF_FILE) : $(ALT_STA_RPT_FILE)
-	cp $(ALT_OUTPUT_DIR)$@ $@
-
-altera: $(ALT_SOF_FILE)
 
 ################################################################################
 
@@ -177,4 +66,5 @@ clean:
 
 ################################################################################
 
-.PHONY: builds clean altera xilinx microsemi microsemi_timing lattice
+.PHONY: builds clean microsemi microsemi_timing lattice
+.DELETE_ON_ERROR:

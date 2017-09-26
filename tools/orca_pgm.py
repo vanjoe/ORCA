@@ -107,10 +107,9 @@ if __name__ == '__main__':
         bin_file.close()
         tcl_script.close()
 
-        system_console = '/nfs/opt/altera/15.1/quartus/sopc_builder/bin/system-console' 
-        subprocess.Popen('{} --cli --script={}'.format(system_console, script_name), shell=True).wait()
+        subprocess.Popen('system-console --cli --script={}'.format(script_name), shell=True).wait()
+        print 'Done programming.'
 
-    # Note: JTAG does not currently work on the xilinx family of devices.
     elif family == 'xilinx':
         BURST_LENGTH = 256
         script_name = output_file
