@@ -9,6 +9,13 @@ void * memcpy (void * restrict dest, const void * restrict src, size_t n)
 	}
 	return dest;
 }
+void *memset(void *s, int c, size_t n){
+	char* ss=s;
+	while(n--){
+		ss[n]=c;
+	}
+	return s;
+}
 int strcmp (const char * a, const char *b)
 {
 

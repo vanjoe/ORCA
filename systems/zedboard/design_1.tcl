@@ -174,18 +174,18 @@ proc create_hier_cell_clock { parentCell nameHier } {
   # Create instance: clk_wiz, and set properties
   set clk_wiz [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:5.4 clk_wiz ]
   set_property -dict [ list \
-CONFIG.CLKOUT1_JITTER {151.636} \
+CONFIG.CLKOUT1_JITTER {130.958} \
 CONFIG.CLKOUT1_PHASE_ERROR {98.575} \
-CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {50} \
-CONFIG.CLKOUT2_JITTER {130.958} \
+CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {100} \
+CONFIG.CLKOUT2_JITTER {114.829} \
 CONFIG.CLKOUT2_PHASE_ERROR {98.575} \
-CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {100} \
+CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {200} \
 CONFIG.CLKOUT2_USED {true} \
 CONFIG.MMCM_CLKFBOUT_MULT_F {10.000} \
 CONFIG.MMCM_CLKIN1_PERIOD {10.000} \
 CONFIG.MMCM_CLKIN2_PERIOD {10.000} \
-CONFIG.MMCM_CLKOUT0_DIVIDE_F {20.000} \
-CONFIG.MMCM_CLKOUT1_DIVIDE {10} \
+CONFIG.MMCM_CLKOUT0_DIVIDE_F {10.000} \
+CONFIG.MMCM_CLKOUT1_DIVIDE {5} \
 CONFIG.MMCM_DIVCLK_DIVIDE {1} \
 CONFIG.NUM_OUT_CLKS {2} \
 CONFIG.RESET_PORT {resetn} \
@@ -617,6 +617,343 @@ CONFIG.S15_READ_ACCEPTANCE {1} \
 CONFIG.S15_WRITE_ACCEPTANCE {1} \
  ] $axi_crossbar_data_uncacheable
 
+  # Create instance: axi_crossbar_idram_instruction_port, and set properties
+  set axi_crossbar_idram_instruction_port [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_crossbar:2.1 axi_crossbar_idram_instruction_port ]
+  set_property -dict [ list \
+CONFIG.CONNECTIVITY_MODE {SASD} \
+CONFIG.DATA_WIDTH {32} \
+CONFIG.M00_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M00_READ_ISSUING {1} \
+CONFIG.M00_WRITE_ISSUING {1} \
+CONFIG.M01_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M01_READ_ISSUING {1} \
+CONFIG.M01_WRITE_ISSUING {1} \
+CONFIG.M02_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M02_READ_ISSUING {1} \
+CONFIG.M02_WRITE_ISSUING {1} \
+CONFIG.M03_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M03_READ_ISSUING {1} \
+CONFIG.M03_WRITE_ISSUING {1} \
+CONFIG.M04_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M04_READ_ISSUING {1} \
+CONFIG.M04_WRITE_ISSUING {1} \
+CONFIG.M05_A00_ADDR_WIDTH {0} \
+CONFIG.M05_A00_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M05_READ_ISSUING {1} \
+CONFIG.M05_WRITE_ISSUING {1} \
+CONFIG.M06_A00_ADDR_WIDTH {0} \
+CONFIG.M06_A00_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M06_READ_ISSUING {1} \
+CONFIG.M06_WRITE_ISSUING {1} \
+CONFIG.M07_A00_ADDR_WIDTH {0} \
+CONFIG.M07_A00_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M07_READ_ISSUING {1} \
+CONFIG.M07_WRITE_ISSUING {1} \
+CONFIG.M08_A00_ADDR_WIDTH {0} \
+CONFIG.M08_A00_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M08_READ_ISSUING {1} \
+CONFIG.M08_WRITE_ISSUING {1} \
+CONFIG.M09_A00_ADDR_WIDTH {0} \
+CONFIG.M09_A00_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M09_READ_ISSUING {1} \
+CONFIG.M09_WRITE_ISSUING {1} \
+CONFIG.M10_A00_ADDR_WIDTH {0} \
+CONFIG.M10_A00_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M10_READ_ISSUING {1} \
+CONFIG.M10_WRITE_ISSUING {1} \
+CONFIG.M11_A00_ADDR_WIDTH {0} \
+CONFIG.M11_A00_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M11_READ_ISSUING {1} \
+CONFIG.M11_WRITE_ISSUING {1} \
+CONFIG.M12_A00_ADDR_WIDTH {0} \
+CONFIG.M12_A00_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M12_READ_ISSUING {1} \
+CONFIG.M12_WRITE_ISSUING {1} \
+CONFIG.M13_A00_ADDR_WIDTH {0} \
+CONFIG.M13_A00_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M13_READ_ISSUING {1} \
+CONFIG.M13_WRITE_ISSUING {1} \
+CONFIG.M14_A00_ADDR_WIDTH {0} \
+CONFIG.M14_A00_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M14_READ_ISSUING {1} \
+CONFIG.M14_WRITE_ISSUING {1} \
+CONFIG.M15_A00_ADDR_WIDTH {0} \
+CONFIG.M15_A00_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A01_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A02_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A03_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A04_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A05_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A06_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A07_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A08_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A09_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A10_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A11_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A12_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A13_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A14_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_A15_BASE_ADDR {0xffffffffffffffff} \
+CONFIG.M15_READ_ISSUING {1} \
+CONFIG.M15_WRITE_ISSUING {1} \
+CONFIG.NUM_MI {1} \
+CONFIG.NUM_SI {2} \
+CONFIG.PROTOCOL {AXI4LITE} \
+CONFIG.R_REGISTER {1} \
+CONFIG.S00_READ_ACCEPTANCE {1} \
+CONFIG.S00_SINGLE_THREAD {1} \
+CONFIG.S00_WRITE_ACCEPTANCE {1} \
+CONFIG.S01_READ_ACCEPTANCE {1} \
+CONFIG.S01_SINGLE_THREAD {1} \
+CONFIG.S01_WRITE_ACCEPTANCE {1} \
+CONFIG.S02_READ_ACCEPTANCE {1} \
+CONFIG.S02_WRITE_ACCEPTANCE {1} \
+CONFIG.S03_READ_ACCEPTANCE {1} \
+CONFIG.S03_WRITE_ACCEPTANCE {1} \
+CONFIG.S04_READ_ACCEPTANCE {1} \
+CONFIG.S04_WRITE_ACCEPTANCE {1} \
+CONFIG.S05_READ_ACCEPTANCE {1} \
+CONFIG.S05_WRITE_ACCEPTANCE {1} \
+CONFIG.S06_READ_ACCEPTANCE {1} \
+CONFIG.S06_WRITE_ACCEPTANCE {1} \
+CONFIG.S07_READ_ACCEPTANCE {1} \
+CONFIG.S07_WRITE_ACCEPTANCE {1} \
+CONFIG.S08_READ_ACCEPTANCE {1} \
+CONFIG.S08_WRITE_ACCEPTANCE {1} \
+CONFIG.S09_READ_ACCEPTANCE {1} \
+CONFIG.S09_WRITE_ACCEPTANCE {1} \
+CONFIG.S10_READ_ACCEPTANCE {1} \
+CONFIG.S10_WRITE_ACCEPTANCE {1} \
+CONFIG.S11_READ_ACCEPTANCE {1} \
+CONFIG.S11_WRITE_ACCEPTANCE {1} \
+CONFIG.S12_READ_ACCEPTANCE {1} \
+CONFIG.S12_WRITE_ACCEPTANCE {1} \
+CONFIG.S13_READ_ACCEPTANCE {1} \
+CONFIG.S13_WRITE_ACCEPTANCE {1} \
+CONFIG.S14_READ_ACCEPTANCE {1} \
+CONFIG.S14_WRITE_ACCEPTANCE {1} \
+CONFIG.S15_READ_ACCEPTANCE {1} \
+CONFIG.S15_WRITE_ACCEPTANCE {1} \
+ ] $axi_crossbar_idram_instruction_port
+
   # Create instance: axi_gpio_jtag_reset, and set properties
   set axi_gpio_jtag_reset [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio_jtag_reset ]
   set_property -dict [ list \
@@ -659,6 +996,9 @@ CONFIG.NUM_SI {1} \
 
   # Create instance: axi_interconnect_instruction_cached, and set properties
   set axi_interconnect_instruction_cached [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_instruction_cached ]
+  set_property -dict [ list \
+CONFIG.NUM_MI {3} \
+ ] $axi_interconnect_instruction_cached
 
   # Create instance: axi_interconnect_jtag, and set properties
   set axi_interconnect_jtag [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_jtag ]
@@ -719,7 +1059,7 @@ CONFIG.FAMILY {XILINX} \
 CONFIG.ICACHE_BURST_EN {1} \
 CONFIG.ICACHE_EXTERNAL_WIDTH {32} \
 CONFIG.ICACHE_LINE_SIZE {16} \
-CONFIG.ICACHE_SIZE {8192} \
+CONFIG.ICACHE_SIZE {0} \
 CONFIG.INTERRUPT_VECTOR {0xC0000200} \
 CONFIG.IUC_ADDR_BASE {0x80000000} \
 CONFIG.IUC_ADDR_LAST {0xFFFFFFFF} \
@@ -796,6 +1136,7 @@ CONFIG.CONST_VAL {0} \
   connect_bd_intf_net -intf_net axi_crossbar_data_uncacheable_M02_AXI [get_bd_intf_pins axi_crossbar_data_uncacheable/M02_AXI] [get_bd_intf_pins axi_gpio_leds/S_AXI]
   connect_bd_intf_net -intf_net axi_crossbar_data_uncacheable_M03_AXI [get_bd_intf_pins axi_bram_ctrl_onchip_A4L/S_AXI] [get_bd_intf_pins axi_crossbar_data_uncacheable/M03_AXI]
   connect_bd_intf_net -intf_net axi_crossbar_data_uncacheable_M04_AXI [get_bd_intf_pins axi_crossbar_data_uncacheable/M04_AXI] [get_bd_intf_pins axi_interconnect_A4L_to_A4_PS7_HP1/S00_AXI]
+  connect_bd_intf_net -intf_net axi_crossbar_idram_instruction_port_M00_AXI [get_bd_intf_pins axi_crossbar_idram_instruction_port/M00_AXI] [get_bd_intf_pins idram/instr]
   connect_bd_intf_net -intf_net axi_gpio_leds_GPIO [get_bd_intf_ports leds_8bits] [get_bd_intf_pins axi_gpio_leds/GPIO]
   connect_bd_intf_net -intf_net axi_interconnect_A4L_to_A4_PS7_GP0_M00_AXI [get_bd_intf_pins axi_interconnect_A4L_to_A4_PS7_GP0/M00_AXI] [get_bd_intf_pins processing_system7/S_AXI_GP0]
   connect_bd_intf_net -intf_net axi_interconnect_A4L_to_A4_PS7_HP1_M00_AXI [get_bd_intf_pins axi_interconnect_A4L_to_A4_PS7_HP1/M00_AXI] [get_bd_intf_pins processing_system7/S_AXI_HP1]
@@ -803,12 +1144,12 @@ CONFIG.CONST_VAL {0} \
   connect_bd_intf_net -intf_net axi_interconnect_A4L_to_A4_PS7_HP2_M01_AXI [get_bd_intf_pins axi_crossbar_data_uncacheable/S01_AXI] [get_bd_intf_pins axi_interconnect_jtag/M01_AXI]
   connect_bd_intf_net -intf_net axi_interconnect_instruction_cached_M00_AXI [get_bd_intf_pins axi_interconnect_instruction_cached/M00_AXI] [get_bd_intf_pins processing_system7/S_AXI_HP0]
   connect_bd_intf_net -intf_net axi_interconnect_instruction_cached_M01_AXI [get_bd_intf_pins axi_bram_ctrl_onchip_A4/S_AXI] [get_bd_intf_pins axi_interconnect_instruction_cached/M01_AXI]
+  connect_bd_intf_net -intf_net axi_interconnect_instruction_cached_M02_AXI [get_bd_intf_pins axi_crossbar_idram_instruction_port/S01_AXI] [get_bd_intf_pins axi_interconnect_instruction_cached/M02_AXI]
   connect_bd_intf_net -intf_net jtag_axi_M_AXI [get_bd_intf_pins axi_interconnect_jtag/S00_AXI] [get_bd_intf_pins jtag_axi/M_AXI]
   connect_bd_intf_net -intf_net orca_DUC [get_bd_intf_pins axi_crossbar_data_uncacheable/S00_AXI] [get_bd_intf_pins orca/DUC]
 connect_bd_intf_net -intf_net [get_bd_intf_nets orca_DUC] [get_bd_intf_pins orca/DUC] [get_bd_intf_pins system_ila_orca_masters/SLOT_2_AXI]
-  connect_bd_intf_net -intf_net orca_IC [get_bd_intf_pins axi_interconnect_instruction_cached/S00_AXI] [get_bd_intf_pins orca/IC]
-connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IC] [get_bd_intf_pins orca/IC] [get_bd_intf_pins system_ila_orca_masters/SLOT_1_AXI]
-  connect_bd_intf_net -intf_net orca_IUC [get_bd_intf_pins idram/instr] [get_bd_intf_pins orca/IUC]
+connect_bd_intf_net -intf_net orca_IC [get_bd_intf_pins axi_interconnect_instruction_cached/S00_AXI] [get_bd_intf_pins system_ila_orca_masters/SLOT_1_AXI]
+  connect_bd_intf_net -intf_net orca_IUC [get_bd_intf_pins axi_crossbar_idram_instruction_port/S00_AXI] [get_bd_intf_pins orca/IUC]
 connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IUC] [get_bd_intf_pins orca/IUC] [get_bd_intf_pins system_ila_orca_masters/SLOT_0_AXI]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7/FIXED_IO]
@@ -819,16 +1160,16 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IUC] [get_bd_intf_pins orca
   connect_bd_net -net axi_gpio_jtag_reset_gpio_io_o [get_bd_pins axi_gpio_jtag_reset/gpio_io_o] [get_bd_pins clock/cpu_resetn_in]
   connect_bd_net -net axi_gpio_leds_gpio2_io_o [get_bd_pins axi_gpio_leds/gpio2_io_o] [get_bd_pins fit_timer/Rst]
   connect_bd_net -net clock_clk_2x_out -boundary_type upper [get_bd_pins clock/clk_2x_out]
-  connect_bd_net -net clock_clk_out [get_bd_pins axi_bram_ctrl_onchip_A4/s_axi_aclk] [get_bd_pins axi_bram_ctrl_onchip_A4L/s_axi_aclk] [get_bd_pins axi_crossbar_data_uncacheable/aclk] [get_bd_pins axi_gpio_jtag_reset/s_axi_aclk] [get_bd_pins axi_gpio_leds/s_axi_aclk] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/ACLK] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/M00_ACLK] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/S00_ACLK] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/ACLK] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/S00_ACLK] [get_bd_pins axi_interconnect_instruction_cached/ACLK] [get_bd_pins axi_interconnect_instruction_cached/M01_ACLK] [get_bd_pins axi_interconnect_instruction_cached/S00_ACLK] [get_bd_pins axi_interconnect_jtag/ACLK] [get_bd_pins axi_interconnect_jtag/M00_ACLK] [get_bd_pins axi_interconnect_jtag/M01_ACLK] [get_bd_pins axi_interconnect_jtag/S00_ACLK] [get_bd_pins clock/clk_out] [get_bd_pins edge_extender/clk] [get_bd_pins fit_timer/Clk] [get_bd_pins idram/clk] [get_bd_pins jtag_axi/aclk] [get_bd_pins orca/clk] [get_bd_pins processing_system7/S_AXI_GP0_ACLK] [get_bd_pins ps7_uart_monitor/axi_aclk] [get_bd_pins system_ila_orca_masters/clk]
-  connect_bd_net -net clock_interconnect_aresetn [get_bd_pins axi_crossbar_data_uncacheable/aresetn] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/ARESETN] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/ARESETN] [get_bd_pins axi_interconnect_instruction_cached/ARESETN] [get_bd_pins clock/interconnect_aresetn]
-  connect_bd_net -net clock_peripheral_aresetn [get_bd_pins axi_bram_ctrl_onchip_A4/s_axi_aresetn] [get_bd_pins axi_bram_ctrl_onchip_A4L/s_axi_aresetn] [get_bd_pins axi_gpio_leds/s_axi_aresetn] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/M00_ARESETN] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/S00_ARESETN] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/S00_ARESETN] [get_bd_pins axi_interconnect_instruction_cached/M01_ARESETN] [get_bd_pins axi_interconnect_instruction_cached/S00_ARESETN] [get_bd_pins axi_interconnect_jtag/M01_ARESETN] [get_bd_pins clock/peripheral_aresetn] [get_bd_pins ps7_uart_monitor/axi_aresetn] [get_bd_pins system_ila_orca_masters/resetn]
+  connect_bd_net -net clock_clk_out [get_bd_pins axi_bram_ctrl_onchip_A4/s_axi_aclk] [get_bd_pins axi_bram_ctrl_onchip_A4L/s_axi_aclk] [get_bd_pins axi_crossbar_data_uncacheable/aclk] [get_bd_pins axi_crossbar_idram_instruction_port/aclk] [get_bd_pins axi_gpio_jtag_reset/s_axi_aclk] [get_bd_pins axi_gpio_leds/s_axi_aclk] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/ACLK] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/M00_ACLK] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/S00_ACLK] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/ACLK] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/M00_ACLK] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/S00_ACLK] [get_bd_pins axi_interconnect_instruction_cached/ACLK] [get_bd_pins axi_interconnect_instruction_cached/M00_ACLK] [get_bd_pins axi_interconnect_instruction_cached/M01_ACLK] [get_bd_pins axi_interconnect_instruction_cached/M02_ACLK] [get_bd_pins axi_interconnect_instruction_cached/S00_ACLK] [get_bd_pins axi_interconnect_jtag/ACLK] [get_bd_pins axi_interconnect_jtag/M00_ACLK] [get_bd_pins axi_interconnect_jtag/M01_ACLK] [get_bd_pins axi_interconnect_jtag/S00_ACLK] [get_bd_pins clock/clk_out] [get_bd_pins edge_extender/clk] [get_bd_pins fit_timer/Clk] [get_bd_pins idram/clk] [get_bd_pins jtag_axi/aclk] [get_bd_pins orca/clk] [get_bd_pins processing_system7/S_AXI_GP0_ACLK] [get_bd_pins processing_system7/S_AXI_HP0_ACLK] [get_bd_pins processing_system7/S_AXI_HP1_ACLK] [get_bd_pins ps7_uart_monitor/axi_aclk] [get_bd_pins system_ila_orca_masters/clk]
+  connect_bd_net -net clock_interconnect_aresetn [get_bd_pins axi_crossbar_data_uncacheable/aresetn] [get_bd_pins axi_crossbar_idram_instruction_port/aresetn] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/ARESETN] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/ARESETN] [get_bd_pins axi_interconnect_instruction_cached/ARESETN] [get_bd_pins clock/interconnect_aresetn]
+  connect_bd_net -net clock_peripheral_aresetn [get_bd_pins axi_bram_ctrl_onchip_A4/s_axi_aresetn] [get_bd_pins axi_bram_ctrl_onchip_A4L/s_axi_aresetn] [get_bd_pins axi_gpio_leds/s_axi_aresetn] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/M00_ARESETN] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/S00_ARESETN] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/M00_ARESETN] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/S00_ARESETN] [get_bd_pins axi_interconnect_instruction_cached/M00_ARESETN] [get_bd_pins axi_interconnect_instruction_cached/M01_ARESETN] [get_bd_pins axi_interconnect_instruction_cached/M02_ARESETN] [get_bd_pins axi_interconnect_instruction_cached/S00_ARESETN] [get_bd_pins axi_interconnect_jtag/M01_ARESETN] [get_bd_pins clock/peripheral_aresetn] [get_bd_pins ps7_uart_monitor/axi_aresetn] [get_bd_pins system_ila_orca_masters/resetn]
   connect_bd_net -net clock_peripheral_aresetn_jtag [get_bd_pins axi_gpio_jtag_reset/s_axi_aresetn] [get_bd_pins axi_interconnect_jtag/M00_ARESETN] [get_bd_pins axi_interconnect_jtag/S00_ARESETN] [get_bd_pins clock/peripheral_aresetn_jtag] [get_bd_pins jtag_axi/aresetn]
   connect_bd_net -net clock_peripheral_reset [get_bd_pins clock/peripheral_reset] [get_bd_pins edge_extender/reset] [get_bd_pins idram/reset]
   connect_bd_net -net clock_peripheral_reset_cpu [get_bd_pins clock/peripheral_reset_cpu] [get_bd_pins orca/reset]
   connect_bd_net -net edge_extender_0_interrupt_out [get_bd_pins edge_extender/interrupt_out] [get_bd_pins orca/global_interrupts]
   connect_bd_net -net fit_timer_Interrupt [get_bd_pins edge_extender/interrupt_in] [get_bd_pins fit_timer/Interrupt]
-  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/M00_ACLK] [get_bd_pins axi_interconnect_instruction_cached/M00_ACLK] [get_bd_pins clock/clk_in1] [get_bd_pins processing_system7/FCLK_CLK0] [get_bd_pins processing_system7/S_AXI_HP0_ACLK] [get_bd_pins processing_system7/S_AXI_HP1_ACLK]
-  connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins axi_interconnect_A4L_to_A4_PS7_HP1/M00_ARESETN] [get_bd_pins axi_interconnect_instruction_cached/M00_ARESETN] [get_bd_pins clock/ext_resetn_in] [get_bd_pins processing_system7/FCLK_RESET0_N]
+  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins clock/clk_in1] [get_bd_pins processing_system7/FCLK_CLK0]
+  connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins clock/ext_resetn_in] [get_bd_pins processing_system7/FCLK_RESET0_N]
   connect_bd_net -net xlconstant_bypass_ps7_uart_dout [get_bd_pins ps7_uart_monitor/bypass] [get_bd_pins xlconstant_bypass_ps7_uart/dout]
 
   # Create address segments
@@ -840,7 +1181,6 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IUC] [get_bd_intf_pins orca
   create_bd_addr_seg -range 0x00400000 -offset 0xE0000000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_IOP] SEG_processing_system7_0_GP0_IOP
   create_bd_addr_seg -range 0x01000000 -offset 0xFC000000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_QSPI_LINEAR] SEG_processing_system7_0_GP0_QSPI_LINEAR
   create_bd_addr_seg -range 0x20000000 -offset 0x00000000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs processing_system7/S_AXI_HP1/HP1_DDR_LOWOCM] SEG_processing_system7_0_HP1_DDR_LOWOCM
-  create_bd_addr_seg -range 0x00020000 -offset 0x50000000 [get_bd_addr_spaces orca/IC] [get_bd_addr_segs axi_bram_ctrl_onchip_A4/S_AXI/Mem0] SEG_axi_bram_ctrl_onchip_A4_Mem0
   create_bd_addr_seg -range 0x00020000 -offset 0xD0000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs axi_bram_ctrl_onchip_A4L/S_AXI/Mem0] SEG_axi_bram_ctrl_onchip_Mem0
   create_bd_addr_seg -range 0x00010000 -offset 0xFFFF0000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs axi_gpio_leds/S_AXI/Reg] SEG_axi_gpio_leds_Reg
   create_bd_addr_seg -range 0x10000000 -offset 0xC0000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs idram/data/reg0] SEG_idram_reg0
@@ -848,7 +1188,6 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IUC] [get_bd_intf_pins orca
   create_bd_addr_seg -range 0x20000000 -offset 0x80000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_DDR_LOWOCM] SEG_processing_system7_0_GP0_DDR_LOWOCM
   create_bd_addr_seg -range 0x00400000 -offset 0xE0000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_IOP] SEG_processing_system7_0_GP0_IOP
   create_bd_addr_seg -range 0x01000000 -offset 0xFC000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_QSPI_LINEAR] SEG_processing_system7_0_GP0_QSPI_LINEAR
-  create_bd_addr_seg -range 0x20000000 -offset 0x00000000 [get_bd_addr_spaces orca/IC] [get_bd_addr_segs processing_system7/S_AXI_HP0/HP0_DDR_LOWOCM] SEG_processing_system7_0_HP0_DDR_LOWOCM
   create_bd_addr_seg -range 0x20000000 -offset 0x00000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs processing_system7/S_AXI_HP1/HP1_DDR_LOWOCM] SEG_processing_system7_0_HP1_DDR_LOWOCM
 
 

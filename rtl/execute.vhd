@@ -77,7 +77,6 @@ entity execute is
 end entity execute;
 
 architecture behavioural of execute is
-
   alias rd is instruction (REGISTER_RD'range);
   alias rs1 is instruction(REGISTER_RS1'range);
   alias rs2 is instruction(REGISTER_RS2'range);
@@ -94,13 +93,11 @@ architecture behavioural of execute is
   signal br_data_out  : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal alu_data_out : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal ld_data_out  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal upp_data_out : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sys_data_out : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal br_data_enable     : std_logic;
   signal alu_data_out_valid : std_logic;
   signal ld_data_enable     : std_logic;
-  signal upp_data_enable    : std_logic;
   signal sys_data_enable    : std_logic;
   signal less_than          : std_logic;
   signal wb_mux             : std_logic_vector(1 downto 0);
@@ -123,10 +120,11 @@ architecture behavioural of execute is
   signal writeback_stall_from_lsu : std_logic;
   signal stall_from_lsu           : std_logic;
 
-  signal fwd_sel  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal fwd_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal fwd_en   : std_logic;
-  signal fwd_mux  : std_logic;
+  signal fwd_sel     : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal fwd_data    : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal fwd_en      : std_logic;
+  signal fwd_mux     : std_logic;
+  signal no_fwd_path : std_logic;
 
   signal lve_executing        : std_logic;
   signal lve_alu_data1        : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -134,8 +132,7 @@ architecture behavioural of execute is
   signal lve_alu_source_valid : std_logic;
 
   signal valid_instr : std_logic;
-  signal rd_latch    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-
+  signal wb_valid    : std_logic;
 
   constant R_ZERO : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := (others => '0');
 
@@ -216,13 +213,11 @@ begin
     br_data_out  when "10",
     alu_data_out when others;
 
-  wb_enable <= (sys_data_enable or
-                ld_data_enable or
-                br_data_enable or
-                (alu_data_out_valid and (not lve_executing)))
-               when wb_sel /= R_ZERO else
-               '0';
-  wb_sel <= rd_latch;
+  wb_valid <= (sys_data_enable or
+               ld_data_enable or
+               br_data_enable or
+               (alu_data_out_valid and (not lve_executing)));
+  wb_enable <= wb_valid when wb_sel /= R_ZERO else '0';
 
   fwd_data <= sys_data_out when sys_data_enable = '1' else
               alu_data_out when alu_data_out_valid = '1' else
@@ -234,59 +229,33 @@ begin
                                          lve_executing or
                                          stall_from_syscall);
 
+  use_after_produce_stall <= wb_valid and no_fwd_path when wb_sel = rs1 or wb_sel = rs2 else '0';
+
   process(clk)
-    variable no_fwd_path  : boolean;
-    variable rs1_mux_var  : fwd_mux_t;
-    variable rs2_mux_var  : fwd_mux_t;
-    variable rd_latch_var : std_logic_vector(rd'range);
   begin
     if rising_edge(clk) then
-      rs1_mux_var := NO_FWD;
-      rs2_mux_var := NO_FWD;
-
-      rd_latch_var := rd_latch;
-      no_fwd_path  := false;
-      if valid_instr = '1' and stall_from_execute = '0' then
-        rd_latch_var := rd;
-        --load, csr_read, jal[r] are the only instructions that writeback but
-        --don't forward. Of these only csr_read and loads don't flush the
-        --pipeline so these are the ones we concern ourselves with here.
-        no_fwd_path  := opcode = LOAD_OP or opcode = SYSTEM_OP;
-
-        if (opcode = LUI_OP or
-            opcode = AUIPC_OP or
-            opcode = ALU_OP or
-            opcode = ALUI_OP) then
-          if rd = subseq_rs1 and rd /= R_ZERO then
-            rs1_mux_var := ALU_FWD;
+      if stall_to_execute = '0' then
+        rs1_mux     <= NO_FWD;
+        rs2_mux     <= NO_FWD;
+        wb_sel      <= rd;
+        no_fwd_path <= '0';
+        if valid_instr = '1' then
+          --load, csr_read, jal[r] are the only instructions that writeback but
+          --don't forward. Of these only csr_read and loads don't flush the
+          --pipeline so these are the ones we concern ourselves with here.
+          if opcode = LOAD_OP or opcode = SYSTEM_OP then
+            no_fwd_path <= '1';
           end if;
-          if rd = subseq_rs2 and rd /= R_ZERO then
-            rs2_mux_var := ALU_FWD;
+
+          if (opcode = LUI_OP or opcode = AUIPC_OP or opcode = ALU_OP or opcode = ALUI_OP) then
+            if rd = subseq_rs1 and rd /= R_ZERO then
+              rs1_mux <= ALU_FWD;
+            end if;
+            if rd = subseq_rs2 and rd /= R_ZERO then
+              rs2_mux <= ALU_FWD;
+            end if;
           end if;
         end if;
-      end if;
-
-      -------------------------------------------------------------------------------
-      -- Generate use after produce stall
-      -------------------------------------------------------------------------------
-      if stall_to_execute = '0' or wb_enable = '1' then
-        if ((rd_latch_var = subseq_rs1 or rd_latch_var = subseq_rs2) and
-            rd_latch_var /= R_ZERO and
-            subseq_valid = '1' and
-            no_fwd_path) then
-          use_after_produce_stall <= '1';
-        else
-          use_after_produce_stall <= '0';
-        end if;
-      end if;
-
-
-      rd_latch <= rd_latch_var;
-      rs1_mux  <= rs1_mux_var;
-      rs2_mux  <= rs2_mux_var;
-
-      if reset = '1' then
-        use_after_produce_stall <= '0';
       end if;
     end if;
   end process;
@@ -300,7 +269,8 @@ begin
       MULTIPLY_ENABLE     => MULTIPLY_ENABLE,
       DIVIDE_ENABLE       => DIVIDE_ENABLE,
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
-      FAMILY              => FAMILY)
+      FAMILY              => FAMILY
+      )
     port map (
       clk                => clk,
       valid_instr        => valid_instr,
@@ -378,8 +348,10 @@ begin
     generic map (
       REGISTER_SIZE     => REGISTER_SIZE,
       INTERRUPT_VECTOR  => INTERRUPT_VECTOR,
+      POWER_OPTIMIZED   => POWER_OPTIMIZED,
       ENABLE_EXCEPTIONS => ENABLE_EXCEPTIONS,
-      COUNTER_LENGTH    => COUNTER_LENGTH)
+      COUNTER_LENGTH    => COUNTER_LENGTH
+      )
     port map (
       clk   => clk,
       reset => reset,
@@ -412,7 +384,8 @@ begin
         SCRATCHPAD_SIZE  => SCRATCHPAD_SIZE,
         POWER_OPTIMIZED  => POWER_OPTIMIZED,
         SLAVE_DATA_WIDTH => REGISTER_SIZE,
-        FAMILY           => FAMILY)
+        FAMILY           => FAMILY
+        )
       port map (
         clk            => clk,
         scratchpad_clk => scratchpad_clk,
