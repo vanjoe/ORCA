@@ -212,7 +212,7 @@ begin  -- architecture rtl
             -----------------------------------------------------------------------------
             -- CSR Read/Write
             -----------------------------------------------------------------------------
-            if csr_select /= CSR_SLEEP then
+            if (not POWER_OPTIMIZED) or (csr_select /= CSR_SLEEP) then
               data_enable <= '1';
             end if;
 
