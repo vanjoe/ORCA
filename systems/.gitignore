@@ -1,0 +1,12 @@
+*.rpt
+.qsys_edit/
+jtag_init.tcl
+qdb/
+system/
+*_defaults.qdf
+db/
+quartus_db/
+incremental_db/
+*.hex
+output_files/
+*.sof

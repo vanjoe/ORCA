@@ -1,0 +1,16 @@
+sub_top.imem.ram.ram3_ram3_0_3 init.mem/init_00.imem
+sub_top.imem.ram.ram3_ram3_0_2 init.mem/init_01.imem
+sub_top.imem.ram.ram3_ram3_0_1 init.mem/init_02.imem
+sub_top.imem.ram.ram3_ram3_0_0 init.mem/init_03.imem
+sub_top.imem.ram.ram2_ram2_0_3 init.mem/init_04.imem
+sub_top.imem.ram.ram2_ram2_0_2 init.mem/init_05.imem
+sub_top.imem.ram.ram2_ram2_0_1 init.mem/init_06.imem
+sub_top.imem.ram.ram2_ram2_0_0 init.mem/init_07.imem
+sub_top.imem.ram.ram1_ram1_0_3 init.mem/init_08.imem
+sub_top.imem.ram.ram1_ram1_0_2 init.mem/init_09.imem
+sub_top.imem.ram.ram1_ram1_0_1 init.mem/init_10.imem
+sub_top.imem.ram.ram1_ram1_0_0 init.mem/init_11.imem
+sub_top.imem.ram.ram0_ram0_0_3 init.mem/init_12.imem
+sub_top.imem.ram.ram0_ram0_0_2 init.mem/init_13.imem
+sub_top.imem.ram.ram0_ram0_0_1 init.mem/init_14.imem
+sub_top.imem.ram.ram0_ram0_0_0 init.mem/init_15.imem

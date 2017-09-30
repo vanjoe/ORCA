@@ -57,7 +57,9 @@ add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd TOP_LEVEL_FILE
 add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
 add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
+add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
 add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
+add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL Orca
@@ -78,22 +80,15 @@ add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd
 add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
 add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
+add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
 add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
+add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
 
 #
 # parameters
 #
 add_parameter REGISTER_SIZE INTEGER 32
 set_parameter_property REGISTER_SIZE DEFAULT_VALUE 32
-set_parameter_property REGISTER_SIZE DISPLAY_NAME REGISTER_SIZE
-set_parameter_property REGISTER_SIZE TYPE INTEGER
-set_parameter_property REGISTER_SIZE UNITS None
-set_parameter_property REGISTER_SIZE ALLOWED_RANGES {32}
-set_parameter_property REGISTER_SIZE HDL_PARAMETER true
-set_parameter_property REGISTER_SIZE visible false
-
-add_parameter BYTE_SIZE INTEGER 8 
-set_parameter_property REGISTER_SIZE DEFAULT_VALUE 8 
 set_parameter_property REGISTER_SIZE DISPLAY_NAME REGISTER_SIZE
 set_parameter_property REGISTER_SIZE TYPE INTEGER
 set_parameter_property REGISTER_SIZE UNITS None
@@ -124,21 +119,19 @@ set_parameter_property WISHBONE_ENABLE HDL_PARAMETER true
 set_parameter_property WISHBONE_ENABLE visible false
 set_parameter_property WISHBONE_ENABLE derived true
 
-add_parameter RESET_VECTOR NATURAL 0 
-set_parameter_property RESET_VECTOR DEFAULT_VALUE 0
+add_parameter RESET_VECTOR Std_Logic_Vector 32'h00000000
+set_parameter_property RESET_VECTOR DEFAULT_VALUE 32'h00000000
 set_parameter_property RESET_VECTOR DISPLAY_NAME "Reset Vector"
-set_parameter_property RESET_VECTOR TYPE integer
 set_parameter_property RESET_VECTOR UNITS None
+set_parameter_property RESET_VECTOR WIDTH 32
 set_parameter_property RESET_VECTOR HDL_PARAMETER true
-set_display_item_property RESET_VECTOR DISPLAY_HINT hexadecimal
 
-add_parameter INTERRUPT_VECTOR NATURAL 512
-set_parameter_property INTERRUPT_VECTOR DEFAULT_VALUE 512
+add_parameter INTERRUPT_VECTOR Std_Logic_Vector 32'h00000200
+set_parameter_property INTERRUPT_VECTOR DEFAULT_VALUE 32'h00000200
 set_parameter_property INTERRUPT_VECTOR DISPLAY_NAME "Interrupt Vector"
-set_parameter_property INTERRUPT_VECTOR TYPE integer
 set_parameter_property INTERRUPT_VECTOR UNITS None
+set_parameter_property INTERRUPT_VECTOR WIDTH 32
 set_parameter_property INTERRUPT_VECTOR HDL_PARAMETER true
-set_display_item_property INTERRUPT_VECTOR DISPLAY_HINT hexadecimal
 
 add_parameter MULTIPLY_ENABLE natural 1
 set_parameter_property MULTIPLY_ENABLE DEFAULT_VALUE 1
@@ -226,6 +219,20 @@ set_parameter_property BTB_SIZE DISPLAY_NAME "        Branch Target Buffer Size"
 set_parameter_property BTB_SIZE DISPLAY_UNITS entries
 set_parameter_property BTB_SIZE visible false
 
+add_parameter          DATA_REQUEST_REGISTER natural 0
+set_parameter_property DATA_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DATA_REQUEST_REGISTER DISPLAY_NAME "Data Request Register"
+set_parameter_property DATA_REQUEST_REGISTER DESCRIPTION "Register data master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property DATA_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+
+add_parameter          DATA_RETURN_REGISTER natural 0
+set_parameter_property DATA_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DATA_RETURN_REGISTER DISPLAY_NAME "Data Return Register"
+set_parameter_property DATA_RETURN_REGISTER DESCRIPTION "Register data master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property DATA_RETURN_REGISTER ALLOWED_RANGES {0,1}
+
 add_parameter          PIPELINE_STAGES natural 5
 set_parameter_property PIPELINE_STAGES HDL_PARAMETER true
 set_parameter_property PIPELINE_STAGES DISPLAY_NAME "Pipeline Stages"
@@ -255,25 +262,37 @@ set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
 set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
 set_parameter_property SCRATCHPAD_ADDR_BITS derived true
 
-add_parameter TCRAM_SIZE integer 64
-set_parameter_property TCRAM_SIZE HDL_PARAMETER true
-set_parameter_property TCRAM_SIZE visible false 
+add_parameter IUC_ADDR_BASE Std_Logic_Vector 32'h00000000
+set_parameter_property IUC_ADDR_BASE DEFAULT_VALUE 32'h00000000
+set_parameter_property IUC_ADDR_BASE DISPLAY_NAME "Uncached Start Address"
+set_parameter_property IUC_ADDR_BASE UNITS None
+set_parameter_property IUC_ADDR_BASE WIDTH 32
+set_parameter_property IUC_ADDR_BASE HDL_PARAMETER true
+set_parameter_property IUC_ADDR_BASE visible false 
 
-add_parameter CACHE_SIZE integer 64
-set_parameter_property CACHE_SIZE HDL_PARAMETER true
-set_parameter_property CACHE_SIZE visible false 
+add_parameter IUC_ADDR_LAST Std_Logic_Vector 32'h00000000
+set_parameter_property IUC_ADDR_LAST DEFAULT_VALUE 32'h00000000
+set_parameter_property IUC_ADDR_LAST DISPLAY_NAME "Uncached End Address"
+set_parameter_property IUC_ADDR_LAST UNITS None
+set_parameter_property IUC_ADDR_LAST WIDTH 32
+set_parameter_property IUC_ADDR_LAST HDL_PARAMETER true
+set_parameter_property IUC_ADDR_LAST visible false 
 
-add_parameter LINE_SIZE integer 16
-set_parameter_property LINE_SIZE HDL_PARAMETER true
-set_parameter_property LINE_SIZE visible false 
+add_parameter ICACHE_SIZE NATURAL 0
+set_parameter_property ICACHE_SIZE HDL_PARAMETER true
+set_parameter_property ICACHE_SIZE visible false 
 
-add_parameter DRAM_WIDTH integer 32
-set_parameter_property DRAM_WIDTH HDL_PARAMETER true
-set_parameter_property DRAM_WIDTH visible false 
+add_parameter ICACHE_LINE_SIZE NATURAL 32
+set_parameter_property ICACHE_LINE_SIZE HDL_PARAMETER true
+set_parameter_property ICACHE_LINE_SIZE visible false 
 
-add_parameter BURST_EN integer 0 
-set_parameter_property BURST_EN HDL_PARAMETER true
-set_parameter_property BURST_EN visible false 
+add_parameter ICACHE_EXTERNAL_WIDTH integer 32 
+set_parameter_property ICACHE_EXTERNAL_WIDTH HDL_PARAMETER true
+set_parameter_property ICACHE_EXTERNAL_WIDTH visible false 
+
+add_parameter ICACHE_BURST_EN integer 0 
+set_parameter_property ICACHE_BURST_EN HDL_PARAMETER true
+set_parameter_property ICACHE_BURST_EN visible false 
 
 add_parameter POWER_OPTIMIZED natural
 set_parameter_property POWER_OPTIMIZED DEFAULT_VALUE 0
@@ -282,10 +301,6 @@ set_parameter_property POWER_OPTIMIZED DESCRIPTION "Improve power usage at the e
 set_parameter_property POWER_OPTIMIZED HDL_PARAMETER true
 set_parameter_property POWER_OPTIMIZED ALLOWED_RANGES 0:1
 set_display_item_property POWER_OPTIMIZED DISPLAY_HINT boolean
-
-add_parameter CACHE_ENABLE integer 0 
-set_parameter_property CACHE_ENABLE HDL_PARAMETER true
-set_parameter_property CACHE_ENABLE visible false 
 
 add_parameter FAMILY string ALTERA 
 set_parameter_property FAMILY HDL_PARAMETER true
@@ -371,158 +386,158 @@ add_interface_port data avm_data_readdatavalid readdatavalid Input 1
 #
 # Data Axi Port
 #
-add_interface axi_data_master axi start
-set_interface_property axi_data_master associatedClock clock
-set_interface_property axi_data_master associatedReset reset
-set_interface_property axi_data_master readIssuingCapability 1
-set_interface_property axi_data_master writeIssuingCapability 1
-set_interface_property axi_data_master combinedIssuingCapability 1
-set_interface_property axi_data_master ENABLED true
-set_interface_property axi_data_master EXPORT_OF ""
-set_interface_property axi_data_master PORT_NAME_MAP ""
-set_interface_property axi_data_master CMSIS_SVD_VARIABLES ""
-set_interface_property axi_data_master SVD_ADDRESS_GROUP ""
+add_interface axi_duc_master axi start
+set_interface_property axi_duc_master associatedClock clock
+set_interface_property axi_duc_master associatedReset reset
+set_interface_property axi_duc_master readIssuingCapability 1
+set_interface_property axi_duc_master writeIssuingCapability 1
+set_interface_property axi_duc_master combinedIssuingCapability 1
+set_interface_property axi_duc_master ENABLED true
+set_interface_property axi_duc_master EXPORT_OF ""
+set_interface_property axi_duc_master PORT_NAME_MAP ""
+set_interface_property axi_duc_master CMSIS_SVD_VARIABLES ""
+set_interface_property axi_duc_master SVD_ADDRESS_GROUP ""
 
-add_interface_port axi_data_master data_ARADDR araddr Output register_size
-add_interface_port axi_data_master data_ARBURST arburst Output 2
-add_interface_port axi_data_master data_ARCACHE arcache Output 4
-add_interface_port axi_data_master data_ARID arid Output 4
-add_interface_port axi_data_master data_ARLEN arlen Output 4
-add_interface_port axi_data_master data_ARLOCK arlock Output 2
-add_interface_port axi_data_master data_ARPROT arprot Output 3
-add_interface_port axi_data_master data_ARREADY arready Input 1
-add_interface_port axi_data_master data_ARSIZE arsize Output 3
-add_interface_port axi_data_master data_ARVALID arvalid Output 1
-add_interface_port axi_data_master data_AWADDR awaddr Output register_size
-add_interface_port axi_data_master data_AWBURST awburst Output 2
-add_interface_port axi_data_master data_AWCACHE awcache Output 4
-add_interface_port axi_data_master data_AWID awid Output 4
-add_interface_port axi_data_master data_AWLEN awlen Output 4
-add_interface_port axi_data_master data_AWLOCK awlock Output 2
-add_interface_port axi_data_master data_AWPROT awprot Output 3
-add_interface_port axi_data_master data_AWREADY awready Input 1
-add_interface_port axi_data_master data_AWSIZE awsize Output 3
-add_interface_port axi_data_master data_AWVALID awvalid Output 1
-add_interface_port axi_data_master data_BID bid Input 4
-add_interface_port axi_data_master data_BREADY bready Output 1
-add_interface_port axi_data_master data_BRESP bresp Input 2
-add_interface_port axi_data_master data_BVALID bvalid Input 1
-add_interface_port axi_data_master data_RDATA rdata Input register_size
-add_interface_port axi_data_master data_RID rid Input 4
-add_interface_port axi_data_master data_RLAST rlast Input 1
-add_interface_port axi_data_master data_RREADY rready Output 1
-add_interface_port axi_data_master data_RRESP rresp Input 2
-add_interface_port axi_data_master data_RVALID rvalid Input 1
-add_interface_port axi_data_master data_WDATA wdata Output register_size
-add_interface_port axi_data_master data_WID wid Output 4
-add_interface_port axi_data_master data_WLAST wlast Output 1
-add_interface_port axi_data_master data_WREADY wready Input 1
-add_interface_port axi_data_master data_WSTRB wstrb Output register_size/8
-add_interface_port axi_data_master data_WVALID wvalid Output 1
-
-#
-# ITCRAM Axi Port
-#
-add_interface axi_itcram_master axi start
-set_interface_property axi_itcram_master associatedClock clock
-set_interface_property axi_itcram_master associatedReset reset
-set_interface_property axi_itcram_master readIssuingCapability 2
-set_interface_property axi_itcram_master writeIssuingCapability 1
-set_interface_property axi_itcram_master combinedIssuingCapability 1
-set_interface_property axi_itcram_master ENABLED true
-set_interface_property axi_itcram_master EXPORT_OF ""
-set_interface_property axi_itcram_master PORT_NAME_MAP ""
-set_interface_property axi_itcram_master CMSIS_SVD_VARIABLES ""
-set_interface_property axi_itcram_master SVD_ADDRESS_GROUP ""
-
-add_interface_port axi_itcram_master itcram_ARADDR araddr Output register_size
-add_interface_port axi_itcram_master itcram_ARBURST arburst Output 2
-add_interface_port axi_itcram_master itcram_ARCACHE arcache Output 4
-add_interface_port axi_itcram_master itcram_ARID arid Output 4
-add_interface_port axi_itcram_master itcram_ARLEN arlen Output 4
-add_interface_port axi_itcram_master itcram_ARLOCK arlock Output 2
-add_interface_port axi_itcram_master itcram_ARPROT arprot Output 3
-add_interface_port axi_itcram_master itcram_ARREADY arready Input 1
-add_interface_port axi_itcram_master itcram_ARSIZE arsize Output 3
-add_interface_port axi_itcram_master itcram_ARVALID arvalid Output 1
-add_interface_port axi_itcram_master itcram_AWADDR awaddr Output register_size
-add_interface_port axi_itcram_master itcram_AWBURST awburst Output 2
-add_interface_port axi_itcram_master itcram_AWCACHE awcache Output 4
-add_interface_port axi_itcram_master itcram_AWID awid Output 4
-add_interface_port axi_itcram_master itcram_AWLEN awlen Output 4
-add_interface_port axi_itcram_master itcram_AWLOCK awlock Output 2
-add_interface_port axi_itcram_master itcram_AWPROT awprot Output 3
-add_interface_port axi_itcram_master itcram_AWREADY awready Input 1
-add_interface_port axi_itcram_master itcram_AWSIZE awsize Output 3
-add_interface_port axi_itcram_master itcram_AWVALID awvalid Output 1
-add_interface_port axi_itcram_master itcram_BID bid Input 4
-add_interface_port axi_itcram_master itcram_BREADY bready Output 1
-add_interface_port axi_itcram_master itcram_BRESP bresp Input 2
-add_interface_port axi_itcram_master itcram_BVALID bvalid Input 1
-add_interface_port axi_itcram_master itcram_RDATA rdata Input register_size
-add_interface_port axi_itcram_master itcram_RID rid Input 4
-add_interface_port axi_itcram_master itcram_RLAST rlast Input 1
-add_interface_port axi_itcram_master itcram_RREADY rready Output 1
-add_interface_port axi_itcram_master itcram_RRESP rresp Input 2
-add_interface_port axi_itcram_master itcram_RVALID rvalid Input 1
-add_interface_port axi_itcram_master itcram_WDATA wdata Output register_size
-add_interface_port axi_itcram_master itcram_WID wid Output 4
-add_interface_port axi_itcram_master itcram_WLAST wlast Output 1
-add_interface_port axi_itcram_master itcram_WREADY wready Input 1
-add_interface_port axi_itcram_master itcram_WSTRB wstrb Output register_size/8
-add_interface_port axi_itcram_master itcram_WVALID wvalid Output 1
+add_interface_port axi_duc_master DUC_ARADDR araddr Output register_size
+add_interface_port axi_duc_master DUC_ARBURST arburst Output 2
+add_interface_port axi_duc_master DUC_ARCACHE arcache Output 4
+add_interface_port axi_duc_master DUC_ARID arid Output 4
+add_interface_port axi_duc_master DUC_ARLEN arlen Output 4
+add_interface_port axi_duc_master DUC_ARLOCK arlock Output 2
+add_interface_port axi_duc_master DUC_ARPROT arprot Output 3
+add_interface_port axi_duc_master DUC_ARREADY arready Input 1
+add_interface_port axi_duc_master DUC_ARSIZE arsize Output 3
+add_interface_port axi_duc_master DUC_ARVALID arvalid Output 1
+add_interface_port axi_duc_master DUC_AWADDR awaddr Output register_size
+add_interface_port axi_duc_master DUC_AWBURST awburst Output 2
+add_interface_port axi_duc_master DUC_AWCACHE awcache Output 4
+add_interface_port axi_duc_master DUC_AWID awid Output 4
+add_interface_port axi_duc_master DUC_AWLEN awlen Output 4
+add_interface_port axi_duc_master DUC_AWLOCK awlock Output 2
+add_interface_port axi_duc_master DUC_AWPROT awprot Output 3
+add_interface_port axi_duc_master DUC_AWREADY awready Input 1
+add_interface_port axi_duc_master DUC_AWSIZE awsize Output 3
+add_interface_port axi_duc_master DUC_AWVALID awvalid Output 1
+add_interface_port axi_duc_master DUC_BID bid Input 4
+add_interface_port axi_duc_master DUC_BREADY bready Output 1
+add_interface_port axi_duc_master DUC_BRESP bresp Input 2
+add_interface_port axi_duc_master DUC_BVALID bvalid Input 1
+add_interface_port axi_duc_master DUC_RDATA rdata Input register_size
+add_interface_port axi_duc_master DUC_RID rid Input 4
+add_interface_port axi_duc_master DUC_RLAST rlast Input 1
+add_interface_port axi_duc_master DUC_RREADY rready Output 1
+add_interface_port axi_duc_master DUC_RRESP rresp Input 2
+add_interface_port axi_duc_master DUC_RVALID rvalid Input 1
+add_interface_port axi_duc_master DUC_WDATA wdata Output register_size
+add_interface_port axi_duc_master DUC_WID wid Output 4
+add_interface_port axi_duc_master DUC_WLAST wlast Output 1
+add_interface_port axi_duc_master DUC_WREADY wready Input 1
+add_interface_port axi_duc_master DUC_WSTRB wstrb Output register_size/8
+add_interface_port axi_duc_master DUC_WVALID wvalid Output 1
 
 #
-# IRAM Axi Port
+# IUC Axi Port
 #
-add_interface axi_iram_master axi start
-set_interface_property axi_iram_master associatedClock clock
-set_interface_property axi_iram_master associatedReset reset
-set_interface_property axi_iram_master readIssuingCapability 2
-set_interface_property axi_iram_master writeIssuingCapability 1
-set_interface_property axi_iram_master combinedIssuingCapability 1
-set_interface_property axi_iram_master ENABLED true
-set_interface_property axi_iram_master EXPORT_OF ""
-set_interface_property axi_iram_master PORT_NAME_MAP ""
-set_interface_property axi_iram_master CMSIS_SVD_VARIABLES ""
-set_interface_property axi_iram_master SVD_ADDRESS_GROUP ""
+add_interface axi_iuc_master axi start
+set_interface_property axi_iuc_master associatedClock clock
+set_interface_property axi_iuc_master associatedReset reset
+set_interface_property axi_iuc_master readIssuingCapability 2
+set_interface_property axi_iuc_master writeIssuingCapability 1
+set_interface_property axi_iuc_master combinedIssuingCapability 1
+set_interface_property axi_iuc_master ENABLED true
+set_interface_property axi_iuc_master EXPORT_OF ""
+set_interface_property axi_iuc_master PORT_NAME_MAP ""
+set_interface_property axi_iuc_master CMSIS_SVD_VARIABLES ""
+set_interface_property axi_iuc_master SVD_ADDRESS_GROUP ""
 
-add_interface_port axi_iram_master iram_ARADDR araddr Output register_size
-add_interface_port axi_iram_master iram_ARBURST arburst Output 2
-add_interface_port axi_iram_master iram_ARCACHE arcache Output 4
-add_interface_port axi_iram_master iram_ARID arid Output 4
-add_interface_port axi_iram_master iram_ARLEN arlen Output 4
-add_interface_port axi_iram_master iram_ARLOCK arlock Output 2
-add_interface_port axi_iram_master iram_ARPROT arprot Output 3
-add_interface_port axi_iram_master iram_ARREADY arready Input 1
-add_interface_port axi_iram_master iram_ARSIZE arsize Output 3
-add_interface_port axi_iram_master iram_ARVALID arvalid Output 1
-add_interface_port axi_iram_master iram_AWADDR awaddr Output register_size
-add_interface_port axi_iram_master iram_AWBURST awburst Output 2
-add_interface_port axi_iram_master iram_AWCACHE awcache Output 4
-add_interface_port axi_iram_master iram_AWID awid Output 4
-add_interface_port axi_iram_master iram_AWLEN awlen Output 4
-add_interface_port axi_iram_master iram_AWLOCK awlock Output 2
-add_interface_port axi_iram_master iram_AWPROT awprot Output 3
-add_interface_port axi_iram_master iram_AWREADY awready Input 1
-add_interface_port axi_iram_master iram_AWSIZE awsize Output 3
-add_interface_port axi_iram_master iram_AWVALID awvalid Output 1
-add_interface_port axi_iram_master iram_BID bid Input 4
-add_interface_port axi_iram_master iram_BREADY bready Output 1
-add_interface_port axi_iram_master iram_BRESP bresp Input 2
-add_interface_port axi_iram_master iram_BVALID bvalid Input 1
-add_interface_port axi_iram_master iram_RDATA rdata Input register_size
-add_interface_port axi_iram_master iram_RID rid Input 4
-add_interface_port axi_iram_master iram_RLAST rlast Input 1
-add_interface_port axi_iram_master iram_RREADY rready Output 1
-add_interface_port axi_iram_master iram_RRESP rresp Input 2
-add_interface_port axi_iram_master iram_RVALID rvalid Input 1
-add_interface_port axi_iram_master iram_WDATA wdata Output register_size
-add_interface_port axi_iram_master iram_WID wid Output 4
-add_interface_port axi_iram_master iram_WLAST wlast Output 1
-add_interface_port axi_iram_master iram_WREADY wready Input 1
-add_interface_port axi_iram_master iram_WSTRB wstrb Output register_size/8
-add_interface_port axi_iram_master iram_WVALID wvalid Output 1
+add_interface_port axi_iuc_master IUC_ARADDR araddr Output register_size
+add_interface_port axi_iuc_master IUC_ARBURST arburst Output 2
+add_interface_port axi_iuc_master IUC_ARCACHE arcache Output 4
+add_interface_port axi_iuc_master IUC_ARID arid Output 4
+add_interface_port axi_iuc_master IUC_ARLEN arlen Output 4
+add_interface_port axi_iuc_master IUC_ARLOCK arlock Output 2
+add_interface_port axi_iuc_master IUC_ARPROT arprot Output 3
+add_interface_port axi_iuc_master IUC_ARREADY arready Input 1
+add_interface_port axi_iuc_master IUC_ARSIZE arsize Output 3
+add_interface_port axi_iuc_master IUC_ARVALID arvalid Output 1
+add_interface_port axi_iuc_master IUC_AWADDR awaddr Output register_size
+add_interface_port axi_iuc_master IUC_AWBURST awburst Output 2
+add_interface_port axi_iuc_master IUC_AWCACHE awcache Output 4
+add_interface_port axi_iuc_master IUC_AWID awid Output 4
+add_interface_port axi_iuc_master IUC_AWLEN awlen Output 4
+add_interface_port axi_iuc_master IUC_AWLOCK awlock Output 2
+add_interface_port axi_iuc_master IUC_AWPROT awprot Output 3
+add_interface_port axi_iuc_master IUC_AWREADY awready Input 1
+add_interface_port axi_iuc_master IUC_AWSIZE awsize Output 3
+add_interface_port axi_iuc_master IUC_AWVALID awvalid Output 1
+add_interface_port axi_iuc_master IUC_BID bid Input 4
+add_interface_port axi_iuc_master IUC_BREADY bready Output 1
+add_interface_port axi_iuc_master IUC_BRESP bresp Input 2
+add_interface_port axi_iuc_master IUC_BVALID bvalid Input 1
+add_interface_port axi_iuc_master IUC_RDATA rdata Input register_size
+add_interface_port axi_iuc_master IUC_RID rid Input 4
+add_interface_port axi_iuc_master IUC_RLAST rlast Input 1
+add_interface_port axi_iuc_master IUC_RREADY rready Output 1
+add_interface_port axi_iuc_master IUC_RRESP rresp Input 2
+add_interface_port axi_iuc_master IUC_RVALID rvalid Input 1
+add_interface_port axi_iuc_master IUC_WDATA wdata Output register_size
+add_interface_port axi_iuc_master IUC_WID wid Output 4
+add_interface_port axi_iuc_master IUC_WLAST wlast Output 1
+add_interface_port axi_iuc_master IUC_WREADY wready Input 1
+add_interface_port axi_iuc_master IUC_WSTRB wstrb Output register_size/8
+add_interface_port axi_iuc_master IUC_WVALID wvalid Output 1
+
+#
+# IC Axi Port
+#
+add_interface axi_ic_master axi start
+set_interface_property axi_ic_master associatedClock clock
+set_interface_property axi_ic_master associatedReset reset
+set_interface_property axi_ic_master readIssuingCapability 2
+set_interface_property axi_ic_master writeIssuingCapability 1
+set_interface_property axi_ic_master combinedIssuingCapability 1
+set_interface_property axi_ic_master ENABLED true
+set_interface_property axi_ic_master EXPORT_OF ""
+set_interface_property axi_ic_master PORT_NAME_MAP ""
+set_interface_property axi_ic_master CMSIS_SVD_VARIABLES ""
+set_interface_property axi_ic_master SVD_ADDRESS_GROUP ""
+
+add_interface_port axi_ic_master IC_ARADDR araddr Output register_size
+add_interface_port axi_ic_master IC_ARBURST arburst Output 2
+add_interface_port axi_ic_master IC_ARCACHE arcache Output 4
+add_interface_port axi_ic_master IC_ARID arid Output 4
+add_interface_port axi_ic_master IC_ARLEN arlen Output 4
+add_interface_port axi_ic_master IC_ARLOCK arlock Output 2
+add_interface_port axi_ic_master IC_ARPROT arprot Output 3
+add_interface_port axi_ic_master IC_ARREADY arready Input 1
+add_interface_port axi_ic_master IC_ARSIZE arsize Output 3
+add_interface_port axi_ic_master IC_ARVALID arvalid Output 1
+add_interface_port axi_ic_master IC_AWADDR awaddr Output register_size
+add_interface_port axi_ic_master IC_AWBURST awburst Output 2
+add_interface_port axi_ic_master IC_AWCACHE awcache Output 4
+add_interface_port axi_ic_master IC_AWID awid Output 4
+add_interface_port axi_ic_master IC_AWLEN awlen Output 4
+add_interface_port axi_ic_master IC_AWLOCK awlock Output 2
+add_interface_port axi_ic_master IC_AWPROT awprot Output 3
+add_interface_port axi_ic_master IC_AWREADY awready Input 1
+add_interface_port axi_ic_master IC_AWSIZE awsize Output 3
+add_interface_port axi_ic_master IC_AWVALID awvalid Output 1
+add_interface_port axi_ic_master IC_BID bid Input 4
+add_interface_port axi_ic_master IC_BREADY bready Output 1
+add_interface_port axi_ic_master IC_BRESP bresp Input 2
+add_interface_port axi_ic_master IC_BVALID bvalid Input 1
+add_interface_port axi_ic_master IC_RDATA rdata Input register_size
+add_interface_port axi_ic_master IC_RID rid Input 4
+add_interface_port axi_ic_master IC_RLAST rlast Input 1
+add_interface_port axi_ic_master IC_RREADY rready Output 1
+add_interface_port axi_ic_master IC_RRESP rresp Input 2
+add_interface_port axi_ic_master IC_RVALID rvalid Input 1
+add_interface_port axi_ic_master IC_WDATA wdata Output register_size
+add_interface_port axi_ic_master IC_WID wid Output 4
+add_interface_port axi_ic_master IC_WLAST wlast Output 1
+add_interface_port axi_ic_master IC_WREADY wready Input 1
+add_interface_port axi_ic_master IC_WSTRB wstrb Output register_size/8
+add_interface_port axi_ic_master IC_WVALID wvalid Output 1
 
 #
 # connection point instruction
@@ -731,9 +746,9 @@ proc elaboration_callback {} {
 	set_parameter_value AVALON_ENABLE  $avalon_bus
 	set_parameter_value WISHBONE_ENABLE $wishbone_bus
 
-	set_interface_property axi_itcram_master ENABLED $axi_bus
-	set_interface_property axi_data_master ENABLED $axi_bus
-	set_interface_property axi_iram_master ENABLED $cache_bus
+	set_interface_property axi_iuc_master ENABLED $axi_bus
+	set_interface_property axi_duc_master ENABLED $axi_bus
+	set_interface_property axi_ic_master ENABLED $cache_bus
 
 	set_interface_property data ENABLED $avalon_bus
 	set_interface_property instruction ENABLED $avalon_bus

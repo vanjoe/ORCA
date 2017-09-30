@@ -22,7 +22,7 @@ TOP_LEVEL_FILES=$(wildcard *.vhd)
 
 -include config.mk
 
-$(QSYS_FILE):$(wildcard config.mk)
+$(QSYS_FILE): $(wildcard config.mk)
 ifdef BRANCH_PREDICTION
 	sed -i 's|parameter name="BRANCH_PREDICTION" value=".*" />|parameter name="BRANCH_PREDICTION" value="$(BRANCH_PREDICTION)" />|' $(QSYS_FILE)
 endif
@@ -48,8 +48,13 @@ ifdef ENABLE_EXCEPTIONS
 	sed -i 's|parameter name="ENABLE_EXCEPTIONS" value=".*" />|parameter name="ENABLE_EXCEPTIONS" value="$(ENABLE_EXCEPTIONS)" />|' $(QSYS_FILE)
 endif
 
+.PHONY: gui-qsys
+gui-qsys:
+	qsys-edit $(QSYS_FILE) --search-path="./,../../rtl/,$$" &
+
 $(QIP_FILE): $(QSYS_FILE) ../../rtl/orca_hw.tcl
-	qsys-generate --synthesis=VHDL system.qsys 2>&1 | tee ./system.qsys.log
+	qsys-generate $(QSYS_FILE) --search-path="./,../../rtl/,$$" --synthesis=VHDL 2>&1 | tee ./synth.$(QSYS_FILE).log
+	[ -e $@ ]
 
 $(ORCA_SUBMODULE_FILES): system/synthesis/submodules/vblox_orca/% : ../../rtl/% | $(QIP_FILE)
 	 cp $^ $@
@@ -61,20 +66,11 @@ copy-files: $(ORCA_SUBMODULE_FILES)
 $(TEST_SUBMODULE_FILES): system/synthesis/submodules/% : test_components/%
 	cp $^ $@
 
-ifndef NO_SW
-HEX_FILE=test.hex
-ELF_FILE=software/test.elf
-else
-HEX_FILE=
-ELF_FILE=
-endif
+BIN_FILE=test.bin
+software/$(BIN_FILE):
+	make -C software $<
 
-$(ELF_FILE) :
-	make -C software/
-$(HEX_FILE) : $(ELF_FILE)
-	../../tools/elf2hex.sh $<
-	mv test.qex test.hex
-$(MAP_RPT_FILE) : $(HEX_FILE) $(QIP_FILE) $(SUBMODULE_FILES) $(TOP_LEVEL_FILES) 
+$(MAP_RPT_FILE) : $(QIP_FILE) $(SUBMODULE_FILES) $(TOP_LEVEL_FILES) 
 	quartus_map $(QPF_FILE)
 $(FIT_RPT_FILE) : $(MAP_RPT_FILE)
 	quartus_fit $(QPF_FILE)
@@ -95,14 +91,18 @@ mif: $(MIF_RPT_FILE)
 asm: $(ASM_RPT_FILE)
 sta: $(STA_RPT_FILE)
 
-.phony: all clean qip map fit mif asm sta pgm testbench sim help
+.phony: all clean qip map fit mif asm sta pgm run testbench sim help
 
-testbench: system/testbench/mentor/msim_setup.tcl
+testbench: system/simulation/mentor/msim_setup.tcl
 
-system/testbench/mentor/msim_setup.tcl:$(QSYS_FILE) $(SUBMODULE_FILES) 
-	qsys-generate --testbench --testbench-simulation=VHDL $(QSYS_FILE)
+system/simulation/mentor/msim_setup.tcl: $(QSYS_FILE) $(SUBMODULE_FILES)
+	qsys-generate $(QSYS_FILE) --search-path="./,../../rtl/,$$" --simulation=VHDL 2>&1 | tee ./sim.$(QSYS_FILE).log
+	[ -e $@ ]
 
-sim: system/testbench/mentor/msim_setup.tcl test.hex
+software/test.hex:
+	$(MAKE) -C software test.hex
+
+sim: testbench software/test.hex
 	vsim -do simulate.tcl
 
 clean:
@@ -110,11 +110,13 @@ clean:
 	rm -rf db/ incremental_db/
 	rm -rf *.log system.sopcinfo
 	rm -rf system.sof .qsys_edit/
-	make clean -C software/
-	rm test.hex
+	$(MAKE) -C software/ clean || true
 
 pgm: system.sof
 	quartus_pgm -m JTAG -o P\;$^
+
+run: software/$(BIN_FILE)
+	python orca_pgm.py software/test.bin --family=altera --reset_address=0x10000000 --end_address=0x00010000
 
 help:
 	@echo "Makefile Help:"
@@ -122,6 +124,9 @@ help:
 	@echo
 	@echo "   all:"
 	@echo "     Build bitstream and run timing reports"
+	@echo
+	@echo "   gui-qsys:"
+	@echo "     Open the system in the QSYS GUI"
 	@echo
 	@echo "   qip:"
 	@echo "     Run qsys-generate"
@@ -149,3 +154,8 @@ help:
 	@echo
 	@echo "   pgm:"
 	@echo "     Program the attached de2-115 board"
+	@echo
+	@echo "   run:"
+	@echo "     Program and run the program from the software directory"
+
+.DELETE_ON_ERROR:

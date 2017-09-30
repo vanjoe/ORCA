@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////
-// Created by SmartDesign Wed Jun 28 14:26:04 2017
+// Created by SmartDesign Wed Aug 30 14:20:50 2017
 // Version: v11.7 SP3 11.7.3.8
 //////////////////////////////////////////////////////////////////////
 
@@ -278,52 +278,52 @@ wire   [2:0]  fabric_master_0_BIF_1_HSIZE;
 wire   [1:0]  fabric_master_0_BIF_1_HTRANS;
 wire   [31:0] fabric_master_0_BIF_1_HWDATA;
 wire          fabric_master_0_BIF_1_HWRITE;
-wire   [31:0] microsemi_wrapper_0_DATA_MASTER_ARADDR;
-wire   [1:0]  microsemi_wrapper_0_DATA_MASTER_ARBURST;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_ARCACHE;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_ARID;
-wire   [1:0]  microsemi_wrapper_0_DATA_MASTER_ARLOCK;
-wire   [2:0]  microsemi_wrapper_0_DATA_MASTER_ARPROT;
-wire          microsemi_wrapper_0_DATA_MASTER_ARREADY;
-wire   [2:0]  microsemi_wrapper_0_DATA_MASTER_ARSIZE;
-wire          microsemi_wrapper_0_DATA_MASTER_ARVALID;
-wire   [31:0] microsemi_wrapper_0_DATA_MASTER_AWADDR;
-wire   [1:0]  microsemi_wrapper_0_DATA_MASTER_AWBURST;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_AWCACHE;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_AWID;
-wire   [1:0]  microsemi_wrapper_0_DATA_MASTER_AWLOCK;
-wire   [2:0]  microsemi_wrapper_0_DATA_MASTER_AWPROT;
-wire          microsemi_wrapper_0_DATA_MASTER_AWREADY;
-wire   [2:0]  microsemi_wrapper_0_DATA_MASTER_AWSIZE;
-wire          microsemi_wrapper_0_DATA_MASTER_AWVALID;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_BID;
-wire          microsemi_wrapper_0_DATA_MASTER_BREADY;
-wire   [1:0]  microsemi_wrapper_0_DATA_MASTER_BRESP;
-wire   [0:0]  microsemi_wrapper_0_DATA_MASTER_BUSER;
-wire          microsemi_wrapper_0_DATA_MASTER_BVALID;
-wire   [31:0] microsemi_wrapper_0_DATA_MASTER_RDATA;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_RID;
-wire          microsemi_wrapper_0_DATA_MASTER_RLAST;
-wire          microsemi_wrapper_0_DATA_MASTER_RREADY;
-wire   [1:0]  microsemi_wrapper_0_DATA_MASTER_RRESP;
-wire   [0:0]  microsemi_wrapper_0_DATA_MASTER_RUSER;
-wire          microsemi_wrapper_0_DATA_MASTER_RVALID;
-wire   [31:0] microsemi_wrapper_0_DATA_MASTER_WDATA;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_WID;
-wire          microsemi_wrapper_0_DATA_MASTER_WLAST;
-wire          microsemi_wrapper_0_DATA_MASTER_WREADY;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_WSTRB;
-wire          microsemi_wrapper_0_DATA_MASTER_WVALID;
-wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_0_PADDR;
-wire          my_mss_top_0_AMBA_SLAVE_0_0_PENABLE;
-wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_0_PRDATA;
-wire          my_mss_top_0_AMBA_SLAVE_0_0_PREADY;
-wire          my_mss_top_0_AMBA_SLAVE_0_0_PSELx;
-wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_0_PWDATA;
-wire          my_mss_top_0_AMBA_SLAVE_0_0_PWRITE;
-wire          my_mss_top_0_FIC_0_CLK_1;
+wire   [31:0] microsemi_wrapper_0_AXI_MASTER_ARADDR;
+wire   [1:0]  microsemi_wrapper_0_AXI_MASTER_ARBURST;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_ARCACHE;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_ARID;
+wire   [1:0]  microsemi_wrapper_0_AXI_MASTER_ARLOCK;
+wire   [2:0]  microsemi_wrapper_0_AXI_MASTER_ARPROT;
+wire          microsemi_wrapper_0_AXI_MASTER_ARREADY;
+wire   [2:0]  microsemi_wrapper_0_AXI_MASTER_ARSIZE;
+wire          microsemi_wrapper_0_AXI_MASTER_ARVALID;
+wire   [31:0] microsemi_wrapper_0_AXI_MASTER_AWADDR;
+wire   [1:0]  microsemi_wrapper_0_AXI_MASTER_AWBURST;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_AWCACHE;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_AWID;
+wire   [1:0]  microsemi_wrapper_0_AXI_MASTER_AWLOCK;
+wire   [2:0]  microsemi_wrapper_0_AXI_MASTER_AWPROT;
+wire          microsemi_wrapper_0_AXI_MASTER_AWREADY;
+wire   [2:0]  microsemi_wrapper_0_AXI_MASTER_AWSIZE;
+wire          microsemi_wrapper_0_AXI_MASTER_AWVALID;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_BID;
+wire          microsemi_wrapper_0_AXI_MASTER_BREADY;
+wire   [1:0]  microsemi_wrapper_0_AXI_MASTER_BRESP;
+wire   [0:0]  microsemi_wrapper_0_AXI_MASTER_BUSER;
+wire          microsemi_wrapper_0_AXI_MASTER_BVALID;
+wire   [31:0] microsemi_wrapper_0_AXI_MASTER_RDATA;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_RID;
+wire          microsemi_wrapper_0_AXI_MASTER_RLAST;
+wire          microsemi_wrapper_0_AXI_MASTER_RREADY;
+wire   [1:0]  microsemi_wrapper_0_AXI_MASTER_RRESP;
+wire   [0:0]  microsemi_wrapper_0_AXI_MASTER_RUSER;
+wire          microsemi_wrapper_0_AXI_MASTER_RVALID;
+wire   [31:0] microsemi_wrapper_0_AXI_MASTER_WDATA;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_WID;
+wire          microsemi_wrapper_0_AXI_MASTER_WLAST;
+wire          microsemi_wrapper_0_AXI_MASTER_WREADY;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_WSTRB;
+wire          microsemi_wrapper_0_AXI_MASTER_WVALID;
+wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_1_PADDR;
+wire          my_mss_top_0_AMBA_SLAVE_0_1_PENABLE;
+wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_1_PRDATA;
+wire          my_mss_top_0_AMBA_SLAVE_0_1_PREADY;
+wire          my_mss_top_0_AMBA_SLAVE_0_1_PSELx;
+wire   [31:0] my_mss_top_0_AMBA_SLAVE_0_1_PWDATA;
+wire          my_mss_top_0_AMBA_SLAVE_0_1_PWRITE;
+wire          my_mss_top_0_FIC_0_CLK_0;
 wire          my_mss_top_0_GL1;
-wire          my_mss_top_0_MSS_READY_0;
+wire          my_mss_top_0_MSS_READY_1;
 wire          RX;
 wire          TX_net_0;
 wire          TX_net_1;
@@ -690,16 +690,16 @@ wire          reset_IN_POST_INV0_0;
 //--------------------------------------------------------------------
 // Bus Interface Nets Declarations - Unequal Pin Widths
 //--------------------------------------------------------------------
-wire   [31:0] axi_to_apb_0_APB_SLAVE_PADDR;
 wire   [4:0]  axi_to_apb_0_APB_SLAVE_PADDR_0_4to0;
 wire   [4:0]  axi_to_apb_0_APB_SLAVE_PADDR_0;
+wire   [31:0] axi_to_apb_0_APB_SLAVE_PADDR;
+wire   [7:0]  axi_to_apb_0_APB_SLAVE_PRDATA;
 wire   [31:8] axi_to_apb_0_APB_SLAVE_PRDATA_0_31to8;
 wire   [7:0]  axi_to_apb_0_APB_SLAVE_PRDATA_0_7to0;
 wire   [31:0] axi_to_apb_0_APB_SLAVE_PRDATA_0;
-wire   [7:0]  axi_to_apb_0_APB_SLAVE_PRDATA;
-wire   [31:0] axi_to_apb_0_APB_SLAVE_PWDATA;
 wire   [7:0]  axi_to_apb_0_APB_SLAVE_PWDATA_0_7to0;
 wire   [7:0]  axi_to_apb_0_APB_SLAVE_PWDATA_0;
+wire   [31:0] axi_to_apb_0_APB_SLAVE_PWDATA;
 wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave0_ARID;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave0_ARID_0_3to0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave0_ARID_0;
@@ -769,14 +769,14 @@ wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave7_RID;
 wire   [4:0]  CoreAXI4Interconnect_0_AXI3mslave7_WID;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave7_WID_0_3to0;
 wire   [3:0]  CoreAXI4Interconnect_0_AXI3mslave7_WID_0;
-wire   [7:4]  microsemi_wrapper_0_DATA_MASTER_ARLEN_0_7to4;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_ARLEN_0_3to0;
-wire   [7:0]  microsemi_wrapper_0_DATA_MASTER_ARLEN_0;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_ARLEN;
-wire   [7:4]  microsemi_wrapper_0_DATA_MASTER_AWLEN_0_7to4;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_AWLEN_0_3to0;
-wire   [7:0]  microsemi_wrapper_0_DATA_MASTER_AWLEN_0;
-wire   [3:0]  microsemi_wrapper_0_DATA_MASTER_AWLEN;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_ARLEN;
+wire   [7:4]  microsemi_wrapper_0_AXI_MASTER_ARLEN_0_7to4;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_ARLEN_0_3to0;
+wire   [7:0]  microsemi_wrapper_0_AXI_MASTER_ARLEN_0;
+wire   [7:4]  microsemi_wrapper_0_AXI_MASTER_AWLEN_0_7to4;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_AWLEN_0_3to0;
+wire   [7:0]  microsemi_wrapper_0_AXI_MASTER_AWLEN_0;
+wire   [3:0]  microsemi_wrapper_0_AXI_MASTER_AWLEN;
 //--------------------------------------------------------------------
 // Constant assignments
 //--------------------------------------------------------------------
@@ -1136,7 +1136,7 @@ assign MASTER7_ARREGION_const_net_0 = 4'h0;
 //--------------------------------------------------------------------
 // Inversions
 //--------------------------------------------------------------------
-assign reset_IN_POST_INV0_0 = ~ my_mss_top_0_MSS_READY_0;
+assign reset_IN_POST_INV0_0 = ~ my_mss_top_0_MSS_READY_1;
 //--------------------------------------------------------------------
 // Top level output port assignments
 //--------------------------------------------------------------------
@@ -1224,13 +1224,13 @@ assign CoreAXI4Interconnect_0_AXI3mslave7_RID_0 = { CoreAXI4Interconnect_0_AXI3m
 assign CoreAXI4Interconnect_0_AXI3mslave7_WID_0_3to0 = CoreAXI4Interconnect_0_AXI3mslave7_WID[3:0];
 assign CoreAXI4Interconnect_0_AXI3mslave7_WID_0 = { CoreAXI4Interconnect_0_AXI3mslave7_WID_0_3to0 };
 
-assign microsemi_wrapper_0_DATA_MASTER_ARLEN_0_7to4 = 4'h0;
-assign microsemi_wrapper_0_DATA_MASTER_ARLEN_0_3to0 = microsemi_wrapper_0_DATA_MASTER_ARLEN[3:0];
-assign microsemi_wrapper_0_DATA_MASTER_ARLEN_0 = { microsemi_wrapper_0_DATA_MASTER_ARLEN_0_7to4, microsemi_wrapper_0_DATA_MASTER_ARLEN_0_3to0 };
+assign microsemi_wrapper_0_AXI_MASTER_ARLEN_0_7to4 = 4'h0;
+assign microsemi_wrapper_0_AXI_MASTER_ARLEN_0_3to0 = microsemi_wrapper_0_AXI_MASTER_ARLEN[3:0];
+assign microsemi_wrapper_0_AXI_MASTER_ARLEN_0 = { microsemi_wrapper_0_AXI_MASTER_ARLEN_0_7to4, microsemi_wrapper_0_AXI_MASTER_ARLEN_0_3to0 };
 
-assign microsemi_wrapper_0_DATA_MASTER_AWLEN_0_7to4 = 4'h0;
-assign microsemi_wrapper_0_DATA_MASTER_AWLEN_0_3to0 = microsemi_wrapper_0_DATA_MASTER_AWLEN[3:0];
-assign microsemi_wrapper_0_DATA_MASTER_AWLEN_0 = { microsemi_wrapper_0_DATA_MASTER_AWLEN_0_7to4, microsemi_wrapper_0_DATA_MASTER_AWLEN_0_3to0 };
+assign microsemi_wrapper_0_AXI_MASTER_AWLEN_0_7to4 = 4'h0;
+assign microsemi_wrapper_0_AXI_MASTER_AWLEN_0_3to0 = microsemi_wrapper_0_AXI_MASTER_AWLEN[3:0];
+assign microsemi_wrapper_0_AXI_MASTER_AWLEN_0 = { microsemi_wrapper_0_AXI_MASTER_AWLEN_0_7to4, microsemi_wrapper_0_AXI_MASTER_AWLEN_0_3to0 };
 
 //--------------------------------------------------------------------
 // Component instances
@@ -1241,8 +1241,8 @@ axi_to_apb #(
         .REGISTER_SIZE ( 32 ) )
 axi_to_apb_0(
         // Inputs
-        .clk     ( my_mss_top_0_FIC_0_CLK_1 ),
-        .aresetn ( my_mss_top_0_MSS_READY_0 ),
+        .clk     ( my_mss_top_0_FIC_0_CLK_0 ),
+        .aresetn ( my_mss_top_0_MSS_READY_1 ),
         .AWVALID ( CoreAXI4Interconnect_0_AXI3mslave3_AWVALID ),
         .WLAST   ( CoreAXI4Interconnect_0_AXI3mslave3_WLAST ),
         .WVALID  ( CoreAXI4Interconnect_0_AXI3mslave3_WVALID ),
@@ -2291,9 +2291,9 @@ CoreAXI4Interconnect #(
         .USER_WIDTH                    ( 1 ) )
 CoreAXI4Interconnect_0(
         // Inputs
-        .ACLK              ( my_mss_top_0_FIC_0_CLK_1 ),
-        .ARESETN           ( my_mss_top_0_MSS_READY_0 ),
-        .MASTER0_AWVALID   ( microsemi_wrapper_0_DATA_MASTER_AWVALID ),
+        .ACLK              ( my_mss_top_0_FIC_0_CLK_0 ),
+        .ARESETN           ( my_mss_top_0_MSS_READY_1 ),
+        .MASTER0_AWVALID   ( microsemi_wrapper_0_AXI_MASTER_AWVALID ),
         .MASTER1_AWVALID   ( GND_net ), // tied to 1'b0 from definition
         .MASTER2_AWVALID   ( GND_net ), // tied to 1'b0 from definition
         .MASTER3_AWVALID   ( GND_net ), // tied to 1'b0 from definition
@@ -2301,8 +2301,8 @@ CoreAXI4Interconnect_0(
         .MASTER5_AWVALID   ( GND_net ), // tied to 1'b0 from definition
         .MASTER6_AWVALID   ( GND_net ), // tied to 1'b0 from definition
         .MASTER7_AWVALID   ( GND_net ), // tied to 1'b0 from definition
-        .MASTER0_WLAST     ( microsemi_wrapper_0_DATA_MASTER_WLAST ),
-        .MASTER0_WVALID    ( microsemi_wrapper_0_DATA_MASTER_WVALID ),
+        .MASTER0_WLAST     ( microsemi_wrapper_0_AXI_MASTER_WLAST ),
+        .MASTER0_WVALID    ( microsemi_wrapper_0_AXI_MASTER_WVALID ),
         .MASTER1_WLAST     ( GND_net ), // tied to 1'b0 from definition
         .MASTER1_WVALID    ( GND_net ), // tied to 1'b0 from definition
         .MASTER2_WLAST     ( GND_net ), // tied to 1'b0 from definition
@@ -2317,7 +2317,7 @@ CoreAXI4Interconnect_0(
         .MASTER6_WVALID    ( GND_net ), // tied to 1'b0 from definition
         .MASTER7_WLAST     ( GND_net ), // tied to 1'b0 from definition
         .MASTER7_WVALID    ( GND_net ), // tied to 1'b0 from definition
-        .MASTER0_BREADY    ( microsemi_wrapper_0_DATA_MASTER_BREADY ),
+        .MASTER0_BREADY    ( microsemi_wrapper_0_AXI_MASTER_BREADY ),
         .MASTER1_BREADY    ( GND_net ), // tied to 1'b0 from definition
         .MASTER2_BREADY    ( GND_net ), // tied to 1'b0 from definition
         .MASTER3_BREADY    ( GND_net ), // tied to 1'b0 from definition
@@ -2325,7 +2325,7 @@ CoreAXI4Interconnect_0(
         .MASTER5_BREADY    ( GND_net ), // tied to 1'b0 from definition
         .MASTER6_BREADY    ( GND_net ), // tied to 1'b0 from definition
         .MASTER7_BREADY    ( GND_net ), // tied to 1'b0 from definition
-        .MASTER0_ARVALID   ( microsemi_wrapper_0_DATA_MASTER_ARVALID ),
+        .MASTER0_ARVALID   ( microsemi_wrapper_0_AXI_MASTER_ARVALID ),
         .MASTER1_ARVALID   ( GND_net ), // tied to 1'b0 from definition
         .MASTER2_ARVALID   ( GND_net ), // tied to 1'b0 from definition
         .MASTER3_ARVALID   ( GND_net ), // tied to 1'b0 from definition
@@ -2333,7 +2333,7 @@ CoreAXI4Interconnect_0(
         .MASTER5_ARVALID   ( GND_net ), // tied to 1'b0 from definition
         .MASTER6_ARVALID   ( GND_net ), // tied to 1'b0 from definition
         .MASTER7_ARVALID   ( GND_net ), // tied to 1'b0 from definition
-        .MASTER0_RREADY    ( microsemi_wrapper_0_DATA_MASTER_RREADY ),
+        .MASTER0_RREADY    ( microsemi_wrapper_0_AXI_MASTER_RREADY ),
         .MASTER1_RREADY    ( GND_net ), // tied to 1'b0 from definition
         .MASTER2_RREADY    ( GND_net ), // tied to 1'b0 from definition
         .MASTER3_RREADY    ( GND_net ), // tied to 1'b0 from definition
@@ -2605,14 +2605,14 @@ CoreAXI4Interconnect_0(
         .S_CLK29           ( GND_net ), // tied to 1'b0 from definition
         .S_CLK30           ( GND_net ), // tied to 1'b0 from definition
         .S_CLK31           ( GND_net ), // tied to 1'b0 from definition
-        .MASTER0_AWID      ( microsemi_wrapper_0_DATA_MASTER_AWID ),
-        .MASTER0_AWADDR    ( microsemi_wrapper_0_DATA_MASTER_AWADDR ),
-        .MASTER0_AWLEN     ( microsemi_wrapper_0_DATA_MASTER_AWLEN_0 ),
-        .MASTER0_AWSIZE    ( microsemi_wrapper_0_DATA_MASTER_AWSIZE ),
-        .MASTER0_AWBURST   ( microsemi_wrapper_0_DATA_MASTER_AWBURST ),
-        .MASTER0_AWLOCK    ( microsemi_wrapper_0_DATA_MASTER_AWLOCK ),
-        .MASTER0_AWCACHE   ( microsemi_wrapper_0_DATA_MASTER_AWCACHE ),
-        .MASTER0_AWPROT    ( microsemi_wrapper_0_DATA_MASTER_AWPROT ),
+        .MASTER0_AWID      ( microsemi_wrapper_0_AXI_MASTER_AWID ),
+        .MASTER0_AWADDR    ( microsemi_wrapper_0_AXI_MASTER_AWADDR ),
+        .MASTER0_AWLEN     ( microsemi_wrapper_0_AXI_MASTER_AWLEN_0 ),
+        .MASTER0_AWSIZE    ( microsemi_wrapper_0_AXI_MASTER_AWSIZE ),
+        .MASTER0_AWBURST   ( microsemi_wrapper_0_AXI_MASTER_AWBURST ),
+        .MASTER0_AWLOCK    ( microsemi_wrapper_0_AXI_MASTER_AWLOCK ),
+        .MASTER0_AWCACHE   ( microsemi_wrapper_0_AXI_MASTER_AWCACHE ),
+        .MASTER0_AWPROT    ( microsemi_wrapper_0_AXI_MASTER_AWPROT ),
         .MASTER0_AWREGION  ( MASTER0_AWREGION_const_net_0 ), // tied to 4'h0 from definition
         .MASTER0_AWQOS     ( MASTER0_AWQOS_const_net_0 ), // tied to 4'h0 from definition
         .MASTER0_AWUSER    ( GND_net ), // tied to 1'b0 from definition
@@ -2693,8 +2693,8 @@ CoreAXI4Interconnect_0(
         .MASTER7_AWREGION  ( MASTER7_AWREGION_const_net_0 ), // tied to 4'h0 from definition
         .MASTER7_AWQOS     ( MASTER7_AWQOS_const_net_0 ), // tied to 4'h0 from definition
         .MASTER7_AWUSER    ( GND_net ), // tied to 1'b0 from definition
-        .MASTER0_WDATA     ( microsemi_wrapper_0_DATA_MASTER_WDATA ),
-        .MASTER0_WSTRB     ( microsemi_wrapper_0_DATA_MASTER_WSTRB ),
+        .MASTER0_WDATA     ( microsemi_wrapper_0_AXI_MASTER_WDATA ),
+        .MASTER0_WSTRB     ( microsemi_wrapper_0_AXI_MASTER_WSTRB ),
         .MASTER0_WUSER     ( GND_net ), // tied to 1'b0 from definition
         .MASTER1_WDATA     ( MASTER1_WDATA_const_net_0 ), // tied to 32'h00000000 from definition
         .MASTER1_WSTRB     ( MASTER1_WSTRB_const_net_0 ), // tied to 4'hF from definition
@@ -2717,14 +2717,14 @@ CoreAXI4Interconnect_0(
         .MASTER7_WDATA     ( MASTER7_WDATA_const_net_0 ), // tied to 32'h00000000 from definition
         .MASTER7_WSTRB     ( MASTER7_WSTRB_const_net_0 ), // tied to 4'hF from definition
         .MASTER7_WUSER     ( GND_net ), // tied to 1'b0 from definition
-        .MASTER0_ARID      ( microsemi_wrapper_0_DATA_MASTER_ARID ),
-        .MASTER0_ARADDR    ( microsemi_wrapper_0_DATA_MASTER_ARADDR ),
-        .MASTER0_ARLEN     ( microsemi_wrapper_0_DATA_MASTER_ARLEN_0 ),
-        .MASTER0_ARSIZE    ( microsemi_wrapper_0_DATA_MASTER_ARSIZE ),
-        .MASTER0_ARBURST   ( microsemi_wrapper_0_DATA_MASTER_ARBURST ),
-        .MASTER0_ARLOCK    ( microsemi_wrapper_0_DATA_MASTER_ARLOCK ),
-        .MASTER0_ARCACHE   ( microsemi_wrapper_0_DATA_MASTER_ARCACHE ),
-        .MASTER0_ARPROT    ( microsemi_wrapper_0_DATA_MASTER_ARPROT ),
+        .MASTER0_ARID      ( microsemi_wrapper_0_AXI_MASTER_ARID ),
+        .MASTER0_ARADDR    ( microsemi_wrapper_0_AXI_MASTER_ARADDR ),
+        .MASTER0_ARLEN     ( microsemi_wrapper_0_AXI_MASTER_ARLEN_0 ),
+        .MASTER0_ARSIZE    ( microsemi_wrapper_0_AXI_MASTER_ARSIZE ),
+        .MASTER0_ARBURST   ( microsemi_wrapper_0_AXI_MASTER_ARBURST ),
+        .MASTER0_ARLOCK    ( microsemi_wrapper_0_AXI_MASTER_ARLOCK ),
+        .MASTER0_ARCACHE   ( microsemi_wrapper_0_AXI_MASTER_ARCACHE ),
+        .MASTER0_ARPROT    ( microsemi_wrapper_0_AXI_MASTER_ARPROT ),
         .MASTER0_ARREGION  ( MASTER0_ARREGION_const_net_0 ), // tied to 4'h0 from definition
         .MASTER0_ARQOS     ( MASTER0_ARQOS_const_net_0 ), // tied to 4'h0 from definition
         .MASTER0_ARUSER    ( GND_net ), // tied to 1'b0 from definition
@@ -3078,7 +3078,7 @@ CoreAXI4Interconnect_0(
         .SLAVE31_RRESP     ( SLAVE31_RRESP_const_net_0 ), // tied to 2'h0 from definition
         .SLAVE31_RUSER     ( GND_net ), // tied to 1'b0 from definition
         // Outputs
-        .MASTER0_AWREADY   ( microsemi_wrapper_0_DATA_MASTER_AWREADY ),
+        .MASTER0_AWREADY   ( microsemi_wrapper_0_AXI_MASTER_AWREADY ),
         .MASTER1_AWREADY   (  ),
         .MASTER2_AWREADY   (  ),
         .MASTER3_AWREADY   (  ),
@@ -3086,7 +3086,7 @@ CoreAXI4Interconnect_0(
         .MASTER5_AWREADY   (  ),
         .MASTER6_AWREADY   (  ),
         .MASTER7_AWREADY   (  ),
-        .MASTER0_WREADY    ( microsemi_wrapper_0_DATA_MASTER_WREADY ),
+        .MASTER0_WREADY    ( microsemi_wrapper_0_AXI_MASTER_WREADY ),
         .MASTER1_WREADY    (  ),
         .MASTER2_WREADY    (  ),
         .MASTER3_WREADY    (  ),
@@ -3094,7 +3094,7 @@ CoreAXI4Interconnect_0(
         .MASTER5_WREADY    (  ),
         .MASTER6_WREADY    (  ),
         .MASTER7_WREADY    (  ),
-        .MASTER0_BVALID    ( microsemi_wrapper_0_DATA_MASTER_BVALID ),
+        .MASTER0_BVALID    ( microsemi_wrapper_0_AXI_MASTER_BVALID ),
         .MASTER1_BVALID    (  ),
         .MASTER2_BVALID    (  ),
         .MASTER3_BVALID    (  ),
@@ -3102,7 +3102,7 @@ CoreAXI4Interconnect_0(
         .MASTER5_BVALID    (  ),
         .MASTER6_BVALID    (  ),
         .MASTER7_BVALID    (  ),
-        .MASTER0_ARREADY   ( microsemi_wrapper_0_DATA_MASTER_ARREADY ),
+        .MASTER0_ARREADY   ( microsemi_wrapper_0_AXI_MASTER_ARREADY ),
         .MASTER1_ARREADY   (  ),
         .MASTER2_ARREADY   (  ),
         .MASTER3_ARREADY   (  ),
@@ -3110,8 +3110,8 @@ CoreAXI4Interconnect_0(
         .MASTER5_ARREADY   (  ),
         .MASTER6_ARREADY   (  ),
         .MASTER7_ARREADY   (  ),
-        .MASTER0_RLAST     ( microsemi_wrapper_0_DATA_MASTER_RLAST ),
-        .MASTER0_RVALID    ( microsemi_wrapper_0_DATA_MASTER_RVALID ),
+        .MASTER0_RLAST     ( microsemi_wrapper_0_AXI_MASTER_RLAST ),
+        .MASTER0_RVALID    ( microsemi_wrapper_0_AXI_MASTER_RVALID ),
         .MASTER1_RLAST     (  ),
         .MASTER1_RVALID    (  ),
         .MASTER2_RLAST     (  ),
@@ -3334,9 +3334,9 @@ CoreAXI4Interconnect_0(
         .SLAVE29_RREADY    (  ),
         .SLAVE30_RREADY    (  ),
         .SLAVE31_RREADY    (  ),
-        .MASTER0_BID       ( microsemi_wrapper_0_DATA_MASTER_BID ),
-        .MASTER0_BRESP     ( microsemi_wrapper_0_DATA_MASTER_BRESP ),
-        .MASTER0_BUSER     ( microsemi_wrapper_0_DATA_MASTER_BUSER ),
+        .MASTER0_BID       ( microsemi_wrapper_0_AXI_MASTER_BID ),
+        .MASTER0_BRESP     ( microsemi_wrapper_0_AXI_MASTER_BRESP ),
+        .MASTER0_BUSER     ( microsemi_wrapper_0_AXI_MASTER_BUSER ),
         .MASTER1_BID       (  ),
         .MASTER1_BRESP     (  ),
         .MASTER1_BUSER     (  ),
@@ -3358,10 +3358,10 @@ CoreAXI4Interconnect_0(
         .MASTER7_BID       (  ),
         .MASTER7_BRESP     (  ),
         .MASTER7_BUSER     (  ),
-        .MASTER0_RID       ( microsemi_wrapper_0_DATA_MASTER_RID ),
-        .MASTER0_RDATA     ( microsemi_wrapper_0_DATA_MASTER_RDATA ),
-        .MASTER0_RRESP     ( microsemi_wrapper_0_DATA_MASTER_RRESP ),
-        .MASTER0_RUSER     ( microsemi_wrapper_0_DATA_MASTER_RUSER ),
+        .MASTER0_RID       ( microsemi_wrapper_0_AXI_MASTER_RID ),
+        .MASTER0_RDATA     ( microsemi_wrapper_0_AXI_MASTER_RDATA ),
+        .MASTER0_RRESP     ( microsemi_wrapper_0_AXI_MASTER_RRESP ),
+        .MASTER0_RUSER     ( microsemi_wrapper_0_AXI_MASTER_RUSER ),
         .MASTER1_RID       (  ),
         .MASTER1_RDATA     (  ),
         .MASTER1_RRESP     (  ),
@@ -4246,8 +4246,8 @@ Top_Fabric_Master_CoreUARTapb_0_CoreUARTapb #(
         .TX_FIFO           ( 1 ) )
 CoreUARTapb_0(
         // Inputs
-        .PCLK        ( my_mss_top_0_FIC_0_CLK_1 ),
-        .PRESETN     ( my_mss_top_0_MSS_READY_0 ),
+        .PCLK        ( my_mss_top_0_FIC_0_CLK_0 ),
+        .PRESETN     ( my_mss_top_0_MSS_READY_1 ),
         .PSEL        ( axi_to_apb_0_APB_SLAVE_PSELx ),
         .PENABLE     ( axi_to_apb_0_APB_SLAVE_PENABLE ),
         .PWRITE      ( axi_to_apb_0_APB_SLAVE_PWRITE ),
@@ -4268,7 +4268,7 @@ CoreUARTapb_0(
 
 //--------fabric_master
 fabric_master #( 
-        .IRAM_SIZE ( 32768 ),
+        .IRAM_SIZE ( 65536 ),
         .WORD_SIZE ( 32 ) )
 fabric_master_0(
         // Inputs
@@ -4278,8 +4278,8 @@ fabric_master_0(
         .BREADY        ( CoreAXI4Interconnect_0_AXI3mslave7_BREADY ),
         .ARVALID       ( CoreAXI4Interconnect_0_AXI3mslave7_ARVALID ),
         .RREADY        ( CoreAXI4Interconnect_0_AXI3mslave7_RREADY ),
-        .HCLK          ( my_mss_top_0_FIC_0_CLK_1 ),
-        .HRESETn       ( my_mss_top_0_MSS_READY_0 ),
+        .HCLK          ( my_mss_top_0_FIC_0_CLK_0 ),
+        .HRESETn       ( my_mss_top_0_MSS_READY_1 ),
         .HREADY        ( fabric_master_0_BIF_1_HREADY ),
         .START         ( VCC_net ),
         .AWID          ( CoreAXI4Interconnect_0_AXI3mslave7_AWID_0 ),
@@ -4326,12 +4326,17 @@ fabric_master_0(
 //--------microsemi_wrapper
 microsemi_wrapper #( 
         .BRANCH_PREDICTORS     ( 0 ),
-        .BYTE_SIZE             ( 8 ),
-        .COUNTER_LENGTH        ( 64 ),
+        .COUNTER_LENGTH        ( 32 ),
         .DIVIDE_ENABLE         ( 1 ),
         .ENABLE_EXCEPTIONS     ( 1 ),
         .ENABLE_EXT_INTERRUPTS ( 0 ),
-        .FORWARD_ALU_ONLY      ( 1 ),
+        .ICACHE_BURST_EN       ( 0 ),
+        .ICACHE_EXTERNAL_WIDTH ( 32 ),
+        .ICACHE_LINE_SIZE      ( 32 ),
+        .ICACHE_SIZE           ( 0 ),
+        .INTERRUPT_VECTOR      ( 512 ),
+        .IUC_ADDR_BASE         ( 0 ),
+        .IUC_ADDR_LAST         ( 0 ),
         .LVE_ENABLE            ( 0 ),
         .MULTIPLY_ENABLE       ( 1 ),
         .NUM_EXT_INTERRUPTS    ( 1 ),
@@ -4341,92 +4346,92 @@ microsemi_wrapper #(
         .RESET_VECTOR          ( 0 ),
         .SCRATCHPAD_ADDR_BITS  ( 10 ),
         .SHIFTER_MAX_CYCLES    ( 1 ),
-        .TCRAM_SIZE            ( 32768 ) )
+        .TCRAM_SIZE            ( 65536 ) )
 microsemi_wrapper_0(
         // Inputs
-        .clk          ( my_mss_top_0_FIC_0_CLK_1 ),
-        .clk_2x       ( my_mss_top_0_GL1 ),
-        .reset        ( reset_IN_POST_INV0_0 ),
-        .data_AWREADY ( microsemi_wrapper_0_DATA_MASTER_AWREADY ),
-        .data_WREADY  ( microsemi_wrapper_0_DATA_MASTER_WREADY ),
-        .data_BVALID  ( microsemi_wrapper_0_DATA_MASTER_BVALID ),
-        .data_ARREADY ( microsemi_wrapper_0_DATA_MASTER_ARREADY ),
-        .data_RLAST   ( microsemi_wrapper_0_DATA_MASTER_RLAST ),
-        .data_RVALID  ( microsemi_wrapper_0_DATA_MASTER_RVALID ),
-        .ram_AWVALID  ( CoreAXI4Interconnect_0_AXI3mslave0_AWVALID ),
-        .ram_WLAST    ( CoreAXI4Interconnect_0_AXI3mslave0_WLAST ),
-        .ram_WVALID   ( CoreAXI4Interconnect_0_AXI3mslave0_WVALID ),
-        .ram_BREADY   ( CoreAXI4Interconnect_0_AXI3mslave0_BREADY ),
-        .ram_ARVALID  ( CoreAXI4Interconnect_0_AXI3mslave0_ARVALID ),
-        .ram_RREADY   ( CoreAXI4Interconnect_0_AXI3mslave0_RREADY ),
-        .nvm_PENABLE  ( my_mss_top_0_AMBA_SLAVE_0_0_PENABLE ),
-        .nvm_PWRITE   ( my_mss_top_0_AMBA_SLAVE_0_0_PWRITE ),
-        .nvm_PSEL     ( my_mss_top_0_AMBA_SLAVE_0_0_PSELx ),
-        .data_BID     ( microsemi_wrapper_0_DATA_MASTER_BID ),
-        .data_BRESP   ( microsemi_wrapper_0_DATA_MASTER_BRESP ),
-        .data_RID     ( microsemi_wrapper_0_DATA_MASTER_RID ),
-        .data_RDATA   ( microsemi_wrapper_0_DATA_MASTER_RDATA ),
-        .data_RRESP   ( microsemi_wrapper_0_DATA_MASTER_RRESP ),
-        .ram_AWID     ( CoreAXI4Interconnect_0_AXI3mslave0_AWID_0 ),
-        .ram_AWADDR   ( CoreAXI4Interconnect_0_AXI3mslave0_AWADDR ),
-        .ram_AWLEN    ( CoreAXI4Interconnect_0_AXI3mslave0_AWLEN_0 ),
-        .ram_AWSIZE   ( CoreAXI4Interconnect_0_AXI3mslave0_AWSIZE ),
-        .ram_AWBURST  ( CoreAXI4Interconnect_0_AXI3mslave0_AWBURST ),
-        .ram_AWLOCK   ( CoreAXI4Interconnect_0_AXI3mslave0_AWLOCK ),
-        .ram_AWCACHE  ( CoreAXI4Interconnect_0_AXI3mslave0_AWCACHE ),
-        .ram_AWPROT   ( CoreAXI4Interconnect_0_AXI3mslave0_AWPROT ),
-        .ram_WID      ( CoreAXI4Interconnect_0_AXI3mslave0_WID_0 ),
-        .ram_WDATA    ( CoreAXI4Interconnect_0_AXI3mslave0_WDATA ),
-        .ram_WSTRB    ( CoreAXI4Interconnect_0_AXI3mslave0_WSTRB ),
-        .ram_ARID     ( CoreAXI4Interconnect_0_AXI3mslave0_ARID_0 ),
-        .ram_ARADDR   ( CoreAXI4Interconnect_0_AXI3mslave0_ARADDR ),
-        .ram_ARLEN    ( CoreAXI4Interconnect_0_AXI3mslave0_ARLEN_0 ),
-        .ram_ARSIZE   ( CoreAXI4Interconnect_0_AXI3mslave0_ARSIZE ),
-        .ram_ARBURST  ( CoreAXI4Interconnect_0_AXI3mslave0_ARBURST ),
-        .ram_ARLOCK   ( CoreAXI4Interconnect_0_AXI3mslave0_ARLOCK ),
-        .ram_ARCACHE  ( CoreAXI4Interconnect_0_AXI3mslave0_ARCACHE ),
-        .ram_ARPROT   ( CoreAXI4Interconnect_0_AXI3mslave0_ARPROT ),
-        .nvm_PADDR    ( my_mss_top_0_AMBA_SLAVE_0_0_PADDR ),
-        .nvm_PWDATA   ( my_mss_top_0_AMBA_SLAVE_0_0_PWDATA ),
+        .clk         ( my_mss_top_0_FIC_0_CLK_0 ),
+        .clk_2x      ( my_mss_top_0_GL1 ),
+        .reset       ( reset_IN_POST_INV0_0 ),
+        .DUC_AWREADY ( microsemi_wrapper_0_AXI_MASTER_AWREADY ),
+        .DUC_WREADY  ( microsemi_wrapper_0_AXI_MASTER_WREADY ),
+        .DUC_BVALID  ( microsemi_wrapper_0_AXI_MASTER_BVALID ),
+        .DUC_ARREADY ( microsemi_wrapper_0_AXI_MASTER_ARREADY ),
+        .DUC_RLAST   ( microsemi_wrapper_0_AXI_MASTER_RLAST ),
+        .DUC_RVALID  ( microsemi_wrapper_0_AXI_MASTER_RVALID ),
+        .ram_AWVALID ( CoreAXI4Interconnect_0_AXI3mslave0_AWVALID ),
+        .ram_WLAST   ( CoreAXI4Interconnect_0_AXI3mslave0_WLAST ),
+        .ram_WVALID  ( CoreAXI4Interconnect_0_AXI3mslave0_WVALID ),
+        .ram_BREADY  ( CoreAXI4Interconnect_0_AXI3mslave0_BREADY ),
+        .ram_ARVALID ( CoreAXI4Interconnect_0_AXI3mslave0_ARVALID ),
+        .ram_RREADY  ( CoreAXI4Interconnect_0_AXI3mslave0_RREADY ),
+        .nvm_PENABLE ( my_mss_top_0_AMBA_SLAVE_0_1_PENABLE ),
+        .nvm_PWRITE  ( my_mss_top_0_AMBA_SLAVE_0_1_PWRITE ),
+        .nvm_PSEL    ( my_mss_top_0_AMBA_SLAVE_0_1_PSELx ),
+        .DUC_BID     ( microsemi_wrapper_0_AXI_MASTER_BID ),
+        .DUC_BRESP   ( microsemi_wrapper_0_AXI_MASTER_BRESP ),
+        .DUC_RID     ( microsemi_wrapper_0_AXI_MASTER_RID ),
+        .DUC_RDATA   ( microsemi_wrapper_0_AXI_MASTER_RDATA ),
+        .DUC_RRESP   ( microsemi_wrapper_0_AXI_MASTER_RRESP ),
+        .ram_AWID    ( CoreAXI4Interconnect_0_AXI3mslave0_AWID_0 ),
+        .ram_AWADDR  ( CoreAXI4Interconnect_0_AXI3mslave0_AWADDR ),
+        .ram_AWLEN   ( CoreAXI4Interconnect_0_AXI3mslave0_AWLEN_0 ),
+        .ram_AWSIZE  ( CoreAXI4Interconnect_0_AXI3mslave0_AWSIZE ),
+        .ram_AWBURST ( CoreAXI4Interconnect_0_AXI3mslave0_AWBURST ),
+        .ram_AWLOCK  ( CoreAXI4Interconnect_0_AXI3mslave0_AWLOCK ),
+        .ram_AWCACHE ( CoreAXI4Interconnect_0_AXI3mslave0_AWCACHE ),
+        .ram_AWPROT  ( CoreAXI4Interconnect_0_AXI3mslave0_AWPROT ),
+        .ram_WID     ( CoreAXI4Interconnect_0_AXI3mslave0_WID_0 ),
+        .ram_WDATA   ( CoreAXI4Interconnect_0_AXI3mslave0_WDATA ),
+        .ram_WSTRB   ( CoreAXI4Interconnect_0_AXI3mslave0_WSTRB ),
+        .ram_ARID    ( CoreAXI4Interconnect_0_AXI3mslave0_ARID_0 ),
+        .ram_ARADDR  ( CoreAXI4Interconnect_0_AXI3mslave0_ARADDR ),
+        .ram_ARLEN   ( CoreAXI4Interconnect_0_AXI3mslave0_ARLEN_0 ),
+        .ram_ARSIZE  ( CoreAXI4Interconnect_0_AXI3mslave0_ARSIZE ),
+        .ram_ARBURST ( CoreAXI4Interconnect_0_AXI3mslave0_ARBURST ),
+        .ram_ARLOCK  ( CoreAXI4Interconnect_0_AXI3mslave0_ARLOCK ),
+        .ram_ARCACHE ( CoreAXI4Interconnect_0_AXI3mslave0_ARCACHE ),
+        .ram_ARPROT  ( CoreAXI4Interconnect_0_AXI3mslave0_ARPROT ),
+        .nvm_PADDR   ( my_mss_top_0_AMBA_SLAVE_0_1_PADDR ),
+        .nvm_PWDATA  ( my_mss_top_0_AMBA_SLAVE_0_1_PWDATA ),
         // Outputs
-        .data_AWVALID ( microsemi_wrapper_0_DATA_MASTER_AWVALID ),
-        .data_WLAST   ( microsemi_wrapper_0_DATA_MASTER_WLAST ),
-        .data_WVALID  ( microsemi_wrapper_0_DATA_MASTER_WVALID ),
-        .data_BREADY  ( microsemi_wrapper_0_DATA_MASTER_BREADY ),
-        .data_ARVALID ( microsemi_wrapper_0_DATA_MASTER_ARVALID ),
-        .data_RREADY  ( microsemi_wrapper_0_DATA_MASTER_RREADY ),
-        .ram_AWREADY  ( CoreAXI4Interconnect_0_AXI3mslave0_AWREADY ),
-        .ram_WREADY   ( CoreAXI4Interconnect_0_AXI3mslave0_WREADY ),
-        .ram_BVALID   ( CoreAXI4Interconnect_0_AXI3mslave0_BVALID ),
-        .ram_ARREADY  ( CoreAXI4Interconnect_0_AXI3mslave0_ARREADY ),
-        .ram_RLAST    ( CoreAXI4Interconnect_0_AXI3mslave0_RLAST ),
-        .ram_RVALID   ( CoreAXI4Interconnect_0_AXI3mslave0_RVALID ),
-        .nvm_PREADY   ( my_mss_top_0_AMBA_SLAVE_0_0_PREADY ),
-        .data_AWID    ( microsemi_wrapper_0_DATA_MASTER_AWID ),
-        .data_AWADDR  ( microsemi_wrapper_0_DATA_MASTER_AWADDR ),
-        .data_AWLEN   ( microsemi_wrapper_0_DATA_MASTER_AWLEN ),
-        .data_AWSIZE  ( microsemi_wrapper_0_DATA_MASTER_AWSIZE ),
-        .data_AWBURST ( microsemi_wrapper_0_DATA_MASTER_AWBURST ),
-        .data_AWLOCK  ( microsemi_wrapper_0_DATA_MASTER_AWLOCK ),
-        .data_AWCACHE ( microsemi_wrapper_0_DATA_MASTER_AWCACHE ),
-        .data_AWPROT  ( microsemi_wrapper_0_DATA_MASTER_AWPROT ),
-        .data_WID     ( microsemi_wrapper_0_DATA_MASTER_WID ),
-        .data_WDATA   ( microsemi_wrapper_0_DATA_MASTER_WDATA ),
-        .data_WSTRB   ( microsemi_wrapper_0_DATA_MASTER_WSTRB ),
-        .data_ARID    ( microsemi_wrapper_0_DATA_MASTER_ARID ),
-        .data_ARADDR  ( microsemi_wrapper_0_DATA_MASTER_ARADDR ),
-        .data_ARLEN   ( microsemi_wrapper_0_DATA_MASTER_ARLEN ),
-        .data_ARSIZE  ( microsemi_wrapper_0_DATA_MASTER_ARSIZE ),
-        .data_ARBURST ( microsemi_wrapper_0_DATA_MASTER_ARBURST ),
-        .data_ARLOCK  ( microsemi_wrapper_0_DATA_MASTER_ARLOCK ),
-        .data_ARCACHE ( microsemi_wrapper_0_DATA_MASTER_ARCACHE ),
-        .data_ARPROT  ( microsemi_wrapper_0_DATA_MASTER_ARPROT ),
-        .ram_BID      ( CoreAXI4Interconnect_0_AXI3mslave0_BID ),
-        .ram_BRESP    ( CoreAXI4Interconnect_0_AXI3mslave0_BRESP ),
-        .ram_RID      ( CoreAXI4Interconnect_0_AXI3mslave0_RID ),
-        .ram_RDATA    ( CoreAXI4Interconnect_0_AXI3mslave0_RDATA ),
-        .ram_RRESP    ( CoreAXI4Interconnect_0_AXI3mslave0_RRESP ),
-        .nvm_PRDATA   ( my_mss_top_0_AMBA_SLAVE_0_0_PRDATA ) 
+        .DUC_AWVALID ( microsemi_wrapper_0_AXI_MASTER_AWVALID ),
+        .DUC_WLAST   ( microsemi_wrapper_0_AXI_MASTER_WLAST ),
+        .DUC_WVALID  ( microsemi_wrapper_0_AXI_MASTER_WVALID ),
+        .DUC_BREADY  ( microsemi_wrapper_0_AXI_MASTER_BREADY ),
+        .DUC_ARVALID ( microsemi_wrapper_0_AXI_MASTER_ARVALID ),
+        .DUC_RREADY  ( microsemi_wrapper_0_AXI_MASTER_RREADY ),
+        .ram_AWREADY ( CoreAXI4Interconnect_0_AXI3mslave0_AWREADY ),
+        .ram_WREADY  ( CoreAXI4Interconnect_0_AXI3mslave0_WREADY ),
+        .ram_BVALID  ( CoreAXI4Interconnect_0_AXI3mslave0_BVALID ),
+        .ram_ARREADY ( CoreAXI4Interconnect_0_AXI3mslave0_ARREADY ),
+        .ram_RLAST   ( CoreAXI4Interconnect_0_AXI3mslave0_RLAST ),
+        .ram_RVALID  ( CoreAXI4Interconnect_0_AXI3mslave0_RVALID ),
+        .nvm_PREADY  ( my_mss_top_0_AMBA_SLAVE_0_1_PREADY ),
+        .DUC_AWID    ( microsemi_wrapper_0_AXI_MASTER_AWID ),
+        .DUC_AWADDR  ( microsemi_wrapper_0_AXI_MASTER_AWADDR ),
+        .DUC_AWLEN   ( microsemi_wrapper_0_AXI_MASTER_AWLEN ),
+        .DUC_AWSIZE  ( microsemi_wrapper_0_AXI_MASTER_AWSIZE ),
+        .DUC_AWBURST ( microsemi_wrapper_0_AXI_MASTER_AWBURST ),
+        .DUC_AWLOCK  ( microsemi_wrapper_0_AXI_MASTER_AWLOCK ),
+        .DUC_AWCACHE ( microsemi_wrapper_0_AXI_MASTER_AWCACHE ),
+        .DUC_AWPROT  ( microsemi_wrapper_0_AXI_MASTER_AWPROT ),
+        .DUC_WID     ( microsemi_wrapper_0_AXI_MASTER_WID ),
+        .DUC_WDATA   ( microsemi_wrapper_0_AXI_MASTER_WDATA ),
+        .DUC_WSTRB   ( microsemi_wrapper_0_AXI_MASTER_WSTRB ),
+        .DUC_ARID    ( microsemi_wrapper_0_AXI_MASTER_ARID ),
+        .DUC_ARADDR  ( microsemi_wrapper_0_AXI_MASTER_ARADDR ),
+        .DUC_ARLEN   ( microsemi_wrapper_0_AXI_MASTER_ARLEN ),
+        .DUC_ARSIZE  ( microsemi_wrapper_0_AXI_MASTER_ARSIZE ),
+        .DUC_ARBURST ( microsemi_wrapper_0_AXI_MASTER_ARBURST ),
+        .DUC_ARLOCK  ( microsemi_wrapper_0_AXI_MASTER_ARLOCK ),
+        .DUC_ARCACHE ( microsemi_wrapper_0_AXI_MASTER_ARCACHE ),
+        .DUC_ARPROT  ( microsemi_wrapper_0_AXI_MASTER_ARPROT ),
+        .ram_BID     ( CoreAXI4Interconnect_0_AXI3mslave0_BID ),
+        .ram_BRESP   ( CoreAXI4Interconnect_0_AXI3mslave0_BRESP ),
+        .ram_RID     ( CoreAXI4Interconnect_0_AXI3mslave0_RID ),
+        .ram_RDATA   ( CoreAXI4Interconnect_0_AXI3mslave0_RDATA ),
+        .ram_RRESP   ( CoreAXI4Interconnect_0_AXI3mslave0_RRESP ),
+        .nvm_PRDATA  ( my_mss_top_0_AMBA_SLAVE_0_1_PRDATA ) 
         );
 
 //--------my_mss_top
@@ -4438,7 +4443,7 @@ my_mss_top my_mss_top_0(
         .M3_RESET_N                 ( GND_net ),
         .AMBA_MASTER_0_HWRITE_M0    ( fabric_master_0_BIF_1_HWRITE ),
         .AMBA_MASTER_0_HMASTLOCK_M0 ( GND_net ), // tied to 1'b0 from definition
-        .PREADYS1                   ( my_mss_top_0_AMBA_SLAVE_0_0_PREADY ),
+        .PREADYS1                   ( my_mss_top_0_AMBA_SLAVE_0_1_PREADY ),
         .PSLVERRS1                  ( GND_net ), // tied to 1'b0 from definition
         .AMBA_MASTER_0_HADDR_M0     ( fabric_master_0_BIF_1_HADDR ),
         .AMBA_MASTER_0_HTRANS_M0    ( fabric_master_0_BIF_1_HTRANS ),
@@ -4446,23 +4451,23 @@ my_mss_top my_mss_top_0(
         .AMBA_MASTER_0_HBURST_M0    ( fabric_master_0_BIF_1_HBURST ),
         .AMBA_MASTER_0_HPROT_M0     ( fabric_master_0_BIF_1_HPROT ),
         .AMBA_MASTER_0_HWDATA_M0    ( fabric_master_0_BIF_1_HWDATA ),
-        .PRDATAS1                   ( my_mss_top_0_AMBA_SLAVE_0_0_PRDATA ),
+        .PRDATAS1                   ( my_mss_top_0_AMBA_SLAVE_0_1_PRDATA ),
         // Outputs
         .MMUART_0_TXD_M2F           (  ),
         .INIT_DONE                  (  ),
-        .MSS_READY                  ( my_mss_top_0_MSS_READY_0 ),
-        .FIC_0_CLK                  ( my_mss_top_0_FIC_0_CLK_1 ),
+        .MSS_READY                  ( my_mss_top_0_MSS_READY_1 ),
+        .FIC_0_CLK                  ( my_mss_top_0_FIC_0_CLK_0 ),
         .FIC_0_LOCK                 (  ),
         .POWER_ON_RESET_N           (  ),
         .GL1                        ( my_mss_top_0_GL1 ),
         .AMBA_MASTER_0_HREADY_M0    ( fabric_master_0_BIF_1_HREADY ),
-        .PSELS1                     ( my_mss_top_0_AMBA_SLAVE_0_0_PSELx ),
-        .PENABLES                   ( my_mss_top_0_AMBA_SLAVE_0_0_PENABLE ),
-        .PWRITES                    ( my_mss_top_0_AMBA_SLAVE_0_0_PWRITE ),
+        .PSELS1                     ( my_mss_top_0_AMBA_SLAVE_0_1_PSELx ),
+        .PENABLES                   ( my_mss_top_0_AMBA_SLAVE_0_1_PENABLE ),
+        .PWRITES                    ( my_mss_top_0_AMBA_SLAVE_0_1_PWRITE ),
         .AMBA_MASTER_0_HRDATA_M0    ( fabric_master_0_BIF_1_HRDATA ),
         .AMBA_MASTER_0_HRESP_M0     ( fabric_master_0_BIF_1_HRESP ),
-        .PADDRS                     ( my_mss_top_0_AMBA_SLAVE_0_0_PADDR ),
-        .PWDATAS                    ( my_mss_top_0_AMBA_SLAVE_0_0_PWDATA ) 
+        .PADDRS                     ( my_mss_top_0_AMBA_SLAVE_0_1_PADDR ),
+        .PWDATAS                    ( my_mss_top_0_AMBA_SLAVE_0_1_PWDATA ) 
         );
 
 

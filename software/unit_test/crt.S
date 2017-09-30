@@ -1,22 +1,25 @@
 #define REGBYTES 4
 
 .section .init
-  
-.globl _start
+
+	.globl _start
 _start:
   la gp, _gp
   la sp, _end_of_memory
 
 	// Enable interrupts.
 	li x1, 0x00000008
-  csrs mstatus, x1 
+  csrs mstatus, x1
 
 	// Enable all interrupt masks.
 	// Note: our meimask csr is non-standard.
 	li x1, 0xFFFFFFFF
 	csrw 0x7C0, x1
 
-  jal main
+	jal main
+	mv t3,a0
+	bnez t3, 1f
+	li t3,1
 1:
   j 1b
 

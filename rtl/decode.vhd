@@ -10,7 +10,8 @@ entity decode is
     REGISTER_SIZE       : positive;
     SIGN_EXTENSION_SIZE : positive;
     PIPELINE_STAGES     : natural range 1 to 2;
-    FAMILY              : string := "ALTERA");
+    FAMILY              : string := "ALTERA"
+    );
   port(
     clk   : in std_logic;
     reset : in std_logic;
@@ -20,15 +21,14 @@ entity decode is
     instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     valid_input : in std_logic;
     --writeback signals
-    wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
-    wb_data     : in std_logic_vector(REGISTER_SIZE -1 downto 0);
+    wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    wb_data     : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     wb_enable   : in std_logic;
-    wb_valid    : in std_logic;
 
     --output signals
-    rs1_data       : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
-    rs2_data       : out    std_logic_vector(REGISTER_SIZE -1 downto 0);
-    sign_extension : out    std_logic_vector(SIGN_EXTENSION_SIZE -1 downto 0);
+    rs1_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    sign_extension : out    std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     --inputs just for carrying to next pipeline stage
     br_taken_in    : in     std_logic;
     pc_curr_in     : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -38,7 +38,8 @@ entity decode is
     subseq_instr   : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     subseq_valid   : out    std_logic;
     valid_output   : out    std_logic;
-    decode_flushed : out    std_logic);
+    decode_flushed : out    std_logic
+    );
 end;
 
 architecture rtl of decode is
@@ -68,11 +69,9 @@ architecture rtl of decode is
   signal il_rs2    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal il_opcode : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
-  signal wb_sel_int    : std_logic_vector(REGISTER_NAME_SIZE -1 downto 0);
-  signal wb_data_int   : std_logic_vector(REGISTER_SIZE -1 downto 0);
+  signal wb_sel_int    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal wb_data_int   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal wb_enable_int : std_logic;
-  signal wb_valid_int  : std_logic;
-
 begin
 
   register_file_1 : register_file
@@ -95,15 +94,15 @@ begin
   -- This is to handle Microsemi board's inability to initialize RAM to zero on startup.
   begin
     reg_rst_en : if FAMILY = "MICROSEMI" generate
-      wb_sel_int    <= wb_sel                 when reset = '0' else (others => '0');
-      wb_data_int   <= wb_data                when reset = '0' else (others => '0');
-      wb_enable_int <= wb_enable and wb_valid when reset = '0' else '1';
+      wb_sel_int    <= wb_sel    when reset = '0' else (others => '0');
+      wb_data_int   <= wb_data   when reset = '0' else (others => '0');
+      wb_enable_int <= wb_enable when reset = '0' else '1';
 
     end generate reg_rst_en;
-    reg_rst_nen : if FAMILY /= "MICROSEMI"  generate
+    reg_rst_nen : if FAMILY /= "MICROSEMI" generate
       wb_sel_int    <= wb_sel;
       wb_data_int   <= wb_data;
-      wb_enable_int <= wb_enable and wb_valid;
+      wb_enable_int <= wb_enable;
     end generate reg_rst_nen;
 
   end generate reg_rst;
@@ -136,12 +135,12 @@ begin
 
         end if;
 
-        if wb_sel = rs1_p and wb_enable = '1' and wb_valid = '1' then
+        if wb_sel = rs1_p and wb_enable = '1' then
           outreg1 <= wb_data;
         elsif stall = '0' then
           outreg1 <= rs1_reg;
         end if;
-        if wb_sel = rs2_p and wb_enable = '1' and wb_valid = '1' then
+        if wb_sel = rs2_p and wb_enable = '1' then
           outreg2 <= wb_data;
         elsif stall = '0' then
           outreg2 <= rs2_reg;

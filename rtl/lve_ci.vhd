@@ -180,7 +180,7 @@ begin
   -----------------------------------------------------------------------------
   process (clk) is
   begin  -- process
-    if clk'event and clk = '1' then     -- rising clock edge
+    if rising_edge(clk) then
       valid_out        <= '0';
       write_enable_out <= '0';
       data_out         <= (others => '0');

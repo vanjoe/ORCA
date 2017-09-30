@@ -10,32 +10,36 @@ use work.constants_pkg.all;
 entity instruction_fetch is
   generic (
     REGISTER_SIZE     : positive;
-    RESET_VECTOR      : integer;
-    BRANCH_PREDICTORS : natural);
+    RESET_VECTOR      : std_logic_vector(31 downto 0);
+    BRANCH_PREDICTORS : natural
+    );
   port (
     clk                : in std_logic;
     reset              : in std_logic;
     downstream_stalled : in std_logic;
     interrupt_pending  : in std_logic;
-    branch_pred        : in std_logic_vector(REGISTER_SIZE*2+3-1 downto 0);
+    branch_pred        : in std_logic_vector((REGISTER_SIZE*2)+3-1 downto 0);
 
     br_taken        : buffer std_logic;
     instr_out       : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     pc_out          : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     next_pc_out     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     valid_instr_out : out    std_logic;
-		fetch_in_flight	: out		 std_logic;
+    fetch_in_flight : out    std_logic;
 
-    read_address   : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    read_en        : buffer std_logic;
-    read_data      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    read_datavalid : in     std_logic;
-    read_wait      : in     std_logic);
+    --Orca-internal memory-mapped master
+    oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    oimm_readnotwrite  : out    std_logic;
+    oimm_requestvalid  : buffer std_logic;
+    oimm_readdata      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    oimm_readdatavalid : in     std_logic;
+    oimm_waitrequest   : in     std_logic
+    );
 end entity instruction_fetch;
 
 
 architecture rtl of instruction_fetch is
-  type state_t is (state_0, state_1, state_2);
+  type state_t is (ASSERT_READ, WAIT_FOR_READDATA, STALL);
 
   signal state : state_t;
 
@@ -51,14 +55,14 @@ architecture rtl of instruction_fetch is
   signal instr_out_saved       : std_logic_vector(instr_out'range);
   signal valid_instr_out_saved : std_logic;
 
-  signal predicted_pc      : unsigned(REGISTER_SIZE -1 downto 0);
-  signal next_address      : unsigned(REGISTER_SIZE -1 downto 0);
-  signal last_next_address : unsigned(REGISTER_SIZE -1 downto 0);
+  signal predicted_pc      : unsigned(REGISTER_SIZE-1 downto 0);
+  signal next_address      : unsigned(REGISTER_SIZE-1 downto 0);
+  signal last_next_address : unsigned(REGISTER_SIZE-1 downto 0);
 
   signal suppress_valid_instr_out : std_logic;
   signal dont_increment           : std_logic;
-
 begin  -- architecture rtl
+  oimm_readnotwrite <= '1';
 
   --unpack branch_pred_data_in
   --branch_pc       <= branch_get_pc(branch_pred);
@@ -69,48 +73,54 @@ begin  -- architecture rtl
 
   dont_increment <= downstream_stalled or interrupt_pending;
 
-  move_to_next_address <= (state = state_1 and read_datavalid = '1' and dont_increment = '0') or
-                          (state = state_2 and dont_increment = '0');
-
-	-- This stops the pipeline from being marked as empty during multi-cycle reads.
-	fetch_in_flight <= '0' when state = state_2 else '1';
+  move_to_next_address <= (state = WAIT_FOR_READDATA and oimm_readdatavalid = '1' and dont_increment = '0') or
+                          (state = STALL and dont_increment = '0');
 
   process(clk)
   begin
     if rising_edge(clk) then
       case state is
-        when state_0 =>                 --waiting for read_wait
-          if read_wait = '0' then
-            state <= state_1;
+        when ASSERT_READ =>             --Fetch new instruction
+          if oimm_requestvalid = '1' and oimm_waitrequest = '0' then
+            state           <= WAIT_FOR_READDATA;
+            fetch_in_flight <= '1';
           else
-            state <= state_0;
+            state           <= ASSERT_READ;
+            fetch_in_flight <= '1';
           end if;
-        when state_1 =>                 --waiting for readvalid
-          if read_datavalid = '1' then
+        when WAIT_FOR_READDATA =>       --Waiting for instruction
+          if oimm_readdatavalid = '1' then
             if dont_increment = '1' then
-              state <= state_2;
-            elsif read_wait = '0' then
-              state <= state_1;
+              state           <= STALL;
+              fetch_in_flight <= '0';
+            elsif oimm_requestvalid = '1' and oimm_waitrequest = '0' then
+              state           <= WAIT_FOR_READDATA;
+              fetch_in_flight <= '1';
             else
-              state <= state_0;
+              state           <= ASSERT_READ;
+              fetch_in_flight <= '1';
             end if;
           end if;
-        when state_2 =>                 -- waiting for execute_stall
+        when STALL =>                   --Stalled (backpressure or flush)
           if dont_increment = '0' then
-            if read_wait = '0' then
-              state <= state_1;
+            if oimm_requestvalid = '1' and oimm_waitrequest = '0' then
+              state           <= WAIT_FOR_READDATA;
+              fetch_in_flight <= '1';
             else
-              state <= state_0;
+              state           <= ASSERT_READ;
+              fetch_in_flight <= '1';
             end if;
 
           else
-            state <= state_2;
+            state           <= STALL;
+            fetch_in_flight <= '0';
           end if;
         when others => null;
       end case;
 
       if reset = '1' then
-        state <= state_0;
+        state           <= ASSERT_READ;
+        fetch_in_flight <= '0';
       end if;
     end if;
   end process;
@@ -127,10 +137,10 @@ begin  -- architecture rtl
   pc_corr_proc : process(clk)
   begin
     if rising_edge(clk) then
-			if reset = '1' then
-				pc_corr_saved <= (others => '0');
-				pc_corr_saved_en <= '0';
-			elsif not move_to_next_address then
+      if reset = '1' then
+        pc_corr_saved    <= (others => '0');
+        pc_corr_saved_en <= '0';
+      elsif not move_to_next_address then
         if pc_corr_en = '1' then
           pc_corr_saved    <= pc_corr;
           pc_corr_saved_en <= '1';
@@ -149,7 +159,7 @@ begin  -- architecture rtl
         program_counter <= next_address;
       end if;
       if reset = '1' then
-        program_counter <= unsigned(to_signed(RESET_VECTOR, REGISTER_SIZE));
+        program_counter <= unsigned(RESET_VECTOR(REGISTER_SIZE-1 downto 0));
       end if;
     end if;
   end process;
@@ -158,9 +168,9 @@ begin  -- architecture rtl
   begin
     if rising_edge(clk) then
       if downstream_stalled = '1' then
-        if read_datavalid = '1' then
-          instr_out_saved       <= read_data;
-          valid_instr_out_saved <= read_datavalid;
+        if oimm_readdatavalid = '1' then
+          instr_out_saved       <= oimm_readdata;
+          valid_instr_out_saved <= '1';
         end if;
       else
         valid_instr_out_saved <= '0';
@@ -174,7 +184,7 @@ begin  -- architecture rtl
       if pc_corr_en = '1' then
         suppress_valid_instr_out <= not interrupt_pending;
       end if;
-      if read_datavalid = '1' then
+      if oimm_readdatavalid = '1' then
         suppress_valid_instr_out <= '0';
       end if;
       if reset = '1' then
@@ -184,17 +194,17 @@ begin  -- architecture rtl
   end process;
 
   pc_out          <= std_logic_vector(program_counter);
-  instr_out       <= read_data when valid_instr_out_saved = '0' else instr_out_saved;
-  valid_instr_out <= (read_datavalid or valid_instr_out_saved) and not (suppress_valid_instr_out or pc_corr_en or interrupt_pending);
+  instr_out       <= oimm_readdata when valid_instr_out_saved = '0' else instr_out_saved;
+  valid_instr_out <= (oimm_readdatavalid or valid_instr_out_saved) and not (suppress_valid_instr_out or pc_corr_en or interrupt_pending);
 
 
-	next_address <= pc_corr_saved when pc_corr_saved_en = '1' and (move_to_next_address or interrupt_pending = '1') else
-									pc_corr when pc_corr_en = '1' and (move_to_next_address or interrupt_pending = '1') else
-									predicted_pc when move_to_next_address else
-									program_counter;
+  next_address <= pc_corr_saved when pc_corr_saved_en = '1' and (move_to_next_address or interrupt_pending = '1') else
+                  pc_corr      when pc_corr_en = '1' and (move_to_next_address or interrupt_pending = '1') else
+                  predicted_pc when move_to_next_address else
+                  program_counter;
 
-  next_pc_out  <= std_logic_vector(next_address);
-  read_address <= std_logic_vector(program_counter) when state = state_0                           		else std_logic_vector(next_address);
-  read_en      <= not reset                         when (state = state_0 or move_to_next_address) 		else '0';
-  br_taken     <= '0';
+  next_pc_out       <= std_logic_vector(next_address);
+  oimm_address      <= std_logic_vector(program_counter) when state = ASSERT_READ                           else std_logic_vector(next_address);
+  oimm_requestvalid <= not reset                         when (state = ASSERT_READ or move_to_next_address) else '0';
+  br_taken          <= '0';
 end architecture rtl;

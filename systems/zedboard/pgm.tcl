@@ -1,13 +1,22 @@
-proc pgm_bits {proj_dir proj_name bitstream} {
-	open_project $proj_dir/$proj_name.xpr
-	open_hw
-	connect_hw_server
-	open_hw_target
-	set_property PROGRAM.FILE $bitstream [get_hw_devices xc7z020_1]
-	set_property PROBES.FILE {} [get_hw_devices xc7z020_1]
-	set_property FULL_PROBES.FILE {} [get_hw_devices xc7z020_1]
-	current_hw_device [get_hw_devices xc7z020_1]
-	refresh_hw_device -update_hw_probes false [lindex [get_hw_devices xc7z020_1] 0]
-	program_hw_devices [lindex [get_hw_devices xc7z020_1] 0]
-	close_project
+#Connect
+connect
+
+#If there's a PS target, set it up
+set nops [catch { target -set -filter {name =~ "ARM*#1"} } ]
+if { !$nops } {
+    catch { stop } error
+    rst -srst
+
+    #source ps7_init.tcl
+    source [lindex $argv 1]
+
+    #Initialize processing system
+    ps7_init
+    ps7_post_config
+    dow [lindex $argv 2]
+    #con
 }
+
+#Program the bitstream
+target -set -filter {name =~ "xc7z*"}
+fpga [lindex $argv 0]

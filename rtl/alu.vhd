@@ -16,12 +16,11 @@ entity arithmetic_unit is
     POWER_OPTIMIZED     : boolean;
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
-    FAMILY              : string := "ALTERA");
-
+    FAMILY              : string := "ALTERA"
+    );
   port (
     clk                : in  std_logic;
     valid_instr        : in  std_logic;
-    stall_to_alu       : in  std_logic;
     simd_op_size       : in  std_logic_vector(1 downto 0);
     stall_from_execute : in  std_logic;
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -39,7 +38,6 @@ entity arithmetic_unit is
     lve_data2        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     lve_source_valid : in std_logic
     );
-
 end entity arithmetic_unit;
 
 architecture rtl of arithmetic_unit is
@@ -300,10 +298,15 @@ begin  -- architecture rtl
 
 
   source_valid <= lve_source_valid when opcode = LVE_OP else
-                  not stall_to_alu and valid_instr;
+                  valid_instr;
 
   func7_shift <= func7 = "0000000" or func7 = "0100000";
-  sh_enable   <= valid_instr and source_valid when ((opcode = ALU_OP and func7_shift) or (opcode = ALUI_OP) or (opcode = LVE_OP and lve_source_valid = '1')) and (func3 = "001" or func3 = "101") else '0';
+  sh_enable   <= valid_instr and source_valid when
+                 (((opcode = ALU_OP and func7_shift) or
+                   (opcode = ALUI_OP) or
+                   (opcode = LVE_OP and lve_source_valid = '1')) and
+                  (func3 = "001" or func3 = "101")) else
+                 '0';
   sh_stall    <= (not shifted_result_valid)   when sh_enable = '1'                                                                                                                                else '0';
 
   SH_GEN0 : if SHIFTER_USE_MULTIPLIER generate
@@ -320,6 +323,9 @@ begin  -- architecture rtl
           rshifted_result <= unsigned(mul_dest(REGISTER_SIZE-1 downto 0));
         end if;
         shifted_result_valid <= mul_dest_valid and sh_enable;
+        if stall_from_execute = '0' then
+          shifted_result_valid <= '0';
+        end if;
       end if;
     end process;
 
@@ -525,8 +531,7 @@ begin  -- architecture rtl
         -- then we want to flush the valid signals
         -- Another way of phrasing this is that unless we have an LVE instruction we only want
         -- mul_dest_valid to be high for one cycle
-        if stall_from_execute = '0' or (opcode /= LVE_OP and mul_dest_valid = '1') then
-
+        if stall_from_execute = '0' then
           mul_ab_valid   <= '0';
           mul_dest_valid <= '0';
         end if;
@@ -541,7 +546,7 @@ begin  -- architecture rtl
     mul_stall          <= '0';
   end generate no_mul_gen;
 
-  d_en : if DIVIDE_ENABLE generate
+  divide_gen : if DIVIDE_ENABLE generate
   begin
     div_enable <= '1' when (func7 = mul_f7 and opcode = ALU_OP and instruction(14) = '1') and valid_instr = '1' and source_valid = '1' else '0';
     div : divider
@@ -561,9 +566,8 @@ begin  -- architecture rtl
     rem_result <= signed(remainder);
 
     div_stall <= div_enable and (not div_result_valid);
-
-  end generate d_en;
-  nd_en : if not DIVIDE_ENABLE generate
+  end generate divide_gen;
+  no_divide_gen : if not DIVIDE_ENABLE generate
   begin
     div_stall        <= '0';
     div_result       <= (others => 'X');
@@ -626,7 +630,7 @@ begin  -- architecture rtl
   begin
     count_sub4 <= count -4;
     shift4     <= not count_sub4(count_sub4'left);
-    count_next <= count_sub4                when shift4 = '1' else count -1;
+    count_next <= count_sub4                when shift4 = '1' else count-1;
     left_nxt   <= SHIFT_LEFT(left_tmp, 4)   when shift4 = '1' else SHIFT_LEFT(left_tmp, 1);
     right_nxt  <= SHIFT_RIGHT(right_tmp, 4) when shift4 = '1' else SHIFT_RIGHT(right_tmp, 1);
 
@@ -639,7 +643,7 @@ begin  -- architecture rtl
             when IDLE =>
               left_tmp  <= shift_value;
               right_tmp <= shift_value;
-              count     <= unsigned("0"&shift_amt);
+              count     <= unsigned("0" & shift_amt);
               if shift_amt /= 0 then
                 state <= RUNNING;
               else
@@ -695,7 +699,7 @@ begin  -- architecture rtl
             when RUNNING =>
               left_tmp  <= left_nxt;
               right_tmp <= right_nxt;
-              count     <= count -1;
+              count     <= count-1;
               if count = 1 then
                 shifted_result_valid <= '1';
                 state                <= DONE;
@@ -768,8 +772,8 @@ begin  -- architecture rtl
   div_neg_op1 <= not unsigned_div when signed(rs1_data) < 0 else '0';
   div_neg_op2 <= not unsigned_div when signed(rs2_data) < 0 else '0';
 
-  min_signed(min_signed'left)             <= '1';
-  min_signed(min_signed'left -1 downto 0) <= (others => '0');
+  min_signed(min_signed'left)            <= '1';
+  min_signed(min_signed'left-1 downto 0) <= (others => '0');
 
   div_zero <= rs2_data = to_unsigned(0, REGISTER_SIZE);
   div_overflow <= (rs1_data = min_signed and

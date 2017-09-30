@@ -1,22 +1,26 @@
-cd system/testbench/mentor
-exec ln -sf ../../../test.hex .
+source sim_waves.tcl
+
+cd system/simulation/mentor
+exec ln -sf ../../../software/test.hex .
 do msim_setup.tcl
 ld
 
-proc re_run { t } {
+proc reload_sim { } {
+    quit -sim
+    cd ../../..
+    do simulate.tcl
+}
 
+proc re_run { t } {
 	 restart -f ;
 	 run $t
 }
 
-add log -r *
-
-add wave -noupdate /system_tb/system_inst/vectorblox_orca_0/clk
-add wave -noupdate /system_tb/system_inst/vectorblox_orca_0/reset
-
-add wave -noupdate -divider Execute
-add wave -noupdate /system_tb/system_inst/vectorblox_orca_0/core/X/valid_instr
-add wave -noupdate /system_tb/system_inst/vectorblox_orca_0/core/X/pc_current
-add wave -noupdate /system_tb/system_inst/vectorblox_orca_0/core/X/instruction
-
+add log -r /*
 set DefaultRadix hex
+
+#Initialize clock and reset
+force -repeat 20ns /system/clk_clk 1 0ns, 0 10ns
+force /system/reset_reset_n 0 0ns, 1 1us
+
+reset_waves
