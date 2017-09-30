@@ -84,19 +84,9 @@ compare = lambda l, c, k, n, mo, me : (l, mo, me, mult(me, mo, c, k, n), diff(me
 
 compare_b = lambda l, mo, me : (l, mo, me)
 
-# adjust_k = lambda lops, c: (0.0025*c*8*1000000)
-# adjust_k = lambda lops, c, p: (12.5*p**2)
-# adjust_k = lambda lops, c, p: (500*c*p)
-# adjust_k = lambda lops, c, p: (20000*c)
-adjust_k = lambda lops, c, p: (500*p*c)
 adjust_k = lambda lops, c, k, n: (34*k*c*n)
 
-# adjust_d = lambda lops, p: (42.5*p**2)
-# adjust_d = lambda lops, p: (68000)
-# adjust_d = lambda lops: (0.0085*8*1000000)
 adjust_d = lambda lops, p: (1800*p)
-adjust_d2 = lambda lops, d: (1600*(d+5))
-# adjust_d = lambda lops, p: (45*p*p)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -133,7 +123,7 @@ if __name__ == "__main__":
     for l, d in enumerate(dense):
         lops = estimate_d(l, d, i) 
         # print compare(l, 1, 1, 1, m8(lops), expected[l])
-        lops += adjust_d2(lops, p)
+        lops += adjust_d(lops, d)
         ops += lops
 
         i = d
