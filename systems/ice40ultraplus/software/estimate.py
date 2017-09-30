@@ -94,6 +94,7 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--channels', type=int, required=True)
     parser.add_argument('-k', '--kernels', type=int, nargs='+', required=True)
     parser.add_argument('-d', '--dense', type=int, nargs='+', required=True)
+    parser.add_argument('-f', '--frequency', choices=[8, 16], type=int, required=True)
     args = parser.parse_args()
 
 
@@ -127,4 +128,7 @@ if __name__ == "__main__":
         ops += lops
 
         i = d
-    print(m16(ops))
+    if args.frequency == 8:
+        print(m8(ops))
+    elif args.frequency == 16:
+        print(m16(ops))
