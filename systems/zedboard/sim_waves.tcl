@@ -12,42 +12,42 @@ proc reset_waves { } {
     add_wave /design_1_wrapper/design_1_i/edge_extender/U0/register_bank 
     add_wave /design_1_wrapper/design_1_i/edge_extender/U0/reset
     
-    orca_reset_waves add_wave add_wave_divider /design_1_wrapper/design_1_i/orca
+    orca_reset_waves add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }
     
 
 proc add_wave_data_masters { } {
-    orca_add_wave_axi_data_masters add_wave add_wave_divider /design_1_wrapper/design_1_i/orca
+    orca_add_wave_axi_data_masters add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }
 
 proc add_wave_instruction_masters { } {
-    orca_add_wave_axi_instruction_masters add_wave add_wave_divider /design_1_wrapper/design_1_i/orca
+    orca_add_wave_axi_instruction_masters add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }
 
 proc add_wave_instruction_cache { } {
-    orca_add_wave_instruction_cache add_wave add_wave_divider /design_1_wrapper/design_1_i/orca
+    orca_add_wave_instruction_cache add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }
 
 proc add_wave_instruction_fetch { } {
-    orca_add_wave_instruction_fetch add_wave add_wave_divider /design_1_wrapper/design_1_i/orca
+    orca_add_wave_instruction_fetch add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }
 
 proc add_wave_syscall { } {
-    orca_add_wave_syscall add_wave add_wave_divider /design_1_wrapper/design_1_i/orca
+    orca_add_wave_syscall add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }
 
 proc add_wave_lsu { } {
-    orca_add_wave_lsu add_wave add_wave_divider /design_1_wrapper/design_1_i/orca
+    orca_add_wave_lsu add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }
 
 proc add_wave_execute { } {
-    orca_add_wave_execute add_wave add_wave_divider /design_1_wrapper/design_1_i/orca
+    orca_add_wave_execute add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }
 
 proc add_wave_alu { } {
-    orca_add_wave_alu add_wave add_wave_divider /design_1_wrapper/design_1_i/orca
+    orca_add_wave_alu add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }
 
 proc add_wave_all { } {
-    orca_add_wave_all add_wave add_wave_divider /design_1_wrapper/design_1_i/orca true false
+    orca_add_wave_all add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0 true false
 }

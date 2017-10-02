@@ -178,7 +178,7 @@ pgm: $(OUT_BIT)
 	xsdb $(PGM_TCL) $(OUT_BIT) ps7_init.tcl arm.elf
 
 .PHONY: run
-run::
+run:
 ifeq ($(ELF_FILE), NONE)
 	python orca_pgm.py test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_MAX_ADDRESS) + 1))` --device=xc7z* --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
 else #ifeq ($(ELF_FILE), NONE)

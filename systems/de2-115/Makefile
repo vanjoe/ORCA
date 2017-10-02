@@ -1,13 +1,21 @@
-QSYS_FILE=system.qsys
-QPF_FILE=system.qpf
-QIP_FILE=system/synthesis/system.qip
-SIP_FILE=system/synthesis/system.sip
-OUTPUT_DIR=output_files/
-MAP_RPT_FILE=$(OUTPUT_DIR)system.map.rpt
-FIT_RPT_FILE=$(OUTPUT_DIR)system.fit.rpt
-ASM_RPT_FILE=$(OUTPUT_DIR)system.asm.rpt
-MIF_RPT_FILE=$(OUTPUT_DIR)system.mif_update.rpt
-STA_RPT_FILE=$(OUTPUT_DIR)system.sta.rpt
+-include config.mk
+
+SYSTEM    ?= system
+QSYS_FILE ?= $(SYSTEM).qsys
+QPF_FILE  ?= $(SYSTEM).qpf
+
+QIP_FILE     := $(SYSTEM)/synthesis/$(SYSTEM).qip
+SIP_FILE     := $(SYSTEM)/synthesis/$(SYSTEM).sip
+OUTPUT_DIR   := output_files
+MAP_RPT_FILE := $(OUTPUT_DIR)/$(SYSTEM).map.rpt
+FIT_RPT_FILE := $(OUTPUT_DIR)/$(SYSTEM).fit.rpt
+ASM_RPT_FILE := $(OUTPUT_DIR)/$(SYSTEM).asm.rpt
+MIF_RPT_FILE := $(OUTPUT_DIR)/$(SYSTEM).mif_update.rpt
+STA_RPT_FILE := $(OUTPUT_DIR)/$(SYSTEM).sta.rpt
+
+SW_DIR   ?= software
+BIN_FILE ?= test.bin
+HEX_FILE ?= test.hex
 
 all: system.sof  $(STA_RPT_FILE)
 
@@ -19,8 +27,6 @@ TEST_SUBMODULE_FILES=$(addprefix system/synthesis/submodules/,$(notdir $(TEST_FI
 JTAG_SUBMODULE_FILES=$(wildcard memory_mapped_reset/*.vhd) 
 SUBMODULE_FILES=$(ORCA_SUBMODULE_FILES) $(TEST_SUBMODULE_FILES) $(JTAG_SUBMODULE_FILES)
 TOP_LEVEL_FILES=$(wildcard *.vhd)
-
--include config.mk
 
 $(QSYS_FILE): $(wildcard config.mk)
 ifdef BRANCH_PREDICTION
@@ -66,10 +72,6 @@ copy-files: $(ORCA_SUBMODULE_FILES)
 $(TEST_SUBMODULE_FILES): system/synthesis/submodules/% : test_components/%
 	cp $^ $@
 
-BIN_FILE=test.bin
-software/$(BIN_FILE):
-	make -C software $<
-
 $(MAP_RPT_FILE) : $(QIP_FILE) $(SUBMODULE_FILES) $(TOP_LEVEL_FILES) 
 	quartus_map $(QPF_FILE)
 $(FIT_RPT_FILE) : $(MAP_RPT_FILE)
@@ -99,10 +101,10 @@ system/simulation/mentor/msim_setup.tcl: $(QSYS_FILE) $(SUBMODULE_FILES)
 	qsys-generate $(QSYS_FILE) --search-path="./,../../rtl/,$$" --simulation=VHDL 2>&1 | tee ./sim.$(QSYS_FILE).log
 	[ -e $@ ]
 
-software/test.hex:
-	$(MAKE) -C software test.hex
+$(SW_DIR)/$(HEX_FILE):
+	$(MAKE) -C $(SW_DIR) $(HEX_FILE)
 
-sim: testbench software/test.hex
+sim: testbench $(SW_DIR)/$(HEX_FILE)
 	vsim -do simulate.tcl
 
 clean:
@@ -110,13 +112,19 @@ clean:
 	rm -rf db/ incremental_db/
 	rm -rf *.log system.sopcinfo
 	rm -rf system.sof .qsys_edit/
-	$(MAKE) -C software/ clean || true
+	$(MAKE) -C $(SW_DIR)/ clean || true
+
 
 pgm: system.sof
 	quartus_pgm -m JTAG -o P\;$^
 
-run: software/$(BIN_FILE)
-	python orca_pgm.py software/test.bin --family=altera --reset_address=0x10000000 --end_address=0x00010000
+run:
+ifeq ($(BIN_FILE), NONE)
+	python orca_pgm.py test.bin --family=altera --reset_address=0x10000000 --end_address=0x00010000
+else #ifeq ($(BIN_FILE), NONE)
+	make -C $(SW_DIR) $(BIN_FILE)
+	python orca_pgm.py $(SW_DIR)/$(BIN_FILE) --family=altera --reset_address=0x10000000 --end_address=0x00010000
+endif #else #ifeq ($(BIN_FILE), NONE)
 
 help:
 	@echo "Makefile Help:"
