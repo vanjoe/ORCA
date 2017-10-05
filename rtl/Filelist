@@ -20,7 +20,5 @@ icache.vhd
 cache_mux.vhd
 a4l_master.vhd
 axi_master.vhd
-idram.vhd
-idram_xilinx.vhd
 memory_interface.vhd
 orca.vhd
