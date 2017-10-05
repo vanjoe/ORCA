@@ -144,9 +144,9 @@ begin
   instr_ARREADY          <= instr_ARREADY_internal;
   instr_AWREADY_internal <= (not reset) and
                             (((not instr_ARREADY_internal) or (not instr_ARVALID)) and (not instr_write_resp_stalled));
-  instr_AWREADY          <= instr_AWREADY_internal;
-  instr_WREADY_internal  <= instr_AWREADY_internal;
-  instr_WREADY           <= instr_WREADY_internal;
+  instr_AWREADY         <= instr_AWREADY_internal;
+  instr_WREADY_internal <= instr_AWREADY_internal;
+  instr_WREADY          <= instr_WREADY_internal;
   instr_address <=
     instr_ARADDR(instr_address'left+log2(BYTES_PER_WORD) downto log2(BYTES_PER_WORD)) when
     instr_read_en = '1' else
@@ -166,9 +166,9 @@ begin
   data_ARREADY          <= data_ARREADY_internal;
   data_AWREADY_internal <= (not reset) and
                            (((not data_ARREADY_internal) or (not data_ARVALID)) and (not data_write_resp_stalled));
-  data_AWREADY          <= data_AWREADY_internal;
-  data_WREADY_internal  <= data_AWREADY_internal;
-  data_WREADY           <= data_WREADY_internal;
+  data_AWREADY         <= data_AWREADY_internal;
+  data_WREADY_internal <= data_AWREADY_internal;
+  data_WREADY          <= data_WREADY_internal;
   data_address <=
     data_ARADDR(data_address'left+log2(BYTES_PER_WORD) downto log2(BYTES_PER_WORD)) when
     data_read_en = '1' else
@@ -190,6 +190,7 @@ begin
       end if;
       if instr_read_en = '1' then
         instr_RVALID_internal <= '1';
+        instr_RID             <= instr_ARID;
       end if;
 
       if instr_BREADY = '1' then
@@ -197,6 +198,7 @@ begin
       end if;
       if instr_write_en = '1' then
         instr_BVALID_internal <= '1';
+        instr_BID             <= instr_AWID;
       end if;
 
       if reset = '1' then
@@ -252,5 +254,9 @@ begin
       data_be       => data_byte_sel,
       data_readdata => data_RDATA
       );
+
+  --Only valid for A4L, needs fixing for AXI3/AXI4
+  instr_RLAST <= '1';
+  data_RLAST  <= '1';
 
 end architecture rtl;
