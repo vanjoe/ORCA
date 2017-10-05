@@ -3,7 +3,7 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 
 library work;
-use work.utils.all;
+use work.idram_utils.all;
 
 package idram_components is
   component idram is

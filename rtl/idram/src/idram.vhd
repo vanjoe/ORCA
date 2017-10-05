@@ -4,7 +4,7 @@ use IEEE.numeric_std.all;
 
 library work;
 use work.idram_components.all;
-use work.utils.all;
+use work.idram_utils.all;
 
 entity idram is
   generic (

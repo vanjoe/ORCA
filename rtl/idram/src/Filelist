@@ -1,4 +1,4 @@
-utils.vhd
+idram_utils.vhd
 idram_components.vhd
 bram_xilinx.vhd
 idram_xilinx.vhd

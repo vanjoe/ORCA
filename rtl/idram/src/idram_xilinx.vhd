@@ -3,7 +3,7 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
 library work;
-use work.utils.all;
+use work.idram_utils.all;
 use work.idram_components.all;
 
 entity idram_xilinx is
