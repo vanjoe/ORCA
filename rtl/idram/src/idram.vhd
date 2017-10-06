@@ -8,9 +8,10 @@ use work.idram_utils.all;
 
 entity idram is
   generic (
-    --Port types: 0 = AXI4Lite, 1 = AXI3, 2 = AXI4
+    --Port types: 0 -> AXI4Lite, 1 -> AXI3, 2 -> AXI4
     INSTR_PORT_TYPE : natural range 0 to 2 := 0;
     DATA_PORT_TYPE  : natural range 0 to 2 := 0;
+    WRITE_FIRST     : natural range 0 to 1 := 0;
     SIZE            : integer              := 32768;
     RAM_WIDTH       : integer              := 32;
     ADDR_WIDTH      : integer              := 32
@@ -232,10 +233,11 @@ begin
     end if;
   end process;
 
-  ram : component idram_xilinx
+  ram : component idram_behav
     generic map (
-      RAM_DEPTH => SIZE/4,
-      RAM_WIDTH => RAM_WIDTH
+      RAM_DEPTH   => SIZE/4,
+      RAM_WIDTH   => RAM_WIDTH,
+      WRITE_FIRST => (WRITE_FIRST /= 0)
       )
     port map (
       clk => clk,

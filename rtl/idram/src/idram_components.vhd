@@ -105,10 +105,11 @@ package idram_components is
       );
   end component;
 
-  component idram_xilinx is
+  component idram_behav is
     generic (
-      RAM_DEPTH : integer := 1024;
-      RAM_WIDTH : integer := 32
+      RAM_DEPTH   : integer := 1024;
+      RAM_WIDTH   : integer := 32;
+      WRITE_FIRST : boolean := false
       );
     port (
       clk : in std_logic;
@@ -129,10 +130,11 @@ package idram_components is
       );
   end component;
 
-  component bram_xilinx is
+  component tdp_ram_behav is
     generic (
-      RAM_DEPTH : integer := 1024;
-      RAM_WIDTH : integer := 8
+      RAM_DEPTH   : integer := 1024;
+      RAM_WIDTH   : integer := 8;
+      WRITE_FIRST : boolean := false
       );
     port (
       address_a  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
