@@ -8,13 +8,6 @@ scripts are located in the `GIT_TOP/scripts/` submodule.
 
 ## Makefile --------------------------------------------------
 
-The Makefile contains 4 different sections, one for Altera builds, one for
-Xilinx builds, one for Microsemi builds, and one for Lattice builds. The
-Makefile is used to build the hardware for each family of FPGAs. As of August
-2017, only the Altera and Xilinx sections of the Makefile build the ORCA
-hardware successfully when called from the build scripts. The Microsemi and
-Lattice sections are yet unimplemented.
-
 To run the whole test process with the default build configurations, run `make
 builds`. Note that you need to do the appropriate environment setup for the
 specific FPGA families your targeting.

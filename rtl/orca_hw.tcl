@@ -21,7 +21,7 @@ proc log2 { num } {
 # module orca
 #
 set_module_property DESCRIPTION "Orca, a RISC-V implementation by Vectorblox"
-set_module_property NAME "vectorblox_orca"
+set_module_property NAME vectorblox_orca
 set_module_property VERSION 1.0
 set_module_property INTERNAL false
 set_module_property OPAQUE_ADDRESS_MAP true

@@ -10,3 +10,5 @@ incremental_db/
 *.hex
 output_files/
 *.sof
+*.qsys
+tmp.*

@@ -1,5 +1,4 @@
 -include test_config.mk
--include config.mk
 CFG_FILE   ?= ../../test/build_cfg_orca.py
 BUILD_ARGS ?= -k --cfg-file=$(CFG_FILE) $(EXTRA_BUILD_ARGS)
 
@@ -62,7 +61,7 @@ builds: $(RV_TESTS_COPY)
 ################################################################################
 
 clean:
-	rm -rf builds/ builds.log config.mk program.mk $(RV_TESTS_COPY)
+	rm -rf builds/ builds.log $(RV_TESTS_COPY)
 
 ################################################################################
 
