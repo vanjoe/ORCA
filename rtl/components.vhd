@@ -268,6 +268,8 @@ package rv_components is
       DATA_RETURN_REGISTER        : natural range 0 to 1          := 0;
       IUC_ADDR_BASE               : std_logic_vector(31 downto 0) := X"00000000";
       IUC_ADDR_LAST               : std_logic_vector(31 downto 0) := X"00000000";
+      IAUX_ADDR_BASE              : std_logic_vector(31 downto 0) := X"00000000";
+      IAUX_ADDR_LAST              : std_logic_vector(31 downto 0) := X"00000000";
       ICACHE_SIZE                 : natural                       := 8192;
       ICACHE_LINE_SIZE            : integer range 16 to 256       := 32;
       ICACHE_EXTERNAL_WIDTH       : integer                       := 32;
@@ -280,31 +282,31 @@ package rv_components is
       reset          : in std_logic;
 
       --Instruction Orca-internal memory-mapped master
-      ifetch_oimm_address       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      ifetch_oimm_requestvalid  : in     std_logic;
-      ifetch_oimm_readnotwrite  : in     std_logic;
-      ifetch_oimm_readdata      : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      ifetch_oimm_waitrequest   : buffer std_logic;
-      ifetch_oimm_readdatavalid : buffer std_logic;
+      ifetch_oimm_address       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      ifetch_oimm_requestvalid  : in  std_logic;
+      ifetch_oimm_readnotwrite  : in  std_logic;
+      ifetch_oimm_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      ifetch_oimm_waitrequest   : out std_logic;
+      ifetch_oimm_readdatavalid : out std_logic;
 
       --Data Orca-internal memory-mapped master
-      lsu_oimm_address       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      lsu_oimm_byteenable    : in     std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-      lsu_oimm_requestvalid  : in     std_logic;
-      lsu_oimm_readnotwrite  : in     std_logic;
-      lsu_oimm_writedata     : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      lsu_oimm_readdata      : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      lsu_oimm_readdatavalid : out    std_logic;
-      lsu_oimm_waitrequest   : buffer std_logic;
+      lsu_oimm_address       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      lsu_oimm_byteenable    : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+      lsu_oimm_requestvalid  : in  std_logic;
+      lsu_oimm_readnotwrite  : in  std_logic;
+      lsu_oimm_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      lsu_oimm_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      lsu_oimm_readdatavalid : out std_logic;
+      lsu_oimm_waitrequest   : out std_logic;
 
       --Scratchpad memory-mapped slave
-      sp_address   : out    std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
-      sp_byte_en   : out    std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-      sp_write_en  : out    std_logic;
-      sp_read_en   : buffer std_logic;
-      sp_writedata : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_readdata  : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_ack       : in     std_logic;
+      sp_address   : out std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
+      sp_byte_en   : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+      sp_write_en  : out std_logic;
+      sp_read_en   : out std_logic;
+      sp_writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_ack       : in  std_logic;
 
       -------------------------------------------------------------------------------
       --AVALON
@@ -440,6 +442,19 @@ package rv_components is
       IUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
       IUC_BVALID : in  std_logic                    := '0';
       IUC_BREADY : out std_logic;
+
+      --Xilinx local memory bus instruction master
+      ILMB_Addr         : out std_logic_vector(0 to REGISTER_SIZE-1);
+      ILMB_Byte_Enable  : out std_logic_vector(0 to (REGISTER_SIZE/8)-1);
+      ILMB_Data_Write   : out std_logic_vector(0 to REGISTER_SIZE-1);
+      ILMB_AS           : out std_logic;
+      ILMB_Read_Strobe  : out std_logic;
+      ILMB_Write_Strobe : out std_logic;
+      ILMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
+      ILMB_Ready        : in  std_logic := '0';
+      ILMB_Wait         : in  std_logic := '0';
+      ILMB_CE           : in  std_logic := '0';
+      ILMB_UE           : in  std_logic := '0';
 
       --AXI3 cacheable instruction master
       IC_ARID    : out std_logic_vector(3 downto 0);
@@ -584,19 +599,19 @@ package rv_components is
       wb_enable   : in std_logic;
 
       --output signals
-      rs1_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sign_extension : out    std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+      rs1_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs2_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sign_extension : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       --inputs just for carrying to next pipeline stage
-      br_taken_in    : in     std_logic;
-      pc_curr_in     : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      br_taken_out   : out    std_logic;
-      pc_curr_out    : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instr_out      : buffer std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      subseq_instr   : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      subseq_valid   : out    std_logic;
-      valid_output   : out    std_logic;
-      decode_flushed : out    std_logic
+      br_taken_in    : in  std_logic;
+      pc_curr_in     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      br_taken_out   : out std_logic;
+      pc_curr_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      instr_out      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      subseq_instr   : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      subseq_valid   : out std_logic;
+      valid_output   : out std_logic;
+      decode_flushed : out std_logic
       );
   end component decode;
 
@@ -892,13 +907,13 @@ package rv_components is
       slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
       slave_ack      : out std_logic;
 
-      lve_executing        : out    std_logic;
-      lve_alu_data1        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-      lve_alu_data2        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-      lve_alu_op_size      : out    std_logic_vector(1 downto 0);
-      lve_alu_source_valid : out    std_logic;
-      lve_alu_result       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      lve_alu_result_valid : in     std_logic
+      lve_executing        : out std_logic;
+      lve_alu_data1        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      lve_alu_data2        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      lve_alu_op_size      : out std_logic_vector(1 downto 0);
+      lve_alu_source_valid : out std_logic;
+      lve_alu_result       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      lve_alu_result_valid : in  std_logic
       );
   end component;
 
@@ -981,14 +996,14 @@ package rv_components is
       aresetn : in std_logic;
 
       --Orca-internal memory-mapped slave
-      oimm_address       : in     std_logic_vector(ADDR_WIDTH-1 downto 0);
-      oimm_byteenable    : in     std_logic_vector((DATA_WIDTH/8)-1 downto 0);
-      oimm_requestvalid  : in     std_logic;
-      oimm_readnotwrite  : in     std_logic;
-      oimm_writedata     : in     std_logic_vector(DATA_WIDTH-1 downto 0);
-      oimm_readdata      : out    std_logic_vector(DATA_WIDTH-1 downto 0);
-      oimm_readdatavalid : out    std_logic;
-      oimm_waitrequest   : buffer std_logic;
+      oimm_address       : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+      oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+      oimm_requestvalid  : in  std_logic;
+      oimm_readnotwrite  : in  std_logic;
+      oimm_writedata     : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+      oimm_readdata      : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      oimm_readdatavalid : out std_logic;
+      oimm_waitrequest   : out std_logic;
 
       --AXI4-Lite memory-mapped master
       AWADDR  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
@@ -1227,25 +1242,30 @@ package rv_components is
 
   component cache_mux is
     generic (
-      UC_ADDR_BASE    : std_logic_vector(31 downto 0);
-      UC_ADDR_LAST    : std_logic_vector(31 downto 0);
-      MAX_BURST_BEATS : positive := 16;
-      ADDR_WIDTH      : integer  := 32;
-      DATA_WIDTH      : integer  := 32
+      REGISTER_SIZE   : positive range 32 to 64       := 32;
+      CACHE_SIZE      : natural                       := 0;
+      CACHE_LINE_SIZE : integer range 16 to 256       := 32;
+      UC_ADDR_BASE    : std_logic_vector(31 downto 0) := X"00000000";
+      UC_ADDR_LAST    : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+      AUX_ADDR_BASE   : std_logic_vector(31 downto 0) := X"00000000";
+      AUX_ADDR_LAST   : std_logic_vector(31 downto 0) := X"00000000";
+      MAX_BURST_BEATS : positive                      := 16;
+      ADDR_WIDTH      : integer                       := 32;
+      DATA_WIDTH      : integer                       := 32
       );
     port (
       clk   : in std_logic;
       reset : in std_logic;
 
       --Orca-internal memory-mapped slave
-      oimm_address       : in     std_logic_vector(ADDR_WIDTH-1 downto 0);
-      oimm_byteenable    : in     std_logic_vector((DATA_WIDTH/8)-1 downto 0);
-      oimm_requestvalid  : in     std_logic;
-      oimm_readnotwrite  : in     std_logic;
-      oimm_writedata     : in     std_logic_vector(DATA_WIDTH-1 downto 0);
-      oimm_readdata      : out    std_logic_vector(DATA_WIDTH-1 downto 0);
-      oimm_readdatavalid : buffer std_logic;
-      oimm_waitrequest   : buffer std_logic;
+      oimm_address       : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+      oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+      oimm_requestvalid  : in  std_logic;
+      oimm_readnotwrite  : in  std_logic;
+      oimm_writedata     : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+      oimm_readdata      : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      oimm_readdatavalid : out std_logic;
+      oimm_waitrequest   : out std_logic;
 
       --Cache interface Orca-internal memory-mapped master
       cacheint_oimm_address       : out std_logic_vector(ADDR_WIDTH-1 downto 0);
@@ -1265,7 +1285,17 @@ package rv_components is
       uc_oimm_writedata     : out std_logic_vector(DATA_WIDTH-1 downto 0);
       uc_oimm_readdata      : in  std_logic_vector(DATA_WIDTH-1 downto 0);
       uc_oimm_readdatavalid : in  std_logic;
-      uc_oimm_waitrequest   : in  std_logic
+      uc_oimm_waitrequest   : in  std_logic;
+
+      --Tightly-coupled memory Orca-internal memory-mapped master
+      aux_oimm_address       : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+      aux_oimm_byteenable    : out std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+      aux_oimm_requestvalid  : out std_logic;
+      aux_oimm_readnotwrite  : out std_logic;
+      aux_oimm_writedata     : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      aux_oimm_readdata      : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+      aux_oimm_readdatavalid : in  std_logic;
+      aux_oimm_waitrequest   : in  std_logic
       );
   end component;
 

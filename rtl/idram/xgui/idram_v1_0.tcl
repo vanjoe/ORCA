@@ -6,9 +6,9 @@ proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "RAM_WIDTH" -parent ${Page_0}
   ipgui::add_param $IPINST -name "INSTR_PORT_TYPE" -parent ${Page_0}
   ipgui::add_param $IPINST -name "DATA_PORT_TYPE" -parent ${Page_0}
-  ipgui::add_param $IPINST -name "WRITE_FIRST" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "WRITE_FIRST_MODE" -parent ${Page_0}
 
-  set SIZE [ipgui::add_param $IPINST -name "SIZE"]
+  set SIZE [ipgui::add_param $IPINST -name "SIZE" -parent ${Page_0}]
   set_property tooltip {Number of bytes stored in IDRAM.} ${SIZE}
 
 }
@@ -49,12 +49,12 @@ proc validate_PARAM_VALUE.DATA_PORT_TYPE { PARAM_VALUE.DATA_PORT_TYPE } {
 	return true
 }
 
-proc update_PARAM_VALUE.WRITE_FIRST { PARAM_VALUE.WRITE_FIRST } {
-	# Procedure called to update WRITE_FIRST when any of the dependent parameters in the arguments change
+proc update_PARAM_VALUE.WRITE_FIRST_MODE { PARAM_VALUE.WRITE_FIRST_MODE } {
+	# Procedure called to update WRITE_FIRST_MODE when any of the dependent parameters in the arguments change
 }
 
-proc validate_PARAM_VALUE.WRITE_FIRST { PARAM_VALUE.WRITE_FIRST } {
-	# Procedure called to validate WRITE_FIRST
+proc validate_PARAM_VALUE.WRITE_FIRST_MODE { PARAM_VALUE.WRITE_FIRST_MODE } {
+	# Procedure called to validate WRITE_FIRST_MODE
 	return true
 }
 
@@ -83,9 +83,9 @@ proc update_MODELPARAM_VALUE.DATA_PORT_TYPE { MODELPARAM_VALUE.DATA_PORT_TYPE PA
 	set_property value [get_property value ${PARAM_VALUE.DATA_PORT_TYPE}] ${MODELPARAM_VALUE.DATA_PORT_TYPE}
 }
 
-proc update_MODELPARAM_VALUE.WRITE_FIRST { MODELPARAM_VALUE.WRITE_FIRST PARAM_VALUE.WRITE_FIRST } {
+proc update_MODELPARAM_VALUE.WRITE_FIRST_MODE { MODELPARAM_VALUE.WRITE_FIRST_MODE PARAM_VALUE.WRITE_FIRST_MODE } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-	set_property value [get_property value ${PARAM_VALUE.WRITE_FIRST}] ${MODELPARAM_VALUE.WRITE_FIRST}
+	set_property value [get_property value ${PARAM_VALUE.WRITE_FIRST_MODE}] ${MODELPARAM_VALUE.WRITE_FIRST_MODE}
 }
 
 proc update_MODELPARAM_VALUE.SIZE { MODELPARAM_VALUE.SIZE PARAM_VALUE.SIZE } {

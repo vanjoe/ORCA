@@ -32,6 +32,8 @@ entity orca is
     SCRATCHPAD_ADDR_BITS  : integer                       := 10;
     IUC_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
     IUC_ADDR_LAST         : std_logic_vector(31 downto 0) := X"00000000";
+    IAUX_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
+    IAUX_ADDR_LAST        : std_logic_vector(31 downto 0) := X"00000000";
     ICACHE_SIZE           : natural                       := 0;
     ICACHE_LINE_SIZE      : integer range 16 to 256       := 32;
     ICACHE_EXTERNAL_WIDTH : integer                       := 32;
@@ -178,6 +180,19 @@ entity orca is
     IUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
     IUC_BVALID : in  std_logic                    := '0';
     IUC_BREADY : out std_logic;
+
+    --Xilinx local memory bus instruction master
+    ILMB_Addr         : out std_logic_vector(0 to REGISTER_SIZE-1);
+    ILMB_Byte_Enable  : out std_logic_vector(0 to (REGISTER_SIZE/8)-1);
+    ILMB_Data_Write   : out std_logic_vector(0 to REGISTER_SIZE-1);
+    ILMB_AS           : out std_logic;
+    ILMB_Read_Strobe  : out std_logic;
+    ILMB_Write_Strobe : out std_logic;
+    ILMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
+    ILMB_Ready        : in  std_logic := '0';
+    ILMB_Wait         : in  std_logic := '0';
+    ILMB_CE           : in  std_logic := '0';
+    ILMB_UE           : in  std_logic := '0';
 
     --AXI3 cacheable instruction master
     IC_ARID    : out std_logic_vector(3 downto 0);
@@ -349,6 +364,8 @@ begin  -- architecture rtl
       DATA_RETURN_REGISTER        => DATA_RETURN_REGISTER,
       IUC_ADDR_BASE               => IUC_ADDR_BASE,
       IUC_ADDR_LAST               => IUC_ADDR_LAST,
+      IAUX_ADDR_BASE              => IAUX_ADDR_BASE,
+      IAUX_ADDR_LAST              => IAUX_ADDR_LAST,
       ICACHE_SIZE                 => ICACHE_SIZE,
       ICACHE_LINE_SIZE            => ICACHE_LINE_SIZE,
       ICACHE_EXTERNAL_WIDTH       => ICACHE_EXTERNAL_WIDTH,
@@ -521,6 +538,19 @@ begin  -- architecture rtl
       IUC_BRESP  => IUC_BRESP,
       IUC_BVALID => IUC_BVALID,
       IUC_BREADY => IUC_BREADY,
+
+      --Xilinx local memory bus instruction master
+      ILMB_Addr         => ILMB_Addr,
+      ILMB_Byte_Enable  => ILMB_Byte_Enable,
+      ILMB_Data_Write   => ILMB_Data_Write,
+      ILMB_AS           => ILMB_AS,
+      ILMB_Read_Strobe  => ILMB_Read_Strobe,
+      ILMB_Write_Strobe => ILMB_Write_Strobe,
+      ILMB_Data_Read    => ILMB_Data_Read,
+      ILMB_Ready        => ILMB_Ready,
+      ILMB_Wait         => ILMB_Wait,
+      ILMB_CE           => ILMB_CE,
+      ILMB_UE           => ILMB_UE,
 
       --AXI3 cacheable instruction master
       IC_ARID    => IC_ARID,

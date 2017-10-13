@@ -35,8 +35,8 @@ entity lve_top is
     slave_ack      : out std_logic;
 
     lve_executing        : out    std_logic;
-    lve_alu_data1        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-    lve_alu_data2        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lve_alu_data1        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lve_alu_data2        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     lve_alu_op_size      : out    std_logic_vector(1 downto 0);
     lve_alu_source_valid : out    std_logic;
     lve_alu_result       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -165,7 +165,6 @@ architecture rtl of lve_top is
   signal ci_start_vector : std_logic;
   signal ci_pause        : std_logic;
 begin
-
   lve_alu_op_size <= LVE_WORD_SIZE when lve_source_valid = '0' else
                      dsz;
   lve_alu_data1        <= lve_data1;

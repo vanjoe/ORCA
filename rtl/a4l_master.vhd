@@ -14,14 +14,14 @@ entity a4l_master is
     aresetn : in std_logic;
 
     --Orca-internal memory-mapped slave
-    oimm_address       : in     std_logic_vector(ADDR_WIDTH-1 downto 0);
-    oimm_byteenable    : in     std_logic_vector((DATA_WIDTH/8)-1 downto 0);
-    oimm_requestvalid  : in     std_logic;
-    oimm_readnotwrite  : in     std_logic;
-    oimm_writedata     : in     std_logic_vector(DATA_WIDTH-1 downto 0);
-    oimm_readdata      : out    std_logic_vector(DATA_WIDTH-1 downto 0);
-    oimm_readdatavalid : out    std_logic;
-    oimm_waitrequest   : buffer std_logic;
+    oimm_address       : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+    oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+    oimm_requestvalid  : in  std_logic;
+    oimm_readnotwrite  : in  std_logic;
+    oimm_writedata     : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+    oimm_readdata      : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    oimm_readdatavalid : out std_logic;
+    oimm_waitrequest   : out std_logic;
 
     --AXI4-Lite memory-mapped master
     AWADDR  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
@@ -51,17 +51,21 @@ entity a4l_master is
 end entity a4l_master;
 
 architecture rtl of a4l_master is
+  signal oimm_waitrequest_int : std_logic;
+
   constant PROT_VAL       : std_logic_vector(2 downto 0) := "000";
   signal AWVALID_internal : std_logic;
   signal WVALID_internal  : std_logic;
   signal aw_sent          : std_logic;
   signal w_sent           : std_logic;
 begin
+  oimm_waitrequest <= oimm_waitrequest_int;
+
   oimm_readdata      <= RDATA;
   oimm_readdatavalid <= RVALID;
 
-  oimm_waitrequest <= (not ARREADY) when oimm_readnotwrite = '1' else
-                      (((not AWREADY) and (not aw_sent)) or ((not WREADY) and (not w_sent)));
+  oimm_waitrequest_int <= (not ARREADY) when oimm_readnotwrite = '1' else
+                          (((not AWREADY) and (not aw_sent)) or ((not WREADY) and (not w_sent)));
 
   AWADDR           <= oimm_address;
   AWPROT           <= PROT_VAL;
@@ -88,7 +92,7 @@ begin
         w_sent <= '1';
       end if;
 
-      if oimm_waitrequest = '0' then
+      if oimm_waitrequest_int = '0' then
         aw_sent <= '0';
         w_sent  <= '0';
       end if;

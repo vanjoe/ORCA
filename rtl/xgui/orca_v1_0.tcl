@@ -25,6 +25,8 @@ proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "SCRATCHPAD_ADDR_BITS"
   ipgui::add_param $IPINST -name "IUC_ADDR_BASE"
   ipgui::add_param $IPINST -name "IUC_ADDR_LAST"
+  ipgui::add_param $IPINST -name "IAUX_ADDR_BASE"
+  ipgui::add_param $IPINST -name "IAUX_ADDR_LAST"
   ipgui::add_param $IPINST -name "ICACHE_SIZE"
   ipgui::add_param $IPINST -name "ICACHE_LINE_SIZE"
   ipgui::add_param $IPINST -name "ICACHE_EXTERNAL_WIDTH"
@@ -268,6 +270,24 @@ proc validate_PARAM_VALUE.IUC_ADDR_LAST { PARAM_VALUE.IUC_ADDR_LAST } {
 	return true
 }
 
+proc update_PARAM_VALUE.IAUX_ADDR_BASE { PARAM_VALUE.IAUX_ADDR_BASE } {
+	# Procedure called to update IAUX_ADDR_BASE when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.IAUX_ADDR_BASE { PARAM_VALUE.IAUX_ADDR_BASE } {
+	# Procedure called to validate IAUX_ADDR_BASE
+	return true
+}
+
+proc update_PARAM_VALUE.IAUX_ADDR_LAST { PARAM_VALUE.IAUX_ADDR_LAST } {
+	# Procedure called to update IAUX_ADDR_LAST when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.IAUX_ADDR_LAST { PARAM_VALUE.IAUX_ADDR_LAST } {
+	# Procedure called to validate IAUX_ADDR_LAST
+	return true
+}
+
 proc update_PARAM_VALUE.WISHBONE_ENABLE { PARAM_VALUE.WISHBONE_ENABLE } {
 	# Procedure called to update WISHBONE_ENABLE when any of the dependent parameters in the arguments change
 }
@@ -381,6 +401,16 @@ proc update_MODELPARAM_VALUE.IUC_ADDR_BASE { MODELPARAM_VALUE.IUC_ADDR_BASE PARA
 proc update_MODELPARAM_VALUE.IUC_ADDR_LAST { MODELPARAM_VALUE.IUC_ADDR_LAST PARAM_VALUE.IUC_ADDR_LAST } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) lastd on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.IUC_ADDR_LAST}] ${MODELPARAM_VALUE.IUC_ADDR_LAST}
+}
+
+proc update_MODELPARAM_VALUE.IAUX_ADDR_BASE { MODELPARAM_VALUE.IAUX_ADDR_BASE PARAM_VALUE.IAUX_ADDR_BASE } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.IAUX_ADDR_BASE}] ${MODELPARAM_VALUE.IAUX_ADDR_BASE}
+}
+
+proc update_MODELPARAM_VALUE.IAUX_ADDR_LAST { MODELPARAM_VALUE.IAUX_ADDR_LAST PARAM_VALUE.IAUX_ADDR_LAST } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) lastd on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.IAUX_ADDR_LAST}] ${MODELPARAM_VALUE.IAUX_ADDR_LAST}
 }
 
 proc update_MODELPARAM_VALUE.ICACHE_SIZE { MODELPARAM_VALUE.ICACHE_SIZE PARAM_VALUE.ICACHE_SIZE } {

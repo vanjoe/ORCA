@@ -26,23 +26,25 @@ entity decode is
     wb_enable   : in std_logic;
 
     --output signals
-    rs1_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sign_extension : out    std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+    rs1_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    sign_extension : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     --inputs just for carrying to next pipeline stage
-    br_taken_in    : in     std_logic;
-    pc_curr_in     : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    br_taken_out   : out    std_logic;
-    pc_curr_out    : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instr_out      : buffer std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    subseq_instr   : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    subseq_valid   : out    std_logic;
-    valid_output   : out    std_logic;
-    decode_flushed : out    std_logic
+    br_taken_in    : in  std_logic;
+    pc_curr_in     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    br_taken_out   : out std_logic;
+    pc_curr_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    instr_out      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    subseq_instr   : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    subseq_valid   : out std_logic;
+    valid_output   : out std_logic;
+    decode_flushed : out std_logic
     );
 end;
 
 architecture rtl of decode is
+  signal instr_out_int : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+
   signal rs1   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal rs2   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal rs1_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
@@ -73,6 +75,7 @@ architecture rtl of decode is
   signal wb_data_int   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal wb_enable_int : std_logic;
 begin
+  instr_out <= instr_out_int;
 
   register_file_1 : register_file
     generic map (
@@ -111,8 +114,8 @@ begin
     rs1 <= instruction(REGISTER_RS1'range) when stall = '0' else instr_latch(REGISTER_RS1'range);
     rs2 <= instruction(REGISTER_RS2'range) when stall = '0' else instr_latch(REGISTER_RS2'range);
 
-    rs1_p <= instr_latch(REGISTER_RS1'range) when stall = '0' else instr_out(REGISTER_RS1'range);
-    rs2_p <= instr_latch(REGISTER_RS2'range) when stall = '0' else instr_out(REGISTER_RS2'range);
+    rs1_p <= instr_latch(REGISTER_RS1'range) when stall = '0' else instr_out_int(REGISTER_RS1'range);
+    rs2_p <= instr_latch(REGISTER_RS2'range) when stall = '0' else instr_out_int(REGISTER_RS2'range);
 
     decode_flushed <= not (valid_input or valid_latch);
 
@@ -128,10 +131,10 @@ begin
           instr_latch    <= instruction;
           valid_latch    <= valid_input;
 
-          br_taken_out <= br_taken_latch;
-          pc_curr_out  <= PC_curr_latch;
-          instr_out    <= instr_latch;
-          valid_output <= valid_latch;
+          br_taken_out  <= br_taken_latch;
+          pc_curr_out   <= PC_curr_latch;
+          instr_out_int <= instr_latch;
+          valid_output  <= valid_latch;
 
         end if;
 
@@ -160,8 +163,8 @@ begin
 
 
   one_cycle : if PIPELINE_STAGES = 1 generate
-    rs1 <= instruction(19 downto 15) when stall = '0' else instr_out(19 downto 15);
-    rs2 <= instruction(24 downto 20) when stall = '0' else instr_out(24 downto 20);
+    rs1 <= instruction(19 downto 15) when stall = '0' else instr_out_int(19 downto 15);
+    rs2 <= instruction(24 downto 20) when stall = '0' else instr_out_int(24 downto 20);
 
     decode_flushed <= not valid_input;
     decode_stage : process (clk, reset) is
@@ -171,10 +174,10 @@ begin
           sign_extension <= std_logic_vector(
             resize(signed(instruction(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
                    SIGN_EXTENSION_SIZE));
-          br_taken_out <= br_taken_in;
-          PC_curr_out  <= PC_curr_in;
-          instr_out    <= instruction;
-          valid_output <= valid_input;
+          br_taken_out  <= br_taken_in;
+          PC_curr_out   <= PC_curr_in;
+          instr_out_int <= instruction;
+          valid_output  <= valid_input;
         end if;
 
 

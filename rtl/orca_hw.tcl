@@ -264,7 +264,7 @@ set_parameter_property SCRATCHPAD_ADDR_BITS derived true
 
 add_parameter IUC_ADDR_BASE Std_Logic_Vector 32'h00000000
 set_parameter_property IUC_ADDR_BASE DEFAULT_VALUE 32'h00000000
-set_parameter_property IUC_ADDR_BASE DISPLAY_NAME "Uncached Start Address"
+set_parameter_property IUC_ADDR_BASE DISPLAY_NAME "Uncached AXI4-Lite Start Address"
 set_parameter_property IUC_ADDR_BASE UNITS None
 set_parameter_property IUC_ADDR_BASE WIDTH 32
 set_parameter_property IUC_ADDR_BASE HDL_PARAMETER true
@@ -272,11 +272,27 @@ set_parameter_property IUC_ADDR_BASE visible false
 
 add_parameter IUC_ADDR_LAST Std_Logic_Vector 32'h00000000
 set_parameter_property IUC_ADDR_LAST DEFAULT_VALUE 32'h00000000
-set_parameter_property IUC_ADDR_LAST DISPLAY_NAME "Uncached End Address"
+set_parameter_property IUC_ADDR_LAST DISPLAY_NAME "Uncached AXI4-Lite End Address"
 set_parameter_property IUC_ADDR_LAST UNITS None
 set_parameter_property IUC_ADDR_LAST WIDTH 32
 set_parameter_property IUC_ADDR_LAST HDL_PARAMETER true
 set_parameter_property IUC_ADDR_LAST visible false 
+
+add_parameter IAUX_ADDR_BASE Std_Logic_Vector 32'h00000000
+set_parameter_property IAUX_ADDR_BASE DEFAULT_VALUE 32'h00000000
+set_parameter_property IAUX_ADDR_BASE DISPLAY_NAME "Uncached Auxiliary Interface Start Address"
+set_parameter_property IAUX_ADDR_BASE UNITS None
+set_parameter_property IAUX_ADDR_BASE WIDTH 32
+set_parameter_property IAUX_ADDR_BASE HDL_PARAMETER true
+set_parameter_property IAUX_ADDR_BASE visible false 
+
+add_parameter IAUX_ADDR_LAST Std_Logic_Vector 32'h00000000
+set_parameter_property IAUX_ADDR_LAST DEFAULT_VALUE 32'h00000000
+set_parameter_property IAUX_ADDR_LAST DISPLAY_NAME "Uncached Auxiliary Interface End Address"
+set_parameter_property IAUX_ADDR_LAST UNITS None
+set_parameter_property IAUX_ADDR_LAST WIDTH 32
+set_parameter_property IAUX_ADDR_LAST HDL_PARAMETER true
+set_parameter_property IAUX_ADDR_LAST visible false 
 
 add_parameter ICACHE_SIZE NATURAL 0
 set_parameter_property ICACHE_SIZE HDL_PARAMETER true
