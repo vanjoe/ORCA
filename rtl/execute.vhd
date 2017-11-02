@@ -12,42 +12,52 @@ library STD;
 use STD.textio.all;                     -- basic I/O
 
 entity execute is
-  generic(
-    REGISTER_SIZE       : positive;
-    SIGN_EXTENSION_SIZE : positive;
-    INTERRUPT_VECTOR    : std_logic_vector(31 downto 0);
-    POWER_OPTIMIZED     : boolean;
-    MULTIPLY_ENABLE     : boolean;
-    DIVIDE_ENABLE       : boolean;
-    SHIFTER_MAX_CYCLES  : natural;
-    COUNTER_LENGTH      : natural;
-    ENABLE_EXCEPTIONS   : boolean;
-    LVE_ENABLE          : natural;
-    SCRATCHPAD_SIZE     : integer;
-    FAMILY              : string
+  generic (
+    REGISTER_SIZE         : positive;
+    SIGN_EXTENSION_SIZE   : positive;
+    INTERRUPT_VECTOR      : std_logic_vector(31 downto 0);
+    POWER_OPTIMIZED       : boolean;
+    MULTIPLY_ENABLE       : boolean;
+    DIVIDE_ENABLE         : boolean;
+    SHIFTER_MAX_CYCLES    : natural;
+    COUNTER_LENGTH        : natural;
+    ENABLE_EXCEPTIONS     : boolean;
+    ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
+    NUM_EXT_INTERRUPTS    : positive range 1 to 32;
+    LVE_ENABLE            : natural;
+    SCRATCHPAD_SIZE       : integer;
+    FAMILY                : string
     );
-  port(
+  port (
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
     reset          : in std_logic;
-    valid_input    : in std_logic;
 
-    br_taken_in  : in std_logic;
-    pc_current   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instruction  : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    subseq_instr : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    subseq_valid : in std_logic;
+    flush_pipeline  : out std_logic;
+    execute_flushed : out std_logic;
+    pipeline_empty  : in  std_logic;
+    program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
 
-    rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sign_extension : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+    --From previous stage
+    valid_input        : in     std_logic;
+    pc_current         : in     unsigned(REGISTER_SIZE-1 downto 0);
+    instruction        : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    subseq_instr       : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    subseq_valid       : in     std_logic;
+    rs1_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    sign_extension     : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+    stall_from_execute : buffer std_logic;
 
+    --To PC correction
+    to_pc_correction_data    : out    unsigned(REGISTER_SIZE-1 downto 0);
+    to_pc_correction_valid   : buffer std_logic;
+    from_pc_correction_ready : in     std_logic;
+
+    --To register file
     wb_sel    : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
     wb_data   : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     wb_enable : buffer std_logic;
-
-    branch_pred        : out    std_logic_vector((REGISTER_SIZE*2)+3-1 downto 0);
-    stall_from_execute : buffer std_logic;
 
     --Data Orca-internal memory-mapped master
     lsu_oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -68,11 +78,8 @@ entity execute is
     sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     sp_ack       : out std_logic;
 
-    external_interrupts : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    pipeline_empty      : in     std_logic;
-    ifetch_next_pc      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    fetch_in_flight     : in     std_logic;
-    interrupt_pending   : buffer std_logic
+    global_interrupts : in     std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+    interrupt_pending : buffer std_logic
     );
 end entity execute;
 
@@ -81,9 +88,6 @@ architecture behavioural of execute is
   alias rs1 is instruction(REGISTER_RS1'range);
   alias rs2 is instruction(REGISTER_RS2'range);
   alias opcode is instruction(MAJOR_OP'range);
-
-  signal predict_corr    : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal predict_corr_en : std_logic;
 
   signal stall_to_execute   : std_logic;
   signal stall_from_syscall : std_logic;
@@ -104,12 +108,11 @@ architecture behavioural of execute is
 
   signal stall_from_alu : std_logic;
 
-  signal br_bad_predict : std_logic;
-  signal br_new_pc      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal branch_to_pc_correction_valid : std_logic;
+  signal branch_to_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal predict_pc     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal syscall_en     : std_logic;
-  signal syscall_target : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal syscall_to_pc_correction_valid : std_logic;
+  signal syscall_to_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
 
   signal rs1_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs2_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -127,6 +130,7 @@ architecture behavioural of execute is
   signal no_fwd_path : std_logic;
 
   signal lve_executing        : std_logic;
+  signal lve_was_executing    : std_logic;
   signal lve_alu_data1        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lve_alu_data2        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lve_alu_source_valid : std_logic;
@@ -141,10 +145,6 @@ architecture behavioural of execute is
   signal rs2_mux : fwd_mux_t;
 
   signal finished_instr : std_logic;
-
-  signal entire_pipeline_empty : std_logic;
-  signal is_branch             : std_logic;
-  signal br_taken_out          : std_logic;
 
   alias subseq_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(19 downto 15);
   alias subseq_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
@@ -216,7 +216,7 @@ begin
   wb_valid <= (sys_data_enable or
                ld_data_enable or
                br_data_enable or
-               (alu_data_out_valid and (not lve_executing)));
+               (alu_data_out_valid and (not lve_was_executing)));
   wb_enable <= wb_valid when wb_sel /= R_ZERO else '0';
 
   fwd_data <= sys_data_out when sys_data_enable = '1' else
@@ -234,11 +234,12 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
+      lve_was_executing <= lve_executing;
       if stall_to_execute = '0' then
-        rs1_mux     <= NO_FWD;
-        rs2_mux     <= NO_FWD;
-        wb_sel      <= rd;
-        no_fwd_path <= '0';
+        rs1_mux           <= NO_FWD;
+        rs2_mux           <= NO_FWD;
+        wb_sel            <= rd;
+        no_fwd_path       <= '0';
         if valid_instr = '1' then
           --load, csr_read, jal[r] are the only instructions that writeback but
           --don't forward. Of these only csr_read and loads don't flush the
@@ -280,7 +281,7 @@ begin
       rs2_data           => alu_rs2_data,
       instruction        => instruction,
       sign_extension     => sign_extension,
-      program_counter    => pc_current,
+      pc_current         => pc_current,
       data_out           => alu_data_out,
       data_out_valid     => alu_data_out_valid,
       less_than          => less_than,
@@ -292,28 +293,27 @@ begin
       );
 
 
-  branch : entity work.branch_unit(latch_middle)
+  branch : branch_unit
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE)
     port map(
-      clk            => clk,
-      reset          => reset,
-      valid          => valid_instr,
-      stall          => stall_to_execute,
-      rs1_data       => rs1_data_fwd,
-      rs2_data       => rs2_data_fwd,
-      current_pc     => pc_current,
-      br_taken_in    => br_taken_in,
-      instr          => instruction,
-      less_than      => less_than,
-      sign_extension => sign_extension,
-      data_out       => br_data_out,
-      data_enable    => br_data_enable,
-      new_pc         => br_new_pc,
-      is_branch      => is_branch,
-      br_taken_out   => br_taken_out,
-      bad_predict    => br_bad_predict);
+      clk                      => clk,
+      reset                    => reset,
+      valid                    => valid_instr,
+      stall                    => stall_to_execute,
+      rs1_data                 => rs1_data_fwd,
+      rs2_data                 => rs2_data_fwd,
+      pc_current               => pc_current,
+      instr                    => instruction,
+      less_than                => less_than,
+      sign_extension           => sign_extension,
+      data_out                 => br_data_out,
+      data_enable              => br_data_enable,
+      to_pc_correction_data    => branch_to_pc_correction_data,
+      to_pc_correction_valid   => branch_to_pc_correction_valid,
+      from_pc_correction_ready => from_pc_correction_ready
+      );
 
   ls_unit : load_store_unit
     generic map(
@@ -342,15 +342,17 @@ begin
       oimm_waitrequest   => lsu_oimm_waitrequest
       );
 
-  entire_pipeline_empty <= pipeline_empty and not valid_input and not fetch_in_flight;
+  execute_flushed <= (not valid_input) and (not writeback_stall_from_lsu);
 
   syscall : system_calls
     generic map (
-      REGISTER_SIZE     => REGISTER_SIZE,
-      INTERRUPT_VECTOR  => INTERRUPT_VECTOR,
-      POWER_OPTIMIZED   => POWER_OPTIMIZED,
-      ENABLE_EXCEPTIONS => ENABLE_EXCEPTIONS,
-      COUNTER_LENGTH    => COUNTER_LENGTH
+      REGISTER_SIZE         => REGISTER_SIZE,
+      INTERRUPT_VECTOR      => INTERRUPT_VECTOR,
+      POWER_OPTIMIZED       => POWER_OPTIMIZED,
+      ENABLE_EXCEPTIONS     => ENABLE_EXCEPTIONS,
+      ENABLE_EXT_INTERRUPTS => ENABLE_EXT_INTERRUPTS,
+      NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
+      COUNTER_LENGTH        => COUNTER_LENGTH
       )
     port map (
       clk   => clk,
@@ -364,17 +366,17 @@ begin
       data_out    => sys_data_out,
       data_enable => sys_data_enable,
 
-      current_pc    => pc_current,
-      pc_correction => syscall_target,
-      pc_corr_en    => syscall_en,
+      pc_current               => pc_current,
+      to_pc_correction_data    => syscall_to_pc_correction_data,
+      to_pc_correction_valid   => syscall_to_pc_correction_valid,
+      from_pc_correction_ready => from_pc_correction_ready,
 
-      interrupt_pending   => interrupt_pending,
-      pipeline_empty      => entire_pipeline_empty,
-      external_interrupts => external_interrupts,
+      interrupt_pending => interrupt_pending,
+      pipeline_empty    => pipeline_empty,
+      global_interrupts => global_interrupts,
 
-      instruction_fetch_pc => ifetch_next_pc,
-      br_bad_predict       => br_bad_predict,
-      br_new_pc            => br_new_pc);
+      program_counter => program_counter
+      );
 
   enable_lve : if LVE_ENABLE /= 0 generate
   begin
@@ -410,7 +412,6 @@ begin
         lve_alu_result       => alu_data_out,
         lve_alu_result_valid => alu_data_out_valid
         );
-
   end generate enable_lve;
 
   n_enable_lve : if LVE_ENABLE = 0 generate
@@ -425,15 +426,10 @@ begin
 
 
 
-  predict_corr_en <= syscall_en or br_bad_predict;
-  predict_corr    <= br_new_pc  when syscall_en = '0' else syscall_target;
-  predict_pc      <= pc_current when rising_edge(clk);
-
-  branch_pred <= branch_pack_signal(predict_pc,       --this pc
-                                    predict_corr,     --branch target
-                                    br_taken_out,     --taken
-                                    predict_corr_en,  --flush
-                                    is_branch);       --is_branch
+  to_pc_correction_valid <= syscall_to_pc_correction_valid or branch_to_pc_correction_valid;
+  to_pc_correction_data  <= syscall_to_pc_correction_data when syscall_to_pc_correction_valid = '1' else
+                           branch_to_pc_correction_data;
+  flush_pipeline <= to_pc_correction_valid;
 
 
   -----------------------------------------------------------------------------
@@ -443,7 +439,7 @@ begin
 --pragma translate_off
   my_print : process(clk)
     variable my_line          : line;   -- type 'line' comes from textio
-    variable last_valid_pc    : std_logic_vector(pc_current'range);
+    variable last_valid_pc    : unsigned(REGISTER_SIZE-1 downto 0);
     type register_list is array(0 to 31) of std_logic_vector(REGISTER_SIZE-1 downto 0);
     variable shadow_registers : register_list := (others => (others => '0'));
 
@@ -454,7 +450,7 @@ begin
 
       if wb_enable = '1' and DEBUG_WRITEBACK then
         write(my_line, string'("WRITEBACK: PC = "));
-        hwrite(my_line, last_valid_pc);
+        hwrite(my_line, std_logic_vector(last_valid_pc));
         shadow_registers(to_integer(unsigned(wb_sel))) := wb_data;
         write(my_line, string'(" REGISTERS = {"));
         for i in shadow_registers'range loop
@@ -470,12 +466,12 @@ begin
 
 
       if valid_instr = '1' then
-        write(my_line, string'("executing pc = "));  -- formatting
-        hwrite(my_line, (pc_current));  -- format type std_logic_vector as hex
-        write(my_line, string'(" instr =  "));       -- formatting
+        write(my_line, string'("executing pc = "));       -- formatting
+        hwrite(my_line, (std_logic_vector(pc_current)));  -- format type std_logic_vector as hex
+        write(my_line, string'(" instr =  "));            -- formatting
         hwrite(my_line, (instruction));  -- format type std_logic_vector as hex
         if stall_from_execute = '1' then
-          write(my_line, string'(" stalling"));      -- formatting
+          write(my_line, string'(" stalling"));           -- formatting
         else
           last_valid_pc := pc_current;
         end if;

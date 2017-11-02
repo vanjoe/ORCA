@@ -45,11 +45,13 @@ use work.constants_pkg.all;
 
 entity system_calls is
   generic (
-    REGISTER_SIZE     : natural;
-    INTERRUPT_VECTOR  : std_logic_vector(31 downto 0);
-    POWER_OPTIMIZED   : boolean;
-    ENABLE_EXCEPTIONS : boolean := true;
-    COUNTER_LENGTH    : natural
+    REGISTER_SIZE         : natural;
+    INTERRUPT_VECTOR      : std_logic_vector(31 downto 0);
+    POWER_OPTIMIZED       : boolean;
+    ENABLE_EXCEPTIONS     : boolean := true;
+    ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
+    NUM_EXT_INTERRUPTS    : positive range 1 to 32;
+    COUNTER_LENGTH        : natural
     );
   port (
     clk         : in  std_logic;
@@ -62,23 +64,19 @@ entity system_calls is
     data_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_enable : out std_logic;
 
-    current_pc    : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    pc_correction : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    pc_corr_en    : buffer std_logic;
+    pc_current               : in  unsigned(REGISTER_SIZE-1 downto 0);
+    to_pc_correction_data    : out unsigned(REGISTER_SIZE-1 downto 0);
+    to_pc_correction_valid   : out std_logic;
+    from_pc_correction_ready : in  std_logic;
 
     -- The interrupt_pending signal goes to the Instruction Fetch stage.
-    interrupt_pending   : buffer std_logic;
-    external_interrupts : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    interrupt_pending : buffer std_logic;
+    global_interrupts : in     std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
     -- Signals when an interrupt may proceed.
-    pipeline_empty      : in     std_logic;
+    pipeline_empty    : in     std_logic;
 
-    -- These signals are used to tell the interrupt handler which instruction
-    -- to return to upon exit. They are sourced from the instruction fetch
-    -- stage of the processor.
-    instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-
-    br_bad_predict : in std_logic;
-    br_new_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0)
+    -- Which instruction to return to upon exit.
+    program_counter : in unsigned(REGISTER_SIZE-1 downto 0)
     );
 end entity system_calls;
 
@@ -116,12 +114,12 @@ architecture rtl of system_calls is
 
   signal legal_instr : std_logic;
 
-  signal was_mret    : std_logic;
-  signal was_illegal : std_logic;
-  signal was_fence_i : std_logic;
-  signal pc_add_4    : std_logic_vector(current_pc'range);
+  signal was_mret      : std_logic;
+  signal was_illegal   : std_logic;
+  signal was_fence_i   : std_logic;
+  signal next_fence_pc : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal interrupt_processor : std_logic;
+  signal interrupt_pc_correction_valid : std_logic;
 
   signal time_counter : unsigned(63 downto 0);
 
@@ -193,11 +191,16 @@ begin  -- architecture rtl
     if rising_edge(clk) then
       data_enable <= '0';
       data_out    <= csr_read_val;
-      pc_add_4    <= std_logic_vector(unsigned(current_pc) + 4);
-      was_mret    <= '0';
-      was_fence_i <= '0';
-      was_illegal <= '0';
+
+      --Hold pc_correction causing signals until they have been processed
+      if from_pc_correction_ready = '1' then
+        was_mret    <= '0';
+        was_fence_i <= '0';
+        was_illegal <= '0';
+      end if;
+
       if valid = '1' then
+        next_fence_pc <= unsigned(pc_current) + to_unsigned(4, next_fence_pc'length);
         if legal_instr /= '1' and ENABLE_EXCEPTIONS then
                                         -----------------------------------------------------------------------------
           -- Handle Illegal Instructions
@@ -205,7 +208,7 @@ begin  -- architecture rtl
           mstatus(CSR_MSTATUS_MIE)  <= '0';
           mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
           mcause                    <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, mcause'length));
-          mepc                      <= current_pc;
+          mepc                      <= std_logic_vector(pc_current);
           was_illegal               <= '1';
         elsif instruction(MAJOR_OP'range) = SYSTEM_OP then
           if func3 /= "000" then
@@ -251,23 +254,32 @@ begin  -- architecture rtl
         elsif instruction(MAJOR_OP'range) = FENCE_OP then
           -- A FENCE instruction is a NOP. 
           -- A FENCE.I instruction is a pipeline flush.
-          was_fence_i <= instruction(12);
-        end if;
-      elsif interrupt_pending = '1' and pipeline_empty = '1' and ENABLE_EXCEPTIONS then
-        -- Latch in mepc the cycle before interrupt_processor goes high.
-        -- When interrupt_processor goes high, the next_pc of the instruction fetch will 
-        -- be corrected to the interrupt reset vector.
-        if interrupt_processor /= '1' then
-          mepc <= instruction_fetch_pc;
-        elsif interrupt_processor = '1' then
-          mstatus(CSR_MSTATUS_MIE)  <= '0';
-          mstatus(CSR_MSTATUS_MPIE) <= '1';
-          mcause(mcause'left)       <= '1';
-          mcause(3 downto 0)        <= std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, 4));
+          if instruction(12) = '1' then
+            was_fence_i <= '1';
+          end if;
         end if;
       end if;
 
+      if from_pc_correction_ready = '1' then
+        interrupt_pc_correction_valid <= '0';
+      end if;
+
+      if interrupt_pending = '1' and pipeline_empty = '1' and ENABLE_EXCEPTIONS then
+        interrupt_pc_correction_valid <= '1';
+
+        -- Latch in mepc the cycle before interrupt_pc_correction_valid goes high.
+        -- When interrupt_pc_correction_valid goes high, the next_pc of the instruction fetch will 
+        -- be corrected to the interrupt reset vector.
+        mepc                      <= std_logic_vector(program_counter);
+        mstatus(CSR_MSTATUS_MIE)  <= '0';
+        mstatus(CSR_MSTATUS_MPIE) <= '1';
+        mcause(mcause'left)       <= '1';
+        mcause(3 downto 0)        <= std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, 4));
+      end if;
+
       if reset = '1' then
+        interrupt_pc_correction_valid <= '0';
+
         if ENABLE_EXCEPTIONS then
           mstatus(CSR_MSTATUS_MIE)  <= '0';
           mstatus(CSR_MSTATUS_MPIE) <= '0';
@@ -282,56 +294,38 @@ begin  -- architecture rtl
   end process;
 
 --------------------------------------------------------------------------------
--- Handle External Interrupts
---
--- interrupt_processor goes high when the pipeline is empty and and interrupt
--- is pending.
+-- Handle Global Interrupts
 --
 -- If interrupt is pending and enabled, slip the pipeline. This is done by
 -- sending the interrupt_pending signal to the instruction_fetch.
--- interrupt_processor is registered to prevent a combinational loop through
--- pc_corr_en to the instruction fetch.
 --
--- The logic here is intended to keep interrupt_pending high until
--- interrupt_processor goes high. At this point, both signals will go low on
--- the next cycle. This results in the intended behaviour for 
--- suppress_valid_instr_out in the instruction fetch component.
---
--- Once the pipeline is flushed, mepc latches the next instruction program
--- counter. The instruction fetch program counter is then set to the interrupt
--- vector on the next cycle.
+-- Once the pipeline is empty, then correct the PC.
 --------------------------------------------------------------------------------
-  meipend           <= external_interrupts;
+  interrupts_gen : if ENABLE_EXT_INTERRUPTS /= 0 generate
+    meipend(NUM_EXT_INTERRUPTS-1 downto 0) <= global_interrupts;
+    not_all_interrupts_gen : if NUM_EXT_INTERRUPTS < REGISTER_SIZE generate
+      meipend(REGISTER_SIZE-1 downto NUM_EXT_INTERRUPTS) <= (others => '0');
+    end generate not_all_interrupts_gen;
+  end generate interrupts_gen;
+  no_interrupts_gen : if ENABLE_EXT_INTERRUPTS = 0 generate
+    meipend <= (others => '0');
+  end generate no_interrupts_gen;
   interrupt_pending <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 else '0';
-
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      if reset = '1' then
-        interrupt_processor <= '0';
-      else
-        if interrupt_processor = '1' then
-          interrupt_processor <= '0';
-        else
-          interrupt_processor <= interrupt_pending and pipeline_empty;
-        end if;
-      end if;
-    end if;
-  end process;
 
 -----------------------------------------------------------------------------
 -- There are several reasons that sys_calls might send a pc correction
--- external enterrupt
+-- global interrupt
 -- illegal instruction
 -- mret instruction
 -- fence.i  (flush pipeline, and start over)
 -----------------------------------------------------------------------------
 
-  pc_corr_en <= was_fence_i or was_mret or was_illegal or interrupt_processor;
-
-  pc_correction <= pc_add_4 when was_fence_i = '1' else
-                   INTERRUPT_VECTOR(REGISTER_SIZE-1 downto 0) when was_illegal = '1' or interrupt_processor = '1' else
-                   mepc                                       when was_mret = '1' else
-                   (others => '-');
+  to_pc_correction_valid <= was_fence_i or was_mret or was_illegal or interrupt_pc_correction_valid;
+  to_pc_correction_data <=
+    next_fence_pc when was_fence_i = '1' else
+    unsigned(INTERRUPT_VECTOR(REGISTER_SIZE-1 downto 0)) when (was_illegal = '1' or
+                                                               interrupt_pc_correction_valid = '1') else
+    unsigned(mepc) when was_mret = '1' else
+    (others => '-');
 
 end architecture rtl;

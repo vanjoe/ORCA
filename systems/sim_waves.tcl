@@ -36,21 +36,21 @@ proc orca_add_wave_avalon_instruction_masters { add_wave_cmd add_divider_cmd pre
 
 proc orca_add_wave_instruction_cache { add_wave_cmd add_divider_cmd prefix } {
     eval "[string trim $add_divider_cmd \"] \"ORCA ICache Mux\""
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache/instruction_cache_mux/clk $prefix/the_memory_interface/instruction_cache/instruction_cache_mux/reset" } error
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache/instruction_cache_mux/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_mux/clk $prefix/the_memory_interface/instruction_cache/instruction_cache_mux/reset" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_mux/*" } error
 
     eval "[string trim $add_divider_cmd \"] \"ORCA ICache\""
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache/instruction_cache/clk $prefix/the_memory_interface/instruction_cache/instruction_cache/reset" } error
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache/instruction_cache/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_gen/instruction_cache/clk $prefix/the_memory_interface/instruction_cache/instruction_cache/reset" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_gen/instruction_cache/*" } error
     catch { eval "[string trim $add_divider_cmd \"] \"ORCA ICache/Cache\"" } error
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache/instruction_cache/the_cache/clk" } error
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache/instruction_cache/the_cache/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_gen/instruction_cache/the_cache/clk" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_gen/instruction_cache/the_cache/*" } error
 }
 
 proc orca_add_wave_instruction_fetch { add_wave_cmd add_divider_cmd prefix } {
     eval "[string trim $add_divider_cmd \"] \"ORCA Instruction Fetch\""
-    eval "[string trim $add_wave_cmd \"] $prefix/core/instr_fetch/clk $prefix/core/instr_fetch/reset"
-    eval "[string trim $add_wave_cmd \"] $prefix/core/instr_fetch/*"
+    eval "[string trim $add_wave_cmd \"] $prefix/core/I/clk $prefix/core/I/reset"
+    eval "[string trim $add_wave_cmd \"] $prefix/core/I/*"
 }
 
 proc orca_add_wave_syscall { add_wave_cmd add_divider_cmd prefix } {
@@ -81,6 +81,12 @@ proc orca_add_wave_alu { add_wave_cmd add_divider_cmd prefix } {
     eval "[string trim $add_wave_cmd \"] $prefix/core/X/alu/mul_gen/*"
 }
 
+proc orca_add_wave_branch { add_wave_cmd add_divider_cmd prefix } {
+    eval "[string trim $add_divider_cmd \"] \"ORCA Branch Unit\""
+    eval "[string trim $add_wave_cmd \"] $prefix/core/X/branch/clk $prefix/core/X/branch/reset"
+    eval "[string trim $add_wave_cmd \"] $prefix/core/X/branch/*"
+}
+
 proc orca_add_wave_all { add_wave_cmd add_divider_cmd prefix axi avalon } {
     if { $axi } {
         orca_add_wave_axi_data_masters $add_wave_cmd $add_divider_cmd $prefix
@@ -96,4 +102,5 @@ proc orca_add_wave_all { add_wave_cmd add_divider_cmd prefix axi avalon } {
     orca_add_wave_syscall $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_execute $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_alu $add_wave_cmd $add_divider_cmd $prefix
+    orca_add_wave_branch $add_wave_cmd $add_divider_cmd $prefix
 }

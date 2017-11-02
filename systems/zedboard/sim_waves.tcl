@@ -48,6 +48,10 @@ proc add_wave_alu { } {
     orca_add_wave_alu add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }
 
+proc add_wave_branch { } {
+    orca_add_wave_branch add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
+}
+
 proc add_wave_all { } {
     orca_add_wave_all add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0 true false
 }

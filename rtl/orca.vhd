@@ -10,36 +10,44 @@ entity orca is
   generic (
     REGISTER_SIZE : positive range 32 to 32 := 32;
 
-    --BUS Select
-    AVALON_ENABLE   : integer range 0 to 1 := 0;
-    WISHBONE_ENABLE : integer range 0 to 1 := 0;
-    AXI_ENABLE      : integer range 0 to 1 := 0;
+    --Auxiliary Interface Select
+    AVALON_AUX   : natural range 0 to 1 := 0;
+    WISHBONE_AUX : natural range 0 to 1 := 0;
+    LMB_AUX      : natural range 0 to 1 := 0;
 
-    RESET_VECTOR          : std_logic_vector(31 downto 0) := X"00000000";
-    INTERRUPT_VECTOR      : std_logic_vector(31 downto 0) := X"00000200";
-    MULTIPLY_ENABLE       : natural range 0 to 1          := 0;
-    DIVIDE_ENABLE         : natural range 0 to 1          := 0;
-    SHIFTER_MAX_CYCLES    : natural                       := 1;
-    COUNTER_LENGTH        : natural                       := 0;
-    ENABLE_EXCEPTIONS     : natural                       := 1;
-    BRANCH_PREDICTORS     : natural                       := 0;
-    PIPELINE_STAGES       : natural range 4 to 5          := 5;
-    DATA_REQUEST_REGISTER : natural range 0 to 2          := 1;
-    DATA_RETURN_REGISTER  : natural range 0 to 1          := 0;
-    LVE_ENABLE            : natural range 0 to 1          := 0;
-    ENABLE_EXT_INTERRUPTS : natural range 0 to 1          := 0;
-    NUM_EXT_INTERRUPTS    : integer range 1 to 32         := 1;
-    SCRATCHPAD_ADDR_BITS  : integer                       := 10;
-    IUC_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
-    IUC_ADDR_LAST         : std_logic_vector(31 downto 0) := X"00000000";
-    IAUX_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
-    IAUX_ADDR_LAST        : std_logic_vector(31 downto 0) := X"00000000";
-    ICACHE_SIZE           : natural                       := 0;
-    ICACHE_LINE_SIZE      : integer range 16 to 256       := 32;
-    ICACHE_EXTERNAL_WIDTH : integer                       := 32;
-    ICACHE_BURST_EN       : integer range 0 to 1          := 0;
-    POWER_OPTIMIZED       : integer range 0 to 1          := 0;
-    FAMILY                : string                        := "ALTERA"
+    RESET_VECTOR           : std_logic_vector(31 downto 0) := X"00000000";
+    INTERRUPT_VECTOR       : std_logic_vector(31 downto 0) := X"00000200";
+    MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4         := 1;
+    MULTIPLY_ENABLE        : natural range 0 to 1          := 0;
+    DIVIDE_ENABLE          : natural range 0 to 1          := 0;
+    SHIFTER_MAX_CYCLES     : natural                       := 1;
+    COUNTER_LENGTH         : natural                       := 0;
+    ENABLE_EXCEPTIONS      : natural                       := 1;
+    PIPELINE_STAGES        : natural range 4 to 5          := 5;
+    DATA_REQUEST_REGISTER  : natural range 0 to 2          := 1;
+    DATA_RETURN_REGISTER   : natural range 0 to 1          := 0;
+    LVE_ENABLE             : natural range 0 to 1          := 0;
+    ENABLE_EXT_INTERRUPTS  : natural range 0 to 1          := 0;
+    NUM_EXT_INTERRUPTS     : positive range 1 to 32        := 1;
+    SCRATCHPAD_ADDR_BITS   : positive                      := 10;
+    IUC_ADDR_BASE          : std_logic_vector(31 downto 0) := X"00000000";
+    IUC_ADDR_LAST          : std_logic_vector(31 downto 0) := X"00000000";
+    IAUX_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
+    IAUX_ADDR_LAST         : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+    ICACHE_SIZE            : natural                       := 0;
+    ICACHE_LINE_SIZE       : positive range 16 to 256      := 32;
+    ICACHE_EXTERNAL_WIDTH  : positive                      := 32;
+    ICACHE_BURST_EN        : natural range 0 to 1          := 0;
+    DUC_ADDR_BASE          : std_logic_vector(31 downto 0) := X"00000000";
+    DUC_ADDR_LAST          : std_logic_vector(31 downto 0) := X"00000000";
+    DAUX_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
+    DAUX_ADDR_LAST         : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+    DCACHE_SIZE            : natural                       := 0;
+    DCACHE_LINE_SIZE       : positive range 16 to 256      := 32;
+    DCACHE_EXTERNAL_WIDTH  : positive                      := 32;
+    DCACHE_BURST_EN        : natural range 0 to 1          := 0;
+    POWER_OPTIMIZED        : natural range 0 to 1          := 0;
+    FAMILY                 : string                        := "GENERIC"
     );
   port (
     clk            : in std_logic;
@@ -93,50 +101,6 @@ entity orca is
     -------------------------------------------------------------------------------
     --AXI
     -------------------------------------------------------------------------------
-    --AXI4-Lite uncached data master
-    --A full AXI3 interface is exposed for systems that require it, but
-    --only the A4L signals are needed
-    DUC_AWID    : out std_logic_vector(3 downto 0);
-    DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    DUC_AWLEN   : out std_logic_vector(3 downto 0);
-    DUC_AWSIZE  : out std_logic_vector(2 downto 0);
-    DUC_AWBURST : out std_logic_vector(1 downto 0);
-    DUC_AWLOCK  : out std_logic_vector(1 downto 0);
-    DUC_AWCACHE : out std_logic_vector(3 downto 0);
-    DUC_AWPROT  : out std_logic_vector(2 downto 0);
-    DUC_AWVALID : out std_logic;
-    DUC_AWREADY : in  std_logic := '0';
-
-    DUC_WID    : out std_logic_vector(3 downto 0);
-    DUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    DUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-    DUC_WLAST  : out std_logic;
-    DUC_WVALID : out std_logic;
-    DUC_WREADY : in  std_logic := '0';
-
-    DUC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
-    DUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
-    DUC_BVALID : in  std_logic                    := '0';
-    DUC_BREADY : out std_logic;
-
-    DUC_ARID    : out std_logic_vector(3 downto 0);
-    DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    DUC_ARLEN   : out std_logic_vector(3 downto 0);
-    DUC_ARSIZE  : out std_logic_vector(2 downto 0);
-    DUC_ARBURST : out std_logic_vector(1 downto 0);
-    DUC_ARLOCK  : out std_logic_vector(1 downto 0);
-    DUC_ARCACHE : out std_logic_vector(3 downto 0);
-    DUC_ARPROT  : out std_logic_vector(2 downto 0);
-    DUC_ARVALID : out std_logic;
-    DUC_ARREADY : in  std_logic := '0';
-
-    DUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
-    DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-    DUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
-    DUC_RLAST  : in  std_logic                                  := '0';
-    DUC_RVALID : in  std_logic                                  := '0';
-    DUC_RREADY : out std_logic;
-
     --AXI4-Lite uncached instruction master
     --A full AXI3 interface is exposed for systems that require it, but
     --only the A4L signals are needed
@@ -181,18 +145,49 @@ entity orca is
     IUC_BVALID : in  std_logic                    := '0';
     IUC_BREADY : out std_logic;
 
-    --Xilinx local memory bus instruction master
-    ILMB_Addr         : out std_logic_vector(0 to REGISTER_SIZE-1);
-    ILMB_Byte_Enable  : out std_logic_vector(0 to (REGISTER_SIZE/8)-1);
-    ILMB_Data_Write   : out std_logic_vector(0 to REGISTER_SIZE-1);
-    ILMB_AS           : out std_logic;
-    ILMB_Read_Strobe  : out std_logic;
-    ILMB_Write_Strobe : out std_logic;
-    ILMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
-    ILMB_Ready        : in  std_logic := '0';
-    ILMB_Wait         : in  std_logic := '0';
-    ILMB_CE           : in  std_logic := '0';
-    ILMB_UE           : in  std_logic := '0';
+    --AXI4-Lite uncached data master
+    --A full AXI3 interface is exposed for systems that require it, but
+    --only the A4L signals are needed
+    DUC_AWID    : out std_logic_vector(3 downto 0);
+    DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    DUC_AWLEN   : out std_logic_vector(3 downto 0);
+    DUC_AWSIZE  : out std_logic_vector(2 downto 0);
+    DUC_AWBURST : out std_logic_vector(1 downto 0);
+    DUC_AWLOCK  : out std_logic_vector(1 downto 0);
+    DUC_AWCACHE : out std_logic_vector(3 downto 0);
+    DUC_AWPROT  : out std_logic_vector(2 downto 0);
+    DUC_AWVALID : out std_logic;
+    DUC_AWREADY : in  std_logic := '0';
+
+    DUC_WID    : out std_logic_vector(3 downto 0);
+    DUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    DUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+    DUC_WLAST  : out std_logic;
+    DUC_WVALID : out std_logic;
+    DUC_WREADY : in  std_logic := '0';
+
+    DUC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
+    DUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+    DUC_BVALID : in  std_logic                    := '0';
+    DUC_BREADY : out std_logic;
+
+    DUC_ARID    : out std_logic_vector(3 downto 0);
+    DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    DUC_ARLEN   : out std_logic_vector(3 downto 0);
+    DUC_ARSIZE  : out std_logic_vector(2 downto 0);
+    DUC_ARBURST : out std_logic_vector(1 downto 0);
+    DUC_ARLOCK  : out std_logic_vector(1 downto 0);
+    DUC_ARCACHE : out std_logic_vector(3 downto 0);
+    DUC_ARPROT  : out std_logic_vector(2 downto 0);
+    DUC_ARVALID : out std_logic;
+    DUC_ARREADY : in  std_logic := '0';
+
+    DUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
+    DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    DUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
+    DUC_RLAST  : in  std_logic                                  := '0';
+    DUC_RVALID : in  std_logic                                  := '0';
+    DUC_RREADY : out std_logic;
 
     --AXI3 cacheable instruction master
     IC_ARID    : out std_logic_vector(3 downto 0);
@@ -235,6 +230,73 @@ entity orca is
     IC_BVALID : in  std_logic                    := '0';
     IC_BREADY : out std_logic;
 
+    --AXI3 cacheable data master
+    DC_ARID    : out std_logic_vector(3 downto 0);
+    DC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    DC_ARLEN   : out std_logic_vector(3 downto 0);
+    DC_ARSIZE  : out std_logic_vector(2 downto 0);
+    DC_ARBURST : out std_logic_vector(1 downto 0);
+    DC_ARLOCK  : out std_logic_vector(1 downto 0);
+    DC_ARCACHE : out std_logic_vector(3 downto 0);
+    DC_ARPROT  : out std_logic_vector(2 downto 0);
+    DC_ARVALID : out std_logic;
+    DC_ARREADY : in  std_logic := '0';
+
+    DC_RID    : in  std_logic_vector(3 downto 0)                       := (others => '0');
+    DC_RDATA  : in  std_logic_vector(DCACHE_EXTERNAL_WIDTH-1 downto 0) := (others => '0');
+    DC_RRESP  : in  std_logic_vector(1 downto 0)                       := (others => '0');
+    DC_RLAST  : in  std_logic                                          := '0';
+    DC_RVALID : in  std_logic                                          := '0';
+    DC_RREADY : out std_logic;
+
+    DC_AWID    : out std_logic_vector(3 downto 0);
+    DC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    DC_AWLEN   : out std_logic_vector(3 downto 0);
+    DC_AWSIZE  : out std_logic_vector(2 downto 0);
+    DC_AWBURST : out std_logic_vector(1 downto 0);
+    DC_AWLOCK  : out std_logic_vector(1 downto 0);
+    DC_AWCACHE : out std_logic_vector(3 downto 0);
+    DC_AWPROT  : out std_logic_vector(2 downto 0);
+    DC_AWVALID : out std_logic;
+    DC_AWREADY : in  std_logic := '0';
+
+    DC_WID    : out std_logic_vector(3 downto 0);
+    DC_WDATA  : out std_logic_vector(DCACHE_EXTERNAL_WIDTH-1 downto 0);
+    DC_WSTRB  : out std_logic_vector((DCACHE_EXTERNAL_WIDTH/8)-1 downto 0);
+    DC_WLAST  : out std_logic;
+    DC_WVALID : out std_logic;
+    DC_WREADY : in  std_logic                    := '0';
+    DC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
+    DC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+    DC_BVALID : in  std_logic                    := '0';
+    DC_BREADY : out std_logic;
+
+    --Xilinx local memory bus instruction master
+    ILMB_Addr         : out std_logic_vector(0 to REGISTER_SIZE-1);
+    ILMB_Byte_Enable  : out std_logic_vector(0 to (REGISTER_SIZE/8)-1);
+    ILMB_Data_Write   : out std_logic_vector(0 to REGISTER_SIZE-1);
+    ILMB_AS           : out std_logic;
+    ILMB_Read_Strobe  : out std_logic;
+    ILMB_Write_Strobe : out std_logic;
+    ILMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
+    ILMB_Ready        : in  std_logic                              := '0';
+    ILMB_Wait         : in  std_logic                              := '0';
+    ILMB_CE           : in  std_logic                              := '0';
+    ILMB_UE           : in  std_logic                              := '0';
+
+    --Xilinx local memory bus data master
+    DLMB_Addr         : out std_logic_vector(0 to REGISTER_SIZE-1);
+    DLMB_Byte_Enable  : out std_logic_vector(0 to (REGISTER_SIZE/8)-1);
+    DLMB_Data_Write   : out std_logic_vector(0 to REGISTER_SIZE-1);
+    DLMB_AS           : out std_logic;
+    DLMB_Read_Strobe  : out std_logic;
+    DLMB_Write_Strobe : out std_logic;
+    DLMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
+    DLMB_Ready        : in  std_logic                              := '0';
+    DLMB_Wait         : in  std_logic                              := '0';
+    DLMB_CE           : in  std_logic                              := '0';
+    DLMB_UE           : in  std_logic                              := '0';
+
     -------------------------------------------------------------------------------
     -- Scratchpad Slave
     -------------------------------------------------------------------------------
@@ -268,8 +330,9 @@ entity orca is
 end entity orca;
 
 architecture rtl of orca is
-  --Currently only AXI3 supported so fix I$ burstlength to 16 max
+  --Currently only AXI3 supported so fix $ burstlength to 16 max
   constant ICACHE_MAX_BURSTLENGTH : positive := 16;
+  constant DCACHE_MAX_BURSTLENGTH : positive := 16;
 
   signal lsu_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lsu_oimm_byteenable    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
@@ -297,21 +360,22 @@ architecture rtl of orca is
 begin  -- architecture rtl
   core : orca_core
     generic map (
-      REGISTER_SIZE      => REGISTER_SIZE,
-      RESET_VECTOR       => RESET_VECTOR,
-      INTERRUPT_VECTOR   => INTERRUPT_VECTOR,
-      MULTIPLY_ENABLE    => MULTIPLY_ENABLE,
-      DIVIDE_ENABLE      => DIVIDE_ENABLE,
-      SHIFTER_MAX_CYCLES => SHIFTER_MAX_CYCLES,
-      POWER_OPTIMIZED    => POWER_OPTIMIZED,
-      COUNTER_LENGTH     => COUNTER_LENGTH,
-      ENABLE_EXCEPTIONS  => ENABLE_EXCEPTIONS,
-      BRANCH_PREDICTORS  => BRANCH_PREDICTORS,
-      PIPELINE_STAGES    => PIPELINE_STAGES,
-      LVE_ENABLE         => LVE_ENABLE,
-      NUM_EXT_INTERRUPTS => CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0),
-      SCRATCHPAD_SIZE    => 2**SCRATCHPAD_ADDR_BITS,
-      FAMILY             => FAMILY
+      REGISTER_SIZE          => REGISTER_SIZE,
+      RESET_VECTOR           => RESET_VECTOR,
+      INTERRUPT_VECTOR       => INTERRUPT_VECTOR,
+      MAX_IFETCHES_IN_FLIGHT => MAX_IFETCHES_IN_FLIGHT,
+      MULTIPLY_ENABLE        => MULTIPLY_ENABLE,
+      DIVIDE_ENABLE          => DIVIDE_ENABLE,
+      SHIFTER_MAX_CYCLES     => SHIFTER_MAX_CYCLES,
+      POWER_OPTIMIZED        => POWER_OPTIMIZED,
+      COUNTER_LENGTH         => COUNTER_LENGTH,
+      ENABLE_EXCEPTIONS      => ENABLE_EXCEPTIONS,
+      PIPELINE_STAGES        => PIPELINE_STAGES,
+      LVE_ENABLE             => LVE_ENABLE,
+      ENABLE_EXT_INTERRUPTS  => ENABLE_EXT_INTERRUPTS,
+      NUM_EXT_INTERRUPTS     => NUM_EXT_INTERRUPTS,
+      SCRATCHPAD_SIZE        => 2**SCRATCHPAD_ADDR_BITS,
+      FAMILY                 => FAMILY
       )
     port map (
       clk            => clk,
@@ -345,7 +409,7 @@ begin  -- architecture rtl
       sp_readdata  => sp_readdata,
       sp_ack       => sp_ack,
 
-      external_interrupts => global_interrupts(CONDITIONAL(ENABLE_EXT_INTERRUPTS > 0, NUM_EXT_INTERRUPTS, 0)-1 downto 0)
+      global_interrupts => global_interrupts
       );
 
   the_memory_interface : memory_interface
@@ -354,9 +418,9 @@ begin  -- architecture rtl
       SCRATCHPAD_ADDR_BITS => SCRATCHPAD_ADDR_BITS,
 
       --BUS Select
-      AVALON_ENABLE   => AVALON_ENABLE,
-      WISHBONE_ENABLE => WISHBONE_ENABLE,
-      AXI_ENABLE      => AXI_ENABLE,
+      AVALON_AUX   => AVALON_AUX,
+      WISHBONE_AUX => WISHBONE_AUX,
+      LMB_AUX      => LMB_AUX,
 
       WISHBONE_SINGLE_CYCLE_READS => 0,  --For now assumed not supported; can be
                                          --brought to top level if needed
@@ -370,7 +434,16 @@ begin  -- architecture rtl
       ICACHE_LINE_SIZE            => ICACHE_LINE_SIZE,
       ICACHE_EXTERNAL_WIDTH       => ICACHE_EXTERNAL_WIDTH,
       ICACHE_MAX_BURSTLENGTH      => ICACHE_MAX_BURSTLENGTH,
-      ICACHE_BURST_EN             => ICACHE_BURST_EN
+      ICACHE_BURST_EN             => ICACHE_BURST_EN,
+      DUC_ADDR_BASE               => DUC_ADDR_BASE,
+      DUC_ADDR_LAST               => DUC_ADDR_LAST,
+      DAUX_ADDR_BASE              => DAUX_ADDR_BASE,
+      DAUX_ADDR_LAST              => DAUX_ADDR_LAST,
+      DCACHE_SIZE                 => DCACHE_SIZE,
+      DCACHE_LINE_SIZE            => DCACHE_LINE_SIZE,
+      DCACHE_EXTERNAL_WIDTH       => DCACHE_EXTERNAL_WIDTH,
+      DCACHE_MAX_BURSTLENGTH      => DCACHE_MAX_BURSTLENGTH,
+      DCACHE_BURST_EN             => DCACHE_BURST_EN
       )
     port map (
       clk            => clk,
@@ -451,50 +524,6 @@ begin  -- architecture rtl
       -------------------------------------------------------------------------------
       --AXI
       -------------------------------------------------------------------------------
-      --AXI4-Lite uncached data master
-      --A full AXI3 interface is exposed for systems that require it, but
-      --only the A4L signals are needed
-      DUC_AWID    => DUC_AWID,
-      DUC_AWADDR  => DUC_AWADDR,
-      DUC_AWLEN   => DUC_AWLEN,
-      DUC_AWSIZE  => DUC_AWSIZE,
-      DUC_AWBURST => DUC_AWBURST,
-      DUC_AWLOCK  => DUC_AWLOCK,
-      DUC_AWCACHE => DUC_AWCACHE,
-      DUC_AWPROT  => DUC_AWPROT,
-      DUC_AWVALID => DUC_AWVALID,
-      DUC_AWREADY => DUC_AWREADY,
-
-      DUC_WID    => DUC_WID,
-      DUC_WDATA  => DUC_WDATA,
-      DUC_WSTRB  => DUC_WSTRB,
-      DUC_WLAST  => DUC_WLAST,
-      DUC_WVALID => DUC_WVALID,
-      DUC_WREADY => DUC_WREADY,
-
-      DUC_BID    => DUC_BID,
-      DUC_BRESP  => DUC_BRESP,
-      DUC_BVALID => DUC_BVALID,
-      DUC_BREADY => DUC_BREADY,
-
-      DUC_ARID    => DUC_ARID,
-      DUC_ARADDR  => DUC_ARADDR,
-      DUC_ARLEN   => DUC_ARLEN,
-      DUC_ARSIZE  => DUC_ARSIZE,
-      DUC_ARBURST => DUC_ARBURST,
-      DUC_ARLOCK  => DUC_ARLOCK,
-      DUC_ARCACHE => DUC_ARCACHE,
-      DUC_ARPROT  => DUC_ARPROT,
-      DUC_ARVALID => DUC_ARVALID,
-      DUC_ARREADY => DUC_ARREADY,
-
-      DUC_RID    => DUC_RID,
-      DUC_RDATA  => DUC_RDATA,
-      DUC_RRESP  => DUC_RRESP,
-      DUC_RLAST  => DUC_RLAST,
-      DUC_RVALID => DUC_RVALID,
-      DUC_RREADY => DUC_RREADY,
-
       --AXI4-Lite uncached instruction master
       --A full AXI3 interface is exposed for systems that require it, but
       --only the A4L signals are needed
@@ -539,18 +568,49 @@ begin  -- architecture rtl
       IUC_BVALID => IUC_BVALID,
       IUC_BREADY => IUC_BREADY,
 
-      --Xilinx local memory bus instruction master
-      ILMB_Addr         => ILMB_Addr,
-      ILMB_Byte_Enable  => ILMB_Byte_Enable,
-      ILMB_Data_Write   => ILMB_Data_Write,
-      ILMB_AS           => ILMB_AS,
-      ILMB_Read_Strobe  => ILMB_Read_Strobe,
-      ILMB_Write_Strobe => ILMB_Write_Strobe,
-      ILMB_Data_Read    => ILMB_Data_Read,
-      ILMB_Ready        => ILMB_Ready,
-      ILMB_Wait         => ILMB_Wait,
-      ILMB_CE           => ILMB_CE,
-      ILMB_UE           => ILMB_UE,
+      --AXI4-Lite uncached data master
+      --A full AXI3 interface is exposed for systems that require it, but
+      --only the A4L signals are needed
+      DUC_AWID    => DUC_AWID,
+      DUC_AWADDR  => DUC_AWADDR,
+      DUC_AWLEN   => DUC_AWLEN,
+      DUC_AWSIZE  => DUC_AWSIZE,
+      DUC_AWBURST => DUC_AWBURST,
+      DUC_AWLOCK  => DUC_AWLOCK,
+      DUC_AWCACHE => DUC_AWCACHE,
+      DUC_AWPROT  => DUC_AWPROT,
+      DUC_AWVALID => DUC_AWVALID,
+      DUC_AWREADY => DUC_AWREADY,
+
+      DUC_WID    => DUC_WID,
+      DUC_WDATA  => DUC_WDATA,
+      DUC_WSTRB  => DUC_WSTRB,
+      DUC_WLAST  => DUC_WLAST,
+      DUC_WVALID => DUC_WVALID,
+      DUC_WREADY => DUC_WREADY,
+
+      DUC_BID    => DUC_BID,
+      DUC_BRESP  => DUC_BRESP,
+      DUC_BVALID => DUC_BVALID,
+      DUC_BREADY => DUC_BREADY,
+
+      DUC_ARID    => DUC_ARID,
+      DUC_ARADDR  => DUC_ARADDR,
+      DUC_ARLEN   => DUC_ARLEN,
+      DUC_ARSIZE  => DUC_ARSIZE,
+      DUC_ARBURST => DUC_ARBURST,
+      DUC_ARLOCK  => DUC_ARLOCK,
+      DUC_ARCACHE => DUC_ARCACHE,
+      DUC_ARPROT  => DUC_ARPROT,
+      DUC_ARVALID => DUC_ARVALID,
+      DUC_ARREADY => DUC_ARREADY,
+
+      DUC_RID    => DUC_RID,
+      DUC_RDATA  => DUC_RDATA,
+      DUC_RRESP  => DUC_RRESP,
+      DUC_RLAST  => DUC_RLAST,
+      DUC_RVALID => DUC_RVALID,
+      DUC_RREADY => DUC_RREADY,
 
       --AXI3 cacheable instruction master
       IC_ARID    => IC_ARID,
@@ -593,6 +653,73 @@ begin  -- architecture rtl
       IC_BVALID => IC_BVALID,
       IC_BREADY => IC_BREADY,
 
+      --AXI3 cacheable data master
+      DC_ARID    => DC_ARID,
+      DC_ARADDR  => DC_ARADDR,
+      DC_ARLEN   => DC_ARLEN,
+      DC_ARSIZE  => DC_ARSIZE,
+      DC_ARBURST => DC_ARBURST,
+      DC_ARLOCK  => DC_ARLOCK,
+      DC_ARCACHE => DC_ARCACHE,
+      DC_ARPROT  => DC_ARPROT,
+      DC_ARVALID => DC_ARVALID,
+      DC_ARREADY => DC_ARREADY,
+
+      DC_RID    => DC_RID,
+      DC_RDATA  => DC_RDATA,
+      DC_RRESP  => DC_RRESP,
+      DC_RLAST  => DC_RLAST,
+      DC_RVALID => DC_RVALID,
+      DC_RREADY => DC_RREADY,
+
+      DC_AWID    => DC_AWID,
+      DC_AWADDR  => DC_AWADDR,
+      DC_AWLEN   => DC_AWLEN,
+      DC_AWSIZE  => DC_AWSIZE,
+      DC_AWBURST => DC_AWBURST,
+      DC_AWLOCK  => DC_AWLOCK,
+      DC_AWCACHE => DC_AWCACHE,
+      DC_AWPROT  => DC_AWPROT,
+      DC_AWVALID => DC_AWVALID,
+      DC_AWREADY => DC_AWREADY,
+
+      DC_WID    => DC_WID,
+      DC_WDATA  => DC_WDATA,
+      DC_WSTRB  => DC_WSTRB,
+      DC_WLAST  => DC_WLAST,
+      DC_WVALID => DC_WVALID,
+      DC_WREADY => DC_WREADY,
+      DC_BID    => DC_BID,
+      DC_BRESP  => DC_BRESP,
+      DC_BVALID => DC_BVALID,
+      DC_BREADY => DC_BREADY,
+
+      --Xilinx local memory bus instruction master
+      ILMB_Addr         => ILMB_Addr,
+      ILMB_Byte_Enable  => ILMB_Byte_Enable,
+      ILMB_Data_Write   => ILMB_Data_Write,
+      ILMB_AS           => ILMB_AS,
+      ILMB_Read_Strobe  => ILMB_Read_Strobe,
+      ILMB_Write_Strobe => ILMB_Write_Strobe,
+      ILMB_Data_Read    => ILMB_Data_Read,
+      ILMB_Ready        => ILMB_Ready,
+      ILMB_Wait         => ILMB_Wait,
+      ILMB_CE           => ILMB_CE,
+      ILMB_UE           => ILMB_UE,
+
+      --Xilinx local memory bus data master
+      DLMB_Addr         => DLMB_Addr,
+      DLMB_Byte_Enable  => DLMB_Byte_Enable,
+      DLMB_Data_Write   => DLMB_Data_Write,
+      DLMB_AS           => DLMB_AS,
+      DLMB_Read_Strobe  => DLMB_Read_Strobe,
+      DLMB_Write_Strobe => DLMB_Write_Strobe,
+      DLMB_Data_Read    => DLMB_Data_Read,
+      DLMB_Ready        => DLMB_Ready,
+      DLMB_Wait         => DLMB_Wait,
+      DLMB_CE           => DLMB_CE,
+      DLMB_UE           => DLMB_UE,
+
       -------------------------------------------------------------------------------
       -- Scratchpad Slave
       -------------------------------------------------------------------------------
@@ -618,5 +745,7 @@ begin  -- architecture rtl
       sp_CTI_I   => sp_CTI_I,
       sp_STALL_O => sp_STALL_O
       );
+
+  assert ENABLE_EXT_INTERRUPTS = 0 or ENABLE_EXCEPTIONS /= 0 report "External interrupts are enabled but exceptions are not enabled so they will never be processed; please disable extrnal interrupts (set ENABLE_EXT_INTERRUPTS to 0) or enable exceptions (set ENABLE_EXCEPTIONS to 1)" severity failure;
 
 end architecture rtl;

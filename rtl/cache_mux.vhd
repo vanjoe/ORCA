@@ -6,26 +6,30 @@ library work;
 use work.rv_components.all;
 use work.utils.all;
 
--- TODO Implement support for pipelined reads and writes through this mux.
--- One option would be to use a FIFO for the cache select values as well as the address
--- of the read, and complete all transactions while the FIFO is not empty. The mux should
--- be able to accept further transactions as long the FIFO is not full.
--- Another option would be to stop accepting transactions when we change from one bus to 
--- another, process all remaining transactions to the old bus, then start accepting new
--- transactions for the new bus.
+--This OIMM Mux can be configured with or without MULTIPLE_READ_SUPPORT.  If
+--turned off, then it is the responsibility of the requester to not issue
+--a read request while a current read request is pending but the readdatavalid
+--signal has not been asserted.  If turned on then the MAX_OUTSTANDING_READS
+--generic sets the number of outstanding reads that can be in flight on any one
+--interface; all reads on one interface must finish before reads on another
+--interface can start.  MAX_OUTSTANDING_READS should be set to a power of 2
+--minus 1 (3,7,15,etc.) normally as numbers between those will use the same
+--amount of resources as the next highest power of 2 minus 1.
 
 entity cache_mux is
   generic (
-    REGISTER_SIZE   : positive range 32 to 64       := 32;
-    CACHE_SIZE      : natural                       := 0;
-    CACHE_LINE_SIZE : integer range 16 to 256       := 32;
-    UC_ADDR_BASE    : std_logic_vector(31 downto 0) := X"00000000";
-    UC_ADDR_LAST    : std_logic_vector(31 downto 0) := X"00000000";
-    AUX_ADDR_BASE   : std_logic_vector(31 downto 0) := X"00000000";
-    AUX_ADDR_LAST   : std_logic_vector(31 downto 0) := X"00000000";
-    MAX_BURST_BEATS : positive                      := 16;
-    ADDR_WIDTH      : integer                       := 32;
-    DATA_WIDTH      : integer                       := 32
+    MULTIPLE_READ_SUPPORT : boolean                       := false;
+    MAX_OUTSTANDING_READS : positive range 3 to 255       := 3;
+    REGISTER_SIZE         : positive range 32 to 64       := 32;
+    CACHE_SIZE            : natural                       := 0;
+    CACHE_LINE_SIZE       : integer range 16 to 256       := 32;
+    UC_ADDR_BASE          : std_logic_vector(31 downto 0) := X"00000000";
+    UC_ADDR_LAST          : std_logic_vector(31 downto 0) := X"00000000";
+    AUX_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
+    AUX_ADDR_LAST         : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+    MAX_BURST_BEATS       : positive                      := 16;
+    ADDR_WIDTH            : integer                       := 32;
+    DATA_WIDTH            : integer                       := 32
     );
   port (
     clk   : in std_logic;
@@ -74,12 +78,21 @@ entity cache_mux is
 end entity cache_mux;
 
 architecture rtl of cache_mux is
+  signal c_outstanding_reads        : unsigned(log2(MAX_OUTSTANDING_READS+1)-1 downto 0);
+  signal uc_outstanding_reads       : unsigned(log2(MAX_OUTSTANDING_READS+1)-1 downto 0);
+  signal aux_outstanding_reads      : unsigned(log2(MAX_OUTSTANDING_READS+1)-1 downto 0);
+  signal c_zero_outstanding_reads   : std_logic;
+  signal uc_zero_outstanding_reads  : std_logic;
+  signal aux_zero_outstanding_reads : std_logic;
+  signal c_max_outstanding_reads    : std_logic;
+  signal uc_max_outstanding_reads   : std_logic;
+  signal aux_max_outstanding_reads  : std_logic;
+
   signal oimm_readdatavalid_int : std_logic;
   signal oimm_waitrequest_int   : std_logic;
   signal c_select               : std_logic;
   signal uc_select              : std_logic;
   signal aux_select             : std_logic;
-  signal reading                : std_logic;
   signal read_stall             : std_logic;
 begin
   oimm_readdatavalid <= oimm_readdatavalid_int;
@@ -234,8 +247,12 @@ begin
     end generate has_uc_gen;
   end generate has_aux_gen;
 
-  --Assumes only one read request in flight and no extraneous responses coming in.
-  read_stall           <= reading and (not oimm_readdatavalid_int);
+  read_stall <=
+    ((c_select and (c_max_outstanding_reads or (not uc_zero_outstanding_reads) or (not aux_zero_outstanding_reads))) or
+     (uc_select and (uc_max_outstanding_reads or (not c_zero_outstanding_reads) or (not aux_zero_outstanding_reads))) or
+     (aux_select and (aux_max_outstanding_reads or (not c_zero_outstanding_reads) or (not uc_zero_outstanding_reads))))
+    when MULTIPLE_READ_SUPPORT else
+    '0';
   oimm_waitrequest_int <= read_stall or
                           ((cacheint_oimm_waitrequest and c_select) or
                            (uc_oimm_waitrequest and uc_select) or
@@ -250,35 +267,79 @@ begin
   aux_oimm_requestvalid <= oimm_requestvalid and (not read_stall) and aux_select;
   aux_oimm_readnotwrite <= oimm_readnotwrite;
 
+
+  --Note that we could include the updated read count when
+  --oimm_readdatavalid_int is '1' but as long as more than one read is
+  --supported we can get full throughput with MAX_OUTSTANDING_READS-1 in
+  --flight.
+  c_zero_outstanding_reads <= '1' when c_outstanding_reads = to_unsigned(0, c_outstanding_reads'length) else '0';
+  c_max_outstanding_reads <=
+    '1' when c_outstanding_reads = to_unsigned(MAX_OUTSTANDING_READS, c_outstanding_reads'length) else '0';
+
+  uc_zero_outstanding_reads <= '1' when uc_outstanding_reads = to_unsigned(0, uc_outstanding_reads'length) else '0';
+  uc_max_outstanding_reads <=
+    '1' when uc_outstanding_reads = to_unsigned(MAX_OUTSTANDING_READS, uc_outstanding_reads'length) else '0';
+
+  aux_zero_outstanding_reads <= '1' when aux_outstanding_reads = to_unsigned(0, aux_outstanding_reads'length) else '0';
+  aux_max_outstanding_reads <=
+    '1' when aux_outstanding_reads = to_unsigned(MAX_OUTSTANDING_READS, aux_outstanding_reads'length) else '0';
+
   process(clk)
   begin
     if rising_edge(clk) then
       if oimm_readdatavalid_int = '1' then
-        reading <= '0';
-      end if;
-      if oimm_requestvalid = '1' and oimm_readnotwrite = '1' and oimm_waitrequest_int = '0' then
-        reading <= '1';
+        --Subtract one unless a new request has been issued
+        if oimm_requestvalid = '0' or oimm_readnotwrite = '0' or oimm_waitrequest_int = '1' then
+          if c_outstanding_reads /= to_unsigned(0, c_outstanding_reads'length) then
+            c_outstanding_reads <= c_outstanding_reads - to_unsigned(1, c_outstanding_reads'length);
+          end if;
+          if uc_outstanding_reads /= to_unsigned(0, uc_outstanding_reads'length) then
+            uc_outstanding_reads <= uc_outstanding_reads - to_unsigned(1, uc_outstanding_reads'length);
+          end if;
+          if aux_outstanding_reads /= to_unsigned(0, aux_outstanding_reads'length) then
+            aux_outstanding_reads <= aux_outstanding_reads - to_unsigned(1, aux_outstanding_reads'length);
+          end if;
+        end if;
+      else
+        if oimm_requestvalid = '1' and oimm_readnotwrite = '1' and oimm_waitrequest_int = '0' then
+          if c_select = '1' then
+            c_outstanding_reads <= c_outstanding_reads + to_unsigned(1, c_outstanding_reads'length);
+          end if;
+          if uc_select = '1' then
+            uc_outstanding_reads <= uc_outstanding_reads + to_unsigned(1, uc_outstanding_reads'length);
+          end if;
+          if aux_select = '1' then
+            aux_outstanding_reads <= aux_outstanding_reads + to_unsigned(1, aux_outstanding_reads'length);
+          end if;
+        end if;
       end if;
 
       if reset = '1' then
-        reading <= '0';
+        c_outstanding_reads   <= to_unsigned(0, c_outstanding_reads'length);
+        uc_outstanding_reads  <= to_unsigned(0, uc_outstanding_reads'length);
+        aux_outstanding_reads <= to_unsigned(0, aux_outstanding_reads'length);
       end if;
     end if;
   end process;
 
+  --Note that this should use to_integer(unsigned(...)) or even better print
+  --out a hex version of the actual slv, but using signed because VHDL integers
+  --(or even naturals) can't go to 2^31 or bigger
   assert not (unsigned(AUX_ADDR_BASE) > unsigned(AUX_ADDR_LAST)) report
     "Error; AUX_ADDR_BASE (" &
-    natural'image(to_integer(unsigned(AUX_ADDR_BASE))) &
+    integer'image(to_integer(signed(AUX_ADDR_BASE))) &
     ") is greater than AUX_ADDR_LAST (" &
-    natural'image(to_integer(unsigned(AUX_ADDR_LAST))) &
+    integer'image(to_integer(signed(AUX_ADDR_LAST))) &
     ")."
     severity failure;
 
+  --Note the (30 downto 0) here is because in VHDL integers are signed 32-bit
+  --at most; for mod powers of 2 we only care about the lower bits anyway
   assert not ((AUX_ADDR_BASE /= AUX_ADDR_LAST) and
               (CACHE_SIZE /= 0) and
-              ((to_integer(unsigned(AUX_ADDR_BASE)) mod CACHE_LINE_SIZE) /= 0)) report
+              ((to_integer(unsigned(AUX_ADDR_BASE(30 downto 0))) mod CACHE_LINE_SIZE) /= 0)) report
     "Error; AUX_ADDR_BASE (" &
-    natural'image(to_integer(unsigned(AUX_ADDR_BASE))) &
+    integer'image(to_integer(signed(AUX_ADDR_BASE))) &
     ") must be aligned to CACHE_LINE_SIZE (" &
     positive'image(CACHE_LINE_SIZE) &
     ") when cache is enabled."
@@ -286,9 +347,9 @@ begin
 
   assert not ((AUX_ADDR_BASE /= AUX_ADDR_LAST) and
               (CACHE_SIZE = 0) and
-              ((to_integer(unsigned(AUX_ADDR_BASE)) mod (REGISTER_SIZE/8)) /= 0)) report
+              ((to_integer(unsigned(AUX_ADDR_BASE(30 downto 0))) mod (REGISTER_SIZE/8)) /= 0)) report
     "Error; AUX_ADDR_BASE (" &
-    natural'image(to_integer(unsigned(AUX_ADDR_BASE))) &
+    integer'image(to_integer(signed(AUX_ADDR_BASE))) &
     ") must be aligned to REGISTER_SIZE/8 (" &
     positive'image(REGISTER_SIZE/8) &
     ") when cache is disabled."
@@ -296,9 +357,9 @@ begin
 
   assert not ((AUX_ADDR_BASE /= AUX_ADDR_LAST) and
               (CACHE_SIZE /= 0) and
-              ((to_integer(unsigned(AUX_ADDR_LAST)) mod CACHE_LINE_SIZE) /= (CACHE_LINE_SIZE-1))) report
+              ((to_integer(unsigned(AUX_ADDR_LAST(30 downto 0))) mod CACHE_LINE_SIZE) /= (CACHE_LINE_SIZE-1))) report
     "Error; AUX_ADDR_LAST (" &
-    natural'image(to_integer(unsigned(AUX_ADDR_LAST))) &
+    integer'image(to_integer(signed(AUX_ADDR_LAST))) &
     ") mod CACHE_LINE_SIZE (" &
     positive'image(CACHE_LINE_SIZE) &
     ") must be CACHE_LINE_SIZE-1 when cache is enabled."
@@ -306,9 +367,9 @@ begin
 
   assert not ((AUX_ADDR_BASE /= AUX_ADDR_LAST) and
               (CACHE_SIZE = 0) and
-              ((to_integer(unsigned(AUX_ADDR_LAST)) mod (REGISTER_SIZE/8)) /= ((REGISTER_SIZE/8)-1))) report
+              ((to_integer(unsigned(AUX_ADDR_LAST(30 downto 0))) mod (REGISTER_SIZE/8)) /= ((REGISTER_SIZE/8)-1))) report
     "Error; AUX_ADDR_LAST (" &
-    natural'image(to_integer(unsigned(AUX_ADDR_LAST))) &
+    integer'image(to_integer(signed(AUX_ADDR_LAST))) &
     ") mod REGISTER_SIZE/8 (" &
     positive'image(REGISTER_SIZE/8) &
     ") must be (REGISTER_SIZE/8)-1 when cache is disabled."
@@ -316,17 +377,17 @@ begin
 
   assert not (unsigned(UC_ADDR_BASE) > unsigned(UC_ADDR_LAST)) report
     "Error; UC_ADDR_BASE (" &
-    natural'image(to_integer(unsigned(UC_ADDR_BASE))) &
+    integer'image(to_integer(signed(UC_ADDR_BASE))) &
     ") is greater than UC_ADDR_LAST (" &
-    natural'image(to_integer(unsigned(UC_ADDR_LAST))) &
+    integer'image(to_integer(signed(UC_ADDR_LAST))) &
     ")."
     severity failure;
 
   assert not ((UC_ADDR_BASE /= UC_ADDR_LAST) and
               (CACHE_SIZE /= 0) and
-              ((to_integer(unsigned(UC_ADDR_BASE)) mod CACHE_LINE_SIZE) /= 0)) report
+              ((to_integer(unsigned(UC_ADDR_BASE(30 downto 0))) mod CACHE_LINE_SIZE) /= 0)) report
     "Error; UC_ADDR_BASE (" &
-    natural'image(to_integer(unsigned(UC_ADDR_BASE))) &
+    integer'image(to_integer(signed(UC_ADDR_BASE))) &
     ") must be aligned to CACHE_LINE_SIZE (" &
     positive'image(CACHE_LINE_SIZE) &
     ") when cache is enabled."
@@ -334,9 +395,9 @@ begin
 
   assert not ((UC_ADDR_BASE /= UC_ADDR_LAST) and
               (CACHE_SIZE = 0) and
-              ((to_integer(unsigned(UC_ADDR_BASE)) mod (REGISTER_SIZE/8)) /= 0)) report
+              ((to_integer(unsigned(UC_ADDR_BASE(30 downto 0))) mod (REGISTER_SIZE/8)) /= 0)) report
     "Error; UC_ADDR_BASE (" &
-    natural'image(to_integer(unsigned(UC_ADDR_BASE))) &
+    integer'image(to_integer(signed(UC_ADDR_BASE))) &
     ") must be aligned to REGISTER_SIZE/8 (" &
     positive'image(REGISTER_SIZE/8) &
     ") when cache is disabled."
@@ -344,9 +405,9 @@ begin
 
   assert not ((UC_ADDR_BASE /= UC_ADDR_LAST) and
               (CACHE_SIZE /= 0) and
-              ((to_integer(unsigned(UC_ADDR_LAST)) mod CACHE_LINE_SIZE) /= (CACHE_LINE_SIZE-1))) report
+              ((to_integer(unsigned(UC_ADDR_LAST(30 downto 0))) mod CACHE_LINE_SIZE) /= (CACHE_LINE_SIZE-1))) report
     "Error; UC_ADDR_LAST (" &
-    natural'image(to_integer(unsigned(UC_ADDR_LAST))) &
+    integer'image(to_integer(signed(UC_ADDR_LAST))) &
     ") mod CACHE_LINE_SIZE (" &
     positive'image(CACHE_LINE_SIZE) &
     ") must be CACHE_LINE_SIZE-1 when cache is enabled."
@@ -354,9 +415,9 @@ begin
 
   assert not ((UC_ADDR_BASE /= UC_ADDR_LAST) and
               (CACHE_SIZE = 0) and
-              ((to_integer(unsigned(UC_ADDR_LAST)) mod (REGISTER_SIZE/8)) /= ((REGISTER_SIZE/8)-1))) report
+              ((to_integer(unsigned(UC_ADDR_LAST(30 downto 0))) mod (REGISTER_SIZE/8)) /= ((REGISTER_SIZE/8)-1))) report
     "Error; UC_ADDR_LAST (" &
-    natural'image(to_integer(unsigned(UC_ADDR_LAST))) &
+    integer'image(to_integer(signed(UC_ADDR_LAST))) &
     ") mod REGISTER_SIZE/8 (" &
     positive'image(REGISTER_SIZE/8) &
     ") must be (REGISTER_SIZE/8)-1 when cache is disabled."

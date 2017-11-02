@@ -6,7 +6,7 @@ library work;
 use work.rv_components.all;
 use work.utils.all;
 
-entity icache is
+entity cache_controller is
   generic (
     CACHE_SIZE      : natural                  := 32768;  -- Byte size of cache
     LINE_SIZE       : positive range 16 to 256 := 32;  -- Bytes per cache line 
@@ -42,9 +42,9 @@ entity icache is
     c_oimm_readdatavalid      : in  std_logic;
     c_oimm_waitrequest        : in  std_logic
     );
-end entity icache;
+end entity cache_controller;
 
-architecture rtl of icache is
+architecture rtl of cache_controller is
   constant NUM_LINES : positive := CACHE_SIZE/LINE_SIZE;
 
   function compute_burst_length
@@ -97,6 +97,7 @@ begin
   c_oimm_burstlength        <= std_logic_vector(to_unsigned(BURST_LENGTH, c_oimm_burstlength'length));
   c_oimm_burstlength_minus1 <= std_logic_vector(to_unsigned(BURST_LENGTH-1, c_oimm_burstlength_minus1'length));
   c_oimm_address            <= internal_data_oimm_missaddress(ADDR_WIDTH-1 downto log2(LINE_SIZE)) & std_logic_vector(c_oimm_offset);
+  c_oimm_requestvalid       <= not c_read_done;
   c_oimm_readnotwrite       <= '1';
   c_oimm_writedata          <= (others => '-');
   c_oimm_byteenable         <= (others => '1');
@@ -108,10 +109,7 @@ begin
     cache_ready                     <= '1';
     c_oimm_offset_reset             <= '0';
     c_oimm_offset_incr              <= '0';
-    c_oimm_requestvalid             <= '0';
     external_oimm_offset_reset      <= '0';
-    external_oimm_offset_incr       <= '0';
-    external_data_oimm_requestvalid <= '0';
     external_tag_oimm_requestvalid  <= '0';
     external_tag_oimm_writedata     <= '0';
     case state_w is
@@ -129,6 +127,7 @@ begin
         if internal_data_oimm_miss = '1' then
           next_state_w                   <= CACHE_MISSED;
           c_oimm_offset_reset            <= '1';
+          external_oimm_offset_reset     <= '1';
           external_tag_oimm_requestvalid <= '1';
           external_tag_oimm_writedata    <= '0';
         end if;
@@ -140,15 +139,10 @@ begin
           else
             next_state_w <= WAIT_FOR_HIT;
           end if;
-          c_oimm_offset_reset            <= '1';
-          external_oimm_offset_reset     <= '1';
           external_tag_oimm_requestvalid <= '1';
           external_tag_oimm_writedata    <= '1';
         end if;
         c_oimm_offset_incr              <= (not c_oimm_waitrequest) and (not c_read_done);
-        c_oimm_requestvalid             <= not c_read_done;
-        external_oimm_offset_incr       <= c_oimm_readdatavalid;
-        external_data_oimm_requestvalid <= c_oimm_readdatavalid;
 
       when WAIT_FOR_HIT =>
         if internal_data_oimm_miss = '0' then
@@ -159,6 +153,8 @@ begin
         null;
     end case;
   end process;
+  external_oimm_offset_incr       <= c_oimm_readdatavalid;
+  external_data_oimm_requestvalid <= c_oimm_readdatavalid;
 
   process(clk)
   begin
@@ -188,7 +184,7 @@ begin
 
       if reset = '1' then
         state_w                   <= CLEAR;
-        c_read_done               <= '0';
+        c_read_done               <= '1';
         c_oimm_offset             <= to_unsigned(0, c_oimm_offset'length);
         c_oimm_offset_next        <= to_unsigned(BYTES_PER_BURST, c_oimm_offset_next'length);
         external_oimm_offset      <= to_unsigned(0, external_oimm_offset'length);
@@ -248,4 +244,17 @@ begin
       external_tag_oimm_requestvalid => external_tag_oimm_requestvalid
       );
 
+  assert (CACHE_SIZE mod LINE_SIZE) = 0
+    report "Error in cache: CACHE_SIZE (" &
+    integer'image(CACHE_SIZE) &
+    ") must be an even mulitple of LINE_SIZE (" &
+    integer'image(LINE_SIZE) &
+    ")."
+    severity failure;
+
+  assert 2**log2(CACHE_SIZE) = CACHE_SIZE
+    report "Error in cache: CACHE_SIZE (" &
+    integer'image(CACHE_SIZE) &
+    ") must be a power of 2."
+    severity failure;
 end architecture;

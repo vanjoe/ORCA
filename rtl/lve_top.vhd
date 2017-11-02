@@ -15,7 +15,7 @@ entity lve_top is
     SLAVE_DATA_WIDTH : natural := 32;
     POWER_OPTIMIZED  : boolean;
     SCRATCHPAD_SIZE  : integer := 1024;
-    FAMILY           : string  := "ALTERA"
+    FAMILY           : string  := "GENERIC"
     );
   port (
     clk            : in std_logic;

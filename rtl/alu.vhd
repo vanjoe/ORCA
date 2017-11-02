@@ -16,7 +16,7 @@ entity arithmetic_unit is
     POWER_OPTIMIZED     : boolean;
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
-    FAMILY              : string := "ALTERA"
+    FAMILY              : string := "GENERIC"
     );
   port (
     clk                : in  std_logic;
@@ -27,7 +27,7 @@ entity arithmetic_unit is
     rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     sign_extension     : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-    program_counter    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    pc_current         : in  unsigned(REGISTER_SIZE-1 downto 0);
     data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     data_out_valid : out std_logic;
@@ -68,8 +68,6 @@ architecture rtl of arithmetic_unit is
   signal slt_result           : unsigned(REGISTER_SIZE-1 downto 0);
   signal slt_result_valid     : std_logic;
 
-  signal upp_imm_sel      : std_logic;
-  signal upper_immediate1 : signed(REGISTER_SIZE-1 downto 0);
   signal upper_immediate  : signed(REGISTER_SIZE-1 downto 0);
 
   signal mul_srca          : signed(REGISTER_SIZE downto 0);
@@ -447,7 +445,7 @@ begin  -- architecture rtl
           data_out       <= std_logic_vector(upper_immediate);
           data_out_valid <= source_valid;
         when AUIPC_OP =>
-          data_out       <= std_logic_vector(upper_immediate + signed(program_counter));
+          data_out       <= std_logic_vector(upper_immediate + signed(pc_current));
           data_out_valid <= source_valid;
         when others =>
           data_out       <= (others => '-');

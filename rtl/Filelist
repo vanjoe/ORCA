@@ -16,7 +16,7 @@ sys_call.vhd
 orca_core.vhd
 bram_tdp_behav.vhd
 cache.vhd
-icache.vhd
+cache_controller.vhd
 cache_mux.vhd
 a4l_master.vhd
 axi_master.vhd

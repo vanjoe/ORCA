@@ -11,7 +11,7 @@ entity ram_1port is
   generic (
     MEM_DEPTH : natural := 1024;
     MEM_WIDTH : natural := 32;
-    FAMILY    : string  := "ALTERA"
+    FAMILY    : string  := "GENERIC"
     );
   port (
     clk        : in  std_logic;
@@ -153,7 +153,7 @@ entity ram_4port is
     MEM_DEPTH       : natural;
     MEM_WIDTH       : natural;
     POWER_OPTIMIZED : boolean;
-    FAMILY          : string := "ALTERA"
+    FAMILY          : string := "GENERIC"
     );
   port (
     clk            : in std_logic;
@@ -197,7 +197,8 @@ architecture rtl of ram_4port is
     generic (
       MEM_DEPTH : natural := 1024;
       MEM_WIDTH : natural := 32;
-      FAMILY    : string  := "ALTERA");
+      FAMILY    : string  := "GENERIC"
+      );
     port (
       clk        : in  std_logic;
       byte_en_d1 : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);

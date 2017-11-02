@@ -11,10 +11,10 @@ package rv_components is
     generic (
       REGISTER_SIZE : positive range 32 to 32 := 32;
 
-      --BUS Select
-      AVALON_ENABLE   : integer range 0 to 1 := 0;
-      WISHBONE_ENABLE : integer range 0 to 1 := 0;
-      AXI_ENABLE      : integer range 0 to 1 := 0;
+      --Auxiliary Interface Select
+      AVALON_AUX   : natural range 0 to 1 := 0;
+      WISHBONE_AUX : natural range 0 to 1 := 0;
+      LMB_AUX      : natural range 0 to 1 := 0;
 
       RESET_VECTOR          : std_logic_vector(31 downto 0) := X"00000000";
       INTERRUPT_VECTOR      : std_logic_vector(31 downto 0) := X"00000200";
@@ -23,22 +23,31 @@ package rv_components is
       SHIFTER_MAX_CYCLES    : natural                       := 1;
       COUNTER_LENGTH        : natural                       := 0;
       ENABLE_EXCEPTIONS     : natural                       := 1;
-      BRANCH_PREDICTORS     : natural                       := 0;
       PIPELINE_STAGES       : natural range 4 to 5          := 5;
       DATA_REQUEST_REGISTER : natural range 0 to 2          := 1;
       DATA_RETURN_REGISTER  : natural range 0 to 1          := 0;
       LVE_ENABLE            : natural range 0 to 1          := 0;
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1          := 0;
-      NUM_EXT_INTERRUPTS    : integer range 1 to 32         := 1;
-      SCRATCHPAD_ADDR_BITS  : integer                       := 10;
+      NUM_EXT_INTERRUPTS    : positive range 1 to 32        := 1;
+      SCRATCHPAD_ADDR_BITS  : positive                      := 10;
       IUC_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
       IUC_ADDR_LAST         : std_logic_vector(31 downto 0) := X"00000000";
+      IAUX_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
+      IAUX_ADDR_LAST        : std_logic_vector(31 downto 0) := X"FFFFFFFF";
       ICACHE_SIZE           : natural                       := 0;
-      ICACHE_LINE_SIZE      : integer range 16 to 256       := 32;
-      ICACHE_EXTERNAL_WIDTH : integer                       := 32;
-      ICACHE_BURST_EN       : integer range 0 to 1          := 0;
-      POWER_OPTIMIZED       : integer range 0 to 1          := 0;
-      FAMILY                : string                        := "ALTERA"
+      ICACHE_LINE_SIZE      : positive range 16 to 256      := 32;
+      ICACHE_EXTERNAL_WIDTH : positive                      := 32;
+      ICACHE_BURST_EN       : natural range 0 to 1          := 0;
+      DUC_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
+      DUC_ADDR_LAST         : std_logic_vector(31 downto 0) := X"00000000";
+      DAUX_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
+      DAUX_ADDR_LAST        : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+      DCACHE_SIZE           : natural                       := 0;
+      DCACHE_LINE_SIZE      : positive range 16 to 256      := 32;
+      DCACHE_EXTERNAL_WIDTH : positive                      := 32;
+      DCACHE_BURST_EN       : natural range 0 to 1          := 0;
+      POWER_OPTIMIZED       : natural range 0 to 1          := 0;
+      FAMILY                : string                        := "GENERIC"
       );
     port (
       clk            : in std_logic;
@@ -92,50 +101,6 @@ package rv_components is
       -------------------------------------------------------------------------------
       --AXI
       -------------------------------------------------------------------------------
-      --AXI4-Lite uncached data master
-      --A full AXI3 interface is exposed for systems that require it, but
-      --only the A4L signals are needed
-      DUC_AWID    : out std_logic_vector(3 downto 0);
-      DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      DUC_AWLEN   : out std_logic_vector(3 downto 0);
-      DUC_AWSIZE  : out std_logic_vector(2 downto 0);
-      DUC_AWBURST : out std_logic_vector(1 downto 0);
-      DUC_AWLOCK  : out std_logic_vector(1 downto 0);
-      DUC_AWCACHE : out std_logic_vector(3 downto 0);
-      DUC_AWPROT  : out std_logic_vector(2 downto 0);
-      DUC_AWVALID : out std_logic;
-      DUC_AWREADY : in  std_logic := '0';
-
-      DUC_WID    : out std_logic_vector(3 downto 0);
-      DUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      DUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-      DUC_WLAST  : out std_logic;
-      DUC_WVALID : out std_logic;
-      DUC_WREADY : in  std_logic := '0';
-
-      DUC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
-      DUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
-      DUC_BVALID : in  std_logic                    := '0';
-      DUC_BREADY : out std_logic;
-
-      DUC_ARID    : out std_logic_vector(3 downto 0);
-      DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      DUC_ARLEN   : out std_logic_vector(3 downto 0);
-      DUC_ARSIZE  : out std_logic_vector(2 downto 0);
-      DUC_ARBURST : out std_logic_vector(1 downto 0);
-      DUC_ARLOCK  : out std_logic_vector(1 downto 0);
-      DUC_ARCACHE : out std_logic_vector(3 downto 0);
-      DUC_ARPROT  : out std_logic_vector(2 downto 0);
-      DUC_ARVALID : out std_logic;
-      DUC_ARREADY : in  std_logic := '0';
-
-      DUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
-      DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-      DUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
-      DUC_RLAST  : in  std_logic                                  := '0';
-      DUC_RVALID : in  std_logic                                  := '0';
-      DUC_RREADY : out std_logic;
-
       --AXI4-Lite uncached instruction master
       --A full AXI3 interface is exposed for systems that require it, but
       --only the A4L signals are needed
@@ -180,6 +145,50 @@ package rv_components is
       IUC_BVALID : in  std_logic                    := '0';
       IUC_BREADY : out std_logic;
 
+      --AXI4-Lite uncached data master
+      --A full AXI3 interface is exposed for systems that require it, but
+      --only the A4L signals are needed
+      DUC_AWID    : out std_logic_vector(3 downto 0);
+      DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      DUC_AWLEN   : out std_logic_vector(3 downto 0);
+      DUC_AWSIZE  : out std_logic_vector(2 downto 0);
+      DUC_AWBURST : out std_logic_vector(1 downto 0);
+      DUC_AWLOCK  : out std_logic_vector(1 downto 0);
+      DUC_AWCACHE : out std_logic_vector(3 downto 0);
+      DUC_AWPROT  : out std_logic_vector(2 downto 0);
+      DUC_AWVALID : out std_logic;
+      DUC_AWREADY : in  std_logic := '0';
+
+      DUC_WID    : out std_logic_vector(3 downto 0);
+      DUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      DUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+      DUC_WLAST  : out std_logic;
+      DUC_WVALID : out std_logic;
+      DUC_WREADY : in  std_logic := '0';
+
+      DUC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
+      DUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+      DUC_BVALID : in  std_logic                    := '0';
+      DUC_BREADY : out std_logic;
+
+      DUC_ARID    : out std_logic_vector(3 downto 0);
+      DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      DUC_ARLEN   : out std_logic_vector(3 downto 0);
+      DUC_ARSIZE  : out std_logic_vector(2 downto 0);
+      DUC_ARBURST : out std_logic_vector(1 downto 0);
+      DUC_ARLOCK  : out std_logic_vector(1 downto 0);
+      DUC_ARCACHE : out std_logic_vector(3 downto 0);
+      DUC_ARPROT  : out std_logic_vector(2 downto 0);
+      DUC_ARVALID : out std_logic;
+      DUC_ARREADY : in  std_logic := '0';
+
+      DUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
+      DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+      DUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
+      DUC_RLAST  : in  std_logic                                  := '0';
+      DUC_RVALID : in  std_logic                                  := '0';
+      DUC_RREADY : out std_logic;
+
       --AXI3 cacheable instruction master
       IC_ARID    : out std_logic_vector(3 downto 0);
       IC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -221,6 +230,73 @@ package rv_components is
       IC_BVALID : in  std_logic                    := '0';
       IC_BREADY : out std_logic;
 
+      --AXI3 cacheable data master
+      DC_ARID    : out std_logic_vector(3 downto 0);
+      DC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      DC_ARLEN   : out std_logic_vector(3 downto 0);
+      DC_ARSIZE  : out std_logic_vector(2 downto 0);
+      DC_ARBURST : out std_logic_vector(1 downto 0);
+      DC_ARLOCK  : out std_logic_vector(1 downto 0);
+      DC_ARCACHE : out std_logic_vector(3 downto 0);
+      DC_ARPROT  : out std_logic_vector(2 downto 0);
+      DC_ARVALID : out std_logic;
+      DC_ARREADY : in  std_logic := '0';
+
+      DC_RID    : in  std_logic_vector(3 downto 0)                       := (others => '0');
+      DC_RDATA  : in  std_logic_vector(DCACHE_EXTERNAL_WIDTH-1 downto 0) := (others => '0');
+      DC_RRESP  : in  std_logic_vector(1 downto 0)                       := (others => '0');
+      DC_RLAST  : in  std_logic                                          := '0';
+      DC_RVALID : in  std_logic                                          := '0';
+      DC_RREADY : out std_logic;
+
+      DC_AWID    : out std_logic_vector(3 downto 0);
+      DC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      DC_AWLEN   : out std_logic_vector(3 downto 0);
+      DC_AWSIZE  : out std_logic_vector(2 downto 0);
+      DC_AWBURST : out std_logic_vector(1 downto 0);
+      DC_AWLOCK  : out std_logic_vector(1 downto 0);
+      DC_AWCACHE : out std_logic_vector(3 downto 0);
+      DC_AWPROT  : out std_logic_vector(2 downto 0);
+      DC_AWVALID : out std_logic;
+      DC_AWREADY : in  std_logic := '0';
+
+      DC_WID    : out std_logic_vector(3 downto 0);
+      DC_WDATA  : out std_logic_vector(DCACHE_EXTERNAL_WIDTH-1 downto 0);
+      DC_WSTRB  : out std_logic_vector((DCACHE_EXTERNAL_WIDTH/8)-1 downto 0);
+      DC_WLAST  : out std_logic;
+      DC_WVALID : out std_logic;
+      DC_WREADY : in  std_logic                    := '0';
+      DC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
+      DC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+      DC_BVALID : in  std_logic                    := '0';
+      DC_BREADY : out std_logic;
+
+      --Xilinx local memory bus instruction master
+      ILMB_Addr         : out std_logic_vector(0 to REGISTER_SIZE-1);
+      ILMB_Byte_Enable  : out std_logic_vector(0 to (REGISTER_SIZE/8)-1);
+      ILMB_Data_Write   : out std_logic_vector(0 to REGISTER_SIZE-1);
+      ILMB_AS           : out std_logic;
+      ILMB_Read_Strobe  : out std_logic;
+      ILMB_Write_Strobe : out std_logic;
+      ILMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
+      ILMB_Ready        : in  std_logic                              := '0';
+      ILMB_Wait         : in  std_logic                              := '0';
+      ILMB_CE           : in  std_logic                              := '0';
+      ILMB_UE           : in  std_logic                              := '0';
+
+      --Xilinx local memory bus data master
+      DLMB_Addr         : out std_logic_vector(0 to REGISTER_SIZE-1);
+      DLMB_Byte_Enable  : out std_logic_vector(0 to (REGISTER_SIZE/8)-1);
+      DLMB_Data_Write   : out std_logic_vector(0 to REGISTER_SIZE-1);
+      DLMB_AS           : out std_logic;
+      DLMB_Read_Strobe  : out std_logic;
+      DLMB_Write_Strobe : out std_logic;
+      DLMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
+      DLMB_Ready        : in  std_logic                              := '0';
+      DLMB_Wait         : in  std_logic                              := '0';
+      DLMB_CE           : in  std_logic                              := '0';
+      DLMB_UE           : in  std_logic                              := '0';
+
       -------------------------------------------------------------------------------
       -- Scratchpad Slave
       -------------------------------------------------------------------------------
@@ -258,23 +334,32 @@ package rv_components is
       REGISTER_SIZE        : positive range 32 to 32 := 32;
       SCRATCHPAD_ADDR_BITS : positive                := 10;
 
-      --BUS Select
-      AVALON_ENABLE   : integer range 0 to 1 := 0;
-      WISHBONE_ENABLE : integer range 0 to 1 := 0;
-      AXI_ENABLE      : integer range 0 to 1 := 0;
+      --Auxiliary Interface Select
+      AVALON_AUX   : natural range 0 to 1 := 0;
+      WISHBONE_AUX : natural range 0 to 1 := 0;
+      LMB_AUX      : natural range 0 to 1 := 0;
 
       WISHBONE_SINGLE_CYCLE_READS : natural range 0 to 1          := 0;
       DATA_REQUEST_REGISTER       : natural range 0 to 2          := 1;
-      DATA_RETURN_REGISTER        : natural range 0 to 1          := 0;
+      DATA_RETURN_REGISTER        : natural range 0 to 1          := 1;
       IUC_ADDR_BASE               : std_logic_vector(31 downto 0) := X"00000000";
       IUC_ADDR_LAST               : std_logic_vector(31 downto 0) := X"00000000";
       IAUX_ADDR_BASE              : std_logic_vector(31 downto 0) := X"00000000";
-      IAUX_ADDR_LAST              : std_logic_vector(31 downto 0) := X"00000000";
+      IAUX_ADDR_LAST              : std_logic_vector(31 downto 0) := X"FFFFFFFF";
       ICACHE_SIZE                 : natural                       := 8192;
       ICACHE_LINE_SIZE            : integer range 16 to 256       := 32;
       ICACHE_EXTERNAL_WIDTH       : integer                       := 32;
       ICACHE_MAX_BURSTLENGTH      : positive                      := 16;
-      ICACHE_BURST_EN             : integer range 0 to 1          := 0
+      ICACHE_BURST_EN             : integer range 0 to 1          := 0;
+      DUC_ADDR_BASE               : std_logic_vector(31 downto 0) := X"00000000";
+      DUC_ADDR_LAST               : std_logic_vector(31 downto 0) := X"00000000";
+      DAUX_ADDR_BASE              : std_logic_vector(31 downto 0) := X"00000000";
+      DAUX_ADDR_LAST              : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+      DCACHE_SIZE                 : natural                       := 8192;
+      DCACHE_LINE_SIZE            : integer range 16 to 256       := 32;
+      DCACHE_EXTERNAL_WIDTH       : integer                       := 32;
+      DCACHE_MAX_BURSTLENGTH      : positive                      := 16;
+      DCACHE_BURST_EN             : integer range 0 to 1          := 0
       );
     port (
       clk            : in std_logic;
@@ -355,50 +440,9 @@ package rv_components is
       -------------------------------------------------------------------------------
       --AXI
       -------------------------------------------------------------------------------
-      --AXI4-Lite uncached data master
-      --A full AXI3 interface is exposed for systems that require it, but
-      --only the A4L signals are needed
-      DUC_AWID    : out std_logic_vector(3 downto 0);
-      DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      DUC_AWLEN   : out std_logic_vector(3 downto 0);
-      DUC_AWSIZE  : out std_logic_vector(2 downto 0);
-      DUC_AWBURST : out std_logic_vector(1 downto 0);
-      DUC_AWLOCK  : out std_logic_vector(1 downto 0);
-      DUC_AWCACHE : out std_logic_vector(3 downto 0);
-      DUC_AWPROT  : out std_logic_vector(2 downto 0);
-      DUC_AWVALID : out std_logic;
-      DUC_AWREADY : in  std_logic := '0';
-
-      DUC_WID    : out std_logic_vector(3 downto 0);
-      DUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      DUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-      DUC_WLAST  : out std_logic;
-      DUC_WVALID : out std_logic;
-      DUC_WREADY : in  std_logic := '0';
-
-      DUC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
-      DUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
-      DUC_BVALID : in  std_logic                    := '0';
-      DUC_BREADY : out std_logic;
-
-      DUC_ARID    : out std_logic_vector(3 downto 0);
-      DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      DUC_ARLEN   : out std_logic_vector(3 downto 0);
-      DUC_ARSIZE  : out std_logic_vector(2 downto 0);
-      DUC_ARBURST : out std_logic_vector(1 downto 0);
-      DUC_ARLOCK  : out std_logic_vector(1 downto 0);
-      DUC_ARCACHE : out std_logic_vector(3 downto 0);
-      DUC_ARPROT  : out std_logic_vector(2 downto 0);
-      DUC_ARVALID : out std_logic;
-      DUC_ARREADY : in  std_logic := '0';
-
-      DUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
-      DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-      DUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
-      DUC_RLAST  : in  std_logic                                  := '0';
-      DUC_RVALID : in  std_logic                                  := '0';
-      DUC_RREADY : out std_logic;
-
+      -------------------------------------------------------------------------------
+      --AXI
+      -------------------------------------------------------------------------------
       --AXI4-Lite uncached instruction master
       --A full AXI3 interface is exposed for systems that require it, but
       --only the A4L signals are needed
@@ -443,18 +487,49 @@ package rv_components is
       IUC_BVALID : in  std_logic                    := '0';
       IUC_BREADY : out std_logic;
 
-      --Xilinx local memory bus instruction master
-      ILMB_Addr         : out std_logic_vector(0 to REGISTER_SIZE-1);
-      ILMB_Byte_Enable  : out std_logic_vector(0 to (REGISTER_SIZE/8)-1);
-      ILMB_Data_Write   : out std_logic_vector(0 to REGISTER_SIZE-1);
-      ILMB_AS           : out std_logic;
-      ILMB_Read_Strobe  : out std_logic;
-      ILMB_Write_Strobe : out std_logic;
-      ILMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
-      ILMB_Ready        : in  std_logic := '0';
-      ILMB_Wait         : in  std_logic := '0';
-      ILMB_CE           : in  std_logic := '0';
-      ILMB_UE           : in  std_logic := '0';
+      --AXI4-Lite uncached data master
+      --A full AXI3 interface is exposed for systems that require it, but
+      --only the A4L signals are needed
+      DUC_AWID    : out std_logic_vector(3 downto 0);
+      DUC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      DUC_AWLEN   : out std_logic_vector(3 downto 0);
+      DUC_AWSIZE  : out std_logic_vector(2 downto 0);
+      DUC_AWBURST : out std_logic_vector(1 downto 0);
+      DUC_AWLOCK  : out std_logic_vector(1 downto 0);
+      DUC_AWCACHE : out std_logic_vector(3 downto 0);
+      DUC_AWPROT  : out std_logic_vector(2 downto 0);
+      DUC_AWVALID : out std_logic;
+      DUC_AWREADY : in  std_logic := '0';
+
+      DUC_WID    : out std_logic_vector(3 downto 0);
+      DUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      DUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+      DUC_WLAST  : out std_logic;
+      DUC_WVALID : out std_logic;
+      DUC_WREADY : in  std_logic := '0';
+
+      DUC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
+      DUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+      DUC_BVALID : in  std_logic                    := '0';
+      DUC_BREADY : out std_logic;
+
+      DUC_ARID    : out std_logic_vector(3 downto 0);
+      DUC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      DUC_ARLEN   : out std_logic_vector(3 downto 0);
+      DUC_ARSIZE  : out std_logic_vector(2 downto 0);
+      DUC_ARBURST : out std_logic_vector(1 downto 0);
+      DUC_ARLOCK  : out std_logic_vector(1 downto 0);
+      DUC_ARCACHE : out std_logic_vector(3 downto 0);
+      DUC_ARPROT  : out std_logic_vector(2 downto 0);
+      DUC_ARVALID : out std_logic;
+      DUC_ARREADY : in  std_logic := '0';
+
+      DUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
+      DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+      DUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
+      DUC_RLAST  : in  std_logic                                  := '0';
+      DUC_RVALID : in  std_logic                                  := '0';
+      DUC_RREADY : out std_logic;
 
       --AXI3 cacheable instruction master
       IC_ARID    : out std_logic_vector(3 downto 0);
@@ -497,6 +572,73 @@ package rv_components is
       IC_BVALID : in  std_logic                    := '0';
       IC_BREADY : out std_logic;
 
+      --AXI3 cacheable data master
+      DC_ARID    : out std_logic_vector(3 downto 0);
+      DC_ARADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      DC_ARLEN   : out std_logic_vector(3 downto 0);
+      DC_ARSIZE  : out std_logic_vector(2 downto 0);
+      DC_ARBURST : out std_logic_vector(1 downto 0);
+      DC_ARLOCK  : out std_logic_vector(1 downto 0);
+      DC_ARCACHE : out std_logic_vector(3 downto 0);
+      DC_ARPROT  : out std_logic_vector(2 downto 0);
+      DC_ARVALID : out std_logic;
+      DC_ARREADY : in  std_logic := '0';
+
+      DC_RID    : in  std_logic_vector(3 downto 0)                       := (others => '0');
+      DC_RDATA  : in  std_logic_vector(DCACHE_EXTERNAL_WIDTH-1 downto 0) := (others => '0');
+      DC_RRESP  : in  std_logic_vector(1 downto 0)                       := (others => '0');
+      DC_RLAST  : in  std_logic                                          := '0';
+      DC_RVALID : in  std_logic                                          := '0';
+      DC_RREADY : out std_logic;
+
+      DC_AWID    : out std_logic_vector(3 downto 0);
+      DC_AWADDR  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      DC_AWLEN   : out std_logic_vector(3 downto 0);
+      DC_AWSIZE  : out std_logic_vector(2 downto 0);
+      DC_AWBURST : out std_logic_vector(1 downto 0);
+      DC_AWLOCK  : out std_logic_vector(1 downto 0);
+      DC_AWCACHE : out std_logic_vector(3 downto 0);
+      DC_AWPROT  : out std_logic_vector(2 downto 0);
+      DC_AWVALID : out std_logic;
+      DC_AWREADY : in  std_logic := '0';
+
+      DC_WID    : out std_logic_vector(3 downto 0);
+      DC_WDATA  : out std_logic_vector(DCACHE_EXTERNAL_WIDTH-1 downto 0);
+      DC_WSTRB  : out std_logic_vector((DCACHE_EXTERNAL_WIDTH/8)-1 downto 0);
+      DC_WLAST  : out std_logic;
+      DC_WVALID : out std_logic;
+      DC_WREADY : in  std_logic                    := '0';
+      DC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
+      DC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
+      DC_BVALID : in  std_logic                    := '0';
+      DC_BREADY : out std_logic;
+
+      --Xilinx local memory bus instruction master
+      ILMB_Addr         : out std_logic_vector(0 to REGISTER_SIZE-1);
+      ILMB_Byte_Enable  : out std_logic_vector(0 to (REGISTER_SIZE/8)-1);
+      ILMB_Data_Write   : out std_logic_vector(0 to REGISTER_SIZE-1);
+      ILMB_AS           : out std_logic;
+      ILMB_Read_Strobe  : out std_logic;
+      ILMB_Write_Strobe : out std_logic;
+      ILMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
+      ILMB_Ready        : in  std_logic                              := '0';
+      ILMB_Wait         : in  std_logic                              := '0';
+      ILMB_CE           : in  std_logic                              := '0';
+      ILMB_UE           : in  std_logic                              := '0';
+
+      --Xilinx local memory bus data master
+      DLMB_Addr         : out std_logic_vector(0 to REGISTER_SIZE-1);
+      DLMB_Byte_Enable  : out std_logic_vector(0 to (REGISTER_SIZE/8)-1);
+      DLMB_Data_Write   : out std_logic_vector(0 to REGISTER_SIZE-1);
+      DLMB_AS           : out std_logic;
+      DLMB_Read_Strobe  : out std_logic;
+      DLMB_Write_Strobe : out std_logic;
+      DLMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
+      DLMB_Ready        : in  std_logic                              := '0';
+      DLMB_Wait         : in  std_logic                              := '0';
+      DLMB_CE           : in  std_logic                              := '0';
+      DLMB_UE           : in  std_logic                              := '0';
+
       -------------------------------------------------------------------------------
       -- Scratchpad Slave
       -------------------------------------------------------------------------------
@@ -526,21 +668,22 @@ package rv_components is
 
   component orca_core is
     generic (
-      REGISTER_SIZE      : integer;
-      RESET_VECTOR       : std_logic_vector(31 downto 0);
-      INTERRUPT_VECTOR   : std_logic_vector(31 downto 0);
-      MULTIPLY_ENABLE    : natural range 0 to 1;
-      DIVIDE_ENABLE      : natural range 0 to 1;
-      SHIFTER_MAX_CYCLES : natural;
-      POWER_OPTIMIZED    : natural range 0 to 1 := 0;
-      COUNTER_LENGTH     : natural;
-      ENABLE_EXCEPTIONS  : natural;
-      BRANCH_PREDICTORS  : natural;
-      PIPELINE_STAGES    : natural range 4 to 5;
-      NUM_EXT_INTERRUPTS : integer range 0 to 32;
-      LVE_ENABLE         : natural range 0 to 1;
-      SCRATCHPAD_SIZE    : integer;
-      FAMILY             : string
+      REGISTER_SIZE          : integer;
+      RESET_VECTOR           : std_logic_vector(31 downto 0);
+      INTERRUPT_VECTOR       : std_logic_vector(31 downto 0);
+      MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
+      MULTIPLY_ENABLE        : natural range 0 to 1;
+      DIVIDE_ENABLE          : natural range 0 to 1;
+      SHIFTER_MAX_CYCLES     : natural;
+      POWER_OPTIMIZED        : natural range 0 to 1 := 0;
+      COUNTER_LENGTH         : natural;
+      ENABLE_EXCEPTIONS      : natural;
+      PIPELINE_STAGES        : natural range 4 to 5;
+      ENABLE_EXT_INTERRUPTS  : natural range 0 to 1;
+      NUM_EXT_INTERRUPTS     : positive range 1 to 32;
+      LVE_ENABLE             : natural range 0 to 1;
+      SCRATCHPAD_SIZE        : integer;
+      FAMILY                 : string
       );
     port(
       clk            : in std_logic;
@@ -548,7 +691,7 @@ package rv_components is
       reset          : in std_logic;
 
       --Instruction Orca-internal memory-mapped master
-      ifetch_oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+      ifetch_oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
       ifetch_oimm_requestvalid  : buffer std_logic;
       ifetch_oimm_readnotwrite  : out    std_logic;
       ifetch_oimm_readdata      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -574,7 +717,7 @@ package rv_components is
       sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       sp_ack       : out std_logic;
 
-      external_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
+      global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
       );
   end component orca_core;
 
@@ -583,75 +726,85 @@ package rv_components is
       REGISTER_SIZE       : positive;
       SIGN_EXTENSION_SIZE : positive;
       PIPELINE_STAGES     : natural range 1 to 2;
-      FAMILY              : string := "ALTERA"
+      FAMILY              : string := "GENERIC"
       );
     port(
       clk   : in std_logic;
       reset : in std_logic;
-      stall : in std_logic;
 
-      flush       : in std_logic;
-      instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      valid_input : in std_logic;
+      decode_flushed : out std_logic;
+      stall          : in  std_logic;
+      flush          : in  std_logic;
+
+      to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
+      to_decode_valid           : in  std_logic;
+      from_decode_ready         : out std_logic;
+
       --writeback signals
-      wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      wb_data     : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      wb_enable   : in std_logic;
+      wb_sel    : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      wb_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      wb_enable : in std_logic;
 
       --output signals
       rs1_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       sign_extension : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-      --inputs just for carrying to next pipeline stage
-      br_taken_in    : in  std_logic;
-      pc_curr_in     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      br_taken_out   : out std_logic;
-      pc_curr_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      pc_curr_out    : out unsigned(REGISTER_SIZE-1 downto 0);
       instr_out      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       subseq_instr   : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       subseq_valid   : out std_logic;
-      valid_output   : out std_logic;
-      decode_flushed : out std_logic
+      valid_output   : out std_logic
       );
   end component decode;
 
   component execute is
-    generic(
-      REGISTER_SIZE       : positive;
-      SIGN_EXTENSION_SIZE : positive;
-      INTERRUPT_VECTOR    : std_logic_vector(31 downto 0);
-      POWER_OPTIMIZED     : boolean;
-      MULTIPLY_ENABLE     : boolean;
-      DIVIDE_ENABLE       : boolean;
-      SHIFTER_MAX_CYCLES  : natural;
-      COUNTER_LENGTH      : natural;
-      ENABLE_EXCEPTIONS   : boolean;
-      LVE_ENABLE          : natural;
-      SCRATCHPAD_SIZE     : integer;
-      FAMILY              : string
+    generic (
+      REGISTER_SIZE         : positive;
+      SIGN_EXTENSION_SIZE   : positive;
+      INTERRUPT_VECTOR      : std_logic_vector(31 downto 0);
+      POWER_OPTIMIZED       : boolean;
+      MULTIPLY_ENABLE       : boolean;
+      DIVIDE_ENABLE         : boolean;
+      SHIFTER_MAX_CYCLES    : natural;
+      COUNTER_LENGTH        : natural;
+      ENABLE_EXCEPTIONS     : boolean;
+      ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
+      NUM_EXT_INTERRUPTS    : positive range 1 to 32;
+      LVE_ENABLE            : natural;
+      SCRATCHPAD_SIZE       : integer;
+      FAMILY                : string
       );
-    port(
+    port (
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
-      valid_input    : in std_logic;
 
-      br_taken_in  : in std_logic;
-      pc_current   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instruction  : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      subseq_instr : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      subseq_valid : in std_logic;
+      flush_pipeline  : out std_logic;
+      execute_flushed : out std_logic;
+      pipeline_empty  : in  std_logic;
+      program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
 
-      rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sign_extension : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+      --From previous stage
+      valid_input        : in     std_logic;
+      pc_current         : in     unsigned(REGISTER_SIZE-1 downto 0);
+      instruction        : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      subseq_instr       : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      subseq_valid       : in     std_logic;
+      rs1_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs2_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sign_extension     : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+      stall_from_execute : buffer std_logic;
 
+      --To PC correction
+      to_pc_correction_data    : out    unsigned(REGISTER_SIZE-1 downto 0);
+      to_pc_correction_valid   : buffer std_logic;
+      from_pc_correction_ready : in     std_logic;
+
+      --To register file
       wb_sel    : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
       wb_data   : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
       wb_enable : buffer std_logic;
-
-      branch_pred        : out    std_logic_vector((REGISTER_SIZE*2)+3-1 downto 0);
-      stall_from_execute : buffer std_logic;
 
       --Data Orca-internal memory-mapped master
       lsu_oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -672,36 +825,35 @@ package rv_components is
       sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       sp_ack       : out std_logic;
 
-      external_interrupts : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      pipeline_empty      : in     std_logic;
-      ifetch_next_pc      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      fetch_in_flight     : in     std_logic;
-      interrupt_pending   : buffer std_logic
+      global_interrupts : in     std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+      interrupt_pending : buffer std_logic
       );
   end component execute;
 
   component instruction_fetch is
     generic (
-      REGISTER_SIZE     : positive;
-      RESET_VECTOR      : std_logic_vector(31 downto 0);
-      BRANCH_PREDICTORS : natural
+      REGISTER_SIZE          : positive;
+      RESET_VECTOR           : std_logic_vector(31 downto 0);
+      MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4
       );
     port (
-      clk                : in std_logic;
-      reset              : in std_logic;
-      downstream_stalled : in std_logic;
-      interrupt_pending  : in std_logic;
-      branch_pred        : in std_logic_vector((REGISTER_SIZE*2)+3-1 downto 0);
+      clk   : in std_logic;
+      reset : in std_logic;
 
-      br_taken        : buffer std_logic;
-      instr_out       : out    std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      pc_out          : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      next_pc_out     : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      valid_instr_out : out    std_logic;
-      fetch_in_flight : out    std_logic;
+      interrupt_pending : in  std_logic;
+      ifetch_flushed    : out std_logic;
+
+      to_pc_correction_data    : in     unsigned(REGISTER_SIZE-1 downto 0);
+      to_pc_correction_valid   : in     std_logic;
+      from_pc_correction_ready : buffer std_logic;
+
+      from_ifetch_instruction     : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      from_ifetch_program_counter : out unsigned(REGISTER_SIZE-1 downto 0);
+      from_ifetch_valid           : out std_logic;
+      to_ifetch_ready             : in  std_logic;
 
       --Orca-internal memory-mapped master
-      oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+      oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
       oimm_readnotwrite  : out    std_logic;
       oimm_requestvalid  : buffer std_logic;
       oimm_readdata      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -719,7 +871,7 @@ package rv_components is
       POWER_OPTIMIZED     : boolean;
       DIVIDE_ENABLE       : boolean;
       SHIFTER_MAX_CYCLES  : natural;
-      FAMILY              : string := "ALTERA"
+      FAMILY              : string := "GENERIC"
       );
     port (
       clk                : in  std_logic;
@@ -730,7 +882,7 @@ package rv_components is
       rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       sign_extension     : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-      program_counter    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      pc_current         : in  unsigned(REGISTER_SIZE-1 downto 0);
       data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       data_out_valid : out std_logic;
@@ -746,25 +898,26 @@ package rv_components is
   component branch_unit is
     generic (
       REGISTER_SIZE       : integer;
-      SIGN_EXTENSION_SIZE : integer);
+      SIGN_EXTENSION_SIZE : integer
+      );
     port (
-      clk            : in  std_logic;
-      stall          : in  std_logic;
-      valid          : in  std_logic;
-      reset          : in  std_logic;
-      rs1_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      current_pc     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      br_taken_in    : in  std_logic;
-      instr          : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      sign_extension : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-      less_than      : in  std_logic;
-      data_out       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_enable    : out std_logic;
-      is_branch      : out std_logic;
-      br_taken_out   : out std_logic;
-      new_pc         : out std_logic_vector(REGISTER_SIZE-1 downto 0);  --next pc
-      bad_predict    : out std_logic
+      clk                      : in     std_logic;
+      stall                    : in     std_logic;
+      valid                    : in     std_logic;
+      reset                    : in     std_logic;
+      rs1_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs2_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      pc_current               : in     unsigned(REGISTER_SIZE-1 downto 0);
+      instr                    : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      sign_extension           : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+      less_than                : in     std_logic;
+      --unconditional jumps store return address in rd, output return address
+      -- on data_out lines
+      data_out                 : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_enable              : out    std_logic;
+      to_pc_correction_data    : out    unsigned(REGISTER_SIZE-1 downto 0);
+      to_pc_correction_valid   : buffer std_logic;
+      from_pc_correction_ready : in     std_logic
       );
   end component branch_unit;
 
@@ -820,11 +973,13 @@ package rv_components is
 
   component system_calls is
     generic (
-      REGISTER_SIZE     : natural;
-      INTERRUPT_VECTOR  : std_logic_vector(31 downto 0);
-      POWER_OPTIMIZED   : boolean;
-      ENABLE_EXCEPTIONS : boolean := true;
-      COUNTER_LENGTH    : natural
+      REGISTER_SIZE         : natural;
+      INTERRUPT_VECTOR      : std_logic_vector(31 downto 0);
+      POWER_OPTIMIZED       : boolean;
+      ENABLE_EXCEPTIONS     : boolean := true;
+      ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
+      NUM_EXT_INTERRUPTS    : positive range 1 to 32;
+      COUNTER_LENGTH        : natural
       );
     port (
       clk         : in  std_logic;
@@ -837,23 +992,19 @@ package rv_components is
       data_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       data_enable : out std_logic;
 
-      current_pc    : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      pc_correction : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      pc_corr_en    : buffer std_logic;
+      pc_current               : in  unsigned(REGISTER_SIZE-1 downto 0);
+      to_pc_correction_data    : out unsigned(REGISTER_SIZE-1 downto 0);
+      to_pc_correction_valid   : out std_logic;
+      from_pc_correction_ready : in  std_logic;
 
       -- The interrupt_pending signal goes to the Instruction Fetch stage.
-      interrupt_pending   : buffer std_logic;
-      external_interrupts : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      interrupt_pending : buffer std_logic;
+      global_interrupts : in     std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
       -- Signals when an interrupt may proceed.
-      pipeline_empty      : in     std_logic;
+      pipeline_empty    : in     std_logic;
 
-      -- These signals are used to tell the interrupt handler which instruction
-      -- to return to upon exit. They are sourced from the instruction fetch
-      -- stage of the processor.
-      instruction_fetch_pc : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-
-      br_bad_predict : in std_logic;
-      br_new_pc      : in std_logic_vector(REGISTER_SIZE-1 downto 0)
+      -- Which instruction to return to upon exit.
+      program_counter : in unsigned(REGISTER_SIZE-1 downto 0)
       );
   end component system_calls;
 
@@ -888,7 +1039,7 @@ package rv_components is
       SLAVE_DATA_WIDTH : natural := 32;
       POWER_OPTIMIZED  : boolean;
       SCRATCHPAD_SIZE  : integer := 1024;
-      FAMILY           : string  := "ALTERA"
+      FAMILY           : string  := "GENERIC"
       );
     port (
       clk            : in std_logic;
@@ -1104,7 +1255,7 @@ package rv_components is
       MEM_DEPTH       : natural;
       MEM_WIDTH       : natural;
       POWER_OPTIMIZED : boolean;
-      FAMILY          : string := "ALTERA"
+      FAMILY          : string := "GENERIC"
       );
     port (
       clk            : in std_logic;
@@ -1160,7 +1311,7 @@ package rv_components is
       );
   end component;
 
-  component icache is
+  component cache_controller is
     generic (
       CACHE_SIZE      : natural                  := 32768;  -- Byte size of cache
       LINE_SIZE       : positive range 16 to 256 := 32;  -- Bytes per cache line 
@@ -1196,7 +1347,7 @@ package rv_components is
       c_oimm_readdatavalid      : in  std_logic;
       c_oimm_waitrequest        : in  std_logic
       );
-  end component icache;
+  end component cache_controller;
 
   component cache is
     generic (
@@ -1242,16 +1393,18 @@ package rv_components is
 
   component cache_mux is
     generic (
-      REGISTER_SIZE   : positive range 32 to 64       := 32;
-      CACHE_SIZE      : natural                       := 0;
-      CACHE_LINE_SIZE : integer range 16 to 256       := 32;
-      UC_ADDR_BASE    : std_logic_vector(31 downto 0) := X"00000000";
-      UC_ADDR_LAST    : std_logic_vector(31 downto 0) := X"FFFFFFFF";
-      AUX_ADDR_BASE   : std_logic_vector(31 downto 0) := X"00000000";
-      AUX_ADDR_LAST   : std_logic_vector(31 downto 0) := X"00000000";
-      MAX_BURST_BEATS : positive                      := 16;
-      ADDR_WIDTH      : integer                       := 32;
-      DATA_WIDTH      : integer                       := 32
+      MULTIPLE_READ_SUPPORT : boolean                       := false;
+      MAX_OUTSTANDING_READS : positive range 3 to 255       := 3;
+      REGISTER_SIZE         : positive range 32 to 64       := 32;
+      CACHE_SIZE            : natural                       := 0;
+      CACHE_LINE_SIZE       : integer range 16 to 256       := 32;
+      UC_ADDR_BASE          : std_logic_vector(31 downto 0) := X"00000000";
+      UC_ADDR_LAST          : std_logic_vector(31 downto 0) := X"00000000";
+      AUX_ADDR_BASE         : std_logic_vector(31 downto 0) := X"00000000";
+      AUX_ADDR_LAST         : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+      MAX_BURST_BEATS       : positive                      := 16;
+      ADDR_WIDTH            : integer                       := 32;
+      DATA_WIDTH            : integer                       := 32
       );
     port (
       clk   : in std_logic;

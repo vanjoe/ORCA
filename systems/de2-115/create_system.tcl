@@ -185,7 +185,6 @@ proc compose { } {
 
     add_instance the_vectorblox_orca vectorblox_orca 1.0
     set_instance_parameter_value the_vectorblox_orca {REGISTER_SIZE} {32}
-    set_instance_parameter_value the_vectorblox_orca {BUS_TYPE} {Avalon}
     set_instance_parameter_value the_vectorblox_orca {RESET_VECTOR} {0}
     set_instance_parameter_value the_vectorblox_orca {INTERRUPT_VECTOR} {512}
     set_instance_parameter_value the_vectorblox_orca {MULTIPLY_ENABLE} {1}
@@ -204,10 +203,20 @@ proc compose { } {
     set_instance_parameter_value the_vectorblox_orca {SCRATCHPAD_SIZE} {64}
     set_instance_parameter_value the_vectorblox_orca {IUC_ADDR_BASE} {0}
     set_instance_parameter_value the_vectorblox_orca {IUC_ADDR_LAST} {0}
+    set_instance_parameter_value the_vectorblox_orca {IAUX_ADDR_BASE} {0}
+    set_instance_parameter_value the_vectorblox_orca {IAUX_ADDR_LAST} {4294967295}
     set_instance_parameter_value the_vectorblox_orca {ICACHE_SIZE} {0}
     set_instance_parameter_value the_vectorblox_orca {ICACHE_LINE_SIZE} {32}
     set_instance_parameter_value the_vectorblox_orca {ICACHE_EXTERNAL_WIDTH} {32}
     set_instance_parameter_value the_vectorblox_orca {ICACHE_BURST_EN} {0}
+    set_instance_parameter_value the_vectorblox_orca {DUC_ADDR_BASE} {0}
+    set_instance_parameter_value the_vectorblox_orca {DUC_ADDR_LAST} {0}
+    set_instance_parameter_value the_vectorblox_orca {DAUX_ADDR_BASE} {0}
+    set_instance_parameter_value the_vectorblox_orca {DAUX_ADDR_LAST} {4294967295}
+    set_instance_parameter_value the_vectorblox_orca {DCACHE_SIZE} {0}
+    set_instance_parameter_value the_vectorblox_orca {DCACHE_LINE_SIZE} {32}
+    set_instance_parameter_value the_vectorblox_orca {DCACHE_EXTERNAL_WIDTH} {32}
+    set_instance_parameter_value the_vectorblox_orca {DCACHE_BURST_EN} {0}
     set_instance_parameter_value the_vectorblox_orca {POWER_OPTIMIZED} {0}
     set_instance_parameter_value the_vectorblox_orca {FAMILY} {ALTERA}
 
@@ -299,6 +308,9 @@ proc compose { } {
     add_connection the_clk.clk the_vectorblox_orca.clock clock
 
     add_connection the_clk.clk the_memory_mapped_reset.clock clock
+
+    add_connection the_vectorblox_orca.global_interrupts the_jtag_uart.irq interrupt
+    set_connection_parameter_value the_vectorblox_orca.global_interrupts/the_jtag_uart.irq irqNumber {0}
 
     add_connection the_clk.clk_reset the_master.clk_reset reset
 

@@ -75,7 +75,7 @@ begin
   write_instr <= '1' when opcode = STORE_INSTR else '0';
   read_instr  <= '1' when opcode = LOAD_INSTR  else '0';
 
-  oimm_requestvalid <= (read_instr or write_instr) and valid and ((not expecting_readdatavalid) or oimm_readdatavalid);
+  oimm_requestvalid <= (read_instr or write_instr) and valid;
   oimm_readnotwrite <= read_instr;
 
   imm <= instruction(31 downto 25) & instruction(11 downto 7) when instruction(5) = '1'

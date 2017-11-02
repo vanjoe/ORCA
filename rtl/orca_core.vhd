@@ -8,21 +8,22 @@ use work.constants_pkg.all;
 
 entity orca_core is
   generic (
-    REGISTER_SIZE      : integer;
-    RESET_VECTOR       : std_logic_vector(31 downto 0);
-    INTERRUPT_VECTOR   : std_logic_vector(31 downto 0);
-    MULTIPLY_ENABLE    : natural range 0 to 1;
-    DIVIDE_ENABLE      : natural range 0 to 1;
-    SHIFTER_MAX_CYCLES : natural;
-    POWER_OPTIMIZED    : natural range 0 to 1 := 0;
-    COUNTER_LENGTH     : natural;
-    ENABLE_EXCEPTIONS  : natural;
-    BRANCH_PREDICTORS  : natural;
-    PIPELINE_STAGES    : natural range 4 to 5;
-    NUM_EXT_INTERRUPTS : integer range 0 to 32;
-    LVE_ENABLE         : natural range 0 to 1;
-    SCRATCHPAD_SIZE    : integer;
-    FAMILY             : string
+    REGISTER_SIZE          : integer;
+    RESET_VECTOR           : std_logic_vector(31 downto 0);
+    INTERRUPT_VECTOR       : std_logic_vector(31 downto 0);
+    MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
+    MULTIPLY_ENABLE        : natural range 0 to 1;
+    DIVIDE_ENABLE          : natural range 0 to 1;
+    SHIFTER_MAX_CYCLES     : natural;
+    POWER_OPTIMIZED        : natural range 0 to 1  := 0;
+    COUNTER_LENGTH         : natural;
+    ENABLE_EXCEPTIONS      : natural;
+    PIPELINE_STAGES        : natural range 4 to 5;
+    ENABLE_EXT_INTERRUPTS  : natural range 0 to 1;
+    NUM_EXT_INTERRUPTS     : positive range 1 to 32;
+    LVE_ENABLE             : natural range 0 to 1;
+    SCRATCHPAD_SIZE        : integer;
+    FAMILY                 : string
     );
   port(
     clk            : in std_logic;
@@ -30,7 +31,7 @@ entity orca_core is
     reset          : in std_logic;
 
     --Instruction Orca-internal memory-mapped master
-    ifetch_oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    ifetch_oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     ifetch_oimm_requestvalid  : buffer std_logic;
     ifetch_oimm_readnotwrite  : out    std_logic;
     ifetch_oimm_readdata      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -56,75 +57,65 @@ entity orca_core is
     sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     sp_ack       : out std_logic;
 
-    external_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
+    global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
     );
 end entity orca_core;
 
 architecture rtl of orca_core is
-  constant SIGN_EXTENSION_SIZE : integer := 20;
+  signal interrupt_pending : std_logic;
 
-  --signals going into fetch
-  signal if_valid_out : std_logic;
+  signal flush_pipeline  : std_logic;
+  signal ifetch_flushed  : std_logic;
+  signal decode_flushed  : std_logic;
+  signal execute_flushed : std_logic;
+  signal pipeline_empty  : std_logic;
 
-  --signals going into decode
-  signal d_instr     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-  signal d_pc        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal d_br_taken  : std_logic;
-  signal d_valid     : std_logic;
-  signal d_valid_out : std_logic;
+  signal execute_to_ifetch_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
+  signal execute_to_ifetch_pc_correction_valid : std_logic;
+  signal ifetch_to_execute_pc_correction_ready : std_logic;
 
-  signal wb_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal wb_sel  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal wb_en   : std_logic;
+  signal ifetch_to_decode_instruction     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal ifetch_to_decode_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
+  signal ifetch_to_decode_valid           : std_logic;
+  signal decode_to_ifetch_ready           : std_logic;
 
-  --signals going into execute
-  signal e_instr        : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-  signal e_subseq_instr : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-  signal e_subseq_valid : std_logic;
-  signal e_pc           : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal e_br_taken     : std_logic;
-  signal e_valid        : std_logic;
-  signal pipeline_empty : std_logic;
+  signal to_decode_valid                    : std_logic;
+  signal execute_stalled                    : std_logic;
+  signal wb_sel                             : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal wb_data                            : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal wb_en                              : std_logic;
+  signal rs1_data                           : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs2_data                           : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sign_extension                     : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
+  signal decode_to_execute_program_counter  : unsigned(REGISTER_SIZE-1 downto 0);
+  signal decode_to_execute_instruction      : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal decode_to_execute_next_instruction : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal decode_to_execute_next_valid       : std_logic;
+  signal decode_to_execute_valid            : std_logic;
 
-  signal execute_stalled : std_logic;
-  signal rs1_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal rs2_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sign_extension  : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
-
-  signal pipeline_flush : std_logic;
-
-  signal fetch_in_flight : std_logic;
-
-  -- Interrupt lines
-  signal e_interrupt_pending : std_logic;
-  signal ext_int_resized     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-
-  signal branch_pred_to_instr_fetch : std_logic_vector(REGISTER_SIZE*2 + 3-1 downto 0);
-
-  signal decode_flushed : std_logic;
-  signal ifetch_next_pc : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal to_execute_valid : std_logic;
 begin  -- architecture rtl
-  pipeline_flush <= branch_get_flush(branch_pred_to_instr_fetch);
-
-  instr_fetch : instruction_fetch
+  I : instruction_fetch
     generic map (
-      REGISTER_SIZE     => REGISTER_SIZE,
-      RESET_VECTOR      => RESET_VECTOR,
-      BRANCH_PREDICTORS => BRANCH_PREDICTORS
+      REGISTER_SIZE          => REGISTER_SIZE,
+      RESET_VECTOR           => RESET_VECTOR,
+      MAX_IFETCHES_IN_FLIGHT => MAX_IFETCHES_IN_FLIGHT
       )
     port map (
-      clk                => clk,
-      reset              => reset,
-      downstream_stalled => execute_stalled,
-      interrupt_pending  => e_interrupt_pending,
-      branch_pred        => branch_pred_to_instr_fetch,
+      clk   => clk,
+      reset => reset,
 
-      instr_out       => d_instr,
-      pc_out          => d_pc,
-      next_pc_out     => ifetch_next_pc,
-      br_taken        => d_br_taken,
-      valid_instr_out => if_valid_out,
-      fetch_in_flight => fetch_in_flight,
+      interrupt_pending => interrupt_pending,
+      ifetch_flushed    => ifetch_flushed,
+
+      to_pc_correction_data    => execute_to_ifetch_pc_correction_data,
+      to_pc_correction_valid   => execute_to_ifetch_pc_correction_valid,
+      from_pc_correction_ready => ifetch_to_execute_pc_correction_ready,
+
+      from_ifetch_instruction     => ifetch_to_decode_instruction,
+      from_ifetch_program_counter => ifetch_to_decode_program_counter,
+      from_ifetch_valid           => ifetch_to_decode_valid,
+      to_ifetch_ready             => decode_to_ifetch_ready,
 
       oimm_address       => ifetch_oimm_address,
       oimm_readnotwrite  => ifetch_oimm_readnotwrite,
@@ -134,8 +125,7 @@ begin  -- architecture rtl
       oimm_waitrequest   => ifetch_oimm_waitrequest
       );
 
-  d_valid <= if_valid_out and not pipeline_flush;
-
+  to_decode_valid <= ifetch_to_decode_valid and (not flush_pipeline);
   D : decode
     generic map(
       REGISTER_SIZE       => REGISTER_SIZE,
@@ -144,67 +134,82 @@ begin  -- architecture rtl
       FAMILY              => FAMILY
       )
     port map(
-      clk            => clk,
-      reset          => reset,
+      clk   => clk,
+      reset => reset,
+
+      decode_flushed => decode_flushed,
       stall          => execute_stalled,
-      flush          => pipeline_flush,
-      instruction    => d_instr,
-      valid_input    => d_valid,
+      flush          => flush_pipeline,
+
+      to_decode_program_counter => ifetch_to_decode_program_counter,
+      to_decode_instruction     => ifetch_to_decode_instruction,
+      to_decode_valid           => to_decode_valid,
+      from_decode_ready         => decode_to_ifetch_ready,
+
       --writeback signals
-      wb_sel         => wb_sel,
-      wb_data        => wb_data,
-      wb_enable      => wb_en,
+      wb_sel    => wb_sel,
+      wb_data   => wb_data,
+      wb_enable => wb_en,
+
       --output signals
       rs1_data       => rs1_data,
       rs2_data       => rs2_data,
       sign_extension => sign_extension,
-      --inputs just for carrying to next pipeline stage
-      br_taken_in    => d_br_taken,
-      pc_curr_in     => d_pc,
-      br_taken_out   => e_br_taken,
-      pc_curr_out    => e_pc,
-      instr_out      => e_instr,
-      subseq_instr   => e_subseq_instr,
-      subseq_valid   => e_subseq_valid,
-      valid_output   => d_valid_out,
-      decode_flushed => decode_flushed
+      pc_curr_out    => decode_to_execute_program_counter,
+      instr_out      => decode_to_execute_instruction,
+      subseq_instr   => decode_to_execute_next_instruction,
+      subseq_valid   => decode_to_execute_next_valid,
+      valid_output   => decode_to_execute_valid
       );
 
-  e_valid <= d_valid_out and not pipeline_flush;
+  to_execute_valid <= decode_to_execute_valid and (not flush_pipeline);
   X : execute
     generic map (
-      REGISTER_SIZE       => REGISTER_SIZE,
-      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
-      INTERRUPT_VECTOR    => INTERRUPT_VECTOR,
-      MULTIPLY_ENABLE     => MULTIPLY_ENABLE = 1,
-      DIVIDE_ENABLE       => DIVIDE_ENABLE = 1,
-      POWER_OPTIMIZED     => POWER_OPTIMIZED = 1,
-      SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
-      COUNTER_LENGTH      => COUNTER_LENGTH,
-      ENABLE_EXCEPTIONS   => ENABLE_EXCEPTIONS = 1,
-      LVE_ENABLE          => LVE_ENABLE,
-      SCRATCHPAD_SIZE     => SCRATCHPAD_SIZE,
-      FAMILY              => FAMILY
+      REGISTER_SIZE         => REGISTER_SIZE,
+      SIGN_EXTENSION_SIZE   => SIGN_EXTENSION_SIZE,
+      INTERRUPT_VECTOR      => INTERRUPT_VECTOR,
+      MULTIPLY_ENABLE       => MULTIPLY_ENABLE = 1,
+      DIVIDE_ENABLE         => DIVIDE_ENABLE = 1,
+      POWER_OPTIMIZED       => POWER_OPTIMIZED = 1,
+      SHIFTER_MAX_CYCLES    => SHIFTER_MAX_CYCLES,
+      COUNTER_LENGTH        => COUNTER_LENGTH,
+      ENABLE_EXCEPTIONS     => ENABLE_EXCEPTIONS = 1,
+      ENABLE_EXT_INTERRUPTS => ENABLE_EXT_INTERRUPTS,
+      NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
+      LVE_ENABLE            => LVE_ENABLE,
+      SCRATCHPAD_SIZE       => SCRATCHPAD_SIZE,
+      FAMILY                => FAMILY
       )
     port map (
-      clk                => clk,
-      scratchpad_clk     => scratchpad_clk,
-      reset              => reset,
-      valid_input        => e_valid,
-      br_taken_in        => e_br_taken,
-      pc_current         => e_pc,
-      instruction        => e_instr,
-      subseq_instr       => e_subseq_instr,
-      subseq_valid       => e_subseq_valid,
+      clk            => clk,
+      scratchpad_clk => scratchpad_clk,
+      reset          => reset,
+
+      flush_pipeline  => flush_pipeline,
+      execute_flushed => execute_flushed,
+      pipeline_empty  => pipeline_empty,
+      program_counter => ifetch_to_decode_program_counter,
+
+      --From previous stage
+      valid_input        => to_execute_valid,
+      pc_current         => decode_to_execute_program_counter,
+      instruction        => decode_to_execute_instruction,
+      subseq_instr       => decode_to_execute_next_instruction,
+      subseq_valid       => decode_to_execute_next_valid,
       rs1_data           => rs1_data,
       rs2_data           => rs2_data,
       sign_extension     => sign_extension,
-      wb_sel             => wb_sel,
-      wb_data            => wb_data,
-      wb_enable          => wb_en,
-      branch_pred        => branch_pred_to_instr_fetch,
-      ifetch_next_pc     => ifetch_next_pc,
       stall_from_execute => execute_stalled,
+
+      --To PC correction
+      to_pc_correction_data    => execute_to_ifetch_pc_correction_data,
+      to_pc_correction_valid   => execute_to_ifetch_pc_correction_valid,
+      from_pc_correction_ready => ifetch_to_execute_pc_correction_ready,
+
+      --To register file
+      wb_sel    => wb_sel,
+      wb_data   => wb_data,
+      wb_enable => wb_en,
 
       --Data memory-mapped master
       lsu_oimm_address       => lsu_oimm_address,
@@ -226,11 +231,9 @@ begin  -- architecture rtl
       sp_ack       => sp_ack,
 
       -- Interrupt lines
-      external_interrupts => ext_int_resized,
-      pipeline_empty      => decode_flushed,
-      fetch_in_flight     => fetch_in_flight,
-      interrupt_pending   => e_interrupt_pending
+      global_interrupts => global_interrupts,
+      interrupt_pending => interrupt_pending
       );
 
-  ext_int_resized <= std_logic_vector(RESIZE(unsigned(external_interrupts), ext_int_resized'length));
+  pipeline_empty <= ifetch_flushed and decode_flushed and execute_flushed;
 end architecture rtl;

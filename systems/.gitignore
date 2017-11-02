@@ -12,3 +12,7 @@ output_files/
 *.sof
 *.qsys
 tmp.*
+synlog.tcl
+*_Implmnt/
+bootmem.mem
+init_*.imem
