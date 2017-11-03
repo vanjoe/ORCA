@@ -122,7 +122,7 @@ add_interface_port reset reset reset Input 1
 #
 # connection point interrupt_out
 #
-add_interface interrupt_out conduit end
+add_interface interrupt_out interrupt sender
 set_interface_property interrupt_out associatedClock ""
 set_interface_property interrupt_out associatedReset ""
 set_interface_property interrupt_out ENABLED true
@@ -131,4 +131,4 @@ set_interface_property interrupt_out PORT_NAME_MAP ""
 set_interface_property interrupt_out CMSIS_SVD_VARIABLES ""
 set_interface_property interrupt_out SVD_ADDRESS_GROUP ""
 
-add_interface_port interrupt_out int_out export Output 1
+add_interface_port interrupt_out int_out irq Output 1
