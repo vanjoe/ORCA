@@ -7,7 +7,7 @@
    description=""
    tags=""
    categories="System" />
- <parameter name="bonusData"><![CDATA[bonusData 
+ <parameter name="bonusData"><![CDATA[bonusData
 {
    element clock_gen_0
    {
@@ -585,7 +585,7 @@
    kind="interrupt"
    version="15.1"
    start="vectorblox_orca_0.global_interrupts"
-   end="interrupt_generator_0.int_out">
+   end="interrrupt_gen_0.interrupt_out">
   <parameter name="irqNumber" value="0" />
  </connection>
  <connection

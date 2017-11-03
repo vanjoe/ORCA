@@ -132,16 +132,13 @@ set_interface_assignment s0 embeddedsw.configuration.isPrintableDevice 0
 #
 # connection point int_out
 #
-add_interface int_out interrupt end
-set_interface_property int_out associatedAddressablePoint ""
-set_interface_property int_out associatedClock clock
-set_interface_property int_out associatedReset reset
-set_interface_property int_out bridgedReceiverOffset ""
-set_interface_property int_out bridgesToReceiver ""
-set_interface_property int_out ENABLED true
-set_interface_property int_out EXPORT_OF ""
-set_interface_property int_out PORT_NAME_MAP ""
-set_interface_property int_out CMSIS_SVD_VARIABLES ""
-set_interface_property int_out SVD_ADDRESS_GROUP ""
+add_interface interrupt_out interrupt sender
+set_interface_property interrupt_out associatedClock ""
+set_interface_property interrupt_out associatedReset ""
+set_interface_property interrupt_out ENABLED true
+set_interface_property interrupt_out EXPORT_OF ""
+set_interface_property interrupt_out PORT_NAME_MAP ""
+set_interface_property interrupt_out CMSIS_SVD_VARIABLES ""
+set_interface_property interrupt_out SVD_ADDRESS_GROUP ""
 
-add_interface_port int_out int_out irq Output 1
+add_interface_port interrupt_out int_out irq Output 1

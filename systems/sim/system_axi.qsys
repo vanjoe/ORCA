@@ -275,6 +275,14 @@
          type = "int";
       }
    }
+   element vectorblox_orca_0.scratch
+   {
+      datum baseAddress
+      {
+         value = "1073741824";
+         type = "String";
+      }
+   }
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
@@ -346,16 +354,37 @@
    kind="vectorblox_orca"
    version="1.0"
    enabled="1">
-  <parameter name="BRANCH_PREDICTION" value="false" />
-  <parameter name="BTB_SIZE" value="0" />
-  <parameter name="BUS_TYPE" value="Axi" />
+  <parameter name="AUTO_GLOBAL_INTERRUPTS_INTERRUPTS_USED" value="1" />
   <parameter name="COUNTER_LENGTH" value="64" />
+  <parameter name="DATA_REQUEST_REGISTER" value="2" />
+  <parameter name="DATA_RETURN_REGISTER" value="0" />
+  <parameter name="DAUX_ADDR_BASE" value="0" />
+  <parameter name="DAUX_ADDR_LAST" value="0" />
+  <parameter name="DCACHE_BURST_EN" value="0" />
+  <parameter name="DCACHE_EXTERNAL_WIDTH" value="32" />
+  <parameter name="DCACHE_LINE_SIZE" value="32" />
+  <parameter name="DCACHE_SIZE" value="0" />
   <parameter name="DIVIDE_ENABLE" value="1" />
+  <parameter name="DUC_ADDR_BASE" value="0" />
+  <parameter name="DUC_ADDR_LAST" value="4294967295" />
   <parameter name="ENABLE_EXCEPTIONS" value="1" />
-  <parameter name="EXT_INTERRUPTS" value="1" />
+  <parameter name="ENABLE_EXT_INTERRUPTS" value="1" />
+  <parameter name="FAMILY" value="ALTERA" />
+  <parameter name="IAUX_ADDR_BASE" value="0" />
+  <parameter name="IAUX_ADDR_LAST" value="0" />
+  <parameter name="ICACHE_BURST_EN" value="0" />
+  <parameter name="ICACHE_EXTERNAL_WIDTH" value="32" />
+  <parameter name="ICACHE_LINE_SIZE" value="32" />
+  <parameter name="ICACHE_SIZE" value="0" />
+  <parameter name="INTERRUPT_VECTOR" value="512" />
+  <parameter name="IUC_ADDR_BASE" value="0" />
+  <parameter name="IUC_ADDR_LAST" value="4294967295" />
   <parameter name="LVE_ENABLE" value="1" />
+  <parameter name="MAX_IFETCHES_IN_FLIGHT" value="3" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
+  <parameter name="NUM_EXT_INTERRUPTS" value="1" />
   <parameter name="PIPELINE_STAGES" value="4" />
+  <parameter name="POWER_OPTIMIZED" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="512" />
   <parameter name="SCRATCHPAD_SIZE" value="1024" />
@@ -364,7 +393,7 @@
  <connection
    kind="avalon"
    version="15.1"
-   start="vectorblox_orca_0.axi_data_master"
+   start="vectorblox_orca_0.axi_duc"
    end="interrrupt_gen_0.s0">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x01000000" />
@@ -373,7 +402,7 @@
  <connection
    kind="avalon"
    version="15.1"
-   start="vectorblox_orca_0.axi_data_master"
+   start="vectorblox_orca_0.axi_duc"
    end="onchip_memory2_0.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
@@ -382,7 +411,16 @@
  <connection
    kind="avalon"
    version="15.1"
-   start="vectorblox_orca_0.axi_instr_master"
+   start="vectorblox_orca_0.axi_duc"
+   end="vectorblox_orca_0.scratch">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x40000000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.1"
+   start="vectorblox_orca_0.axi_iuc"
    end="onchip_memory2_0.s2">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
@@ -414,15 +452,11 @@
    start="clock_gen_0.clock"
    end="interrrupt_gen_0.clock" />
  <connection
-   kind="conduit"
+   kind="interrupt"
    version="15.1"
-   start="interrrupt_gen_0.interrupt_out"
-   end="vectorblox_orca_0.global_interrupts">
-  <parameter name="endPort" value="" />
-  <parameter name="endPortLSB" value="0" />
-  <parameter name="startPort" value="" />
-  <parameter name="startPortLSB" value="0" />
-  <parameter name="width" value="0" />
+   start="vectorblox_orca_0.global_interrupts"
+   end="interrrupt_gen_0.interrupt_out">
+  <parameter name="irqNumber" value="0" />
  </connection>
  <connection
    kind="reset"

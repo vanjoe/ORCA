@@ -12,6 +12,10 @@ SIM_FILE=simulate_$(BUS_TYPE).tcl
 TESTALL_FILE=testall_$(BUS_TYPE).tcl
 
 
+.PHONY: gui-qsys
+gui-qsys: $(QSYS_FILE)
+	qsys-edit $(QSYS_FILE) --search-path="./,../../rtl/,$$" &
+
 $(SYSTEM)/simulation/mentor/msim_setup.tcl: $(QSYS_FILE)
 	qsys-generate --simulation=vhdl $^
 	(cd $(SYSTEM)/simulation/submodules/vblox_orca; for i in *.vhd; do if [ -f ../../../../rtl/$$i ] ; then ln -sf ../../../../rtl/$$i $$i; fi; done; )
@@ -37,3 +41,5 @@ clean:
 	rm -rf system_avalon system_csmith system_axi test test.hex
 	rm -rf *_axi.tcl *_avalon.tcl transcript *.sopcinfo platform.info
 	rm -rf .qsys_edit
+
+.DELETE_ON_ERROR:
