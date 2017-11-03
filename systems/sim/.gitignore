@@ -8,3 +8,5 @@ system_csmith
 csmith-compile
 system_axi
 .qsys_edit
+/riscv-tests/
+/test/

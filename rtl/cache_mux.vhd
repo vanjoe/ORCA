@@ -133,6 +133,7 @@ begin
     end generate no_uc_gen;
     has_uc_gen : if UC_ADDR_BASE /= UC_ADDR_LAST generate
       no_c_gen : if CACHE_SIZE = 0 generate
+        c_select               <= '0';
         uc_select              <= '1';
         oimm_readdata          <= uc_oimm_readdata;
         oimm_readdatavalid_int <= uc_oimm_readdatavalid;
@@ -146,6 +147,7 @@ begin
           '1' when ((unsigned(oimm_address) >= unsigned(UC_ADDR_BASE(ADDR_WIDTH-1 downto 0))) and
                     (unsigned(oimm_address) <= unsigned(UC_ADDR_LAST(ADDR_WIDTH-1 downto 0)))) else
           '0';
+        c_select <= not uc_select;
 
         oimm_readdata <= cacheint_oimm_readdata when cacheint_oimm_readdatavalid = '1' else
                          uc_oimm_readdata;
@@ -158,13 +160,10 @@ begin
     end generate has_uc_gen;
   end generate no_aux_gen;
   has_aux_gen : if AUX_ADDR_BASE /= AUX_ADDR_LAST generate
-    aux_select <=
-      '1' when ((unsigned(oimm_address) >= unsigned(AUX_ADDR_BASE(ADDR_WIDTH-1 downto 0))) and
-                (unsigned(oimm_address) <= unsigned(AUX_ADDR_LAST(ADDR_WIDTH-1 downto 0)))) else
-      '0';
     no_uc_gen : if UC_ADDR_BASE = UC_ADDR_LAST generate
       uc_select <= '0';
       no_c_gen : if CACHE_SIZE = 0 generate
+        aux_select             <= '1';
         c_select               <= '0';
         oimm_readdata          <= aux_oimm_readdata;
         oimm_readdatavalid_int <= aux_oimm_readdatavalid;
@@ -174,6 +173,10 @@ begin
           severity warning;
       end generate no_c_gen;
       has_c_gen : if CACHE_SIZE /= 0 generate
+        aux_select <=
+          '1' when ((unsigned(oimm_address) >= unsigned(AUX_ADDR_BASE(ADDR_WIDTH-1 downto 0))) and
+                    (unsigned(oimm_address) <= unsigned(AUX_ADDR_LAST(ADDR_WIDTH-1 downto 0)))) else
+          '0';
         c_select      <= not aux_select;
         oimm_readdata <= cacheint_oimm_readdata when cacheint_oimm_readdatavalid = '1' else
                          aux_oimm_readdata;
@@ -185,6 +188,10 @@ begin
       end generate has_c_gen;
     end generate no_uc_gen;
     has_uc_gen : if UC_ADDR_BASE /= UC_ADDR_LAST generate
+      aux_select <=
+        '1' when ((unsigned(oimm_address) >= unsigned(AUX_ADDR_BASE(ADDR_WIDTH-1 downto 0))) and
+                  (unsigned(oimm_address) <= unsigned(AUX_ADDR_LAST(ADDR_WIDTH-1 downto 0)))) else
+        '0';
       no_c_gen : if CACHE_SIZE = 0 generate
         uc_select     <= not aux_select;
         c_select      <= '0';
