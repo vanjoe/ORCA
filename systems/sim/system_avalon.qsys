@@ -7,7 +7,7 @@
    description=""
    tags=""
    categories="System" />
- <parameter name="bonusData"><![CDATA[bonusData 
+ <parameter name="bonusData"><![CDATA[bonusData
 {
    element clock_gen_0
    {
@@ -17,12 +17,20 @@
          type = "int";
       }
    }
-   element interrrupt_gen_0
+   element interrupt_generator_0
    {
       datum _sortIndex
       {
          value = "4";
          type = "int";
+      }
+   }
+   element interrupt_generator_0.s0
+   {
+      datum baseAddress
+      {
+         value = "131072";
+         type = "String";
       }
    }
    element onchip_memory2_0
@@ -40,6 +48,11 @@
    }
    element onchip_memory2_0.s1
    {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
       datum baseAddress
       {
          value = "0";
@@ -48,6 +61,11 @@
    }
    element onchip_memory2_0.s2
    {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
       datum baseAddress
       {
          value = "0";
@@ -65,6 +83,22 @@
       {
          value = "1";
          type = "boolean";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
       }
    }
    element system_avalon
@@ -371,6 +405,14 @@
          type = "int";
       }
    }
+   element vectorblox_orca_0.scratch
+   {
+      datum baseAddress
+      {
+         value = "65536";
+         type = "String";
+      }
+   }
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="AUTO" />
@@ -396,8 +438,8 @@
   <parameter name="CLK_MHZ" value="1000" />
  </module>
  <module
-   name="interrrupt_gen_0"
-   kind="interrrupt_gen"
+   name="interrupt_generator_0"
+   kind="interrupt_generator"
    version="1.0"
    enabled="1" />
  <module
@@ -482,9 +524,9 @@
    kind="avalon"
    version="15.1"
    start="vectorblox_orca_0.data"
-   end="interrrupt_gen_0.s0">
+   end="interrupt_generator_0.s0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x01000000" />
+  <parameter name="baseAddress" value="0x00020000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -502,7 +544,7 @@
    start="vectorblox_orca_0.data"
    end="vectorblox_orca_0.scratch">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x04000000" />
+  <parameter name="baseAddress" value="0x00010000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -538,7 +580,7 @@
    kind="clock"
    version="15.1"
    start="clock_gen_0.clock"
-   end="interrrupt_gen_0.clock" />
+   end="interrupt_generator_0.clock" />
  <connection
    kind="interrupt"
    version="15.1"
@@ -555,7 +597,7 @@
    kind="reset"
    version="15.1"
    start="reset_source_0.reset"
-   end="interrrupt_gen_0.reset" />
+   end="interrupt_generator_0.reset" />
  <connection
    kind="reset"
    version="15.1"
