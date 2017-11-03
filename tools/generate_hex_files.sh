@@ -1,12 +1,11 @@
 #!/bin/bash
 SCRIPTDIR=$(readlink -f $(dirname $0))
 
+RISCV_TEST_DIR=$SCRIPTDIR/../software/riscv-tests
+
 (
-	 rm -rf riscv-tests
-	 git clone https://github.com/riscv/riscv-tests
-	 cd riscv-tests/
-	 git checkout 6a1a38d421fd3e24bdc179d58d33572636b903b2
-	 git submodule update --init --recursive
+	 git submodule update --init --recursive ${RISCV_TEST_DIR}
+	 cd ${RISCV_TEST_DIR}
 	 sed -i 's/. = 0x80000000/. = 0x00000000/' env/p/link.ld
 	 sed -i 's/.tohost.*$//' env/p/link.ld
 	 sed -i 's/ ecall/fence.i;ecall/' env/p/riscv_test.h
@@ -15,8 +14,8 @@ SCRIPTDIR=$(readlink -f $(dirname $0))
 	 make -k isa -j10 >/dev/null 2>&1
 )
 
-TEST_DIR=riscv-tests/isa
-FILES=$(ls ${TEST_DIR}/rv32u?-p-* | grep -v dump | grep -v hex)
+TEST_DIR=${RISCV_TEST_DIR}/isa
+FILES=$(ls ${TEST_DIR}/rv32u[ima]-p-* | grep -v dump | grep -v hex)
 #build vectorblox unit tests
 if [ -d $SCRIPTDIR/../software/unit_test ]
 then
