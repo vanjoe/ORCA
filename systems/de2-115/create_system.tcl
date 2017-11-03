@@ -193,9 +193,7 @@ proc compose { } {
     set_instance_parameter_value the_vectorblox_orca {COUNTER_LENGTH} {64}
     set_instance_parameter_value the_vectorblox_orca {ENABLE_EXCEPTIONS} {1}
     set_instance_parameter_value the_vectorblox_orca {ENABLE_EXT_INTERRUPTS} {1}
-    set_instance_parameter_value the_vectorblox_orca {EXT_INTERRUPTS} {1}
-    set_instance_parameter_value the_vectorblox_orca {BRANCH_PREDICTION} {0}
-    set_instance_parameter_value the_vectorblox_orca {BTB_SIZE} {0}
+    set_instance_parameter_value the_vectorblox_orca {NUM_EXT_INTERRUPTS} {1}
     set_instance_parameter_value the_vectorblox_orca {DATA_REQUEST_REGISTER} {0}
     set_instance_parameter_value the_vectorblox_orca {DATA_RETURN_REGISTER} {0}
     set_instance_parameter_value the_vectorblox_orca {PIPELINE_STAGES} {5}
