@@ -9,7 +9,7 @@
    (((BYTES) << 0)  & 0x000FF000) |             \
    0x6F);
 
-#define USE_ONCHIP_MEM 0
+#define USE_ONCHIP_MEM 1
 
 #define WAIT_SECONDS_BEFORE_START 0
 
@@ -29,7 +29,7 @@
 #define PS7_MEM_SPAN          0x10000000
 
 #define ONCHIP_MEM_CACHED_BASE   0x50000000
-#define ONCHIP_MEM_UNCACHED_BASE 0xD0000000
+#define ONCHIP_MEM_UNCACHED_BASE 0x50000000
 #define ONCHIP_MEM_SPAN          0x00020000
 
 #if USE_ONCHIP_MEM

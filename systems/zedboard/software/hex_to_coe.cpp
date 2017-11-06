@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     char *dummy;
     base_address = (unsigned long)strtoll(argv[1], &dummy, 0);
     max_address = (unsigned long)strtoll(argv[2], &dummy, 0);
-    cout << "Using base address " << base_address << " and max address " << max_address << endl;
+    cout << "Using base address 0x" << uppercase << hex << base_address << " and max address 0x" << max_address << dec << nouppercase << endl;
   } else {
     cout << "Usage: " << argv[0] << " [base_address] [max_address]" << endl;
     exit(1);

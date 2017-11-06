@@ -1,0 +1,21 @@
+
+This directory allows us to run randomly generated csmith tests,
+
+They should be run using the system_csmith.qsys system in systems/sim/
+
+In that directory, after generating the system: `make BUS_TYPE=csmith`
+run the following command to run csmith tests with seeds 1-100:
+`for i in {1..100}; do sh ../../software/csmith/run_csmith.sh $i; done`
+
+Test 7 fails right now, but it agrees with the output spike outputs.
+to run spike, run the follwing commands (assuming spike is installed)
+
+```
+spike -l -d --isa=rv32im --pc=0x80000000 csmith-compile/csmith-riscv-seed7
+warning: tohost and fromhost symbols not in ELF; can't communicate with target
+: until pc 0 0xffffffff80000020
+: reg 0 t3
+0x00000000275dc222
+```
+
+You will notice that that is the same number that orca spits out from the simulator

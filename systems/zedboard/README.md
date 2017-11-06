@@ -18,9 +18,17 @@ sure the software is up-to-date before running the simulation script.
 
 ## Simulation
 
-To simulate, first generate the design in Vivado, the run the Vivado simulator.
-From the simulator's TCL command window, enter: source --quiet sim.tcl This
-initializes the block rams with the test.coe file in the software directory.
+To simulate, start by running 'make sim'.  This builds the file
+software/test.coe which initializes the block RAMs, and generates and
+opens the design in Vivado sourcing the sim.tcl script.  Once in Vivado open the
+TCL console and use the following commands provided by sim.tcl:
+
+* `reset_sim` - Reset the simulation and reload all IP to get source file changes.
+* `start_sim` - Launch a simulation, forcing signals that need to be forced, etc.
+* `add_wave_all` - Add waves for all parts of the processor; there are separate
+  add\_wave\_* (`add_wave_instruction_fetch`, etc.) commands for individual parts.
+
+A common set of commands would be `reset_sim; start_sim; add_wave_all; run 100us`
 
 ## Block Ram Initialization
 

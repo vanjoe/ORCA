@@ -8,195 +8,243 @@ use work.utils.all;
 
 entity cache is
   generic (
-    NUM_LINES   : integer := 1;
-    LINE_SIZE   : integer := 64;        -- In bytes
-    BYTE_SIZE   : integer := 8;
-    ADDR_WIDTH  : integer := 32;
-    READ_WIDTH  : integer := 32;
-    WRITE_WIDTH : integer := 32
+    NUM_LINES      : integer := 1;
+    LINE_SIZE      : integer := 64;
+    ADDR_WIDTH     : integer := 32;
+    INTERNAL_WIDTH : integer := 32;
+    EXTERNAL_WIDTH : integer := 32
     );
   port (
-    clk : in std_logic;
+    clk   : in std_logic;
+    reset : in std_logic;
 
-    read_address  : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
-    read_data_in  : in  std_logic_vector(READ_WIDTH-1 downto 0);
-    read_valid_in : in  std_logic;
-    read_we       : in  std_logic;
-    read_readdata : out std_logic_vector(READ_WIDTH-1 downto 0);
-    read_hit      : out std_logic;
+    --Internal data Orca-internal memory-mapped slave
+    internal_data_oimm_address       : in     std_logic_vector(ADDR_WIDTH-1 downto 0);
+    internal_data_oimm_byteenable    : in     std_logic_vector((INTERNAL_WIDTH/8)-1 downto 0);
+    internal_data_oimm_requestvalid  : in     std_logic;
+    internal_data_oimm_readnotwrite  : in     std_logic;
+    internal_data_oimm_writedata     : in     std_logic_vector(INTERNAL_WIDTH-1 downto 0);
+    internal_data_oimm_readdata      : out    std_logic_vector(INTERNAL_WIDTH-1 downto 0);
+    internal_data_oimm_readdatavalid : out    std_logic;
+    internal_data_oimm_miss          : out    std_logic;
+    internal_data_oimm_missaddress   : buffer std_logic_vector(ADDR_WIDTH-1 downto 0);
+    internal_data_oimm_waitrequest   : buffer std_logic;
 
-    write_address  : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
-    write_data_in  : in  std_logic_vector(WRITE_WIDTH-1 downto 0);
-    write_valid_in : in  std_logic;
-    write_we       : in  std_logic;
-    write_readdata : out std_logic_vector(WRITE_WIDTH-1 downto 0);
-    write_hit      : out std_logic;
+    --Internal tag Orca-internal memory-mapped slave (uses internal_data_oimm_address)
+    internal_tag_oimm_writedata    : in std_logic;
+    internal_tag_oimm_requestvalid : in std_logic;
 
-    write_tag_valid_in : in std_logic;
-    write_tag_valid_en : in std_logic
+    --External data Orca-internal memory-mapped master
+    external_data_oimm_address       : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+    external_data_oimm_requestvalid  : in  std_logic;
+    external_data_oimm_readnotwrite  : in  std_logic;
+    external_data_oimm_writedata     : in  std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
+    external_data_oimm_readdata      : out std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
+    external_data_oimm_readdatavalid : out std_logic;
+
+    --External tag Orca-external memory-mapped slave (uses external_data_oimm_address)
+    external_tag_oimm_writedata    : in std_logic;
+    external_tag_oimm_requestvalid : in std_logic
     );
 end entity;
 
 architecture rtl of cache is
-  constant BYTES_PER_READ       : integer := READ_WIDTH/BYTE_SIZE;
-  constant BYTES_PER_WRITE      : integer := WRITE_WIDTH/BYTE_SIZE;
-  constant WORDS_PER_WRITE      : integer := WRITE_WIDTH/READ_WIDTH;
-  constant WORDS_PER_LINE       : integer := LINE_SIZE/BYTES_PER_READ;
-  constant WRITES_PER_LINE      : integer := LINE_SIZE/BYTES_PER_WRITE;
-  constant DATA_BITS            : integer := READ_WIDTH+1;  -- One valid bit per DRAM-width word
-  constant TAG_BITS             : integer := ADDR_WIDTH-log2(NUM_LINES)-log2(LINE_SIZE)+1;  -- One valid bit for the tag
-  constant TAG_LEFT             : integer := ADDR_WIDTH;
-  constant TAG_RIGHT            : integer := log2(NUM_LINES)+log2(LINE_SIZE);
-  constant CACHE_ADDR_BITS      : integer := log2(NUM_LINES);
-  constant CACHE_ADDR_LEFT      : integer := log2(NUM_LINES)+log2(LINE_SIZE);
-  constant CACHE_ADDR_RIGHT     : integer := log2(LINE_SIZE);
-  constant BLOCK_OFFSET_LEFT_R  : integer := log2(LINE_SIZE);
-  constant BLOCK_OFFSET_RIGHT_R : integer := log2(BYTES_PER_READ);
-  constant BLOCK_OFFSET_BITS_R  : integer := BLOCK_OFFSET_LEFT_R-BLOCK_OFFSET_RIGHT_R;
-  constant BLOCK_OFFSET_LEFT_W  : integer := log2(LINE_SIZE);
-  constant BLOCK_OFFSET_RIGHT_W : integer := log2(BYTES_PER_WRITE);
-  constant BLOCK_OFFSET_BITS_W  : integer := BLOCK_OFFSET_LEFT_W-BLOCK_OFFSET_RIGHT_W;
+  constant INTERNAL_WORDS_PER_EXTERNAL_WORD : positive := EXTERNAL_WIDTH/INTERNAL_WIDTH;
+  constant EXTERNAL_WORDS_PER_LINE          : positive := LINE_SIZE/(EXTERNAL_WIDTH/8);
+  constant INTERNAL_WORDS_PER_LINE          : positive := LINE_SIZE/(INTERNAL_WIDTH/8);
+  constant TAG_BITS                         : positive := ADDR_WIDTH-log2(NUM_LINES)-log2(LINE_SIZE);
+  constant TAG_LEFT                         : natural  := ADDR_WIDTH;
+  constant TAG_RIGHT                        : natural  := log2(NUM_LINES)+log2(LINE_SIZE);
+  constant CACHELINE_BITS                   : positive := log2(NUM_LINES);
+  constant CACHELINE_LEFT                   : natural  := log2(NUM_LINES)+log2(LINE_SIZE);
+  constant CACHELINE_RIGHT                  : natural  := log2(LINE_SIZE);
+  constant CACHEWORD_BITS                   : positive := log2(NUM_LINES)+log2(EXTERNAL_WORDS_PER_LINE);
+  constant CACHEWORD_LEFT                   : natural  := log2(NUM_LINES)+log2(LINE_SIZE);
+  constant CACHEWORD_RIGHT                  : natural  := log2(EXTERNAL_WIDTH/8);
+  constant INTERNAL_WORD_SELECT_LEFT        : natural  := log2(LINE_SIZE);
+  constant INTERNAL_WORD_SELECT_RIGHT       : natural  := log2(INTERNAL_WIDTH/8);
+  constant INTERNAL_WORD_SELECT_BITS        : positive := INTERNAL_WORD_SELECT_LEFT-INTERNAL_WORD_SELECT_RIGHT;
+  constant EXTERNAL_WORD_SELECT_LEFT        : natural  := log2(LINE_SIZE);
+  constant EXTERNAL_WORD_SELECT_RIGHT       : natural  := log2(EXTERNAL_WIDTH/8);
+  constant EXTERNAL_WORD_SELECT_BITS        : positive := EXTERNAL_WORD_SELECT_LEFT-EXTERNAL_WORD_SELECT_RIGHT;
 
-  type wren_t is array (WORDS_PER_LINE-1 downto 0) of std_logic;
-  type line_t is array (WORDS_PER_LINE-1 downto 0) of std_logic_vector(DATA_BITS-1 downto 0);
+  signal internal_address               : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal internal_requestinflight       : std_logic;
+  signal internal_readinflight          : std_logic;
+  signal internal_hit                   : std_logic;
+  signal external_address               : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal external_requestinflight       : std_logic;
+  signal external_readinflight          : std_logic;
+  signal external_data_oimm_missaddress : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal external_hit                   : std_logic;
 
-  signal read_tag_address : std_logic_vector(CACHE_ADDR_BITS-1 downto 0);
-  signal read_tag_out     : std_logic_vector(TAG_BITS-1 downto 0);
+  signal internal_valid_and_tag_in  : std_logic_vector(TAG_BITS downto 0);
+  signal internal_valid_and_tag_out : std_logic_vector(TAG_BITS downto 0);
+  alias internal_valid_out          : std_logic is
+    internal_valid_and_tag_out(TAG_BITS);
+  alias internal_tag_out : std_logic_vector(TAG_BITS-1 downto 0) is
+    internal_valid_and_tag_out(TAG_BITS-1 downto 0);
+  signal internal_tag_equal : std_logic;
 
-  signal write_tag_address : std_logic_vector(CACHE_ADDR_BITS-1 downto 0);
-  signal write_tag_in      : std_logic_vector(TAG_BITS-1 downto 0);
-  signal write_tag_wren    : std_logic;
+  signal external_valid_and_tag_in  : std_logic_vector(TAG_BITS downto 0);
+  signal external_valid_and_tag_out : std_logic_vector(TAG_BITS downto 0);
+  alias external_valid_out          : std_logic is
+    external_valid_and_tag_out(TAG_BITS);
+  alias external_tag_out : std_logic_vector(TAG_BITS-1 downto 0) is
+    external_valid_and_tag_out(TAG_BITS-1 downto 0);
+  signal external_tag_equal : std_logic;
 
-  signal read_line_address  : std_logic_vector(CACHE_ADDR_BITS-1 downto 0);
-  signal write_line_address : std_logic_vector(CACHE_ADDR_BITS-1 downto 0);
-  signal read_line_wren     : wren_t;
-  signal write_line_wren    : wren_t;
-  signal read_line_in       : line_t;
-  signal write_line_in      : line_t;
-  signal read_line_out      : line_t;
-  signal write_line_out     : line_t;
+  signal internal_word_wren : std_logic_vector(INTERNAL_WORDS_PER_LINE-1 downto 0);
+  signal external_word_wren : std_logic_vector(EXTERNAL_WORDS_PER_LINE-1 downto 0);
 
-  signal read_tag_valid : std_logic;
+  type word_array is array (natural range <>) of std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
+  signal internal_word_out : word_array(INTERNAL_WORDS_PER_LINE-1 downto 0);
+  signal external_word_out : word_array(EXTERNAL_WORDS_PER_LINE-1 downto 0);
 
-  signal read_word_valid   : std_logic;
-  signal write_word_valid  : std_logic;
-  signal read_current_word : std_logic_vector(DATA_BITS-1 downto 0);
-  signal read_tag_equal    : std_logic;
-  signal write_tag_equal   : std_logic;
+  alias internal_write_word_select : std_logic_vector(INTERNAL_WORD_SELECT_BITS-1 downto 0)
+    is internal_address(INTERNAL_WORD_SELECT_LEFT-1 downto INTERNAL_WORD_SELECT_RIGHT);
+  alias external_write_word_select : std_logic_vector(EXTERNAL_WORD_SELECT_BITS-1 downto 0)
+    is external_address(EXTERNAL_WORD_SELECT_LEFT-1 downto EXTERNAL_WORD_SELECT_RIGHT);
+  alias internal_read_word_select : std_logic_vector(INTERNAL_WORD_SELECT_BITS-1 downto 0)
+    is internal_data_oimm_missaddress(INTERNAL_WORD_SELECT_LEFT-1 downto INTERNAL_WORD_SELECT_RIGHT);
+  alias external_read_word_select : std_logic_vector(EXTERNAL_WORD_SELECT_BITS-1 downto 0)
+    is external_data_oimm_missaddress(EXTERNAL_WORD_SELECT_LEFT-1 downto EXTERNAL_WORD_SELECT_RIGHT);
 
-  signal read_tag_l           : std_logic_vector(TAG_BITS-2 downto 0);
-  signal write_tag_l          : std_logic_vector(TAG_BITS-2 downto 0);
-  signal read_block_offset_l  : std_logic_vector(BLOCK_OFFSET_BITS_R-1 downto 0);
-  signal write_block_offset_l : std_logic_vector(BLOCK_OFFSET_BITS_W-1 downto 0);
+  alias internal_cacheline : std_logic_vector(CACHELINE_BITS-1 downto 0)
+    is internal_address(CACHELINE_LEFT-1 downto CACHELINE_RIGHT);
+  alias external_cacheline : std_logic_vector(CACHELINE_BITS-1 downto 0)
+    is external_address(CACHELINE_LEFT-1 downto CACHELINE_RIGHT);
+  alias internal_cacheword : std_logic_vector(CACHEWORD_BITS-1 downto 0)
+    is internal_address(CACHEWORD_LEFT-1 downto CACHEWORD_RIGHT);
+  alias external_cacheword : std_logic_vector(CACHEWORD_BITS-1 downto 0)
+    is external_address(CACHEWORD_LEFT-1 downto CACHEWORD_RIGHT);
 
-  alias read_block_offset : std_logic_vector(BLOCK_OFFSET_BITS_R-1 downto 0)
-    is read_address(BLOCK_OFFSET_LEFT_R-1 downto BLOCK_OFFSET_RIGHT_R);
-  alias write_block_offset : std_logic_vector(BLOCK_OFFSET_BITS_W-1 downto 0)
-    is write_address(BLOCK_OFFSET_LEFT_W-1 downto BLOCK_OFFSET_RIGHT_W);
-  alias read_cache_address : std_logic_vector(CACHE_ADDR_BITS-1 downto 0)
-    is read_address(CACHE_ADDR_LEFT-1 downto CACHE_ADDR_RIGHT);
-  alias write_cache_address : std_logic_vector(CACHE_ADDR_BITS-1 downto 0)
-    is write_address(CACHE_ADDR_LEFT-1 downto CACHE_ADDR_RIGHT);
-  alias read_tag : std_logic_vector(TAG_BITS-2 downto 0)  -- TAG_BITS less one bit due to the valid bit.
-    is read_address(TAG_LEFT-1 downto TAG_RIGHT);
-  alias write_tag : std_logic_vector(TAG_BITS-2 downto 0)  -- TAG_BITS less one bit due to the valid bit.
-    is write_address(TAG_LEFT-1 downto TAG_RIGHT);
-
+  alias internal_write_tag : std_logic_vector(TAG_BITS-1 downto 0)
+    is internal_address(TAG_LEFT-1 downto TAG_RIGHT);
+  alias external_write_tag : std_logic_vector(TAG_BITS-1 downto 0)
+    is external_address(TAG_LEFT-1 downto TAG_RIGHT);
+  alias internal_address_tag : std_logic_vector(TAG_BITS-1 downto 0)
+    is internal_data_oimm_missaddress(TAG_LEFT-1 downto TAG_RIGHT);
+  alias external_address_tag : std_logic_vector(TAG_BITS-1 downto 0)
+    is external_data_oimm_missaddress(TAG_LEFT-1 downto TAG_RIGHT);
 begin
+  internal_data_oimm_waitrequest <= internal_requestinflight and (not internal_hit);
+  internal_data_oimm_miss        <= internal_requestinflight and (not internal_hit);
+  internal_address               <= internal_data_oimm_address when internal_data_oimm_waitrequest = '0' else
+                      internal_data_oimm_missaddress;
+  external_address <= external_data_oimm_address;
 
   process(clk)
   begin
     if rising_edge(clk) then
-      read_tag_l           <= read_tag;
-      write_tag_l          <= write_tag;
-      read_block_offset_l  <= read_block_offset;
-      write_block_offset_l <= write_block_offset;
+      if internal_hit = '1' then
+        internal_requestinflight <= '0';
+        internal_readinflight    <= '0';
+      end if;
+      if external_hit = '1' then
+        external_requestinflight <= '0';
+        external_readinflight    <= '0';
+      end if;
+
+      if internal_data_oimm_requestvalid = '1' and internal_data_oimm_waitrequest = '0' then
+        internal_data_oimm_missaddress <= internal_data_oimm_address;
+        internal_requestinflight       <= '1';
+        internal_readinflight          <= internal_data_oimm_readnotwrite;
+      end if;
+      --No waitrequest for external interface
+      external_data_oimm_missaddress <= external_data_oimm_address;
+      if external_data_oimm_requestvalid = '1' then
+        external_requestinflight <= '1';
+        external_readinflight    <= internal_data_oimm_readnotwrite;
+      end if;
+
+      if reset = '1' then
+        internal_requestinflight <= '0';
+        internal_readinflight    <= '0';
+        external_requestinflight <= '0';
+        external_readinflight    <= '0';
+      end if;
     end if;
   end process;
 
-  read_current_word <= read_line_out(to_integer(unsigned(read_block_offset_l)));
-  read_readdata     <= read_current_word(READ_WIDTH-1 downto 0);
-  write_assemble_gen : for gread_word in (WRITE_WIDTH/READ_WIDTH)-1 downto 0 generate
-    signal write_block_offset_l_word : std_logic_vector(BLOCK_OFFSET_BITS_R-1 downto 0);
-    signal write_current_word        : std_logic_vector(DATA_BITS-1 downto 0);
-  begin
-    write_block_offset_l_word(BLOCK_OFFSET_BITS_R-1 downto BLOCK_OFFSET_BITS_R-BLOCK_OFFSET_BITS_W) <=
-      write_block_offset_l;
-    multiblock_gen : if (WRITE_WIDTH/READ_WIDTH) > 1 generate
-      write_block_offset_l_word((BLOCK_OFFSET_BITS_R-BLOCK_OFFSET_BITS_W)-1 downto 0) <=
-        std_logic_vector(to_unsigned(gread_word, BLOCK_OFFSET_BITS_R-BLOCK_OFFSET_BITS_W));
-    end generate multiblock_gen;
-    write_current_word <=
-      write_line_out(to_integer(unsigned(write_block_offset_l_word)));
-    write_readdata(((gread_word+1)*READ_WIDTH)-1 downto gread_word*READ_WIDTH) <=
-      write_current_word(READ_WIDTH-1 downto 0);
-  end generate write_assemble_gen;
+  internal_data_oimm_readdata <= internal_word_out(to_integer(unsigned(internal_read_word_select)));
+  external_data_oimm_readdata <= external_word_out(to_integer(unsigned(external_read_word_select)));
 
-  read_tag_valid  <= read_tag_out(read_tag_out'left);
-  read_word_valid <= read_current_word(read_current_word'left);
-  read_tag_equal  <= '1' when (read_tag_out(TAG_BITS-2 downto 0) = read_tag_l) else '0';
+  internal_tag_equal <= '1' when internal_tag_out = internal_address_tag else '0';
+  external_tag_equal <= '1' when external_tag_out = external_address_tag else '0';
 
-  read_hit <= read_tag_valid and read_word_valid and read_tag_equal;
+  internal_hit                     <= internal_valid_out and internal_tag_equal;
+  internal_data_oimm_readdatavalid <= internal_hit and internal_readinflight;
+  external_hit                     <= external_valid_out and external_tag_equal;
+  external_data_oimm_readdatavalid <= external_hit and external_readinflight;
 
-  read_tag_address  <= read_cache_address;
-  write_tag_address <= read_cache_address;
+  internal_valid_and_tag_in <= internal_tag_oimm_writedata & internal_write_tag;
+  external_valid_and_tag_in <= external_tag_oimm_writedata & external_write_tag;
 
-  write_tag_in   <= write_tag_valid_in & write_tag;
-  write_tag_wren <= write_tag_valid_en;
-
-  read_line_address  <= read_cache_address;
-  write_line_address <= write_cache_address;
-
-  -- This block contains the tag, with a valid bit.
+  --This block contains the tag, with a valid bit.
   cache_tags : bram_tdp_behav
     generic map (
       RAM_DEPTH => NUM_LINES,
-      RAM_WIDTH => TAG_BITS
+      RAM_WIDTH => TAG_BITS+1
       )
     port map (
-      address_a  => read_tag_address,
-      address_b  => write_tag_address,
+      address_a  => internal_cacheline,
+      address_b  => external_cacheline,
       clk        => clk,
-      data_a     => (others => '0'),
-      data_b     => write_tag_in,
-      wren_a     => '0',
-      wren_b     => write_tag_valid_en,
-      readdata_a => read_tag_out,
-      readdata_b => open
+      data_a     => internal_valid_and_tag_in,
+      data_b     => external_valid_and_tag_in,
+      wren_a     => internal_tag_oimm_requestvalid,
+      wren_b     => external_tag_oimm_requestvalid,
+      readdata_a => internal_valid_and_tag_out,
+      readdata_b => external_valid_and_tag_out
       );
 
-  -- This block contains the cache line, with a valid bit for each word in the line.
-  cache_gen :
-  for i in 0 to WORDS_PER_LINE-1 generate
-    read_line_in(i)  <= read_valid_in & read_data_in;
-    write_line_in(i) <= write_valid_in & write_data_in((((i/WRITES_PER_LINE)+1)*READ_WIDTH)-1 downto ((i/WRITES_PER_LINE)*READ_WIDTH));
+  --For each external word width generate a separate set of cache RAMs
+  external_word_gen : for gexternal_word in 0 to EXTERNAL_WORDS_PER_LINE-1 generate
+    external_word_wren(gexternal_word) <= external_data_oimm_requestvalid and (not external_data_oimm_readnotwrite)
+                                          when gexternal_word = to_integer(unsigned(external_write_word_select)) else
+                                          '0';
 
-    read_line_wren(i)  <= '1' when ((i = to_integer(unsigned(read_block_offset))) and (read_we = '1'))                     else '0';
-    write_line_wren(i) <= '1' when (((i/WORDS_PER_WRITE) = to_integer(unsigned(write_block_offset))) and (write_we = '1')) else '0';
+    internal_word_gen : for ginternal_word in INTERNAL_WORDS_PER_EXTERNAL_WORD-1 downto 0 generate
+      constant INTERNAL_WORD : natural := (gexternal_word*INTERNAL_WORDS_PER_EXTERNAL_WORD)+ginternal_word;
+    begin
+      internal_word_wren(INTERNAL_WORD) <=
+        internal_data_oimm_requestvalid and (not internal_data_oimm_readnotwrite)
+        when (INTERNAL_WORD = to_integer(unsigned(internal_write_word_select))) else
+        '0';
 
-    cache_data : component bram_tdp_behav
-      generic map (
-        RAM_DEPTH => NUM_LINES,
-        RAM_WIDTH => DATA_BITS
-        )
-      port map (
-        address_a  => read_line_address,
-        address_b  => write_line_address,
-        clk        => clk,
-        data_a     => read_line_in(i),
-        data_b     => write_line_in(i),
-        wren_a     => read_line_wren(i),
-        wren_b     => write_line_wren(i),
-        readdata_a => read_line_out(i),
-        readdata_b => write_line_out(i)
-        );
-  end generate cache_gen;
+      byte_gen : for gbyte in (INTERNAL_WIDTH/8)-1 downto 0 generate
+        constant EXTERNAL_BYTE     : natural := (ginternal_word*(INTERNAL_WIDTH/8))+gbyte;
+        signal internal_byteenable : std_logic;
+      begin
+        internal_byteenable <= internal_word_wren(INTERNAL_WORD) and internal_data_oimm_byteenable(gbyte);
+        cache_data : component bram_tdp_behav
+          generic map (
+            RAM_DEPTH => NUM_LINES*EXTERNAL_WORDS_PER_LINE,
+            RAM_WIDTH => 8
+            )
+          port map (
+            address_a  => internal_cacheword,
+            address_b  => external_cacheword,
+            clk        => clk,
+            data_a     => internal_data_oimm_writedata(((gbyte+1)*8)-1 downto gbyte*8),
+            data_b     => external_data_oimm_writedata(((EXTERNAL_BYTE+1)*8)-1 downto EXTERNAL_BYTE*8),
+            wren_a     => internal_byteenable,
+            wren_b     => external_word_wren(gexternal_word),
+            readdata_a => internal_word_out(INTERNAL_WORD)(((gbyte+1)*8)-1 downto gbyte*8),
+            readdata_b => external_word_out(gexternal_word)(((gbyte+1)*8)-1 downto gbyte*8)
+            );
+      end generate byte_gen;
+    end generate internal_word_gen;
 
-  assert WRITE_WIDTH >= READ_WIDTH
-    report "Error in cache: WRITE_WIDTH (" &
-    integer'image(WRITE_WIDTH) &
-    ") must be greater than or equal to READ_WIDTH (" &
-    integer'image(READ_WIDTH) &
+
+  end generate external_word_gen;
+
+  assert EXTERNAL_WIDTH >= INTERNAL_WIDTH
+    report "Error in cache: EXTERNAL_WIDTH (" &
+    integer'image(EXTERNAL_WIDTH) &
+    ") must be greater than or equal to INTERNAL_WIDTH (" &
+    integer'image(INTERNAL_WIDTH) &
     ")."
     severity failure;
 

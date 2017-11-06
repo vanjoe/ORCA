@@ -62,21 +62,16 @@ void mputc(void *p, char c) {
 
 void test_pass(void) {
 	init_printf(0, mputc);
-	while (1) {
-		orca_printf("\r\nTest passed!\r\n");
-		mputc(0, 4);
-		delayus(1E6);
+  orca_printf("\r\nTest passed!\r\n");
+  mputc(0, 4);
+  while(1){
 	}
 }
 
 void test_fail(void) {
 	init_printf(0, mputc);
-	while (1) {
-		// The risc-v tests fail immediately once an
-		// error has occured, so there will never be
-		// more than one error at a time.
-		orca_printf("\r\nTest failed with 1 error.\r\n");	
-		mputc(0, 4);
-		delayus(1E6);
+  orca_printf("\r\nTest failed with 1 error.\r\n");	
+  mputc(0, 4);
+	while(1){
 	}
 }

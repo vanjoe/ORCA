@@ -8,6 +8,7 @@
 
 add_file -vhdl -lib work "../../rtl/utils.vhd" 
 add_file -vhdl -lib work "../../rtl/constants_pkg.vhd" 
+add_file -vhdl -lib work "../../rtl/cache_mux.vhd" 
 add_file -vhdl -lib work "../../rtl/components.vhd" 
 add_file -vhdl -lib work "hdl/top_util_pkg.vhd" 
 add_file -vhdl -lib work "hdl/top_component_pkg.vhd" 

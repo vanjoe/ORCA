@@ -38,7 +38,7 @@ if __name__ == '__main__':
     reset_address = 0x10000000	
     end_address = 0x00010000
     family = 'altera'
-    device = 'xc7z020_1'
+    device = 'xc7z*'
     project_file = 'project/project.xpr'
     debug_nets = 'project/project.runs/impl_1/debug_nets.ltx'
     output_file = 'jtag_init.tcl'
@@ -107,10 +107,9 @@ if __name__ == '__main__':
         bin_file.close()
         tcl_script.close()
 
-        system_console = '/nfs/opt/altera/15.1/quartus/sopc_builder/bin/system-console' 
-        subprocess.Popen('{} --cli --script={}'.format(system_console, script_name), shell=True).wait()
+        subprocess.Popen('system-console --cli --script={}'.format(script_name), shell=True).wait()
+        print 'Done programming.'
 
-    # Note: JTAG does not currently work on the xilinx family of devices.
     elif family == 'xilinx':
         BURST_LENGTH = 256
         script_name = output_file
@@ -122,12 +121,9 @@ if __name__ == '__main__':
         ending_write_count  = 0
         
         tcl_script.write('proc orca_pgm {} {\n')
-#        tcl_script.write('\topen_project {}\n'.format(project_file))
         tcl_script.write('\tset_msg_config -id "Labtoolstcl 44-481" -suppress\n')
         tcl_script.write('\topen_hw\n')
         tcl_script.write('\tconnect_hw_server\n')
-        tcl_script.write('\tcurrent_hw_target [get_hw_targets */xilinx_tcf/Digilent/*]\n')
-        tcl_script.write('\tset_property PARAM.FREQUENCY 5000000 [get_hw_targets */xilinx_tcf/Digilent/*]\n')
         tcl_script.write('\topen_hw_target\n')
         tcl_script.write('\tset_property PROBES.FILE {{{}}} [get_hw_devices {}]\n'.format(debug_nets, device))
         tcl_script.write('\tcurrent_hw_device [get_hw_devices {}]\n'.format(device))
@@ -202,7 +198,6 @@ if __name__ == '__main__':
         tcl_script.write('\tputs "Done."\n')
 
         tcl_script.write('\tclose_hw\n')
-#        tcl_script.write('\tclose_project\n')
         tcl_script.write('}\n')
         tcl_script.write('orca_pgm\n')
 

@@ -27,6 +27,7 @@ static inline unsigned get_time() {
   asm volatile(" csrr %0,time":"=r"(tmp));return tmp;
 }
 
+
 void delayus(int us)
 {
 	unsigned start=get_time();
@@ -37,14 +38,13 @@ void delayus(int us)
 #define delayms(ms) delayus(ms*1000)
 
 int main() {
-
   init_printf(0, mputc);
 
-	for (;;) {
-		printf("Hello World\r\n");
-		delayms(100);
-	}
+  printf("Hello World\r\n");
 
+  while(1){
+  }
+  return 0;
 }
 
 int tohost_exit() {

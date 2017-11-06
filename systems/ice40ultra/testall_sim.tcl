@@ -1,7 +1,7 @@
 do simulate.tcl
 
 set files [lsort [glob ./test/*.mem]]
-add wave /top_tb/dut/rv/core/D/register_file_1/t3
+add wave /top_tb/dut/sub_top/WITH_LVE/rv/core/D/register_file_1/t3
 
 set max_length  0
 foreach f $files {
@@ -17,9 +17,9 @@ foreach f $files {
 	 exec make MEM_FILE=test.mem imem.mem dmem.mem
 	 restart -f
 	 onbreak {resume}
-	 when {/top_tb/dut/rv/core/X/instruction == x"00000073" && /top_tb/dut/rv/core/X/valid_input == "1" } {stop}
+	 when {/top_tb/dut/sub_top/WITH_LVE/rv/core/X/instruction == x"00000073" && /top_tb/dut/sub_top/WITH_LVE/rv/core/X/valid_input == "1" } {stop}
 	 run 2000 us
-	 set v [examine -radix decimal /top_tb/dut/rv/core/D/register_file_1/t3 ]
+	 set v [examine -radix decimal /top_tb/dut/sub_top/WITH_LVE/rv/core/D/register_file_1/t3 ]
      set passfail  ""
 	 if { $v != 1 } {
 		  set passfail "FAIL"

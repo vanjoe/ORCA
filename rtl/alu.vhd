@@ -16,19 +16,18 @@ entity arithmetic_unit is
     POWER_OPTIMIZED     : boolean;
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
-    FAMILY              : string := "ALTERA"
+    FAMILY              : string := "GENERIC"
     );
   port (
     clk                : in  std_logic;
     valid_instr        : in  std_logic;
-    stall_to_alu       : in  std_logic;
     simd_op_size       : in  std_logic_vector(1 downto 0);
     stall_from_execute : in  std_logic;
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     sign_extension     : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-    program_counter    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    pc_current         : in  unsigned(REGISTER_SIZE-1 downto 0);
     data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     data_out_valid : out std_logic;
@@ -69,8 +68,6 @@ architecture rtl of arithmetic_unit is
   signal slt_result           : unsigned(REGISTER_SIZE-1 downto 0);
   signal slt_result_valid     : std_logic;
 
-  signal upp_imm_sel      : std_logic;
-  signal upper_immediate1 : signed(REGISTER_SIZE-1 downto 0);
   signal upper_immediate  : signed(REGISTER_SIZE-1 downto 0);
 
   signal mul_srca          : signed(REGISTER_SIZE downto 0);
@@ -299,10 +296,15 @@ begin  -- architecture rtl
 
 
   source_valid <= lve_source_valid when opcode = LVE_OP else
-                  not stall_to_alu and valid_instr;
+                  valid_instr;
 
   func7_shift <= func7 = "0000000" or func7 = "0100000";
-  sh_enable   <= valid_instr and source_valid when ((opcode = ALU_OP and func7_shift) or (opcode = ALUI_OP) or (opcode = LVE_OP and lve_source_valid = '1')) and (func3 = "001" or func3 = "101") else '0';
+  sh_enable   <= valid_instr and source_valid when
+                 (((opcode = ALU_OP and func7_shift) or
+                   (opcode = ALUI_OP) or
+                   (opcode = LVE_OP and lve_source_valid = '1')) and
+                  (func3 = "001" or func3 = "101")) else
+                 '0';
   sh_stall    <= (not shifted_result_valid)   when sh_enable = '1'                                                                                                                                else '0';
 
   SH_GEN0 : if SHIFTER_USE_MULTIPLIER generate
@@ -319,6 +321,9 @@ begin  -- architecture rtl
           rshifted_result <= unsigned(mul_dest(REGISTER_SIZE-1 downto 0));
         end if;
         shifted_result_valid <= mul_dest_valid and sh_enable;
+        if stall_from_execute = '0' then
+          shifted_result_valid <= '0';
+        end if;
       end if;
     end process;
 
@@ -440,7 +445,7 @@ begin  -- architecture rtl
           data_out       <= std_logic_vector(upper_immediate);
           data_out_valid <= source_valid;
         when AUIPC_OP =>
-          data_out       <= std_logic_vector(upper_immediate + signed(program_counter));
+          data_out       <= std_logic_vector(upper_immediate + signed(pc_current));
           data_out_valid <= source_valid;
         when others =>
           data_out       <= (others => '-');
@@ -524,8 +529,7 @@ begin  -- architecture rtl
         -- then we want to flush the valid signals
         -- Another way of phrasing this is that unless we have an LVE instruction we only want
         -- mul_dest_valid to be high for one cycle
-        if stall_from_execute = '0' or (opcode /= LVE_OP and mul_dest_valid = '1') then
-
+        if stall_from_execute = '0' then
           mul_ab_valid   <= '0';
           mul_dest_valid <= '0';
         end if;
@@ -540,7 +544,7 @@ begin  -- architecture rtl
     mul_stall          <= '0';
   end generate no_mul_gen;
 
-  d_en : if DIVIDE_ENABLE generate
+  divide_gen : if DIVIDE_ENABLE generate
   begin
     div_enable <= '1' when (func7 = mul_f7 and opcode = ALU_OP and instruction(14) = '1') and valid_instr = '1' and source_valid = '1' else '0';
     div : divider
@@ -560,9 +564,8 @@ begin  -- architecture rtl
     rem_result <= signed(remainder);
 
     div_stall <= div_enable and (not div_result_valid);
-
-  end generate d_en;
-  nd_en : if not DIVIDE_ENABLE generate
+  end generate divide_gen;
+  no_divide_gen : if not DIVIDE_ENABLE generate
   begin
     div_stall        <= '0';
     div_result       <= (others => 'X');
@@ -638,7 +641,7 @@ begin  -- architecture rtl
             when IDLE =>
               left_tmp  <= shift_value;
               right_tmp <= shift_value;
-              count     <= unsigned("0"&shift_amt);
+              count     <= unsigned("0" & shift_amt);
               if shift_amt /= 0 then
                 state <= RUNNING;
               else

@@ -1007,7 +1007,7 @@
         <spirit:wire>
           <spirit:direction>in</spirit:direction>
           <spirit:vector>
-            <spirit:left spirit:format="long" spirit:resolve="dependent" spirit:dependency="((spirit:decode(id(&apos;MODELPARAM_VALUE.RAM_WIDTH&apos;)) / spirit:decode(id(&apos;MODELPARAM_VALUE.BYTE_SIZE&apos;))) - 1)">3</spirit:left>
+            <spirit:left spirit:format="long" spirit:resolve="dependent" spirit:dependency="((spirit:decode(id(&apos;MODELPARAM_VALUE.RAM_WIDTH&apos;)) / 8) - 1)">3</spirit:left>
             <spirit:right spirit:format="long">0</spirit:right>
           </spirit:vector>
           <spirit:wireTypeDefs>
@@ -1720,7 +1720,7 @@
         <spirit:wire>
           <spirit:direction>in</spirit:direction>
           <spirit:vector>
-            <spirit:left spirit:format="long" spirit:resolve="dependent" spirit:dependency="((spirit:decode(id(&apos;MODELPARAM_VALUE.RAM_WIDTH&apos;)) / spirit:decode(id(&apos;MODELPARAM_VALUE.BYTE_SIZE&apos;))) - 1)">3</spirit:left>
+            <spirit:left spirit:format="long" spirit:resolve="dependent" spirit:dependency="((spirit:decode(id(&apos;MODELPARAM_VALUE.RAM_WIDTH&apos;)) / 8) - 1)">3</spirit:left>
             <spirit:right spirit:format="long">0</spirit:right>
           </spirit:vector>
           <spirit:wireTypeDefs>
@@ -2205,14 +2205,14 @@
         <spirit:value spirit:format="long" spirit:minimum="0" spirit:maximum="0" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DATA_PORT_TYPE">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter xsi:type="spirit:nameValueTypeType" spirit:dataType="integer">
+        <spirit:name>WRITE_FIRST_MODE</spirit:name>
+        <spirit:displayName>Write first (0 = Read first)</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:minimum="0" spirit:maximum="1" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.WRITE_FIRST_MODE">0</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter xsi:type="spirit:nameValueTypeType" spirit:dataType="integer">
         <spirit:name>RAM_WIDTH</spirit:name>
         <spirit:displayName>Ram Width</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.RAM_WIDTH">32</spirit:value>
-      </spirit:modelParameter>
-      <spirit:modelParameter spirit:dataType="integer">
-        <spirit:name>BYTE_SIZE</spirit:name>
-        <spirit:displayName>Byte Size</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.BYTE_SIZE">8</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>SIZE</spirit:name>
@@ -2230,21 +2230,17 @@
     <spirit:fileSet>
       <spirit:name>xilinx_anylanguagesynthesis_view_fileset</spirit:name>
       <spirit:file>
-        <spirit:name>src/utils.vhd</spirit:name>
+        <spirit:name>src/idram_utils.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
         <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>src/bram_xilinx.vhd</spirit:name>
+        <spirit:name>src/tdp_ram_behav.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
         <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>src/constants_pkg.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>src/components.vhd</spirit:name>
+        <spirit:name>src/idram_components.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
         <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
       </spirit:file>
@@ -2253,7 +2249,7 @@
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>src/idram_xilinx.vhd</spirit:name>
+        <spirit:name>src/idram_behav.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
         <spirit:userFileType>CHECKSUM_c920ec41</spirit:userFileType>
       </spirit:file>
@@ -2261,21 +2257,17 @@
     <spirit:fileSet>
       <spirit:name>xilinx_anylanguagebehavioralsimulation_view_fileset</spirit:name>
       <spirit:file>
-        <spirit:name>src/utils.vhd</spirit:name>
+        <spirit:name>src/idram_utils.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
         <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>src/bram_xilinx.vhd</spirit:name>
+        <spirit:name>src/tdp_ram_behav.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
         <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>src/constants_pkg.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>src/components.vhd</spirit:name>
+        <spirit:name>src/idram_components.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
         <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
       </spirit:file>
@@ -2284,7 +2276,7 @@
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>src/idram_xilinx.vhd</spirit:name>
+        <spirit:name>src/idram_behav.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
     </spirit:fileSet>
@@ -2311,14 +2303,14 @@
       <spirit:value spirit:format="long" spirit:minimum="0" spirit:maximum="0" spirit:resolve="user" spirit:id="PARAM_VALUE.DATA_PORT_TYPE">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
+      <spirit:name>WRITE_FIRST_MODE</spirit:name>
+      <spirit:displayName>Write first (0 = Read first)</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:minimum="0" spirit:maximum="1" spirit:resolve="user" spirit:id="PARAM_VALUE.WRITE_FIRST_MODE">0</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
       <spirit:name>RAM_WIDTH</spirit:name>
       <spirit:displayName>Ram Width</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.RAM_WIDTH">32</spirit:value>
-    </spirit:parameter>
-    <spirit:parameter>
-      <spirit:name>BYTE_SIZE</spirit:name>
-      <spirit:displayName>Byte Size</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.BYTE_SIZE">8</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>Component_Name</spirit:name>

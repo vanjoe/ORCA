@@ -1,6 +1,3 @@
-[submodule "tools/riscv-toolchain/riscv-tools"]
-	path = tools/riscv-toolchain/riscv-tools
-	url = https://github.com/riscv/riscv-tools.git
 [submodule "tools/riscv-toolchain/riscv-gnu-toolchain"]
 	path = tools/riscv-toolchain/riscv-gnu-toolchain
 	url = https://github.com/riscv/riscv-gnu-toolchain
@@ -10,3 +7,6 @@
 [submodule "scripts"]
 	path = scripts
 	url = /nfs/data/git/scripts.git/
+[submodule "software/riscv-tests"]
+	path = software/riscv-tests
+	url = https://github.com/riscv/riscv-tests

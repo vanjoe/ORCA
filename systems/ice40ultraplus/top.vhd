@@ -508,20 +508,19 @@ begin
 
     rv : component orca
       generic map (
-        REGISTER_SIZE        => REGISTER_SIZE,
-        RESET_VECTOR         => x"00000000",
-        WISHBONE_ENABLE      => 1,
-        MULTIPLY_ENABLE      => 1,
-        DIVIDE_ENABLE        => 0,
-        POWER_OPTIMIZED      => 1,
-        SHIFTER_MAX_CYCLES   => 32,
-        COUNTER_LENGTH       => 32,
-        PIPELINE_STAGES      => 4,
-        LVE_ENABLE           => 1,
-        ENABLE_EXCEPTIONS    => 0,
-        NUM_EXT_INTERRUPTS   => 2,
-        SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
-        FAMILY               => "LATTICE")
+        REGISTER_SIZE         => REGISTER_SIZE,
+        RESET_VECTOR          => x"00000000",
+        WISHBONE_AUX          => 1,
+        MULTIPLY_ENABLE       => 1,
+        DIVIDE_ENABLE         => 0,
+        POWER_OPTIMIZED       => 0,
+        SHIFTER_MAX_CYCLES    => 32,
+        COUNTER_LENGTH        => 32,
+        PIPELINE_STAGES       => 4,
+        LVE_ENABLE            => 1,
+        ENABLE_EXCEPTIONS     => 0,
+        SCRATCHPAD_ADDR_BITS  => log2(SCRATCHPAD_SIZE),
+        FAMILY                => "LATTICE")
       port map(
 
         clk            => clk,
@@ -564,19 +563,19 @@ begin
   WITHOUT_LVE : if USE_LVE = 0 generate
     rv : component orca
       generic map (
-        REGISTER_SIZE        => REGISTER_SIZE,
-        RESET_VECTOR         => x"00000000",
-        WISHBONE_ENABLE      => 1,
-        MULTIPLY_ENABLE      => 1,
-        DIVIDE_ENABLE        => 0,
-        SHIFTER_MAX_CYCLES   => 32,
-        COUNTER_LENGTH       => 32,
-        PIPELINE_STAGES      => 4,
-        LVE_ENABLE           => 0,
-        ENABLE_EXCEPTIONS    => 0,
-        NUM_EXT_INTERRUPTS   => 2,
-        SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
-        FAMILY               => "LATTICE")
+        REGISTER_SIZE         => REGISTER_SIZE,
+        RESET_VECTOR          => x"00000000",
+        WISHBONE_AUX          => 1,
+        MULTIPLY_ENABLE       => 1,
+        DATA_REQUEST_REGISTER => 0,
+        DIVIDE_ENABLE         => 0,
+        SHIFTER_MAX_CYCLES    => 32,
+        COUNTER_LENGTH        => 32,
+        PIPELINE_STAGES       => 4,
+        LVE_ENABLE            => 0,
+        ENABLE_EXCEPTIONS     => 0,
+        SCRATCHPAD_ADDR_BITS  => log2(SCRATCHPAD_SIZE),
+        FAMILY                => "LATTICE")
       port map(
 
         clk            => clk,

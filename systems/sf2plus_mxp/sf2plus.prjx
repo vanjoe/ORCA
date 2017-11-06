@@ -1595,12 +1595,12 @@ STATE="utd"
 TIME="1504030848"
 SIZE="11509"
 ENDFILE
-VALUE "<project>/hdl/a4l_instruction_master.vhd,hdl"
+VALUE "<project>/hdl/a4l_master.vhd,hdl"
 STATE="utd"
 TIME="1504030848"
-SIZE="2153"
+SIZE="8775"
 ENDFILE
-VALUE "<project>/hdl/a4l_master.vhd,hdl"
+VALUE "<project>/hdl/axi_master.vhd,hdl"
 STATE="utd"
 TIME="1504030848"
 SIZE="8775"
@@ -1825,7 +1825,7 @@ STATE="utd"
 TIME="1498835702"
 SIZE="11507"
 ENDFILE
-VALUE "<project>/hdl/icache.vhd,hdl"
+VALUE "<project>/hdl/cache_controller.vhd,hdl"
 STATE="utd"
 TIME="1504030848"
 SIZE="13413"
@@ -2756,9 +2756,9 @@ SmartDesign;Top_Fabric_Master;0
 ACTIVEVIEW;Top_Fabric_Master
 ENDLIST
 LIST ModuleSubBlockList
-LIST "a4l_instruction_master::work::rv_components","hdl/a4l_instruction_master.vhd","FALSE","FALSE"
-ENDLIST
 LIST "a4l_master::work::rv_components","hdl/a4l_master.vhd","FALSE","FALSE"
+ENDLIST
+LIST "axi_master::work::rv_components","hdl/axi_master.vhd","FALSE","FALSE"
 ENDLIST
 LIST "absv_unit::work::component_pkg","hdl/absv_unit.vhd","FALSE","FALSE"
 ENDLIST
@@ -3091,7 +3091,7 @@ SUBBLOCK "falling_edge_sig::work","hdl/falling_edge_sig.vhd","FALSE","FALSE"
 SUBBLOCK "input_registration::work","hdl/input_registration.vhd","FALSE","FALSE"
 SUBBLOCK "rising_edge_sig::work","hdl/rising_edge_sig.vhd","FALSE","FALSE"
 ENDLIST
-LIST "icache::work::rv_components","hdl/icache.vhd","FALSE","FALSE"
+LIST "cache_controller::work::rv_components","hdl/cache_controller.vhd","FALSE","FALSE"
 SUBBLOCK "cache::work::rv_components","hdl/cache.vhd","FALSE","FALSE"
 ENDLIST
 LIST "idram::work","","FALSE","FALSE"
@@ -3191,10 +3191,10 @@ ENDLIST
 LIST "nios_ci_handler::work::component_pkg","hdl/nios_ci_handler.vhd","FALSE","FALSE"
 ENDLIST
 LIST "orca::work::rv_components","hdl/orca.vhd","FALSE","FALSE"
-SUBBLOCK "a4l_instruction_master::work::rv_components","hdl/a4l_instruction_master.vhd","FALSE","FALSE"
 SUBBLOCK "a4l_master::work::rv_components","hdl/a4l_master.vhd","FALSE","FALSE"
+SUBBLOCK "axi_master::work::rv_components","hdl/axi_master.vhd","FALSE","FALSE"
 SUBBLOCK "cache_mux::work::rv_components","hdl/cache_mux.vhd","FALSE","FALSE"
-SUBBLOCK "icache::work::rv_components","hdl/icache.vhd","FALSE","FALSE"
+SUBBLOCK "cache_controller::work::rv_components","hdl/cache_controller.vhd","FALSE","FALSE"
 SUBBLOCK "orca_core::work::rv_components","hdl/orca_core.vhd","FALSE","FALSE"
 ENDLIST
 LIST "orca_core::work::rv_components","hdl/orca_core.vhd","FALSE","FALSE"
@@ -3259,8 +3259,8 @@ ENDLIST
 LIST "RoundRobinArb::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4CrossBar/RoundRobinArb.v","FALSE","FALSE"
 ENDLIST
 LIST "rv_components::work","hdl/components.vhd","FALSE","FALSE"
-SUBBLOCK "a4l_instruction_master::work::rv_components","hdl/a4l_instruction_master.vhd","FALSE","FALSE"
 SUBBLOCK "a4l_master::work::rv_components","hdl/a4l_master.vhd","FALSE","FALSE"
+SUBBLOCK "axi_master::work::rv_components","hdl/axi_master.vhd","FALSE","FALSE"
 SUBBLOCK "arithmetic_unit::work::rv_components","hdl/alu.vhd","FALSE","FALSE"
 SUBBLOCK "bram_microsemi::work::rv_components","hdl/bram_microsemi.vhd","FALSE","FALSE"
 SUBBLOCK "bram_tdp_behav::work","","FALSE","FALSE"
@@ -3270,7 +3270,7 @@ SUBBLOCK "cache::work::rv_components","hdl/cache.vhd","FALSE","FALSE"
 SUBBLOCK "cache_mux::work::rv_components","hdl/cache_mux.vhd","FALSE","FALSE"
 SUBBLOCK "decode::work::rv_components","hdl/decode.vhd","FALSE","FALSE"
 SUBBLOCK "execute::work::rv_components","hdl/execute.vhd","FALSE","FALSE"
-SUBBLOCK "icache::work::rv_components","hdl/icache.vhd","FALSE","FALSE"
+SUBBLOCK "cache_controller::work::rv_components","hdl/cache_controller.vhd","FALSE","FALSE"
 SUBBLOCK "idram::work","","FALSE","FALSE"
 SUBBLOCK "idram_xilinx::work","","FALSE","FALSE"
 SUBBLOCK "instruction_fetch::work::rv_components","hdl/instruction_fetch.vhd","FALSE","FALSE"

@@ -1,3 +1,7 @@
+#Optionally add sources here/set SW_PROJECT variable
+-include config.mk
+-include ../config.mk
+
 all:
 AS_SRCS=crt.S
 
@@ -29,28 +33,31 @@ $(C_OBJ_FILES): obj/%.c.o : %.c
 $(S_OBJ_FILES): obj/%.S.o : %.S
 	$(CC) $(CFLAGS) -c $< -o $@
 
-LD_SCRIPT=link.ld
+LD_SCRIPT=../link.ld
 LIBC=
 
 $(TARGET).elf: $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
 	$(CC) -T $(LD_SCRIPT) $(S_OBJ_FILES)  $(C_OBJ_FILES)  -o $@ $(LD_FLAGS)
-	$(OBJDUMP)   -D test.elf > test.dump
+	$(MAKE) $(TARGET).dump
+ $(TARGET).dump: $(TARGET).elf
+	$(OBJDUMP) -D $(TARGET).elf > $(TARGET).dump
 $(TARGET).bin: $(TARGET).elf
 	$(OBJCOPY) -O binary $< $@
-$(TARGET).hex: $(TARGET).elf
-	../../../tools/elf2hex.sh test.elf
-	cp test.qex ../test.hex
-
+$(TARGET).hex: $(TARGET).bin
+	python ../../../tools/bin2hex.py -o $@ $<
 $(TARGET).mem: $(TARGET).bin
 	 head -c $$((0x100)) /dev/zero | cat - $< | xxd -g1 -c4 | awk '{print $$5$$4$$3$$2}' > $@
 
-.phony:all clean
 ifndef FORMAT
 FORMAT=elf
 endif
-all: $(TARGET).$(FORMAT) $(TARGET).hex $(TARGET).mem
+.PHONY: all
+all: $(TARGET).$(FORMAT) $(TARGET).mem
 
+.PHONY: clean
 clean:
-	rm -rf obj test.elf test.dump test.bin test.hex test.mif test.mem test.qex
+	rm -rf obj $(TARGET).elf $(TARGET).dump $(TARGET).bin $(TARGET).mif $(TARGET).mem
 
 -include $(wildcard obj/*.d)
+
+.DELETE_ON_ERROR:

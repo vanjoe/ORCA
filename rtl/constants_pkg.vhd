@@ -6,9 +6,11 @@ library work;
 use work.utils.all;
 
 package constants_pkg is
+  constant SIGN_EXTENSION_SIZE : positive := 20;
+  constant INSTRUCTION_SIZE    : integer  := 32;
 
   --REGISTER NAMES
-  constant REGISTER_NAME_SIZE : integer := 5;
+  constant REGISTER_NAME_SIZE : positive := 5;
 
   constant REGISTER_ZERO : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(0, REGISTER_NAME_SIZE);
   constant REGISTER_RA   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(1, REGISTER_NAME_SIZE);
@@ -65,10 +67,6 @@ package constants_pkg is
   constant LVE_OP     : std_logic_vector(6 downto 0) := CUSTOM0_OP;
   constant BRANCH_OP  : std_logic_vector(6 downto 0) := "1100011";
 
-
-  constant INSTRUCTION_SIZE : integer := 32;
-
-
   constant OP_IMM_IMMEDIATE_SIZE : integer                        := 12;
   constant CSR_ZIMM              : std_logic_vector(19 downto 15) := (others => '0');
   constant JAL                   : std_logic_vector(6 downto 0)   := "1101111";
@@ -120,7 +118,6 @@ package constants_pkg is
   constant BGEU_OP     : std_logic_vector(2 downto 0)   := "111";
 
   --Load store  func3 instr(14 downto 12)
-
   constant BYTE_SIZE   : std_logic_vector(2 downto 0) := "000";
   constant HALF_SIZE   : std_logic_vector(2 downto 0) := "001";
   constant WORD_SIZE   : std_logic_vector(2 downto 0) := "010";
@@ -139,7 +136,6 @@ package constants_pkg is
   constant OR_OP   : std_logic_vector(2 downto 0) := "110";
   constant AND_OP  : std_logic_vector(2 downto 0) := "111";
 
-
   --multipy func3
   constant MUL_OP    : std_logic_vector(2 downto 0) := "000";
   constant MULH_OP   : std_logic_vector(2 downto 0) := "001";
@@ -154,7 +150,7 @@ package constants_pkg is
   constant SUB_f7 : std_logic_vector(6 downto 0) := "0100000";
   constant ALU_f7 : std_logic_vector(6 downto 0) := "0000000";
 
-  constant FENCE_I_BITS : std_logic_vector(31 downto 7) := x"0000"&"00010"&x"0";
+  constant FENCE_I_BITS : std_logic_vector(31 downto 7) := x"0000" & "00010" & x"0";
 
   constant LVE_VCMV_Z_FUNC3  : std_logic_vector(2 downto 0) := "011";
   constant LVE_VCMV_NZ_FUNC3 : std_logic_vector(2 downto 0) := "100";

@@ -2,7 +2,7 @@
 #define ORCA_TIME_H
 #include <stdint.h>
 
-#define SYS_CLK 12500000
+#define SYS_CLK 50000000
 
 inline uint32_t get_time();
 

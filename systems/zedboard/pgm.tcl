@@ -1,17 +1,22 @@
-#Connect and reset
-connect arm hw
-stop
-rst -srst
+#Connect
+connect
 
-#source ps7_init.tcl
-source [lindex $argv 1]
+#If there's a PS target, set it up
+set nops [catch { target -set -filter {name =~ "ARM*#1"} } ]
+if { !$nops } {
+    catch { stop } error
+    rst -srst
 
-#Initialize processing system
-ps7_init
-ps7_post_config
-rst -processor
-dow [lindex $argv 2]
-#con
+    #source ps7_init.tcl
+    source [lindex $argv 1]
 
-#program bitstream
-fpga -f [lindex $argv 0]
+    #Initialize processing system
+    ps7_init
+    ps7_post_config
+    dow [lindex $argv 2]
+    #con
+}
+
+#Program the bitstream
+target -set -filter {name =~ "xc7z*"}
+fpga [lindex $argv 0]

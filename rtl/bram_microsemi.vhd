@@ -8,8 +8,7 @@ use work.utils.all;
 entity bram_microsemi is
   generic (
     RAM_DEPTH : integer := 1024;        -- this is the maximum
-    RAM_WIDTH : integer := 32;
-    BYTE_SIZE : integer := 8
+    RAM_WIDTH : integer := 32
     );
   port (
     clk : in std_logic;
@@ -17,19 +16,19 @@ entity bram_microsemi is
     address  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
     data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
     we       : in  std_logic;
-    be       : in  std_logic_vector((RAM_WIDTH/BYTE_SIZE)-1 downto 0);
+    be       : in  std_logic_vector((RAM_WIDTH/8)-1 downto 0);
     readdata : out std_logic_vector(RAM_WIDTH-1 downto 0);
 
     data_address  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
     data_data_in  : in  std_logic_vector(RAM_WIDTH-1 downto 0);
     data_we       : in  std_logic;
-    data_be       : in  std_logic_vector((RAM_WIDTH/BYTE_SIZE)-1 downto 0);
+    data_be       : in  std_logic_vector((RAM_WIDTH/8)-1 downto 0);
     data_readdata : out std_logic_vector(RAM_WIDTH-1 downto 0)
     );
 end entity bram_microsemi;
 
 architecture rtl of bram_microsemi is
-  type ram_type is array (RAM_DEPTH-1 downto 0) of std_logic_vector(BYTE_SIZE-1 downto 0);
+  type ram_type is array (RAM_DEPTH-1 downto 0) of std_logic_vector(8-1 downto 0);
 
   signal ram3              : ram_type := (others => (others => '0'));
   signal byte_we3          : std_logic;

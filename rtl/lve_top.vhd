@@ -22,11 +22,11 @@ entity lve_top is
     instruction    : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     valid_instr    : in  std_logic;
     stall_out      : out std_logic;
-    stall_to_lve   : in  std_logic;
+
     rs1_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs3_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_data        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+--    wb_data        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
     slave_read_en  : in  std_logic;

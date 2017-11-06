@@ -54,94 +54,178 @@ ZEDBOARD_UART_CFG = Xil_Uart_Cfg('/dev/ttyACM0', 115200)
 M2S150_UART_CFG = Mcsm_Uart_Cfg('/dev/ttyUSB2', 115200)
 
 TEST_IGNORE_LIST = [
-    'unit_test',
-    'rv32mi*',
-    'rv32si*',
-    'rv32ua*',
-    'rv32uc*',
-    'rv32uf*',
-    'rv32um*',
-    'rv32ui-p-sw',
-    'rv32ui-p-b*',
-    'rv32ui-p-a*',
-    'rv32ui-p-f*',
-#    'rv32ui-p-j*',
-    'rv32ui-p-l*',
-    'rv32ui-p-o*',
-    'rv32ui-p-s*',
-    'rv32ui-p-x*'
+    #Should probably work but don't yet
+    'rv.*-fence_i',           #FENCE.I
+
+    #Should work on LVE systems (untested)
+    'rv.*-vbx_test',          #LVE (VBX)
+    'rv.*-cmov_test',         #LVE CMOV (VBX)
+    
+    #Requires traps that aren't set up (may also be unsupported and/or broken)
+    'rv.*-interrupt_test',    #Interrupt test (VBX)
+    'rv.*-illegal',           #Illegal instructions
+    'rv.*-ma_fetch',          #Misaligned instruction fetch
+    'rv.*-scall',             #Syscall trap
+    'rv.*-shamt',             #slli with shamt[4/5] illegal instruction
+
+    #May someday be supported
+    'rv.*-csr',               #CSRs; we do not support them all
+    'rv.*-ma_addr',           #Misaligned addresses; not yet supported but should be as a parameter
+    'rv.*-rvc',               #Compressed instruction corner cases
+    
+    #Will likely never be supported
+    'rv.*-mcsr',              #M-mode CSRs; not supported
+    'rv.*-sbreak',            #Syscall breakpoint; not supported
+    'rv.*-dirty',             #VM referenced/dirty bits
+    'rv.*-amo.*_w',            #Atomic instructions
+    'rv.*-lrsc',              #Load reserved/store conditional
+    'rv32uf-.*',              #Floating point
 ]
 
 ORCA_BUILDS = \
-    [Alt_Orca_BuildCfg(system='de2-115',
-                       reset_vector=0,
-                       interrupt_vector=0x200,
-                       multiply_enable=1,
-                       divide_enable=1,
-                       shifter_max_cycles=1,
-                       counter_length=64,
-                       enable_exceptions=1,
-                       branch_predictors=0,
-                       pipeline_stages=5,
-                       lve_enable=0,
-                       enable_ext_interrupts=0,
-                       num_ext_interrupts=1,
-                       scratchpad_addr_bits=10,
-                       iuc_addr_base=0,
-                       iuc_addr_last=0,
-                       icache_size=0,
-                       icache_line_size=16,
-                       icache_external_width=32,
-                       icache_burst_en=0,
-                       power_optimized=0),
-
-     Xil_Orca_BuildCfg(system='zedboard',
-                       reset_vector=0xC0000000,
-                       interrupt_vector=0xC0000200,
-                       multiply_enable=1,
-                       divide_enable=1,
-                       shifter_max_cycles=1,
-                       counter_length=64,
-                       enable_exceptions=1,
-                       branch_predictors=0,
-                       pipeline_stages=5,
-                       lve_enable=0,
-                       enable_ext_interrupts=0,
-                       num_ext_interrupts=1,
-                       scratchpad_addr_bits=10,
-                       iuc_addr_base=0x80000000,
-                       iuc_addr_last=0xFFFFFFFF,
-                       icache_size=8192,
-                       icache_line_size=16,
-                       icache_external_width=32,
-                       icache_burst_en=1,
-                       power_optimized=0,
-                       zynq='arm',
-                       vivado=True,
-                       uart_cfg=ZEDBOARD_UART_CFG),
-
-     Mcsm_Orca_BuildCfg(system='sf2plus',
-                        reset_vector=0,
-                        interrupt_vector=0x200,
-                        multiply_enable=1,
-                        divide_enable=1,
-                        shifter_max_cycles=1,
-                        counter_length=64,
-                        enable_exceptions=1,
-                        branch_predictors=0,
-                        pipeline_stages=5,
-                        lve_enable=0,
-                        enable_ext_interrupts=0,
-                        num_ext_interrupts=1,
-                        scratchpad_addr_bits=10,
-                        iuc_addr_base=0,
-                        iuc_addr_last=0,
-                        icache_size=0,
-                        icache_line_size=16,
-                        icache_external_width=32,
-                        icache_burst_en=0,
-                        power_optimized=0,
-                        uart_cfg=M2S150_UART_CFG)]
+              [
+                  Alt_Orca_BuildCfg(system='de2-115',
+                                    reset_vector=0,
+                                    interrupt_vector=0x200,
+                                    max_ifetches_in_flight=3,
+                                    multiply_enable=1,
+                                    divide_enable=1,
+                                    shifter_max_cycles=1,
+                                    counter_length=32,
+                                    enable_exceptions=1,
+                                    pipeline_stages=5,
+                                    data_request_register=1,
+                                    data_return_register=1,
+                                    lve_enable=0,
+                                    enable_ext_interrupts=0,
+                                    num_ext_interrupts=1,
+                                    scratchpad_addr_bits=10,
+                                    iuc_addr_base=0,
+                                    iuc_addr_last=0,
+                                    iaux_addr_base=0,
+                                    iaux_addr_last=0,
+                                    icache_size=0,
+                                    icache_line_size=16,
+                                    icache_external_width=32,
+                                    icache_burst_en=0,
+                                    duc_addr_base=0,
+                                    duc_addr_last=0,
+                                    daux_addr_base=0,
+                                    daux_addr_last=0,
+                                    dcache_size=0,
+                                    dcache_line_size=16,
+                                    dcache_external_width=32,
+                                    dcache_burst_en=0,
+                                    power_optimized=0),
+                  Xil_Orca_BuildCfg(system='zedboard',
+                                    reset_vector=0xD0000000,
+                                    interrupt_vector=0xD0000200,
+                                    max_ifetches_in_flight=3,
+                                    multiply_enable=1,
+                                    divide_enable=1,
+                                    shifter_max_cycles=1,
+                                    counter_length=32,
+                                    enable_exceptions=1,
+                                    pipeline_stages=5,
+                                    data_request_register=2,
+                                    data_return_register=1,
+                                    lve_enable=0,
+                                    enable_ext_interrupts=0,
+                                    num_ext_interrupts=1,
+                                    scratchpad_addr_bits=10,
+                                    iuc_addr_base=0x00000000,
+                                    iuc_addr_last=0xFFFFFFFF,
+                                    iaux_addr_base=0x00000000,
+                                    iaux_addr_last=0x00000000,
+                                    icache_size=0,
+                                    icache_line_size=16,
+                                    icache_external_width=32,
+                                    icache_burst_en=1,
+                                    duc_addr_base=0x00000000,
+                                    duc_addr_last=0xFFFFFFFF,
+                                    daux_addr_base=0x00000000,
+                                    daux_addr_last=0x00000000,
+                                    dcache_size=0,
+                                    dcache_line_size=16,
+                                    dcache_external_width=32,
+                                    dcache_burst_en=1,
+                                    power_optimized=0,
+                                    zynq='arm',
+                                    vivado=True,
+                                    uart_cfg=ZEDBOARD_UART_CFG),
+                  Xil_Orca_BuildCfg(system='zedboard',
+                                    reset_vector=0xD0000000,
+                                    interrupt_vector=0xD0000200,
+                                    max_ifetches_in_flight=3,
+                                    multiply_enable=1,
+                                    divide_enable=1,
+                                    shifter_max_cycles=1,
+                                    counter_length=32,
+                                    enable_exceptions=1,
+                                    pipeline_stages=5,
+                                    data_request_register=2,
+                                    data_return_register=1,
+                                    lve_enable=0,
+                                    enable_ext_interrupts=0,
+                                    num_ext_interrupts=1,
+                                    scratchpad_addr_bits=10,
+                                    iuc_addr_base=0xE0000000,
+                                    iuc_addr_last=0xFFFFFFFF,
+                                    iaux_addr_base=0x00000000,
+                                    iaux_addr_last=0x00000000,
+                                    icache_size=0,
+                                    icache_line_size=16,
+                                    icache_external_width=32,
+                                    icache_burst_en=1,
+                                    duc_addr_base=0x00000000,
+                                    duc_addr_last=0xFFFFFFFF,
+                                    daux_addr_base=0x00000000,
+                                    daux_addr_last=0x00000000,
+                                    dcache_size=0,
+                                    dcache_line_size=16,
+                                    dcache_external_width=32,
+                                    dcache_burst_en=1,
+                                    power_optimized=0,
+                                    zynq='arm',
+                                    vivado=True,
+                                    uart_cfg=ZEDBOARD_UART_CFG),
+                  Xil_Orca_BuildCfg(system='zedboard',
+                                    reset_vector=0xD0000000,
+                                    interrupt_vector=0xD0000200,
+                                    max_ifetches_in_flight=3,
+                                    multiply_enable=1,
+                                    divide_enable=1,
+                                    shifter_max_cycles=1,
+                                    counter_length=32,
+                                    enable_exceptions=1,
+                                    pipeline_stages=5,
+                                    data_request_register=2,
+                                    data_return_register=1,
+                                    lve_enable=0,
+                                    enable_ext_interrupts=0,
+                                    num_ext_interrupts=1,
+                                    scratchpad_addr_bits=10,
+                                    iuc_addr_base=0x00000000,
+                                    iuc_addr_last=0x00000000,
+                                    iaux_addr_base=0x00000000,
+                                    iaux_addr_last=0xDFFFFFFF,
+                                    icache_size=0,
+                                    icache_line_size=16,
+                                    icache_external_width=32,
+                                    icache_burst_en=1,
+                                    duc_addr_base=0xE0000000,
+                                    duc_addr_last=0xFFFFFFFF,
+                                    daux_addr_base=0x00000000,
+                                    daux_addr_last=0xDFFFFFFF,
+                                    dcache_size=0,
+                                    dcache_line_size=16,
+                                    dcache_external_width=32,
+                                    dcache_burst_en=1,
+                                    power_optimized=0,
+                                    zynq='arm',
+                                    vivado=True,
+                                    uart_cfg=ZEDBOARD_UART_CFG),
+              ]
 
 
 BUILDS = ORCA_BUILDS
@@ -172,7 +256,7 @@ BUILDS = ORCA_BUILDS
 # QSF2 = QSFOpts('qsf2', [('PLACEMENT_EFFORT_MULTIPLIER', '2.0'),
 #                         ('FITTER_AGGRESSIVE_ROUTABILITY_OPTIMIZATION', 'ALWAYS')])
 # BUILDS = \
-#   [Alt_Mxp_BuildCfg('de4_230_dvi_b', 16, 8,  64,  4, 'BYTE', use_lic=True, qsf_opts=QSF1),
+    #   [Alt_Mxp_BuildCfg('de4_230_dvi_b', 16, 8,  64,  4, 'BYTE', use_lic=True, qsf_opts=QSF1),
 #    Alt_Mxp_BuildCfg('de4_230_dvi_b', 16, 8,  64,  4, 'BYTE', use_lic=True, qsf_opts=QSF2)]
 #
 # The build directories will be named
@@ -194,15 +278,15 @@ BUILDS = ORCA_BUILDS
 
 ###########################################################################
 # By default, all tests in software/test and software/hwtest are run.
-# You can specify a list of tests to ignore (not run). Glob-style
-# wildcards are allowed.
+# You can specify a list of tests to ignore (not run). Regular expressions
+# are allowed.
 #
 # TEST_IGNORE_LIST = [
-#     'test/*',
-#     'hwtest/stream*',
+#     'test/.*',
+#     'hwtest/stream.*',
 #     ]
 #
-# TEST_IGNORE_LIST = ['hwtest/*']
+# TEST_IGNORE_LIST = ['hwtest/.*']
 
 ###########################################################################
 # Optionally specify a test timeout value in seconds.

@@ -11,12 +11,8 @@ Once the HDL generation has completed, close Qsys, and reopen `system.qpf` in qu
 
 Now Run Processing->Start Compilation from the menubar, this should build
 
-### Software
-
-Build the software at `GIT_TOP/de2-115/software/` then with the script `GIT_TOP/tools/elf2hex.sh` convert the elf file to a hex file that quartus can
-understand. Copy that hex file to this directory and call it test.hex.
-
 ### Makefiles
 
-If you have created the test.hex in this directory as described in the above section, you should be able to simply run `make` in this directory and everything
+If you have created the test.hex in this directory as described in the above section,
+you should be able to simply run `make` in this directory and everything
 should build correctly and system.sof will be a bitstream able to download on a de2-115 developement board.

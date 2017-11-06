@@ -376,7 +376,7 @@ begin
   rv : component orca
     generic map (
       REGISTER_SIZE      => REGISTER_SIZE,
-      WISHBONE_ENABLE    => 1,
+      WISHBONE_AUX       => 1,
       MULTIPLY_ENABLE    => 1,
       DIVIDE_ENABLE      => 0,
       SHIFTER_MAX_CYCLES => 32,
@@ -384,7 +384,6 @@ begin
       PIPELINE_STAGES    => 4,
       LVE_ENABLE         => 0,
       ENABLE_EXCEPTIONS  => 0,
-      NUM_EXT_INTERRUPTS => 2,
       FAMILY             => "LATTICE")
     port map(
 
