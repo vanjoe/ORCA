@@ -175,7 +175,9 @@ begin
 
         srca_ptr   <= srca_ptr_next;
         srcb_ptr   <= srcb_ptr_next;
+
         enum_value <= enum_value +1;
+
         if elems_left_read /= 0 then
           elems_left_read <= elems_left_read -1;
         else
@@ -248,8 +250,8 @@ begin
   dest_ptr_next <= dest_ptr+CONDITIONAL(acc_enable = '1', 0, 4) when elems_left_write /= 0 else
                    dest_row_ptr+dest_incr;
 
-  stall_out     <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector;
-  lve_executing <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and not first_elem;
+  lve_executing     <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector;
+  --lve_executing <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and not first_elem;
 
 
   wr_data_ready <= (mov_result_valid or lve_alu_result_valid or ci_valid_out) and not done_write;

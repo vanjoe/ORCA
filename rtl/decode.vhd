@@ -184,7 +184,7 @@ begin
   one_cycle : if PIPELINE_STAGES = 1 generate
     rs1 <= to_decode_instruction(19 downto 15) when stall = '0' else instr_out_int(19 downto 15);
     rs2 <= to_decode_instruction(24 downto 20) when stall = '0' else instr_out_int(24 downto 20);
-    rs2 <= to_decode_instruction(REGISTER_RD'range) when stall = '0' else instr_out_int(REGISTER_RD'range);
+    rs3 <= to_decode_instruction(REGISTER_RD'range) when stall = '0' else instr_out_int(REGISTER_RD'range);
 
     decode_flushed <= not to_decode_valid;
     decode_stage : process (clk) is

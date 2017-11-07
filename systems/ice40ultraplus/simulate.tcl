@@ -1,5 +1,5 @@
 
-proc com {} {
+proc com { args } {
     set fileset [list \
                      ../../rtl/utils.vhd                \
                      ../../rtl/constants_pkg.vhd        \
@@ -79,14 +79,31 @@ proc com {} {
 
 
     vlib work
+	 set compiletime_file "work/compile_time"
+	 if { [file exists $compiletime_file  ] } {
+		  set fp [open $compiletime_file "r" ]
+		  set last_compile_time [read $fp ]
+	 } else {
+		  set last_compile_time 0
+	 }
+	 #if -f in args, recompile all
+	 if { [string first "-f" $args ] >= 0 } {
+		  set last_compile_time 0
+	 }
 
     foreach f $fileset {
-        if { [file extension $f ] == ".v" } {
-            vlog -work work -stats=none $f
-        } else {
-            vcom -work work -2002 -explicit $f
-        }
+		  if { [file mtime $f] > $last_compile_time } {
+				if { [file extension $f ] == ".v" } {
+					 vlog -work work -stats=none $f
+				} else {
+					 vcom -work work -2002 -explicit $f
+				}
+		  }
     }
+	 set fp [open $compiletime_file "w"]
+	 puts $fp [clock seconds]
+	 close $fp
+
 }
 
 proc wave_LVE { } {
