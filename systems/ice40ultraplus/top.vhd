@@ -463,6 +463,8 @@ begin
 
 --arbiter for scratchpad port
   arbiter : component wb_arbiter
+    generic map (
+      WAIT_FOR_WRITE_ACK => "100")
     port map (
       CLK_I => clk,
       RST_I => reset,
@@ -756,39 +758,41 @@ begin
   instr_ack_i   <= not uart_stall and mem_instr_ack;
 
   --dma controller for reading blocks of flash
-  the_spi : wb_flash_dma
-    generic map(
-      MAX_LENGTH => 128*1024)
-    port map(
-      clk_i         => clk,
-      rst_i         => reset,
-      slave_ADR_I   => spi_adr_i(3 downto 0),
-      slave_DAT_O   => spi_dat_o,
-      slave_DAT_I   => spi_DAT_I,
-      slave_WE_I    => spi_WE_I,
-      slave_SEL_I   => spi_SEL_I,
-      slave_STB_I   => spi_STB_I,
-      slave_ACK_O   => spi_ACK_O,
-      slave_CYC_I   => spi_CYC_I,
-      slave_CTI_I   => spi_CTI_I,
-      slave_STALL_O => spi_STALL_O,
+  -- the_spi : wb_flash_dma
+  --   generic map(
+  --     MAX_LENGTH => 128*1024)
+  --   port map(
+  --     clk_i         => clk,
+  --     rst_i         => reset,
+  --     slave_ADR_I   => spi_adr_i(3 downto 0),
+  --     slave_DAT_O   => spi_dat_o,
+  --     slave_DAT_I   => spi_DAT_I,
+  --     slave_WE_I    => spi_WE_I,
+  --     slave_SEL_I   => spi_SEL_I,
+  --     slave_STB_I   => spi_STB_I,
+  --     slave_ACK_O   => spi_ACK_O,
+  --     slave_CYC_I   => spi_CYC_I,
+  --     slave_CTI_I   => spi_CTI_I,
+  --     slave_STALL_O => spi_STALL_O,
 
-      master_ADR_O   => spi_sp_ADR_O,
-      master_DAT_I   => spi_sp_DAT_I,
-      master_DAT_O   => spi_sp_DAT_O,
-      master_WE_O    => spi_sp_WE_O,
-      master_SEL_O   => spi_sp_SEL_O,
-      master_STB_O   => spi_sp_STB_O,
-      master_ACK_I   => spi_sp_ACK_I,
-      master_CYC_O   => spi_sp_CYC_O,
-      master_CTI_O   => spi_sp_CTI_O,
-      master_STALL_I => spi_sp_STALL_I,
+  --     master_ADR_O   => spi_sp_ADR_O,
+  --     master_DAT_I   => spi_sp_DAT_I,
+  --     master_DAT_O   => spi_sp_DAT_O,
+  --     master_WE_O    => spi_sp_WE_O,
+  --     master_SEL_O   => spi_sp_SEL_O,
+  --     master_STB_O   => spi_sp_STB_O,
+  --     master_ACK_I   => spi_sp_ACK_I,
+  --     master_CYC_O   => spi_sp_CYC_O,
+  --     master_CTI_O   => spi_sp_CTI_O,
+  --     master_STALL_I => spi_sp_STALL_I,
 
-      spi_mosi => spi_mosi,
-      spi_miso => spi_miso,
-      spi_ss   => spi_ss,
-      spi_sclk => spi_sclk
-      );
+  --     spi_mosi => spi_mosi,
+  --     spi_miso => spi_miso,
+  --     spi_ss   => spi_ss,
+  --     spi_sclk => spi_sclk
+  --     );
+  spi_sp_STB_O <= '0';
+  spi_sp_CYC_O <= '0';
 
   the_sccb_pio : wb_pio
     generic map (

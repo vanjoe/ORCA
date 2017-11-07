@@ -116,7 +116,8 @@ package top_component_pkg is
 
   component wb_arbiter is
     generic (
-      DATA_WIDTH : integer := 32
+      DATA_WIDTH : integer := 32;
+      WAIT_FOR_WRITE_ACK : std_logic_vector(2 downto 0) := "000"
       );
     port (
       CLK_I : in std_logic;
