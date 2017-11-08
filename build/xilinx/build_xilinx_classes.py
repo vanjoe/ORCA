@@ -571,7 +571,13 @@ class Xil_Orca_BuildCfg(Orca_BuildCfgBase):
         self.dsp48 = '?'
 
         re_orca_resource = re.compile(r'\|\s+orca\s+\| .+ \|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|')
-        resource_file = open(resource_rpt, 'r')
+
+        try:
+            resource_file = open(resource_rpt, 'r')
+        except IOError:
+            logging.error("Error: parse_resource_rpt_vivado: Resource report not found for build %s", self.build_id)
+            return
+
         resource_text = resource_file.read()
         resource_file.close()
 
@@ -975,7 +981,7 @@ class Xil_Orca_SWTest(Orca_SWTest):
         success = False
         timeout_length = 300
 
-        while True:
+        while (tries_remaining > 0) and (not success):
             start_time = timeit.default_timer()
             pgm_process = subprocess.Popen(pgm_cmd, shell=True)
 
@@ -998,13 +1004,9 @@ class Xil_Orca_SWTest(Orca_SWTest):
                     break
 
 
-            if success:
-                break 
-
-            if tries_remaining == 0:
-                logging.info('Out of attempts to perform JTAG initialization.')
-                logging.info('PLEASE POWER CYCLE THE BOARD, '
-                             'THEN PRESS ENTER TO CONTINUE: ')
+        if tries_remaining <= 0:
+            logging.info('Out of attempts to perform JTAG initialization.')
+            return -1
 
         #Run minterm for one second to catch any previous output
         uart_cfg = self.build_cfg.uart_cfg
