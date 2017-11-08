@@ -4,7 +4,7 @@
 #include "base64.h"
 #include "sccb.h"
 
-#define USE_CAM_IMG 1
+#define USE_CAM_IMG 0
 #define PRINT_B64_IMG 0
 #define STRETCH_TO_1S 1
 
@@ -89,6 +89,7 @@ void run_network(layer_t *cifar, const int verbose)
 				v_outb = (vbx_ubyte_t*)SP84;
 			}
 			convolution_ci_lve(v_outb, v_padb, &(cifar[l].conv), 0);
+			debug(v_outb[3]);
 			if (cifar[l].conv.last) break;
 		} else {
 			if(verbose){
@@ -163,11 +164,8 @@ void cifar_lve() {
 	printf("CES demo\r\n");
 	printf("Lattice\r\n");
 
-		//wait while initializing
-	while(FLASH_DMA_BASE[FLASH_DMA_STATUS] & 0x80000000){
-		printf("waiting for Flash initialization\r\n");
-	}
-
+	//wait while initializing
+	flash_dma_init();
 	init_lve();
 	//enable output on LED
 	SCCB_PIO_BASE[PIO_ENABLE_REGISTER] |= (1<<PIO_LED_BIT);

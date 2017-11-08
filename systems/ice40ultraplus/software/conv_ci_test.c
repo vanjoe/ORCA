@@ -141,10 +141,9 @@ int test_convolve()
 	for(i=0;i<(sizeof(output_map_check)/sizeof(output_map_check[0]));i++){
 		v_output_map[i]=0;
 	}
-	flash_dma_trans(flash_dma_addr,(void*) v_dma_dest,flash_dma_size);
+	//flash_dma_trans(flash_dma_addr,(void*) v_dma_dest,flash_dma_size);
 	vbx_convolve(v_input_map,v_output_map,INPUT_MAP_SIZE,sample_weight);
-	while(!flash_dma_done());
-
+	//while(!flash_dma_done());
 
 	int errors=0;
 	if(PRINT_MAPS){

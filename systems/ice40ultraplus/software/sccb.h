@@ -24,10 +24,21 @@
 #define PIO_DATA_REGISTER   0
 #define PIO_ENABLE_REGISTER 1
 
-#define SCCB_PIO_BASE   ((unsigned *)0x06000000)
+#define SCCB_PIO_BASE   ((volatile uint32_t *)0x06000000)
 
-void sccb_init(void *pioBase);
-void sccb_write(void *pioBase, uint8_t slaveAddress, uint8_t subAddress, uint8_t data);
-uint8_t sccb_read(void *pioBase, uint8_t slaveAddress, uint8_t subAddress);
+void sccb_init(volatile void *pioBase);
+void sccb_write(volatile void *pioBase, uint8_t slaveAddress, uint8_t subAddress, uint8_t data);
+uint8_t sccb_read(volatile void *pioBase, uint8_t slaveAddress, uint8_t subAddress);
+
+
+
+static inline void led_on()
+{
+		SCCB_PIO_BASE[PIO_ENABLE_REGISTER] &= ~(1<<PIO_LED_BIT);
+}
+static inline void led_off()
+{
+		SCCB_PIO_BASE[PIO_ENABLE_REGISTER] |= (1<<PIO_LED_BIT);
+}
 
 #endif //def __SCCB_H_
