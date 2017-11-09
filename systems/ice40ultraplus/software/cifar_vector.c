@@ -64,11 +64,11 @@ void vbx_convolve_ci(vbx_half_t *v_out, vbx_ubyte_t *v_in, vbx_half_t *v_conv, c
 		    (vbx_word_t*)((vbx_byte_t*)v_in + x + 4));
 	}
 
-	vbx_set_vl(1,n/2);
-	vbx_set_2D(sizeof(vbx_word_t),sizeof(vbx_word_t),sizeof(vbx_word_t));
+	vbx_set_vl(n/2);
 	for (y = 0; y < m; y++) {
 		vbx(VVW, VCUSTOM3, (vbx_word_t*)(v_out + y*n), (vbx_word_t*)(v_out + y*n), (vbx_word_t*)(v_conv + y*(n+4)));
 	}
+
 }
 
 void vbx_zeropad_ci(vbx_ubyte_t *v_out, vbx_word_t *v_pad, vbx_word_t *v_in, const int m, const int n)
@@ -99,7 +99,9 @@ void vbx_accumulate_columns(vbx_word_t *v_map, vbx_half_t *v_maph, vbx_word_t *v
 	vbx_set_vl(1,n/2*m);
 	vbx_set_2D(2*sizeof(vbx_word_t),2*sizeof(vbx_half_t),2*sizeof(vbx_half_t));
 	vbx(SVW, VMUL, v_tmp, (1<<16), (vbx_word_t*)v_maph);
+	vbx_set_2D(2*sizeof(vbx_word_t),2*sizeof(vbx_word_t),2*sizeof(vbx_word_t));
 	vbx(SVW, VMULH, v_tmp, (1<<16), v_tmp);
+	vbx_set_2D(2*sizeof(vbx_word_t),2*sizeof(vbx_half_t),2*sizeof(vbx_half_t));
 	vbx(SVW, VMULH, v_tmp + 1, (1<<16), (vbx_word_t*)v_maph);
 
 	vbx_set_vl(n*m);
@@ -111,6 +113,21 @@ void vbx_accumulate_columns(vbx_word_t *v_map, vbx_half_t *v_maph, vbx_word_t *v
 }
 
 // takes in padded inputs
+
+int channel_sum(vbx_ubyte_t* chan,int size){
+	int sum=0;
+	while(size--){
+		sum+=chan[size];
+	}
+	return sum;
+}
+int channel_sumw(vbx_word_t* chan,int size){
+	int sum=0;
+	while(size--){
+		sum+=chan[size];
+	}
+	return sum;
+}
 void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_layer_t *layer, const int debug)
 {
 	int c, k, m = layer->m, n = layer->n, m0 = m, n0 = n;
@@ -144,18 +161,24 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 		vbx(SVW, VAND, (vbx_word_t*)v_maph, 0, (vbx_word_t*)v_maph);
 
 		for (c = 0; c < layer->channels; c++) {
+			debug(channel_sum(v_inb + c*(m+2)*(n+4),(m+2)*(n+4)));
 			vbx_convolve_ci(v_maph, v_inb + c*(m+2)*(n+4), (vbx_half_t*)v_tmp, m, n, v_weights[c]);
+
+			debug(channel_sum(v_maph,m*n*2));
 			if ((c+1)%13 == 0) {
 				vbx_accumulate_columns(v_map, v_maph, v_tmp, m, n);
+				debug((v_maph[0]));
 			}
 		}
 		if (layer->channels % 13) {
 			vbx_accumulate_columns(v_map, v_maph, v_tmp, m , n);
 		}
+		debug(channel_sumw(v_map,m*n));
 
 		if (layer->maxpool) {
 			vbx_pool(v_map, v_tmp, m, n);
 		}
+		debug(channel_sumw(v_map,m0*n0));
 
 		vbx_set_vl(m0*n0);
 		if (layer->scale) {
@@ -165,17 +188,20 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 				vbx(SVW, VMUL, v_map, scale, v_map);
 			}
 		}
+		debug(channel_sumw((v_map),m0*n0));
 
 		if (!layer->zeropad_output && layer->activation_type == RELU) {
 			vbx_relu(v_map, v_tmp);
 		}
-
+		debug(channel_sumw(((v_map)),m0*n0));
 		if (layer->zeropad_output) {
 			vbx_zeropad_ci(v_outb+(k*(n0+4)*(m0+2)), v_tmp, v_map, m0, n0);
 		} else {
 			vbx_set_vl(m0*n0);
 			vbx(SVW, VOR, (vbx_word_t*)v_outb+(k*n0*m0), 0, v_map);
 		}
+		debug(channel_sum(v_outb + k*(m0+2)*(n0+4),(m0+2)*(n0+4)));
+
 	}
 }
 
