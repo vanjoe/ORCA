@@ -3,15 +3,24 @@
 #include "ovm7692.h"
 #include "base64.h"
 #include "sccb.h"
+#include "image_diff.h"
+#include "rgb2grayscale.h"
 
 #define USE_CAM_IMG 1
 #define PRINT_B64_IMG 0
-#define STRETCH_TO_1S 1
+#define STRETCH_TO_1S 0
 
-#define SP0 (SCRATCHPAD_BASE+0*1024)
-#define SP4 (SCRATCHPAD_BASE+4*1024)
-#define SP44 (SCRATCHPAD_BASE+44*1024)
-#define SP84 (SCRATCHPAD_BASE+84*1024)
+#define SP_CAM_IMG (SCRATCHPAD_BASE+0*1024)
+#define SP_NN_OUTPUT (SCRATCHPAD_BASE+4*1024) // outputs
+#define SP_TMP (SCRATCHPAD_BASE+8*1024) // grayscale image
+#define SP_NN_WEIGHTS (SCRATCHPAD_BASE+44*1024) // weights for NN
+#define SP_NN_INPUTS (SCRATCHPAD_BASE+84*1024) // padded inputs placed here also temp SP for NN
+#define SP_PREV_IMG_BUF1 (SCRATCHPAD_BASE+126*1024) // previous grayscale image
+#define SP_PREV_IMG_BUF2 (SCRATCHPAD_BASE+127*1024)
+
+#define MAX_FRAMES_BETWEEN_NN 3
+
+#define NN_RUN_TIME 623 //ms
 
 void transfer_network(layer_t *cifar, const int dst, const int src, const int verbose)
 {
@@ -82,11 +91,11 @@ void run_network(layer_t *cifar, const int verbose)
 				printf("conv layer\r\n");
 			}
 			if (!buf) {
-				v_outb = (vbx_ubyte_t*)SP4;
-				v_padb = (vbx_ubyte_t*)SP84;
+				v_outb = (vbx_ubyte_t*)SP_NN_OUTPUT;
+				v_padb = (vbx_ubyte_t*)SP_NN_INPUTS;
 			} else {
-				v_padb = (vbx_ubyte_t*)SP4;
-				v_outb = (vbx_ubyte_t*)SP84;
+				v_padb = (vbx_ubyte_t*)SP_NN_OUTPUT;
+				v_outb = (vbx_ubyte_t*)SP_NN_INPUTS;
 			}
 			convolution_ci_lve(v_outb, v_padb, &(cifar[l].conv), 0);
 			if (cifar[l].conv.last) break;
@@ -95,11 +104,11 @@ void run_network(layer_t *cifar, const int verbose)
 				printf("dense layer\r\n");
 			}
 			if (!buf) {
-				v_out = (vbx_word_t*)SP4;
-				v_in = (vbx_word_t*)SP84;
+				v_out = (vbx_word_t*)SP_NN_OUTPUT;
+				v_in = (vbx_word_t*)SP_NN_INPUTS;
 			} else {
-				v_in = (vbx_word_t*)SP4;
-				v_out = (vbx_word_t*)SP84;
+				v_in = (vbx_word_t*)SP_NN_OUTPUT;
+				v_out = (vbx_word_t*)SP_NN_INPUTS;
 			}
 			dense_lve(v_out, v_in, &(cifar[l].dense));
 			if (cifar[l].dense.last) break;
@@ -160,8 +169,7 @@ void zeropad_input(vbx_ubyte_t *v_out, vbx_ubyte_t *v_in, const int m, const int
 
 void cifar_lve() {
 
-	printf("CES demo\r\n");
-	printf("Lattice\r\n");
+	printf("CES demo\r\nLattice\r\ncategories:\r\n");
 
 		//wait while initializing
 	while(FLASH_DMA_BASE[FLASH_DMA_STATUS] & 0x80000000){
@@ -174,13 +182,19 @@ void cifar_lve() {
 #if USE_CAM_IMG
 	ovm_initialize();
 #endif
+	int face_score = 0;
+	int frames_since_last_run = MAX_FRAMES_BETWEEN_NN;
 	int frame_num=0;
 	int is_face=0;
 	int max_cat;
 	int c, m = 32, n = 32, verbose = 0;
-	vbx_ubyte_t* v_padb = (vbx_ubyte_t*)SP84; // IMPORTANT: padded input placed here
-	vbx_word_t* v_out = (vbx_word_t*)  SP4; // IMPORTANT: 10 outputs produced here
-	vbx_ubyte_t* v_inb = (vbx_ubyte_t*)SP0;
+	vbx_ubyte_t* v_padb = (vbx_ubyte_t*)SP_NN_INPUTS; // IMPORTANT: padded input placed here
+	vbx_word_t* v_out = (vbx_word_t*)  SP_NN_OUTPUT; // IMPORTANT: 10 outputs produced here
+	vbx_ubyte_t* v_inb = (vbx_ubyte_t*)SP_CAM_IMG;
+	vbx_word_t* v_in_gs = (vbx_word_t*)SP_TMP;
+	vbx_ubyte_t* v_prev_img = (vbx_ubyte_t*)SP_PREV_IMG_BUF1;
+	vbx_ubyte_t* v_prev_buf = (vbx_ubyte_t*)SP_PREV_IMG_BUF2;
+	int img_diff_score = 0;
 
 #if CATEGORIES == 10
 	char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
@@ -188,7 +202,6 @@ void cifar_lve() {
 	char *categories[] = {"noface","face"};
 #endif
 
-	printf("categories:\r\n");
 	for (c = 0; c < CATEGORIES; c++) {
 		printf("%s\r\n", categories[c]);
 	}
@@ -206,7 +219,7 @@ void cifar_lve() {
 	}
 
 	layer_t* network=CES_GOLDEN? cifar_golden:cifar_reduced;
-	transfer_network(network, SP44, REDUCED_FLASH_DATA_OFFSET, verbose);
+	transfer_network(network, SP_NN_WEIGHTS, REDUCED_FLASH_DATA_OFFSET, verbose);
 
 #if USE_CAM_IMG
 	/* ovm_get_frame_async(); */
@@ -217,7 +230,6 @@ void cifar_lve() {
 
 
 #if USE_CAM_IMG
-
 
 		//get camera frame
 		/* ovm_wait_frame(); */
@@ -245,6 +257,8 @@ void cifar_lve() {
 		//adjust start_time to elimate time spent printing base64 image
 		start_time+=b64_time;
 #endif
+		convert_rgb2grayscale((vbx_word_t*)(v_inb)+THUMB_X_OFFSET*CAM_IMG_WIDTH+THUMB_Y_OFFSET,v_in_gs);
+		img_diff_score = abs_image_diff(v_in_gs,v_prev_img,v_prev_buf);
 
 		for (c = 0; c < 3; c++) {
 			cam_extract_and_pad(v_padb + c*(m+2)*(n+4), (vbx_word_t*)v_inb,c, m, n, 64);
@@ -268,17 +282,29 @@ void cifar_lve() {
 		SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
 #endif
 
+		// check if we want to run the NN
+		if(img_diff_score > DIFF_THRESH || frames_since_last_run >= MAX_FRAMES_BETWEEN_NN){
+			vbx_ubyte_t* tmp = v_prev_img;
+			v_prev_img = v_prev_buf;
+			v_prev_buf = tmp;
 
-		run_network(network, verbose);
+			// run the network
+			run_network(network, verbose);
+			// reset the counter
+			frames_since_last_run = 0;
 
-		// print results (or toggle LED if person is max, and > 0)
-		max_cat = 0;
-		for (c = 0; c < CATEGORIES; c++) {
-			if(v_out[c] > v_out[max_cat] ){
-				max_cat = c;
+			// print results (or toggle LED if person is max, and > 0)
+			max_cat = 0;
+			for (c = 0; c < CATEGORIES; c++) {
+				if(v_out[c] > v_out[max_cat] ){
+					max_cat = c;
+				}
 			}
+			is_face = (max_cat == 1);
+			face_score = (int)v_out[1];
+		}else{
+			delayms(NN_RUN_TIME);
 		}
-		is_face = (max_cat == 1);
 
 		if (verbose) {
 			for (c = 0; c < CATEGORIES; c++) {
@@ -298,15 +324,15 @@ void cifar_lve() {
 
 		if(STRETCH_TO_1S && net_ms <999){
 			sleepuntil(start_time+ms2cycle(1000));
-		}else{
-
 		}
 
 		net_cycles=get_time()-start_time;
 		net_ms=cycle2ms(net_cycles);
-		printf("Frame %d: %d ms Face Score = %d \r\n",frame_num,net_ms,(int) v_out[1]);
+
+		printf("Frame %d: %4d ms, Image Diff Score = 0x%08x, Face Score = %d \r\n",frame_num,net_ms,img_diff_score,face_score);
 		start_time = get_time();
 		frame_num++;
+		frames_since_last_run++;
 
 	} while(USE_CAM_IMG);
 }
