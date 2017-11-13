@@ -8,35 +8,46 @@ use work.utils.all;
 
 entity memory_interface is
   generic (
-    REGISTER_SIZE        : positive range 32 to 32 := 32;
-    SCRATCHPAD_ADDR_BITS : positive                := 10;
+    REGISTER_SIZE        : positive range 32 to 32;
+    SCRATCHPAD_ADDR_BITS : positive;
 
     --Auxiliary Interface Select
-    AVALON_AUX   : natural range 0 to 1 := 0;
-    WISHBONE_AUX : natural range 0 to 1 := 0;
-    LMB_AUX      : natural range 0 to 1 := 0;
+    AVALON_AUX   : natural range 0 to 1;
+    WISHBONE_AUX : natural range 0 to 1;
+    LMB_AUX      : natural range 0 to 1;
 
-    WISHBONE_SINGLE_CYCLE_READS : natural range 0 to 1          := 0;
-    DATA_REQUEST_REGISTER       : natural range 0 to 2          := 1;
-    DATA_RETURN_REGISTER        : natural range 0 to 1          := 1;
-    IUC_ADDR_BASE               : std_logic_vector(31 downto 0) := X"00000000";
-    IUC_ADDR_LAST               : std_logic_vector(31 downto 0) := X"00000000";
-    IAUX_ADDR_BASE              : std_logic_vector(31 downto 0) := X"00000000";
-    IAUX_ADDR_LAST              : std_logic_vector(31 downto 0) := X"FFFFFFFF";
-    ICACHE_SIZE                 : natural                       := 8192;
-    ICACHE_LINE_SIZE            : integer range 16 to 256       := 32;
-    ICACHE_EXTERNAL_WIDTH       : integer                       := 32;
-    ICACHE_MAX_BURSTLENGTH      : positive                      := 16;
-    ICACHE_BURST_EN             : integer range 0 to 1          := 0;
-    DUC_ADDR_BASE               : std_logic_vector(31 downto 0) := X"00000000";
-    DUC_ADDR_LAST               : std_logic_vector(31 downto 0) := X"00000000";
-    DAUX_ADDR_BASE              : std_logic_vector(31 downto 0) := X"00000000";
-    DAUX_ADDR_LAST              : std_logic_vector(31 downto 0) := X"FFFFFFFF";
-    DCACHE_SIZE                 : natural                       := 8192;
-    DCACHE_LINE_SIZE            : integer range 16 to 256       := 32;
-    DCACHE_EXTERNAL_WIDTH       : integer                       := 32;
-    DCACHE_MAX_BURSTLENGTH      : positive                      := 16;
-    DCACHE_BURST_EN             : integer range 0 to 1          := 0
+    WISHBONE_SINGLE_CYCLE_READS  : natural range 0 to 1;
+    MAX_IFETCHES_IN_FLIGHT       : positive range 1 to 4;
+    INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2;
+    INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1;
+    IUC_REQUEST_REGISTER         : natural range 0 to 2;
+    IUC_RETURN_REGISTER          : natural range 0 to 1;
+    IUC_ADDR_BASE                : std_logic_vector(31 downto 0);
+    IUC_ADDR_LAST                : std_logic_vector(31 downto 0);
+    IAUX_REQUEST_REGISTER        : natural range 0 to 2;
+    IAUX_RETURN_REGISTER         : natural range 0 to 1;
+    IAUX_ADDR_BASE               : std_logic_vector(31 downto 0);
+    IAUX_ADDR_LAST               : std_logic_vector(31 downto 0);
+    ICACHE_SIZE                  : natural;
+    ICACHE_LINE_SIZE             : integer range 16 to 256;
+    ICACHE_EXTERNAL_WIDTH        : integer;
+    ICACHE_MAX_BURSTLENGTH       : positive;
+    ICACHE_BURST_EN              : integer range 0 to 1;
+    DATA_REQUEST_REGISTER        : natural range 0 to 2;
+    DATA_RETURN_REGISTER         : natural range 0 to 1;
+    DUC_REQUEST_REGISTER         : natural range 0 to 2;
+    DUC_RETURN_REGISTER          : natural range 0 to 1;
+    DUC_ADDR_BASE                : std_logic_vector(31 downto 0);
+    DUC_ADDR_LAST                : std_logic_vector(31 downto 0);
+    DAUX_REQUEST_REGISTER        : natural range 0 to 2;
+    DAUX_RETURN_REGISTER         : natural range 0 to 1;
+    DAUX_ADDR_BASE               : std_logic_vector(31 downto 0);
+    DAUX_ADDR_LAST               : std_logic_vector(31 downto 0);
+    DCACHE_SIZE                  : natural;
+    DCACHE_LINE_SIZE             : integer range 16 to 256;
+    DCACHE_EXTERNAL_WIDTH        : integer;
+    DCACHE_MAX_BURSTLENGTH       : positive;
+    DCACHE_BURST_EN              : integer range 0 to 1
     );
   port (
     clk            : in std_logic;
@@ -77,46 +88,43 @@ entity memory_interface is
     avm_data_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     avm_data_byteenable    : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     avm_data_read          : out std_logic;
-    avm_data_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    avm_data_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     avm_data_write         : out std_logic;
     avm_data_writedata     : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    avm_data_waitrequest   : in  std_logic                                  := '0';
-    avm_data_readdatavalid : in  std_logic                                  := '0';
+    avm_data_waitrequest   : in  std_logic;
+    avm_data_readdatavalid : in  std_logic;
 
     --Avalon instruction master
     avm_instruction_address       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     avm_instruction_read          : out std_logic;
-    avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-    avm_instruction_waitrequest   : in  std_logic                                  := '0';
-    avm_instruction_readdatavalid : in  std_logic                                  := '0';
+    avm_instruction_readdata      : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    avm_instruction_waitrequest   : in  std_logic;
+    avm_instruction_readdatavalid : in  std_logic;
 
     -------------------------------------------------------------------------------
     --WISHBONE
     -------------------------------------------------------------------------------
     --WISHBONE data master
     data_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    data_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_WE_O    : out std_logic;
     data_SEL_O   : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     data_STB_O   : out std_logic;
-    data_ACK_I   : in  std_logic                                  := '0';
+    data_ACK_I   : in  std_logic;
     data_CYC_O   : out std_logic;
     data_CTI_O   : out std_logic_vector(2 downto 0);
-    data_STALL_I : in  std_logic                                  := '0';
+    data_STALL_I : in  std_logic;
 
     --WISHBONE instruction master
     instr_ADR_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instr_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    instr_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     instr_STB_O   : out std_logic;
-    instr_ACK_I   : in  std_logic                                  := '0';
+    instr_ACK_I   : in  std_logic;
     instr_CYC_O   : out std_logic;
     instr_CTI_O   : out std_logic_vector(2 downto 0);
-    instr_STALL_I : in  std_logic                                  := '0';
+    instr_STALL_I : in  std_logic;
 
-    -------------------------------------------------------------------------------
-    --AXI
-    -------------------------------------------------------------------------------
     -------------------------------------------------------------------------------
     --AXI
     -------------------------------------------------------------------------------
@@ -132,13 +140,13 @@ entity memory_interface is
     IUC_ARCACHE : out std_logic_vector(3 downto 0);
     IUC_ARPROT  : out std_logic_vector(2 downto 0);
     IUC_ARVALID : out std_logic;
-    IUC_ARREADY : in  std_logic := '0';
+    IUC_ARREADY : in  std_logic;
 
-    IUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
-    IUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-    IUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
-    IUC_RLAST  : in  std_logic                                  := '0';
-    IUC_RVALID : in  std_logic                                  := '0';
+    IUC_RID    : in  std_logic_vector(3 downto 0);
+    IUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    IUC_RRESP  : in  std_logic_vector(1 downto 0);
+    IUC_RLAST  : in  std_logic;
+    IUC_RVALID : in  std_logic;
     IUC_RREADY : out std_logic;
 
     IUC_AWID    : out std_logic_vector(3 downto 0);
@@ -150,18 +158,18 @@ entity memory_interface is
     IUC_AWCACHE : out std_logic_vector(3 downto 0);
     IUC_AWPROT  : out std_logic_vector(2 downto 0);
     IUC_AWVALID : out std_logic;
-    IUC_AWREADY : in  std_logic := '0';
+    IUC_AWREADY : in  std_logic;
 
     IUC_WID    : out std_logic_vector(3 downto 0);
     IUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     IUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     IUC_WLAST  : out std_logic;
     IUC_WVALID : out std_logic;
-    IUC_WREADY : in  std_logic := '0';
+    IUC_WREADY : in  std_logic;
 
-    IUC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
-    IUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
-    IUC_BVALID : in  std_logic                    := '0';
+    IUC_BID    : in  std_logic_vector(3 downto 0);
+    IUC_BRESP  : in  std_logic_vector(1 downto 0);
+    IUC_BVALID : in  std_logic;
     IUC_BREADY : out std_logic;
 
     --AXI4-Lite uncached data master
@@ -176,18 +184,18 @@ entity memory_interface is
     DUC_AWCACHE : out std_logic_vector(3 downto 0);
     DUC_AWPROT  : out std_logic_vector(2 downto 0);
     DUC_AWVALID : out std_logic;
-    DUC_AWREADY : in  std_logic := '0';
+    DUC_AWREADY : in  std_logic;
 
     DUC_WID    : out std_logic_vector(3 downto 0);
     DUC_WDATA  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     DUC_WSTRB  : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     DUC_WLAST  : out std_logic;
     DUC_WVALID : out std_logic;
-    DUC_WREADY : in  std_logic := '0';
+    DUC_WREADY : in  std_logic;
 
-    DUC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
-    DUC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
-    DUC_BVALID : in  std_logic                    := '0';
+    DUC_BID    : in  std_logic_vector(3 downto 0);
+    DUC_BRESP  : in  std_logic_vector(1 downto 0);
+    DUC_BVALID : in  std_logic;
     DUC_BREADY : out std_logic;
 
     DUC_ARID    : out std_logic_vector(3 downto 0);
@@ -199,13 +207,13 @@ entity memory_interface is
     DUC_ARCACHE : out std_logic_vector(3 downto 0);
     DUC_ARPROT  : out std_logic_vector(2 downto 0);
     DUC_ARVALID : out std_logic;
-    DUC_ARREADY : in  std_logic := '0';
+    DUC_ARREADY : in  std_logic;
 
-    DUC_RID    : in  std_logic_vector(3 downto 0)               := (others => '0');
-    DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-    DUC_RRESP  : in  std_logic_vector(1 downto 0)               := (others => '0');
-    DUC_RLAST  : in  std_logic                                  := '0';
-    DUC_RVALID : in  std_logic                                  := '0';
+    DUC_RID    : in  std_logic_vector(3 downto 0);
+    DUC_RDATA  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    DUC_RRESP  : in  std_logic_vector(1 downto 0);
+    DUC_RLAST  : in  std_logic;
+    DUC_RVALID : in  std_logic;
     DUC_RREADY : out std_logic;
 
     --AXI3 cacheable instruction master
@@ -218,13 +226,13 @@ entity memory_interface is
     IC_ARCACHE : out std_logic_vector(3 downto 0);
     IC_ARPROT  : out std_logic_vector(2 downto 0);
     IC_ARVALID : out std_logic;
-    IC_ARREADY : in  std_logic := '0';
+    IC_ARREADY : in  std_logic;
 
-    IC_RID    : in  std_logic_vector(3 downto 0)                       := (others => '0');
-    IC_RDATA  : in  std_logic_vector(ICACHE_EXTERNAL_WIDTH-1 downto 0) := (others => '0');
-    IC_RRESP  : in  std_logic_vector(1 downto 0)                       := (others => '0');
-    IC_RLAST  : in  std_logic                                          := '0';
-    IC_RVALID : in  std_logic                                          := '0';
+    IC_RID    : in  std_logic_vector(3 downto 0);
+    IC_RDATA  : in  std_logic_vector(ICACHE_EXTERNAL_WIDTH-1 downto 0);
+    IC_RRESP  : in  std_logic_vector(1 downto 0);
+    IC_RLAST  : in  std_logic;
+    IC_RVALID : in  std_logic;
     IC_RREADY : out std_logic;
 
     IC_AWID    : out std_logic_vector(3 downto 0);
@@ -236,17 +244,17 @@ entity memory_interface is
     IC_AWCACHE : out std_logic_vector(3 downto 0);
     IC_AWPROT  : out std_logic_vector(2 downto 0);
     IC_AWVALID : out std_logic;
-    IC_AWREADY : in  std_logic := '0';
+    IC_AWREADY : in  std_logic;
 
     IC_WID    : out std_logic_vector(3 downto 0);
     IC_WDATA  : out std_logic_vector(ICACHE_EXTERNAL_WIDTH-1 downto 0);
     IC_WSTRB  : out std_logic_vector((ICACHE_EXTERNAL_WIDTH/8)-1 downto 0);
     IC_WLAST  : out std_logic;
     IC_WVALID : out std_logic;
-    IC_WREADY : in  std_logic                    := '0';
-    IC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
-    IC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
-    IC_BVALID : in  std_logic                    := '0';
+    IC_WREADY : in  std_logic;
+    IC_BID    : in  std_logic_vector(3 downto 0);
+    IC_BRESP  : in  std_logic_vector(1 downto 0);
+    IC_BVALID : in  std_logic;
     IC_BREADY : out std_logic;
 
     --AXI3 cacheable data master
@@ -259,13 +267,13 @@ entity memory_interface is
     DC_ARCACHE : out std_logic_vector(3 downto 0);
     DC_ARPROT  : out std_logic_vector(2 downto 0);
     DC_ARVALID : out std_logic;
-    DC_ARREADY : in  std_logic := '0';
+    DC_ARREADY : in  std_logic;
 
-    DC_RID    : in  std_logic_vector(3 downto 0)                       := (others => '0');
-    DC_RDATA  : in  std_logic_vector(DCACHE_EXTERNAL_WIDTH-1 downto 0) := (others => '0');
-    DC_RRESP  : in  std_logic_vector(1 downto 0)                       := (others => '0');
-    DC_RLAST  : in  std_logic                                          := '0';
-    DC_RVALID : in  std_logic                                          := '0';
+    DC_RID    : in  std_logic_vector(3 downto 0);
+    DC_RDATA  : in  std_logic_vector(DCACHE_EXTERNAL_WIDTH-1 downto 0);
+    DC_RRESP  : in  std_logic_vector(1 downto 0);
+    DC_RLAST  : in  std_logic;
+    DC_RVALID : in  std_logic;
     DC_RREADY : out std_logic;
 
     DC_AWID    : out std_logic_vector(3 downto 0);
@@ -277,17 +285,17 @@ entity memory_interface is
     DC_AWCACHE : out std_logic_vector(3 downto 0);
     DC_AWPROT  : out std_logic_vector(2 downto 0);
     DC_AWVALID : out std_logic;
-    DC_AWREADY : in  std_logic := '0';
+    DC_AWREADY : in  std_logic;
 
     DC_WID    : out std_logic_vector(3 downto 0);
     DC_WDATA  : out std_logic_vector(DCACHE_EXTERNAL_WIDTH-1 downto 0);
     DC_WSTRB  : out std_logic_vector((DCACHE_EXTERNAL_WIDTH/8)-1 downto 0);
     DC_WLAST  : out std_logic;
     DC_WVALID : out std_logic;
-    DC_WREADY : in  std_logic                    := '0';
-    DC_BID    : in  std_logic_vector(3 downto 0) := (others => '0');
-    DC_BRESP  : in  std_logic_vector(1 downto 0) := (others => '0');
-    DC_BVALID : in  std_logic                    := '0';
+    DC_WREADY : in  std_logic;
+    DC_BID    : in  std_logic_vector(3 downto 0);
+    DC_BRESP  : in  std_logic_vector(1 downto 0);
+    DC_BVALID : in  std_logic;
     DC_BREADY : out std_logic;
 
     --Xilinx local memory bus instruction master
@@ -297,11 +305,11 @@ entity memory_interface is
     ILMB_AS           : out std_logic;
     ILMB_Read_Strobe  : out std_logic;
     ILMB_Write_Strobe : out std_logic;
-    ILMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
-    ILMB_Ready        : in  std_logic                              := '0';
-    ILMB_Wait         : in  std_logic                              := '0';
-    ILMB_CE           : in  std_logic                              := '0';
-    ILMB_UE           : in  std_logic                              := '0';
+    ILMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1);
+    ILMB_Ready        : in  std_logic;
+    ILMB_Wait         : in  std_logic;
+    ILMB_CE           : in  std_logic;
+    ILMB_UE           : in  std_logic;
 
     --Xilinx local memory bus data master
     DLMB_Addr         : out std_logic_vector(0 to REGISTER_SIZE-1);
@@ -310,35 +318,35 @@ entity memory_interface is
     DLMB_AS           : out std_logic;
     DLMB_Read_Strobe  : out std_logic;
     DLMB_Write_Strobe : out std_logic;
-    DLMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1) := (others => '0');
-    DLMB_Ready        : in  std_logic                              := '0';
-    DLMB_Wait         : in  std_logic                              := '0';
-    DLMB_CE           : in  std_logic                              := '0';
-    DLMB_UE           : in  std_logic                              := '0';
+    DLMB_Data_Read    : in  std_logic_vector(0 to REGISTER_SIZE-1);
+    DLMB_Ready        : in  std_logic;
+    DLMB_Wait         : in  std_logic;
+    DLMB_CE           : in  std_logic;
+    DLMB_UE           : in  std_logic;
 
     -------------------------------------------------------------------------------
     -- Scratchpad Slave
     -------------------------------------------------------------------------------
     --Avalon scratchpad slave
-    avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
-    avm_scratch_byteenable    : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0)    := (others => '0');
-    avm_scratch_read          : in  std_logic                                         := '0';
+    avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
+    avm_scratch_byteenable    : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+    avm_scratch_read          : in  std_logic;
     avm_scratch_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    avm_scratch_write         : in  std_logic                                         := '0';
-    avm_scratch_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0)        := (others => '0');
+    avm_scratch_write         : in  std_logic;
+    avm_scratch_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     avm_scratch_waitrequest   : out std_logic;
     avm_scratch_readdatavalid : out std_logic;
 
     --WISHBONE scratchpad slave
-    sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
+    sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
     sp_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)        := (others => '0');
-    sp_WE_I    : in  std_logic                                         := '0';
-    sp_SEL_I   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0)    := (others => '0');
-    sp_STB_I   : in  std_logic                                         := '0';
+    sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    sp_WE_I    : in  std_logic;
+    sp_SEL_I   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+    sp_STB_I   : in  std_logic;
     sp_ACK_O   : out std_logic;
-    sp_CYC_I   : in  std_logic                                         := '0';
-    sp_CTI_I   : in  std_logic_vector(2 downto 0)                      := (others => '0');
+    sp_CYC_I   : in  std_logic;
+    sp_CTI_I   : in  std_logic_vector(2 downto 0);
     sp_STALL_O : out std_logic
     );
 end entity memory_interface;
@@ -347,22 +355,11 @@ architecture rtl of memory_interface is
   signal ifetch_oimm_byteenable : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
   signal ifetch_oimm_writedata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal lsu_oimm_waitrequest_int : std_logic;
-
   constant A4L_BURST_LEN  : std_logic_vector(3 downto 0) := "0000";
   constant A4L_BURST_SIZE : std_logic_vector(2 downto 0) := std_logic_vector(to_unsigned(log2(REGISTER_SIZE/8), 3));
   constant A4L_BURST_INCR : std_logic_vector(1 downto 0) := "01";
   constant A4L_LOCK_VAL   : std_logic_vector(1 downto 0) := "00";
   constant A4L_CACHE_VAL  : std_logic_vector(3 downto 0) := "0000";
-
-  signal data_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_oimm_byteenable    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-  signal data_oimm_requestvalid  : std_logic;
-  signal data_oimm_readnotwrite  : std_logic;
-  signal data_oimm_writedata     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_oimm_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal data_oimm_readdatavalid : std_logic;
-  signal data_oimm_waitrequest   : std_logic;
 
   signal iuc_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal iuc_oimm_byteenable    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
@@ -420,8 +417,6 @@ architecture rtl of memory_interface is
 
   signal axi_resetn : std_logic;
 begin  -- architecture rtl
-  lsu_oimm_waitrequest <= lsu_oimm_waitrequest_int;
-
   assert (AVALON_AUX + WISHBONE_AUX + LMB_AUX) < 2 report
     "At most one auxiliary interface type (AVALON_AUX, WISHBONE_AUX, LMB_AUX) must be enabled"
     severity failure;
@@ -432,158 +427,25 @@ begin  -- architecture rtl
   ifetch_oimm_byteenable <= (others => '1');
 
   -----------------------------------------------------------------------------
-  -- Optional Data Memory Request Register
-  -----------------------------------------------------------------------------
-  no_data_request_register_gen : if DATA_REQUEST_REGISTER = 0 generate
-    --Passthrough, lowest fmax but no extra resources or added latency.
-    data_oimm_address      <= lsu_oimm_address;
-    data_oimm_byteenable   <= lsu_oimm_byteenable;
-    data_oimm_requestvalid <= lsu_oimm_requestvalid;
-    data_oimm_readnotwrite <= lsu_oimm_readnotwrite;
-    data_oimm_writedata    <= lsu_oimm_writedata;
-
-    lsu_oimm_waitrequest_int <= data_oimm_waitrequest;
-  end generate no_data_request_register_gen;
-  light_data_request_register_gen : if DATA_REQUEST_REGISTER = 1 generate
-    signal lsu_oimm_address_held      : std_logic_vector(REGISTER_SIZE-1 downto 0);
-    signal lsu_oimm_byteenable_held   : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-    signal lsu_oimm_requestvalid_held : std_logic;
-    signal lsu_oimm_readnotwrite_held : std_logic;
-    signal lsu_oimm_writedata_held    : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  begin
-    --Light register; breaks waitrequest/stall combinational path but does not break
-    --address/etc. path.  Does not add latency if slave is not asserting
-    --waitrequest, but will reduce throughput if the slave does.
-    data_oimm_address      <= lsu_oimm_address_held      when lsu_oimm_waitrequest_int = '1' else lsu_oimm_address;
-    data_oimm_byteenable   <= lsu_oimm_byteenable_held   when lsu_oimm_waitrequest_int = '1' else lsu_oimm_byteenable;
-    data_oimm_requestvalid <= lsu_oimm_requestvalid_held when lsu_oimm_waitrequest_int = '1' else lsu_oimm_requestvalid;
-    data_oimm_readnotwrite <= lsu_oimm_readnotwrite_held when lsu_oimm_waitrequest_int = '1' else lsu_oimm_readnotwrite;
-    data_oimm_writedata    <= lsu_oimm_writedata_held    when lsu_oimm_waitrequest_int = '1' else lsu_oimm_writedata;
-
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        --When coming out of reset, need to put waitrequest down
-        if lsu_oimm_requestvalid_held = '0' then
-          lsu_oimm_waitrequest_int <= '0';
-        end if;
-
-        if data_oimm_waitrequest = '0' then
-          lsu_oimm_waitrequest_int <= '0';
-        end if;
-
-        if lsu_oimm_waitrequest_int = '0' then
-          lsu_oimm_address_held      <= lsu_oimm_address;
-          lsu_oimm_byteenable_held   <= lsu_oimm_byteenable;
-          lsu_oimm_requestvalid_held <= lsu_oimm_requestvalid;
-          lsu_oimm_readnotwrite_held <= lsu_oimm_readnotwrite;
-          lsu_oimm_writedata_held    <= lsu_oimm_writedata;
-          lsu_oimm_waitrequest_int   <= data_oimm_waitrequest and lsu_oimm_requestvalid;
-        end if;
-
-        if reset = '1' then
-          lsu_oimm_requestvalid_held <= '0';
-          lsu_oimm_waitrequest_int   <= '1';
-        end if;
-      end if;
-    end process;
-  end generate light_data_request_register_gen;
-  full_data_request_register_gen : if DATA_REQUEST_REGISTER /= 0 and DATA_REQUEST_REGISTER /= 1 generate
-    signal registered_oimm_address      : std_logic_vector(REGISTER_SIZE-1 downto 0);
-    signal registered_oimm_byteenable   : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-    signal registered_oimm_requestvalid : std_logic;
-    signal registered_oimm_readnotwrite : std_logic;
-    signal registered_oimm_writedata    : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  begin
-    --Full register; breaks waitrequest/stall combinational path and address/etc.
-    --path. Always adds one cycle of latency but does not reduce throughput.
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        --When coming out of reset, need to put waitrequest down
-        if registered_oimm_requestvalid = '0' then
-          lsu_oimm_waitrequest_int <= '0';
-        end if;
-
-        if data_oimm_waitrequest = '0' then
-          data_oimm_requestvalid <= '0';
-          if registered_oimm_requestvalid = '1' then
-            data_oimm_address            <= registered_oimm_address;
-            data_oimm_byteenable         <= registered_oimm_byteenable;
-            data_oimm_readnotwrite       <= registered_oimm_readnotwrite;
-            data_oimm_requestvalid       <= registered_oimm_requestvalid;
-            data_oimm_writedata          <= registered_oimm_writedata;
-            registered_oimm_requestvalid <= '0';
-            lsu_oimm_waitrequest_int     <= '0';
-          else
-            data_oimm_address      <= lsu_oimm_address;
-            data_oimm_byteenable   <= lsu_oimm_byteenable;
-            data_oimm_readnotwrite <= lsu_oimm_readnotwrite;
-            data_oimm_requestvalid <= lsu_oimm_requestvalid and (not lsu_oimm_waitrequest_int);
-            data_oimm_writedata    <= lsu_oimm_writedata;
-          end if;
-        else
-          if lsu_oimm_waitrequest_int = '0' then
-            if data_oimm_requestvalid = '1' then
-              registered_oimm_address      <= lsu_oimm_address;
-              registered_oimm_byteenable   <= lsu_oimm_byteenable;
-              registered_oimm_requestvalid <= lsu_oimm_requestvalid;
-              registered_oimm_readnotwrite <= lsu_oimm_readnotwrite;
-              registered_oimm_writedata    <= lsu_oimm_writedata;
-              lsu_oimm_waitrequest_int     <= lsu_oimm_requestvalid;
-            else
-              data_oimm_address      <= lsu_oimm_address;
-              data_oimm_byteenable   <= lsu_oimm_byteenable;
-              data_oimm_readnotwrite <= lsu_oimm_readnotwrite;
-              data_oimm_requestvalid <= lsu_oimm_requestvalid;
-              data_oimm_writedata    <= lsu_oimm_writedata;
-            end if;
-          end if;
-        end if;
-
-        if reset = '1' then
-          data_oimm_requestvalid       <= '0';
-          registered_oimm_requestvalid <= '0';
-          lsu_oimm_waitrequest_int     <= '1';
-        end if;
-      end if;
-    end process;
-
-  end generate full_data_request_register_gen;
-
-  -----------------------------------------------------------------------------
-  -- Optional Data Memory Return Register
-  -----------------------------------------------------------------------------
-  no_data_return_register_gen : if DATA_RETURN_REGISTER = 0 generate
-    lsu_oimm_readdata      <= data_oimm_readdata;
-    lsu_oimm_readdatavalid <= data_oimm_readdatavalid;
-  end generate no_data_return_register_gen;
-  data_return_register_gen : if DATA_RETURN_REGISTER /= 0 generate
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        lsu_oimm_readdata      <= data_oimm_readdata;
-        lsu_oimm_readdatavalid <= data_oimm_readdatavalid;
-      end if;
-    end process;
-  end generate data_return_register_gen;
-
-
-  -----------------------------------------------------------------------------
   -- Instruction cache and mux
   -----------------------------------------------------------------------------
   instruction_cache_mux : cache_mux
     generic map (
-      MULTIPLE_READ_SUPPORT => false,
-      REGISTER_SIZE         => REGISTER_SIZE,
-      CACHE_SIZE            => ICACHE_SIZE,
-      CACHE_LINE_SIZE       => ICACHE_LINE_SIZE,
-      UC_ADDR_BASE          => IUC_ADDR_BASE,
-      UC_ADDR_LAST          => IUC_ADDR_LAST,
-      AUX_ADDR_BASE         => IAUX_ADDR_BASE,
-      AUX_ADDR_LAST         => IAUX_ADDR_LAST,
-      ADDR_WIDTH            => REGISTER_SIZE,
-      DATA_WIDTH            => REGISTER_SIZE
+      ADDRESS_WIDTH             => REGISTER_SIZE,
+      DATA_WIDTH                => REGISTER_SIZE,
+      MAX_OUTSTANDING_READS     => MAX_IFETCHES_IN_FLIGHT,
+      INTERNAL_REQUEST_REGISTER => INSTRUCTION_REQUEST_REGISTER,
+      INTERNAL_RETURN_REGISTER  => INSTRUCTION_RETURN_REGISTER,
+      CACHE_SIZE                => ICACHE_SIZE,
+      CACHE_LINE_SIZE           => ICACHE_LINE_SIZE,
+      UC_REQUEST_REGISTER       => IUC_REQUEST_REGISTER,
+      UC_RETURN_REGISTER        => IUC_RETURN_REGISTER,
+      UC_ADDR_BASE              => IUC_ADDR_BASE,
+      UC_ADDR_LAST              => IUC_ADDR_LAST,
+      AUX_REQUEST_REGISTER      => IAUX_REQUEST_REGISTER,
+      AUX_RETURN_REGISTER       => IAUX_RETURN_REGISTER,
+      AUX_ADDR_BASE             => IAUX_ADDR_BASE,
+      AUX_ADDR_LAST             => IAUX_ADDR_LAST
       )
     port map (
       clk   => clk,
@@ -642,7 +504,7 @@ begin  -- architecture rtl
       generic map (
         CACHE_SIZE      => ICACHE_SIZE,
         LINE_SIZE       => ICACHE_LINE_SIZE,
-        ADDR_WIDTH      => REGISTER_SIZE,
+        ADDRESS_WIDTH   => REGISTER_SIZE,
         INTERNAL_WIDTH  => REGISTER_SIZE,
         EXTERNAL_WIDTH  => ICACHE_EXTERNAL_WIDTH,
         MAX_BURSTLENGTH => ICACHE_MAX_BURSTLENGTH,
@@ -675,7 +537,7 @@ begin  -- architecture rtl
 
     ic_master : axi_master
       generic map (
-        ADDR_WIDTH      => REGISTER_SIZE,
+        ADDRESS_WIDTH   => REGISTER_SIZE,
         DATA_WIDTH      => REGISTER_SIZE,
         ID_WIDTH        => 4,
         MAX_BURSTLENGTH => ICACHE_MAX_BURSTLENGTH
@@ -770,29 +632,34 @@ begin  -- architecture rtl
   -----------------------------------------------------------------------------
   data_cache_mux : cache_mux
     generic map (
-      MULTIPLE_READ_SUPPORT => false,
-      REGISTER_SIZE         => REGISTER_SIZE,
-      CACHE_SIZE            => DCACHE_SIZE,
-      CACHE_LINE_SIZE       => DCACHE_LINE_SIZE,
-      UC_ADDR_BASE          => DUC_ADDR_BASE,
-      UC_ADDR_LAST          => DUC_ADDR_LAST,
-      AUX_ADDR_BASE         => DAUX_ADDR_BASE,
-      AUX_ADDR_LAST         => DAUX_ADDR_LAST,
-      ADDR_WIDTH            => REGISTER_SIZE,
-      DATA_WIDTH            => REGISTER_SIZE
+      ADDRESS_WIDTH             => REGISTER_SIZE,
+      DATA_WIDTH                => REGISTER_SIZE,
+      MAX_OUTSTANDING_READS     => 1,
+      INTERNAL_REQUEST_REGISTER => DATA_REQUEST_REGISTER,
+      INTERNAL_RETURN_REGISTER  => DATA_RETURN_REGISTER,
+      CACHE_SIZE                => DCACHE_SIZE,
+      CACHE_LINE_SIZE           => DCACHE_LINE_SIZE,
+      UC_REQUEST_REGISTER       => DUC_REQUEST_REGISTER,
+      UC_RETURN_REGISTER        => DUC_RETURN_REGISTER,
+      UC_ADDR_BASE              => DUC_ADDR_BASE,
+      UC_ADDR_LAST              => DUC_ADDR_LAST,
+      AUX_REQUEST_REGISTER      => DAUX_REQUEST_REGISTER,
+      AUX_RETURN_REGISTER       => DAUX_RETURN_REGISTER,
+      AUX_ADDR_BASE             => DAUX_ADDR_BASE,
+      AUX_ADDR_LAST             => DAUX_ADDR_LAST
       )
     port map (
       clk   => clk,
       reset => reset,
 
-      oimm_address       => data_oimm_address,
-      oimm_byteenable    => data_oimm_byteenable,
-      oimm_requestvalid  => data_oimm_requestvalid,
-      oimm_readnotwrite  => data_oimm_readnotwrite,
-      oimm_writedata     => data_oimm_writedata,
-      oimm_readdata      => data_oimm_readdata,
-      oimm_readdatavalid => data_oimm_readdatavalid,
-      oimm_waitrequest   => data_oimm_waitrequest,
+      oimm_address       => lsu_oimm_address,
+      oimm_byteenable    => lsu_oimm_byteenable,
+      oimm_requestvalid  => lsu_oimm_requestvalid,
+      oimm_readnotwrite  => lsu_oimm_readnotwrite,
+      oimm_writedata     => lsu_oimm_writedata,
+      oimm_readdata      => lsu_oimm_readdata,
+      oimm_readdatavalid => lsu_oimm_readdatavalid,
+      oimm_waitrequest   => lsu_oimm_waitrequest,
 
       cacheint_oimm_address       => dcacheint_oimm_address,
       cacheint_oimm_byteenable    => dcacheint_oimm_byteenable,
@@ -838,7 +705,7 @@ begin  -- architecture rtl
       generic map (
         CACHE_SIZE      => DCACHE_SIZE,
         LINE_SIZE       => DCACHE_LINE_SIZE,
-        ADDR_WIDTH      => REGISTER_SIZE,
+        ADDRESS_WIDTH   => REGISTER_SIZE,
         INTERNAL_WIDTH  => REGISTER_SIZE,
         EXTERNAL_WIDTH  => DCACHE_EXTERNAL_WIDTH,
         MAX_BURSTLENGTH => DCACHE_MAX_BURSTLENGTH,
@@ -871,7 +738,7 @@ begin  -- architecture rtl
 
     dc_master : axi_master
       generic map (
-        ADDR_WIDTH      => REGISTER_SIZE,
+        ADDRESS_WIDTH   => REGISTER_SIZE,
         DATA_WIDTH      => REGISTER_SIZE,
         ID_WIDTH        => 4,
         MAX_BURSTLENGTH => DCACHE_MAX_BURSTLENGTH
@@ -1219,8 +1086,8 @@ begin  -- architecture rtl
   iuc_master_gen : if IUC_ADDR_BASE /= IUC_ADDR_LAST generate
     iuc_master : a4l_master
       generic map (
-        ADDR_WIDTH => REGISTER_SIZE,
-        DATA_WIDTH => REGISTER_SIZE
+        ADDRESS_WIDTH => REGISTER_SIZE,
+        DATA_WIDTH    => REGISTER_SIZE
         )
       port map (
         clk     => clk,
@@ -1293,8 +1160,8 @@ begin  -- architecture rtl
   duc_master_gen : if DUC_ADDR_BASE /= DUC_ADDR_LAST generate
     duc_master : a4l_master
       generic map (
-        ADDR_WIDTH => REGISTER_SIZE,
-        DATA_WIDTH => REGISTER_SIZE
+        ADDRESS_WIDTH => REGISTER_SIZE,
+        DATA_WIDTH    => REGISTER_SIZE
         )
       port map (
         clk     => clk,

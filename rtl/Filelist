@@ -20,5 +20,6 @@ cache_controller.vhd
 cache_mux.vhd
 a4l_master.vhd
 axi_master.vhd
+oimm_register.vhd
 memory_interface.vhd
 orca.vhd

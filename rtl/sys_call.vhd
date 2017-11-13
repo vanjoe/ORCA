@@ -48,18 +48,18 @@ entity system_calls is
     REGISTER_SIZE         : natural;
     INTERRUPT_VECTOR      : std_logic_vector(31 downto 0);
     POWER_OPTIMIZED       : boolean;
-    ENABLE_EXCEPTIONS     : boolean := true;
+    ENABLE_EXCEPTIONS     : boolean;
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
     COUNTER_LENGTH        : natural
     );
   port (
-    clk         : in  std_logic;
-    reset       : in  std_logic;
-    valid       : in  std_logic;
-    stall_out   : out std_logic;
-    rs1_data    : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    clk           : in  std_logic;
+    reset         : in  std_logic;
+    valid         : in  std_logic;
+    syscall_ready : out std_logic;
+    rs1_data      : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    instruction   : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
     data_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_enable : out std_logic;
@@ -181,10 +181,9 @@ begin  -- architecture rtl
     when others;
 
   --Sleep CSR is for power optimized versions only; costs area and fmax otherwise
-  stall_out <= '1' when POWER_OPTIMIZED and (instruction(MAJOR_OP'range) = SYSTEM_OP and
-                                             csr_select = CSR_SLEEP and
-                                             valid = '1' and
-                                             csr_write_val /= mtime) else '0';
+  syscall_ready <= '0' when POWER_OPTIMIZED and (instruction(MAJOR_OP'range) = SYSTEM_OP and
+                                                 csr_select = CSR_SLEEP and
+                                                 csr_write_val /= mtime) else '1';
 
   process(clk)
   begin
@@ -302,7 +301,12 @@ begin  -- architecture rtl
 -- Once the pipeline is empty, then correct the PC.
 --------------------------------------------------------------------------------
   interrupts_gen : if ENABLE_EXT_INTERRUPTS /= 0 generate
-    meipend(NUM_EXT_INTERRUPTS-1 downto 0) <= global_interrupts;
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        meipend(NUM_EXT_INTERRUPTS-1 downto 0) <= global_interrupts;
+      end if;
+    end process;
     not_all_interrupts_gen : if NUM_EXT_INTERRUPTS < REGISTER_SIZE generate
       meipend(REGISTER_SIZE-1 downto NUM_EXT_INTERRUPTS) <= (others => '0');
     end generate not_all_interrupts_gen;

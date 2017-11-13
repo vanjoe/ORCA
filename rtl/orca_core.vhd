@@ -15,7 +15,7 @@ entity orca_core is
     MULTIPLY_ENABLE        : natural range 0 to 1;
     DIVIDE_ENABLE          : natural range 0 to 1;
     SHIFTER_MAX_CYCLES     : natural;
-    POWER_OPTIMIZED        : natural range 0 to 1  := 0;
+    POWER_OPTIMIZED        : natural range 0 to 1;
     COUNTER_LENGTH         : natural;
     ENABLE_EXCEPTIONS      : natural;
     PIPELINE_STAGES        : natural range 4 to 5;
@@ -57,7 +57,7 @@ entity orca_core is
     sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     sp_ack       : out std_logic;
 
-    global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
+    global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0)
     );
 end entity orca_core;
 

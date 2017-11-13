@@ -28,19 +28,20 @@ proc create_bd {proj_dir proj_name bd_file bd_changes} {
 
 #creates .hwdef
 proc generate_bd_design {proj_dir proj_name bd_tcl_name} {
-	 open_project $proj_dir/$proj_name.xpr
-	 set bd_design [glob $proj_dir/$proj_name.srcs/[current_fileset]/bd/*/*.bd]
-	 open_bd_design $bd_design
-	 generate_target all [get_files  $bd_design ]
-	 write_bd_tcl $bd_tcl_name
-	 close_project
+    open_project $proj_dir/$proj_name.xpr
+    set bd_design [glob $proj_dir/$proj_name.srcs/[current_fileset]/bd/*/*.bd]
+    open_bd_design $bd_design
+    catch { reset_target all [get_files $bd_design] }
+    generate_target all [get_files  $bd_design ]
+    write_bd_tcl $bd_tcl_name
+    close_project
 }
 
 #creates synth_1/runme.log
 proc project_synth {proj_dir proj_name } {
     open_project $proj_dir/$proj_name.xpr
     reset_run synth_1
-    launch_runs synth_1
+    launch_runs synth_1 -jobs 4
     wait_on_run synth_1
     close_project
 }

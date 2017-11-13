@@ -34,13 +34,14 @@ entity lve_top is
     slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
     slave_ack      : out std_logic;
 
-    lve_executing        : out    std_logic;
+    lve_ready            : out std_logic;
+    lve_executing        : out std_logic;
     lve_alu_data1        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     lve_alu_data2        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    lve_alu_op_size      : out    std_logic_vector(1 downto 0);
-    lve_alu_source_valid : out    std_logic;
-    lve_alu_result       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    lve_alu_result_valid : in     std_logic
+    lve_alu_op_size      : out std_logic_vector(1 downto 0);
+    lve_alu_source_valid : out std_logic;
+    lve_alu_result       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lve_alu_result_valid : in  std_logic
     );
 end entity;
 
@@ -104,6 +105,8 @@ architecture rtl of lve_top is
   signal write_enable  : std_logic;
 
   signal valid_lve_instr : std_logic;
+  signal lve_select      : std_logic;
+  signal lve_can_execute : std_logic;
 
 
   signal accumulation_register : unsigned(REGISTER_SIZE - 1 downto 0);
@@ -175,7 +178,8 @@ begin
   lve_result <= lve_alu_result when mxp_instr = '0' else
                 cmv_result;
 
-  valid_lve_instr <= valid_instr when major_op = CUSTOM0 else '0';
+  lve_select      <= '1' when major_op = CUSTOM0 else '0';
+  valid_lve_instr <= valid_instr and lve_select;
 
   pointer_increment <= unsigned(rs2_data(rs2_data'left downto rs2_data'length - pointer_increment'length));
 
@@ -269,7 +273,9 @@ begin
 
   end process;
 
-  lve_executing <= valid_lve_instr and not is_prefix when first_element = '1' or (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
+  lve_ready       <= not lve_can_execute;
+  lve_can_execute <= lve_select and (not is_prefix) when first_element = '1' or (read_vector_length /= 0) or (write_vector_length /= 0) else '0';
+  lve_executing   <= lve_can_execute and valid_instr;
 
   rd_en <= valid_lve_instr when external_port_enable = '0' and (read_vector_length > 1 or first_element = '1') else '0';
 

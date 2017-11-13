@@ -60,6 +60,7 @@ add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
 add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
 add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
 add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH cache_mux.vhd
+add_fileset_file vblox_orca/oimm_register.vhd VHDL PATH oimm_register.vhd
 add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
 add_fileset_file vblox_orca/cache_controller.vhd VHDL PATH cache_controller.vhd
 
@@ -85,6 +86,7 @@ add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
 add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
 add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
 add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH cache_mux.vhd
+add_fileset_file vblox_orca/oimm_register.vhd VHDL PATH oimm_register.vhd
 add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
 add_fileset_file vblox_orca/cache_controller.vhd VHDL PATH cache_controller.vhd
 
@@ -204,8 +206,8 @@ set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "       External Interrup
 set_parameter_property NUM_EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (maximum 32)."
 set_parameter_property NUM_EXT_INTERRUPTS visible false
 
-add_parameter          DATA_REQUEST_REGISTER natural 2
-set_parameter_property DATA_REQUEST_REGISTER DEFAULT_VALUE 2
+add_parameter          DATA_REQUEST_REGISTER natural 0
+set_parameter_property DATA_REQUEST_REGISTER DEFAULT_VALUE 0
 set_parameter_property DATA_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property DATA_REQUEST_REGISTER DISPLAY_NAME "Data Request Register"
 set_parameter_property DATA_REQUEST_REGISTER DESCRIPTION "Register data master request for higher fmax.  \
@@ -213,11 +215,92 @@ set_parameter_property DATA_REQUEST_REGISTER DESCRIPTION "Register data master r
 set_parameter_property DATA_REQUEST_REGISTER ALLOWED_RANGES {0,2}
 
 add_parameter          DATA_RETURN_REGISTER natural 0
+set_parameter_property DATA_RETURN_REGISTER DEFAULT_VALUE 0
 set_parameter_property DATA_RETURN_REGISTER HDL_PARAMETER true
 set_parameter_property DATA_RETURN_REGISTER DISPLAY_NAME "Data Return Register"
 set_parameter_property DATA_RETURN_REGISTER DESCRIPTION "Register data master readdata for higher fmax \
 at the cost of higher load latency."
 set_parameter_property DATA_RETURN_REGISTER ALLOWED_RANGES {0,1}
+
+add_parameter          DUC_REQUEST_REGISTER natural 2
+set_parameter_property DUC_REQUEST_REGISTER DEFAULT_VALUE 2
+set_parameter_property DUC_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DUC_REQUEST_REGISTER DISPLAY_NAME "DUC Request Register"
+set_parameter_property DUC_REQUEST_REGISTER DESCRIPTION "Register DUC master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property DUC_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+
+add_parameter          DUC_RETURN_REGISTER natural 1
+set_parameter_property DUC_RETURN_REGISTER DEFAULT_VALUE 1
+set_parameter_property DUC_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DUC_RETURN_REGISTER DISPLAY_NAME "DUC Return Register"
+set_parameter_property DUC_RETURN_REGISTER DESCRIPTION "Register DUC master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property DUC_RETURN_REGISTER ALLOWED_RANGES {0,1}
+
+add_parameter          DAUX_REQUEST_REGISTER natural 2
+set_parameter_property DAUX_REQUEST_REGISTER DEFAULT_VALUE 2
+set_parameter_property DAUX_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DAUX_REQUEST_REGISTER DISPLAY_NAME "Data avalon Request Register"
+set_parameter_property DAUX_REQUEST_REGISTER DESCRIPTION "Register data avalon master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property DAUX_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+
+add_parameter          DAUX_RETURN_REGISTER natural 1
+set_parameter_property DAUX_RETURN_REGISTER DEFAULT_VALUE 1
+set_parameter_property DAUX_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DAUX_RETURN_REGISTER DISPLAY_NAME "Data avalon Return Register"
+set_parameter_property DAUX_RETURN_REGISTER DESCRIPTION "Register data avalon master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property DAUX_RETURN_REGISTER ALLOWED_RANGES {0,1}
+
+add_parameter          INSTRUCTION_REQUEST_REGISTER natural 0
+set_parameter_property INSTRUCTION_REQUEST_REGISTER DEFAULT_VALUE 0
+set_parameter_property INSTRUCTION_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property INSTRUCTION_REQUEST_REGISTER DISPLAY_NAME "Instruction Request Register"
+set_parameter_property INSTRUCTION_REQUEST_REGISTER DESCRIPTION "Register instruction master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property INSTRUCTION_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+
+add_parameter          INSTRUCTION_RETURN_REGISTER natural 0
+set_parameter_property INSTRUCTION_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property INSTRUCTION_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property INSTRUCTION_RETURN_REGISTER DISPLAY_NAME "Instruction Return Register"
+set_parameter_property INSTRUCTION_RETURN_REGISTER DESCRIPTION "Register instruction master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property INSTRUCTION_RETURN_REGISTER ALLOWED_RANGES {0,1}
+
+add_parameter          IUC_REQUEST_REGISTER natural 1
+set_parameter_property IUC_REQUEST_REGISTER DEFAULT_VALUE 1
+set_parameter_property IUC_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property IUC_REQUEST_REGISTER DISPLAY_NAME "IUC Request Register"
+set_parameter_property IUC_REQUEST_REGISTER DESCRIPTION "Register IUC master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property IUC_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+
+add_parameter          IUC_RETURN_REGISTER natural 0
+set_parameter_property IUC_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property IUC_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property IUC_RETURN_REGISTER DISPLAY_NAME "IUC Return Register"
+set_parameter_property IUC_RETURN_REGISTER DESCRIPTION "Register IUC master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property IUC_RETURN_REGISTER ALLOWED_RANGES {0,1}
+
+add_parameter          IAUX_REQUEST_REGISTER natural 1
+set_parameter_property IAUX_REQUEST_REGISTER DEFAULT_VALUE 1
+set_parameter_property IAUX_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property IAUX_REQUEST_REGISTER DISPLAY_NAME "Instruction Avalon Request Register"
+set_parameter_property IAUX_REQUEST_REGISTER DESCRIPTION "Register instruction avalon master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property IAUX_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+
+add_parameter          IAUX_RETURN_REGISTER natural 0
+set_parameter_property IAUX_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property IAUX_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property IAUX_RETURN_REGISTER DISPLAY_NAME "Instruction Avalon Return Register"
+set_parameter_property IAUX_RETURN_REGISTER DESCRIPTION "Register instruction avalon master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property IAUX_RETURN_REGISTER ALLOWED_RANGES {0,1}
 
 add_parameter          PIPELINE_STAGES natural 5
 set_parameter_property PIPELINE_STAGES HDL_PARAMETER true

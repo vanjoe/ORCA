@@ -23,6 +23,16 @@ proc init_gui { IPINST } {
     set memoryAndCachePage [ipgui::add_page $IPINST -name "Memory and Cache"]
     ipgui::add_param $IPINST -name "DATA_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
     ipgui::add_param $IPINST -name "DATA_RETURN_REGISTER"  -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DUC_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "DUC_RETURN_REGISTER"  -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DAUX_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "DAUX_RETURN_REGISTER"  -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "INSTRUCTION_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "INSTRUCTION_RETURN_REGISTER"  -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "IUC_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "IUC_RETURN_REGISTER"  -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "IAUX_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "IAUX_RETURN_REGISTER"  -parent $memoryAndCachePage
     ipgui::add_param $IPINST -name "IUC_ADDR_BASE"         -parent $memoryAndCachePage
     ipgui::add_param $IPINST -name "IUC_ADDR_LAST"         -parent $memoryAndCachePage
     ipgui::add_param $IPINST -name "IAUX_ADDR_BASE"        -parent $memoryAndCachePage
@@ -74,6 +84,96 @@ proc update_PARAM_VALUE.DATA_RETURN_REGISTER { PARAM_VALUE.DATA_RETURN_REGISTER 
 
 proc validate_PARAM_VALUE.DATA_RETURN_REGISTER { PARAM_VALUE.DATA_RETURN_REGISTER } {
 	# Procedure called to validate DATA_RETURN_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.DUC_REQUEST_REGISTER { PARAM_VALUE.DUC_REQUEST_REGISTER } {
+	# Procedure called to update DUC_REQUEST_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.DUC_REQUEST_REGISTER { PARAM_VALUE.DUC_REQUEST_REGISTER } {
+	# Procedure called to validate DUC_REQUEST_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.DUC_RETURN_REGISTER { PARAM_VALUE.DUC_RETURN_REGISTER } {
+	# Procedure called to update DUC_RETURN_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.DUC_RETURN_REGISTER { PARAM_VALUE.DUC_RETURN_REGISTER } {
+	# Procedure called to validate DUC_RETURN_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.DAUX_REQUEST_REGISTER { PARAM_VALUE.DAUX_REQUEST_REGISTER } {
+	# Procedure called to update DAUX_REQUEST_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.DAUX_REQUEST_REGISTER { PARAM_VALUE.DAUX_REQUEST_REGISTER } {
+	# Procedure called to validate DAUX_REQUEST_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.DAUX_RETURN_REGISTER { PARAM_VALUE.DAUX_RETURN_REGISTER } {
+	# Procedure called to update DAUX_RETURN_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.DAUX_RETURN_REGISTER { PARAM_VALUE.DAUX_RETURN_REGISTER } {
+	# Procedure called to validate DAUX_RETURN_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.INSTRUCTION_REQUEST_REGISTER { PARAM_VALUE.INSTRUCTION_REQUEST_REGISTER } {
+	# Procedure called to update INSTRUCTION_REQUEST_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.INSTRUCTION_REQUEST_REGISTER { PARAM_VALUE.INSTRUCTION_REQUEST_REGISTER } {
+	# Procedure called to validate INSTRUCTION_REQUEST_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.INSTRUCTION_RETURN_REGISTER { PARAM_VALUE.INSTRUCTION_RETURN_REGISTER } {
+	# Procedure called to update INSTRUCTION_RETURN_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.INSTRUCTION_RETURN_REGISTER { PARAM_VALUE.INSTRUCTION_RETURN_REGISTER } {
+	# Procedure called to validate INSTRUCTION_RETURN_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.IUC_REQUEST_REGISTER { PARAM_VALUE.IUC_REQUEST_REGISTER } {
+	# Procedure called to update IUC_REQUEST_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.IUC_REQUEST_REGISTER { PARAM_VALUE.IUC_REQUEST_REGISTER } {
+	# Procedure called to validate IUC_REQUEST_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.IUC_RETURN_REGISTER { PARAM_VALUE.IUC_RETURN_REGISTER } {
+	# Procedure called to update IUC_RETURN_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.IUC_RETURN_REGISTER { PARAM_VALUE.IUC_RETURN_REGISTER } {
+	# Procedure called to validate IUC_RETURN_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.IAUX_REQUEST_REGISTER { PARAM_VALUE.IAUX_REQUEST_REGISTER } {
+	# Procedure called to update IAUX_REQUEST_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.IAUX_REQUEST_REGISTER { PARAM_VALUE.IAUX_REQUEST_REGISTER } {
+	# Procedure called to validate IAUX_REQUEST_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.IAUX_RETURN_REGISTER { PARAM_VALUE.IAUX_RETURN_REGISTER } {
+	# Procedure called to update IAUX_RETURN_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.IAUX_RETURN_REGISTER { PARAM_VALUE.IAUX_RETURN_REGISTER } {
+	# Procedure called to validate IAUX_RETURN_REGISTER
 	return true
 }
 
@@ -443,6 +543,56 @@ proc update_MODELPARAM_VALUE.DATA_REQUEST_REGISTER { MODELPARAM_VALUE.DATA_REQUE
 proc update_MODELPARAM_VALUE.DATA_RETURN_REGISTER { MODELPARAM_VALUE.DATA_RETURN_REGISTER PARAM_VALUE.DATA_RETURN_REGISTER } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.DATA_RETURN_REGISTER}] ${MODELPARAM_VALUE.DATA_RETURN_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.DUC_REQUEST_REGISTER { MODELPARAM_VALUE.DUC_REQUEST_REGISTER PARAM_VALUE.DUC_REQUEST_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.DUC_REQUEST_REGISTER}] ${MODELPARAM_VALUE.DUC_REQUEST_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.DUC_RETURN_REGISTER { MODELPARAM_VALUE.DUC_RETURN_REGISTER PARAM_VALUE.DUC_RETURN_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.DUC_RETURN_REGISTER}] ${MODELPARAM_VALUE.DUC_RETURN_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.DAUX_REQUEST_REGISTER { MODELPARAM_VALUE.DAUX_REQUEST_REGISTER PARAM_VALUE.DAUX_REQUEST_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.DAUX_REQUEST_REGISTER}] ${MODELPARAM_VALUE.DAUX_REQUEST_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.DAUX_RETURN_REGISTER { MODELPARAM_VALUE.DAUX_RETURN_REGISTER PARAM_VALUE.DAUX_RETURN_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.DAUX_RETURN_REGISTER}] ${MODELPARAM_VALUE.DAUX_RETURN_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.INSTRUCTION_REQUEST_REGISTER { MODELPARAM_VALUE.INSTRUCTION_REQUEST_REGISTER PARAM_VALUE.INSTRUCTION_REQUEST_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.INSTRUCTION_REQUEST_REGISTER}] ${MODELPARAM_VALUE.INSTRUCTION_REQUEST_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.INSTRUCTION_RETURN_REGISTER { MODELPARAM_VALUE.INSTRUCTION_RETURN_REGISTER PARAM_VALUE.INSTRUCTION_RETURN_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.INSTRUCTION_RETURN_REGISTER}] ${MODELPARAM_VALUE.INSTRUCTION_RETURN_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.IUC_REQUEST_REGISTER { MODELPARAM_VALUE.IUC_REQUEST_REGISTER PARAM_VALUE.IUC_REQUEST_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.IUC_REQUEST_REGISTER}] ${MODELPARAM_VALUE.IUC_REQUEST_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.IUC_RETURN_REGISTER { MODELPARAM_VALUE.IUC_RETURN_REGISTER PARAM_VALUE.IUC_RETURN_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.IUC_RETURN_REGISTER}] ${MODELPARAM_VALUE.IUC_RETURN_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.IAUX_REQUEST_REGISTER { MODELPARAM_VALUE.IAUX_REQUEST_REGISTER PARAM_VALUE.IAUX_REQUEST_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.IAUX_REQUEST_REGISTER}] ${MODELPARAM_VALUE.IAUX_REQUEST_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.IAUX_RETURN_REGISTER { MODELPARAM_VALUE.IAUX_RETURN_REGISTER PARAM_VALUE.IAUX_RETURN_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.IAUX_RETURN_REGISTER}] ${MODELPARAM_VALUE.IAUX_RETURN_REGISTER}
 }
 
 proc update_MODELPARAM_VALUE.PIPELINE_STAGES { MODELPARAM_VALUE.PIPELINE_STAGES PARAM_VALUE.PIPELINE_STAGES } {

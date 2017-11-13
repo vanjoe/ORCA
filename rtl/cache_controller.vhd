@@ -8,20 +8,20 @@ use work.utils.all;
 
 entity cache_controller is
   generic (
-    CACHE_SIZE      : natural                  := 32768;  -- Byte size of cache
-    LINE_SIZE       : positive range 16 to 256 := 32;  -- Bytes per cache line 
-    ADDR_WIDTH      : integer                  := 32;
-    INTERNAL_WIDTH  : integer                  := 32;
-    EXTERNAL_WIDTH  : integer                  := 32;
-    MAX_BURSTLENGTH : positive                 := 16;
-    BURST_EN        : integer                  := 0
+    CACHE_SIZE      : natural;
+    LINE_SIZE       : positive range 16 to 256;
+    ADDRESS_WIDTH   : positive;
+    INTERNAL_WIDTH  : positive;
+    EXTERNAL_WIDTH  : positive;
+    MAX_BURSTLENGTH : positive;
+    BURST_EN        : natural range 0 to 1
     );
   port (
     clk   : in std_logic;
     reset : in std_logic;
 
     --Cache interface Orca-internal memory-mapped slave
-    cacheint_oimm_address       : in     std_logic_vector(ADDR_WIDTH-1 downto 0);
+    cacheint_oimm_address       : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     cacheint_oimm_byteenable    : in     std_logic_vector((INTERNAL_WIDTH/8)-1 downto 0);
     cacheint_oimm_requestvalid  : in     std_logic;
     cacheint_oimm_readnotwrite  : in     std_logic;
@@ -31,7 +31,7 @@ entity cache_controller is
     cacheint_oimm_waitrequest   : buffer std_logic;
 
     --Cached Orca-internal memory-mapped master
-    c_oimm_address            : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    c_oimm_address            : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     c_oimm_burstlength        : out std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0);
     c_oimm_burstlength_minus1 : out std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
     c_oimm_byteenable         : out std_logic_vector((EXTERNAL_WIDTH/8)-1 downto 0);
@@ -68,12 +68,12 @@ architecture rtl of cache_controller is
   constant NUM_READS        : positive := LINE_SIZE/BYTES_PER_BURST;  -- Number of reads to perform from DRAM.
 
   signal internal_data_oimm_miss        : std_logic;
-  signal internal_data_oimm_missaddress : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal internal_data_oimm_missaddress : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
 
   type state_w_t is (CLEAR, IDLE, CACHE_MISSED, WAIT_FOR_HIT);
   signal state_w                         : state_w_t;
   signal next_state_w                    : state_w_t;
-  signal external_oimm_address           : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal external_oimm_address           : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
   signal external_data_oimm_writedata    : std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
   signal external_data_oimm_requestvalid : std_logic;
   signal external_tag_oimm_writedata     : std_logic;
@@ -96,7 +96,7 @@ architecture rtl of cache_controller is
 begin
   c_oimm_burstlength        <= std_logic_vector(to_unsigned(BURST_LENGTH, c_oimm_burstlength'length));
   c_oimm_burstlength_minus1 <= std_logic_vector(to_unsigned(BURST_LENGTH-1, c_oimm_burstlength_minus1'length));
-  c_oimm_address            <= internal_data_oimm_missaddress(ADDR_WIDTH-1 downto log2(LINE_SIZE)) & std_logic_vector(c_oimm_offset);
+  c_oimm_address            <= internal_data_oimm_missaddress(ADDRESS_WIDTH-1 downto log2(LINE_SIZE)) & std_logic_vector(c_oimm_offset);
   c_oimm_requestvalid       <= not c_read_done;
   c_oimm_readnotwrite       <= '1';
   c_oimm_writedata          <= (others => '-');
@@ -104,14 +104,14 @@ begin
 
   process(state_w, cache_management_line, internal_data_oimm_miss, external_oimm_offset_next, c_oimm_readdatavalid, c_oimm_waitrequest, c_read_done)
   begin
-    next_state_w                    <= state_w;
-    next_cache_management_line      <= cache_management_line;
-    cache_ready                     <= '1';
-    c_oimm_offset_reset             <= '0';
-    c_oimm_offset_incr              <= '0';
-    external_oimm_offset_reset      <= '0';
-    external_tag_oimm_requestvalid  <= '0';
-    external_tag_oimm_writedata     <= '0';
+    next_state_w                   <= state_w;
+    next_cache_management_line     <= cache_management_line;
+    cache_ready                    <= '1';
+    c_oimm_offset_reset            <= '0';
+    c_oimm_offset_incr             <= '0';
+    external_oimm_offset_reset     <= '0';
+    external_tag_oimm_requestvalid <= '0';
+    external_tag_oimm_writedata    <= '0';
     case state_w is
       when CLEAR =>
         cache_ready                    <= '0';
@@ -142,7 +142,7 @@ begin
           external_tag_oimm_requestvalid <= '1';
           external_tag_oimm_writedata    <= '1';
         end if;
-        c_oimm_offset_incr              <= (not c_oimm_waitrequest) and (not c_read_done);
+        c_oimm_offset_incr <= (not c_oimm_waitrequest) and (not c_read_done);
 
       when WAIT_FOR_HIT =>
         if internal_data_oimm_miss = '0' then
@@ -194,8 +194,8 @@ begin
     end if;
   end process;
 
-  external_oimm_address(ADDR_WIDTH-1 downto log2(CACHE_SIZE)) <=
-    internal_data_oimm_missaddress(ADDR_WIDTH-1 downto log2(CACHE_SIZE));
+  external_oimm_address(ADDRESS_WIDTH-1 downto log2(CACHE_SIZE)) <=
+    internal_data_oimm_missaddress(ADDRESS_WIDTH-1 downto log2(CACHE_SIZE));
   external_oimm_address(log2(CACHE_SIZE)-1 downto log2(LINE_SIZE)) <=
     internal_data_oimm_missaddress(log2(CACHE_SIZE)-1 downto log2(LINE_SIZE)) when cache_ready = '1' else
     std_logic_vector(cache_management_line);
@@ -211,7 +211,7 @@ begin
     generic map (
       NUM_LINES      => NUM_LINES,
       LINE_SIZE      => LINE_SIZE,
-      ADDR_WIDTH     => ADDR_WIDTH,
+      ADDRESS_WIDTH  => ADDRESS_WIDTH,
       INTERNAL_WIDTH => INTERNAL_WIDTH,
       EXTERNAL_WIDTH => EXTERNAL_WIDTH
       )

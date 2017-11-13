@@ -16,7 +16,7 @@ entity arithmetic_unit is
     POWER_OPTIMIZED     : boolean;
     DIVIDE_ENABLE       : boolean;
     SHIFTER_MAX_CYCLES  : natural;
-    FAMILY              : string := "GENERIC"
+    FAMILY              : string
     );
   port (
     clk                : in  std_logic;
@@ -32,7 +32,7 @@ entity arithmetic_unit is
 
     data_out_valid : out std_logic;
     less_than      : out std_logic;
-    stall_from_alu : out std_logic;
+    alu_ready      : out std_logic;
 
     lve_data1        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     lve_data2        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -68,7 +68,7 @@ architecture rtl of arithmetic_unit is
   signal slt_result           : unsigned(REGISTER_SIZE-1 downto 0);
   signal slt_result_valid     : std_logic;
 
-  signal upper_immediate  : signed(REGISTER_SIZE-1 downto 0);
+  signal upper_immediate : signed(REGISTER_SIZE-1 downto 0);
 
   signal mul_srca          : signed(REGISTER_SIZE downto 0);
   signal mul_srcb          : signed(REGISTER_SIZE downto 0);
@@ -79,7 +79,8 @@ architecture rtl of arithmetic_unit is
   signal mul_dest_shift_amt : unsigned(log2(REGISTER_SIZE)-1 downto 0);
   signal mul_dest_valid     : std_logic;
 
-  signal mul_stall : std_logic;
+  signal mul_ready  : std_logic;
+  signal mul_select : std_logic;
 
   signal div_op1          : unsigned(REGISTER_SIZE-1 downto 0);
   signal div_op2          : unsigned(REGISTER_SIZE-1 downto 0);
@@ -98,12 +99,13 @@ architecture rtl of arithmetic_unit is
   signal div_neg     : std_logic;
   signal div_neg_op1 : std_logic;
   signal div_neg_op2 : std_logic;
-  signal div_stall   : std_logic;
+  signal div_ready   : std_logic;
+  signal div_enable  : std_logic;
+  signal div_select  : std_logic;
 
-  signal div_enable : std_logic;
-
-  signal sh_stall  : std_logic;
+  signal sh_ready  : std_logic;
   signal sh_enable : std_logic;
+  signal sh_select : std_logic;
 
   component shifter is
     generic (
@@ -299,13 +301,14 @@ begin  -- architecture rtl
                   valid_instr;
 
   func7_shift <= func7 = "0000000" or func7 = "0100000";
-  sh_enable   <= valid_instr and source_valid when
-                 (((opcode = ALU_OP and func7_shift) or
-                   (opcode = ALUI_OP) or
-                   (opcode = LVE_OP and lve_source_valid = '1')) and
-                  (func3 = "001" or func3 = "101")) else
-                 '0';
-  sh_stall    <= (not shifted_result_valid)   when sh_enable = '1'                                                                                                                                else '0';
+  sh_enable   <= source_valid and sh_select;
+  sh_select   <= '1' when
+               (((opcode = ALU_OP and func7_shift) or
+                 (opcode = ALUI_OP) or
+                 (opcode = LVE_OP and lve_source_valid = '1')) and
+                (func3 = "001" or func3 = "101")) else
+               '0';
+  sh_ready <= shifted_result_valid or (not sh_select);
 
   SH_GEN0 : if SHIFTER_USE_MULTIPLIER generate
     shift_mul_gen : for n in shifter_multiply'left-1 downto 0 generate
@@ -462,9 +465,11 @@ begin  -- architecture rtl
     signal mul_ab_shift_amt : unsigned(log2(REGISTER_SIZE)-1 downto 0);
     signal mul_ab_valid     : std_logic;
   begin
-    mul_enable <= valid_instr and source_valid when ((func7 = mul_f7 and opcode = ALU_OP) or
-                                                     (instruction(25) = '1' and opcode = LVE_OP)) and instruction(14) = '0' else '0';
-    mul_stall <= mul_enable and (not mul_dest_valid);
+    mul_select <= '1' when ((func7 = mul_f7 and opcode = ALU_OP) or
+                            (instruction(25) = '1' and opcode = LVE_OP)) and instruction(14) = '0' else
+                  '0';
+    mul_enable <= source_valid and mul_select;
+    mul_ready  <= mul_dest_valid or (not mul_select);
 
     lattice_mul_gen : if FAMILY = "LATTICE" generate
       signal afix  : unsigned(mul_a'length-2 downto 0);
@@ -541,12 +546,13 @@ begin  -- architecture rtl
     mul_dest_valid     <= '0';
     mul_dest_shift_amt <= (others => '-');
     mul_dest           <= (others => '-');
-    mul_stall          <= '0';
+    mul_ready          <= '1';
   end generate no_mul_gen;
 
   divide_gen : if DIVIDE_ENABLE generate
   begin
-    div_enable <= '1' when (func7 = mul_f7 and opcode = ALU_OP and instruction(14) = '1') and valid_instr = '1' and source_valid = '1' else '0';
+    div_enable <= source_valid and div_select;
+    div_select <= '1' when (func7 = mul_f7 and opcode = ALU_OP and instruction(14) = '1') else '0';
     div : divider
       generic map (
         REGISTER_SIZE => REGISTER_SIZE)
@@ -563,17 +569,17 @@ begin  -- architecture rtl
     div_result <= signed(quotient);
     rem_result <= signed(remainder);
 
-    div_stall <= div_enable and (not div_result_valid);
+    div_ready <= div_result_valid or (not div_select);
   end generate divide_gen;
   no_divide_gen : if not DIVIDE_ENABLE generate
   begin
-    div_stall        <= '0';
+    div_ready        <= '1';
     div_result       <= (others => 'X');
     rem_result       <= (others => 'X');
     div_result_valid <= '0';
   end generate;
 
-  stall_from_alu <= div_stall or mul_stall or sh_stall;
+  alu_ready <= div_ready and mul_ready and sh_ready;
 end architecture;
 
 -------------------------------------------------------------------------------
