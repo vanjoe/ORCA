@@ -24,8 +24,6 @@ uint32_t abs_image_diff(vbx_word_t* imgA,vbx_ubyte_t* imgBb,vbx_ubyte_t* prevBuf
 #if GS_CAM
 			imgA[col] = imgAb[row*CAM_IMAGE_WIDTH + col];
 #endif
-		}
-		for(int col=0;col<THUMBNAIL_WIDTH;col++){
 			prevBuf[row*THUMBNAIL_WIDTH+col] = imgA[row*THUMBNAIL_WIDTH+col];
 		}
 

@@ -5,7 +5,8 @@ use IEEE.numeric_std.all;
 
 entity wb_arbiter is
   generic (
-    DATA_WIDTH : integer := 32
+    DATA_WIDTH         : integer                      := 32;
+    WAIT_FOR_WRITE_ACK : std_logic_vector(2 downto 0) := "000"
     );
   port (
     CLK_I : in std_logic;
@@ -99,14 +100,14 @@ architecture rtl of wb_arbiter is
 
   end function;
 
-  signal slave_en         : std_logic_vector(2 downto 0);
-  signal wait_for_read : std_logic;
+  signal slave_en      : std_logic_vector(2 downto 0);
+  signal wait_for_ack : std_logic;
 
 begin  -- architecture rtl
   slave_en(0)      <= slave0_STB_I and slave0_CYC_I;
   slave_en(1)      <= slave1_STB_I and slave1_CYC_I;
   slave_en(2)      <= slave2_STB_I and slave2_CYC_I;
-  port_sel_request <= READ_WAIT when wait_for_read = '1' and master_ACK_I = '0' else
+  port_sel_request <= READ_WAIT when wait_for_ack = '1' and master_ACK_I = '0' else
                       SLAVE0 when slave_en(0) = '1' else
                       SLAVE1 when slave_en(1) = '1' else
                       SLAVE2 when slave_en(2) = '1' else
@@ -116,9 +117,9 @@ begin  -- architecture rtl
   slave1_STALL_O <= slave_en(1) when port_sel_request /= SLAVE1 else master_stall_i;
   slave2_STALL_O <= slave_en(2) when port_sel_request /= SLAVE2 else master_stall_i;
 
-  slave0_ACK_O <= (master_ACK_I and wait_for_read) or write_ack(0) when port_sel_response = SLAVE0 else '0';
-  slave1_ACK_O <= (master_ACK_I and wait_for_read) or write_ack(1) when port_sel_response = SLAVE1 else '0';
-  slave2_ACK_O <= (master_ACK_I and wait_for_read) or write_ack(2) when port_sel_response = SLAVE2 else '0';
+  slave0_ACK_O <= (master_ACK_I and wait_for_ack) or write_ack(0) when port_sel_response = SLAVE0 else '0';
+  slave1_ACK_O <= (master_ACK_I and wait_for_ack) or write_ack(1) when port_sel_response = SLAVE1 else '0';
+  slave2_ACK_O <= (master_ACK_I and wait_for_ack) or write_ack(2) when port_sel_response = SLAVE2 else '0';
 
   slave0_DAT_O <= master_DAT_I;
   slave1_DAT_O <= master_DAT_I;
@@ -131,18 +132,18 @@ begin  -- architecture rtl
     if rising_edge(clk_i) then
       if master_STALL_I = '0' then
 
-        if wait_for_read = '1' and master_ack_i = '1' then
-          wait_for_read <= '0';
+        if wait_for_ack = '1' and master_ack_i = '1' then
+          wait_for_ack <= '0';
         end if;
-        if ((slave_en(0) and not slave0_we_i) or
-            (slave_en(1) and not slave1_we_i) or
-            (slave_en(2) and not slave2_we_i)) = '1' then
-          wait_for_read <= '1';
+        if ((slave_en(0) and (not slave0_we_i or WAIT_FOR_WRITE_ACK(0))) or
+            (slave_en(1) and (not slave1_we_i or WAIT_FOR_WRITE_ACK(1))) or
+            (slave_en(2) and (not slave2_we_i or WAIT_FOR_WRITE_ACK(2)))) = '1' then
+          wait_for_ack <= '1';
         end if;
 
-        write_ack(0) <= slave_en(0) and slave0_we_i;
-        write_ack(1) <= slave_en(1) and slave1_we_i;
-        write_ack(2) <= slave_en(2) and slave2_we_i;
+        write_ack(0) <= slave_en(0) and slave0_we_i and not WAIT_FOR_WRITE_ACK(0);
+        write_ack(1) <= slave_en(1) and slave1_we_i and not WAIT_FOR_WRITE_ACK(1);
+        write_ack(2) <= slave_en(2) and slave2_we_i and not WAIT_FOR_WRITE_ACK(2);
 
         if port_sel_request /= READ_WAIT then
           port_sel_response <= port_sel_request;
@@ -150,7 +151,7 @@ begin  -- architecture rtl
 
       end if;
       if rst_i = '1' then
-        wait_for_read <= '0';
+        wait_for_ack <= '0';
       end if;
     end if;
   end process;

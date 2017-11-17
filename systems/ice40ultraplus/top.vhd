@@ -163,7 +163,7 @@ architecture rtl of vhdl_top is
 
   signal sccb_pio_adr_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sccb_pio_dat_i   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sccb_pio_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal sccb_pio_dat_o   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal sccb_pio_stb_i   : std_logic;
   signal sccb_pio_cyc_i   : std_logic;
   signal sccb_pio_we_i    : std_logic;
@@ -463,6 +463,8 @@ begin
 
 --arbiter for scratchpad port
   arbiter : component wb_arbiter
+    generic map (
+      WAIT_FOR_WRITE_ACK => "100")
     port map (
       CLK_I => clk,
       RST_I => reset,
