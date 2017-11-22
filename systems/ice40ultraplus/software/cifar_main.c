@@ -257,8 +257,13 @@ void cifar_lve() {
 		//adjust start_time to elimate time spent printing base64 image
 		start_time+=b64_time;
 #endif
-		convert_rgb2grayscale((vbx_word_t*)(v_inb)+THUMB_X_OFFSET*CAM_IMG_WIDTH+THUMB_Y_OFFSET,v_in_gs);
+
+#if GS_CAM
+		img_diff_score = abs_image_diff(v_inb + THUMBNAIL_X_OFFSET*CAM_IMG_WIDTH+THUMBNAIL_Y_OFFSET,v_prev_img,v_prev_buf);
+#else
+		convert_rgb2grayscale((vbx_word_t*)(v_inb)+THUMBNAIL_X_OFFSET*CAM_IMG_WIDTH+THUMBNAIL_Y_OFFSET,v_in_gs);
 		img_diff_score = abs_image_diff(v_in_gs,v_prev_img,v_prev_buf);
+#endif
 
 		for (c = 0; c < 3; c++) {
 			cam_extract_and_pad(v_padb + c*(m+2)*(n+4), (vbx_word_t*)v_inb,c, m, n, 64);
