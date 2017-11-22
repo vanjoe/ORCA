@@ -7,10 +7,11 @@ use work.rv_components.all;
 use work.constants_pkg.all;
 entity decode is
   generic(
-    REGISTER_SIZE       : positive;
-    SIGN_EXTENSION_SIZE : positive;
-    PIPELINE_STAGES     : natural range 1 to 2;
-    FAMILY              : string
+    REGISTER_SIZE         : positive;
+    SIGN_EXTENSION_SIZE   : positive;
+    PIPELINE_STAGES       : natural range 1 to 2;
+    WRITE_FIRST_SUPPORTED : boolean;
+    FAMILY                : string
     );
   port(
     clk   : in std_logic;
@@ -79,18 +80,17 @@ begin
     generic map (
       REGISTER_SIZE         => REGISTER_SIZE,
       REGISTER_NAME_SIZE    => REGISTER_NAME_SIZE,
-      WRITE_FIRST_SUPPORTED => FAMILY = "XILINX"
+      WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED
       )
     port map(
-      clk         => clk,
-      valid_input => to_decode_valid,
-      rs1_sel     => rs1,
-      rs2_sel     => rs2,
-      wb_sel      => wb_sel_signal,
-      wb_data     => wb_data_signal,
-      wb_enable   => wb_enable_signal,
-      rs1_data    => rs1_reg,
-      rs2_data    => rs2_reg
+      clk       => clk,
+      rs1_sel   => rs1,
+      rs2_sel   => rs2,
+      wb_sel    => wb_sel_signal,
+      wb_data   => wb_data_signal,
+      wb_enable => wb_enable_signal,
+      rs1_data  => rs1_reg,
+      rs2_data  => rs2_reg
       );
 
   -- This is to handle Microsemi board's inability to initialize RAM to zero on startup.

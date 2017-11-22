@@ -63,6 +63,8 @@ add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH cache_mux.vhd
 add_fileset_file vblox_orca/oimm_register.vhd VHDL PATH oimm_register.vhd
 add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
 add_fileset_file vblox_orca/cache_controller.vhd VHDL PATH cache_controller.vhd
+add_fileset_file vblox_orca/cache.vhd VHDL PATH cache.vhd
+add_fileset_file vblox_orca/bram_sdp_write_first.vhd VHDL PATH bram_sdp_write_first.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL Orca
@@ -89,6 +91,8 @@ add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH cache_mux.vhd
 add_fileset_file vblox_orca/oimm_register.vhd VHDL PATH oimm_register.vhd
 add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
 add_fileset_file vblox_orca/cache_controller.vhd VHDL PATH cache_controller.vhd
+add_fileset_file vblox_orca/cache.vhd VHDL PATH cache.vhd
+add_fileset_file vblox_orca/bram_sdp_write_first.vhd VHDL PATH bram_sdp_write_first.vhd
 
 #
 # parameters
@@ -212,7 +216,7 @@ set_parameter_property DATA_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property DATA_REQUEST_REGISTER DISPLAY_NAME "Data Request Register"
 set_parameter_property DATA_REQUEST_REGISTER DESCRIPTION "Register data master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property DATA_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+set_parameter_property DATA_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
 
 add_parameter          DATA_RETURN_REGISTER natural 0
 set_parameter_property DATA_RETURN_REGISTER DEFAULT_VALUE 0
@@ -228,7 +232,7 @@ set_parameter_property DUC_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property DUC_REQUEST_REGISTER DISPLAY_NAME "DUC Request Register"
 set_parameter_property DUC_REQUEST_REGISTER DESCRIPTION "Register DUC master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property DUC_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+set_parameter_property DUC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
 
 add_parameter          DUC_RETURN_REGISTER natural 1
 set_parameter_property DUC_RETURN_REGISTER DEFAULT_VALUE 1
@@ -244,7 +248,7 @@ set_parameter_property DAUX_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property DAUX_REQUEST_REGISTER DISPLAY_NAME "Data avalon Request Register"
 set_parameter_property DAUX_REQUEST_REGISTER DESCRIPTION "Register data avalon master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property DAUX_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+set_parameter_property DAUX_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
 
 add_parameter          DAUX_RETURN_REGISTER natural 1
 set_parameter_property DAUX_RETURN_REGISTER DEFAULT_VALUE 1
@@ -260,7 +264,7 @@ set_parameter_property INSTRUCTION_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property INSTRUCTION_REQUEST_REGISTER DISPLAY_NAME "Instruction Request Register"
 set_parameter_property INSTRUCTION_REQUEST_REGISTER DESCRIPTION "Register instruction master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property INSTRUCTION_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+set_parameter_property INSTRUCTION_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
 
 add_parameter          INSTRUCTION_RETURN_REGISTER natural 0
 set_parameter_property INSTRUCTION_RETURN_REGISTER DEFAULT_VALUE 0
@@ -276,7 +280,7 @@ set_parameter_property IUC_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property IUC_REQUEST_REGISTER DISPLAY_NAME "IUC Request Register"
 set_parameter_property IUC_REQUEST_REGISTER DESCRIPTION "Register IUC master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property IUC_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+set_parameter_property IUC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
 
 add_parameter          IUC_RETURN_REGISTER natural 0
 set_parameter_property IUC_RETURN_REGISTER DEFAULT_VALUE 0
@@ -292,7 +296,7 @@ set_parameter_property IAUX_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property IAUX_REQUEST_REGISTER DISPLAY_NAME "Instruction Avalon Request Register"
 set_parameter_property IAUX_REQUEST_REGISTER DESCRIPTION "Register instruction avalon master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property IAUX_REQUEST_REGISTER ALLOWED_RANGES {0,2}
+set_parameter_property IAUX_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
 
 add_parameter          IAUX_RETURN_REGISTER natural 0
 set_parameter_property IAUX_RETURN_REGISTER DEFAULT_VALUE 0

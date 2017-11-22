@@ -13,34 +13,19 @@
 
 #define WAIT_SECONDS_BEFORE_START 0
 
-#define RUN_ASM_TEST     1
-#define RUN_IDRAM_LOOP   1
-#define RUN_CACHED_LOOP  1
-#define RUN_CACHE_MISSES 1
+#define RUN_ASM_TEST      1
+#define RUN_CACHED_LOOP   1
+#define RUN_UNCACHED_LOOP 1
+#define RUN_CACHE_MISSES  1
 
 #define LOOP_RUNS 256
 
-#define ICACHE_SIZE      8192
-#define ICACHE_LINE_SIZE 16
+#define CACHE_SIZE      8192
+#define CACHE_LINE_SIZE 16
 
-//Target the last half of PS memory; the first bit does not seem set up as writeable.
-#define PS7_MEM_CACHED_BASE   0x10000000
-#define PS7_MEM_UNCACHED_BASE 0x10000000
-#define PS7_MEM_SPAN          0x10000000
-
-#define ONCHIP_MEM_CACHED_BASE   0x50000000
-#define ONCHIP_MEM_UNCACHED_BASE 0x50000000
-#define ONCHIP_MEM_SPAN          0x00020000
-
-#if USE_ONCHIP_MEM
-#define NOT_TCM_CACHED_BASE   ONCHIP_MEM_CACHED_BASE
-#define NOT_TCM_UNCACHED_BASE ONCHIP_MEM_UNCACHED_BASE
-#define NOT_TCM_SPAN          ONCHIP_MEM_SPAN
-#else //#if USE_ONCHIP_MEM
-#define NOT_TCM_CACHED_BASE   PS7_MEM_CACHED_BASE
-#define NOT_TCM_UNCACHED_BASE PS7_MEM_UNCACHED_BASE
-#define NOT_TCM_SPAN          PS7_MEM_SPAN
-#endif //#else //#if USE_ONCHIP_MEM
+#define MEM_CACHED_BASE   0xA0000000
+#define MEM_UNCACHED_BASE 0xB0000000
+#define MEM_BASE_MASK     0xF0000000
 
 typedef void (*timing_loop)(uint32_t);
 
@@ -51,20 +36,24 @@ int main(void) {
     delayms(1000);
   }
   ChangedPrint("\r\n");
+
+  uint8_t test_space[3*CACHE_SIZE];
+  uint8_t *test_space_aligned = (uint8_t *)((((uintptr_t)test_space) + (CACHE_SIZE-1)) & (~(CACHE_SIZE-1)));
+  
 #if RUN_ASM_TEST
   {
     ChangedPrint("ASM cache test:\r\n");
 
-    int result = cache_test();
+    int result = cache_test((void *)test_space_aligned, 2*CACHE_SIZE, CACHE_SIZE, CACHE_LINE_SIZE);
     ChangedPrint("Cache test returned ");
     print_hex(result);
     ChangedPrint("\r\n");
   }
 #endif //#if RUN_ASM_TEST
   
-#if RUN_IDRAM_LOOP
+#if RUN_CACHED_LOOP
   {
-    ChangedPrint("IDRAM loop:\r\n");
+    ChangedPrint("Cached loop:\r\n");
     timing_loop the_timing_loop = &idram_timing_loop;
   
     uint32_t start_cycle = get_time();
@@ -72,50 +61,27 @@ int main(void) {
     uint32_t end_cycle = get_time();
   
     print_hex(LOOP_RUNS);
-    ChangedPrint(" runs of timing loop from idram took ");
+    ChangedPrint(" runs of timing loop from cache took ");
     print_hex(end_cycle-start_cycle);
     ChangedPrint(" cycles.\r\n");
   }
-#endif //#if RUN_IDRAM_LOOP
+#endif //#if RUN_CACHED_LOOP
 
-#if RUN_CACHED_LOOP
+#if RUN_UNCACHED_LOOP
   {
-    ChangedPrint("Cached loop:\r\n");
-    uint32_t *function_copy_ptr = (uint32_t *)(&idram_timing_loop);
-    uint32_t *function_copy_end = &idram_timing_loop_end;
-    uint32_t timing_loop_size   = (uint32_t)(function_copy_end-function_copy_ptr);
-
-    uint32_t *function_destination_ptr = (uint32_t *)NOT_TCM_UNCACHED_BASE;
-
-    int word;
-    for(word = 0; word < timing_loop_size; word++){
-      function_destination_ptr[word] = function_copy_ptr[word];
-    }
-    ChangedPrint("Function copied to not TCM.\r\n");
-    for(word = 0; word < timing_loop_size; word++){
-      if(function_destination_ptr[word] != function_copy_ptr[word]){
-        ChangedPrint("Error at word ");
-        print_hex(word);
-        ChangedPrint(" expected ");
-        print_hex(function_copy_ptr[word]);
-        ChangedPrint(" got ");
-        print_hex(function_destination_ptr[word]);
-        ChangedPrint("\r\n");
-      }
-    }
-    
-    timing_loop the_timing_loop = (timing_loop)(NOT_TCM_CACHED_BASE);
+    ChangedPrint("Unached loop:\r\n");
+    timing_loop the_timing_loop = (timing_loop)((((uintptr_t)(&idram_timing_loop)) & (~MEM_BASE_MASK)) | MEM_UNCACHED_BASE);
   
     uint32_t start_cycle = get_time();
     (*the_timing_loop)(LOOP_RUNS);
     uint32_t end_cycle = get_time();
   
     print_hex(LOOP_RUNS);
-    ChangedPrint(" runs of timing loop from not TCM (cached) took ");
+    ChangedPrint(" runs of timing loop from uncached memory took ");
     print_hex(end_cycle-start_cycle);
     ChangedPrint(" cycles.\r\n");
   }
-#endif //#if RUN_CACHED_LOOP
+#endif //#if RUN_UNCACHED_LOOP
 
 #if RUN_CACHE_MISSES
   {
@@ -124,13 +90,13 @@ int main(void) {
     uint32_t *function_copy_end = &idram_timing_loop_end;
     uint32_t timing_loop_size   = (uint32_t)(function_copy_end-function_copy_ptr);
 
-    uint32_t *function_destination_ptr = (uint32_t *)(NOT_TCM_UNCACHED_BASE+ICACHE_SIZE);
+    uint32_t *function_destination_ptr = (uint32_t *)test_space_aligned;
 
     int word;
     for(word = 0; word < timing_loop_size; word++){
       function_destination_ptr[word] = function_copy_ptr[word];
     }
-    ChangedPrint("Function copied to not TCM.\r\n");
+    ChangedPrint("Function copied to test_space.\r\n");
     for(word = 0; word < timing_loop_size; word++){
       if(function_destination_ptr[word] != function_copy_ptr[word]){
         ChangedPrint("Error at word ");
@@ -144,9 +110,9 @@ int main(void) {
     }
     //Overwrite the jump back to the beginning of the loop to a jump
     //forward to the next conflicting line in the cache.
-    function_destination_ptr[2] = J_FORWARD_BY(ICACHE_SIZE-(2*sizeof(uint32_t)));
+    function_destination_ptr[2] = J_FORWARD_BY(CACHE_SIZE-(2*sizeof(uint32_t)));
 
-    function_destination_ptr = (uint32_t *)(NOT_TCM_UNCACHED_BASE+(2*ICACHE_SIZE));
+    function_destination_ptr = (uint32_t *)(test_space_aligned+CACHE_SIZE);
     for(word = 0; word < timing_loop_size; word++){
       function_destination_ptr[word] = function_copy_ptr[word];
     }
@@ -154,17 +120,17 @@ int main(void) {
     //backward to the previous conflicting line in the cache.  The
     //function will ping-pong back and forth between these two lines
     //and always cause a conflict miss.
-    function_destination_ptr[2] = J_FORWARD_BY(0-(ICACHE_SIZE+(2*sizeof(uint32_t))));
+    function_destination_ptr[2] = J_FORWARD_BY(0-(CACHE_SIZE+(2*sizeof(uint32_t))));
     
     
-    timing_loop the_timing_loop = (timing_loop)(NOT_TCM_CACHED_BASE+ICACHE_SIZE);
+    timing_loop the_timing_loop = (timing_loop)(test_space_aligned);
   
     uint32_t start_cycle = get_time();
     (*the_timing_loop)(LOOP_RUNS);
     uint32_t end_cycle = get_time();
   
     print_hex(LOOP_RUNS);
-    ChangedPrint(" runs of timing loop from not TCM (cached) took ");
+    ChangedPrint(" runs of cache miss timing loop took ");
     print_hex(end_cycle-start_cycle);
     ChangedPrint(" cycles.\r\n");
   }

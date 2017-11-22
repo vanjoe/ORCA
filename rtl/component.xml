@@ -6048,7 +6048,7 @@
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>bram_tdp_behav.vhd</spirit:name>
+        <spirit:name>bram_sdp_write_first.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
@@ -6147,7 +6147,7 @@
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>bram_tdp_behav.vhd</spirit:name>
+        <spirit:name>bram_sdp_write_first.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>

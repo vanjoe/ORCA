@@ -342,8 +342,9 @@ package rv_components is
 
   component memory_interface is
     generic (
-      REGISTER_SIZE        : positive range 32 to 32;
-      SCRATCHPAD_ADDR_BITS : positive;
+      REGISTER_SIZE         : positive range 32 to 32;
+      SCRATCHPAD_ADDR_BITS  : positive;
+      WRITE_FIRST_SUPPORTED : boolean;
 
       --Auxiliary Interface Select
       AVALON_AUX   : natural range 0 to 1;
@@ -702,6 +703,7 @@ package rv_components is
       NUM_EXT_INTERRUPTS     : positive range 1 to 32;
       LVE_ENABLE             : natural range 0 to 1;
       SCRATCHPAD_SIZE        : integer;
+      WRITE_FIRST_SUPPORTED  : boolean;
       FAMILY                 : string
       );
     port(
@@ -742,10 +744,11 @@ package rv_components is
 
   component decode is
     generic(
-      REGISTER_SIZE       : positive;
-      SIGN_EXTENSION_SIZE : positive;
-      PIPELINE_STAGES     : natural range 1 to 2;
-      FAMILY              : string
+      REGISTER_SIZE         : positive;
+      SIGN_EXTENSION_SIZE   : positive;
+      PIPELINE_STAGES       : natural range 1 to 2;
+      WRITE_FIRST_SUPPORTED : boolean;
+      FAMILY                : string
       );
     port(
       clk   : in std_logic;
@@ -979,13 +982,12 @@ package rv_components is
       WRITE_FIRST_SUPPORTED : boolean
       );
     port(
-      clk         : in std_logic;
-      valid_input : in std_logic;
-      rs1_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      wb_data     : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      wb_enable   : in std_logic;
+      clk       : in std_logic;
+      rs1_sel   : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      rs2_sel   : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      wb_sel    : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      wb_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      wb_enable : in std_logic;
 
       rs1_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data : out std_logic_vector(REGISTER_SIZE-1 downto 0)
@@ -1335,13 +1337,14 @@ package rv_components is
 
   component cache_controller is
     generic (
-      CACHE_SIZE      : natural;
-      LINE_SIZE       : positive range 16 to 256;
-      ADDRESS_WIDTH   : positive;
-      INTERNAL_WIDTH  : positive;
-      EXTERNAL_WIDTH  : positive;
-      MAX_BURSTLENGTH : positive;
-      BURST_EN        : natural range 0 to 1
+      CACHE_SIZE            : natural;
+      LINE_SIZE             : positive range 16 to 256;
+      ADDRESS_WIDTH         : positive;
+      INTERNAL_WIDTH        : positive;
+      EXTERNAL_WIDTH        : positive;
+      MAX_BURSTLENGTH       : positive;
+      WRITE_FIRST_SUPPORTED : boolean;
+      BURST_EN              : natural range 0 to 1
       );
     port (
       clk   : in std_logic;
@@ -1373,43 +1376,37 @@ package rv_components is
 
   component cache is
     generic (
-      NUM_LINES      : positive;
-      LINE_SIZE      : positive;
-      ADDRESS_WIDTH  : positive;
-      INTERNAL_WIDTH : positive;
-      EXTERNAL_WIDTH : positive
+      NUM_LINES             : positive;
+      LINE_SIZE             : positive;
+      ADDRESS_WIDTH         : positive;
+      WIDTH                 : positive;
+      DIRTY_BITS            : natural;
+      WRITE_FIRST_SUPPORTED : boolean
       );
     port (
       clk   : in std_logic;
       reset : in std_logic;
 
-      --Internal data Orca-internal memory-mapped slave
-      internal_data_oimm_address       : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-      internal_data_oimm_byteenable    : in     std_logic_vector((INTERNAL_WIDTH/8)-1 downto 0);
-      internal_data_oimm_requestvalid  : in     std_logic;
-      internal_data_oimm_readnotwrite  : in     std_logic;
-      internal_data_oimm_writedata     : in     std_logic_vector(INTERNAL_WIDTH-1 downto 0);
-      internal_data_oimm_readdata      : out    std_logic_vector(INTERNAL_WIDTH-1 downto 0);
-      internal_data_oimm_readdatavalid : out    std_logic;
-      internal_data_oimm_miss          : out    std_logic;
-      internal_data_oimm_missaddress   : buffer std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-      internal_data_oimm_waitrequest   : buffer std_logic;
+      --Read-only data Orca-internal memory-mapped slave
+      read_oimm_address       : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+      read_oimm_requestvalid  : in     std_logic;
+      read_oimm_speculative   : in     std_logic;
+      read_oimm_writedata     : in     std_logic_vector(WIDTH-1 downto 0);
+      read_oimm_readdata      : out    std_logic_vector(WIDTH-1 downto 0);
+      read_oimm_readdatavalid : out    std_logic;
+      read_oimm_readabort     : out    std_logic;
+      read_oimm_waitrequest   : buffer std_logic;
+      read_miss               : out    std_logic;
+      read_lastaddress        : buffer std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+      read_dirty_valid        : out    std_logic_vector(DIRTY_BITS downto 0);
 
-      --Internal tag Orca-internal memory-mapped slave (uses internal_data_oimm_address)
-      internal_tag_oimm_writedata    : in std_logic;
-      internal_tag_oimm_requestvalid : in std_logic;
-
-      --External data Orca-internal memory-mapped master
-      external_data_oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-      external_data_oimm_requestvalid  : in  std_logic;
-      external_data_oimm_readnotwrite  : in  std_logic;
-      external_data_oimm_writedata     : in  std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
-      external_data_oimm_readdata      : out std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
-      external_data_oimm_readdatavalid : out std_logic;
-
-      --External tag Orca-external memory-mapped slave (uses external_data_oimm_address)
-      external_tag_oimm_writedata    : in std_logic;
-      external_tag_oimm_requestvalid : in std_logic
+      --Write-only data Orca-internal memory-mapped slave
+      write_oimm_address      : in std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+      write_oimm_byteenable   : in std_logic_vector((WIDTH/8)-1 downto 0);
+      write_oimm_requestvalid : in std_logic;
+      write_oimm_writedata    : in std_logic_vector(WIDTH-1 downto 0);
+      write_tag_update        : in std_logic;
+      write_dirty_valid       : in std_logic_vector(DIRTY_BITS downto 0)
       );
   end component;
 
@@ -1509,5 +1506,22 @@ package rv_components is
       master_oimm_waitrequest   : in  std_logic
       );
   end component;
+
+  component bram_sdp_write_first is
+    generic(
+      DEPTH                 : positive;
+      WIDTH                 : positive;
+      WRITE_FIRST_SUPPORTED : boolean
+      );
+    port(
+      clk           : in  std_logic;
+      read_address  : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+      read_data     : out std_logic_vector(WIDTH-1 downto 0);
+      write_address : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+      write_enable  : in  std_logic;
+      write_data    : in  std_logic_vector(WIDTH-1 downto 0)
+      );
+  end component;
+
 
 end package rv_components;

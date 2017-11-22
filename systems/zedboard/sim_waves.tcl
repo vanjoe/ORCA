@@ -28,6 +28,10 @@ proc add_wave_instruction_cache { } {
     orca_add_wave_instruction_cache add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }
 
+proc add_wave_data_cache { } {
+    orca_add_wave_data_cache add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
+}
+
 proc add_wave_instruction_fetch { } {
     orca_add_wave_instruction_fetch add_wave add_wave_divider /design_1_wrapper/design_1_i/orca/U0
 }

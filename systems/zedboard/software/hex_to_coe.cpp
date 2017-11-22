@@ -29,37 +29,33 @@ int main(int argc, char *argv[])
   char output[9];   // 8 chars + termination
   /* These could be inputs */
 
-  unsigned char default_value = 0;
-
   unsigned char *buffer = (unsigned char *)malloc(BUFFER_SIZE);
   unsigned char byte_count;
 
   char * p;
 
-  unsigned long i;
-  int j;
-  int k;
-  unsigned long address;
   unsigned long address_offset = 0;
 
-  for (i = 0; i < BUFFER_SIZE; i++) {
-    buffer[i] = default_value;
+  for(int i = 0; i < BUFFER_SIZE; i+=4){
+    buffer[i+0] = 0xEF;
+    buffer[i+1] = 0xBE;
+    buffer[i+2] = 0xAD;
+    buffer[i+3] = 0xDE;
   }
 
   fin.open("test.hex", ios::in);    // open file
   assert (!fin.fail());
   getline(fin, line);
-  while (!fin.eof()) {     //if not at end of file, continue reading numbers
-    //    cout << line << endl;
+  while(!fin.eof()){     //if not at end of file, continue reading numbers
     switch (line[8]) {
     case '0': {
       /* This is data */
       /* First two bytes = number of bytes in hex */
       byte_count = strtol(line.substr(1,2).c_str(), &p, 16);
       /* check address */
-      address = address_offset + strtol(line.substr(3,4).c_str(), &p, 16);
+      unsigned long address = address_offset + strtol(line.substr(3,4).c_str(), &p, 16);
       if ((address >= base_address) && (address <= max_address)) {
-        for (i = 0; i < byte_count; i++) {
+        for(int i = 0; i < byte_count; i++) {
           buffer[(address-base_address) + i] = strtol(line.substr(9+i*2,2).c_str(), &p, 16);
         }
       }
@@ -95,18 +91,16 @@ int main(int argc, char *argv[])
     } 
     getline(fin, line);
   }
-  fin.close();       //close file
+  fin.close();
 
   /* Now genereate coe file from buffer */
   fout.open("test.coe", ios::out);
-  i = 0;
-  while (i < BUFFER_SIZE) {
-    for (j = 0; j < 32; j += 4) {
+  fout << "memory_initialization_radix=16;\nmemory_initialization_vector=\n";
+  for(int i = 0; i < BUFFER_SIZE; i += 32){
+    for(int j = 0; j < 32; j += 4){
       sprintf((char*) &output, "%02X%02X%02X%02X", buffer[i+j+3], buffer[i+j+2], buffer[i+j+1], buffer[i+j]);
-      fout << output << " ";
+      fout << output << ((j >= 28) ? ((i >= (BUFFER_SIZE-32)) ? ";\n" : ",\n") : ", ");
     }
-    fout << endl;
-    i = i + 32;
   }
 
   fout.close();

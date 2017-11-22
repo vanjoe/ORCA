@@ -12,6 +12,10 @@ proc reset_sim { } {
 }
 
 proc start_sim { {run_time 0} } {
+    #BD needs to be open to get properties of modules
+    open_bd_design [get_files *.bd]
+
+    #If open throws error
     catch { launch_simulation }
 
     set reset_time 1000
@@ -34,36 +38,40 @@ proc start_sim { {run_time 0} } {
     #Turn on UART bypass module
     add_force /design_1_wrapper/design_1_i/xlconstant_bypass_ps7_uart_dout   1 0us
 
-    #Run until reset is about to be removed then set up BRAMs
-    run [expr $reset_time]
+    set run_from_idram [expr [get_property CONFIG.RESET_VECTOR [get_bd_cells /orca]] == 0xc0000000]
+    if { $run_from_idram } {
+        #Run until reset is about to be removed then set up BRAMs
+        run [expr $reset_time]
 
-    set coe_file [open "software/test.coe" r]
-    set coe_data [read $coe_file]
-    close $coe_file
+        set coe_file [open "software/test.coe" r]
+        set coe_data [read $coe_file]
+        close $coe_file
 
-    set i 0
-    set data [split $coe_data "\n"]
-    foreach line $data {
-        set words [regexp -all -inline {\S+} $line]
-        #puts $words
-        foreach word $words {
-            set byte0 ""
-            append byte0 [string index $word 6]
-            append byte0 [string index $word 7]
-            set_value "/design_1_wrapper/design_1_i/idram/U0/ram/\\idram_gen(0)\\/tdp_ram/ram[$i]" -radix hex $byte0 
-            set byte1 ""
-            append byte1 [string index $word 4]
-            append byte1 [string index $word 5]
-            set_value "/design_1_wrapper/design_1_i/idram/U0/ram/\\idram_gen(1)\\/tdp_ram/ram[$i]" -radix hex $byte1
-            set byte2 ""
-            append byte2 [string index $word 2]
-            append byte2 [string index $word 3]
-            set_value "/design_1_wrapper/design_1_i/idram/U0/ram/\\idram_gen(2)\\/tdp_ram/ram[$i]" -radix hex $byte2 
-            set byte3 "" 
-            append byte3 [string index $word 0]
-            append byte3 [string index $word 1]
-            set_value "/design_1_wrapper/design_1_i/idram/U0/ram/\\idram_gen(3)\\/tdp_ram/ram[$i]" -radix hex $byte3 
-            set i [expr {$i + 1}]
+        set i 0
+        set data [split $coe_data "\n"]
+        #Chop off the first two lines with memory initialization stuff
+        set data [lrange $data 2 [expr [llength $data] - 1]]
+        foreach line $data {
+            set words [regexp -all -inline {[^,\s]+} $line]
+            foreach word $words {
+                set byte0 ""
+                append byte0 [string index $word 6]
+                append byte0 [string index $word 7]
+                set_value "/design_1_wrapper/design_1_i/idram/U0/ram/\\idram_gen(0)\\/tdp_ram/ram[$i]" -radix hex $byte0 
+                set byte1 ""
+                append byte1 [string index $word 4]
+                append byte1 [string index $word 5]
+                set_value "/design_1_wrapper/design_1_i/idram/U0/ram/\\idram_gen(1)\\/tdp_ram/ram[$i]" -radix hex $byte1
+                set byte2 ""
+                append byte2 [string index $word 2]
+                append byte2 [string index $word 3]
+                set_value "/design_1_wrapper/design_1_i/idram/U0/ram/\\idram_gen(2)\\/tdp_ram/ram[$i]" -radix hex $byte2 
+                set byte3 "" 
+                append byte3 [string index $word 0]
+                append byte3 [string index $word 1]
+                set_value "/design_1_wrapper/design_1_i/idram/U0/ram/\\idram_gen(3)\\/tdp_ram/ram[$i]" -radix hex $byte3 
+                set i [expr {$i + 1}]
+            }
         }
     }
     run $run_time

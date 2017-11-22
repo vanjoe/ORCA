@@ -340,6 +340,9 @@ entity orca is
 end entity orca;
 
 architecture rtl of orca is
+  --Might want to bring this out to the top level
+  constant WRITE_FIRST_SUPPORTED : boolean := FAMILY = "XILINX" or FAMILY = "ALTERA";
+  
   --Currently only AXI3 supported so fix $ burstlength to 16 max
   constant ICACHE_MAX_BURSTLENGTH : positive := 16;
   constant DCACHE_MAX_BURSTLENGTH : positive := 16;
@@ -385,6 +388,7 @@ begin  -- architecture rtl
       ENABLE_EXT_INTERRUPTS  => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS     => NUM_EXT_INTERRUPTS,
       SCRATCHPAD_SIZE        => 2**SCRATCHPAD_ADDR_BITS,
+      WRITE_FIRST_SUPPORTED  => WRITE_FIRST_SUPPORTED,
       FAMILY                 => FAMILY
       )
     port map (
@@ -424,8 +428,9 @@ begin  -- architecture rtl
 
   the_memory_interface : memory_interface
     generic map (
-      REGISTER_SIZE        => REGISTER_SIZE,
-      SCRATCHPAD_ADDR_BITS => SCRATCHPAD_ADDR_BITS,
+      REGISTER_SIZE         => REGISTER_SIZE,
+      SCRATCHPAD_ADDR_BITS  => SCRATCHPAD_ADDR_BITS,
+      WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED,
 
       --BUS Select
       AVALON_AUX   => AVALON_AUX,

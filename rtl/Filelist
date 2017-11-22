@@ -14,7 +14,7 @@ lve_top.vhd
 register_file.vhd
 sys_call.vhd
 orca_core.vhd
-bram_tdp_behav.vhd
+bram_sdp_write_first.vhd
 cache.vhd
 cache_controller.vhd
 cache_mux.vhd

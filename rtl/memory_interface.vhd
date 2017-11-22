@@ -8,8 +8,9 @@ use work.utils.all;
 
 entity memory_interface is
   generic (
-    REGISTER_SIZE        : positive range 32 to 32;
-    SCRATCHPAD_ADDR_BITS : positive;
+    REGISTER_SIZE         : positive range 32 to 32;
+    SCRATCHPAD_ADDR_BITS  : positive;
+    WRITE_FIRST_SUPPORTED : boolean;
 
     --Auxiliary Interface Select
     AVALON_AUX   : natural range 0 to 1;
@@ -502,13 +503,14 @@ begin  -- architecture rtl
   begin
     instruction_cache : cache_controller
       generic map (
-        CACHE_SIZE      => ICACHE_SIZE,
-        LINE_SIZE       => ICACHE_LINE_SIZE,
-        ADDRESS_WIDTH   => REGISTER_SIZE,
-        INTERNAL_WIDTH  => REGISTER_SIZE,
-        EXTERNAL_WIDTH  => ICACHE_EXTERNAL_WIDTH,
-        MAX_BURSTLENGTH => ICACHE_MAX_BURSTLENGTH,
-        BURST_EN        => ICACHE_BURST_EN
+        CACHE_SIZE            => ICACHE_SIZE,
+        LINE_SIZE             => ICACHE_LINE_SIZE,
+        ADDRESS_WIDTH         => REGISTER_SIZE,
+        INTERNAL_WIDTH        => REGISTER_SIZE,
+        EXTERNAL_WIDTH        => ICACHE_EXTERNAL_WIDTH,
+        MAX_BURSTLENGTH       => ICACHE_MAX_BURSTLENGTH,
+        WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED,
+        BURST_EN              => ICACHE_BURST_EN
         )
       port map (
         clk   => clk,
@@ -703,13 +705,14 @@ begin  -- architecture rtl
   begin
     data_cache : cache_controller
       generic map (
-        CACHE_SIZE      => DCACHE_SIZE,
-        LINE_SIZE       => DCACHE_LINE_SIZE,
-        ADDRESS_WIDTH   => REGISTER_SIZE,
-        INTERNAL_WIDTH  => REGISTER_SIZE,
-        EXTERNAL_WIDTH  => DCACHE_EXTERNAL_WIDTH,
-        MAX_BURSTLENGTH => DCACHE_MAX_BURSTLENGTH,
-        BURST_EN        => DCACHE_BURST_EN
+        CACHE_SIZE            => DCACHE_SIZE,
+        LINE_SIZE             => DCACHE_LINE_SIZE,
+        ADDRESS_WIDTH         => REGISTER_SIZE,
+        INTERNAL_WIDTH        => REGISTER_SIZE,
+        EXTERNAL_WIDTH        => DCACHE_EXTERNAL_WIDTH,
+        MAX_BURSTLENGTH       => DCACHE_MAX_BURSTLENGTH,
+        WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED,
+        BURST_EN              => DCACHE_BURST_EN
         )
       port map (
         clk   => clk,

@@ -25,6 +25,10 @@ proc add_wave_instruction_cache { } {
     orca_add_wave_instruction_cache "add wave" "add wave -divider" /system/the_vectorblox_orca
 }
 
+proc add_wave_data_cache { } {
+    orca_add_wave_data_cache "add wave" "add wave -divider" /system/the_vectorblox_orca
+}
+
 proc add_wave_instruction_fetch { } {
     orca_add_wave_instruction_fetch "add wave" "add wave -divider" /system/the_vectorblox_orca
 }

@@ -23,6 +23,7 @@ entity orca_core is
     NUM_EXT_INTERRUPTS     : positive range 1 to 32;
     LVE_ENABLE             : natural range 0 to 1;
     SCRATCHPAD_SIZE        : integer;
+    WRITE_FIRST_SUPPORTED  : boolean;
     FAMILY                 : string
     );
   port(
@@ -128,10 +129,11 @@ begin  -- architecture rtl
   to_decode_valid <= ifetch_to_decode_valid and (not flush_pipeline);
   D : decode
     generic map(
-      REGISTER_SIZE       => REGISTER_SIZE,
-      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
-      PIPELINE_STAGES     => PIPELINE_STAGES-3,
-      FAMILY              => FAMILY
+      REGISTER_SIZE         => REGISTER_SIZE,
+      SIGN_EXTENSION_SIZE   => SIGN_EXTENSION_SIZE,
+      PIPELINE_STAGES       => PIPELINE_STAGES-3,
+      WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED,
+      FAMILY                => FAMILY
       )
     port map(
       clk   => clk,

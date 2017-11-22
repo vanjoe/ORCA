@@ -7,6 +7,10 @@ proc orca_reset_waves { add_wave_cmd add_divider_cmd prefix } {
 
 
 proc orca_add_wave_axi_data_masters { add_wave_cmd add_divider_cmd prefix } {
+    eval "[string trim $add_divider_cmd \"] \"ORCA AXI DC Master\""
+    eval "[string trim $add_wave_cmd \"] $prefix/clk $prefix/reset"
+    eval "[string trim $add_wave_cmd \"] $prefix/DC_*"
+
     eval "[string trim $add_divider_cmd \"] \"ORCA AXI DUC Master\""
     eval "[string trim $add_wave_cmd \"] $prefix/clk $prefix/reset"
     eval "[string trim $add_wave_cmd \"] $prefix/DUC_*"
@@ -45,6 +49,19 @@ proc orca_add_wave_instruction_cache { add_wave_cmd add_divider_cmd prefix } {
     catch { eval "[string trim $add_divider_cmd \"] \"ORCA ICache/Cache\"" } error
     catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_gen/instruction_cache/the_cache/clk" } error
     catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_gen/instruction_cache/the_cache/*" } error
+}
+
+proc orca_add_wave_data_cache { add_wave_cmd add_divider_cmd prefix } {
+    eval "[string trim $add_divider_cmd \"] \"ORCA DCache Mux\""
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_mux/clk $prefix/the_memory_interface/data_cache/data_cache_mux/reset" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_mux/*" } error
+
+    eval "[string trim $add_divider_cmd \"] \"ORCA DCache\""
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_gen/data_cache/clk $prefix/the_memory_interface/data_cache/data_cache/reset" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_gen/data_cache/*" } error
+    catch { eval "[string trim $add_divider_cmd \"] \"ORCA DCache/Cache\"" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_gen/data_cache/the_cache/clk" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_gen/data_cache/the_cache/*" } error
 }
 
 proc orca_add_wave_instruction_fetch { add_wave_cmd add_divider_cmd prefix } {
@@ -98,6 +115,7 @@ proc orca_add_wave_all { add_wave_cmd add_divider_cmd prefix axi avalon } {
     }
     orca_add_wave_instruction_cache $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_instruction_fetch $add_wave_cmd $add_divider_cmd $prefix
+    orca_add_wave_data_cache $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_lsu $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_syscall $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_execute $add_wave_cmd $add_divider_cmd $prefix

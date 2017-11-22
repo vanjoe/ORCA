@@ -12,7 +12,6 @@ entity register_file is
     );
   port(
     clk         : in std_logic;
-    valid_input : in std_logic;
     rs1_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
     rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
     wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);

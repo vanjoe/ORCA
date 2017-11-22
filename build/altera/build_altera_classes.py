@@ -65,7 +65,7 @@ DEFAULT_IUC_RETURN_REGISTER=0
 DEFAULT_IAUX_REQUEST_REGISTER=1
 DEFAULT_IAUX_RETURN_REGISTER=0
 DEFAULT_LVE_ENABLE=0
-DEFAULT_ENABLE_EXT_INTERRUPTS=0
+DEFAULT_ENABLE_EXT_INTERRUPTS=1
 DEFAULT_NUM_EXT_INTERRUPTS=1
 DEFAULT_SCRATCHPAD_ADDR_BITS=10
 DEFAULT_IUC_ADDR_BASE=0x00000000
@@ -894,6 +894,13 @@ class Alt_Orca_BuildCfg(Orca_BuildCfgBase):
         else:
             print 'Error: .sof file missing.'
 
+        #Kill any nios2-terminal processes owned by the user that may be hogging the JTAG bus.
+        #This is overkill and should get fixed to selectively kill only a process that's actually
+        #using the board we need.
+        killall_terms_returcode = subprocess.call('killall nios2-terminal')
+        if not killall_terms_returncode:
+            logging.info("Warning, killed a nios2-terminal process before programming .sof", self.dstdir)
+
         # Configure will work.
         jtagd_output = subprocess.check_output('jtagd', stderr=subprocess.STDOUT)
         cmd = 'jtagconfig'
@@ -1105,9 +1112,8 @@ class Alt_Orca_SWTest(Orca_SWTest):
                      self.build_cfg.build_id)
         logging.info('\n======================================================================\n')
 
-        cmd = 'BIN_FILE=NONE make -C {} pgm'.format(self.build_cfg.dstdir)
-        subprocess.Popen(cmd, shell=True)
-        
+        self.build_cfg.download_sof(self.build_cfg.pgm_cable)
+
         cmd = 'date +"%s" > %s' % (DATE_FMT, run_time_log)
         subprocess.check_call(cmd, shell=True)
 
@@ -1145,10 +1151,10 @@ class Alt_Orca_SWTest(Orca_SWTest):
         # Attach a session id to shell process so entire process group
         # (shell and child processes) can be killed with one PGID
         # (e.g. in the event of a timeout).
-        p = subprocess.Popen(nios2_terminal_cmd, shell=True, preexec_fn=os.setsid)
+        nios2_terminal_process = subprocess.Popen(nios2_terminal_cmd, shell=True, preexec_fn=os.setsid)
 
-        logging.info("nios2-terminal started in PGID %d.", p.pid)
-        logging.info("If you need to stop the test, use 'kill -- -%d'.", p.pid)
+        logging.info("nios2-terminal started in PGID %d.", nios2_terminal_process.pid)
+        logging.info("If you need to stop the test, use 'kill -- -%d'.", nios2_terminal_process.pid)
 
         # Program the .bin file to the device.
         run_cmd = 'BIN_FILE=NONE make -C {} run'.format(self.build_cfg.dstdir)
@@ -1160,7 +1166,7 @@ class Alt_Orca_SWTest(Orca_SWTest):
         tries_remaining = 2
         while True:
             time.sleep(3)
-            r = p.poll()
+            r = nios2_terminal_process.poll()
             if r != None:
                 if r != 0:
                     logging.error('ERROR: nios2-terminal parent process '
@@ -1179,7 +1185,7 @@ class Alt_Orca_SWTest(Orca_SWTest):
                             logging.info('{} tries left.'.format(tries_remaining))
                             self.build_cfg.download_sof(self.build_cfg.pgm_cable)
                             logging.info('Reprogramming over JTAG.')
-                            p = subprocess.Popen(nios2_terminal_cmd, shell=True, preexec_fn=os.setsid)
+                            nios2_terminal_process = subprocess.Popen(nios2_terminal_cmd, shell=True, preexec_fn=os.setsid)
                             subprocess.check_call(run_cmd, shell=True)
                     else:
                         # Something's wrong with nios2-terminal, not the bitstream.
@@ -1201,14 +1207,14 @@ class Alt_Orca_SWTest(Orca_SWTest):
                     logging.error("Timeout has expired after %s!",
                                   elapsed_str)
                     logging.info("Sending SIGTERM to process group %d...",
-                                 p.pid)
-                    os.killpg(p.pid, signal.SIGTERM)
+                                 nios2_terminal_process.pid)
+                    os.killpg(nios2_terminal_process.pid, signal.SIGTERM)
                     killed_on_timeout = True
 
                 elif (current_time - last_msg_time > msg_interval):
                     logging.info("Test has been running for %s. "
                                  "To stop test, use 'kill -- -%d'.",
-                                 elapsed_str, p.pid)
+                                 elapsed_str, nios2_terminal_process.pid)
                     last_msg_time = current_time
 
         cmd = 'date +"%s" >> %s' % (DATE_FMT, run_time_log)

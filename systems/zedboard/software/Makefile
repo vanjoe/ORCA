@@ -16,12 +16,20 @@ else ifeq ($(C_SRCS), uart.c)
 endif
 
 #These should come from the BSP
+JTAG_RESET_BASE_ADDRESS ?= 0x40000000
 ifdef RESET_VECTOR
-IDRAM_BASE_ADDRESS ?= $(RESET_VECTOR)
+ifeq (RESET_VECTOR, 0xB0000000)
+IDRAM_BASE_ADDRESS      ?= 0xB0000000
+JTAG_IDRAM_BASE_ADDRESS ?= 0xA0000000
+else #ifeq(RESET_VECTOR, 0xB0000000)
+IDRAM_BASE_ADDRESS      ?= $(RESET_VECTOR)
+JTAG_IDRAM_BASE_ADDRESS ?= $(RESET_VECTOR)
+endif #else #ifeq(RESET_VECTOR, 0xB0000000)
 else #ifdef RESET_VECTOR
-IDRAM_BASE_ADDRESS ?= 0xC0000000
+IDRAM_BASE_ADDRESS      ?= 0xA0000000
+JTAG_IDRAM_BASE_ADDRESS ?= 0xA0000000
 endif #else #ifdef RESET_VECTOR
-IDRAM_LENGTH       ?= 0x00020000
+IDRAM_LENGTH            ?= 0x00020000
 
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
@@ -50,6 +58,9 @@ $(S_OBJ_FILES): obj/%.S.o : %.S
 LD_SCRIPT=../link.ld
 LIBC=
 
+$(LD_SCRIPT)::
+	$(MAKE) -C ../ link.ld
+
 $(TARGET).elf: $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
 	$(CC) -T $(LD_SCRIPT) $(S_OBJ_FILES)  $(C_OBJ_FILES)  -o $@ $(LD_FLAGS)
 $(TARGET).dump: $(TARGET).elf
@@ -73,7 +84,7 @@ all: $(TARGET).$(FORMAT) $(TARGET).hex $(TARGET).mem $(TARGET).coe $(TARGET).dum
 
 .PHONY: clean
 clean:
-	rm -rf obj $(TARGET).elf $(TARGET).dump $(TARGET).bin $(TARGET).hex $(TARGET).mif $(TARGET).mem $(TARGET).coe hex_to_coe
+	rm -rf obj $(TARGET).elf $(TARGET).dump $(TARGET).bin $(TARGET).hex $(TARGET).mif $(TARGET).mem hex_to_coe
 
 -include $(wildcard obj/*.d)
 
