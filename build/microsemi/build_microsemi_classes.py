@@ -413,8 +413,8 @@ class Mcsm_Orca_BuildCfg(Orca_BuildCfgBase):
                 qopt += '-q %s' % qsub_qlist
             if self.use_quartus_lic:
                 qopt += ' -l quartus_license=1'
-            cmd = "qsub %s -b y -sync y -j y -o log/qsub_compile_all_log -V "\
-                "-cwd -N \"%s\" ./%s" % (qopt, self.build_id, script_name)
+            cmd = "qsub %s -m a -M %s -b y -sync y -j y -o log/qsub_compile_all_log -V "\
+                "-cwd -N \"%s\" ./%s" % (qopt, git_user_email(), self.build_id, script_name)
             print "qsub command: %s" %cmd
             args = shlex.split(cmd)
             self.subproc = subprocess.Popen(args, cwd=self.dstdir)

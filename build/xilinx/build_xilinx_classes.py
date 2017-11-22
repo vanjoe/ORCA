@@ -391,8 +391,8 @@ class Xil_Orca_BuildCfg(Orca_BuildCfgBase):
                     qopt += ' -l quartus_license=1'
             except AttributeError:
                 pass
-            cmd = "qsub %s -b y -sync y -j y -o log/qsub_compile_all_log -V "\
-                "-cwd -N \"%s\" ./%s" % (qopt, self.build_id, script_name)
+            cmd = "qsub %s -m a -M %s -b y -sync y -j y -o log/qsub_compile_all_log -V "\
+                "-cwd -N \"%s\" ./%s" % (qopt, git_user_email(), self.build_id, script_name)
             logging.info("qsub command: %s for %s",
                          cmd, self.build_id)
             args = shlex.split(cmd)
