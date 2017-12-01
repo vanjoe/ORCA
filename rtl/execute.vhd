@@ -204,8 +204,8 @@ begin
 
   stall_from_execute <= valid_input and (stall_to_execute or
                                          (not lsu_ready) or
-                                         (not alu_ready) or
-                                         (not lve_ready) or
+                                         (not alu_ready and not lve_was_executing) or
+                                         (not lve_ready ) or
                                          (not syscall_ready));
 
   --No forward stall; system calls, loads, and branches aren't forwarded.  Since
@@ -371,8 +371,9 @@ begin
         reset          => reset,
         instruction    => instruction,
         valid_instr    => valid_instr,
-        rs1_data       => rs1_data_fwd,
-        rs2_data       => rs2_data_fwd,
+        rs1_data       => rs1_data,     --these don't need forwarding because
+        rs2_data       => rs2_data,     --they never follow an instruction with
+                                        --a writeback
         slave_address  => sp_address,
         slave_read_en  => sp_read_en,
         slave_write_en => sp_write_en,
