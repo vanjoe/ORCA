@@ -91,8 +91,8 @@ architecture behavioural of execute is
   alias rs3 is instruction(REGISTER_RD'range);
   alias opcode is instruction(MAJOR_OP'range);
 
-  signal stall_to_execute   : std_logic;
-  signal stall_from_syscall : std_logic;
+  signal stall_to_execute : std_logic;
+  signal syscall_ready    : std_logic;
 
 
   -- various writeback sources
@@ -108,7 +108,7 @@ architecture behavioural of execute is
   signal less_than          : std_logic;
   signal wb_mux             : std_logic_vector(1 downto 0);
 
-  signal stall_from_alu : std_logic;
+  signal alu_ready : std_logic;
 
   signal branch_to_pc_correction_valid : std_logic;
   signal branch_to_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
@@ -120,18 +120,11 @@ architecture behavioural of execute is
   signal rs2_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs3_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal alu_rs1_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal alu_rs2_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
-
   signal writeback_stall_from_lsu : std_logic;
-  signal stall_from_lsu           : std_logic;
+  signal lsu_ready                : std_logic;
+  signal load_in_progress         : std_logic;
 
-  signal fwd_sel     : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal fwd_data    : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal fwd_en      : std_logic;
-  signal fwd_mux     : std_logic;
-  signal no_fwd_path : std_logic;
-
+  signal lve_ready            : std_logic;
   signal lve_executing        : std_logic;
   signal lve_was_executing    : std_logic;
   signal lve_alu_data1        : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -161,6 +154,7 @@ begin
   --These stalls happen during the writeback cycle
   stall_to_execute <= use_after_produce_stall or writeback_stall_from_lsu;
   valid_instr      <= valid_input and (not stall_to_execute);
+
   -----------------------------------------------------------------------------
   -- REGISTER FORWADING
   -- Knowing the next instruction coming downt the pipeline, we can
@@ -171,29 +165,15 @@ begin
   -- propogate if the next instruction uses them.
   --
   -----------------------------------------------------------------------------
-  with rs1_mux select
-    rs1_data_fwd <=
-    alu_data_out when ALU_FWD,
-    rs1_data     when others;
-  with rs2_mux select
-    rs2_data_fwd <=
-    alu_data_out when ALU_FWD,
-    rs2_data     when others;
- with rs3_mux select
-    rs3_data_fwd <=
-    alu_data_out when ALU_FWD,
-    rs3_data     when others;
 
-
-
-  alu_rs1_data <= rs1_data_fwd when LVE_ENABLE = 0 else
-                  lve_alu_data1 when lve_alu_source_valid = '1' else
-                  alu_data_out  when rs1_mux = ALU_FWD else rs1_data;
-  alu_rs2_data <= rs2_data_fwd when LVE_ENABLE = 0 else
-                  lve_alu_data2 when lve_alu_source_valid = '1' else
-                  alu_data_out  when rs2_mux = ALU_FWD else rs2_data;
-
-
+  rs1_data_fwd <= lve_alu_data1 when lve_alu_source_valid = '1' else
+                  alu_data_out when rs1_mux = ALU_FWD else
+                  rs1_data;
+  rs2_data_fwd <= lve_alu_data2 when lve_alu_source_valid = '1' else
+                  alu_data_out when rs2_mux = ALU_FWD else
+                  rs2_data;
+  rs3_data_fwd <= alu_data_out when rs2_mux = ALU_FWD else
+                  rs3_data;
 
 
   -------------------------------------------------------------------------------
@@ -212,7 +192,7 @@ begin
   end process;
 
   wb_mux <= "00" when sys_data_enable = '1' else
-            "01" when ld_data_enable = '1' else
+            "01" when load_in_progress = '1' else
             "10" when br_data_enable = '1' else
             "11";                       --when alu_data_out_valid = '1'
 
@@ -227,46 +207,39 @@ begin
                ld_data_enable or
                br_data_enable or
                (alu_data_out_valid and (not lve_was_executing)));
+
   wb_enable <= wb_valid when wb_sel /= R_ZERO else '0';
 
-  fwd_data <= sys_data_out when sys_data_enable = '1' else
-              alu_data_out when alu_data_out_valid = '1' else
-              br_data_out;
-
   stall_from_execute <= valid_input and (stall_to_execute or
-                                         stall_from_lsu or
-                                         stall_from_alu or
-                                         lve_executing or
-                                         stall_from_syscall);
+                                         (not lsu_ready) or
+                                         (not alu_ready and not lve_was_executing) or
+                                         (not lve_ready) or
+                                         (not syscall_ready));
 
-  use_after_produce_stall <= wb_valid and no_fwd_path when wb_sel = rs1 or wb_sel = rs2 else '0';
+  --No forward stall; system calls, loads, and branches aren't forwarded.  Since
+  --branches clear the pipeline no need to check for stall here.
+  use_after_produce_stall <= sys_data_enable or load_in_progress when wb_sel = rs1 or wb_sel = rs2 else '0';
 
   process(clk)
   begin
     if rising_edge(clk) then
       lve_was_executing <= lve_executing;
       if stall_to_execute = '0' then
-        rs1_mux           <= NO_FWD;
-        rs2_mux           <= NO_FWD;
-        rs3_mux           <= NO_FWD;
-        wb_sel            <= rd;
-        no_fwd_path       <= '0';
-        if valid_instr = '1' then
-          --load, csr_read, jal[r] are the only instructions that writeback but
-          --don't forward. Of these only csr_read and loads don't flush the
-          --pipeline so these are the ones we concern ourselves with here.
-          if opcode = LOAD_OP or opcode = SYSTEM_OP then
-            no_fwd_path <= '1';
-          end if;
-
-          if (opcode = LUI_OP or opcode = AUIPC_OP or opcode = ALU_OP or opcode = ALUI_OP) then
-            if rd = subseq_rs1 and rd /= R_ZERO then
+        rs1_mux <= NO_FWD;
+        rs2_mux <= NO_FWD;
+        rs3_mux <= NO_FWD;
+        wb_sel  <= rd;
+      end if;
+      if valid_instr = '1' and subseq_valid = '1' then
+        if opcode = LUI_OP or opcode = AUIPC_OP or opcode = ALU_OP or opcode = ALUI_OP then
+          if rd /= R_ZERO then
+            if rd = subseq_rs1 then
               rs1_mux <= ALU_FWD;
             end if;
-            if rd = subseq_rs2 and rd /= R_ZERO then
+            if rd = subseq_rs2 then
               rs2_mux <= ALU_FWD;
             end if;
-            if rd = subseq_rs3 and rd /= R_ZERO then
+            if rd = subseq_rs3 then
               rs3_mux <= ALU_FWD;
             end if;
           end if;
@@ -291,15 +264,15 @@ begin
       valid_instr        => valid_instr,
       simd_op_size       => simd_op_size,
       stall_from_execute => stall_from_execute,
-      rs1_data           => alu_rs1_data,
-      rs2_data           => alu_rs2_data,
+      rs1_data           => rs1_data_fwd,
+      rs2_data           => rs2_data_fwd,
       instruction        => instruction,
       sign_extension     => sign_extension,
       pc_current         => pc_current,
       data_out           => alu_data_out,
       data_out_valid     => alu_data_out_valid,
       less_than          => less_than,
-      stall_from_alu     => stall_from_alu,
+      alu_ready          => alu_ready,
 
       lve_data1        => lve_alu_data1,
       lve_data2        => lve_alu_data2,
@@ -342,9 +315,10 @@ begin
       instruction              => instruction,
       sign_extension           => sign_extension,
       writeback_stall_from_lsu => writeback_stall_from_lsu,
-      stall_from_lsu           => stall_from_lsu,
+      lsu_ready                => lsu_ready,
       data_out                 => ld_data_out,
       data_enable              => ld_data_enable,
+      load_in_progress         => load_in_progress,
 
       oimm_address       => lsu_oimm_address,
       oimm_byteenable    => lsu_oimm_byteenable,
@@ -373,7 +347,7 @@ begin
       reset => reset,
       valid => valid_instr,
 
-      stall_out => stall_from_syscall,
+      syscall_ready => syscall_ready,
 
       rs1_data    => rs1_data_fwd,
       instruction => instruction,
@@ -408,9 +382,11 @@ begin
         reset          => reset,
         instruction    => instruction,
         valid_instr    => valid_instr,
+
         rs1_data       => rs1_data_fwd,
         rs2_data       => rs2_data_fwd,
         rs3_data       => rs3_data_fwd,
+
         slave_address  => sp_address,
         slave_read_en  => sp_read_en,
         slave_write_en => sp_write_en,
@@ -419,6 +395,7 @@ begin
         slave_data_out => sp_readdata,
         slave_ack      => sp_ack,
 
+        lve_ready            => lve_ready,
         lve_executing        => lve_executing,
         lve_alu_data1        => lve_alu_data1,
         lve_alu_data2        => lve_alu_data2,
@@ -430,6 +407,7 @@ begin
   end generate enable_lve;
 
   n_enable_lve : if LVE_ENABLE = 0 generate
+    lve_ready            <= '1';
     lve_executing        <= '0';
     simd_op_size         <= LVE_WORD_SIZE;
     lve_alu_source_valid <= '0';

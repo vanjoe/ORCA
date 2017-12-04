@@ -16,8 +16,12 @@ else ifeq ($(C_SRCS), uart.c)
 endif
 
 #These should come from the BSP
+ifdef RESET_VECTOR
+IDRAM_BASE_ADDRESS ?= $(RESET_VECTOR)
+else #ifdef RESET_VECTOR
 IDRAM_BASE_ADDRESS ?= 0xC0000000
-IDRAM_MAX_ADDRESS  ?= 0xC001FFFF
+endif #else #ifdef RESET_VECTOR
+IDRAM_LENGTH       ?= 0x00020000
 
 
 C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
@@ -59,7 +63,7 @@ $(TARGET).mem: $(TARGET).bin
 hex_to_coe: hex_to_coe.cpp
 	g++ hex_to_coe.cpp -o hex_to_coe
 $(TARGET).coe: $(TARGET).hex hex_to_coe
-	./hex_to_coe $(IDRAM_BASE_ADDRESS) $(IDRAM_MAX_ADDRESS)
+	./hex_to_coe $(IDRAM_BASE_ADDRESS) `printf "0x%08X" $$(($(IDRAM_BASE_ADDRESS) + $(IDRAM_LENGTH) - 1))`
 
 ifndef FORMAT
 FORMAT=elf

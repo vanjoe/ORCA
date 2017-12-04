@@ -1865,6 +1865,16 @@ STATE="utd"
 TIME="1504030848"
 SIZE="7040"
 ENDFILE
+VALUE "<project>/hdl/memory_interface.vhd,hdl"
+STATE="utd"
+TIME="1504030848"
+SIZE="7040"
+ENDFILE
+VALUE "<project>/hdl/oimm_register.vhd,hdl"
+STATE="utd"
+TIME="1504030848"
+SIZE="7040"
+ENDFILE
 VALUE "<project>/hdl/lve_ci.vhd,hdl"
 STATE="utd"
 TIME="1495565049"

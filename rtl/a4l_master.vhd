@@ -6,15 +6,15 @@ use work.rv_components.all;
 
 entity a4l_master is
   generic (
-    ADDR_WIDTH : integer := 32;
-    DATA_WIDTH : integer := 32
+    ADDRESS_WIDTH : integer := 32;
+    DATA_WIDTH    : integer := 32
     );
   port (
     clk     : in std_logic;
     aresetn : in std_logic;
 
     --Orca-internal memory-mapped slave
-    oimm_address       : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+    oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
     oimm_requestvalid  : in  std_logic;
     oimm_readnotwrite  : in  std_logic;
@@ -24,7 +24,7 @@ entity a4l_master is
     oimm_waitrequest   : out std_logic;
 
     --AXI4-Lite memory-mapped master
-    AWADDR  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    AWADDR  : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     AWPROT  : out std_logic_vector(2 downto 0);
     AWVALID : out std_logic;
     AWREADY : in  std_logic;
@@ -38,7 +38,7 @@ entity a4l_master is
     BVALID : in  std_logic;
     BREADY : out std_logic;
 
-    ARADDR  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    ARADDR  : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     ARPROT  : out std_logic_vector(2 downto 0);
     ARVALID : out std_logic;
     ARREADY : in  std_logic;
@@ -51,31 +51,31 @@ entity a4l_master is
 end entity a4l_master;
 
 architecture rtl of a4l_master is
-  signal oimm_waitrequest_int : std_logic;
+  signal oimm_waitrequest_signal : std_logic;
 
-  constant PROT_VAL       : std_logic_vector(2 downto 0) := "000";
-  signal AWVALID_internal : std_logic;
-  signal WVALID_internal  : std_logic;
-  signal aw_sent          : std_logic;
-  signal w_sent           : std_logic;
+  constant PROT_VAL     : std_logic_vector(2 downto 0) := "000";
+  signal AWVALID_signal : std_logic;
+  signal WVALID_signal  : std_logic;
+  signal aw_sent        : std_logic;
+  signal w_sent         : std_logic;
 begin
-  oimm_waitrequest <= oimm_waitrequest_int;
+  oimm_waitrequest <= oimm_waitrequest_signal;
+  AWVALID          <= AWVALID_signal;
+  WVALID           <= WVALID_signal;
 
   oimm_readdata      <= RDATA;
   oimm_readdatavalid <= RVALID;
 
-  oimm_waitrequest_int <= (not ARREADY) when oimm_readnotwrite = '1' else
-                          (((not AWREADY) and (not aw_sent)) or ((not WREADY) and (not w_sent)));
+  oimm_waitrequest_signal <= (not ARREADY) when oimm_readnotwrite = '1' else
+                             (((not AWREADY) and (not aw_sent)) or ((not WREADY) and (not w_sent)));
 
-  AWADDR           <= oimm_address;
-  AWPROT           <= PROT_VAL;
-  AWVALID_internal <= ((not oimm_readnotwrite) and oimm_requestvalid) and (not aw_sent);
-  AWVALID          <= AWVALID_internal;
-  WSTRB            <= oimm_byteenable;
-  WVALID_internal  <= ((not oimm_readnotwrite) and oimm_requestvalid) and (not w_sent);
-  WVALID           <= WVALID_internal;
-  WDATA            <= oimm_writedata;
-  BREADY           <= '1';
+  AWADDR         <= oimm_address;
+  AWPROT         <= PROT_VAL;
+  AWVALID_signal <= ((not oimm_readnotwrite) and oimm_requestvalid) and (not aw_sent);
+  WSTRB          <= oimm_byteenable;
+  WVALID_signal  <= ((not oimm_readnotwrite) and oimm_requestvalid) and (not w_sent);
+  WDATA          <= oimm_writedata;
+  BREADY         <= '1';
 
   ARADDR  <= oimm_address;
   ARPROT  <= PROT_VAL;
@@ -85,14 +85,14 @@ begin
   process (clk) is
   begin  -- process
     if rising_edge(clk) then
-      if AWVALID_internal = '1' and AWREADY = '1' then
+      if AWVALID_signal = '1' and AWREADY = '1' then
         aw_sent <= '1';
       end if;
-      if WVALID_internal = '1' and WREADY = '1' then
+      if WVALID_signal = '1' and WREADY = '1' then
         w_sent <= '1';
       end if;
 
-      if oimm_waitrequest_int = '0' then
+      if oimm_waitrequest_signal = '0' then
         aw_sent <= '0';
         w_sent  <= '0';
       end if;

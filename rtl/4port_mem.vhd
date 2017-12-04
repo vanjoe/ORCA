@@ -7,14 +7,14 @@ use work.utils.all;
 entity true_dual_port_ram_single_clock is
   generic
     (
-      DATA_WIDTH : natural := 8;
-      ADDR_WIDTH : natural := 6
+      ADDRESS_WIDTH : natural := 6;
+      DATA_WIDTH    : natural := 8
       );
   port
     (
       clk    : in  std_logic;
-      addr_a : in  natural range 0 to (2**ADDR_WIDTH)-1;
-      addr_b : in  natural range 0 to (2**ADDR_WIDTH)-1;
+      addr_a : in  natural range 0 to (2**ADDRESS_WIDTH)-1;
+      addr_b : in  natural range 0 to (2**ADDRESS_WIDTH)-1;
       data_a : in  std_logic_vector(DATA_WIDTH-1 downto 0);
       data_b : in  std_logic_vector(DATA_WIDTH-1 downto 0);
       we_a   : in  std_logic := '1';
@@ -28,7 +28,7 @@ architecture rtl of true_dual_port_ram_single_clock is
 
   -- Build a 2-D array type for the RAM
   subtype word_t is std_logic_vector((DATA_WIDTH-1) downto 0);
-  type memory_t is array(0 to 2**ADDR_WIDTH-1) of word_t;
+  type memory_t is array(0 to 2**ADDRESS_WIDTH-1) of word_t;
 
   -- Declare the RAM
   shared variable ram : memory_t;
@@ -98,14 +98,14 @@ architecture behav of ram_2port is
   component true_dual_port_ram_single_clock is
     generic
       (
-        DATA_WIDTH : natural := 8;
-        ADDR_WIDTH : natural := 6
+        ADDRESS_WIDTH : natural := 6;
+        DATA_WIDTH    : natural := 8
         );
     port
       (
         clk    : in  std_logic;
-        addr_a : in  natural range 0 to (2**ADDR_WIDTH)-1;
-        addr_b : in  natural range 0 to (2**ADDR_WIDTH)-1;
+        addr_a : in  natural range 0 to (2**ADDRESS_WIDTH)-1;
+        addr_b : in  natural range 0 to (2**ADDRESS_WIDTH)-1;
         data_a : in  std_logic_vector(DATA_WIDTH-1 downto 0);
         data_b : in  std_logic_vector(DATA_WIDTH-1 downto 0);
         we_a   : in  std_logic := '1';
@@ -144,8 +144,9 @@ begin
 
     dpram : component true_dual_port_ram_single_clock
       generic map (
-        DATA_WIDTH => 8,
-        ADDR_WIDTH => addr0'length)
+        ADDRESS_WIDTH => addr0'length,
+        DATA_WIDTH    => 8
+        )
       port map (
         clk    => clk,
         data_a => byte_in0,

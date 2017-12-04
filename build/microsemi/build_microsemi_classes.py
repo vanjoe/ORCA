@@ -41,44 +41,98 @@ if repo_build_path not in sys.path:
 from build_classes import *
 
 
+#Microsemi specific defaults
+DEFAULT_RESET_VECTOR=0xC0000000
+DEFAULT_INTERRUPT_VECTOR=0xC0000200
+DEFAULT_MAX_IFETCHES_IN_FLIGHT=3
+DEFAULT_MULTIPLY_ENABLE=1
+DEFAULT_DIVIDE_ENABLE=1
+DEFAULT_SHIFTER_MAX_CYCLES=1
+DEFAULT_COUNTER_LENGTH=32
+DEFAULT_ENABLE_EXCEPTIONS=1
+DEFAULT_PIPELINE_STAGES=5
+DEFAULT_DATA_REQUEST_REGISTER=0
+DEFAULT_DATA_RETURN_REGISTER=0
+DEFAULT_DUC_REQUEST_REGISTER=2
+DEFAULT_DUC_RETURN_REGISTER=1
+DEFAULT_DAUX_REQUEST_REGISTER=2
+DEFAULT_DAUX_RETURN_REGISTER=1
+DEFAULT_INSTRUCTION_REQUEST_REGISTER=0
+DEFAULT_INSTRUCTION_RETURN_REGISTER=0
+DEFAULT_IUC_REQUEST_REGISTER=1
+DEFAULT_IUC_RETURN_REGISTER=0
+DEFAULT_IAUX_REQUEST_REGISTER=1
+DEFAULT_IAUX_RETURN_REGISTER=0
+DEFAULT_LVE_ENABLE=0
+DEFAULT_ENABLE_EXT_INTERRUPTS=0
+DEFAULT_NUM_EXT_INTERRUPTS=1
+DEFAULT_SCRATCHPAD_ADDR_BITS=10
+DEFAULT_IUC_ADDR_BASE=0x00000000
+DEFAULT_IUC_ADDR_LAST=0xFFFFFFFF
+DEFAULT_IAUX_ADDR_BASE=0x00000000
+DEFAULT_IAUX_ADDR_LAST=0x00000000
+DEFAULT_ICACHE_SIZE=0
+DEFAULT_ICACHE_LINE_SIZE=16
+DEFAULT_ICACHE_EXTERNAL_WIDTH=32
+DEFAULT_ICACHE_BURST_EN=1
+DEFAULT_DUC_ADDR_BASE=0x00000000
+DEFAULT_DUC_ADDR_LAST=0xFFFFFFFF
+DEFAULT_DAUX_ADDR_BASE=0x00000000
+DEFAULT_DAUX_ADDR_LAST=0x00000000
+DEFAULT_DCACHE_SIZE=0
+DEFAULT_DCACHE_LINE_SIZE=16
+DEFAULT_DCACHE_EXTERNAL_WIDTH=32
+DEFAULT_DCACHE_BURST_EN=1
+DEFAULT_POWER_OPTIMIZED=0
+
 ##########################################################################
 class Mcsm_Orca_BuildCfg(Orca_BuildCfgBase):
 
     ######################################################################
     def __init__(self,
                  system,
-                 reset_vector,
-                 interrupt_vector,
-                 max_ifetches_in_flight,
-                 multiply_enable,
-                 divide_enable,
-                 shifter_max_cycles,
-                 counter_length,
-                 enable_exceptions,
-                 pipeline_stages,
-                 data_request_register,
-                 data_return_register,
-                 lve_enable,
-                 enable_ext_interrupts,
-                 num_ext_interrupts,
-                 scratchpad_addr_bits,
-                 iuc_addr_base,
-                 iuc_addr_last,
-                 iaux_addr_base,
-                 iaux_addr_last,
-                 icache_size,
-                 icache_line_size,
-                 icache_external_width,
-                 icache_burst_en,
-                 duc_addr_base,
-                 duc_addr_last,
-                 daux_addr_base,
-                 daux_addr_last,
-                 dcache_size,
-                 dcache_line_size,
-                 dcache_external_width,
-                 dcache_burst_en,
-                 power_optimized,
+                 reset_vector=DEFAULT_RESET_VECTOR,
+                 interrupt_vector=DEFAULT_INTERRUPT_VECTOR,
+                 max_ifetches_in_flight=DEFAULT_MAX_IFETCHES_IN_FLIGHT,
+                 multiply_enable=DEFAULT_MULTIPLY_ENABLE,
+                 divide_enable=DEFAULT_DIVIDE_ENABLE,
+                 shifter_max_cycles=DEFAULT_SHIFTER_MAX_CYCLES,
+                 counter_length=DEFAULT_COUNTER_LENGTH,
+                 enable_exceptions=DEFAULT_ENABLE_EXCEPTIONS,
+                 pipeline_stages=DEFAULT_PIPELINE_STAGES,
+                 data_request_register=DEFAULT_DATA_REQUEST_REGISTER,
+                 data_return_register=DEFAULT_DATA_RETURN_REGISTER,
+                 duc_request_register=DEFAULT_DUC_REQUEST_REGISTER,
+                 duc_return_register=DEFAULT_DUC_RETURN_REGISTER,
+                 daux_request_register=DEFAULT_DAUX_REQUEST_REGISTER,
+                 daux_return_register=DEFAULT_DAUX_RETURN_REGISTER,
+                 instruction_request_register=DEFAULT_INSTRUCTION_REQUEST_REGISTER,
+                 instruction_return_register=DEFAULT_INSTRUCTION_RETURN_REGISTER,
+                 iuc_request_register=DEFAULT_IUC_REQUEST_REGISTER,
+                 iuc_return_register=DEFAULT_IUC_RETURN_REGISTER,
+                 iaux_request_register=DEFAULT_IAUX_REQUEST_REGISTER,
+                 iaux_return_register=DEFAULT_IAUX_RETURN_REGISTER,
+                 lve_enable=DEFAULT_LVE_ENABLE,
+                 enable_ext_interrupts=DEFAULT_ENABLE_EXT_INTERRUPTS,
+                 num_ext_interrupts=DEFAULT_NUM_EXT_INTERRUPTS,
+                 scratchpad_addr_bits=DEFAULT_SCRATCHPAD_ADDR_BITS,
+                 iuc_addr_base=DEFAULT_IUC_ADDR_BASE,
+                 iuc_addr_last=DEFAULT_IUC_ADDR_LAST,
+                 iaux_addr_base=DEFAULT_IAUX_ADDR_BASE,
+                 iaux_addr_last=DEFAULT_IAUX_ADDR_LAST,
+                 icache_size=DEFAULT_ICACHE_SIZE,
+                 icache_line_size=DEFAULT_ICACHE_LINE_SIZE,
+                 icache_external_width=DEFAULT_ICACHE_EXTERNAL_WIDTH,
+                 icache_burst_en=DEFAULT_ICACHE_BURST_EN,
+                 duc_addr_base=DEFAULT_DUC_ADDR_BASE,
+                 duc_addr_last=DEFAULT_DUC_ADDR_LAST,
+                 daux_addr_base=DEFAULT_DAUX_ADDR_BASE,
+                 daux_addr_last=DEFAULT_DAUX_ADDR_LAST,
+                 dcache_size=DEFAULT_DCACHE_SIZE,
+                 dcache_line_size=DEFAULT_DCACHE_LINE_SIZE,
+                 dcache_external_width=DEFAULT_DCACHE_EXTERNAL_WIDTH,
+                 dcache_burst_en=DEFAULT_DCACHE_BURST_EN,
+                 power_optimized=DEFAULT_POWER_OPTIMIZED,
                  opt_sysid='',
                  dstdir='',
                  skip_sw_tests=False,
@@ -98,6 +152,16 @@ class Mcsm_Orca_BuildCfg(Orca_BuildCfgBase):
               pipeline_stages,
               data_request_register,
               data_return_register,
+              duc_request_register,
+              duc_return_register,
+              daux_request_register,
+              daux_return_register,
+              instruction_request_register,
+              instruction_return_register,
+              iuc_request_register,
+              iuc_return_register,
+              iaux_request_register,
+              iaux_return_register,
               lve_enable,
               enable_ext_interrupts,
               num_ext_interrupts,
@@ -187,6 +251,26 @@ class Mcsm_Orca_BuildCfg(Orca_BuildCfgBase):
               '\\1( %s )' % self.data_request_register),
              (r'(.DATA_RETURN_REGISTER\s+)\( \d+ \)',
               '\\1( %s )' % self.data_return_register),
+             (r'(.DUC_REQUEST_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.duc_request_register),
+             (r'(.DUC_RETURN_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.duc_return_register),
+             (r'(.DAUX_REQUEST_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.daux_request_register),
+             (r'(.DAUX_RETURN_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.daux_return_register),
+             (r'(.INSTRUCTION_REQUEST_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.instruction_request_register),
+             (r'(.INSTRUCTION_RETURN_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.instruction_return_register),
+             (r'(.IUC_REQUEST_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.iuc_request_register),
+             (r'(.IUC_RETURN_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.iuc_return_register),
+             (r'(.IAUX_REQUEST_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.iaux_request_register),
+             (r'(.IAUX_RETURN_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.iaux_return_register),
              (r'(.LVE_ENABLE\s+)\( \d+ \)',
               '\\1( %s )' % self.lve_enable),
              (r'(.ENABLE_EXT_INTERRUPTS\s+)\( \d+ \)',

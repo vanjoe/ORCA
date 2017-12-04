@@ -569,7 +569,6 @@ begin
         RESET_VECTOR          => x"00000000",
         WISHBONE_AUX          => 1,
         MULTIPLY_ENABLE       => 1,
-        DATA_REQUEST_REGISTER => 0,
         DIVIDE_ENABLE         => 0,
         SHIFTER_MAX_CYCLES    => 32,
         COUNTER_LENGTH        => 32,

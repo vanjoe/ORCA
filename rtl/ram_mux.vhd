@@ -6,12 +6,12 @@ use work.utils.all;
 
 entity ram_mux is
   generic (
-    DATA_WIDTH : natural := 32;
-    ADDR_WIDTH : natural := 32
+    ADDRESS_WIDTH : natural := 32;
+    DATA_WIDTH    : natural := 32
     );
   port (
     -- init signals
-    nvm_addr     : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+    nvm_addr     : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     nvm_wdata    : in  std_logic_vector(DATA_WIDTH-1 downto 0);
     nvm_wen      : in  std_logic;
     nvm_byte_sel : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
@@ -21,18 +21,18 @@ entity ram_mux is
 
     -- user signals
     user_ARREADY : out std_logic;
-    user_ARADDR  : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+    user_ARADDR  : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     user_ARVALID : in  std_logic;
 
     user_RREADY : out std_logic;
-    user_RDATA  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    user_RDATA  : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     user_RVALID : out std_logic;
 
-    user_AWADDR  : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+    user_AWADDR  : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     user_AWVALID : in  std_logic;
     user_AWREADY : out std_logic;
 
-    user_WDATA  : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+    user_WDATA  : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     user_WVALID : in  std_logic;
     user_WREADY : out std_logic;
 
@@ -41,7 +41,7 @@ entity ram_mux is
 
     -- mux signals/ram inputs
     SEL          : in  std_logic;
-    ram_addr     : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    ram_addr     : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     ram_wdata    : out std_logic_vector(DATA_WIDTH-1 downto 0);
     ram_wen      : out std_logic;
     ram_byte_sel : out std_logic_vector(DATA_WIDTH/8-1 downto 0);

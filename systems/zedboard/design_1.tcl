@@ -413,6 +413,7 @@ proc create_root_design { parentCell } {
   # Create instance: axi_interconnect_data_uncacheable, and set properties
   set axi_interconnect_data_uncacheable [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_data_uncacheable ]
   set_property -dict [ list \
+   CONFIG.M00_HAS_REGSLICE {1} \
    CONFIG.NUM_MI {3} \
    CONFIG.NUM_SI {2} \
    CONFIG.S01_HAS_REGSLICE {1} \
@@ -495,15 +496,15 @@ proc create_root_design { parentCell } {
    CONFIG.ICACHE_EXTERNAL_WIDTH {32} \
    CONFIG.ICACHE_LINE_SIZE {16} \
    CONFIG.ICACHE_SIZE {8192} \
-   CONFIG.INTERRUPT_VECTOR {0xD0000200} \
-   CONFIG.IUC_ADDR_BASE {0xC0000000} \
+   CONFIG.INTERRUPT_VECTOR {0xC0000200} \
+   CONFIG.IUC_ADDR_BASE {0xD0000000} \
    CONFIG.IUC_ADDR_LAST {0xFFFFFFFF} \
    CONFIG.LVE_ENABLE {0} \
    CONFIG.MULTIPLY_ENABLE {1} \
    CONFIG.NUM_EXT_INTERRUPTS {1} \
    CONFIG.PIPELINE_STAGES {5} \
    CONFIG.POWER_OPTIMIZED {0} \
-   CONFIG.RESET_VECTOR {0xD0000000} \
+   CONFIG.RESET_VECTOR {0xC0000000} \
    CONFIG.SCRATCHPAD_ADDR_BITS {10} \
    CONFIG.SHIFTER_MAX_CYCLES {1} \
  ] $orca

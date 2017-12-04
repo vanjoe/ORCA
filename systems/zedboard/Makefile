@@ -17,6 +17,7 @@ BD_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/$(BD_NAME).bd
 HWH_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/hw_handoff/$(BD_NAME).hwh
 SYNTH_DCP=$(PROJ_DIR)/$(PROJ_NAME).runs/synth_1/$(BD_NAME)_wrapper.dcp
 IMPL_BIT=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.bit
+ORCA_SRCS=$(wildcard ../../rtl/*.vhd) ../../rtl/component.xml
 
 RESOURCE_TCL=report_resource_usage.tcl
 MMI_TCL=write_mmi.tcl
@@ -75,6 +76,36 @@ endif #ifdef DATA_REQUEST_REGISTER
 ifdef DATA_RETURN_REGISTER
 BD_CHANGES += DATA_RETURN_REGISTER $(DATA_RETURN_REGISTER)
 endif #ifdef DATA_RETURN_REGISTER
+ifdef DUC_REQUEST_REGISTER
+BD_CHANGES += DUC_REQUEST_REGISTER $(DUC_REQUEST_REGISTER)
+endif #ifdef DUC_REQUEST_REGISTER
+ifdef DUC_RETURN_REGISTER
+BD_CHANGES += DUC_RETURN_REGISTER $(DUC_RETURN_REGISTER)
+endif #ifdef DUC_RETURN_REGISTER
+ifdef DAUX_REQUEST_REGISTER
+BD_CHANGES += DAUX_REQUEST_REGISTER $(DAUX_REQUEST_REGISTER)
+endif #ifdef DAUX_REQUEST_REGISTER
+ifdef DAUX_RETURN_REGISTER
+BD_CHANGES += DAUX_RETURN_REGISTER $(DAUX_RETURN_REGISTER)
+endif #ifdef DAUX_RETURN_REGISTER
+ifdef INSTRUCTION_REQUEST_REGISTER
+BD_CHANGES += INSTRUCTION_REQUEST_REGISTER $(INSTRUCTION_REQUEST_REGISTER)
+endif #ifdef INSTRUCTION_REQUEST_REGISTER
+ifdef INSTRUCTION_RETURN_REGISTER
+BD_CHANGES += INSTRUCTION_RETURN_REGISTER $(INSTRUCTION_RETURN_REGISTER)
+endif #ifdef INSTRUCTION_RETURN_REGISTER
+ifdef IUC_REQUEST_REGISTER
+BD_CHANGES += IUC_REQUEST_REGISTER $(IUC_REQUEST_REGISTER)
+endif #ifdef IUC_REQUEST_REGISTER
+ifdef IUC_RETURN_REGISTER
+BD_CHANGES += IUC_RETURN_REGISTER $(IUC_RETURN_REGISTER)
+endif #ifdef IUC_RETURN_REGISTER
+ifdef IAUX_REQUEST_REGISTER
+BD_CHANGES += IAUX_REQUEST_REGISTER $(IAUX_REQUEST_REGISTER)
+endif #ifdef IAUX_REQUEST_REGISTER
+ifdef IAUX_RETURN_REGISTER
+BD_CHANGES += IAUX_RETURN_REGISTER $(IAUX_RETURN_REGISTER)
+endif #ifdef IAUX_RETURN_REGISTER
 ifdef PIPELINE_STAGES
 BD_CHANGES += PIPELINE_STAGES $(PIPELINE_STAGES)
 endif #ifdef PIPELINE_STAGES
@@ -96,6 +127,12 @@ endif #ifdef IUC_ADDR_BASE
 ifdef IUC_ADDR_LAST
 BD_CHANGES += IUC_ADDR_LAST $(IUC_ADDR_LAST)
 endif #ifdef IUC_ADDR_LAST
+ifdef IAUX_ADDR_BASE
+BD_CHANGES += IAUX_ADDR_BASE $(IAUX_ADDR_BASE)
+endif #ifdef IAUX_ADDR_BASE
+ifdef IAUX_ADDR_LAST
+BD_CHANGES += IAUX_ADDR_LAST $(IAUX_ADDR_LAST)
+endif #ifdef IAUX_ADDR_LAST
 ifdef ICACHE_SIZE
 BD_CHANGES += ICACHE_SIZE $(ICACHE_SIZE)
 endif #ifdef ICACHE_SIZE
@@ -108,6 +145,30 @@ endif #ifdef ICACHE_EXTERNAL_WIDTH
 ifdef ICACHE_BURST_EN
 BD_CHANGES += ICACHE_BURST_EN $(ICACHE_BURST_EN)
 endif #ifdef ICACHE_BURST_EN
+ifdef DUC_ADDR_BASE
+BD_CHANGES += DUC_ADDR_BASE $(DUC_ADDR_BASE)
+endif #ifdef DUC_ADDR_BASE
+ifdef DUC_ADDR_LAST
+BD_CHANGES += DUC_ADDR_LAST $(DUC_ADDR_LAST)
+endif #ifdef DUC_ADDR_LAST
+ifdef DAUX_ADDR_BASE
+BD_CHANGES += DAUX_ADDR_BASE $(DAUX_ADDR_BASE)
+endif #ifdef DAUX_ADDR_BASE
+ifdef DAUX_ADDR_LAST
+BD_CHANGES += DAUX_ADDR_LAST $(DAUX_ADDR_LAST)
+endif #ifdef DAUX_ADDR_LAST
+ifdef DCACHE_SIZE
+BD_CHANGES += DCACHE_SIZE $(DCACHE_SIZE)
+endif #ifdef DCACHE_SIZE
+ifdef DCACHE_LINE_SIZE
+BD_CHANGES += DCACHE_LINE_SIZE $(DCACHE_LINE_SIZE)
+endif #ifdef DCACHE_LINE_SIZE
+ifdef DCACHE_EXTERNAL_WIDTH
+BD_CHANGES += DCACHE_EXTERNAL_WIDTH $(DCACHE_EXTERNAL_WIDTH)
+endif #ifdef DCACHE_EXTERNAL_WIDTH
+ifdef DCACHE_BURST_EN
+BD_CHANGES += DCACHE_BURST_EN $(DCACHE_BURST_EN)
+endif #ifdef DCACHE_BURST_EN
 ifdef POWER_OPTIMIZED
 BD_CHANGES += POWER_OPTIMIZED $(POWER_OPTIMIZED)
 endif #ifdef POWER_OPTIMIZED
@@ -124,7 +185,7 @@ $(PROJ_FILE) $(BD_FILE): $(PROJECT_TCL) $(BD_TCL) $(wildcard config.mk)
 .PHONY: archiveBD
 archiveBD: $(HWH_FILE)
 
-$(HWH_FILE): $(BD_FILE)
+$(HWH_FILE): $(BD_FILE) $(ORCA_SRCS)
 	rm -f tmp.$(BD_TCL)
 	rm -f $@
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs generate_bd_design $(PROJ_DIR) $(PROJ_NAME) tmp.$(BD_TCL)
@@ -142,8 +203,12 @@ $(IMPL_BIT): $(SYNTH_DCP)
 
 #These should come from the BSP
 JTAG_RESET_BASE_ADDRESS ?= 0x40000000
+ifdef RESET_VECTOR
+IDRAM_BASE_ADDRESS ?= $(RESET_VECTOR)
+else #ifdef RESET_VECTOR
 IDRAM_BASE_ADDRESS ?= 0xC0000000
-IDRAM_MAX_ADDRESS  ?= 0xC001FFFF
+endif #else #ifdef RESET_VECTOR
+IDRAM_LENGTH       ?= 0x00020000
 
 $(MMI_FILE): $(IMPL_BIT) $(MMI_TCL)
 	$(VIVADO_SOURCE) $(MMI_TCL) -tclargs mmi_wrapper $(PROJ_DIR) $(PROJ_NAME) $(BRAM_NAME) $(IDRAM_BASE_ADDRESS)
@@ -188,10 +253,10 @@ pgm: $(OUT_BIT)
 .PHONY: run
 run:
 ifeq ($(ELF_FILE), NONE)
-	python orca_pgm.py test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_MAX_ADDRESS) + 1))` --device=xc7z* --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
+	python orca_pgm.py test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_BASE_ADDRESS) + $(IDRAM_LENGTH)))` --device=xc7z* --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
 else #ifeq ($(ELF_FILE), NONE)
 	$(MAKE) -C software test.bin
-	python orca_pgm.py software/test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_MAX_ADDRESS) + 1))` --device=xc7z* --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
+	python orca_pgm.py software/test.bin --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS) --base_address=$(IDRAM_BASE_ADDRESS) --end_address=`printf "0x%08X" $$(($(IDRAM_BASE_ADDRESS) + $(IDRAM_LENGTH)))` --device=xc7z* --project=$(PROJ_FILE) --debug_nets=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.ltx --output_file=jtag_init.tcl
 endif #else #ifeq ($(ELF_FILE), NONE)
 
 .PHONY: clean

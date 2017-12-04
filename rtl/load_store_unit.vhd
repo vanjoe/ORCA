@@ -20,9 +20,10 @@ entity load_store_unit is
     instruction              : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     sign_extension           : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     writeback_stall_from_lsu : buffer std_logic;
-    stall_from_lsu           : out    std_logic;
+    lsu_ready                : out    std_logic;
     data_out                 : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_enable              : out    std_logic;
+    load_in_progress         : buffer std_logic;
 
     --Orca-internal memory-mapped master
     oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -68,9 +69,8 @@ architecture rtl of load_store_unit is
   signal load_byte2 : std_logic_vector(7 downto 0);
   signal load_byte3 : std_logic_vector(7 downto 0);
 
-  signal write_instr             : std_logic;
-  signal read_instr              : std_logic;
-  signal expecting_readdatavalid : std_logic;
+  signal write_instr : std_logic;
+  signal read_instr  : std_logic;
 begin
   write_instr <= '1' when opcode = STORE_INSTR else '0';
   read_instr  <= '1' when opcode = LOAD_INSTR  else '0';
@@ -111,23 +111,23 @@ begin
 
   --Stall if sending a request and slave is not ready or if awaiting loaddata
   --and it hasn't arrived yet
-  writeback_stall_from_lsu <= expecting_readdatavalid and (not oimm_readdatavalid);
-  stall_from_lsu           <= oimm_requestvalid and oimm_waitrequest;
+  writeback_stall_from_lsu <= load_in_progress and (not oimm_readdatavalid);
+  lsu_ready                <= ((not read_instr) and (not write_instr)) or (not oimm_waitrequest);
 
   process(clk)
   begin
     if rising_edge(clk) then
       if oimm_readdatavalid = '1' then
-        expecting_readdatavalid <= '0';
+        load_in_progress <= '0';
       end if;
       if (oimm_requestvalid = '1' and oimm_readnotwrite = '1') and oimm_waitrequest = '0' then
-        load_alignment          <= address_unaligned(1 downto 0);
-        load_fun3               <= fun3;
-        expecting_readdatavalid <= '1';
+        load_alignment   <= address_unaligned(1 downto 0);
+        load_fun3        <= fun3;
+        load_in_progress <= '1';
       end if;
 
       if reset = '1' then
-        expecting_readdatavalid <= '0';
+        load_in_progress <= '0';
       end if;
     end if;
   end process;

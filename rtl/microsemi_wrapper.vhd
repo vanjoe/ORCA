@@ -7,28 +7,28 @@ use work.rv_components.all;
 entity microsemi_wrapper is
   generic
     (
-      REGISTER_SIZE         : integer                       := 32;
-      RESET_VECTOR          : natural                       := 16#00000000#;
-      INTERRUPT_VECTOR      : natural                       := 16#00000200#;
-      MULTIPLY_ENABLE       : natural range 0 to 1          := 1;
-      DIVIDE_ENABLE         : natural range 0 to 1          := 1;
-      SHIFTER_MAX_CYCLES    : natural                       := 1;
-      COUNTER_LENGTH        : natural                       := 32;
-      ENABLE_EXCEPTIONS     : natural                       := 1;
-      BRANCH_PREDICTORS     : natural                       := 0;
-      PIPELINE_STAGES       : natural range 4 to 5          := 5;
-      LVE_ENABLE            : natural range 0 to 1          := 0;
-      ENABLE_EXT_INTERRUPTS : natural range 0 to 1          := 0;
-      NUM_EXT_INTERRUPTS    : natural range 1 to 32         := 1;
-      SCRATCHPAD_ADDR_BITS  : integer                       := 10;
-      IUC_ADDR_BASE         : natural                       := 0;
-      IUC_ADDR_LAST         : natural                       := 0;
-      ICACHE_SIZE           : natural                       := 0;
-      ICACHE_LINE_SIZE      : integer range 16 to 256       := 32;
-      ICACHE_EXTERNAL_WIDTH : integer                       := 32;
-      ICACHE_BURST_EN       : integer                       := 0;
-      POWER_OPTIMIZED       : integer range 0 to 1          := 0;
-      TCRAM_SIZE            : natural range 8192 to 65536   := 65536
+      REGISTER_SIZE         : integer                     := 32;
+      RESET_VECTOR          : natural                     := 16#00000000#;
+      INTERRUPT_VECTOR      : natural                     := 16#00000200#;
+      MULTIPLY_ENABLE       : natural range 0 to 1        := 1;
+      DIVIDE_ENABLE         : natural range 0 to 1        := 1;
+      SHIFTER_MAX_CYCLES    : natural                     := 1;
+      COUNTER_LENGTH        : natural                     := 32;
+      ENABLE_EXCEPTIONS     : natural                     := 1;
+      BRANCH_PREDICTORS     : natural                     := 0;
+      PIPELINE_STAGES       : natural range 4 to 5        := 5;
+      LVE_ENABLE            : natural range 0 to 1        := 0;
+      ENABLE_EXT_INTERRUPTS : natural range 0 to 1        := 0;
+      NUM_EXT_INTERRUPTS    : natural range 1 to 32       := 1;
+      SCRATCHPAD_ADDR_BITS  : integer                     := 10;
+      IUC_ADDR_BASE         : natural                     := 0;
+      IUC_ADDR_LAST         : natural                     := 0;
+      ICACHE_SIZE           : natural                     := 0;
+      ICACHE_LINE_SIZE      : integer range 16 to 256     := 32;
+      ICACHE_EXTERNAL_WIDTH : integer                     := 32;
+      ICACHE_BURST_EN       : integer                     := 0;
+      POWER_OPTIMIZED       : integer range 0 to 1        := 0;
+      TCRAM_SIZE            : natural range 8192 to 65536 := 65536
       );
   port (
     clk    : in std_logic;
@@ -432,8 +432,8 @@ begin
 
   mux : entity work.ram_mux(rtl)
     generic map (
-      DATA_WIDTH => REGISTER_SIZE,
-      ADDR_WIDTH => REGISTER_SIZE
+      ADDRESS_WIDTH => REGISTER_SIZE,
+      DATA_WIDTH    => REGISTER_SIZE
       )
     port map (
       nvm_addr     => nvm_addr,
@@ -499,8 +499,8 @@ begin
 
   iram : entity work.iram(rtl)
     generic map (
-      SIZE            => TCRAM_SIZE,
-      RAM_WIDTH       => REGISTER_SIZE
+      SIZE      => TCRAM_SIZE,
+      RAM_WIDTH => REGISTER_SIZE
       )
     port map (
       clk   => clk,

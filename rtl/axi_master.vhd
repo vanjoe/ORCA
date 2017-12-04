@@ -12,7 +12,7 @@ use work.rv_components.all;
 
 entity axi_master is
   generic (
-    ADDR_WIDTH      : integer  := 32;
+    ADDRESS_WIDTH   : integer  := 32;
     DATA_WIDTH      : integer  := 32;
     ID_WIDTH        : positive := 4;
     MAX_BURSTLENGTH : positive := 16
@@ -22,7 +22,7 @@ entity axi_master is
     aresetn : in std_logic;
 
     --Orca-internal memory-mapped slave
-    oimm_address            : in     std_logic_vector(ADDR_WIDTH-1 downto 0);
+    oimm_address            : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     oimm_burstlength        : in     std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0);
     oimm_burstlength_minus1 : in     std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
     oimm_byteenable         : in     std_logic_vector((DATA_WIDTH/8)-1 downto 0);
@@ -35,7 +35,7 @@ entity axi_master is
 
     --AXI memory-mapped master
     AWID    : out std_logic_vector(ID_WIDTH-1 downto 0);
-    AWADDR  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    AWADDR  : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     AWLEN   : out std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
     AWSIZE  : out std_logic_vector(2 downto 0);
     AWBURST : out std_logic_vector(1 downto 0);
@@ -58,7 +58,7 @@ entity axi_master is
     BREADY : out std_logic;
 
     ARID    : out std_logic_vector(ID_WIDTH-1 downto 0);
-    ARADDR  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    ARADDR  : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     ARLEN   : out std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
     ARSIZE  : out std_logic_vector(2 downto 0);
     ARBURST : out std_logic_vector(1 downto 0);

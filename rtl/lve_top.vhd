@@ -23,9 +23,9 @@ entity lve_top is
     valid_instr    : in  std_logic;
     stall_out      : out std_logic;
 
-    rs1_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs3_data       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs3_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 --    wb_data        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
@@ -36,7 +36,7 @@ entity lve_top is
     slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
     slave_ack      : out std_logic;
 
-
+    lve_ready            : out    std_logic;
     lve_executing        : out    std_logic;
     lve_alu_data1        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     lve_alu_data2        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -75,15 +75,15 @@ architecture rtl of lve_top is
   signal enum_value       : unsigned(REGISTER_SIZE-1 downto 0);
 
   --pointers
-  signal srca_ptr          : unsigned(ptr'range);
-  signal srcb_ptr          : unsigned(ptr'range);
-  signal dest_ptr          : unsigned(ptr'range);
-  signal srca_row_ptr      : unsigned(ptr'range);
-  signal srcb_row_ptr      : unsigned(ptr'range);
-  signal dest_row_ptr      : unsigned(ptr'range);
-  signal srca_ptr_next     : unsigned(ptr'range);
-  signal srcb_ptr_next     : unsigned(ptr'range);
-  signal dest_ptr_next     : unsigned(ptr'range);
+  signal srca_ptr      : unsigned(ptr'range);
+  signal srcb_ptr      : unsigned(ptr'range);
+  signal dest_ptr      : unsigned(ptr'range);
+  signal srca_row_ptr  : unsigned(ptr'range);
+  signal srcb_row_ptr  : unsigned(ptr'range);
+  signal dest_row_ptr  : unsigned(ptr'range);
+  signal srca_ptr_next : unsigned(ptr'range);
+  signal srcb_ptr_next : unsigned(ptr'range);
+  signal dest_ptr_next : unsigned(ptr'range);
 
 
   --accumulator registers
@@ -173,8 +173,8 @@ begin
     if rising_edge(clk) then
       if valid_lve_instr = '1' and opcode5 /= "11111" and zero_length_vector = '0' then
 
-        srca_ptr   <= srca_ptr_next;
-        srcb_ptr   <= srcb_ptr_next;
+        srca_ptr <= srca_ptr_next;
+        srcb_ptr <= srcb_ptr_next;
 
         enum_value <= enum_value +1;
 
@@ -203,7 +203,7 @@ begin
             else
               elems_left_write <= vector_length-1;
               rows_left_write  <= rows_left_write -1;
-              dest_row_ptr <= dest_ptr_next;
+              dest_row_ptr     <= dest_ptr_next;
             end if;
           end if;
         end if;
@@ -227,10 +227,10 @@ begin
           dest_ptr     <= unsigned(rs3_data(ptr'range));
           dest_row_ptr <= unsigned(rs3_data(ptr'range));
 
-          first_elem   <= '0';
-          done_write   <= '0';
-          done_read    <= '0';
-          enum_value   <= (others => '0');
+          first_elem <= '0';
+          done_write <= '0';
+          done_read  <= '0';
+          enum_value <= (others => '0');
         end if;
       end if;
       if reset = '1' then
@@ -250,8 +250,8 @@ begin
   dest_ptr_next <= dest_ptr+CONDITIONAL(acc_enable = '1', 0, 4) when elems_left_write /= 0 else
                    dest_row_ptr+dest_incr;
 
-  lve_executing     <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector;
-  --lve_executing <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and not first_elem;
+  lve_executing <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector;
+  lve_ready <= not (bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector);
 
 
   wr_data_ready <= (mov_result_valid or lve_alu_result_valid or ci_valid_out) and not done_write;
@@ -341,7 +341,7 @@ begin
     lve_source_valid when "10100",
     lve_source_valid when "10110",
     lve_source_valid when "10111",
-    '0'     when others;
+    '0'              when others;
 
 
   ci : lve_ci

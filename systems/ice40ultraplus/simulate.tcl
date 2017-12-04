@@ -18,6 +18,7 @@ proc com { args } {
                      ../../rtl/memory_interface.vhd     \
                      ../../rtl/cache_mux.vhd            \
                      ../../rtl/lve_top.vhd              \
+							../../rtl/oimm_register.vhd        \
                      ../../rtl/4port_mem_ultraplus.vhd  \
                      hdl/top_util_pkg.vhd               \
                      hdl/top_component_pkg.vhd          \
@@ -129,7 +130,7 @@ proc wave_ALU { } {
 
 proc wave_RF { } {
     add wave -noupdate -divider "Register File (full)"
-    add wave -hex /top_tb/dut/sub_top/WITH_LVE/rv/core/D/register_file_1/*
+    add wave -hex /top_tb/dut/sub_top/WITH_LVE/rv/core/D/the_register_file/*
 }
 
 proc wave_Top { } {
@@ -147,7 +148,7 @@ proc recom { t {extra_waves false} } {
     add wave -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/clk
     add wave -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/reset
     add wave -noupdate -divider Decode
-    add wave -hex -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/D/register_file_1/registers(28)
+    add wave -hex -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/D/the_register_file/registers(28)
     add wave -noupdate -divider Execute
     add wave -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/X/valid_instr
     add wave -hex -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/X/pc_current

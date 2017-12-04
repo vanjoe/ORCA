@@ -8,6 +8,7 @@ entity register_file is
   generic(
     REGISTER_SIZE      : positive;
     REGISTER_NAME_SIZE : positive;
+    WRITE_FIRST_SUPPORTED : boolean;
     READ_PORTS         : positive range 1 to 3
     );
   port(
@@ -20,28 +21,15 @@ entity register_file is
     wb_data     : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     wb_enable   : in std_logic;
 
-    rs1_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs3_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0)
+    rs1_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs3_data : out std_logic_vector(REGISTER_SIZE-1 downto 0)
     );
 end;
 
 architecture rtl of register_file is
-  type register_list is array(31 downto 0) of std_logic_vector(REGISTER_SIZE-1 downto 0);
-
-
-  signal registers : register_list := (others => (others => '0'));
-
-  constant ZERO : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := (others => '0');
-
-  signal read_during_write1 : std_logic;
-  signal read_during_write2 : std_logic;
-  signal read_during_write3 : std_logic;
-  signal out1               : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal out2               : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal out3               : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal wb_data_latched    : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal we                 : std_logic;
+  type register_vector is array(31 downto 0) of std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal registers : register_vector := (others => (others => '0'));
 
 --These aliases are useful during simulation of software.
   alias ra  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_RA));
@@ -75,49 +63,79 @@ architecture rtl of register_file is
   alias t4  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T4));
   alias t5  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T5));
   alias t6  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T6));
-
 begin
 
-  we <= wb_enable;
-  register_proc : process (clk) is
+  bypass_gen : if not WRITE_FIRST_SUPPORTED generate
+    signal out1               : std_logic_vector(REGISTER_SIZE-1 downto 0);
+    signal out2               : std_logic_vector(REGISTER_SIZE-1 downto 0);
+    signal out3               : std_logic_vector(REGISTER_SIZE-1 downto 0);
+    signal read_during_write1 : std_logic;
+    signal read_during_write2 : std_logic;
+    signal read_during_write3 : std_logic;
+    signal wb_data_latched    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   begin
-    if rising_edge(clk) then
-      if we = '1' then
-        registers(to_integer(unsigned(wb_sel))) <= wb_data;
-      end if;
-      out1 <= registers(to_integer(unsigned(rs1_sel)));
-      out2 <= registers(to_integer(unsigned(rs2_sel)));
-      out3 <= registers(to_integer(unsigned(rs3_sel)));
-    end if;  --rising edge
-  end process;
+
+    process (clk) is
+    begin
+      if rising_edge(clk) then
+        out1 <= registers(to_integer(unsigned(rs1_sel)));
+        out2 <= registers(to_integer(unsigned(rs2_sel)));
+        out3 <= registers(to_integer(unsigned(rs2_sel)));
+        if wb_enable = '1' then
+          registers(to_integer(unsigned(wb_sel))) <= wb_data;
+        end if;
+      end if;  --rising edge
+    end process;
 
 
-  --read during write logic
-  rs1_data <= wb_data_latched when read_during_write1 = '1'else out1;
-  rs2_data <= (others => '-') when READ_PORTS < 2 else
-              wb_data_latched when read_during_write2 = '1'else out2;
-  rs3_data <= (others => '-') when READ_PORTS < 3 else
-              wb_data_latched when read_during_write3 = '1'else out3;
-
-  process(clk) is
-  begin
-    if rising_edge(clk) then
-      read_during_write3 <= '0';
-      read_during_write2 <= '0';
-      read_during_write1 <= '0';
-      if rs1_sel = wb_sel and we = '1' then
-        read_during_write1 <= '1';
+    --read during write logic
+    rs1_data <= wb_data_latched when read_during_write1 = '1' else out1;
+    rs2_data <= wb_data_latched when read_during_write2 = '1' else out2;
+    rs3_data <= (others => '-') when READ_PORTS < 3 else
+                wb_data_latched when read_during_write2 = '1' else out2;
+    process(clk) is
+    begin
+      if rising_edge(clk) then
+        read_during_write3 <= '0';
+        read_during_write2 <= '0';
+        read_during_write1 <= '0';
+        if rs1_sel = wb_sel and wb_enable = '1' then
+          read_during_write1 <= '1';
+        end if;
+        if rs2_sel = wb_sel and wb_enable = '1' then
+          read_during_write2 <= '1';
+        end if;
+        if rs3_sel = wb_sel and wb_enable = '1' then
+          read_during_write3 <= '1';
       end if;
-      if rs2_sel = wb_sel and we = '1' then
-        read_during_write2 <= '1';
-      end if;
-      if rs3_sel = wb_sel and we = '1' then
-        read_during_write3 <= '1';
-      end if;
-
       wb_data_latched <= wb_data;
-    end if;
+      end if;
+    end process;
+  end generate bypass_gen;
 
-  end process;
+  write_first_gen : if WRITE_FIRST_SUPPORTED generate
+    process (clk) is
+      variable registers_variable : register_vector := (others => (others => '0'));
+    begin
+      if rising_edge(clk) then
+        if wb_enable = '1' then
+          registers_variable(to_integer(unsigned(wb_sel))) := wb_data;
+        end if;
+        rs1_data <= registers_variable(to_integer(unsigned(rs1_sel)));
+        rs2_data <= registers_variable(to_integer(unsigned(rs2_sel)));
+        rs3_data <= registers_variable(to_integer(unsigned(rs3_sel)));
+      end if;  --rising edge
+    end process;
+    process (clk) is
+    begin  -- process
+      if rising_edge(clk) then          -- rising clock edge
+        --Vivado simulator doesn't like tracing variables so this signal
+        --duplicates the register_file variable
+        if wb_enable = '1' then
+          registers(to_integer(unsigned(wb_sel))) <= wb_data;
+        end if;
+      end if;
+    end process;
+  end generate write_first_gen;
 
 end architecture;

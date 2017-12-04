@@ -356,8 +356,6 @@
    enabled="1">
   <parameter name="AUTO_GLOBAL_INTERRUPTS_INTERRUPTS_USED" value="1" />
   <parameter name="COUNTER_LENGTH" value="64" />
-  <parameter name="DATA_REQUEST_REGISTER" value="2" />
-  <parameter name="DATA_RETURN_REGISTER" value="0" />
   <parameter name="DAUX_ADDR_BASE" value="0" />
   <parameter name="DAUX_ADDR_LAST" value="0" />
   <parameter name="DCACHE_BURST_EN" value="0" />
