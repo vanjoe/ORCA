@@ -7,6 +7,7 @@ proc init_gui { IPINST } {
     ipgui::add_param $IPINST -name "INTERRUPT_VECTOR"       -parent $generalParametersPage
     ipgui::add_param $IPINST -name "PIPELINE_STAGES"        -parent $generalParametersPage
     ipgui::add_param $IPINST -name "MAX_IFETCHES_IN_FLIGHT" -parent $generalParametersPage
+    ipgui::add_param $IPINST -name "BTB_ENTRIES"            -parent $generalParametersPage
     ipgui::add_param $IPINST -name "MULTIPLY_ENABLE"        -parent $generalParametersPage
     ipgui::add_param $IPINST -name "DIVIDE_ENABLE"          -parent $generalParametersPage
     ipgui::add_param $IPINST -name "SHIFTER_MAX_CYCLES"     -parent $generalParametersPage
@@ -237,6 +238,15 @@ proc update_PARAM_VALUE.MAX_IFETCHES_IN_FLIGHT { PARAM_VALUE.MAX_IFETCHES_IN_FLI
 
 proc validate_PARAM_VALUE.MAX_IFETCHES_IN_FLIGHT { PARAM_VALUE.MAX_IFETCHES_IN_FLIGHT } {
 	# Procedure called to validate MAX_IFETCHES_IN_FLIGHT
+	return true
+}
+
+proc update_PARAM_VALUE.BTB_ENTRIES { PARAM_VALUE.BTB_ENTRIES } {
+	# Procedure called to update BTB_ENTRIES when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.BTB_ENTRIES { PARAM_VALUE.BTB_ENTRIES } {
+	# Procedure called to validate BTB_ENTRIES
 	return true
 }
 
@@ -508,6 +518,11 @@ proc update_MODELPARAM_VALUE.INTERRUPT_VECTOR { MODELPARAM_VALUE.INTERRUPT_VECTO
 proc update_MODELPARAM_VALUE.MAX_IFETCHES_IN_FLIGHT { MODELPARAM_VALUE.MAX_IFETCHES_IN_FLIGHT PARAM_VALUE.MAX_IFETCHES_IN_FLIGHT } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.MAX_IFETCHES_IN_FLIGHT}] ${MODELPARAM_VALUE.MAX_IFETCHES_IN_FLIGHT}
+}
+
+proc update_MODELPARAM_VALUE.BTB_ENTRIES { MODELPARAM_VALUE.BTB_ENTRIES PARAM_VALUE.BTB_ENTRIES } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.BTB_ENTRIES}] ${MODELPARAM_VALUE.BTB_ENTRIES}
 }
 
 proc update_MODELPARAM_VALUE.MULTIPLY_ENABLE { MODELPARAM_VALUE.MULTIPLY_ENABLE PARAM_VALUE.MULTIPLY_ENABLE } {

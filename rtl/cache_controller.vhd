@@ -129,7 +129,7 @@ begin
   c_oimm_writedata    <= c_write_data;
   c_oimm_byteenable   <= c_write_byteenable when c_write = '1' else (others => '1');
 
-  process(control_state, cache_management_line, read_miss, write_offset_next, c_oimm_readdatavalid, c_oimm_waitrequest, c_read)
+  process(control_state, cache_management_line, read_miss, write_offset_next, c_oimm_readdatavalid, c_oimm_waitrequest, c_read, c_write)
   begin
     next_control_state              <= control_state;
     increment_cache_management_line <= '0';
@@ -326,7 +326,6 @@ begin
       read_oimm_address       => cacheint_oimm_address,
       read_oimm_requestvalid  => read_oimm_requestvalid,
       read_oimm_speculative   => read_oimm_speculative,
-      read_oimm_writedata     => cacheint_oimm_writedata,
       read_oimm_readdata      => read_oimm_readdata,
       read_oimm_readdatavalid => read_oimm_readdatavalid,
       read_oimm_readabort     => read_oimm_readabort,

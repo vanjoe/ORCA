@@ -147,6 +147,15 @@ set_parameter_property MAX_IFETCHES_IN_FLIGHT UNITS None
 set_parameter_property MAX_IFETCHES_IN_FLIGHT ALLOWED_RANGES 1:4
 set_parameter_property MAX_IFETCHES_IN_FLIGHT HDL_PARAMETER true
 
+add_parameter BTB_ENTRIES natural 16
+set_parameter_property BTB_ENTRIES DEFAULT_VALUE 16
+set_parameter_property BTB_ENTRIES DISPLAY_NAME "BTB Entries"
+set_parameter_property BTB_ENTRIES DESCRIPTION "Branch target buffer entries (0 for no branch prediction)."
+set_parameter_property BTB_ENTRIES TYPE NATURAL
+set_parameter_property BTB_ENTRIES UNITS None
+set_parameter_property BTB_ENTRIES ALLOWED_RANGES 0:64
+set_parameter_property BTB_ENTRIES HDL_PARAMETER true
+
 add_parameter MULTIPLY_ENABLE natural 1
 set_parameter_property MULTIPLY_ENABLE DEFAULT_VALUE 1
 set_parameter_property MULTIPLY_ENABLE DISPLAY_NAME "Hardware Multiply"

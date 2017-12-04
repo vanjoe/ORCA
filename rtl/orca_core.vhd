@@ -12,6 +12,7 @@ entity orca_core is
     RESET_VECTOR           : std_logic_vector(31 downto 0);
     INTERRUPT_VECTOR       : std_logic_vector(31 downto 0);
     MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
+    BTB_ENTRIES            : natural;
     MULTIPLY_ENABLE        : natural range 0 to 1;
     DIVIDE_ENABLE          : natural range 0 to 1;
     SHIFTER_MAX_CYCLES     : natural;
@@ -23,7 +24,7 @@ entity orca_core is
     NUM_EXT_INTERRUPTS     : positive range 1 to 32;
     LVE_ENABLE             : natural range 0 to 1;
     SCRATCHPAD_SIZE        : integer;
-    WRITE_FIRST_SUPPORTED  : boolean;
+    WRITE_FIRST_SMALL_RAMS : boolean;
     FAMILY                 : string
     );
   port(
@@ -71,12 +72,15 @@ architecture rtl of orca_core is
   signal execute_flushed : std_logic;
   signal pipeline_empty  : std_logic;
 
-  signal execute_to_ifetch_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
-  signal execute_to_ifetch_pc_correction_valid : std_logic;
-  signal ifetch_to_execute_pc_correction_ready : std_logic;
+  signal execute_to_ifetch_pc_correction_data        : unsigned(REGISTER_SIZE-1 downto 0);
+  signal execute_to_ifetch_pc_correction_source_pc   : unsigned(REGISTER_SIZE-1 downto 0);
+  signal execute_to_ifetch_pc_correction_valid       : std_logic;
+  signal execute_to_ifetch_pc_correction_predictable : std_logic;
+  signal ifetch_to_execute_pc_correction_ready       : std_logic;
 
   signal ifetch_to_decode_instruction     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
   signal ifetch_to_decode_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
+  signal ifetch_to_decode_predicted_pc    : unsigned(REGISTER_SIZE-1 downto 0);
   signal ifetch_to_decode_valid           : std_logic;
   signal decode_to_ifetch_ready           : std_logic;
 
@@ -89,6 +93,7 @@ architecture rtl of orca_core is
   signal rs2_data                           : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sign_extension                     : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
   signal decode_to_execute_program_counter  : unsigned(REGISTER_SIZE-1 downto 0);
+  signal decode_to_execute_predicted_pc     : unsigned(REGISTER_SIZE-1 downto 0);
   signal decode_to_execute_instruction      : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
   signal decode_to_execute_next_instruction : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
   signal decode_to_execute_next_valid       : std_logic;
@@ -100,7 +105,8 @@ begin  -- architecture rtl
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
       RESET_VECTOR           => RESET_VECTOR,
-      MAX_IFETCHES_IN_FLIGHT => MAX_IFETCHES_IN_FLIGHT
+      MAX_IFETCHES_IN_FLIGHT => MAX_IFETCHES_IN_FLIGHT,
+      BTB_ENTRIES            => BTB_ENTRIES
       )
     port map (
       clk   => clk,
@@ -109,12 +115,15 @@ begin  -- architecture rtl
       interrupt_pending => interrupt_pending,
       ifetch_flushed    => ifetch_flushed,
 
-      to_pc_correction_data    => execute_to_ifetch_pc_correction_data,
-      to_pc_correction_valid   => execute_to_ifetch_pc_correction_valid,
-      from_pc_correction_ready => ifetch_to_execute_pc_correction_ready,
+      to_pc_correction_data        => execute_to_ifetch_pc_correction_data,
+      to_pc_correction_source_pc   => execute_to_ifetch_pc_correction_source_pc,
+      to_pc_correction_valid       => execute_to_ifetch_pc_correction_valid,
+      to_pc_correction_predictable => execute_to_ifetch_pc_correction_predictable,
+      from_pc_correction_ready     => ifetch_to_execute_pc_correction_ready,
 
       from_ifetch_instruction     => ifetch_to_decode_instruction,
       from_ifetch_program_counter => ifetch_to_decode_program_counter,
+      from_ifetch_predicted_pc    => ifetch_to_decode_predicted_pc,
       from_ifetch_valid           => ifetch_to_decode_valid,
       to_ifetch_ready             => decode_to_ifetch_ready,
 
@@ -129,11 +138,11 @@ begin  -- architecture rtl
   to_decode_valid <= ifetch_to_decode_valid and (not flush_pipeline);
   D : decode
     generic map(
-      REGISTER_SIZE         => REGISTER_SIZE,
-      SIGN_EXTENSION_SIZE   => SIGN_EXTENSION_SIZE,
-      PIPELINE_STAGES       => PIPELINE_STAGES-3,
-      WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED,
-      FAMILY                => FAMILY
+      REGISTER_SIZE          => REGISTER_SIZE,
+      SIGN_EXTENSION_SIZE    => SIGN_EXTENSION_SIZE,
+      PIPELINE_STAGES        => PIPELINE_STAGES-3,
+      WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS,
+      FAMILY                 => FAMILY
       )
     port map(
       clk   => clk,
@@ -144,6 +153,7 @@ begin  -- architecture rtl
       flush          => flush_pipeline,
 
       to_decode_program_counter => ifetch_to_decode_program_counter,
+      to_decode_predicted_pc    => ifetch_to_decode_predicted_pc,
       to_decode_instruction     => ifetch_to_decode_instruction,
       to_decode_valid           => to_decode_valid,
       from_decode_ready         => decode_to_ifetch_ready,
@@ -158,6 +168,7 @@ begin  -- architecture rtl
       rs2_data       => rs2_data,
       sign_extension => sign_extension,
       pc_curr_out    => decode_to_execute_program_counter,
+      pc_next_out    => decode_to_execute_predicted_pc,
       instr_out      => decode_to_execute_instruction,
       subseq_instr   => decode_to_execute_next_instruction,
       subseq_valid   => decode_to_execute_next_valid,
@@ -170,6 +181,7 @@ begin  -- architecture rtl
       REGISTER_SIZE         => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE   => SIGN_EXTENSION_SIZE,
       INTERRUPT_VECTOR      => INTERRUPT_VECTOR,
+      BTB_ENTRIES           => BTB_ENTRIES,
       MULTIPLY_ENABLE       => MULTIPLY_ENABLE = 1,
       DIVIDE_ENABLE         => DIVIDE_ENABLE = 1,
       POWER_OPTIMIZED       => POWER_OPTIMIZED = 1,
@@ -194,7 +206,8 @@ begin  -- architecture rtl
 
       --From previous stage
       valid_input        => to_execute_valid,
-      pc_current         => decode_to_execute_program_counter,
+      current_pc         => decode_to_execute_program_counter,
+      predicted_pc       => decode_to_execute_predicted_pc,
       instruction        => decode_to_execute_instruction,
       subseq_instr       => decode_to_execute_next_instruction,
       subseq_valid       => decode_to_execute_next_valid,
@@ -204,9 +217,11 @@ begin  -- architecture rtl
       stall_from_execute => execute_stalled,
 
       --To PC correction
-      to_pc_correction_data    => execute_to_ifetch_pc_correction_data,
-      to_pc_correction_valid   => execute_to_ifetch_pc_correction_valid,
-      from_pc_correction_ready => ifetch_to_execute_pc_correction_ready,
+      to_pc_correction_data        => execute_to_ifetch_pc_correction_data,
+      to_pc_correction_source_pc   => execute_to_ifetch_pc_correction_source_pc,
+      to_pc_correction_valid       => execute_to_ifetch_pc_correction_valid,
+      to_pc_correction_predictable => execute_to_ifetch_pc_correction_predictable,
+      from_pc_correction_ready     => ifetch_to_execute_pc_correction_ready,
 
       --To register file
       wb_sel    => wb_sel,

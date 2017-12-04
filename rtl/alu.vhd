@@ -27,7 +27,7 @@ entity arithmetic_unit is
     rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     sign_extension     : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-    pc_current         : in  unsigned(REGISTER_SIZE-1 downto 0);
+    current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
     data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     data_out_valid : out std_logic;
@@ -448,7 +448,7 @@ begin  -- architecture rtl
           data_out       <= std_logic_vector(upper_immediate);
           data_out_valid <= source_valid;
         when AUIPC_OP =>
-          data_out       <= std_logic_vector(upper_immediate + signed(pc_current));
+          data_out       <= std_logic_vector(upper_immediate + signed(current_pc));
           data_out_valid <= source_valid;
         when others =>
           data_out       <= (others => '-');

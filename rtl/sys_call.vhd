@@ -64,7 +64,7 @@ entity system_calls is
     data_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_enable : out std_logic;
 
-    pc_current               : in  unsigned(REGISTER_SIZE-1 downto 0);
+    current_pc               : in  unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_data    : out unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_valid   : out std_logic;
     from_pc_correction_ready : in  std_logic;
@@ -199,7 +199,7 @@ begin  -- architecture rtl
       end if;
 
       if valid = '1' then
-        next_fence_pc <= unsigned(pc_current) + to_unsigned(4, next_fence_pc'length);
+        next_fence_pc <= unsigned(current_pc) + to_unsigned(4, next_fence_pc'length);
         if legal_instr /= '1' and ENABLE_EXCEPTIONS then
                                         -----------------------------------------------------------------------------
           -- Handle Illegal Instructions
@@ -207,7 +207,7 @@ begin  -- architecture rtl
           mstatus(CSR_MSTATUS_MIE)  <= '0';
           mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
           mcause                    <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, mcause'length));
-          mepc                      <= std_logic_vector(pc_current);
+          mepc                      <= std_logic_vector(current_pc);
           was_illegal               <= '1';
         elsif instruction(MAJOR_OP'range) = SYSTEM_OP then
           if func3 /= "000" then

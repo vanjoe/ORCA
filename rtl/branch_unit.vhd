@@ -7,26 +7,27 @@ use work.constants_pkg.all;
 entity branch_unit is
   generic (
     REGISTER_SIZE       : integer;
-    SIGN_EXTENSION_SIZE : integer
+    SIGN_EXTENSION_SIZE : integer;
+    BTB_ENTRIES         : natural
     );
   port (
-    clk                      : in     std_logic;
-    stall                    : in     std_logic;
-    valid                    : in     std_logic;
-    reset                    : in     std_logic;
-    rs1_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    pc_current               : in     unsigned(REGISTER_SIZE-1 downto 0);
-    instr                    : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    sign_extension           : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-    less_than                : in     std_logic;
-    --unconditional jumps store return address in rd, output return address
-    -- on data_out lines
-    data_out                 : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_enable              : out    std_logic;
-    to_pc_correction_data    : out    unsigned(REGISTER_SIZE-1 downto 0);
-    to_pc_correction_valid   : buffer std_logic;
-    from_pc_correction_ready : in     std_logic
+    clk                        : in  std_logic;
+    stall                      : in  std_logic;
+    valid                      : in  std_logic;
+    reset                      : in  std_logic;
+    rs1_data                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    current_pc                 : in  unsigned(REGISTER_SIZE-1 downto 0);
+    predicted_pc               : in  unsigned(REGISTER_SIZE-1 downto 0);
+    instr                      : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    sign_extension             : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+    less_than                  : in  std_logic;
+    data_out                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    data_enable                : out std_logic;
+    to_pc_correction_data      : out unsigned(REGISTER_SIZE-1 downto 0);
+    to_pc_correction_source_pc : out unsigned(REGISTER_SIZE-1 downto 0);
+    to_pc_correction_valid     : out std_logic;
+    from_pc_correction_ready   : in  std_logic
     );
 end entity branch_unit;
 
@@ -49,8 +50,8 @@ architecture rtl of branch_unit is
   signal jal_target     : unsigned(REGISTER_SIZE-1 downto 0);
   signal target_pc      : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal leq_flg : std_logic;
-  signal eq_flg  : std_logic;
+  signal lt_flag : std_logic;
+  signal eq_flag : std_logic;
 
   signal take_if_branch : std_logic;
 
@@ -71,18 +72,18 @@ begin  -- architecture
   op2 <= signed((msb_mask and rs2_data(rs2_data'left)) & rs2_data);
   sub <= op1 - op2;
 
-  eq_flg  <= '1' when op1 = op2 else '0';
-  leq_flg <= sub(sub'left);
+  eq_flag <= '1' when rs1_data = rs2_data else '0';
+  lt_flag <= sub(sub'left);
 
   with func3 select
     take_if_branch <=
-    eq_flg                 when beq_OP,
-    not eq_flg             when bne_OP,
-    leq_flg and not eq_flg when blt_OP,
-    not leq_flg or eq_flg  when bge_OP,
-    leq_flg and not eq_flg when bltu_OP,
-    not leq_flg or eq_flg  when bgeu_OP,
-    '0'                    when others;
+    eq_flag                  when beq_OP,
+    not eq_flag              when bne_OP,
+    lt_flag                  when blt_OP,
+    (not lt_flag) or eq_flag when bge_OP,
+    lt_flag                  when bltu_OP,
+    (not lt_flag) or eq_flag when bgeu_OP,
+    '0'                      when others;
 
   b_imm <= unsigned(sign_extension(REGISTER_SIZE-13 downto 0) &
                     instr(7) & instr(30 downto 25) &instr(11 downto 8) & "0");
@@ -92,21 +93,87 @@ begin  -- architecture
   jal_imm <= unsigned(RESIZE(signed(instr(31) & instr(19 downto 12) & instr(20) &
                                     instr(30 downto 21)&"0"), REGISTER_SIZE));
 
-  --With a real branch predictor we'll need to calculate the branch target
-  --depending on whether or not the branch is taken
-  branch_target <= b_imm + pc_current;
-
-  nbranch_target <= to_unsigned(4, REGISTER_SIZE) + pc_current;
-  jalr_target    <= jalr_imm + unsigned(rs1_data);
-  jal_target     <= jal_imm + pc_current;
-
-  with opcode select
+  no_predictor_gen : if BTB_ENTRIES = 0 generate
+    signal mispredict : std_logic;
+  begin
+    --If there's no branch predictor, any taken branch/jump is a mispredict, and
+    --there's no need to use PC+4 (nbranch_target) as a correction
     target_pc <=
-    jalr_target    when JALR_OP,
-    jal_target     when JAL_OP,
-    branch_target  when BRANCH_OP,
-    nbranch_target when others;
+      jal_target  when is_jal_op = '1' else
+      jalr_target when is_jalr_op = '1' else
+      branch_target;
+    mispredict <= (take_if_branch and is_br_op) or is_jal_op or is_jalr_op;
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        if from_pc_correction_ready = '1' then
+          to_pc_correction_valid <= '0';
+        end if;
 
+        if stall = '0' then
+          if valid = '1' then
+            to_pc_correction_data      <= target_pc;
+            to_pc_correction_source_pc <= current_pc;
+
+            if mispredict = '1' then
+              to_pc_correction_valid <= '1';
+            end if;
+          end if;
+        end if;
+
+        if reset = '1' then
+          to_pc_correction_valid <= '0';
+        end if;
+      end if;
+    end process;
+  end generate no_predictor_gen;
+  has_predictor_gen : if BTB_ENTRIES > 0 generate
+    signal previously_targeted_pc                 : unsigned(REGISTER_SIZE-1 downto 0);
+    signal previously_predicted_pc                : unsigned(REGISTER_SIZE-1 downto 0);
+    signal to_pc_correction_valid_if_mispredicted : std_logic;
+    signal was_mispredicted                       : std_logic;
+  begin
+    target_pc <=
+      jalr_target   when is_jalr_op = '1' else
+      jal_target    when is_jal_op = '1' else
+      branch_target when is_br_op = '1' and take_if_branch = '1' else
+      nbranch_target;
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        if from_pc_correction_ready = '1' then
+          to_pc_correction_valid_if_mispredicted <= '0';
+        end if;
+
+        if stall = '0' then
+          if valid = '1' then
+            previously_targeted_pc     <= target_pc;
+            to_pc_correction_source_pc <= current_pc;
+            previously_predicted_pc    <= predicted_pc;
+
+            to_pc_correction_valid_if_mispredicted <= '1';
+          end if;
+        end if;
+
+        if reset = '1' then
+          to_pc_correction_valid_if_mispredicted <= '0';
+        end if;
+      end if;
+    end process;
+    to_pc_correction_data  <= previously_targeted_pc;
+    --Note that computing mispredict during the execute cycle (as is done in
+    --the no BTB generate) is more readable/consistent.  The latter part of the
+    --mispredict calculation was moved to the next cycle only because there is
+    --a long combinational path and it can be the critical path in
+    --implementations that don't do register retiming.
+    was_mispredicted       <= '1' when previously_targeted_pc /= previously_predicted_pc else '0';
+    to_pc_correction_valid <= to_pc_correction_valid_if_mispredicted and was_mispredicted;
+  end generate has_predictor_gen;
+
+  branch_target  <= b_imm + current_pc;
+  nbranch_target <= to_unsigned(4, REGISTER_SIZE) + current_pc;
+  jalr_target    <= jalr_imm + unsigned(rs1_data);
+  jal_target     <= jal_imm + current_pc;
 
   is_jal_op  <= '1' when opcode = JAL_OP    else '0';
   is_jalr_op <= '1' when opcode = JALR_OP   else '0';
@@ -116,31 +183,15 @@ begin  -- architecture
   begin
     if rising_edge(clk) then
       data_enable <= '0';
-      if from_pc_correction_ready = '1' then
-        to_pc_correction_valid <= '0';
-      end if;
 
       if stall = '0' then
         data_out    <= std_logic_vector(nbranch_target);
         data_enable <= valid and (is_jal_op or is_jalr_op);
-
-        if valid = '1' then
-          to_pc_correction_data <= target_pc;
-
-          --With a real branch predictor we'll need to check the fetched next PC vs. the
-          --correct next PC (this uses the fact that any taken branch or jump will be a
-          --mispredict with no predictor).
-          if (take_if_branch = '1' and is_br_op = '1') or is_jal_op = '1' or is_jalr_op = '1' then
-            to_pc_correction_valid <= '1';
-          end if;
-        end if;
       end if;
 
       if reset = '1' then
-        data_enable            <= '0';
-        to_pc_correction_valid <= '0';
+        data_enable <= '0';
       end if;
     end if;
   end process;
-
 end architecture;

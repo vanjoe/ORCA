@@ -379,6 +379,7 @@
   <parameter name="IUC_ADDR_LAST" value="4294967295" />
   <parameter name="LVE_ENABLE" value="1" />
   <parameter name="MAX_IFETCHES_IN_FLIGHT" value="3" />
+  <parameter name="BTB_ENTRIES" value="16" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="NUM_EXT_INTERRUPTS" value="1" />
   <parameter name="PIPELINE_STAGES" value="4" />

@@ -11,7 +11,8 @@ entity instruction_fetch is
   generic (
     REGISTER_SIZE          : positive;
     RESET_VECTOR           : std_logic_vector(31 downto 0);
-    MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4
+    MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
+    BTB_ENTRIES            : natural
     );
   port (
     clk   : in std_logic;
@@ -20,12 +21,15 @@ entity instruction_fetch is
     interrupt_pending : in  std_logic;
     ifetch_flushed    : out std_logic;
 
-    to_pc_correction_data    : in     unsigned(REGISTER_SIZE-1 downto 0);
-    to_pc_correction_valid   : in     std_logic;
-    from_pc_correction_ready : buffer std_logic;
+    to_pc_correction_data        : in     unsigned(REGISTER_SIZE-1 downto 0);
+    to_pc_correction_source_pc   : in     unsigned(REGISTER_SIZE-1 downto 0);
+    to_pc_correction_valid       : in     std_logic;
+    to_pc_correction_predictable : in     std_logic;
+    from_pc_correction_ready     : buffer std_logic;
 
     from_ifetch_instruction     : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     from_ifetch_program_counter : out unsigned(REGISTER_SIZE-1 downto 0);
+    from_ifetch_predicted_pc    : out unsigned(REGISTER_SIZE-1 downto 0);
     from_ifetch_valid           : out std_logic;
     to_ifetch_ready             : in  std_logic;
 
@@ -58,8 +62,8 @@ architecture rtl of instruction_fetch is
   signal pc_fifo_can_accept_data     : std_logic;
 
   signal pc_fifo_write     : std_logic;
-  signal pc_fifo_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal pc_fifo_readdata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal pc_fifo_writedata : std_logic_vector((2*REGISTER_SIZE)-1 downto 0);
+  signal pc_fifo_readdata  : std_logic_vector((2*REGISTER_SIZE)-1 downto 0);
   signal pc_fifo_read      : std_logic;
   signal pc_fifo_empty     : std_logic;
   signal pc_fifo_full      : std_logic;
@@ -79,8 +83,90 @@ begin  -- architecture rtl
   --instructions waiting to dispatch, and no PC correction waiting
   ifetch_flushed <= (not waiting_for_not_waitrequest) and pc_fifo_empty and (not to_pc_correction_valid);
 
-  --Branch predictor goes here
-  predicted_program_counter <= program_counter + to_unsigned(4, predicted_program_counter'length);
+  --No branch predictor; assume PC+4
+  no_btb_gen : if BTB_ENTRIES = 0 generate
+    predicted_program_counter <= program_counter + to_unsigned(4, predicted_program_counter'length);
+  end generate no_btb_gen;
+  --Branch predictor.  On a branch/jump update BTB ways; don't predict PC
+  --updates from other sources as they have side-effects.
+  btb_gen : if BTB_ENTRIES > 0 generate
+    subtype btb_tag_type is std_logic_vector(((REGISTER_SIZE-log2(BTB_ENTRIES))-2)-1 downto 0);
+    type btb_tag_vector is array (natural range <>) of btb_tag_type;
+    subtype btb_prediction_type is std_logic_vector((REGISTER_SIZE-2)-1 downto 0);
+    type btb_prediction_vector is array (natural range <>) of btb_prediction_type;
+
+    signal btb_update     : std_logic;
+    signal btb_tag        : btb_tag_vector(BTB_ENTRIES-1 downto 0);
+    signal btb_prediction : btb_prediction_vector(BTB_ENTRIES-1 downto 0);
+    signal btb_valid      : std_logic_vector(BTB_ENTRIES-1 downto 0);
+
+    signal btb_prediction_valid     : std_logic;
+    signal btb_prediction_pc        : unsigned(REGISTER_SIZE-1 downto 0);
+    signal btb_prediction_tag       : btb_tag_type;
+    signal btb_prediction_tag_match : std_logic;
+  begin
+    btb_update <= to_pc_correction_valid and to_pc_correction_predictable;
+
+    one_entry_gen : if BTB_ENTRIES = 1 generate
+      process (clk) is
+      begin  -- process
+        if rising_edge(clk) then        -- rising clock edge
+          if btb_update = '1' then
+            btb_valid(0)      <= '1';
+            btb_prediction(0) <= std_logic_vector(to_pc_correction_data(REGISTER_SIZE-1 downto 2));
+            btb_tag(0)        <= std_logic_vector(to_pc_correction_source_pc(REGISTER_SIZE-1 downto 2));
+          end if;
+
+          if reset = '1' then
+            btb_valid <= (others => '0');
+          end if;
+        end if;
+      end process;
+      btb_prediction_valid <= btb_valid(0);
+      btb_prediction_pc    <= unsigned(std_logic_vector'(btb_prediction(0) & "00"));
+      btb_prediction_tag   <= btb_tag(0);
+    end generate one_entry_gen;
+    multiple_entries_gen : if BTB_ENTRIES > 1 generate
+      signal btb_read_entry_select  : unsigned(log2(BTB_ENTRIES)-1 downto 0);
+      signal btb_write_entry_select : unsigned(log2(BTB_ENTRIES)-1 downto 0);
+      signal btb_read_valid         : std_logic;
+      signal btb_read_prediction    : btb_prediction_type;
+      signal btb_read_tag           : btb_tag_type;
+    begin
+      btb_read_entry_select  <= unsigned(program_counter(log2(BTB_ENTRIES)+1 downto 2));
+      btb_write_entry_select <= to_pc_correction_source_pc(log2(BTB_ENTRIES)+1 downto 2);
+      process (clk) is
+      begin  -- process
+        if rising_edge(clk) then        -- rising clock edge
+          if btb_update = '1' then
+            btb_valid(to_integer(btb_write_entry_select)) <= '1';
+            btb_prediction(to_integer(btb_write_entry_select)) <=
+              std_logic_vector(to_pc_correction_data(REGISTER_SIZE-1 downto 2));
+            btb_tag(to_integer(btb_write_entry_select)) <=
+              std_logic_vector(to_pc_correction_source_pc(REGISTER_SIZE-1 downto log2(BTB_ENTRIES)+2));
+          end if;
+
+          if reset = '1' then
+            --For large rams we may want to change this; for now since the BTB
+            --is asynchronous read we can assume it will be small (implemented
+            --in LUTs or distributed RAMs) and so having a reset vector is OK.
+            btb_valid <= (others => '0');
+          end if;
+        end if;
+      end process;
+      btb_prediction_valid <= btb_valid(to_integer(btb_read_entry_select));
+      btb_prediction_pc    <= unsigned(std_logic_vector'(btb_prediction(to_integer(btb_read_entry_select)) & "00"));
+      btb_prediction_tag   <= btb_tag(to_integer(btb_read_entry_select));
+    end generate multiple_entries_gen;
+    btb_prediction_tag_match <=
+      '1' when btb_prediction_tag = std_logic_vector(program_counter(REGISTER_SIZE-1 downto log2(BTB_ENTRIES)+2)) else
+      '0';
+
+    predicted_program_counter <=
+      btb_prediction_pc when btb_prediction_valid = '1' and btb_prediction_tag_match = '1' else
+      program_counter + to_unsigned(4, predicted_program_counter'length);
+  end generate btb_gen;
+
 
   --When a PC correction is requested, hold it until the current instruction
   --request has issued in case it's stalled (not waiting_for_not_waitrequest)
@@ -131,7 +217,7 @@ begin  -- architecture rtl
 
   --Store returned instructions and their corresponding PC's
   pc_fifo_write              <= oimm_requestvalid and (not oimm_waitrequest);
-  pc_fifo_writedata          <= oimm_address;
+  pc_fifo_writedata          <= std_logic_vector(predicted_program_counter) & std_logic_vector(program_counter);
   pc_fifo_read               <= ifetch_valid and to_ifetch_ready;
   instruction_fifo_writedata <= oimm_readdata;
 
@@ -185,7 +271,7 @@ begin  -- architecture rtl
   end generate single_fetch_in_flight;
   --Dual request in flight/dual entry instruction FIFO 
   dual_fetches_in_flight : if MAX_IFETCHES_IN_FLIGHT = 2 generate
-    signal pc_fifo_internaldata          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+    signal pc_fifo_internaldata          : std_logic_vector((2*REGISTER_SIZE)-1 downto 0);
     signal instruction_fifo_internaldata : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
   begin
     process(clk)
@@ -246,7 +332,7 @@ begin  -- architecture rtl
   --Might be better to switch to RAM based FIFO already at 3 if distributed
   --RAMs are supported on the family.
   a_few_fetches_in_flight : if MAX_IFETCHES_IN_FLIGHT > 2 generate
-    type pc_fifo_data_vector is array (natural range <>) of std_logic_vector(REGISTER_SIZE-1 downto 0);
+    type pc_fifo_data_vector is array (natural range <>) of std_logic_vector((2*REGISTER_SIZE)-1 downto 0);
     signal pc_fifo_internaldata          : pc_fifo_data_vector(MAX_IFETCHES_IN_FLIGHT-1 downto 0);
     type instruction_fifo_data_vector is array (natural range <>) of std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     signal instruction_fifo_internaldata : instruction_fifo_data_vector(MAX_IFETCHES_IN_FLIGHT-1 downto 0);
@@ -331,8 +417,16 @@ begin  -- architecture rtl
   end generate no_bypass_gen;
 
   from_ifetch_valid           <= ifetch_valid;
-  from_ifetch_program_counter <= unsigned(pc_fifo_readdata);
+  from_ifetch_program_counter <= unsigned(pc_fifo_readdata(REGISTER_SIZE-1 downto 0));
+  from_ifetch_predicted_pc    <= unsigned(pc_fifo_readdata((2*REGISTER_SIZE)-1 downto REGISTER_SIZE));
 
+  assert (BTB_ENTRIES = 0) or (2**log2(BTB_ENTRIES) = BTB_ENTRIES) report
+    "BTB_ENTRIES (" &
+    natural'image(BTB_ENTRIES) &
+    ") must be a power of 2."
+    severity failure;
+    
   assert FIFO_BYPASS or (MAX_IFETCHES_IN_FLIGHT > 1) report
     "With FIFO_BYPASS set to false and MAX_IFETCHES_IN_FLIGHT set to 1 the instruction fetch will only be able to maintain a throughput of 1 instruction every 2 cycles." severity error;
+
 end architecture rtl;

@@ -6,17 +6,17 @@ use work.constants_pkg.all;
 
 entity register_file is
   generic(
-    REGISTER_SIZE         : positive;
-    REGISTER_NAME_SIZE    : positive;
-    WRITE_FIRST_SUPPORTED : boolean
+    REGISTER_SIZE          : positive;
+    REGISTER_NAME_SIZE     : positive;
+    WRITE_FIRST_SMALL_RAMS : boolean
     );
   port(
-    clk         : in std_logic;
-    rs1_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    wb_data     : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_enable   : in std_logic;
+    clk       : in std_logic;
+    rs1_sel   : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    rs2_sel   : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    wb_sel    : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    wb_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    wb_enable : in std_logic;
 
     rs1_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data : out std_logic_vector(REGISTER_SIZE-1 downto 0)
@@ -62,7 +62,7 @@ architecture rtl of register_file is
   alias t6  : std_logic_vector(REGISTER_SIZE-1 downto 0) is registers(to_integer(REGISTER_T6));
 begin
 
-  bypass_gen : if not WRITE_FIRST_SUPPORTED generate
+  bypass_gen : if not WRITE_FIRST_SMALL_RAMS generate
     signal out1               : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal out2               : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal read_during_write1 : std_logic;
@@ -100,7 +100,7 @@ begin
     end process;
   end generate bypass_gen;
 
-  write_first_gen : if WRITE_FIRST_SUPPORTED generate
+  write_first_gen : if WRITE_FIRST_SMALL_RAMS generate
     process (clk) is
       variable registers_variable : register_vector := (others => (others => '0'));
     begin

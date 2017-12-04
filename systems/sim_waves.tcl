@@ -1,7 +1,7 @@
 proc orca_reset_waves { add_wave_cmd add_divider_cmd prefix } {
     eval "[string trim $add_divider_cmd \"] \"ORCA core status\""
     eval "[string trim $add_wave_cmd \"] $prefix/core/X/clk $prefix/core/X/reset"
-    eval "[string trim $add_wave_cmd \"] $prefix/core/X/valid_input $prefix/core/X/pc_current $prefix/core/X/instruction "
+    eval "[string trim $add_wave_cmd \"] $prefix/core/X/valid_input $prefix/core/X/current_pc $prefix/core/X/instruction "
     eval "[string trim $add_wave_cmd \"] $prefix/core/D/the_register_file/registers"
 }
 
@@ -68,6 +68,9 @@ proc orca_add_wave_instruction_fetch { add_wave_cmd add_divider_cmd prefix } {
     eval "[string trim $add_divider_cmd \"] \"ORCA Instruction Fetch\""
     eval "[string trim $add_wave_cmd \"] $prefix/core/I/clk $prefix/core/I/reset"
     eval "[string trim $add_wave_cmd \"] $prefix/core/I/*"
+    eval "[string trim $add_divider_cmd \"] \"ORCA BTB\""
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/core/I/btb_gen/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/core/I/btb_gen/multiple_entries_gen/*" } error
 }
 
 proc orca_add_wave_syscall { add_wave_cmd add_divider_cmd prefix } {
@@ -102,6 +105,7 @@ proc orca_add_wave_branch { add_wave_cmd add_divider_cmd prefix } {
     eval "[string trim $add_divider_cmd \"] \"ORCA Branch Unit\""
     eval "[string trim $add_wave_cmd \"] $prefix/core/X/branch/clk $prefix/core/X/branch/reset"
     eval "[string trim $add_wave_cmd \"] $prefix/core/X/branch/*"
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/core/X/branch/has_predictor_gen/*" } error
 }
 
 proc orca_add_wave_all { add_wave_cmd add_divider_cmd prefix axi avalon } {

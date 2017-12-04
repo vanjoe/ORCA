@@ -16,6 +16,7 @@ entity execute is
     REGISTER_SIZE         : positive;
     SIGN_EXTENSION_SIZE   : positive;
     INTERRUPT_VECTOR      : std_logic_vector(31 downto 0);
+    BTB_ENTRIES           : natural;
     POWER_OPTIMIZED       : boolean;
     MULTIPLY_ENABLE       : boolean;
     DIVIDE_ENABLE         : boolean;
@@ -40,7 +41,8 @@ entity execute is
 
     --From previous stage
     valid_input        : in     std_logic;
-    pc_current         : in     unsigned(REGISTER_SIZE-1 downto 0);
+    current_pc         : in     unsigned(REGISTER_SIZE-1 downto 0);
+    predicted_pc       : in     unsigned(REGISTER_SIZE-1 downto 0);
     instruction        : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     subseq_instr       : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     subseq_valid       : in     std_logic;
@@ -50,9 +52,11 @@ entity execute is
     stall_from_execute : buffer std_logic;
 
     --To PC correction
-    to_pc_correction_data    : out    unsigned(REGISTER_SIZE-1 downto 0);
-    to_pc_correction_valid   : buffer std_logic;
-    from_pc_correction_ready : in     std_logic;
+    to_pc_correction_data        : out    unsigned(REGISTER_SIZE-1 downto 0);
+    to_pc_correction_source_pc   : out    unsigned(REGISTER_SIZE-1 downto 0);
+    to_pc_correction_valid       : buffer std_logic;
+    to_pc_correction_predictable : out    std_logic;
+    from_pc_correction_ready     : in     std_logic;
 
     --To register file
     wb_sel    : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
@@ -208,9 +212,8 @@ begin
                                          (not lve_ready) or
                                          (not syscall_ready));
 
-  --No forward stall; system calls, loads, and branches aren't forwarded.  Since
-  --branches clear the pipeline no need to check for stall here.
-  use_after_produce_stall <= sys_data_enable or load_in_progress when wb_sel = rs1 or wb_sel = rs2 else '0';
+  --No forward stall; system calls, loads, and branches aren't forwarded.
+  use_after_produce_stall <= sys_data_enable or load_in_progress or br_data_enable when wb_sel = rs1 or wb_sel = rs2 else '0';
 
   process(clk)
   begin
@@ -257,7 +260,7 @@ begin
       rs2_data           => rs2_data_fwd,
       instruction        => instruction,
       sign_extension     => sign_extension,
-      pc_current         => pc_current,
+      current_pc         => current_pc,
       data_out           => alu_data_out,
       data_out_valid     => alu_data_out_valid,
       less_than          => less_than,
@@ -272,23 +275,27 @@ begin
   branch : branch_unit
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
-      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE)
+      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
+      BTB_ENTRIES         => BTB_ENTRIES
+      )
     port map(
-      clk                      => clk,
-      reset                    => reset,
-      valid                    => valid_instr,
-      stall                    => stall_to_execute,
-      rs1_data                 => rs1_data_fwd,
-      rs2_data                 => rs2_data_fwd,
-      pc_current               => pc_current,
-      instr                    => instruction,
-      less_than                => less_than,
-      sign_extension           => sign_extension,
-      data_out                 => br_data_out,
-      data_enable              => br_data_enable,
-      to_pc_correction_data    => branch_to_pc_correction_data,
-      to_pc_correction_valid   => branch_to_pc_correction_valid,
-      from_pc_correction_ready => from_pc_correction_ready
+      clk                        => clk,
+      reset                      => reset,
+      valid                      => valid_instr,
+      stall                      => stall_to_execute,
+      rs1_data                   => rs1_data_fwd,
+      rs2_data                   => rs2_data_fwd,
+      current_pc                 => current_pc,
+      predicted_pc               => predicted_pc,
+      instr                      => instruction,
+      less_than                  => less_than,
+      sign_extension             => sign_extension,
+      data_out                   => br_data_out,
+      data_enable                => br_data_enable,
+      to_pc_correction_data      => branch_to_pc_correction_data,
+      to_pc_correction_source_pc => to_pc_correction_source_pc,
+      to_pc_correction_valid     => branch_to_pc_correction_valid,
+      from_pc_correction_ready   => from_pc_correction_ready
       );
 
   ls_unit : load_store_unit
@@ -343,7 +350,7 @@ begin
       data_out    => sys_data_out,
       data_enable => sys_data_enable,
 
-      pc_current               => pc_current,
+      current_pc               => current_pc,
       to_pc_correction_data    => syscall_to_pc_correction_data,
       to_pc_correction_valid   => syscall_to_pc_correction_valid,
       from_pc_correction_ready => from_pc_correction_ready,
@@ -405,9 +412,13 @@ begin
 
 
 
-  to_pc_correction_valid <= syscall_to_pc_correction_valid or branch_to_pc_correction_valid;
-  to_pc_correction_data  <= syscall_to_pc_correction_data when syscall_to_pc_correction_valid = '1' else
+  to_pc_correction_data <= syscall_to_pc_correction_data when syscall_to_pc_correction_valid = '1' else
                            branch_to_pc_correction_data;
+  to_pc_correction_valid       <= syscall_to_pc_correction_valid or branch_to_pc_correction_valid;
+  --Don't put syscalls in the BTB as they have side effects and must flush the
+  --pipeline anyway.
+  to_pc_correction_predictable <= not syscall_to_pc_correction_valid;
+
   flush_pipeline <= to_pc_correction_valid;
 
 
@@ -446,13 +457,13 @@ begin
 
       if valid_instr = '1' then
         write(my_line, string'("executing pc = "));       -- formatting
-        hwrite(my_line, (std_logic_vector(pc_current)));  -- format type std_logic_vector as hex
+        hwrite(my_line, (std_logic_vector(current_pc)));  -- format type std_logic_vector as hex
         write(my_line, string'(" instr =  "));            -- formatting
         hwrite(my_line, (instruction));  -- format type std_logic_vector as hex
         if stall_from_execute = '1' then
           write(my_line, string'(" stalling"));           -- formatting
         else
-          last_valid_pc := pc_current;
+          last_valid_pc := current_pc;
         end if;
         writeline(output, my_line);     -- write to "output"
       else

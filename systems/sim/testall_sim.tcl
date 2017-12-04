@@ -2,7 +2,7 @@ cd system/simulation/mentor
 do msim_setup.tcl
 ld
 
-add wave /system/vectorblox_orca_0/core/D/register_file_1/t3
+add wave /system/vectorblox_orca_0/core/D/the_register_file/t3
 set files [lsort [glob ../../../test/*.qex]]
 
 set max_length  0
@@ -24,7 +24,8 @@ foreach f $files {
 	 } else {
 		  run 30 us
 	 }
-	 set v [examine -radix decimal /system/vectorblox_orca_0/core/D/register_file_1/t3]
+    
+	 set v [examine -radix decimal /system/vectorblox_orca_0/core/D/the_register_file/t3]
 	 set passfail  ""
 	 if { $v != 1 } {
 		  set passfail "FAIL"

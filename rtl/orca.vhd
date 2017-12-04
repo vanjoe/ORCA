@@ -18,6 +18,7 @@ entity orca is
     RESET_VECTOR                 : std_logic_vector(31 downto 0) := X"00000000";
     INTERRUPT_VECTOR             : std_logic_vector(31 downto 0) := X"00000200";
     MAX_IFETCHES_IN_FLIGHT       : positive range 1 to 4         := 1;
+    BTB_ENTRIES                  : natural                       := 0;
     MULTIPLY_ENABLE              : natural range 0 to 1          := 0;
     DIVIDE_ENABLE                : natural range 0 to 1          := 0;
     SHIFTER_MAX_CYCLES           : natural                       := 1;
@@ -340,9 +341,11 @@ entity orca is
 end entity orca;
 
 architecture rtl of orca is
-  --Might want to bring this out to the top level
-  constant WRITE_FIRST_SUPPORTED : boolean := FAMILY = "XILINX" or FAMILY = "ALTERA";
-  
+  --Might want to bring this out to the top level.  Changing to true will
+  --utilize DRAM/MRAM that supports write-first mode instead of using a
+  --RAM with bypass.
+  constant WRITE_FIRST_SMALL_RAMS : boolean := FAMILY = "XILINX" or FAMILY = "ALTERA";
+
   --Currently only AXI3 supported so fix $ burstlength to 16 max
   constant ICACHE_MAX_BURSTLENGTH : positive := 16;
   constant DCACHE_MAX_BURSTLENGTH : positive := 16;
@@ -377,6 +380,7 @@ begin  -- architecture rtl
       RESET_VECTOR           => RESET_VECTOR,
       INTERRUPT_VECTOR       => INTERRUPT_VECTOR,
       MAX_IFETCHES_IN_FLIGHT => MAX_IFETCHES_IN_FLIGHT,
+      BTB_ENTRIES            => BTB_ENTRIES,
       MULTIPLY_ENABLE        => MULTIPLY_ENABLE,
       DIVIDE_ENABLE          => DIVIDE_ENABLE,
       SHIFTER_MAX_CYCLES     => SHIFTER_MAX_CYCLES,
@@ -388,7 +392,7 @@ begin  -- architecture rtl
       ENABLE_EXT_INTERRUPTS  => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS     => NUM_EXT_INTERRUPTS,
       SCRATCHPAD_SIZE        => 2**SCRATCHPAD_ADDR_BITS,
-      WRITE_FIRST_SUPPORTED  => WRITE_FIRST_SUPPORTED,
+      WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS,
       FAMILY                 => FAMILY
       )
     port map (
@@ -430,7 +434,8 @@ begin  -- architecture rtl
     generic map (
       REGISTER_SIZE         => REGISTER_SIZE,
       SCRATCHPAD_ADDR_BITS  => SCRATCHPAD_ADDR_BITS,
-      WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED,
+      WRITE_FIRST_SUPPORTED => false,  --May be able to enable on some families
+      --to save bypass logic
 
       --BUS Select
       AVALON_AUX   => AVALON_AUX,

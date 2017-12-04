@@ -23,7 +23,6 @@ entity cache is
     read_oimm_address       : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     read_oimm_requestvalid  : in     std_logic;
     read_oimm_speculative   : in     std_logic;
-    read_oimm_writedata     : in     std_logic_vector(WIDTH-1 downto 0);
     read_oimm_readdata      : out    std_logic_vector(WIDTH-1 downto 0);
     read_oimm_readdatavalid : out    std_logic;
     read_oimm_readabort     : out    std_logic;

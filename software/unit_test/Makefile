@@ -1,5 +1,7 @@
 all:
 
+-include $(wildcard *.d)
+
 ARCH=rv32im
 LVE_EXT=xlve
 PREFIX=riscv32-unknown-elf-
@@ -13,7 +15,7 @@ TEST_C_ELF=$(addsuffix .elf,$(basename $(TEST_C)))
 
 RISCV_TESTS_DIR=../riscv-tests
 RISCV_ENV_DIR=$(RISCV_TESTS_DIR)/env/p
-C_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles  -march=$(ARCH) -Wa,-march=$(ARCH)$(LVE_EXT) -Wall
+C_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles  -march=$(ARCH) -Wa,-march=$(ARCH)$(LVE_EXT) -Wall -MD
 INCLUDE_DIRS:=$(RISCV_ENV_DIR) $(RISCV_TESTS_DIR)/isa/macros/scalar ../
 
 INCLUDE_DIRS:=$(addprefix -I,$(INCLUDE_DIRS))

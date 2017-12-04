@@ -9,8 +9,6 @@
    (((BYTES) << 0)  & 0x000FF000) |             \
    0x6F);
 
-#define USE_ONCHIP_MEM 1
-
 #define WAIT_SECONDS_BEFORE_START 0
 
 #define RUN_ASM_TEST      1
@@ -24,18 +22,20 @@
 #define CACHE_LINE_SIZE 16
 
 #define MEM_CACHED_BASE   0xA0000000
-#define MEM_UNCACHED_BASE 0xB0000000
+#define MEM_UNCACHED_BASE 0xA0000000
 #define MEM_BASE_MASK     0xF0000000
 
 typedef void (*timing_loop)(uint32_t);
 
 int main(void) {
-  for(int i = 0; i < WAIT_SECONDS_BEFORE_START; i++){
-    print_hex(i);
-    ChangedPrint(" ...");
-    delayms(1000);
+  if(WAIT_SECONDS_BEFORE_START){
+    for(int i = 0; i < WAIT_SECONDS_BEFORE_START; i++){
+      print_hex(i);
+      ChangedPrint(" ...");
+      delayms(1000);
+    }
+    ChangedPrint("\r\n");
   }
-  ChangedPrint("\r\n");
 
   uint8_t test_space[3*CACHE_SIZE];
   uint8_t *test_space_aligned = (uint8_t *)((((uintptr_t)test_space) + (CACHE_SIZE-1)) & (~(CACHE_SIZE-1)));
@@ -141,7 +141,6 @@ int main(void) {
 
 int handle_interrupt(int cause, int epc, int regs[32])
 {
-	return epc;
 	if (!((cause >> 31) & 0x1)) {
 		// Handle illegal instruction.
 		ChangedPrint("Illegal Instruction\r\n");
@@ -149,6 +148,6 @@ int handle_interrupt(int cause, int epc, int regs[32])
 	}
 
 	// Handle interrupt	
-	ChangedPrint("Hello World\r\n");
+	ChangedPrint("Interrupt\r\n");
 	return epc;
 }

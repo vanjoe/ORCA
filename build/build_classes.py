@@ -37,6 +37,7 @@ from file_utils import *
 DEFAULT_RESET_VECTOR=0x00000000
 DEFAULT_INTERRUPT_VECTOR=0x00000200
 DEFAULT_MAX_IFETCHES_IN_FLIGHT=3
+DEFAULT_BTB_ENTRIES=16
 DEFAULT_MULTIPLY_ENABLE=1
 DEFAULT_DIVIDE_ENABLE=1
 DEFAULT_SHIFTER_MAX_CYCLES=1
@@ -86,6 +87,7 @@ class Orca_BuildCfgBase(object):
                  reset_vector=DEFAULT_RESET_VECTOR,
                  interrupt_vector=DEFAULT_INTERRUPT_VECTOR,
                  max_ifetches_in_flight=DEFAULT_MAX_IFETCHES_IN_FLIGHT,
+                 btb_entries=DEFAULT_BTB_ENTRIES,
                  multiply_enable=DEFAULT_MULTIPLY_ENABLE,
                  divide_enable=DEFAULT_DIVIDE_ENABLE,
                  shifter_max_cycles=DEFAULT_SHIFTER_MAX_CYCLES,
@@ -135,6 +137,7 @@ class Orca_BuildCfgBase(object):
         self.reset_vector = reset_vector
         self.interrupt_vector = interrupt_vector
         self.max_ifetches_in_flight = max_ifetches_in_flight
+        self.btb_entries = btb_entries
         self.multiply_enable = multiply_enable
         self.divide_enable = divide_enable
         self.shifter_max_cycles = shifter_max_cycles
@@ -240,6 +243,8 @@ class Orca_BuildCfgBase(object):
             self.build_id += '_iv%X' % self.interrupt_vector
         if self.max_ifetches_in_flight != DEFAULT_MAX_IFETCHES_IN_FLIGHT:
             self.build_id += '_mif%d' % self.max_ifetches_in_flight
+        if self.btb_entries != DEFAULT_BTB_ENTRIES:
+            self.build_id += '_btb%d' % self.btb_entries
         if self.multiply_enable != DEFAULT_MULTIPLY_ENABLE:
             self.build_id += '_me%d' % self.multiply_enable
         if self.divide_enable != DEFAULT_DIVIDE_ENABLE:

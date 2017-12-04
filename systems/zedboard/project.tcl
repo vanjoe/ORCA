@@ -5,6 +5,12 @@ proc init_project { proj_dir proj_name} {
     set_property BOARD_PART em.avnet.com:zed:part0:1.3 [current_project]
     set_property ip_repo_paths "../../rtl/ ip/" [current_fileset]
     update_ip_catalog
+    #Make a temporary .xdc for ILA/debugging
+    file mkdir $proj_dir/$proj_name.srcs/constrs_1
+    file mkdir $proj_dir/$proj_name.srcs/constrs_1/new
+    close [ open $proj_dir/$proj_name.srcs/constrs_1/new/debug.xdc w ]
+    add_files -fileset constrs_1 $proj_dir/$proj_name.srcs/constrs_1/new/debug.xdc
+    set_property target_constrs_file $proj_dir/$proj_name.srcs/constrs_1/new/debug.xdc [current_fileset -constrset]
     close_project
 }
 

@@ -14,5 +14,10 @@ static inline void delayms(uint32_t ms) {
   ms*=(SYS_CLK/1000);
   while(((uint32_t)(get_time()-start)) < ms);
 }
+static inline void delayus(uint32_t us) {
+  uint32_t start = get_time();
+  us*=(SYS_CLK/1000000);
+  while(((uint32_t)(get_time()-start)) < us);
+}
 
 #endif //__MAIN_H

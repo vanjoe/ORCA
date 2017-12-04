@@ -5815,6 +5815,11 @@
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.MAX_IFETCHES_IN_FLIGHT" spirit:minimum="1" spirit:maximum="4" spirit:rangeType="long">3</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>BTB_ENTRIES</spirit:name>
+        <spirit:displayName>Branch target buffer entries</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.BTB_ENTRIES" spirit:minimum="0" spirit:maximum="64" spirit:rangeType="long">16</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>MULTIPLY_ENABLE</spirit:name>
         <spirit:displayName>Multiply Enable</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.MULTIPLY_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
@@ -6265,6 +6270,11 @@
       <spirit:name>MAX_IFETCHES_IN_FLIGHT</spirit:name>
       <spirit:displayName>Maximum Instruction Fetches in Flight</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.MAX_IFETCHES_IN_FLIGHT" spirit:minimum="1" spirit:maximum="4" spirit:rangeType="long">3</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>BTB_ENTRIES</spirit:name>
+      <spirit:displayName>Branch target buffer entries</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.BTB_ENTRIES" spirit:minimum="0" spirit:maximum="64" spirit:rangeType="long">16</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>MULTIPLY_ENABLE</spirit:name>

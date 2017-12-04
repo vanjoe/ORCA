@@ -19,6 +19,7 @@ package rv_components is
       RESET_VECTOR                 : std_logic_vector(31 downto 0) := X"00000000";
       INTERRUPT_VECTOR             : std_logic_vector(31 downto 0) := X"00000200";
       MAX_IFETCHES_IN_FLIGHT       : positive range 1 to 4         := 1;
+      BTB_ENTRIES                  : natural                       := 0;
       MULTIPLY_ENABLE              : natural range 0 to 1          := 0;
       DIVIDE_ENABLE                : natural range 0 to 1          := 0;
       SHIFTER_MAX_CYCLES           : natural                       := 1;
@@ -692,6 +693,7 @@ package rv_components is
       RESET_VECTOR           : std_logic_vector(31 downto 0);
       INTERRUPT_VECTOR       : std_logic_vector(31 downto 0);
       MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
+      BTB_ENTRIES            : natural;
       MULTIPLY_ENABLE        : natural range 0 to 1;
       DIVIDE_ENABLE          : natural range 0 to 1;
       SHIFTER_MAX_CYCLES     : natural;
@@ -703,7 +705,7 @@ package rv_components is
       NUM_EXT_INTERRUPTS     : positive range 1 to 32;
       LVE_ENABLE             : natural range 0 to 1;
       SCRATCHPAD_SIZE        : integer;
-      WRITE_FIRST_SUPPORTED  : boolean;
+      WRITE_FIRST_SMALL_RAMS : boolean;
       FAMILY                 : string
       );
     port(
@@ -744,11 +746,11 @@ package rv_components is
 
   component decode is
     generic(
-      REGISTER_SIZE         : positive;
-      SIGN_EXTENSION_SIZE   : positive;
-      PIPELINE_STAGES       : natural range 1 to 2;
-      WRITE_FIRST_SUPPORTED : boolean;
-      FAMILY                : string
+      REGISTER_SIZE          : positive;
+      SIGN_EXTENSION_SIZE    : positive;
+      PIPELINE_STAGES        : natural range 1 to 2;
+      WRITE_FIRST_SMALL_RAMS : boolean;
+      FAMILY                 : string
       );
     port(
       clk   : in std_logic;
@@ -760,6 +762,7 @@ package rv_components is
 
       to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
+      to_decode_predicted_pc    : in  unsigned(REGISTER_SIZE-1 downto 0);
       to_decode_valid           : in  std_logic;
       from_decode_ready         : out std_logic;
 
@@ -773,6 +776,7 @@ package rv_components is
       rs2_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       sign_extension : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       pc_curr_out    : out unsigned(REGISTER_SIZE-1 downto 0);
+      pc_next_out    : out unsigned(REGISTER_SIZE-1 downto 0);
       instr_out      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       subseq_instr   : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       subseq_valid   : out std_logic;
@@ -785,6 +789,7 @@ package rv_components is
       REGISTER_SIZE         : positive;
       SIGN_EXTENSION_SIZE   : positive;
       INTERRUPT_VECTOR      : std_logic_vector(31 downto 0);
+      BTB_ENTRIES           : natural;
       POWER_OPTIMIZED       : boolean;
       MULTIPLY_ENABLE       : boolean;
       DIVIDE_ENABLE         : boolean;
@@ -809,7 +814,8 @@ package rv_components is
 
       --From previous stage
       valid_input        : in     std_logic;
-      pc_current         : in     unsigned(REGISTER_SIZE-1 downto 0);
+      current_pc         : in     unsigned(REGISTER_SIZE-1 downto 0);
+      predicted_pc       : in     unsigned(REGISTER_SIZE-1 downto 0);
       instruction        : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       subseq_instr       : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       subseq_valid       : in     std_logic;
@@ -819,9 +825,11 @@ package rv_components is
       stall_from_execute : buffer std_logic;
 
       --To PC correction
-      to_pc_correction_data    : out    unsigned(REGISTER_SIZE-1 downto 0);
-      to_pc_correction_valid   : buffer std_logic;
-      from_pc_correction_ready : in     std_logic;
+      to_pc_correction_data        : out    unsigned(REGISTER_SIZE-1 downto 0);
+      to_pc_correction_source_pc   : out    unsigned(REGISTER_SIZE-1 downto 0);
+      to_pc_correction_valid       : buffer std_logic;
+      to_pc_correction_predictable : out    std_logic;
+      from_pc_correction_ready     : in     std_logic;
 
       --To register file
       wb_sel    : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
@@ -856,7 +864,8 @@ package rv_components is
     generic (
       REGISTER_SIZE          : positive;
       RESET_VECTOR           : std_logic_vector(31 downto 0);
-      MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4
+      MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
+      BTB_ENTRIES            : natural
       );
     port (
       clk   : in std_logic;
@@ -865,12 +874,15 @@ package rv_components is
       interrupt_pending : in  std_logic;
       ifetch_flushed    : out std_logic;
 
-      to_pc_correction_data    : in     unsigned(REGISTER_SIZE-1 downto 0);
-      to_pc_correction_valid   : in     std_logic;
-      from_pc_correction_ready : buffer std_logic;
+      to_pc_correction_data        : in     unsigned(REGISTER_SIZE-1 downto 0);
+      to_pc_correction_source_pc   : in     unsigned(REGISTER_SIZE-1 downto 0);
+      to_pc_correction_valid       : in     std_logic;
+      to_pc_correction_predictable : in     std_logic;
+      from_pc_correction_ready     : buffer std_logic;
 
       from_ifetch_instruction     : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       from_ifetch_program_counter : out unsigned(REGISTER_SIZE-1 downto 0);
+      from_ifetch_predicted_pc    : out unsigned(REGISTER_SIZE-1 downto 0);
       from_ifetch_valid           : out std_logic;
       to_ifetch_ready             : in  std_logic;
 
@@ -904,7 +916,7 @@ package rv_components is
       rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       sign_extension     : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-      pc_current         : in  unsigned(REGISTER_SIZE-1 downto 0);
+      current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
       data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       data_out_valid : out std_logic;
@@ -920,26 +932,27 @@ package rv_components is
   component branch_unit is
     generic (
       REGISTER_SIZE       : integer;
-      SIGN_EXTENSION_SIZE : integer
+      SIGN_EXTENSION_SIZE : integer;
+      BTB_ENTRIES         : natural
       );
     port (
-      clk                      : in     std_logic;
-      stall                    : in     std_logic;
-      valid                    : in     std_logic;
-      reset                    : in     std_logic;
-      rs1_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      pc_current               : in     unsigned(REGISTER_SIZE-1 downto 0);
-      instr                    : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      sign_extension           : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-      less_than                : in     std_logic;
-      --unconditional jumps store return address in rd, output return address
-      -- on data_out lines
-      data_out                 : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_enable              : out    std_logic;
-      to_pc_correction_data    : out    unsigned(REGISTER_SIZE-1 downto 0);
-      to_pc_correction_valid   : buffer std_logic;
-      from_pc_correction_ready : in     std_logic
+      clk                        : in  std_logic;
+      stall                      : in  std_logic;
+      valid                      : in  std_logic;
+      reset                      : in  std_logic;
+      rs1_data                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs2_data                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      current_pc                 : in  unsigned(REGISTER_SIZE-1 downto 0);
+      predicted_pc               : in  unsigned(REGISTER_SIZE-1 downto 0);
+      instr                      : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      sign_extension             : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+      less_than                  : in  std_logic;
+      data_out                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      data_enable                : out std_logic;
+      to_pc_correction_data      : out unsigned(REGISTER_SIZE-1 downto 0);
+      to_pc_correction_source_pc : out unsigned(REGISTER_SIZE-1 downto 0);
+      to_pc_correction_valid     : out std_logic;
+      from_pc_correction_ready   : in  std_logic
       );
   end component branch_unit;
 
@@ -977,9 +990,9 @@ package rv_components is
 
   component register_file
     generic(
-      REGISTER_SIZE         : positive;
-      REGISTER_NAME_SIZE    : positive;
-      WRITE_FIRST_SUPPORTED : boolean
+      REGISTER_SIZE          : positive;
+      REGISTER_NAME_SIZE     : positive;
+      WRITE_FIRST_SMALL_RAMS : boolean
       );
     port(
       clk       : in std_logic;
@@ -1015,7 +1028,7 @@ package rv_components is
       data_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       data_enable : out std_logic;
 
-      pc_current               : in  unsigned(REGISTER_SIZE-1 downto 0);
+      current_pc               : in  unsigned(REGISTER_SIZE-1 downto 0);
       to_pc_correction_data    : out unsigned(REGISTER_SIZE-1 downto 0);
       to_pc_correction_valid   : out std_logic;
       from_pc_correction_ready : in  std_logic;
@@ -1391,7 +1404,6 @@ package rv_components is
       read_oimm_address       : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
       read_oimm_requestvalid  : in     std_logic;
       read_oimm_speculative   : in     std_logic;
-      read_oimm_writedata     : in     std_logic_vector(WIDTH-1 downto 0);
       read_oimm_readdata      : out    std_logic_vector(WIDTH-1 downto 0);
       read_oimm_readdatavalid : out    std_logic;
       read_oimm_readabort     : out    std_logic;

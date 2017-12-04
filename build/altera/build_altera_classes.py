@@ -46,6 +46,7 @@ from build_classes import *
 DEFAULT_RESET_VECTOR=0x00000000
 DEFAULT_INTERRUPT_VECTOR=0x00000200
 DEFAULT_MAX_IFETCHES_IN_FLIGHT=3
+DEFAULT_BTB_ENTRIES=16
 DEFAULT_MULTIPLY_ENABLE=1
 DEFAULT_DIVIDE_ENABLE=1
 DEFAULT_SHIFTER_MAX_CYCLES=1
@@ -95,6 +96,7 @@ class Alt_Orca_BuildCfg(Orca_BuildCfgBase):
                  reset_vector=DEFAULT_RESET_VECTOR,
                  interrupt_vector=DEFAULT_INTERRUPT_VECTOR,
                  max_ifetches_in_flight=DEFAULT_MAX_IFETCHES_IN_FLIGHT,
+                 btb_entries=DEFAULT_BTB_ENTRIES,
                  multiply_enable=DEFAULT_MULTIPLY_ENABLE,
                  divide_enable=DEFAULT_DIVIDE_ENABLE,
                  shifter_max_cycles=DEFAULT_SHIFTER_MAX_CYCLES,
@@ -147,6 +149,7 @@ class Alt_Orca_BuildCfg(Orca_BuildCfgBase):
               reset_vector,
               interrupt_vector,
               max_ifetches_in_flight,
+              btb_entries,
               multiply_enable,
               divide_enable,
               shifter_max_cycles,
@@ -262,6 +265,7 @@ class Alt_Orca_BuildCfg(Orca_BuildCfgBase):
         f.write('RESET_VECTOR=%s\n' % self.reset_vector)
         f.write('INTERRUPT_VECTOR=%s\n' % self.interrupt_vector)
         f.write('MAX_IFETCHES_IN_FLIGHT=%s\n' % self.max_ifetches_in_flight)
+        f.write('BTB_ENTRIES=%s\n' % self.btb_entries)
         f.write('MULTIPLY_ENABLE=%s\n' % self.multiply_enable)
         f.write('DIVIDE_ENABLE=%s\n' % self.divide_enable)
         f.write('SHIFTER_MAX_CYCLES=%s\n' % self.shifter_max_cycles)
@@ -897,7 +901,7 @@ class Alt_Orca_BuildCfg(Orca_BuildCfgBase):
         #Kill any nios2-terminal processes owned by the user that may be hogging the JTAG bus.
         #This is overkill and should get fixed to selectively kill only a process that's actually
         #using the board we need.
-        killall_terms_returcode = subprocess.call('killall nios2-terminal')
+        killall_terms_returcode = subprocess.call('killall nios2-terminal', shell=True)
         if not killall_terms_returncode:
             logging.info("Warning, killed a nios2-terminal process before programming .sof", self.dstdir)
 

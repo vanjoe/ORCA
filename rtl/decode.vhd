@@ -7,11 +7,11 @@ use work.rv_components.all;
 use work.constants_pkg.all;
 entity decode is
   generic(
-    REGISTER_SIZE         : positive;
-    SIGN_EXTENSION_SIZE   : positive;
-    PIPELINE_STAGES       : natural range 1 to 2;
-    WRITE_FIRST_SUPPORTED : boolean;
-    FAMILY                : string
+    REGISTER_SIZE          : positive;
+    SIGN_EXTENSION_SIZE    : positive;
+    PIPELINE_STAGES        : natural range 1 to 2;
+    WRITE_FIRST_SMALL_RAMS : boolean;
+    FAMILY                 : string
     );
   port(
     clk   : in std_logic;
@@ -23,6 +23,7 @@ entity decode is
 
     to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
+    to_decode_predicted_pc    : in  unsigned(REGISTER_SIZE-1 downto 0);
     to_decode_valid           : in  std_logic;
     from_decode_ready         : out std_logic;
 
@@ -36,6 +37,7 @@ entity decode is
     rs2_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     sign_extension : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     pc_curr_out    : out unsigned(REGISTER_SIZE-1 downto 0);
+    pc_next_out    : out unsigned(REGISTER_SIZE-1 downto 0);
     instr_out      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     subseq_instr   : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     subseq_valid   : out std_logic;
@@ -46,28 +48,11 @@ end;
 architecture rtl of decode is
   signal instr_out_signal : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
-  signal rs1   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal rs2   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal rs1_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal rs2_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
   signal rs1_reg : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs2_reg : std_logic_vector(REGISTER_SIZE-1 downto 0);
-
-  signal pc_next_latch : unsigned(REGISTER_SIZE-1 downto 0);
-  signal pc_curr_latch : unsigned(REGISTER_SIZE-1 downto 0);
-  signal instr_latch   : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-  signal valid_latch   : std_logic;
-
-
-  signal i_rd  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal i_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal i_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-
-  signal il_rd     : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal il_rs1    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal il_rs2    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal il_opcode : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
   signal wb_sel_signal    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal wb_data_signal   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -78,9 +63,9 @@ begin
 
   the_register_file : register_file
     generic map (
-      REGISTER_SIZE         => REGISTER_SIZE,
-      REGISTER_NAME_SIZE    => REGISTER_NAME_SIZE,
-      WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED
+      REGISTER_SIZE          => REGISTER_SIZE,
+      REGISTER_NAME_SIZE     => REGISTER_NAME_SIZE,
+      WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS
       )
     port map(
       clk       => clk,
@@ -106,6 +91,17 @@ begin
   end generate reg_rst_nen;
 
   two_cycle : if PIPELINE_STAGES = 2 generate
+    signal rs1_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    signal rs2_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+
+    signal outreg1 : std_logic_vector(REGISTER_SIZE-1 downto 0);
+    signal outreg2 : std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+    signal pc_curr_latch : unsigned(REGISTER_SIZE-1 downto 0);
+    signal pc_next_latch : unsigned(REGISTER_SIZE-1 downto 0);
+    signal instr_latch   : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    signal valid_latch   : std_logic;
+  begin
     rs1 <= to_decode_instruction(REGISTER_RS1'range) when stall = '0' else instr_latch(REGISTER_RS1'range);
     rs2 <= to_decode_instruction(REGISTER_RS2'range) when stall = '0' else instr_latch(REGISTER_RS2'range);
 
@@ -121,11 +117,13 @@ begin
           sign_extension <= std_logic_vector(
             resize(signed(instr_latch(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
                    SIGN_EXTENSION_SIZE));
-          PC_curr_latch <= to_decode_program_counter;
+          pc_curr_latch <= to_decode_program_counter;
+          pc_next_latch <= to_decode_predicted_pc;
           instr_latch   <= to_decode_instruction;
           valid_latch   <= to_decode_valid;
 
-          pc_curr_out      <= PC_curr_latch;
+          pc_curr_out      <= pc_curr_latch;
+          pc_next_out      <= pc_next_latch;
           instr_out_signal <= instr_latch;
           valid_output     <= valid_latch;
 
@@ -166,6 +164,7 @@ begin
             resize(signed(to_decode_instruction(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
                    SIGN_EXTENSION_SIZE));
           pc_curr_out      <= to_decode_program_counter;
+          pc_next_out      <= to_decode_predicted_pc;
           instr_out_signal <= to_decode_instruction;
           valid_output     <= to_decode_valid;
         end if;
