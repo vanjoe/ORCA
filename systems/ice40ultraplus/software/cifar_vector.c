@@ -1,5 +1,27 @@
 #include "neural.h"
 
+__attribute__((unused)) static  int channel_sum(vbx_ubyte_t* chan,int size) {
+	int sum=0;
+	while(size--){
+		sum+=chan[size];
+	}
+	return sum;
+}
+__attribute__((unused)) static  int channel_sumh(vbx_half_t* chan,int size) {
+	int sum=0;
+	while(size--){
+		sum+=chan[size];
+	}
+	return sum;
+}
+__attribute__((unused)) static  int channel_sumw(vbx_word_t* chan,int size) {
+	int sum=0;
+	while(size--){
+		sum+=chan[size];
+	}
+	return sum;
+}
+
 void vbx_flash_dma(vbx_word_t *v_dst, int flash_byte_offset, const int bytes)
 {
 	flash_dma_trans(flash_byte_offset, (void*)v_dst, bytes);
@@ -70,23 +92,23 @@ void vbx_convolve_ci(vbx_half_t *v_out, vbx_ubyte_t *v_in, vbx_half_t *v_conv, c
 	}
 
 }
-
 void vbx_zeropad_ci(vbx_ubyte_t *v_out, vbx_word_t *v_pad, vbx_word_t *v_in, const int m, const int n)
 {
 	int y;
 
 	// zero top and bottom
+	vbx_set_vl(n+2+2);
+	vbx(SVW, VAND, v_pad, 0, v_pad);
 	vbx_set_vl(1,n+2+2);
 	vbx_set_2D(sizeof(vbx_byte_t),sizeof(vbx_word_t),sizeof(vbx_word_t));
 
-	vbx(SVW, VAND, v_pad, 0, v_pad);
+
 	vbx(VVW, VCUSTOM0, (vbx_word_t*)((vbx_byte_t*)v_out + (0)*(n+2+2)), v_pad, 0);
 	vbx(VVW, VCUSTOM0, (vbx_word_t*)((vbx_byte_t*)v_out + (m+1)*(n+2+2)), v_pad, 0);
-
 	// move in rows
 	for (y = 0; y < m; y++) {
 		vbx_set_vl(n);
-		vbx(SVW, VOR, v_pad + 1, 0, v_in + y*n);
+		vbx(SVW, VOR, v_pad + 1,0, v_in + y*n);
 		vbx_set_vl(1,n+2+2);
 		//2D strides are still correct
 		vbx(VVW, VCUSTOM0,(vbx_word_t*)((vbx_byte_t*)v_out + (y+1)*(n+2+2)), v_pad, 0);
@@ -114,21 +136,7 @@ void vbx_accumulate_columns(vbx_word_t *v_map, vbx_half_t *v_maph, vbx_word_t *v
 
 // takes in padded inputs
 
-int channel_sum(vbx_ubyte_t* chan,int size){
-	int sum=0;
-	while(size--){
-		sum+=chan[size];
-	}
-	return sum;
-}
-int channel_sumw(vbx_word_t* chan,int size){
-	int sum=0;
-	while(size--){
-		sum+=chan[size];
-	}
-	return sum;
-}
-void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_layer_t *layer, const int debug)
+void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_layer_t *layer, const int debuglayer)
 {
 	int c, k, m = layer->m, n = layer->n, m0 = m, n0 = n;
 	if (layer->maxpool) {
@@ -161,25 +169,17 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 		vbx(SVW, VAND, (vbx_word_t*)v_maph, 0, (vbx_word_t*)v_maph);
 
 		for (c = 0; c < layer->channels; c++) {
-			debug(channel_sum(v_inb + c*(m+2)*(n+4),(m+2)*(n+4)));
 			vbx_convolve_ci(v_maph, v_inb + c*(m+2)*(n+4), (vbx_half_t*)v_tmp, m, n, v_weights[c]);
-
-			debug(channel_sum(v_maph,m*n*2));
 			if ((c+1)%13 == 0) {
 				vbx_accumulate_columns(v_map, v_maph, v_tmp, m, n);
-				debug((v_maph[0]));
 			}
 		}
 		if (layer->channels % 13) {
 			vbx_accumulate_columns(v_map, v_maph, v_tmp, m , n);
 		}
-		debug(channel_sumw(v_map,m*n));
-
 		if (layer->maxpool) {
 			vbx_pool(v_map, v_tmp, m, n);
 		}
-		debug(channel_sumw(v_map,m0*n0));
-
 		vbx_set_vl(m0*n0);
 		if (layer->scale) {
 			if (layer->zeropad_output) {
@@ -188,20 +188,22 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 				vbx(SVW, VMUL, v_map, scale, v_map);
 			}
 		}
-		debug(channel_sumw((v_map),m0*n0));
-
 		if (!layer->zeropad_output && layer->activation_type == RELU) {
 			vbx_relu(v_map, v_tmp);
 		}
-		debug(channel_sumw(((v_map)),m0*n0));
 		if (layer->zeropad_output) {
 			vbx_zeropad_ci(v_outb+(k*(n0+4)*(m0+2)), v_tmp, v_map, m0, n0);
 		} else {
+			#if 1
+			//FIXME: For some reason the VMOV doesn't work, manually copying.
+			for(int i=0;i<m0*n0;i++){
+				((vbx_word_t*)v_outb+(k*n0*m0))[i]=v_map[i];
+			}
+			#else
 			vbx_set_vl(m0*n0);
-			vbx(SVW, VOR, (vbx_word_t*)v_outb+(k*n0*m0), 0, v_map);
+			vbx(VVW, VMOV, (vbx_word_t*)v_outb+(k*n0*m0),v_map,0);
+			#endif
 		}
-		debug(channel_sum(v_outb + k*(m0+2)*(n0+4),(m0+2)*(n0+4)));
-
 	}
 }
 

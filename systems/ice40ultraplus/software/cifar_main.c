@@ -89,7 +89,6 @@ void run_network(layer_t *cifar, const int verbose)
 				v_outb = (vbx_ubyte_t*)SP84;
 			}
 			convolution_ci_lve(v_outb, v_padb, &(cifar[l].conv), 0);
-			debug(v_outb[3]);
 			if (cifar[l].conv.last) break;
 		} else {
 			if(verbose){
