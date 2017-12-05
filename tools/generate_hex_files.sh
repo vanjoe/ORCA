@@ -2,7 +2,8 @@
 SCRIPTDIR=$(readlink -f $(dirname $0))
 
 RISCV_TEST_DIR=$SCRIPTDIR/../software/riscv-tests
-
+set -e
+set -o pipefail
 (
 	 git submodule update --init --recursive ${RISCV_TEST_DIR}
 	 cd ${RISCV_TEST_DIR}

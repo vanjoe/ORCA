@@ -158,9 +158,9 @@ begin
           rs2_data <= rs2_reg;
         end if;
         if wb_sel = rs3_p and wb_enable = '1' then
-          outreg3 <= wb_data;
+          rs3_data <= wb_data;
         elsif stall = '0' then
-          outreg3 <= rs3_reg;
+          rs3_data <= rs3_reg;
         end if;
 
         if reset = '1' or flush = '1' then
@@ -171,9 +171,7 @@ begin
     end process decode_stage;
     subseq_instr <= instr_latch;
     subseq_valid <= valid_latch;
-    rs1_data     <= outreg1;
-    rs2_data     <= outreg2;
-    rs3_data     <= outreg3;
+
   end generate two_cycle;
 
 

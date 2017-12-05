@@ -172,7 +172,7 @@ begin
   rs2_data_fwd <= lve_alu_data2 when lve_alu_source_valid = '1' else
                   alu_data_out when rs2_mux = ALU_FWD else
                   rs2_data;
-  rs3_data_fwd <= alu_data_out when rs2_mux = ALU_FWD else
+  rs3_data_fwd <= alu_data_out when rs3_mux = ALU_FWD else
                   rs3_data;
 
 

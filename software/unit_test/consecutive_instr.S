@@ -53,8 +53,7 @@ test_5: /*csrr after load*/
 	nop
 	nop
 	csrr    x7, mstatus
-
-	lw      x5, 0(x	1)
+	lw      x5, 0(x1)
 	csrr    x6, mstatus
 	li      x28, 5
 	bne     x7,x4,1f

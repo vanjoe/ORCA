@@ -80,7 +80,7 @@ begin
       if rising_edge(clk) then
         out1 <= registers(to_integer(unsigned(rs1_sel)));
         out2 <= registers(to_integer(unsigned(rs2_sel)));
-        out3 <= registers(to_integer(unsigned(rs2_sel)));
+        out3 <= registers(to_integer(unsigned(rs3_sel)));
         if wb_enable = '1' then
           registers(to_integer(unsigned(wb_sel))) <= wb_data;
         end if;
@@ -92,7 +92,7 @@ begin
     rs1_data <= wb_data_latched when read_during_write1 = '1' else out1;
     rs2_data <= wb_data_latched when read_during_write2 = '1' else out2;
     rs3_data <= (others => '-') when READ_PORTS < 3 else
-                wb_data_latched when read_during_write2 = '1' else out2;
+                wb_data_latched when read_during_write3 = '1' else out3;
     process(clk) is
     begin
       if rising_edge(clk) then
