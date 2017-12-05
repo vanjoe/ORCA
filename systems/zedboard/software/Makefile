@@ -4,10 +4,10 @@
 
 all:
 AS_SRCS += crt.S
-C_SRCS  += uart.c
+C_SRCS  += uart.c orca_time.c
 
 ifeq ($(SW_PROJ), dhrystone)
-  C_SRCS  += dhry_1.c dhry_2.c printf.c malloc.c orca_time.c
+  C_SRCS  += dhry_1.c dhry_2.c printf.c malloc.c
 else ifeq ($(SW_PROJ), cache_test)
   AS_SRCS += cache_test.S
   C_SRCS  += cache_test_main.c

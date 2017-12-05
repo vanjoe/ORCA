@@ -149,7 +149,7 @@ if __name__ == '__main__':
                 if not end_of_file:
                     file_data = bin_file.read(4)
                     if file_data == '':
-                        file_data = '00000000'
+                        file_data = '\0'
                         end_of_file = True
                         if word == 0:
                             break

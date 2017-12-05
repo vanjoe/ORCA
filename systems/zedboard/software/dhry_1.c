@@ -123,8 +123,6 @@ int main (int argc, char *argv[])
   printf ("Dhrystone Benchmark, Version 2.1 (Language: C or C++)\r\n");
   printf ("\r\n");
 
-  delayms(10000);
-   
   double dtime();
  
   One_Fifty   Int_1_Loc;
@@ -160,6 +158,10 @@ int main (int argc, char *argv[])
  
   Next_Ptr_Glob = (Rec_Pointer) malloc (sizeof (Rec_Type));
   Ptr_Glob = (Rec_Pointer) malloc (sizeof (Rec_Type));
+  if((Next_Ptr_Glob == NULL) || (Ptr_Glob == NULL)){
+    printf("Fail during malloc; dying\r\n");
+    return 1;
+  }
  
   Ptr_Glob->Ptr_Comp                    = Next_Ptr_Glob;
   Ptr_Glob->Discr                       = Ident_1;
@@ -214,7 +216,7 @@ int main (int argc, char *argv[])
       Number_Of_Runs);
   */
 
-  Number_Of_Runs = 1000;
+  Number_Of_Runs = 10;
 
   do
     {
@@ -282,14 +284,14 @@ int main (int argc, char *argv[])
       End_Cycle = get_time();
       User_Time = ((double)(End_Cycle - Begin_Cycle))/SYS_CLK;
              
-      printf("%d runs %d seconds %d runs/second\r\n", (int)Number_Of_Runs, (int)User_Time, (int)(Number_Of_Runs/User_Time));
-      if (User_Time > 2)
+      printf("%d runs %d.%d seconds %d runs/second\r\n", (int)Number_Of_Runs, (int)User_Time, ((int)(User_Time*10.0))%10, (int)(Number_Of_Runs/User_Time));
+      if (User_Time > Too_Small_Time)
         {
           count = 0;
         }
       else
         {
-          if (User_Time < 0.1)
+          if (User_Time < (Too_Small_Time/20.0))
             {
               Number_Of_Runs = Number_Of_Runs * 5;
             }
@@ -731,7 +733,6 @@ double dtime()
 
 int handle_interrupt(int cause, int epc, int regs[32])
 {
-	return epc;
 	if (!((cause >> 31) & 0x1)) {
 		// Handle illegal instruction.
 		printf("Illegal Instruction\r\n");

@@ -36,11 +36,8 @@ int main(int argc, char *argv[])
 
   unsigned long address_offset = 0;
 
-  for(int i = 0; i < BUFFER_SIZE; i+=4){
-    buffer[i+0] = 0xEF;
-    buffer[i+1] = 0xBE;
-    buffer[i+2] = 0xAD;
-    buffer[i+3] = 0xDE;
+  for(int i = 0; i < BUFFER_SIZE; i++){
+    buffer[i] = 0;
   }
 
   fin.open("test.hex", ios::in);    // open file
