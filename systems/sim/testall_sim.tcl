@@ -24,7 +24,6 @@ foreach f $files {
 	 } else {
 		  run 30 us
 	 }
-    
 	 set v [examine -radix decimal /system/vectorblox_orca_0/core/D/the_register_file/t3]
 	 set passfail  ""
 	 if { $v != 1 } {
