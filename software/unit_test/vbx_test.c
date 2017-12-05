@@ -182,6 +182,28 @@ TEST_ATTR int test_9()
 
 }
 
+TEST_ATTR int test_10()
+{
+  int vlen=10;
+  vbx_word_t* a=((vbx_word_t*)SCRATCHPAD_BASE);
+  //force load word right before vbx instruction
+  vbx_word_t* volatile d=a+vlen;
+  int acc_check=0;
+  for( int i=0;i<vlen;i++){
+	a[i]= 3+i;
+  }
+  vbx_set_vl(vlen);
+  vbx(VVW,VMOV,d,a,0);
+  for( int i=0;i<vlen;i++){
+  if (d[i] != a[i]){
+	 return 1; //TEST FAIL
+  }
+  }
+  // TEST SUCCESS
+  return 0;
+
+}
+
 
 //this macro runs the test, and returns the test number on failure
 #define do_test(i) do{if ( test_##i () ) return i;}while(0)
@@ -196,6 +218,7 @@ int main()
 	do_test(7);
 	do_test(8);
 	do_test(9);
+	do_test(10);
 	return 0;
 
 }

@@ -218,7 +218,7 @@ begin
 
   --No forward stall; system calls, loads, and branches aren't forwarded.  Since
   --branches clear the pipeline no need to check for stall here.
-  use_after_produce_stall <= sys_data_enable or load_in_progress when wb_sel = rs1 or wb_sel = rs2 else '0';
+  use_after_produce_stall <= sys_data_enable or load_in_progress when wb_sel = rs1 or wb_sel = rs2 or (wb_sel = rs3 and LVE_ENABLE=1) else '0';
 
   process(clk)
   begin
