@@ -130,6 +130,32 @@ TEST_ATTR int test_7()
 
 }
 
+TEST_ATTR int test_8()
+{
+  int vlen=10;
+  vbx_set_vl(vlen);
+  vbx_word_t* a=((vbx_word_t*)SCRATCHPAD_BASE);
+  vbx_word_t* b=a+vlen;
+  vbx_word_t* c=b+vlen;
+  int acc_check=0;
+  for( int i=0;i<vlen;i++){
+	a[i]= 3+i;
+  }
+  for( int i=0;i<vlen;i++){
+	b[i] = 6+i;
+	acc_check+=b[i]*a[i];
+  }
+
+  vbx_acc(VVW,VMUL,c,b,a);
+  if (c[0] != acc_check){
+	 return 1; //TEST FAIL
+  }
+
+  // TEST SUCCESS
+  return 0;
+
+}
+
 
 
 //this macro runs the test, and returns the test number on failure
@@ -144,6 +170,7 @@ int main()
 	do_test(5);
 	do_test(6);
 	do_test(7);
+	do_test(8);
 	return 0;
 
 }
