@@ -17,12 +17,20 @@
          type = "int";
       }
    }
-   element interrrupt_gen_0
+   element interrupt_generator_0
    {
       datum _sortIndex
       {
          value = "4";
          type = "int";
+      }
+   }
+   element interrupt_generator_0.s0
+   {
+      datum baseAddress
+      {
+         value = "1114112";
+         type = "String";
       }
    }
    element onchip_memory2_0
@@ -42,7 +50,7 @@
    {
       datum baseAddress
       {
-         value = "0";
+         value = "1048576";
          type = "String";
       }
    }
@@ -50,7 +58,7 @@
    {
       datum baseAddress
       {
-         value = "0";
+         value = "1048576";
          type = "String";
       }
    }
@@ -279,7 +287,7 @@
    {
       datum baseAddress
       {
-         value = "1073741824";
+         value = "0";
          type = "String";
       }
    }
@@ -308,8 +316,8 @@
   <parameter name="CLK_MHZ" value="1000" />
  </module>
  <module
-   name="interrrupt_gen_0"
-   kind="interrrupt_gen"
+   name="interrupt_generator_0"
+   kind="interrupt_generator"
    version="1.0"
    enabled="1" />
  <module
@@ -356,8 +364,12 @@
    enabled="1">
   <parameter name="AUTO_GLOBAL_INTERRUPTS_INTERRUPTS_USED" value="1" />
   <parameter name="COUNTER_LENGTH" value="64" />
+  <parameter name="DATA_REQUEST_REGISTER" value="0" />
+  <parameter name="DATA_RETURN_REGISTER" value="0" />
   <parameter name="DAUX_ADDR_BASE" value="0" />
   <parameter name="DAUX_ADDR_LAST" value="0" />
+  <parameter name="DAUX_REQUEST_REGISTER" value="2" />
+  <parameter name="DAUX_RETURN_REGISTER" value="1" />
   <parameter name="DCACHE_BURST_EN" value="0" />
   <parameter name="DCACHE_EXTERNAL_WIDTH" value="32" />
   <parameter name="DCACHE_LINE_SIZE" value="32" />
@@ -365,18 +377,26 @@
   <parameter name="DIVIDE_ENABLE" value="1" />
   <parameter name="DUC_ADDR_BASE" value="0" />
   <parameter name="DUC_ADDR_LAST" value="4294967295" />
+  <parameter name="DUC_REQUEST_REGISTER" value="2" />
+  <parameter name="DUC_RETURN_REGISTER" value="1" />
   <parameter name="ENABLE_EXCEPTIONS" value="1" />
   <parameter name="ENABLE_EXT_INTERRUPTS" value="1" />
   <parameter name="FAMILY" value="ALTERA" />
   <parameter name="IAUX_ADDR_BASE" value="0" />
   <parameter name="IAUX_ADDR_LAST" value="0" />
+  <parameter name="IAUX_REQUEST_REGISTER" value="0" />
+  <parameter name="IAUX_RETURN_REGISTER" value="0" />
   <parameter name="ICACHE_BURST_EN" value="0" />
   <parameter name="ICACHE_EXTERNAL_WIDTH" value="32" />
   <parameter name="ICACHE_LINE_SIZE" value="32" />
   <parameter name="ICACHE_SIZE" value="0" />
+  <parameter name="INSTRUCTION_REQUEST_REGISTER" value="0" />
+  <parameter name="INSTRUCTION_RETURN_REGISTER" value="0" />
   <parameter name="INTERRUPT_VECTOR" value="512" />
   <parameter name="IUC_ADDR_BASE" value="0" />
   <parameter name="IUC_ADDR_LAST" value="4294967295" />
+  <parameter name="IUC_REQUEST_REGISTER" value="0" />
+  <parameter name="IUC_RETURN_REGISTER" value="0" />
   <parameter name="LVE_ENABLE" value="1" />
   <parameter name="MAX_IFETCHES_IN_FLIGHT" value="3" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
@@ -384,7 +404,7 @@
   <parameter name="PIPELINE_STAGES" value="4" />
   <parameter name="POWER_OPTIMIZED" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
-  <parameter name="RESET_VECTOR" value="512" />
+  <parameter name="RESET_VECTOR" value="0" />
   <parameter name="SCRATCHPAD_SIZE" value="1024" />
   <parameter name="SHIFTER_MAX_CYCLES" value="32" />
  </module>
@@ -392,9 +412,9 @@
    kind="avalon"
    version="15.1"
    start="vectorblox_orca_0.axi_duc"
-   end="interrrupt_gen_0.s0">
+   end="interrupt_generator_0.s0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x01000000" />
+  <parameter name="baseAddress" value="0x00110000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -412,7 +432,7 @@
    start="vectorblox_orca_0.axi_duc"
    end="vectorblox_orca_0.scratch">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x40000000" />
+  <parameter name="baseAddress" value="0x04000000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -448,12 +468,12 @@
    kind="clock"
    version="15.1"
    start="clock_gen_0.clock"
-   end="interrrupt_gen_0.clock" />
+   end="interrupt_generator_0.clock" />
  <connection
    kind="interrupt"
    version="15.1"
    start="vectorblox_orca_0.global_interrupts"
-   end="interrrupt_gen_0.interrupt_out">
+   end="interrupt_generator_0.interrupt_out">
   <parameter name="irqNumber" value="0" />
  </connection>
  <connection
@@ -465,7 +485,7 @@
    kind="reset"
    version="15.1"
    start="reset_source_0.reset"
-   end="interrrupt_gen_0.reset" />
+   end="interrupt_generator_0.reset" />
  <connection
    kind="reset"
    version="15.1"
