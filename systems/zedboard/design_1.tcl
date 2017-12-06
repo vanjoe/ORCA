@@ -406,6 +406,7 @@ proc create_root_design { parentCell } {
   # Create instance: axi_interconnect_cacheable, and set properties
   set axi_interconnect_cacheable [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_cacheable ]
   set_property -dict [ list \
+   CONFIG.M02_HAS_REGSLICE {1} \
    CONFIG.NUM_MI {3} \
    CONFIG.NUM_SI {3} \
    CONFIG.SYNCHRONIZATION_STAGES {2} \
@@ -414,7 +415,6 @@ proc create_root_design { parentCell } {
   # Create instance: axi_interconnect_data_uncacheable, and set properties
   set axi_interconnect_data_uncacheable [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_data_uncacheable ]
   set_property -dict [ list \
-   CONFIG.M00_HAS_REGSLICE {1} \
    CONFIG.NUM_MI {3} \
    CONFIG.NUM_SI {2} \
    CONFIG.S01_HAS_REGSLICE {1} \

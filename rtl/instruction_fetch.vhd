@@ -20,6 +20,7 @@ entity instruction_fetch is
 
     interrupt_pending : in  std_logic;
     ifetch_flushed    : out std_logic;
+    program_counter   : buffer unsigned(REGISTER_SIZE-1 downto 0);
 
     to_pc_correction_data        : in     unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_source_pc   : in     unsigned(REGISTER_SIZE-1 downto 0);
@@ -48,18 +49,16 @@ architecture rtl of instruction_fetch is
   --Could get promoted to top level; for instance no FIFO_BYPASS with
   --MAX_IFETCHES_IN_FLIGHT = 1 reduces throughput but might be useful for low
   --performance embedded systems
-  constant FIFO_BYPASS             : boolean := MAX_IFETCHES_IN_FLIGHT = 1;
+  constant FIFO_BYPASS             : boolean := true;  --MAX_IFETCHES_IN_FLIGHT = 1;
   constant BREAK_CHAIN_FROM_DECODE : boolean := MAX_IFETCHES_IN_FLIGHT > 2;
 
   signal ready_for_next_fetch        : std_logic;
   signal waiting_for_not_waitrequest : std_logic;
 
   signal predicted_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
-  signal program_counter           : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal outstanding_reads_in_flight : std_logic;
-  signal pc_instruction_fifo_reset   : std_logic;
-  signal pc_fifo_can_accept_data     : std_logic;
+  signal pc_instruction_fifo_reset : std_logic;
+  signal pc_fifo_can_accept_data   : std_logic;
 
   signal pc_fifo_write     : std_logic;
   signal pc_fifo_writedata : std_logic_vector((2*REGISTER_SIZE)-1 downto 0);
@@ -68,6 +67,11 @@ architecture rtl of instruction_fetch is
   signal pc_fifo_empty     : std_logic;
   signal pc_fifo_full      : std_logic;
   signal pc_fifo_usedw     : unsigned(log2(MAX_IFETCHES_IN_FLIGHT+1)-1 downto 0);
+
+  signal next_pc_fifo_usedw          : unsigned(log2(MAX_IFETCHES_IN_FLIGHT+1)-1 downto 0);
+  signal next_instruction_fifo_usedw : unsigned(log2(MAX_IFETCHES_IN_FLIGHT+1)-1 downto 0);
+  signal squashed_fetches_in_flight  : unsigned(log2(MAX_IFETCHES_IN_FLIGHT+1)-1 downto 0);
+  signal squashing_readdata          : std_logic;
 
   signal instruction_fifo_write     : std_logic;
   signal instruction_fifo_read      : std_logic;
@@ -170,22 +174,28 @@ begin  -- architecture rtl
 
   --When a PC correction is requested, hold it until the current instruction
   --request has issued in case it's stalled (not waiting_for_not_waitrequest)
-  --and there are no outstanding instruction reads in flight
-  from_pc_correction_ready <= (not waiting_for_not_waitrequest) and (not outstanding_reads_in_flight);
+  from_pc_correction_ready <= (not waiting_for_not_waitrequest) or (not oimm_waitrequest);
   process(clk)
   begin
     if rising_edge(clk) then
+      if oimm_readdatavalid = '1' and squashing_readdata = '1' then
+        squashed_fetches_in_flight <= squashed_fetches_in_flight - to_unsigned(1, squashed_fetches_in_flight'length);
+      end if;
+
       if to_pc_correction_valid = '1' and from_pc_correction_ready = '1' then
-        program_counter <= to_pc_correction_data;
+        program_counter            <= to_pc_correction_data;
+        squashed_fetches_in_flight <= next_pc_fifo_usedw - next_instruction_fifo_usedw;
       elsif oimm_requestvalid = '1' and oimm_waitrequest = '0' then
         program_counter <= predicted_program_counter;
       end if;
 
       if reset = '1' then
-        program_counter <= unsigned(RESET_VECTOR(REGISTER_SIZE-1 downto 0));
+        program_counter            <= unsigned(RESET_VECTOR(REGISTER_SIZE-1 downto 0));
+        squashed_fetches_in_flight <= to_unsigned(0, squashed_fetches_in_flight'length);
       end if;
     end if;
   end process;
+  squashing_readdata <= '1' when squashed_fetches_in_flight /= to_unsigned(0, squashed_fetches_in_flight'length) else '0';
 
   --Don't fetch when updating the PC, no more instructions can fit in the
   --instruction FIFO, or an interrupt is pending
@@ -231,40 +241,45 @@ begin  -- architecture rtl
   pc_fifo_can_accept_data <= (not pc_fifo_full) when BREAK_CHAIN_FROM_DECODE else (not pc_fifo_full) or pc_fifo_read;
 
 
-  --If the PC FIFO and Instruction FIFO have a different level, that means an
-  --instruction should be returned from the memory subsystem
-  outstanding_reads_in_flight <= '1' when pc_fifo_usedw /= instruction_fifo_usedw else '0';
+  --On PC correction flush the PC and instruction FIFOs.
+  pc_instruction_fifo_reset <= to_pc_correction_valid and from_pc_correction_ready;
 
-  --On PC correction, wait for all outstanding reads to finish before flushing.
-  --This ensures an outstanding readdatavalid during flush doesn't show up
-  --later as a new instruction being fetched.
-  pc_instruction_fifo_reset <= to_pc_correction_valid when outstanding_reads_in_flight = '0' else '0';
+  --Need to calculate 'next' usedw values for tracking instruction fetches in
+  --flight on a mispredict correction
+  process (clk) is
+  begin  -- process
+    if rising_edge(clk) then            -- rising clock edge
+      pc_fifo_usedw          <= next_pc_fifo_usedw;
+      instruction_fifo_usedw <= next_instruction_fifo_usedw;
+      if reset = '1' or pc_instruction_fifo_reset = '1' then
+        pc_fifo_usedw          <= to_unsigned(0, pc_fifo_usedw'length);
+        instruction_fifo_usedw <= to_unsigned(0, instruction_fifo_usedw'length);
+      end if;
+    end if;
+  end process;
 
-  --Single request in flight/single entry instruction FIFO 
+  --Single request in flight/single entry instruction FIFO
   single_fetch_in_flight : if MAX_IFETCHES_IN_FLIGHT = 1 generate
-    pc_fifo_empty             <= not pc_fifo_full;
-    instruction_fifo_empty    <= not instruction_fifo_full;
-    pc_fifo_usedw(0)          <= pc_fifo_full;
-    instruction_fifo_usedw(0) <= instruction_fifo_full;
+    pc_fifo_empty          <= not pc_fifo_full;
+    instruction_fifo_empty <= not instruction_fifo_full;
+    pc_fifo_full           <= pc_fifo_usedw(0);
+    instruction_fifo_full  <= instruction_fifo_usedw(0);
+    next_pc_fifo_usedw <=
+      to_unsigned(1, next_pc_fifo_usedw'length) when pc_fifo_write = '1' else
+      to_unsigned(0, next_pc_fifo_usedw'length) when pc_fifo_read = '1' else
+      next_pc_fifo_usedw;
+    next_instruction_fifo_usedw <=
+      to_unsigned(1, next_instruction_fifo_usedw'length) when instruction_fifo_write = '1' else
+      to_unsigned(0, next_instruction_fifo_usedw'length) when instruction_fifo_read = '1' else
+      next_instruction_fifo_usedw;
     process(clk)
     begin
       if rising_edge(clk) then
         if pc_fifo_write = '1' then
           pc_fifo_readdata <= pc_fifo_writedata;
-          pc_fifo_full     <= '1';
-        elsif pc_fifo_read = '1' then
-          pc_fifo_full <= '0';
         end if;
         if instruction_fifo_write = '1' then
           instruction_fifo_readdata <= instruction_fifo_writedata;
-          instruction_fifo_full     <= '1';
-        elsif instruction_fifo_read = '1' then
-          instruction_fifo_full <= '0';
-        end if;
-
-        if reset = '1' or pc_instruction_fifo_reset = '1' then
-          pc_fifo_full          <= '0';
-          instruction_fifo_full <= '0';
         end if;
       end if;
     end process;
@@ -274,6 +289,16 @@ begin  -- architecture rtl
     signal pc_fifo_internaldata          : std_logic_vector((2*REGISTER_SIZE)-1 downto 0);
     signal instruction_fifo_internaldata : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
   begin
+    next_pc_fifo_usedw <=
+      pc_fifo_usedw + to_unsigned(1, pc_fifo_usedw'length) when pc_fifo_write = '1' and pc_fifo_read = '0' else
+      pc_fifo_usedw - to_unsigned(1, pc_fifo_usedw'length) when pc_fifo_write = '0' and pc_fifo_read = '1' else
+      pc_fifo_usedw;
+    next_instruction_fifo_usedw <=
+      instruction_fifo_usedw + to_unsigned(1, instruction_fifo_usedw'length) when
+      instruction_fifo_write = '1' and instruction_fifo_read = '0' else
+      instruction_fifo_usedw - to_unsigned(1, instruction_fifo_usedw'length) when
+      instruction_fifo_write = '0' and instruction_fifo_read = '1' else
+      instruction_fifo_usedw;
     process(clk)
     begin
       if rising_edge(clk) then
@@ -287,14 +312,12 @@ begin  -- architecture rtl
               pc_fifo_readdata <= pc_fifo_writedata;
             end if;
           else
-            pc_fifo_full  <= not pc_fifo_empty;
-            pc_fifo_usedw <= pc_fifo_usedw + to_unsigned(1, pc_fifo_usedw'length);
+            pc_fifo_full <= not pc_fifo_empty;
           end if;
         elsif pc_fifo_read = '1' then
           pc_fifo_full     <= '0';
           pc_fifo_readdata <= pc_fifo_internaldata;
           pc_fifo_empty    <= not pc_fifo_full;
-          pc_fifo_usedw    <= pc_fifo_usedw - to_unsigned(1, pc_fifo_usedw'length);
         end if;
 
         if instruction_fifo_write = '1' then
@@ -307,23 +330,19 @@ begin  -- architecture rtl
               instruction_fifo_readdata <= instruction_fifo_writedata;
             end if;
           else
-            instruction_fifo_full  <= not instruction_fifo_empty;
-            instruction_fifo_usedw <= instruction_fifo_usedw + to_unsigned(1, instruction_fifo_usedw'length);
+            instruction_fifo_full <= not instruction_fifo_empty;
           end if;
         elsif instruction_fifo_read = '1' then
           instruction_fifo_full     <= '0';
           instruction_fifo_readdata <= instruction_fifo_internaldata;
           instruction_fifo_empty    <= not instruction_fifo_full;
-          instruction_fifo_usedw    <= instruction_fifo_usedw - to_unsigned(1, instruction_fifo_usedw'length);
         end if;
 
         if reset = '1' or pc_instruction_fifo_reset = '1' then
           pc_fifo_empty          <= '1';
           pc_fifo_full           <= '0';
-          pc_fifo_usedw          <= to_unsigned(0, pc_fifo_usedw'length);
           instruction_fifo_empty <= '1';
           instruction_fifo_full  <= '0';
-          instruction_fifo_usedw <= to_unsigned(0, instruction_fifo_usedw'length);
         end if;
       end if;
     end process;
@@ -339,6 +358,16 @@ begin  -- architecture rtl
   begin
     pc_fifo_readdata          <= pc_fifo_internaldata(0);
     instruction_fifo_readdata <= instruction_fifo_internaldata(0);
+    next_pc_fifo_usedw <=
+      pc_fifo_usedw + to_unsigned(1, pc_fifo_usedw'length) when pc_fifo_write = '1' and pc_fifo_read = '0' else
+      pc_fifo_usedw - to_unsigned(1, pc_fifo_usedw'length) when pc_fifo_write = '0' and pc_fifo_read = '1' else
+      pc_fifo_usedw;
+    next_instruction_fifo_usedw <=
+      instruction_fifo_usedw + to_unsigned(1, instruction_fifo_usedw'length) when
+      instruction_fifo_write = '1' and instruction_fifo_read = '0' else
+      instruction_fifo_usedw - to_unsigned(1, instruction_fifo_usedw'length) when
+      instruction_fifo_write = '0' and instruction_fifo_read = '1' else
+      instruction_fifo_usedw;
     process(clk)
     begin
       if rising_edge(clk) then
@@ -355,14 +384,12 @@ begin  -- architecture rtl
             if pc_fifo_usedw = to_unsigned(MAX_IFETCHES_IN_FLIGHT-1, pc_fifo_usedw'length) then
               pc_fifo_full <= '1';
             end if;
-            pc_fifo_usedw <= pc_fifo_usedw + to_unsigned(1, pc_fifo_usedw'length);
           end if;
         elsif pc_fifo_read = '1' then
           pc_fifo_full <= '0';
           if pc_fifo_usedw = to_unsigned(1, pc_fifo_usedw'length) then
             pc_fifo_empty <= '1';
           end if;
-          pc_fifo_usedw <= pc_fifo_usedw - to_unsigned(1, pc_fifo_usedw'length);
         end if;
 
         if instruction_fifo_read = '1' then
@@ -378,23 +405,19 @@ begin  -- architecture rtl
             if instruction_fifo_usedw = to_unsigned(MAX_IFETCHES_IN_FLIGHT-1, instruction_fifo_usedw'length) then
               instruction_fifo_full <= '1';
             end if;
-            instruction_fifo_usedw <= instruction_fifo_usedw + to_unsigned(1, instruction_fifo_usedw'length);
           end if;
         elsif instruction_fifo_read = '1' then
           instruction_fifo_full <= '0';
           if instruction_fifo_usedw = to_unsigned(1, instruction_fifo_usedw'length) then
             instruction_fifo_empty <= '1';
           end if;
-          instruction_fifo_usedw <= instruction_fifo_usedw - to_unsigned(1, instruction_fifo_usedw'length);
         end if;
 
         if reset = '1' or pc_instruction_fifo_reset = '1' then
           pc_fifo_empty          <= '1';
           pc_fifo_full           <= '0';
-          pc_fifo_usedw          <= to_unsigned(0, pc_fifo_usedw'length);
           instruction_fifo_empty <= '1';
           instruction_fifo_full  <= '0';
-          instruction_fifo_usedw <= to_unsigned(0, instruction_fifo_usedw'length);
         end if;
       end if;
     end process;
@@ -405,15 +428,16 @@ begin  -- architecture rtl
   bypass_gen : if FIFO_BYPASS generate
     from_ifetch_instruction <= instruction_fifo_readdata when instruction_fifo_empty = '0' else
                                oimm_readdata;
-    ifetch_valid           <= (not instruction_fifo_empty) or oimm_readdatavalid;
+    ifetch_valid           <= (not instruction_fifo_empty) or (oimm_readdatavalid and (not squashing_readdata));
     instruction_fifo_read  <= pc_fifo_read and (not instruction_fifo_empty);
-    instruction_fifo_write <= oimm_readdatavalid and ((not to_ifetch_ready) or (not instruction_fifo_empty));
+    instruction_fifo_write <= (oimm_readdatavalid and (not squashing_readdata)) and
+                              ((not to_ifetch_ready) or (not instruction_fifo_empty));
   end generate bypass_gen;
   no_bypass_gen : if not FIFO_BYPASS generate
     from_ifetch_instruction <= instruction_fifo_readdata;
     ifetch_valid            <= not instruction_fifo_empty;
     instruction_fifo_read   <= pc_fifo_read;
-    instruction_fifo_write  <= oimm_readdatavalid;
+    instruction_fifo_write  <= (oimm_readdatavalid and (not squashing_readdata));
   end generate no_bypass_gen;
 
   from_ifetch_valid           <= ifetch_valid;
@@ -425,7 +449,7 @@ begin  -- architecture rtl
     natural'image(BTB_ENTRIES) &
     ") must be a power of 2."
     severity failure;
-    
+
   assert FIFO_BYPASS or (MAX_IFETCHES_IN_FLIGHT > 1) report
     "With FIFO_BYPASS set to false and MAX_IFETCHES_IN_FLIGHT set to 1 the instruction fetch will only be able to maintain a throughput of 1 instruction every 2 cycles." severity error;
 

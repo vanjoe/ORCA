@@ -84,6 +84,8 @@ architecture rtl of orca_core is
   signal ifetch_to_decode_valid           : std_logic;
   signal decode_to_ifetch_ready           : std_logic;
 
+  signal program_counter : unsigned(REGISTER_SIZE-1 downto 0);
+
   signal to_decode_valid                    : std_logic;
   signal execute_stalled                    : std_logic;
   signal wb_sel                             : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
@@ -114,6 +116,7 @@ begin  -- architecture rtl
 
       interrupt_pending => interrupt_pending,
       ifetch_flushed    => ifetch_flushed,
+      program_counter   => program_counter,
 
       to_pc_correction_data        => execute_to_ifetch_pc_correction_data,
       to_pc_correction_source_pc   => execute_to_ifetch_pc_correction_source_pc,
@@ -202,7 +205,7 @@ begin  -- architecture rtl
       flush_pipeline  => flush_pipeline,
       execute_flushed => execute_flushed,
       pipeline_empty  => pipeline_empty,
-      program_counter => ifetch_to_decode_program_counter,
+      program_counter => program_counter,
 
       --From previous stage
       valid_input        => to_execute_valid,

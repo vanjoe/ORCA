@@ -3,17 +3,18 @@
 -include ../config.mk
 
 all:
-AS_SRCS += crt.S
-C_SRCS  += uart.c orca_time.c
 
 ifeq ($(SW_PROJ), dhrystone)
   C_SRCS  += dhry_1.c dhry_2.c printf.c malloc.c
 else ifeq ($(SW_PROJ), cache_test)
   AS_SRCS += cache_test.S
   C_SRCS  += cache_test_main.c
-else ifeq ($(C_SRCS), uart.c)
+else ifeq ($(C_SRCS), )
   C_SRCS  += hello_world.c
 endif
+
+AS_SRCS += crt.S
+C_SRCS  += uart.c orca_time.c
 
 #These should come from the BSP
 JTAG_RESET_BASE_ADDRESS ?= 0x40000000
@@ -33,15 +34,15 @@ endif #else #ifdef RESET_VECTOR
 IDRAM_LENGTH            ?= 0x00020000
 
 
-C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
-S_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(AS_SRCS)))
+C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(notdir $(C_SRCS))))
+S_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(notdir $(AS_SRCS))))
 
 CROSS_COMPILE=riscv32-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
 ARCH=rv32im
-CFLAGS= -O2 -fno-delete-null-pointer-checks -g -march=$(ARCH) -MD -Wall -std=gnu99
+CFLAGS= -O3 -fno-delete-null-pointer-checks -g -march=$(ARCH) -MD -Wall -std=gnu99
 LD_FLAGS= -march=$(ARCH) -static -nostartfiles
 
 TARGET=test

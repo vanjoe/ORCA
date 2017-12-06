@@ -871,8 +871,9 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
-      interrupt_pending : in  std_logic;
-      ifetch_flushed    : out std_logic;
+      interrupt_pending : in     std_logic;
+      ifetch_flushed    : out    std_logic;
+      program_counter   : buffer unsigned(REGISTER_SIZE-1 downto 0);
 
       to_pc_correction_data        : in     unsigned(REGISTER_SIZE-1 downto 0);
       to_pc_correction_source_pc   : in     unsigned(REGISTER_SIZE-1 downto 0);
