@@ -8,6 +8,7 @@ endif
 all:
 SYSTEM=system_$(BUS_TYPE)
 QSYS_FILE=$(SYSTEM).qsys
+SIM_WAVES_FILE=sim_waves_system_$(BUS_TYPE).tcl
 SIM_FILE=simulate_$(BUS_TYPE).tcl
 TESTALL_FILE=testall_$(BUS_TYPE).tcl
 
@@ -25,6 +26,8 @@ test/rv32ui-p-add.qex:
 
 $(SIM_FILE):simulate.tcl
 	sed 's/system/system_$(BUS_TYPE)/g' $^ > $@
+$(SIM_WAVES_FILE):sim_waves_system.tcl
+	sed 's/system/system_$(BUS_TYPE)/g' $^ > $@
 $(TESTALL_FILE):testall_sim.tcl
 	sed 's/system/system_$(BUS_TYPE)/g' $^ > $@
 
@@ -35,7 +38,7 @@ testall: test/rv32ui-p-add.qex $(SYSTEM)/simulation/mentor/msim_setup.tcl $(TEST
 all: $(SYSTEM)/simulation/mentor/msim_setup.tcl
 	(cd $(SYSTEM)/simulation/mentor/; ln -sf ../../../test.hex .)
 
-sim: all $(SIM_FILE)
+sim: all $(SIM_FILE) $(SIM_WAVES_FILE)
 	vsim -do $(SIM_FILE)
 clean:
 	rm -rf system_avalon system_csmith system_axi test test.hex

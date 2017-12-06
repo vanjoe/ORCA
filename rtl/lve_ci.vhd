@@ -7,6 +7,7 @@ use STD.TEXTIO.all;
 library work;
 use work.utils.all;
 use work.constants_pkg.all;
+use work.rv_components.all;
 
 entity lve_ci is
   generic (
@@ -16,7 +17,7 @@ entity lve_ci is
     clk   : in std_logic;
     reset : in std_logic;
 
-    func3 : in std_logic_vector(2 downto 0);
+    func : VCUSTOM_ENUM;
 
     pause : in std_logic;
 
@@ -28,6 +29,7 @@ entity lve_ci is
     align2_in : in std_logic_vector(1 downto 0);
 
     valid_out        : out std_logic;
+    byte_en_out      : out std_logic_vector(3 downto 0);
     write_enable_out : out std_logic;
     data_out         : out std_logic_vector(REGISTER_SIZE-1 downto 0)
     );
@@ -38,15 +40,12 @@ architecture rtl of lve_ci is
 
   --For testing pipeline the result
 
-  constant VCUSTOM0_FUNC3 : std_logic_vector(2 downto 0) := "101";
-  constant VCUSTOM1_FUNC3 : std_logic_vector(2 downto 0) := "110";
-  constant VCUSTOM2_FUNC3 : std_logic_vector(2 downto 0) := "111";
-  constant VCUSTOM3_FUNC3 : std_logic_vector(2 downto 0) := "000";
-  constant VCUSTOM4_FUNC3 : std_logic_vector(2 downto 0) := "001";
-  constant VCUSTOM5_FUNC3 : std_logic_vector(2 downto 0) := "010";
 
   signal cust0_out_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal half_add_sum   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal cust0_byte     : std_logic_vector(7 downto 0);
+  signal cust0_byte_en  : std_logic_vector(3 downto 0);
+
+  signal half_add_sum : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal conv_weights : std_logic_vector(8 downto 0);
   type row_t is array(0 to 3) of signed(8 downto 0);
@@ -80,12 +79,21 @@ begin
   -----------------------------------------------------------------------------
   -- WORD to byte saturation conversion
   -----------------------------------------------------------------------------
-  cust0_out_data(7 downto 0) <= x"FF" when signed(data1_in) > 255 else
-                                x"00" when signed(data1_in) < 0 else
-                                data1_in(7 downto 0);
+  cust0_byte <= x"FF" when signed(data1_in) > 255 else
+                x"00" when signed(data1_in) < 0 else
+                data1_in(7 downto 0);
 
-  cust0_out_data(31 downto 8) <= data1_in(31 downto 8);
-
+  cust0_out_data <= cust0_byte &cust0_byte &cust0_byte &cust0_byte;
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if func = VCUSTOM0 and valid_in = '1' then
+        cust0_byte_en <= cust0_byte_en(2 downto 0) & cust0_byte_en(3);
+      elsif pause = '0' then
+        cust0_byte_en <= "0001";
+      end if;
+    end if;
+  end process;
 
 
   -----------------------------------------------------------------------------
@@ -94,7 +102,7 @@ begin
   weight_setup : process(clk)
   begin
     if rising_edge(clk) then
-      if func3 = VCUSTOM1_FUNC3 and valid_in = '1'then
+      if func = VCUSTOM1 and valid_in = '1'then
         conv_weights <= data1_in(8 downto 0);
       end if;
     end if;
@@ -184,25 +192,26 @@ begin
       valid_out        <= '0';
       write_enable_out <= '0';
       data_out         <= (others => '0');
-
-      if func3 = VCUSTOM0_FUNC3 then
+      byte_en_out      <= "1111";
+      if func = VCUSTOM0 then
         --word to byte conversion
         valid_out        <= valid_in;
         write_enable_out <= valid_in;
         data_out         <= cust0_out_data;
+        byte_en_out      <= cust0_byte_en;
       end if;
-      if func3 = VCUSTOM1_FUNC3 then
+      if func = VCUSTOM1 then
         --setup weights
         valid_out <= valid_in;
       --no writeback
       end if;
-      if func3 = VCUSTOM2_FUNC3 then
+      if func = VCUSTOM2 then
         --convolution instruction
         valid_out        <= conv_done;
         write_enable_out <= conv_we;
         data_out         <= conv_data_out;
       end if;
-      if func3 = VCUSTOM3_FUNC3 then
+      if func = VCUSTOM3 then
         valid_out        <= valid_in;
         write_enable_out <= valid_in;
         data_out         <= half_add_sum;

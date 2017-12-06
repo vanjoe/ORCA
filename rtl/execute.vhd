@@ -48,6 +48,7 @@ entity execute is
     subseq_valid       : in     std_logic;
     rs1_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs3_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     sign_extension     : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     stall_from_execute : buffer std_logic;
 
@@ -91,6 +92,7 @@ architecture behavioural of execute is
   alias rd is instruction (REGISTER_RD'range);
   alias rs1 is instruction(REGISTER_RS1'range);
   alias rs2 is instruction(REGISTER_RS2'range);
+  alias rs3 is instruction(REGISTER_RD'range);
   alias opcode is instruction(MAJOR_OP'range);
 
   signal stall_to_execute : std_logic;
@@ -120,6 +122,7 @@ architecture behavioural of execute is
 
   signal rs1_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs2_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs3_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal writeback_stall_from_lsu : std_logic;
   signal lsu_ready                : std_logic;
@@ -140,11 +143,13 @@ architecture behavioural of execute is
   type fwd_mux_t is (ALU_FWD, NO_FWD);
   signal rs1_mux : fwd_mux_t;
   signal rs2_mux : fwd_mux_t;
+  signal rs3_mux : fwd_mux_t;
 
   signal finished_instr : std_logic;
 
-  alias subseq_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(19 downto 15);
-  alias subseq_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(24 downto 20);
+  alias subseq_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(REGISTER_RS1'range);
+  alias subseq_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(REGISTER_RS2'range);
+  alias subseq_rs3 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(REGISTER_RD'range);
 
   signal use_after_produce_stall : std_logic;
 
@@ -164,13 +169,15 @@ begin
   -- propogate if the next instruction uses them.
   --
   -----------------------------------------------------------------------------
+
   rs1_data_fwd <= lve_alu_data1 when lve_alu_source_valid = '1' else
                   alu_data_out when rs1_mux = ALU_FWD else
                   rs1_data;
   rs2_data_fwd <= lve_alu_data2 when lve_alu_source_valid = '1' else
                   alu_data_out when rs2_mux = ALU_FWD else
                   rs2_data;
-
+  rs3_data_fwd <= alu_data_out when rs3_mux = ALU_FWD else
+                  rs3_data;
 
 
   -------------------------------------------------------------------------------
@@ -204,16 +211,19 @@ begin
                ld_data_enable or
                br_data_enable or
                (alu_data_out_valid and (not lve_was_executing)));
+
   wb_enable <= wb_valid when wb_sel /= R_ZERO else '0';
 
   stall_from_execute <= valid_input and (stall_to_execute or
                                          (not lsu_ready) or
                                          (not alu_ready and not lve_was_executing) or
-                                         (not lve_ready ) or
+                                         (not lve_ready) or
                                          (not syscall_ready));
 
   --No forward stall; system calls, loads, and branches aren't forwarded.
-  use_after_produce_stall <= sys_data_enable or load_in_progress or br_data_enable when wb_sel = rs1 or wb_sel = rs2 else '0';
+  use_after_produce_stall <= sys_data_enable or load_in_progress or br_data_enable when
+                             wb_sel = rs1 or wb_sel = rs2 or (wb_sel = rs3 and LVE_ENABLE = 1) else
+                             '0';
 
   process(clk)
   begin
@@ -222,9 +232,9 @@ begin
       if stall_to_execute = '0' then
         rs1_mux <= NO_FWD;
         rs2_mux <= NO_FWD;
+        rs3_mux <= NO_FWD;
         wb_sel  <= rd;
       end if;
-
       if valid_instr = '1' and subseq_valid = '1' then
         if opcode = LUI_OP or opcode = AUIPC_OP or opcode = ALU_OP or opcode = ALUI_OP then
           if rd /= R_ZERO then
@@ -233,6 +243,9 @@ begin
             end if;
             if rd = subseq_rs2 then
               rs2_mux <= ALU_FWD;
+            end if;
+            if rd = subseq_rs3 then
+              rs3_mux <= ALU_FWD;
             end if;
           end if;
         end if;
@@ -278,7 +291,7 @@ begin
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
       BTB_ENTRIES         => BTB_ENTRIES
       )
-    port map(
+    port map (
       clk                        => clk,
       reset                      => reset,
       valid                      => valid_instr,
@@ -299,10 +312,11 @@ begin
       );
 
   ls_unit : load_store_unit
-    generic map(
+    generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
-      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE)
-    port map(
+      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE
+      )
+    port map (
       clk                      => clk,
       reset                    => reset,
       valid                    => valid_instr,
@@ -378,9 +392,11 @@ begin
         reset          => reset,
         instruction    => instruction,
         valid_instr    => valid_instr,
-        rs1_data       => rs1_data,     --these don't need forwarding because
-        rs2_data       => rs2_data,     --they never follow an instruction with
-                                        --a writeback
+
+        rs1_data => rs1_data_fwd,
+        rs2_data => rs2_data_fwd,
+        rs3_data => rs3_data_fwd,
+
         slave_address  => sp_address,
         slave_read_en  => sp_read_en,
         slave_write_en => sp_write_en,

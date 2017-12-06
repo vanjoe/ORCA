@@ -112,7 +112,7 @@ architecture rtl of arithmetic_unit is
       REGISTER_SIZE : natural;
       SINGLE_CYCLE  : natural
       );
-    port(
+    port (
       clk                  : in  std_logic;
       shift_amt            : in  unsigned(log2(REGISTER_SIZE)-1 downto 0);
       shift_value          : in  signed(REGISTER_SIZE downto 0);
@@ -126,7 +126,7 @@ architecture rtl of arithmetic_unit is
     generic (
       REGISTER_SIZE : natural
       );
-    port(
+    port (
       clk          : in std_logic;
       div_enable   : in std_logic;
       unsigned_div : in std_logic;
@@ -597,7 +597,7 @@ entity shifter is
     REGISTER_SIZE : natural;
     SINGLE_CYCLE  : natural
     );
-  port(
+  port (
     clk                  : in  std_logic;
     shift_amt            : in  unsigned(log2(REGISTER_SIZE)-1 downto 0);
     shift_value          : in  signed(REGISTER_SIZE downto 0);
@@ -741,7 +741,7 @@ entity divider is
   generic (
     REGISTER_SIZE : natural
     );
-  port(
+  port (
     clk              : in  std_logic;
     div_enable       : in  std_logic;
     unsigned_div     : in  std_logic;

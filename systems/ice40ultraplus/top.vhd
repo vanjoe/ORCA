@@ -54,7 +54,7 @@ architecture rtl of vhdl_top is
   constant DATA_RAM_SIZE : natural := 2*1024;
 
   constant SEPERATE_MEMS : boolean := true;
-
+  constant BITBANG_SPI   : integer := 1;
 
 --  constant reset_btn: std_logic := '1';
 
@@ -265,9 +265,9 @@ architecture rtl of vhdl_top is
 
   signal cam_dat_internal : std_logic_vector(7 downto 0);
 
-  signal pio_in  : std_logic_vector(4+(1-USE_UART) downto 0);
-  signal pio_out : std_logic_vector(4+(1-USE_UART) downto 0);
-  signal pio_oe  : std_logic_vector(4+(1-USE_UART) downto 0);
+  signal pio_in  : std_logic_vector(15 downto 0) := (others => '0');
+  signal pio_out : std_logic_vector(15 downto 0) := (others => '0');
+  signal pio_oe  : std_logic_vector(15 downto 0) := (others => '0');
 begin
 
   pwm_counter : process (osc_clk) is
@@ -510,19 +510,19 @@ begin
 
     rv : component orca
       generic map (
-        REGISTER_SIZE         => REGISTER_SIZE,
-        RESET_VECTOR          => x"00000000",
-        WISHBONE_AUX          => 1,
-        MULTIPLY_ENABLE       => 1,
-        DIVIDE_ENABLE         => 0,
-        POWER_OPTIMIZED       => 0,
-        SHIFTER_MAX_CYCLES    => 32,
-        COUNTER_LENGTH        => 32,
-        PIPELINE_STAGES       => 4,
-        LVE_ENABLE            => 1,
-        ENABLE_EXCEPTIONS     => 0,
-        SCRATCHPAD_ADDR_BITS  => log2(SCRATCHPAD_SIZE),
-        FAMILY                => "LATTICE")
+        REGISTER_SIZE        => REGISTER_SIZE,
+        RESET_VECTOR         => x"00000000",
+        WISHBONE_AUX         => 1,
+        MULTIPLY_ENABLE      => 1,
+        DIVIDE_ENABLE        => 0,
+        POWER_OPTIMIZED      => 0,
+        SHIFTER_MAX_CYCLES   => 32,
+        COUNTER_LENGTH       => 32,
+        PIPELINE_STAGES      => 4,
+        LVE_ENABLE           => 1,
+        ENABLE_EXCEPTIONS    => 0,
+        SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
+        FAMILY               => "LATTICE")
       port map(
 
         clk            => clk,
@@ -755,52 +755,70 @@ begin
 
   instr_stall_i <= uart_stall or mem_instr_stall;
   instr_ack_i   <= not uart_stall and mem_instr_ack;
+  spi_dma : if BITBANG_SPI = 0 generate
 
-  --dma controller for reading blocks of flash
-  the_spi : wb_flash_dma
-    generic map(
-      MAX_LENGTH => 128*1024)
-    port map(
-      clk_i         => clk,
-      rst_i         => reset,
-      slave_ADR_I   => spi_adr_i(3 downto 0),
-      slave_DAT_O   => spi_dat_o,
-      slave_DAT_I   => spi_DAT_I,
-      slave_WE_I    => spi_WE_I,
-      slave_SEL_I   => spi_SEL_I,
-      slave_STB_I   => spi_STB_I,
-      slave_ACK_O   => spi_ACK_O,
-      slave_CYC_I   => spi_CYC_I,
-      slave_CTI_I   => spi_CTI_I,
-      slave_STALL_O => spi_STALL_O,
+    -- dma controller
+    --   for reading blocks of flash
+    the_spi : wb_flash_dma
+      generic map(
+        MAX_LENGTH => 128*1024)
+      port map(
+        clk_i         => clk,
+        rst_i         => reset,
+        slave_ADR_I   => spi_adr_i(3 downto 0),
+        slave_DAT_O   => spi_dat_o,
+        slave_DAT_I   => spi_DAT_I,
+        slave_WE_I    => spi_WE_I,
+        slave_SEL_I   => spi_SEL_I,
+        slave_STB_I   => spi_STB_I,
+        slave_ACK_O   => spi_ACK_O,
+        slave_CYC_I   => spi_CYC_I,
+        slave_CTI_I   => spi_CTI_I,
+        slave_STALL_O => spi_STALL_O,
 
-      master_ADR_O   => spi_sp_ADR_O,
-      master_DAT_I   => spi_sp_DAT_I,
-      master_DAT_O   => spi_sp_DAT_O,
-      master_WE_O    => spi_sp_WE_O,
-      master_SEL_O   => spi_sp_SEL_O,
-      master_STB_O   => spi_sp_STB_O,
-      master_ACK_I   => spi_sp_ACK_I,
-      master_CYC_O   => spi_sp_CYC_O,
-      master_CTI_O   => spi_sp_CTI_O,
-      master_STALL_I => spi_sp_STALL_I,
+        master_ADR_O   => spi_sp_ADR_O,
+        master_DAT_I   => spi_sp_DAT_I,
+        master_DAT_O   => spi_sp_DAT_O,
+        master_WE_O    => spi_sp_WE_O,
+        master_SEL_O   => spi_sp_SEL_O,
+        master_STB_O   => spi_sp_STB_O,
+        master_ACK_I   => spi_sp_ACK_I,
+        master_CYC_O   => spi_sp_CYC_O,
+        master_CTI_O   => spi_sp_CTI_O,
+        master_STALL_I => spi_sp_STALL_I,
 
-      spi_mosi => spi_mosi,
-      spi_miso => spi_miso,
-      spi_ss   => spi_ss,
-      spi_sclk => spi_sclk
-      );
+        spi_mosi => spi_mosi,
+        spi_miso => spi_miso,
+        spi_ss   => spi_ss,
+        spi_sclk => spi_sclk
+        );
+  end generate spi_dma;
+
+  no_spi_dma : if BITBANG_SPI = 1 generate
+    spi_mosi   <= pio_out(7);
+    pio_in(8)  <= spi_miso;
+    spi_sclk   <= pio_out(9);
+    spi_ss     <= pio_out(10);
+    pio_in(7)  <= pio_out(7);
+    pio_in(9)  <= pio_out(9);
+    pio_in(10) <= pio_out(10);
+
+    spi_sp_WE_O  <= '0';
+    spi_sp_STB_O <= '0';
+    spi_sp_CYC_O <= '0';
+
+  end generate no_spi_dma;
 
   the_sccb_pio : wb_pio
     generic map (
-      DATA_WIDTH => 5+(1-USE_UART)
+      DATA_WIDTH => pio_out'length
       )
     port map(
       clk_i => clk,
       rst_i => reset,
 
       adr_i   => sccb_pio_adr_i,
-      dat_i   => sccb_pio_dat_i(4+(1-USE_UART) downto 0),
+      dat_i   => sccb_pio_dat_i(pio_out'range),
       we_i    => sccb_pio_we_i,
       cyc_i   => sccb_pio_cyc_i,
       stb_i   => sccb_pio_stb_i,
@@ -810,7 +828,7 @@ begin
       lock_i  => sccb_pio_lock_i,
       ack_o   => sccb_pio_ack_o,
       stall_o => sccb_pio_stall_o,
-      data_o  => sccb_pio_dat_o(4+(1-USE_UART) downto 0),
+      data_o  => sccb_pio_dat_o(pio_out'range),
       err_o   => sccb_pio_err_o,
       rty_o   => sccb_pio_rty_o,
 
@@ -819,8 +837,9 @@ begin
       input     => pio_in
 
       );
-  sccb_sda  <= pio_out(0) when pio_oe(0) = '1' else 'Z';
-  pio_in(0) <= sccb_sda;
+  sccb_pio_dat_o(sccb_pio_dat_o'left downto pio_out'length) <= (others => '0');
+  sccb_sda                                                    <= pio_out(0) when pio_oe(0) = '1' else 'Z';
+  pio_in(0)                                                   <= sccb_sda;
 
   sccb_scl  <= pio_out(1) when pio_oe(1) = '1' else 'Z';
   pio_in(1) <= sccb_scl;

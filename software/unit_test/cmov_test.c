@@ -11,7 +11,7 @@ TEST_ATTR int test_2()
 	vbx_set_vl(vlen);
 	vbx_word_t* va=(vbx_word_t*)SCRATCHPAD_BASE;
 	vbx_word_t* vb=va+vlen;
-	vbx_word_t check[]={1,2,3,4,10,10,10,10,10,10};
+	static const vbx_word_t check[]={1,2,3,4,10,10,10,10,10,10};
 	vbx(SEW,VADD,va,1,vbx_ENUM);
 	vbx(SVW,VSLT,vb,4,va);
 	vbx(SVW,VCMV_NZ,va,10,vb);
@@ -33,8 +33,6 @@ TEST_ATTR int test_2()
 
 int main()
 {
-	the_lve.stride =1;
-
 	do_test(2);
 	return 0;
 

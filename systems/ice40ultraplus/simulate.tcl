@@ -1,5 +1,5 @@
 
-proc com {} {
+proc com { args } {
     set fileset [list \
                      ../../rtl/utils.vhd                \
                      ../../rtl/constants_pkg.vhd        \
@@ -16,7 +16,9 @@ proc com {} {
                      ../../rtl/sys_call.vhd             \
                      ../../rtl/lve_ci.vhd               \
                      ../../rtl/memory_interface.vhd     \
+                     ../../rtl/cache_mux.vhd            \
                      ../../rtl/lve_top.vhd              \
+							../../rtl/oimm_register.vhd        \
                      ../../rtl/4port_mem_ultraplus.vhd  \
                      hdl/top_util_pkg.vhd               \
                      hdl/top_component_pkg.vhd          \
@@ -65,8 +67,8 @@ proc com {} {
                      top_tb.vhd
                 ]
 
-    set icecube2_dir /opt/lattice/lscc/iCEcube2.2016.02/
-    #set icecube2_dir    /nfs/opt/lattice/iCEcube2/2016.02/
+    #set icecube2_dir /opt/lattice/lscc/iCEcube2.2016.02/
+    set icecube2_dir    /nfs/opt/lattice/iCEcube2/2016.02/
     lappend fileset $icecube2_dir/verilog/ABIPTBS8.v
     lappend fileset $icecube2_dir/verilog/ABIWTCZ4.v
     lappend fileset $icecube2_dir/verilog/sb_ice_ipenc_modelsim.v
@@ -78,14 +80,31 @@ proc com {} {
 
 
     vlib work
+	 set compiletime_file "work/compile_time"
+	 if { [file exists $compiletime_file  ] } {
+		  set fp [open $compiletime_file "r" ]
+		  set last_compile_time [read $fp ]
+	 } else {
+		  set last_compile_time 0
+	 }
+	 #if -f in args, recompile all
+	 if { [string first "-f" $args ] >= 0 } {
+		  set last_compile_time 0
+	 }
 
     foreach f $fileset {
-        if { [file extension $f ] == ".v" } {
-            vlog -work work -stats=none $f
-        } else {
-            vcom -work work -2002 -explicit $f
-        }
+		  if { [file mtime $f] > $last_compile_time } {
+				if { [file extension $f ] == ".v" } {
+					 vlog -work work -stats=none $f
+				} else {
+					 vcom -work work -2002 -explicit $f
+				}
+		  }
     }
+	 set fp [open $compiletime_file "w"]
+	 puts $fp [clock seconds]
+	 close $fp
+
 }
 
 proc wave_LVE { } {
@@ -111,7 +130,7 @@ proc wave_ALU { } {
 
 proc wave_RF { } {
     add wave -noupdate -divider "Register File (full)"
-    add wave -hex /top_tb/dut/sub_top/WITH_LVE/rv/core/D/register_file_1/*
+    add wave -hex /top_tb/dut/sub_top/WITH_LVE/rv/core/D/the_register_file/*
 }
 
 proc wave_Top { } {
@@ -129,7 +148,7 @@ proc recom { t {extra_waves false} } {
     add wave -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/clk
     add wave -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/reset
     add wave -noupdate -divider Decode
-    add wave -hex -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/D/register_file_1/registers(28)
+    add wave -hex -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/D/the_register_file/registers(28)
     add wave -noupdate -divider Execute
     add wave -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/X/valid_instr
     add wave -hex -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/X/pc_current

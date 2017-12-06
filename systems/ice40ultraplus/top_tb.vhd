@@ -90,6 +90,7 @@ component uart_rx_tb is
 end component;
 
 begin
+  spi_miso <= 'H';
   process
   begin
     ovm_pclk <= not ovm_pclk;

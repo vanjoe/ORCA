@@ -236,8 +236,8 @@ architecture rtl of ram_4port is
 
   signal pause_lve_internal : std_logic;
 
-  signal ren0_0 : std_logic;
-
+  signal ren0_0      : std_logic;
+  signal enum_value0 : std_logic_vector(MEM_WIDTH-1 downto 0);
   signal ack3_int    : std_logic;
   signal raddr0_d1   : std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
   signal raddr1_d1   : std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
@@ -339,13 +339,13 @@ begin  -- architecture rtl
       data_out0       <= data_out0_tmp;
       data_out1       <= data_out1_tmp;
 
-
+      enum_value0 <= enum_value;
 
       if scalar_enable = '1' then
         data_out0 <= scalar_value;
       end if;
       if enum_enable = '1' then
-        data_out1 <= enum_value;
+        data_out1 <= enum_value0;
       end if;
       data_out3 <= data_out0_tmp;
 
@@ -364,7 +364,7 @@ begin  -- architecture rtl
       MEM_DEPTH => MEM_DEPTH,
       MEM_WIDTH => MEM_WIDTH,
       FAMILY    => FAMILY)
-    port map(
+    port map (
       clk        => scratchpad_clk,
       byte_en_d1 => actual_byte_en_d1,
       wr_en_d1   => actual_wr_en_d1,

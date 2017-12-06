@@ -5,15 +5,17 @@ use IEEE.NUMERIC_STD.all;
 library work;
 use work.rv_components.all;
 use work.constants_pkg.all;
+use work.utils.all;
 entity decode is
-  generic(
+  generic (
     REGISTER_SIZE          : positive;
     SIGN_EXTENSION_SIZE    : positive;
+    LVE_ENABLE             : boolean;
     PIPELINE_STAGES        : natural range 1 to 2;
     WRITE_FIRST_SMALL_RAMS : boolean;
     FAMILY                 : string
     );
-  port(
+  port (
     clk   : in std_logic;
     reset : in std_logic;
 
@@ -35,6 +37,7 @@ entity decode is
     --output signals
     rs1_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs3_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     sign_extension : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     pc_curr_out    : out unsigned(REGISTER_SIZE-1 downto 0);
     pc_next_out    : out unsigned(REGISTER_SIZE-1 downto 0);
@@ -50,9 +53,14 @@ architecture rtl of decode is
 
   signal rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal rs3 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
   signal rs1_reg : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal outreg1 : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs2_reg : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal outreg2 : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs3_reg : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal outreg3 : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal wb_sel_signal    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal wb_data_signal   : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -65,17 +73,21 @@ begin
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
       REGISTER_NAME_SIZE     => REGISTER_NAME_SIZE,
+      READ_PORTS             => CONDITIONAL(LVE_ENABLE, 3, 2),
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS
       )
     port map(
-      clk       => clk,
-      rs1_sel   => rs1,
-      rs2_sel   => rs2,
-      wb_sel    => wb_sel_signal,
-      wb_data   => wb_data_signal,
-      wb_enable => wb_enable_signal,
-      rs1_data  => rs1_reg,
-      rs2_data  => rs2_reg
+      clk         => clk,
+      valid_input => to_decode_valid,
+      rs1_sel     => rs1,
+      rs2_sel     => rs2,
+      rs3_sel     => rs3,
+      wb_sel      => wb_sel_signal,
+      wb_data     => wb_data_signal,
+      wb_enable   => wb_enable_signal,
+      rs1_data    => rs1_reg,
+      rs2_data    => rs2_reg,
+      rs3_data    => rs3_reg
       );
 
   -- This is to handle Microsemi board's inability to initialize RAM to zero on startup.
@@ -93,6 +105,7 @@ begin
   two_cycle : if PIPELINE_STAGES = 2 generate
     signal rs1_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
     signal rs2_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    signal rs3_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
     signal outreg1 : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal outreg2 : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -104,9 +117,11 @@ begin
   begin
     rs1 <= to_decode_instruction(REGISTER_RS1'range) when stall = '0' else instr_latch(REGISTER_RS1'range);
     rs2 <= to_decode_instruction(REGISTER_RS2'range) when stall = '0' else instr_latch(REGISTER_RS2'range);
+    rs3 <= to_decode_instruction(REGISTER_RD'range)  when stall = '0' else instr_latch(REGISTER_RD'range);
 
     rs1_p <= instr_latch(REGISTER_RS1'range) when stall = '0' else instr_out_signal(REGISTER_RS1'range);
     rs2_p <= instr_latch(REGISTER_RS2'range) when stall = '0' else instr_out_signal(REGISTER_RS2'range);
+    rs3_p <= instr_latch(REGISTER_RD'range)  when stall = '0' else instr_out_signal(REGISTER_RD'range);
 
     decode_flushed <= not (to_decode_valid or valid_latch);
 
@@ -139,6 +154,11 @@ begin
         elsif stall = '0' then
           rs2_data <= rs2_reg;
         end if;
+        if wb_sel = rs3_p and wb_enable = '1' then
+          rs3_data <= wb_data;
+        elsif stall = '0' then
+          rs3_data <= rs3_reg;
+        end if;
 
         if reset = '1' or flush = '1' then
           valid_output <= '0';
@@ -148,12 +168,14 @@ begin
     end process decode_stage;
     subseq_instr <= instr_latch;
     subseq_valid <= valid_latch;
+
   end generate two_cycle;
 
 
   one_cycle : if PIPELINE_STAGES = 1 generate
-    rs1 <= to_decode_instruction(19 downto 15) when stall = '0' else instr_out_signal(19 downto 15);
-    rs2 <= to_decode_instruction(24 downto 20) when stall = '0' else instr_out_signal(24 downto 20);
+    rs1 <= to_decode_instruction(19 downto 15)      when stall = '0' else instr_out_signal(19 downto 15);
+    rs2 <= to_decode_instruction(24 downto 20)      when stall = '0' else instr_out_signal(24 downto 20);
+    rs3 <= to_decode_instruction(REGISTER_RD'range) when stall = '0' else instr_out_signal(REGISTER_RD'range);
 
     decode_flushed <= not to_decode_valid;
     decode_stage : process (clk) is
@@ -179,6 +201,7 @@ begin
     subseq_valid <= to_decode_valid;
     rs1_data     <= rs1_reg;
     rs2_data     <= rs2_reg;
+    rs3_data     <= rs3_reg;
   end generate one_cycle;
 
 end architecture;

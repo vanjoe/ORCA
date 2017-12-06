@@ -5,27 +5,30 @@ use ieee.numeric_std.all;
 use work.constants_pkg.all;
 
 entity register_file is
-  generic(
+  generic (
     REGISTER_SIZE          : positive;
     REGISTER_NAME_SIZE     : positive;
+    READ_PORTS             : positive range 1 to 3;
     WRITE_FIRST_SMALL_RAMS : boolean
     );
-  port(
-    clk       : in std_logic;
-    rs1_sel   : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    rs2_sel   : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    wb_sel    : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    wb_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_enable : in std_logic;
+  port (
+    clk         : in std_logic;
+    valid_input : in std_logic;
+    rs1_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    rs3_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    wb_data     : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    wb_enable   : in std_logic;
 
-    rs1_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data : out std_logic_vector(REGISTER_SIZE-1 downto 0)
+    rs1_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs3_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0)
     );
 end;
 
 architecture rtl of register_file is
   type register_vector is array(31 downto 0) of std_logic_vector(REGISTER_SIZE-1 downto 0);
-
   signal registers : register_vector := (others => (others => '0'));
 
 --These aliases are useful during simulation of software.
@@ -65,15 +68,19 @@ begin
   bypass_gen : if not WRITE_FIRST_SMALL_RAMS generate
     signal out1               : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal out2               : std_logic_vector(REGISTER_SIZE-1 downto 0);
+    signal out3               : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal read_during_write1 : std_logic;
     signal read_during_write2 : std_logic;
+    signal read_during_write3 : std_logic;
     signal wb_data_latched    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   begin
+
     process (clk) is
     begin
       if rising_edge(clk) then
         out1 <= registers(to_integer(unsigned(rs1_sel)));
         out2 <= registers(to_integer(unsigned(rs2_sel)));
+        out3 <= registers(to_integer(unsigned(rs3_sel)));
         if wb_enable = '1' then
           registers(to_integer(unsigned(wb_sel))) <= wb_data;
         end if;
@@ -84,9 +91,12 @@ begin
     --read during write logic
     rs1_data <= wb_data_latched when read_during_write1 = '1' else out1;
     rs2_data <= wb_data_latched when read_during_write2 = '1' else out2;
+    rs3_data <= (others => '-') when READ_PORTS < 3 else
+                wb_data_latched when read_during_write3 = '1' else out3;
     process(clk) is
     begin
       if rising_edge(clk) then
+        read_during_write3 <= '0';
         read_during_write2 <= '0';
         read_during_write1 <= '0';
         if rs1_sel = wb_sel and wb_enable = '1' then
@@ -94,6 +104,9 @@ begin
         end if;
         if rs2_sel = wb_sel and wb_enable = '1' then
           read_during_write2 <= '1';
+        end if;
+        if rs3_sel = wb_sel and wb_enable = '1' then
+          read_during_write3 <= '1';
         end if;
         wb_data_latched <= wb_data;
       end if;
@@ -110,6 +123,7 @@ begin
         end if;
         rs1_data <= registers_variable(to_integer(unsigned(rs1_sel)));
         rs2_data <= registers_variable(to_integer(unsigned(rs2_sel)));
+        rs3_data <= registers_variable(to_integer(unsigned(rs3_sel)));
       end if;  --rising edge
     end process;
     process (clk) is

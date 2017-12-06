@@ -27,7 +27,7 @@ entity orca_core is
     WRITE_FIRST_SMALL_RAMS : boolean;
     FAMILY                 : string
     );
-  port(
+  port (
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
     reset          : in std_logic;
@@ -93,6 +93,7 @@ architecture rtl of orca_core is
   signal wb_en                              : std_logic;
   signal rs1_data                           : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs2_data                           : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs3_data                           : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sign_extension                     : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
   signal decode_to_execute_program_counter  : unsigned(REGISTER_SIZE-1 downto 0);
   signal decode_to_execute_predicted_pc     : unsigned(REGISTER_SIZE-1 downto 0);
@@ -140,14 +141,15 @@ begin  -- architecture rtl
 
   to_decode_valid <= ifetch_to_decode_valid and (not flush_pipeline);
   D : decode
-    generic map(
+    generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE    => SIGN_EXTENSION_SIZE,
+      LVE_ENABLE             => LVE_ENABLE = 1,
       PIPELINE_STAGES        => PIPELINE_STAGES-3,
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS,
       FAMILY                 => FAMILY
       )
-    port map(
+    port map (
       clk   => clk,
       reset => reset,
 
@@ -169,6 +171,7 @@ begin  -- architecture rtl
       --output signals
       rs1_data       => rs1_data,
       rs2_data       => rs2_data,
+      rs3_data       => rs3_data,
       sign_extension => sign_extension,
       pc_curr_out    => decode_to_execute_program_counter,
       pc_next_out    => decode_to_execute_predicted_pc,
@@ -216,6 +219,7 @@ begin  -- architecture rtl
       subseq_valid       => decode_to_execute_next_valid,
       rs1_data           => rs1_data,
       rs2_data           => rs2_data,
+      rs3_data           => rs3_data,
       sign_extension     => sign_extension,
       stall_from_execute => execute_stalled,
 

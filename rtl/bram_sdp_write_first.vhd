@@ -6,12 +6,12 @@ library work;
 use work.utils.all;
 
 entity bram_sdp_write_first is
-  generic(
+  generic (
     DEPTH                 : positive;
     WIDTH                 : positive;
     WRITE_FIRST_SUPPORTED : boolean
     );
-  port(
+  port (
     clk           : in  std_logic;
     read_address  : in  std_logic_vector(log2(DEPTH)-1 downto 0);
     read_data     : out std_logic_vector(WIDTH-1 downto 0);

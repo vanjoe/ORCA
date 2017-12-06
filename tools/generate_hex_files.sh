@@ -2,7 +2,8 @@
 SCRIPTDIR=$(readlink -f $(dirname $0))
 
 RISCV_TEST_DIR=$SCRIPTDIR/../software/riscv-tests
-
+set -e
+set -o pipefail
 (
 	 git submodule update --init --recursive ${RISCV_TEST_DIR}
 	 cd ${RISCV_TEST_DIR}
@@ -11,7 +12,7 @@ RISCV_TEST_DIR=$SCRIPTDIR/../software/riscv-tests
 	 sed -i 's/ ecall/fence.i;ecall/' env/p/riscv_test.h
 	 ./configure --with-xlen=32 2>&1
 	 make clean &>/dev/null
-	 make -k isa -j10 >/dev/null 2>&1
+	 make -k isa -j10 >/dev/null 2>&1 || true
 )
 
 TEST_DIR=${RISCV_TEST_DIR}/isa

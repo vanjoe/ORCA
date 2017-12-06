@@ -49,14 +49,12 @@ void vbx_convolve(vbx_ubyte_t* input_map,vbx_half_t* output_map,int square_size,
 	//dest and srcb do not matter;
 	vbx_set_vl(1);
 	vbx(SVW,VCUSTOM1,0,weights,0);
-	vbx_set_vl(square_size+2);
-
+	vbx_set_vl(1,square_size+2);
 	//stride is square size + 2 bytes for zero padding, + 2 bytes for word alignment
 	int stride=square_size+2 +2;
-
-	the_lve.stride=stride;
+	vbx_set_2D(stride*2, stride,stride );
 	for(col=0;col<square_size;col+=2){
-		vbx(VVHBU,VCUSTOM2,(vbx_uhalf_t*)output_map+col,input_map+col,input_map+col+4);
+		vbx(VVW,VCUSTOM2,(vbx_word_t*)(output_map+col),(vbx_word_t*)(input_map+col),(vbx_word_t*)(input_map+col+4));
 	}
 
 }
@@ -101,8 +99,8 @@ int test_convolve()
 
 	//clear outputs
 	vbx_set_vl(PAD_UP(INPUT_MAP_SIZE+2,4)*(INPUT_MAP_SIZE)/(sizeof(vbx_word_t)/sizeof(vbx_half_t)));
-	vbx(SEW,VAND,(vbx_word_t*)v_output_map,0,vbx_ENUM);
-	vbx(SEW,VAND,(vbx_word_t*)s_output_map,0,vbx_ENUM);
+	vbx(SEW,VMOV,(vbx_word_t*)v_output_map,0,vbx_ENUM);
+	vbx(SEW,VMOV,(vbx_word_t*)s_output_map,0,vbx_ENUM);
 
 
 	//scalar output matrix
@@ -143,10 +141,9 @@ int test_convolve()
 	for(i=0;i<(sizeof(output_map_check)/sizeof(output_map_check[0]));i++){
 		v_output_map[i]=0;
 	}
-	flash_dma_trans(flash_dma_addr,(void*) v_dma_dest,flash_dma_size);
+	//flash_dma_trans(flash_dma_addr,(void*) v_dma_dest,flash_dma_size);
 	vbx_convolve(v_input_map,v_output_map,INPUT_MAP_SIZE,sample_weight);
-	while(!flash_dma_done());
-
+	//while(!flash_dma_done());
 
 	int errors=0;
 	if(PRINT_MAPS){
@@ -183,10 +180,9 @@ int test_word_to_byte()
 		v_input[i] = input_gen(i) ;
 	}
 
-	the_lve.stride=1;
-	vbx_set_vl(test_length);
-
-	vbx(VVBWU,VCUSTOM0,v_output,v_input,0);
+	vbx_set_vl(1,test_length);
+	vbx_set_2D(1,4 ,0);
+	vbx(VEW,VCUSTOM0,(vbx_word_t*)v_output,(vbx_word_t*)v_input,0);
 
 
 	for(i=0;i<test_length;i++){
@@ -208,7 +204,7 @@ int test_word_to_byte()
 int test_halfword_add()
 {
 	printf("test_halfword_add()\r\n");
-	int test_length=2048;
+	int test_length=10;
 	vbx_half_t* v_inputa=SCRATCHPAD_BASE;
 	vbx_half_t* v_inputb=(v_inputa+test_length);;
 	vbx_half_t* v_output=(v_inputb+test_length);
@@ -221,7 +217,6 @@ int test_halfword_add()
 	}
 	//treat the vector as words
 	vbx_set_vl(test_length/2);
-	the_lve.stride=1;
 	vbx(VVW,VCUSTOM3,(vbx_word_t*)v_output,(vbx_word_t*)v_inputa,(vbx_word_t*)v_inputb);
 
 	for(i=0;i<test_length;i++){
@@ -236,9 +231,9 @@ int test_halfword_add()
 
 int test_halftoword()
 {
-	printf("test_halftoword()\r\n");
+	//	printf("test_halftoword()\r\n");
 	init_lve();
-	int test_length=64;
+	int test_length=10;
 	vbx_half_t* v_input=SCRATCHPAD_BASE;
 	vbx_word_t* v_output=(vbx_word_t*)(v_input+test_length);
 	int i,errors=0;
@@ -246,10 +241,10 @@ int test_halftoword()
 		v_input[i]=i;
 	}
 
-	the_lve.stride=2;
-	vbx_set_vl(test_length/2);
-	vbx(SVWH,VAND,v_output,0xFFFF,v_input);
-	vbx(SVWH,VMULH,v_output+1,(1<<16),v_input);
+	vbx_set_vl(1,test_length/2);
+	vbx_set_2D(8,0,4);
+	vbx(SVW,VAND, v_output,0xFFFF,   (vbx_word_t*)v_input);
+	vbx(SVW,VMULHI,v_output+1,(1<<16),(vbx_word_t*)v_input);
 
 	for(i=0;i<test_length;i++){
 		if(v_output[i]!=i){
@@ -264,13 +259,12 @@ int test_halftoword()
 
 int main()
 {
-	printf("\r\n\r\nStarting conv_ci_test");
+	//	printf("Starting\n");
 	int errors=0;
 	errors += test_convolve();
 	errors += test_word_to_byte();
 	errors += test_halfword_add();
 	errors += test_halftoword();
-
 
 
 	printf("DONE -- errors = %d %s\r\n\r\n",errors,errors?"FAILED :(":"PASSED :)");
@@ -287,7 +281,6 @@ int main()
 
 void vbx_w2b_convert(vbx_word_t* input_map,vbx_byte_t* output_map,int num_elements)
 {
-	the_lve.stride=1;
 	vbx_set_vl(num_elements);
-	vbx(VVBW,VCUSTOM0,output_map,input_map,0);
+	vbx(VEW,VCUSTOM0,(vbx_word_t*)output_map,input_map,0);
 }

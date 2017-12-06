@@ -242,8 +242,8 @@ begin  -- architecture rtl
                                         -----------------------------------------------------------------------------
             -- Other System Instructions (mret)
             -----------------------------------------------------------------------------
-            if instruction(31 downto 30) = "00" and instruction(27 downto 20) = "00000010" then
-              -- We only have one privilege level (M), so treat all [USHM]RET instructions 
+            if instruction(31 downto 30) = "00" and instruction(27 downto 20) = "00000010" and ENABLE_EXCEPTIONS then
+              -- We only have one privilege level (M), so treat all [USHM]RET instructions
               -- as the same.
               mstatus(CSR_MSTATUS_MIE)  <= mstatus(CSR_MSTATUS_MPIE);
               mstatus(CSR_MSTATUS_MPIE) <= '0';
@@ -251,7 +251,7 @@ begin  -- architecture rtl
             end if;
           end if;
         elsif instruction(MAJOR_OP'range) = FENCE_OP then
-          -- A FENCE instruction is a NOP. 
+          -- A FENCE instruction is a NOP.
           -- A FENCE.I instruction is a pipeline flush.
           if instruction(12) = '1' then
             was_fence_i <= '1';
@@ -267,7 +267,7 @@ begin  -- architecture rtl
         interrupt_pc_correction_valid <= '1';
 
         -- Latch in mepc the cycle before interrupt_pc_correction_valid goes high.
-        -- When interrupt_pc_correction_valid goes high, the next_pc of the instruction fetch will 
+        -- When interrupt_pc_correction_valid goes high, the next_pc of the instruction fetch will
         -- be corrected to the interrupt reset vector.
         mepc                      <= std_logic_vector(program_counter);
         mstatus(CSR_MSTATUS_MIE)  <= '0';

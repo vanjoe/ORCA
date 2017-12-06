@@ -6,7 +6,7 @@
 #include "image_diff.h"
 #include "rgb2grayscale.h"
 
-#define USE_CAM_IMG 1
+#define USE_CAM_IMG 0
 #define PRINT_B64_IMG 0
 #define STRETCH_TO_1S 0
 
@@ -171,11 +171,8 @@ void cifar_lve() {
 
 	printf("CES demo\r\nLattice\r\ncategories:\r\n");
 
-		//wait while initializing
-	while(FLASH_DMA_BASE[FLASH_DMA_STATUS] & 0x80000000){
-		printf("waiting for Flash initialization\r\n");
-	}
-
+	//wait while initializing
+	flash_dma_init();
 	init_lve();
 	//enable output on LED
 	SCCB_PIO_BASE[PIO_ENABLE_REGISTER] |= (1<<PIO_LED_BIT);

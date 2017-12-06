@@ -2,120 +2,200 @@
 from collections import namedtuple
 import sys
 import itertools
-instruction = namedtuple('instruction',['name','bit30','bit28','bit25','bit14_12'])
+instruction = namedtuple('instruction',['name','bit40','bit30','bit25','bit14_12'])
 
 arith_instr=[instruction("vadd"     ,0,0,0,0),
-             instruction("vsub"     ,1,0,0,0),
+             instruction("vsub"     ,0,1,0,0),
              instruction("vsll"     ,0,0,0,1),
              instruction("vslt"     ,0,0,0,2),
              instruction("vsltu"    ,0,0,0,3),
              instruction("vxor"     ,0,0,0,4),
              instruction("vsrl"     ,0,0,0,5),
-             instruction("vsra"     ,1,0,0,5),
+             instruction("vsra"     ,0,1,0,5),
              instruction("vor"      ,0,0,0,6),
              instruction("vand"     ,0,0,0,7),
              instruction("vmul"     ,0,0,1,0),
              instruction("vmulh"    ,0,0,1,1),
-             instruction("vmulhsu"  ,0,0,1,2),
+             instruction("vmulhus"  ,0,0,1,2), #oposite order of riscv
              instruction("vmulhu"   ,0,0,1,3),
              instruction("vdiv"     ,0,0,1,4),
              instruction("vdivu"    ,0,0,1,5),
              instruction("vrem"     ,0,0,1,6),
              instruction("vremu"    ,0,0,1,7),
-             #mxp instructions
-             instruction('vaddc'    ,0,1,0,0),
-             instruction('vsubb'    ,0,1,0,1),
-             instruction('vabsdiff' ,0,1,0,2),
-             instruction('vmulfxp'  ,0,1,0,3),
-             instruction('vrotl'    ,0,1,0,4),
-             instruction('vrotr'    ,0,1,0,5),
-             instruction('vmov'     ,0,1,0,6),
-             instruction('vcmv_lez' ,0,1,0,7),
-             instruction('vcmv_gtz' ,0,1,1,0),
-             instruction('vcmv_ltz' ,0,1,1,1),
-             instruction('vcmv_gez' ,0,1,1,2),
-             instruction('vcmv_z'   ,0,1,1,3),
-             instruction('vcmv_nz'  ,0,1,1,4),
-             instruction('vcustom0' ,0,1,1,5),
-             instruction('vcustom1' ,0,1,1,6),
-             instruction('vcustom2' ,0,1,1,7),
-             instruction('vcustom3' ,1,1,0,0),
-             instruction('vcustom4' ,1,1,0,1),
-             instruction('vcustom5' ,1,1,0,2),
-             instruction('vcustom6' ,1,1,0,3),
-             instruction('vcustom7' ,1,1,0,4),
-             instruction('vcustom8' ,1,1,0,5),
-             instruction('vcustom9' ,1,1,0,6),
-             instruction('vcustom10',1,1,0,7),
-             instruction('vcustom11',1,1,1,0),
-             instruction('vcustom12',1,1,1,1),
-             instruction('vcustom13',1,1,1,2),
-             instruction('vcustom14',1,1,1,3),
-             instruction('vcustom15',1,1,1,4),
+             #non-riscv lve instructions
+             instruction('vcmv_nz'  ,0,1,1,0),
+             instruction('vcmv_z'   ,0,1,1,1),
+             instruction('vmov'     ,0,1,1,2),
+             instruction('vcustom0' ,0,1,1,3),
+             instruction('vcustom1' ,0,1,1,4),
+             instruction('vcustom2' ,0,1,1,5),
+             instruction('vcustom3' ,0,1,1,6),
+             instruction('vcustom4' ,0,1,0,1),
+             instruction('vsgt'     ,0,1,0,2),
+             instruction('vsgtu'    ,0,1,0,3),
+             instruction('vcustom5' ,0,1,0,4),
+             instruction('vcustom6' ,0,1,0,6),
+             instruction('vcustom7' ,0,1,0,7),
+
+
+             #mxp instructions (Not used for now)
+             #instruction('vcmv_lez' ,1,0,0,0),
+             #instruction('vcmv_gtz' ,1,0,0,1),
+             #instruction('vcmv_ltz' ,1,0,0,2),
+             #instruction('vcmv_gez' ,1,0,0,3),
+             #instruction('vsubb'    ,1,0,0,4),
+             #instruction('vaddc'    ,1,0,0,5),
+             #instruction('vabsdiff' ,1,0,0,6),
+             #instruction('vmulfxp'  ,1,0,0,7),
+             #
+             #instruction('vsetup_msk_lez' ,1,0,1,0),
+             #instruction('vsetup_msk_gtz' ,1,0,1,1),
+             #instruction('vsetup_msk_ltz' ,1,0,1,2),
+             #instruction('vsetup_msk_gez' ,1,0,1,3),
+             #instruction('vsetup_msk_nz'  ,1,0,1,4),
+             #instruction('vsetup_msk_z'   ,1,0,1,5),
+             #
+             #instruction('vcustom8'  ,1,1,0,0),
+             #instruction('vcustom9'  ,1,1,0,1),
+             #instruction('vcustom10' ,1,1,0,2),
+             #instruction('vcustom11' ,1,1,0,3),
+             #instruction('vcustom12' ,1,1,0,4),
+             #instruction('vcustom13' ,1,1,0,5),
+             #instruction('vcustom14' ,1,1,0,6),
+             #instruction('vcustom15' ,1,1,0,7),
 
 ]
 type_bits={'vv':0,
            'sv':1,
            've':2,
            'se':3}
-dim_bits={"1d":0,
-          "2d":1,
-          "3d":2}
-size_bits={"b":1,
-           "h":2,
-           "w":3,}
+size_bits={"b":0,
+           "h":1,
+           "w":2,}
 sign_bits={'u':0,
            's':1}
-def make_line(name,bits):
-    if "--riscv-opc" in sys.argv:
-        return '{{"{name}", "Xlve", "s,t", MATCH_{uname}, MASK_{uname}, match_opcode, 0 }},'.format(name=name.strip(),
-                                                                                                    uname=name.strip().replace('.','_').upper())
-    else:
-        return name+bits
+acc_bits={".acc":1,
+          "":0}
+
+lve_extension_template = '{{"{name}", "X{ext}", "d,s,t", MATCH_{uname}, MASK_{uname}, match_opcode, 0 }},\n'
+
+
+
+def generate_arithmetic_instr( define_file,lve_extension_file):
+    def make_mask(instruction_tpl,
+                  srca_size,
+                  srcb_size,
+                  dest_size,
+                  srca_sign,
+                  srcb_sign,
+                  dest_sign):
+        if (srca_sign == 's' and
+            srcb_sign == 's' and
+            dest_sign == 's' and
+            srca_size == dest_size and
+            srca_size == srcb_size and
+            instruction_tpl.bit40 == 0):
+            #32bit instruction
+            return 0xFE00707F
+        else:
+            return 0xFFFFFFFFFE00707F
+
+
+    def make_match( instruction_tpl,
+                    acc,
+                    type_spec,
+                    srca_size,
+                    srcb_size,
+                    dest_size,
+                    srca_sign,
+                    srcb_sign,
+                    dest_sign):
+        dest_size_bits= (size_bits[dest_size]&1) | ((size_bits[dest_size]&2) << 1)
+        instruction = 0
+        #32bit instruction
+        instruction |= 0x2B
+        instruction |= (instruction_tpl.bit14_12 << 12)
+        instruction |= (instruction_tpl.bit25 << 25)
+        instruction |= (type_bits[type_spec] << 26)
+        instruction |= (acc_bits[acc] << 28)
+        instruction |= (dest_size_bits << 29)
+        instruction |= (instruction_tpl.bit30 << 30)
+        instruction |= (instruction_tpl.bit40 << 40)
+        if not (srca_sign == 's' and
+                srcb_sign == 's' and
+                dest_sign == 's' and
+                srca_size == dest_size and
+                srca_size == srcb_size and
+                instruction_tpl.bit40 == 0):
+            # 64bit instruction
+            instruction|= 0x3F
+            instruction|= size_bits[srca_size] <<32
+            instruction|= size_bits[srcb_size] <<34
+            instruction|= sign_bits[dest_sign] <<36
+            instruction|= sign_bits[srca_sign] <<37
+            instruction|= sign_bits[srcb_sign] <<38
+
+        return instruction
+
+
+    for ai in arith_instr:
+        for acc in acc_bits:
+            for type_spec in type_bits:
+                for sd,sa,sb in itertools.product(sign_bits.keys(),repeat=3):
+                    for dsz,asz,bsz in itertools.product(size_bits.keys(),repeat=3):
+                        name="{name}.{type}{size}{acc}".format(name=ai.name,
+                                                               type=type_spec,
+                                                               size=dsz+asz+bsz+sd+sa+sb,
+                                                               acc=acc)
+                        uname=name.replace('.','_').upper()
+                        mask=make_mask(ai,asz,bsz,dsz,sa,sb,sd)
+                        match=make_match(instruction_tpl=ai,
+                                         acc=acc,
+                                         type_spec=type_spec,
+                                         srca_size=asz,
+                                         srcb_size=bsz,
+                                         dest_size=dsz,
+                                         srca_sign=sa,
+                                         srcb_sign=sb,
+                                         dest_sign=sd)
+                        #perhaps we will want to seperate these in the future
+                        ext = "lve" if mask < 0xFFFFFFFF else "lve"
+
+                        define_file.write("#define MATCH_{} 0x{:X}\n".format(uname,match))
+                        define_file.write("#define MASK_{} 0x{:X}\n".format(uname,mask))
+
+                        lve_extension_file.write(lve_extension_template.format(name=name,
+                                                                               ext=ext,
+                                                                               uname=uname))
 
 
 
 
+def generate_special_instr( define_file,lve_extension_file):
+    instruction = namedtuple('instruction',['name','bit28_26','registers'])
+    special_inst = [instruction('vbx_set_vl',0,'"s,t,d"'),
+                    instruction('vbx_set_2d',1,'"d,s,t"'),
+                    instruction('vbx_set_3d',2,'"d,s,t"'),
+                    instruction('vbx_get',3,'"d,s,t"'),
+                    instruction('vbx_dma_tohost',4,'"d,s,t"'),
+                    instruction('vbx_dma_tovec',5,'"d,s,t"'),
+                    instruction('vbx_dma_2dstart',6,'"d,s,t"')]
+    special_inst_template='{{"{name}", "X{ext}", {regs}, MATCH_{uname}, MASK_{uname}, match_opcode, 0 }},\n'
+
+    for si in special_inst:
+        mask=0xFE00707F
+        match=0x4200702B | (si.bit28_26 <<26)
+        name = si.name
+        uname = name.upper()
+        ext = "lve"
+        define_file.write("#define MATCH_{} 0x{:X}\n".format(uname,match))
+        define_file.write("#define MASK_{} 0x{:X}\n".format(uname,mask))
+        lve_extension_file.write(special_inst_template.format(name=name,
+                                                              regs=si.registers,
+                                                              ext=ext,
+                                                              uname=uname))
 
 if __name__ == '__main__':
-    for ai in arith_instr:
-        for acc in ("    ",".acc"):
-            for srcb_type in ('v','e'):
-                for srca_type in ('v','s'):
-                    for dim in ("1d","2d","3d"):
-                        for sd,sa,sb in itertools.product(("s","u"),repeat=3):
-                            name="{name}.{srca_type}{srcb_type}.{dim}.{sign}{acc}".format(name=ai.name,
-                                                                                          srca_type=srca_type,
-                                                                                          srcb_type=srcb_type,
-                                                                                          dim=dim,
-                                                                                          sign=sd+sa+sb,
-                                                                                          acc=acc)
-                            bits=" ".join((" rs1 rs2 31={}".format(sign_bits[sb]),
-                                           "30={} 29={}".format(ai.bit30,sign_bits[sa]),
-                                           "28={} 27=0".format(ai.bit28),
-                                           "26={}".format('1' if acc == ".acc" else '0'),
-                                           "25={}".format(ai.bit25),
-                                           "14..12={}".format(ai.bit14_12),
-                                           "11..10={}".format(type_bits[srca_type+srcb_type]),
-                                           "9..8={}".format(dim_bits[dim]),
-                                           "7={} 6..2=0x0A 1..0=3".format(sign_bits[sd])))
-
-                            print(make_line(name,bits))
-
-
-    #vsub1 and vsla1 share opcodes with vadd1 and vsll1 respectively
-
-    for dsz in size_bits :
-        for asz in size_bits:
-            for bsz in size_bits:
-                for sync in ('.sync','    '):
-
-                    name="vtype.{}{}{}{}".format(dsz,asz,bsz,sync)
-                    bits=" ".join((" rs1 rs2 31..25=4",
-                                   "14..13={}".format(size_bits[dsz]),
-                                   "12..11={}".format(size_bits[asz]),
-                                   "10..9={}".format(size_bits[bsz]),
-                                   "8={}".format(1 if sync==".sync" else 0),
-                                   "7=0 6..2=0x0A 1..0=3"))
-
-                    print(make_line(name , bits))
+    with open("riscv-lve.h","w") as define_file, open("lve-extensions.h","w") as lve_extension_file:
+        generate_arithmetic_instr(define_file,lve_extension_file)
+        generate_special_instr(define_file,lve_extension_file)

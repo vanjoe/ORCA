@@ -708,7 +708,7 @@ package rv_components is
       WRITE_FIRST_SMALL_RAMS : boolean;
       FAMILY                 : string
       );
-    port(
+    port (
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
@@ -745,14 +745,15 @@ package rv_components is
   end component orca_core;
 
   component decode is
-    generic(
+    generic (
       REGISTER_SIZE          : positive;
       SIGN_EXTENSION_SIZE    : positive;
+      LVE_ENABLE             : boolean;
       PIPELINE_STAGES        : natural range 1 to 2;
       WRITE_FIRST_SMALL_RAMS : boolean;
       FAMILY                 : string
       );
-    port(
+    port (
       clk   : in std_logic;
       reset : in std_logic;
 
@@ -774,6 +775,7 @@ package rv_components is
       --output signals
       rs1_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs3_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       sign_extension : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       pc_curr_out    : out unsigned(REGISTER_SIZE-1 downto 0);
       pc_next_out    : out unsigned(REGISTER_SIZE-1 downto 0);
@@ -821,6 +823,7 @@ package rv_components is
       subseq_valid       : in     std_logic;
       rs1_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs3_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       sign_extension     : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       stall_from_execute : buffer std_logic;
 
@@ -990,21 +993,25 @@ package rv_components is
   end component load_store_unit;
 
   component register_file
-    generic(
+    generic (
       REGISTER_SIZE          : positive;
       REGISTER_NAME_SIZE     : positive;
+      READ_PORTS             : positive range 1 to 3;
       WRITE_FIRST_SMALL_RAMS : boolean
       );
-    port(
-      clk       : in std_logic;
-      rs1_sel   : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      rs2_sel   : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      wb_sel    : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      wb_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      wb_enable : in std_logic;
+    port (
+      clk         : in std_logic;
+      valid_input : in std_logic;
+      rs1_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      rs3_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      wb_data     : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      wb_enable   : in std_logic;
 
-      rs1_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data : out std_logic_vector(REGISTER_SIZE-1 downto 0)
+      rs1_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs2_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs3_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0)
       );
   end component register_file;
 
@@ -1045,6 +1052,7 @@ package rv_components is
       );
   end component system_calls;
 
+  type VCUSTOM_ENUM is (VCUSTOM0, VCUSTOM1, VCUSTOM2, VCUSTOM3, VCUSTOM4, VCUSTOM5, VCUSTOM6, VCUSTOM7);
   component lve_ci is
     generic (
       REGISTER_SIZE : positive := 32
@@ -1055,7 +1063,7 @@ package rv_components is
 
       pause : in std_logic;
 
-      func3 : in std_logic_vector(2 downto 0);
+      func : in VCUSTOM_ENUM;
 
       valid_in : in std_logic;
       data1_in : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -1065,6 +1073,7 @@ package rv_components is
       align2_in : in std_logic_vector(1 downto 0);
 
       valid_out        : out std_logic;
+      byte_en_out      : out std_logic_vector(3 downto 0);
       write_enable_out : out std_logic;
       data_out         : out std_logic_vector(REGISTER_SIZE-1 downto 0)
       );
@@ -1086,6 +1095,7 @@ package rv_components is
       valid_instr    : in std_logic;
       rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs3_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
       slave_read_en  : in  std_logic;
@@ -1521,12 +1531,12 @@ package rv_components is
   end component;
 
   component bram_sdp_write_first is
-    generic(
+    generic (
       DEPTH                 : positive;
       WIDTH                 : positive;
       WRITE_FIRST_SUPPORTED : boolean
       );
-    port(
+    port (
       clk           : in  std_logic;
       read_address  : in  std_logic_vector(log2(DEPTH)-1 downto 0);
       read_data     : out std_logic_vector(WIDTH-1 downto 0);
