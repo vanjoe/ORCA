@@ -484,7 +484,7 @@
    kind="vectorblox_orca"
    version="1.0"
    enabled="1">
-  <parameter name="AUTO_GLOBAL_INTERRUPTS_INTERRUPTS_USED" value="0" />
+  <parameter name="AUTO_GLOBAL_INTERRUPTS_INTERRUPTS_USED" value="1" />
   <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DATA_REQUEST_REGISTER" value="0" />
   <parameter name="DATA_RETURN_REGISTER" value="0" />
@@ -536,7 +536,7 @@
    start="vectorblox_orca_0.data"
    end="interrupt_generator_0.s0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00020000" />
+  <parameter name="baseAddress" value="0x01000000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -591,6 +591,13 @@
    version="15.1"
    start="clock_gen_0.clock"
    end="interrupt_generator_0.clock" />
+ <connection
+   kind="interrupt"
+   version="15.1"
+   start="vectorblox_orca_0.global_interrupts"
+   end="interrupt_generator_0.interrupt_out">
+  <parameter name="irqNumber" value="0" />
+ </connection>
  <connection
    kind="reset"
    version="15.1"
