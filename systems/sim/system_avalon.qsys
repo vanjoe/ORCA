@@ -537,7 +537,7 @@
    start="vectorblox_orca_0.data"
    end="interrupt_generator_0.s0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00020000" />
+  <parameter name="baseAddress" value="0x01000000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection

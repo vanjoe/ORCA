@@ -188,7 +188,6 @@ TEST_ATTR int test_10()
   vbx_word_t* a=((vbx_word_t*)SCRATCHPAD_BASE);
   //force load word right before vbx instruction
   vbx_word_t* volatile d=a+vlen;
-  int acc_check=0;
   for( int i=0;i<vlen;i++){
 	a[i]= 3+i;
   }

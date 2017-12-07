@@ -8,24 +8,27 @@ if [ -z "$BUILD_DIR" ]
 then
 	 BUILD_DIR=./build
 fi
+export SCRIPT_FILE=$(readlink -f $0)
 export SCRIPT_DIR=$(readlink -f $(dirname $0))
 
 mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 
-export BINUTILS_VERSION=2.28
-export GCC_VERSION=7.1.0
-
-#set -e
-#set -o pipefail
+export BINUTILS_VERSION=2.29
+export GCC_VERSION=7.2.0
+export NEWLIB_VERSION=2.5.0.20170922
 
 [ ! -f binutils-$BINUTILS_VERSION.tar.gz ] && wget http://ftpmirror.gnu.org/binutils/binutils-$BINUTILS_VERSION.tar.gz
 [ ! -f gcc-$GCC_VERSION.tar.gz ] && wget http://ftpmirror.gnu.org/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.gz
+[ ! -f newlib-$NEWLIB_VERSION.tar.gz ] && wget ftp://sourceware.org/pub/newlib/newlib-$NEWLIB_VERSION.tar.gz
 (
-	 rm -rf binutils-$BINUTILS_VERSION gcc-$GCC_VERSION
+	 printf "Extracting Archives ... "
+	 rm -rf binutils-$BINUTILS_VERSION gcc-$GCC_VERSION newlib-$NEWLIB_VERSION
 	 tar -xf binutils-$BINUTILS_VERSION.tar.gz &
 	 tar -xf gcc-$GCC_VERSION.tar.gz &
+	 tar -xf newlib-$NEWLIB_VERSION.tar.gz &
 	 wait
+	 printf "Done\n"
 )
 
 export PATH=$RISCV_INSTALL/bin:$PATH
@@ -45,7 +48,7 @@ then
 	 mv lve-extensions.h $(dirname $RISCV_OPC_C)
 	 sed -i 's/#include "lve-extensions.h"//' $RISCV_OPC_C
 	 sed -i  '/\ Terminate the list.  /i#include "lve-extensions.h"' $RISCV_OPC_C
-	 #allow extensions to be passed int -march
+	 #allow extensions to be passed int -march (this requirement should be removed in the future)
 	 sed -i "s/if (\*p)/if (\*p \&\& *p != 'x')/" gcc-$GCC_VERSION/gcc/common/config/riscv/riscv-common.c
 fi
 #bash;exit 0
@@ -66,15 +69,16 @@ fi
 	 mkdir -p build-gcc
 	 cd build-gcc
 	 ../gcc-$GCC_VERSION/configure --prefix=$RISCV_INSTALL --target=riscv32-unknown-elf --with-abi=ilp32 --with-arch=rv32im --enable-languages=c,c++ --disable-multilib
-	 make -j$(( `nproc` * 2))  all-gcc &&	 make install-gcc
-	 make -j$(( `nproc` * 2))  all-target-libgcc &&	 make install-target-libgcc
+	 make -j$(( `nproc` * 2))  all-gcc && make install-gcc
+	 make -j$(( `nproc` * 2))  all-target-libgcc && make install-target-libgcc
 )
 
-#newlib (still uses riscv git repository not yet upstreamed
+#newlib
 (
-	 git clone -b riscv-newlib-2.5.0 https://github.com/riscv/riscv-newlib.git
 	 mkdir build-newlib
 	 cd build-newlib
-	 ../riscv-newlib/configure --target=riscv32-unknown-elf --prefix=$RISCV_INSTALL
+	 ../newlib-$NEWLIB_VERSION/configure --target=riscv32-unknown-elf --prefix=$RISCV_INSTALL
 	 make && make install
 )
+#copy this script to the installation directory
+cp $SCRIPT_FILE $RISCV_INSTALL/build-script.sh

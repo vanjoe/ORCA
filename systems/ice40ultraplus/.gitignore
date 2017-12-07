@@ -6,3 +6,4 @@ program_flash.xcf
 /dmem.mem
 /ice40ultraplus_Implmnt/
 /synlog.tcl
+/test/
