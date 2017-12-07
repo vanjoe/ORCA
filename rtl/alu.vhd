@@ -30,7 +30,6 @@ entity arithmetic_unit is
     data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     data_out_valid : out std_logic;
-    less_than      : out std_logic;
     alu_ready      : out std_logic;
 
     lve_data1        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -328,10 +327,8 @@ begin
         end if;
       end if;
     end process;
-
   end generate SH_GEN0;
   SH_GEN1 : if not SHIFTER_USE_MULTIPLIER generate
-
     sh : shifter
       generic map (
         REGiSTER_SIZE => REGISTER_SIZE,
@@ -345,12 +342,8 @@ begin
         shifted_result_valid => shifted_result_valid,
         sh_enable            => sh_enable
         );
-
   end generate SH_GEN1;
 
-
-  less_than        <= sub(sub'left);
---combine slt
   slt_result       <= to_unsigned(1, REGISTER_SIZE) when sub(sub'left) = '1' else to_unsigned(0, REGISTER_SIZE);
   slt_result_valid <= sub_valid;
 

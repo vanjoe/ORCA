@@ -1,9 +1,7 @@
-
 #define _stringify(a) #a
 #define stringify(a) _stringify(a)
 #define csrr(name,dst) asm volatile ("csrr %0 ," stringify(name) :"=r"(dst) )
 #define csrw(name,src) asm volatile ("csrw " stringify(name) ",%0" ::"r"(src) )
-#define pipeline_flush asm volatile ("nop;nop;nop;nop;nop;nop;nop;nop;" )
 
 #define MEIMASK 0x7C0
 #define MEIPEND 0x7C0
@@ -11,6 +9,18 @@
 #define MSTATUS_MIE 0x8
 
 volatile static int*  INT_GEN_REGISTER = (volatile int*)(0x01000000);
+
+static inline unsigned get_time() {
+  int tmp;
+  asm volatile("csrr %0, time" : "=r"(tmp));
+  return tmp;
+}
+static inline void delay_cycles(int cycles) {
+  unsigned start = get_time();
+  while(get_time() - start < cycles){
+  }
+}
+
 
 static inline void schedule_interrupt(int cycles)
 {
@@ -50,7 +60,7 @@ TEST_ATTR int test_2()
 	csrw(MEIMASK,1);
 	//send interrupt
 	schedule_interrupt(0);
-	pipeline_flush;
+	delay_cycles(32);
 
 	//disable interrupts
 	csrw(mstatus,0);
@@ -68,7 +78,7 @@ TEST_ATTR int test_3()
 	csrw(MEIMASK,1);
 	//send interrupt
 	schedule_interrupt(0);
-	pipeline_flush;
+	delay_cycles(32);
 	//disable interrupts
 	csrw(mstatus,0);
 	schedule_interrupt(-1);
@@ -87,7 +97,7 @@ TEST_ATTR int test_4()
 	csrw(MEIMASK,0);
 	//send interrupt
 	schedule_interrupt(0);
-	pipeline_flush;
+	delay_cycles(32);
 	//disable interrupts
 	csrw(mstatus,0);
 	schedule_interrupt(-1);
@@ -105,7 +115,7 @@ TEST_ATTR int test_5()
 	csrw(MEIMASK,0);
 	//send interrupt
 	schedule_interrupt(0);
-	pipeline_flush;
+	delay_cycles(32);
 	//disable interrupts
 	csrw(mstatus,0);
 	schedule_interrupt(-1);

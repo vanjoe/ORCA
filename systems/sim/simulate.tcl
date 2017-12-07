@@ -13,4 +13,4 @@ proc rerun { t } {
 				run $t
 		  }
 radix -hexadecimal
-config wave -signalnamewidth 2
+config wave -signalnamewidth 1

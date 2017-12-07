@@ -21,7 +21,6 @@ entity branch_unit is
     predicted_pc               : in  unsigned(REGISTER_SIZE-1 downto 0);
     instruction                : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     sign_extension             : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-    less_than                  : in  std_logic;
     data_out                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     data_enable                : out std_logic;
     to_pc_correction_data      : out unsigned(REGISTER_SIZE-1 downto 0);

@@ -109,7 +109,7 @@ begin
   --Addresses are always aligned
   oimm_address <= address_unaligned(REGISTER_SIZE-1 downto 2) & "00";
 
-  --Stall if sending a request and slave is not ready or if awaiting loaddata
+  --Stall if sending a request and slave is not ready or if awaiting readdata
   --and it hasn't arrived yet
   writeback_stall_from_lsu <= load_in_progress and (not oimm_readdatavalid);
   lsu_ready                <= ((not read_instr) and (not write_instr)) or (not oimm_waitrequest);
