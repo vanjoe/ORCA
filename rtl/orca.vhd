@@ -373,7 +373,7 @@ architecture rtl of orca is
   signal sp_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sp_readdata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal sp_ack       : std_logic;
-begin  -- architecture rtl
+begin
   core : orca_core
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,

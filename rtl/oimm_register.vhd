@@ -42,7 +42,7 @@ end entity oimm_register;
 architecture rtl of oimm_register is
   signal slave_oimm_waitrequest_signal   : std_logic;
   signal master_oimm_requestvalid_signal : std_logic;
-begin  -- architecture rtl
+begin
   slave_oimm_waitrequest   <= slave_oimm_waitrequest_signal;
   master_oimm_requestvalid <= master_oimm_requestvalid_signal;
   -----------------------------------------------------------------------------

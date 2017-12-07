@@ -72,6 +72,8 @@ architecture rtl of orca_core is
   signal execute_flushed : std_logic;
   signal pipeline_empty  : std_logic;
 
+  signal program_counter : unsigned(REGISTER_SIZE-1 downto 0);
+
   signal execute_to_ifetch_pc_correction_data        : unsigned(REGISTER_SIZE-1 downto 0);
   signal execute_to_ifetch_pc_correction_source_pc   : unsigned(REGISTER_SIZE-1 downto 0);
   signal execute_to_ifetch_pc_correction_valid       : std_logic;
@@ -81,29 +83,27 @@ architecture rtl of orca_core is
   signal ifetch_to_decode_instruction     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
   signal ifetch_to_decode_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
   signal ifetch_to_decode_predicted_pc    : unsigned(REGISTER_SIZE-1 downto 0);
-  signal ifetch_to_decode_valid           : std_logic;
+  signal from_ifetch_valid                : std_logic;
   signal decode_to_ifetch_ready           : std_logic;
 
-  signal program_counter : unsigned(REGISTER_SIZE-1 downto 0);
-
   signal to_decode_valid                    : std_logic;
-  signal execute_stalled                    : std_logic;
-  signal wb_sel                             : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal wb_data                            : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal wb_en                              : std_logic;
-  signal rs1_data                           : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal rs2_data                           : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal rs3_data                           : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sign_extension                     : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
+  signal decode_to_execute_rs1_data         : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal decode_to_execute_rs2_data         : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal decode_to_execute_rs3_data         : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal decode_to_execute_sign_extension   : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
   signal decode_to_execute_program_counter  : unsigned(REGISTER_SIZE-1 downto 0);
   signal decode_to_execute_predicted_pc     : unsigned(REGISTER_SIZE-1 downto 0);
   signal decode_to_execute_instruction      : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
   signal decode_to_execute_next_instruction : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
   signal decode_to_execute_next_valid       : std_logic;
-  signal decode_to_execute_valid            : std_logic;
+  signal from_decode_valid                  : std_logic;
+  signal execute_to_decode_ready            : std_logic;
 
-  signal to_execute_valid : std_logic;
-begin  -- architecture rtl
+  signal to_execute_valid     : std_logic;
+  signal execute_to_rf_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal execute_to_rf_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal execute_to_rf_valid  : std_logic;
+begin
   I : instruction_fetch
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
@@ -128,7 +128,7 @@ begin  -- architecture rtl
       from_ifetch_instruction     => ifetch_to_decode_instruction,
       from_ifetch_program_counter => ifetch_to_decode_program_counter,
       from_ifetch_predicted_pc    => ifetch_to_decode_predicted_pc,
-      from_ifetch_valid           => ifetch_to_decode_valid,
+      from_ifetch_valid           => from_ifetch_valid,
       to_ifetch_ready             => decode_to_ifetch_ready,
 
       oimm_address       => ifetch_oimm_address,
@@ -139,7 +139,7 @@ begin  -- architecture rtl
       oimm_waitrequest   => ifetch_oimm_waitrequest
       );
 
-  to_decode_valid <= ifetch_to_decode_valid and (not flush_pipeline);
+  to_decode_valid <= from_ifetch_valid and (not flush_pipeline);
   D : decode
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
@@ -154,7 +154,6 @@ begin  -- architecture rtl
       reset => reset,
 
       decode_flushed => decode_flushed,
-      stall          => execute_stalled,
       flush          => flush_pipeline,
 
       to_decode_program_counter => ifetch_to_decode_program_counter,
@@ -164,24 +163,25 @@ begin  -- architecture rtl
       from_decode_ready         => decode_to_ifetch_ready,
 
       --writeback signals
-      wb_sel    => wb_sel,
-      wb_data   => wb_data,
-      wb_enable => wb_en,
+      to_rf_select => execute_to_rf_select,
+      to_rf_data   => execute_to_rf_data,
+      to_rf_valid  => execute_to_rf_valid,
 
       --output signals
-      rs1_data       => rs1_data,
-      rs2_data       => rs2_data,
-      rs3_data       => rs3_data,
-      sign_extension => sign_extension,
-      pc_curr_out    => decode_to_execute_program_counter,
-      pc_next_out    => decode_to_execute_predicted_pc,
-      instr_out      => decode_to_execute_instruction,
-      subseq_instr   => decode_to_execute_next_instruction,
-      subseq_valid   => decode_to_execute_next_valid,
-      valid_output   => decode_to_execute_valid
+      from_decode_rs1_data         => decode_to_execute_rs1_data,
+      from_decode_rs2_data         => decode_to_execute_rs2_data,
+      from_decode_rs3_data         => decode_to_execute_rs3_data,
+      from_decode_sign_extension   => decode_to_execute_sign_extension,
+      from_decode_program_counter  => decode_to_execute_program_counter,
+      from_decode_predicted_pc     => decode_to_execute_predicted_pc,
+      from_decode_instruction      => decode_to_execute_instruction,
+      from_decode_next_instruction => decode_to_execute_next_instruction,
+      from_decode_next_valid       => decode_to_execute_next_valid,
+      from_decode_valid            => from_decode_valid,
+      to_decode_ready              => execute_to_decode_ready
       );
 
-  to_execute_valid <= decode_to_execute_valid and (not flush_pipeline);
+  to_execute_valid <= from_decode_valid and (not flush_pipeline);
   X : execute
     generic map (
       REGISTER_SIZE         => REGISTER_SIZE,
@@ -211,17 +211,17 @@ begin  -- architecture rtl
       program_counter => program_counter,
 
       --From previous stage
-      valid_input        => to_execute_valid,
-      current_pc         => decode_to_execute_program_counter,
-      predicted_pc       => decode_to_execute_predicted_pc,
-      instruction        => decode_to_execute_instruction,
-      subseq_instr       => decode_to_execute_next_instruction,
-      subseq_valid       => decode_to_execute_next_valid,
-      rs1_data           => rs1_data,
-      rs2_data           => rs2_data,
-      rs3_data           => rs3_data,
-      sign_extension     => sign_extension,
-      stall_from_execute => execute_stalled,
+      to_execute_valid            => to_execute_valid,
+      to_execute_program_counter  => decode_to_execute_program_counter,
+      to_execute_predicted_pc     => decode_to_execute_predicted_pc,
+      to_execute_instruction      => decode_to_execute_instruction,
+      to_execute_next_instruction => decode_to_execute_next_instruction,
+      to_execute_next_valid       => decode_to_execute_next_valid,
+      to_execute_rs1_data         => decode_to_execute_rs1_data,
+      to_execute_rs2_data         => decode_to_execute_rs2_data,
+      to_execute_rs3_data         => decode_to_execute_rs3_data,
+      to_execute_sign_extension   => decode_to_execute_sign_extension,
+      from_execute_ready          => execute_to_decode_ready,
 
       --To PC correction
       to_pc_correction_data        => execute_to_ifetch_pc_correction_data,
@@ -231,9 +231,9 @@ begin  -- architecture rtl
       from_pc_correction_ready     => ifetch_to_execute_pc_correction_ready,
 
       --To register file
-      wb_sel    => wb_sel,
-      wb_data   => wb_data,
-      wb_enable => wb_en,
+      to_rf_select => execute_to_rf_select,
+      to_rf_data   => execute_to_rf_data,
+      to_rf_valid  => execute_to_rf_valid,
 
       --Data memory-mapped master
       lsu_oimm_address       => lsu_oimm_address,

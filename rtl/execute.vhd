@@ -40,17 +40,17 @@ entity execute is
     program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
 
     --From previous stage
-    valid_input        : in     std_logic;
-    current_pc         : in     unsigned(REGISTER_SIZE-1 downto 0);
-    predicted_pc       : in     unsigned(REGISTER_SIZE-1 downto 0);
-    instruction        : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    subseq_instr       : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    subseq_valid       : in     std_logic;
-    rs1_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs3_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sign_extension     : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-    stall_from_execute : buffer std_logic;
+    to_execute_valid            : in     std_logic;
+    to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
+    to_execute_predicted_pc     : in     unsigned(REGISTER_SIZE-1 downto 0);
+    to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    to_execute_next_valid       : in     std_logic;
+    to_execute_rs1_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_execute_rs2_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_execute_rs3_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_execute_sign_extension   : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+    from_execute_ready          : buffer std_logic;
 
     --To PC correction
     to_pc_correction_data        : out    unsigned(REGISTER_SIZE-1 downto 0);
@@ -60,9 +60,9 @@ entity execute is
     from_pc_correction_ready     : in     std_logic;
 
     --To register file
-    wb_sel    : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    wb_data   : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_enable : buffer std_logic;
+    to_rf_select : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    to_rf_data   : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_rf_valid  : buffer std_logic;
 
     --Data Orca-internal memory-mapped master
     lsu_oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -89,11 +89,11 @@ entity execute is
 end entity execute;
 
 architecture behavioural of execute is
-  alias rd is instruction (REGISTER_RD'range);
-  alias rs1 is instruction(REGISTER_RS1'range);
-  alias rs2 is instruction(REGISTER_RS2'range);
-  alias rs3 is instruction(REGISTER_RD'range);
-  alias opcode is instruction(MAJOR_OP'range);
+  alias rd is to_execute_instruction (REGISTER_RD'range);
+  alias rs1 is to_execute_instruction(REGISTER_RS1'range);
+  alias rs2 is to_execute_instruction(REGISTER_RS2'range);
+  alias rs3 is to_execute_instruction(REGISTER_RD'range);
+  alias opcode is to_execute_instruction(MAJOR_OP'range);
 
   signal stall_to_execute : std_logic;
   signal syscall_ready    : std_logic;
@@ -110,7 +110,7 @@ architecture behavioural of execute is
   signal ld_data_enable     : std_logic;
   signal sys_data_enable    : std_logic;
   signal less_than          : std_logic;
-  signal wb_mux             : std_logic_vector(1 downto 0);
+  signal to_rf_mux          : std_logic_vector(1 downto 0);
 
   signal alu_ready : std_logic;
 
@@ -120,9 +120,9 @@ architecture behavioural of execute is
   signal syscall_to_pc_correction_valid : std_logic;
   signal syscall_to_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal rs1_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal rs2_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal rs3_data_fwd : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs1_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs2_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs3_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal writeback_stall_from_lsu : std_logic;
   signal lsu_ready                : std_logic;
@@ -136,7 +136,6 @@ architecture behavioural of execute is
   signal lve_alu_source_valid : std_logic;
 
   signal valid_instr : std_logic;
-  signal wb_valid    : std_logic;
 
   constant R_ZERO : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := (others => '0');
 
@@ -145,11 +144,9 @@ architecture behavioural of execute is
   signal rs2_mux : fwd_mux_t;
   signal rs3_mux : fwd_mux_t;
 
-  signal finished_instr : std_logic;
-
-  alias subseq_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(REGISTER_RS1'range);
-  alias subseq_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(REGISTER_RS2'range);
-  alias subseq_rs3 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is subseq_instr(REGISTER_RD'range);
+  alias next_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_next_instruction(REGISTER_RS1'range);
+  alias next_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_next_instruction(REGISTER_RS2'range);
+  alias next_rs3 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_next_instruction(REGISTER_RD'range);
 
   signal use_after_produce_stall : std_logic;
 
@@ -157,7 +154,7 @@ architecture behavioural of execute is
 begin
   --These stalls happen during the writeback cycle
   stall_to_execute <= use_after_produce_stall or writeback_stall_from_lsu;
-  valid_instr      <= valid_input and (not stall_to_execute);
+  valid_instr      <= to_execute_valid and (not stall_to_execute);
 
   -----------------------------------------------------------------------------
   -- REGISTER FORWADING
@@ -170,14 +167,14 @@ begin
   --
   -----------------------------------------------------------------------------
 
-  rs1_data_fwd <= lve_alu_data1 when lve_alu_source_valid = '1' else
-                  alu_data_out when rs1_mux = ALU_FWD else
-                  rs1_data;
-  rs2_data_fwd <= lve_alu_data2 when lve_alu_source_valid = '1' else
-                  alu_data_out when rs2_mux = ALU_FWD else
-                  rs2_data;
-  rs3_data_fwd <= alu_data_out when rs3_mux = ALU_FWD else
-                  rs3_data;
+  rs1_data <= lve_alu_data1 when lve_alu_source_valid = '1' else
+              alu_data_out when rs1_mux = ALU_FWD else
+              to_execute_rs1_data;
+  rs2_data <= lve_alu_data2 when lve_alu_source_valid = '1' else
+              alu_data_out when rs2_mux = ALU_FWD else
+              to_execute_rs2_data;
+  rs3_data <= alu_data_out when rs3_mux = ALU_FWD else
+              to_execute_rs3_data;
 
 
   -------------------------------------------------------------------------------
@@ -195,34 +192,34 @@ begin
     end if;
   end process;
 
-  wb_mux <= "00" when sys_data_enable = '1' else
-            "01" when load_in_progress = '1' else
-            "10" when br_data_enable = '1' else
-            "11";                       --when alu_data_out_valid = '1'
+  to_rf_mux <= "00" when sys_data_enable = '1' else
+               "01" when load_in_progress = '1' else
+               "10" when br_data_enable = '1' else
+               "11";
 
-  with wb_mux select
-    wb_data <=
+  with to_rf_mux select
+    to_rf_data <=
     sys_data_out when "00",
     ld_data_out  when "01",
     br_data_out  when "10",
     alu_data_out when others;
 
-  wb_valid <= (sys_data_enable or
-               ld_data_enable or
-               br_data_enable or
-               (alu_data_out_valid and (not lve_was_executing)));
+  to_rf_valid <= (sys_data_enable or
+                  ld_data_enable or
+                  br_data_enable or
+                  (alu_data_out_valid and (not lve_was_executing))) when
+                 to_rf_select /= R_ZERO else
+                 '0';
 
-  wb_enable <= wb_valid when wb_sel /= R_ZERO else '0';
-
-  stall_from_execute <= valid_input and (stall_to_execute or
-                                         (not lsu_ready) or
-                                         (not alu_ready and not lve_was_executing) or
-                                         (not lve_ready) or
-                                         (not syscall_ready));
+  from_execute_ready <= (not to_execute_valid) or ((not stall_to_execute) and
+                                                   lsu_ready and
+                                                   (alu_ready or lve_was_executing) and
+                                                   lve_ready and
+                                                   syscall_ready);
 
   --No forward stall; system calls, loads, and branches aren't forwarded.
   use_after_produce_stall <= sys_data_enable or load_in_progress or br_data_enable when
-                             wb_sel = rs1 or wb_sel = rs2 or (wb_sel = rs3 and LVE_ENABLE = 1) else
+                             to_rf_select = rs1 or to_rf_select = rs2 or (to_rf_select = rs3 and LVE_ENABLE = 1) else
                              '0';
 
   process(clk)
@@ -230,21 +227,21 @@ begin
     if rising_edge(clk) then
       lve_was_executing <= lve_executing;
       if stall_to_execute = '0' then
-        rs1_mux <= NO_FWD;
-        rs2_mux <= NO_FWD;
-        rs3_mux <= NO_FWD;
-        wb_sel  <= rd;
+        rs1_mux      <= NO_FWD;
+        rs2_mux      <= NO_FWD;
+        rs3_mux      <= NO_FWD;
+        to_rf_select <= rd;
       end if;
-      if valid_instr = '1' and subseq_valid = '1' then
+      if valid_instr = '1' and to_execute_next_valid = '1' then
         if opcode = LUI_OP or opcode = AUIPC_OP or opcode = ALU_OP or opcode = ALUI_OP then
           if rd /= R_ZERO then
-            if rd = subseq_rs1 then
+            if rd = next_rs1 then
               rs1_mux <= ALU_FWD;
             end if;
-            if rd = subseq_rs2 then
+            if rd = next_rs2 then
               rs2_mux <= ALU_FWD;
             end if;
-            if rd = subseq_rs3 then
+            if rd = next_rs3 then
               rs3_mux <= ALU_FWD;
             end if;
           end if;
@@ -268,12 +265,12 @@ begin
       clk                => clk,
       valid_instr        => valid_instr,
       simd_op_size       => simd_op_size,
-      stall_from_execute => stall_from_execute,
-      rs1_data           => rs1_data_fwd,
-      rs2_data           => rs2_data_fwd,
-      instruction        => instruction,
-      sign_extension     => sign_extension,
-      current_pc         => current_pc,
+      from_execute_ready => from_execute_ready,
+      rs1_data           => rs1_data,
+      rs2_data           => rs2_data,
+      instruction        => to_execute_instruction,
+      sign_extension     => to_execute_sign_extension,
+      current_pc         => to_execute_program_counter,
       data_out           => alu_data_out,
       data_out_valid     => alu_data_out_valid,
       less_than          => less_than,
@@ -296,13 +293,13 @@ begin
       reset                      => reset,
       valid                      => valid_instr,
       stall                      => stall_to_execute,
-      rs1_data                   => rs1_data_fwd,
-      rs2_data                   => rs2_data_fwd,
-      current_pc                 => current_pc,
-      predicted_pc               => predicted_pc,
-      instr                      => instruction,
+      rs1_data                   => rs1_data,
+      rs2_data                   => rs2_data,
+      current_pc                 => to_execute_program_counter,
+      predicted_pc               => to_execute_predicted_pc,
+      instruction                => to_execute_instruction,
       less_than                  => less_than,
-      sign_extension             => sign_extension,
+      sign_extension             => to_execute_sign_extension,
       data_out                   => br_data_out,
       data_enable                => br_data_enable,
       to_pc_correction_data      => branch_to_pc_correction_data,
@@ -320,10 +317,10 @@ begin
       clk                      => clk,
       reset                    => reset,
       valid                    => valid_instr,
-      rs1_data                 => rs1_data_fwd,
-      rs2_data                 => rs2_data_fwd,
-      instruction              => instruction,
-      sign_extension           => sign_extension,
+      rs1_data                 => rs1_data,
+      rs2_data                 => rs2_data,
+      instruction              => to_execute_instruction,
+      sign_extension           => to_execute_sign_extension,
       writeback_stall_from_lsu => writeback_stall_from_lsu,
       lsu_ready                => lsu_ready,
       data_out                 => ld_data_out,
@@ -340,7 +337,7 @@ begin
       oimm_waitrequest   => lsu_oimm_waitrequest
       );
 
-  execute_flushed <= (not valid_input) and (not writeback_stall_from_lsu);
+  execute_flushed <= (not to_execute_valid) and (not writeback_stall_from_lsu);
 
   syscall : system_calls
     generic map (
@@ -359,12 +356,12 @@ begin
 
       syscall_ready => syscall_ready,
 
-      rs1_data    => rs1_data_fwd,
-      instruction => instruction,
+      rs1_data    => rs1_data,
+      instruction => to_execute_instruction,
       data_out    => sys_data_out,
       data_enable => sys_data_enable,
 
-      current_pc               => current_pc,
+      current_pc               => to_execute_program_counter,
       to_pc_correction_data    => syscall_to_pc_correction_data,
       to_pc_correction_valid   => syscall_to_pc_correction_valid,
       from_pc_correction_ready => from_pc_correction_ready,
@@ -390,12 +387,12 @@ begin
         clk            => clk,
         scratchpad_clk => scratchpad_clk,
         reset          => reset,
-        instruction    => instruction,
+        instruction    => to_execute_instruction,
         valid_instr    => valid_instr,
 
-        rs1_data => rs1_data_fwd,
-        rs2_data => rs2_data_fwd,
-        rs3_data => rs3_data_fwd,
+        rs1_data => rs1_data,
+        rs2_data => rs2_data,
+        rs3_data => rs3_data,
 
         slave_address  => sp_address,
         slave_read_en  => sp_read_en,
@@ -455,10 +452,10 @@ begin
   begin
     if rising_edge(clk) then
 
-      if wb_enable = '1' and DEBUG_WRITEBACK then
+      if to_rf_valid = '1' and DEBUG_WRITEBACK then
         write(my_line, string'("WRITEBACK: PC = "));
         hwrite(my_line, std_logic_vector(last_valid_pc));
-        shadow_registers(to_integer(unsigned(wb_sel))) := wb_data;
+        shadow_registers(to_integer(unsigned(to_rf_select))) := to_rf_data;
         write(my_line, string'(" REGISTERS = {"));
         for i in shadow_registers'range loop
           hwrite(my_line, shadow_registers(i));
@@ -473,14 +470,14 @@ begin
 
 
       if valid_instr = '1' then
-        write(my_line, string'("executing pc = "));       -- formatting
-        hwrite(my_line, (std_logic_vector(current_pc)));  -- format type std_logic_vector as hex
-        write(my_line, string'(" instr =  "));            -- formatting
-        hwrite(my_line, (instruction));  -- format type std_logic_vector as hex
-        if stall_from_execute = '1' then
-          write(my_line, string'(" stalling"));           -- formatting
+        write(my_line, string'("executing pc = "));  -- formatting
+        hwrite(my_line, (std_logic_vector(to_execute_program_counter)));  -- format type std_logic_vector as hex
+        write(my_line, string'(" instr =  "));      -- formatting
+        hwrite(my_line, (to_execute_instruction));  -- format type std_logic_vector as hex
+        if from_execute_ready = '0' then
+          write(my_line, string'(" stalling"));     -- formatting
         else
-          last_valid_pc := current_pc;
+          last_valid_pc := to_execute_program_counter;
         end if;
         writeline(output, my_line);     -- write to "output"
       else

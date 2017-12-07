@@ -184,8 +184,8 @@ begin
   write_dirty_valid(0)   <= write_tag_valid;
 
   process (clk) is
-  begin  -- process
-    if rising_edge(clk) then            -- rising clock edge
+  begin
+    if rising_edge(clk) then
       if read_oimm_readdatavalid = '1' or read_oimm_readabort = '1' then
         write_on_hit <= '0';
       end if;
@@ -271,8 +271,8 @@ begin
   single_internal_word_gen : if INTERNAL_WORDS_PER_EXTERNAL_WORD = 1 generate
     cacheint_oimm_readdata <= read_oimm_readdata;
     process (clk) is
-    begin  -- process
-      if rising_edge(clk) then          -- rising clock edge
+    begin
+      if rising_edge(clk) then
         if cacheint_oimm_waitrequest = '0' then
           c_write_data       <= cacheint_oimm_writedata;
           c_write_byteenable <= cacheint_oimm_byteenable;
@@ -293,8 +293,8 @@ begin
       read_oimm_readdata_word(to_integer(unsigned(read_lastaddress(log2(EXTERNAL_WIDTH/8)-1 downto
                                                                    log2(INTERNAL_WIDTH/8)))));
     process (clk) is
-    begin  -- process
-      if rising_edge(clk) then          -- rising clock edge
+    begin
+      if rising_edge(clk) then
         if cacheint_oimm_waitrequest = '0' then
           last_writedata     <= cacheint_oimm_writedata;
           c_write_byteenable <= (others => '0');

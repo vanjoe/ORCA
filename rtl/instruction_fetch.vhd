@@ -82,7 +82,7 @@ architecture rtl of instruction_fetch is
   signal instruction_fifo_usedw     : unsigned(log2(MAX_IFETCHES_IN_FLIGHT+1)-1 downto 0);
 
   signal ifetch_valid : std_logic;
-begin  -- architecture rtl
+begin
   --Stage is flushed when there are no instruction being fetched, no
   --instructions waiting to dispatch, and no PC correction waiting
   ifetch_flushed <= (not waiting_for_not_waitrequest) and pc_fifo_empty and (not to_pc_correction_valid);
@@ -113,8 +113,8 @@ begin  -- architecture rtl
 
     one_entry_gen : if BTB_ENTRIES = 1 generate
       process (clk) is
-      begin  -- process
-        if rising_edge(clk) then        -- rising clock edge
+      begin
+        if rising_edge(clk) then
           if btb_update = '1' then
             btb_valid(0)      <= '1';
             btb_prediction(0) <= std_logic_vector(to_pc_correction_data(REGISTER_SIZE-1 downto 2));
@@ -140,8 +140,8 @@ begin  -- architecture rtl
       btb_read_entry_select  <= unsigned(program_counter(log2(BTB_ENTRIES)+1 downto 2));
       btb_write_entry_select <= to_pc_correction_source_pc(log2(BTB_ENTRIES)+1 downto 2);
       process (clk) is
-      begin  -- process
-        if rising_edge(clk) then        -- rising clock edge
+      begin
+        if rising_edge(clk) then
           if btb_update = '1' then
             btb_valid(to_integer(btb_write_entry_select)) <= '1';
             btb_prediction(to_integer(btb_write_entry_select)) <=
@@ -247,8 +247,8 @@ begin  -- architecture rtl
   --Need to calculate 'next' usedw values for tracking instruction fetches in
   --flight on a mispredict correction
   process (clk) is
-  begin  -- process
-    if rising_edge(clk) then            -- rising clock edge
+  begin
+    if rising_edge(clk) then
       pc_fifo_usedw          <= next_pc_fifo_usedw;
       instruction_fifo_usedw <= next_instruction_fifo_usedw;
       if reset = '1' or pc_instruction_fifo_reset = '1' then

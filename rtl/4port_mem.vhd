@@ -270,7 +270,7 @@ architecture rtl of ram_4port is
   signal read3_ack0 : std_logic;
   signal read3_ack1 : std_logic;
   signal read_ack   : std_logic;
-begin  -- architecture rtl
+begin
 
   process(clk)
   begin

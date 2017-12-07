@@ -12,14 +12,13 @@ entity register_file is
     WRITE_FIRST_SMALL_RAMS : boolean
     );
   port (
-    clk         : in std_logic;
-    valid_input : in std_logic;
-    rs1_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    rs3_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    wb_data     : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_enable   : in std_logic;
+    clk        : in std_logic;
+    rs1_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    rs2_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    rs3_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    wb_select  : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    wb_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    wb_enable  : in std_logic;
 
     rs1_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -78,13 +77,13 @@ begin
     process (clk) is
     begin
       if rising_edge(clk) then
-        out1 <= registers(to_integer(unsigned(rs1_sel)));
-        out2 <= registers(to_integer(unsigned(rs2_sel)));
-        out3 <= registers(to_integer(unsigned(rs3_sel)));
+        out1 <= registers(to_integer(unsigned(rs1_select)));
+        out2 <= registers(to_integer(unsigned(rs2_select)));
+        out3 <= registers(to_integer(unsigned(rs3_select)));
         if wb_enable = '1' then
-          registers(to_integer(unsigned(wb_sel))) <= wb_data;
+          registers(to_integer(unsigned(wb_select))) <= wb_data;
         end if;
-      end if;  --rising edge
+      end if;
     end process;
 
 
@@ -99,13 +98,13 @@ begin
         read_during_write3 <= '0';
         read_during_write2 <= '0';
         read_during_write1 <= '0';
-        if rs1_sel = wb_sel and wb_enable = '1' then
+        if rs1_select = wb_select and wb_enable = '1' then
           read_during_write1 <= '1';
         end if;
-        if rs2_sel = wb_sel and wb_enable = '1' then
+        if rs2_select = wb_select and wb_enable = '1' then
           read_during_write2 <= '1';
         end if;
-        if rs3_sel = wb_sel and wb_enable = '1' then
+        if rs3_select = wb_select and wb_enable = '1' then
           read_during_write3 <= '1';
         end if;
         wb_data_latched <= wb_data;
@@ -119,20 +118,20 @@ begin
     begin
       if rising_edge(clk) then
         if wb_enable = '1' then
-          registers_variable(to_integer(unsigned(wb_sel))) := wb_data;
+          registers_variable(to_integer(unsigned(wb_select))) := wb_data;
         end if;
-        rs1_data <= registers_variable(to_integer(unsigned(rs1_sel)));
-        rs2_data <= registers_variable(to_integer(unsigned(rs2_sel)));
-        rs3_data <= registers_variable(to_integer(unsigned(rs3_sel)));
-      end if;  --rising edge
+        rs1_data <= registers_variable(to_integer(unsigned(rs1_select)));
+        rs2_data <= registers_variable(to_integer(unsigned(rs2_select)));
+        rs3_data <= registers_variable(to_integer(unsigned(rs3_select)));
+      end if;
     end process;
     process (clk) is
-    begin  -- process
-      if rising_edge(clk) then          -- rising clock edge
+    begin
+      if rising_edge(clk) then
         --Vivado simulator doesn't like tracing variables so this signal
         --duplicates the register_file variable
         if wb_enable = '1' then
-          registers(to_integer(unsigned(wb_sel))) <= wb_data;
+          registers(to_integer(unsigned(wb_select))) <= wb_data;
         end if;
       end if;
     end process;

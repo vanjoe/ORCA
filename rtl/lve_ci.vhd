@@ -187,7 +187,7 @@ begin
   -- COMMON STUFF
   -----------------------------------------------------------------------------
   process (clk) is
-  begin  -- process
+  begin
     if rising_edge(clk) then
       valid_out        <= '0';
       write_enable_out <= '0';

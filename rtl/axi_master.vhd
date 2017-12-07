@@ -135,7 +135,7 @@ begin
   w_sending   <= WVALID_internal and WLAST_internal and WREADY;
   writes_left <= unsigned(oimm_burstlength_minus1) when write_burst_start = '1' else writes_left_registered;
   process (clk) is
-  begin  -- process
+  begin
     if rising_edge(clk) then
       if aw_sending = '1' then
         if w_sent = '1' or w_sending = '1' then

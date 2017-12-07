@@ -83,7 +83,7 @@ begin
   RREADY  <= '1';
 
   process (clk) is
-  begin  -- process
+  begin
     if rising_edge(clk) then
       if AWVALID_signal = '1' and AWREADY = '1' then
         aw_sent <= '1';

@@ -64,7 +64,7 @@ begin
           ram(to_integer(unsigned(write_address))) := write_data;
         end if;
         read_data <= ram(to_integer(unsigned(read_address)));
-      end if;  --rising edge
+      end if;
     end process;
   end generate write_first_gen;
 

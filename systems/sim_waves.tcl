@@ -1,7 +1,7 @@
 proc orca_reset_waves { add_wave_cmd add_divider_cmd prefix } {
     eval "[string trim $add_divider_cmd \"] \"ORCA core status\""
     eval "[string trim $add_wave_cmd \"] $prefix/core/X/clk $prefix/core/X/reset"
-    eval "[string trim $add_wave_cmd \"] $prefix/core/X/valid_input $prefix/core/X/current_pc $prefix/core/X/instruction "
+    eval "[string trim $add_wave_cmd \"] $prefix/core/X/to_execute_valid $prefix/core/X/current_pc $prefix/core/X/to_execute_instruction "
     eval "[string trim $add_wave_cmd \"] $prefix/core/D/the_register_file/registers"
 }
 

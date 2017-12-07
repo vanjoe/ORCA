@@ -33,7 +33,7 @@ $(TESTALL_FILE):testall_sim.tcl
 
 
 testall: test/rv32ui-p-add.qex $(SYSTEM)/simulation/mentor/msim_setup.tcl $(TESTALL_FILE)
-	vsim -c -do $(TESTALL_FILE) | egrep '(^[^#]|Error:)'
+	vsim -c -do $(TESTALL_FILE) | egrep '(^[^#]|Error:|Error \(suppressible\):)'
 
 all: $(SYSTEM)/simulation/mentor/msim_setup.tcl
 	(cd $(SYSTEM)/simulation/mentor/; ln -sf ../../../test.hex .)

@@ -48,6 +48,7 @@ entity lve_top is
 end entity;
 
 architecture rtl of lve_top is
+  signal lve_instr       : std_logic;
   signal valid_lve_instr : std_logic;
   --parts of the instruction
   alias instr_major_op   : std_logic_vector is instruction(MAJOR_OP'range);
@@ -131,7 +132,8 @@ architecture rtl of lve_top is
 
 
 begin
-  valid_lve_instr     <= valid_instr when instr_major_op = LVE_OP else '0';
+  lve_instr           <= '1' when instr_major_op = LVE_OP else '0';
+  valid_lve_instr     <= valid_instr and lve_instr;
   opcode5(4)          <= instruction(30);
   opcode5(3)          <= instruction(25);
   opcode5(2 downto 0) <= instruction(14 downto 12);
@@ -140,7 +142,7 @@ begin
   -- Handle set and get instructions here
   -----------------------------------------------------------------------------
   set_vl_proc : process (clk)
-  begin  -- process
+  begin
     if rising_edge(clk) then
       if valid_lve_instr = '1' and opcode5 = "11111" then
         --secial instruction
@@ -251,7 +253,7 @@ begin
                    dest_row_ptr+dest_incr;
 
   lve_executing <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector;
-  lve_ready <= not (bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector);
+  lve_ready     <= not (bool_to_sl(lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector);
 
 
   wr_data_ready <= (mov_result_valid or lve_alu_result_valid or ci_valid_out) and not done_write;

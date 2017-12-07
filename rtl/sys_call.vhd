@@ -3,46 +3,6 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.constants_pkg.all;
 
-entity instruction_legal is
-  generic (
-    CHECK_LEGAL_INSTRUCTIONS : boolean
-    );
-  port (
-    instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    legal       : out std_logic
-    );
-end entity;
-
-architecture rtl of instruction_legal is
-  alias opcode7 is instruction(6 downto 0);
-  alias func3 is instruction(INSTR_FUNC3'range);
-  alias func7 is instruction(31 downto 25);
-  alias csr_num is instruction(SYSTEM_MINOR_OP'range);
-begin
-
-  legal <=
-    '1' when (CHECK_LEGAL_INSTRUCTIONS = false or
-              opcode7 = LUI_OP or
-              opcode7 = AUIPC_OP or
-              opcode7 = JAL_OP or
-              (opcode7 = JALR_OP and func3 = "000") or
-              (opcode7 = BRANCH_OP and func3 /= "010" and func3 /= "011") or
-              (opcode7 = LOAD_OP and func3 /= "011" and func3 /= "110" and func3 /= "111") or
-              (opcode7 = STORE_OP and (func3 = "000" or func3 = "001" or func3 = "010")) or
-              opcode7 = ALUI_OP or      -- Does not catch illegal
-                                        -- shift amounts
-              (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
-              (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
-              (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /= SYSTEM_EBREAK) or
-              opcode7 = LVE_OP) else '0';
-
-end architecture;
-
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use work.constants_pkg.all;
-
 entity system_calls is
   generic (
     REGISTER_SIZE         : natural;
@@ -122,15 +82,15 @@ architecture rtl of system_calls is
   signal interrupt_pc_correction_valid : std_logic;
 
   signal time_counter : unsigned(63 downto 0);
-
-begin  -- architecture rtl
-
+begin
   instr_check : instruction_legal
     generic map (
-      check_legal_instructions => true)
+      check_legal_instructions => true
+      )
     port map (
       instruction => instruction,
-      legal       => legal_instr);
+      legal       => legal_instr
+      );
 
   -- Process for the timer counter.
   process(clk)
@@ -201,7 +161,7 @@ begin  -- architecture rtl
       if valid = '1' then
         next_fence_pc <= unsigned(current_pc) + to_unsigned(4, next_fence_pc'length);
         if legal_instr /= '1' and ENABLE_EXCEPTIONS then
-                                        -----------------------------------------------------------------------------
+          -----------------------------------------------------------------------------
           -- Handle Illegal Instructions
           -----------------------------------------------------------------------------
           mstatus(CSR_MSTATUS_MIE)  <= '0';
@@ -239,7 +199,7 @@ begin  -- architecture rtl
 
             end if;
           elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
-                                        -----------------------------------------------------------------------------
+            -----------------------------------------------------------------------------
             -- Other System Instructions (mret)
             -----------------------------------------------------------------------------
             if instruction(31 downto 30) = "00" and instruction(27 downto 20) = "00000010" and ENABLE_EXCEPTIONS then
@@ -316,14 +276,11 @@ begin  -- architecture rtl
   end generate no_interrupts_gen;
   interrupt_pending <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 else '0';
 
------------------------------------------------------------------------------
--- There are several reasons that sys_calls might send a pc correction
--- global interrupt
--- illegal instruction
--- mret instruction
--- fence.i  (flush pipeline, and start over)
------------------------------------------------------------------------------
-
+  -- There are several reasons that sys_calls might send a pc correction
+  -- global interrupt
+  -- illegal instruction
+  -- mret instruction
+  -- fence.i  (flush pipeline, and start over)
   to_pc_correction_valid <= was_fence_i or was_mret or was_illegal or interrupt_pc_correction_valid;
   to_pc_correction_data <=
     next_fence_pc when was_fence_i = '1' else
@@ -333,3 +290,45 @@ begin  -- architecture rtl
     (others => '-');
 
 end architecture rtl;
+
+
+--------------------------------------------------------------------------------
+-- Legal instruction checker
+--------------------------------------------------------------------------------
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use work.constants_pkg.all;
+
+entity instruction_legal is
+  generic (
+    CHECK_LEGAL_INSTRUCTIONS : boolean
+    );
+  port (
+    instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    legal       : out std_logic
+    );
+end entity;
+
+architecture rtl of instruction_legal is
+  alias opcode7 is instruction(6 downto 0);
+  alias func3 is instruction(INSTR_FUNC3'range);
+  alias func7 is instruction(31 downto 25);
+  alias csr_num is instruction(SYSTEM_MINOR_OP'range);
+begin
+  legal <=
+    '1' when (CHECK_LEGAL_INSTRUCTIONS = false or
+              opcode7 = LUI_OP or
+              opcode7 = AUIPC_OP or
+              opcode7 = JAL_OP or
+              (opcode7 = JALR_OP and func3 = "000") or
+              (opcode7 = BRANCH_OP and func3 /= "010" and func3 /= "011") or
+              (opcode7 = LOAD_OP and func3 /= "011" and func3 /= "110" and func3 /= "111") or
+              (opcode7 = STORE_OP and (func3 = "000" or func3 = "001" or func3 = "010")) or
+              opcode7 = ALUI_OP or      -- Does not catch illegal
+                                        -- shift amounts
+              (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
+              (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
+              (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /= SYSTEM_EBREAK) or
+              opcode7 = LVE_OP) else '0';
+end architecture;

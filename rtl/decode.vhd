@@ -20,7 +20,6 @@ entity decode is
     reset : in std_logic;
 
     decode_flushed : out std_logic;
-    stall          : in  std_logic;
     flush          : in  std_logic;
 
     to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -30,44 +29,42 @@ entity decode is
     from_decode_ready         : out std_logic;
 
     --writeback signals
-    wb_sel    : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    wb_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    wb_enable : in std_logic;
+    to_rf_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_rf_valid  : in std_logic;
 
     --output signals
-    rs1_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs3_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sign_extension : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-    pc_curr_out    : out unsigned(REGISTER_SIZE-1 downto 0);
-    pc_next_out    : out unsigned(REGISTER_SIZE-1 downto 0);
-    instr_out      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    subseq_instr   : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    subseq_valid   : out std_logic;
-    valid_output   : out std_logic
+    from_decode_rs1_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    from_decode_rs2_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    from_decode_rs3_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    from_decode_sign_extension   : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+    from_decode_program_counter  : out unsigned(REGISTER_SIZE-1 downto 0);
+    from_decode_predicted_pc     : out unsigned(REGISTER_SIZE-1 downto 0);
+    from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    from_decode_next_valid       : out std_logic;
+    from_decode_valid            : out std_logic;
+    to_decode_ready              : in  std_logic
     );
 end;
 
 architecture rtl of decode is
-  signal instr_out_signal : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal from_decode_instruction_signal : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
 
-  signal rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal rs3 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal rs3_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
-  signal rs1_reg : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal outreg1 : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal rs2_reg : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal outreg2 : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal rs3_reg : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal outreg3 : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs1_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs2_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal rs3_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal wb_sel_signal    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal wb_data_signal   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal wb_enable_signal : std_logic;
+  signal wb_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal wb_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal wb_enable : std_logic;
 begin
-  instr_out         <= instr_out_signal;
-  from_decode_ready <= not stall;
+  from_decode_instruction <= from_decode_instruction_signal;
+  from_decode_ready       <= to_decode_ready;
 
   the_register_file : register_file
     generic map (
@@ -77,131 +74,135 @@ begin
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS
       )
     port map(
-      clk         => clk,
-      valid_input => to_decode_valid,
-      rs1_sel     => rs1,
-      rs2_sel     => rs2,
-      rs3_sel     => rs3,
-      wb_sel      => wb_sel_signal,
-      wb_data     => wb_data_signal,
-      wb_enable   => wb_enable_signal,
-      rs1_data    => rs1_reg,
-      rs2_data    => rs2_reg,
-      rs3_data    => rs3_reg
+      clk        => clk,
+      rs1_select => rs1_select,
+      rs2_select => rs2_select,
+      rs3_select => rs3_select,
+      wb_select  => wb_select,
+      wb_data    => wb_data,
+      wb_enable  => wb_enable,
+      rs1_data   => rs1_data,
+      rs2_data   => rs2_data,
+      rs3_data   => rs3_data
       );
 
   -- This is to handle Microsemi board's inability to initialize RAM to zero on startup.
   reg_rst_en : if FAMILY = "MICROSEMI" generate
-    wb_sel_signal    <= wb_sel    when reset = '0' else (others => '0');
-    wb_data_signal   <= wb_data   when reset = '0' else (others => '0');
-    wb_enable_signal <= wb_enable when reset = '0' else '1';
+    wb_select <= to_rf_select when reset = '0' else (others => '0');
+    wb_data   <= to_rf_data   when reset = '0' else (others => '0');
+    wb_enable <= to_rf_valid  when reset = '0' else '1';
   end generate reg_rst_en;
   reg_rst_nen : if FAMILY /= "MICROSEMI" generate
-    wb_sel_signal    <= wb_sel;
-    wb_data_signal   <= wb_data;
-    wb_enable_signal <= wb_enable;
+    wb_select <= to_rf_select;
+    wb_data   <= to_rf_data;
+    wb_enable <= to_rf_valid;
   end generate reg_rst_nen;
 
   two_cycle : if PIPELINE_STAGES = 2 generate
-    signal rs1_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    signal rs2_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    signal rs3_p : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    signal previous_rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    signal previous_rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    signal previous_rs3_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
 
-    signal outreg1 : std_logic_vector(REGISTER_SIZE-1 downto 0);
-    signal outreg2 : std_logic_vector(REGISTER_SIZE-1 downto 0);
-
-    signal pc_curr_latch : unsigned(REGISTER_SIZE-1 downto 0);
-    signal pc_next_latch : unsigned(REGISTER_SIZE-1 downto 0);
-    signal instr_latch   : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    signal valid_latch   : std_logic;
+    signal program_counter_latch : unsigned(REGISTER_SIZE-1 downto 0);
+    signal predicted_pc_latch    : unsigned(REGISTER_SIZE-1 downto 0);
+    signal instruction_latch     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    signal valid_latch           : std_logic;
   begin
-    rs1 <= to_decode_instruction(REGISTER_RS1'range) when stall = '0' else instr_latch(REGISTER_RS1'range);
-    rs2 <= to_decode_instruction(REGISTER_RS2'range) when stall = '0' else instr_latch(REGISTER_RS2'range);
-    rs3 <= to_decode_instruction(REGISTER_RD'range)  when stall = '0' else instr_latch(REGISTER_RD'range);
+    rs1_select <= to_decode_instruction(REGISTER_RS1'range) when to_decode_ready = '1' else
+                  instruction_latch(REGISTER_RS1'range);
+    rs2_select <= to_decode_instruction(REGISTER_RS2'range) when to_decode_ready = '1' else
+                  instruction_latch(REGISTER_RS2'range);
+    rs3_select <= to_decode_instruction(REGISTER_RD'range) when to_decode_ready = '1' else
+                  instruction_latch(REGISTER_RD'range);
 
-    rs1_p <= instr_latch(REGISTER_RS1'range) when stall = '0' else instr_out_signal(REGISTER_RS1'range);
-    rs2_p <= instr_latch(REGISTER_RS2'range) when stall = '0' else instr_out_signal(REGISTER_RS2'range);
-    rs3_p <= instr_latch(REGISTER_RD'range)  when stall = '0' else instr_out_signal(REGISTER_RD'range);
+    previous_rs1_select <= instruction_latch(REGISTER_RS1'range) when to_decode_ready = '1' else
+                           from_decode_instruction_signal(REGISTER_RS1'range);
+    previous_rs2_select <= instruction_latch(REGISTER_RS2'range) when to_decode_ready = '1' else
+                           from_decode_instruction_signal(REGISTER_RS2'range);
+    previous_rs3_select <= instruction_latch(REGISTER_RD'range) when to_decode_ready = '1' else
+                           from_decode_instruction_signal(REGISTER_RD'range);
 
     decode_flushed <= not (to_decode_valid or valid_latch);
 
     decode_stage : process (clk) is
-    begin  -- process decode_stage
-      if rising_edge(clk) then          -- rising clock edge
-        if not stall = '1' then
-          sign_extension <= std_logic_vector(
-            resize(signed(instr_latch(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
-                   SIGN_EXTENSION_SIZE));
-          pc_curr_latch <= to_decode_program_counter;
-          pc_next_latch <= to_decode_predicted_pc;
-          instr_latch   <= to_decode_instruction;
-          valid_latch   <= to_decode_valid;
+    begin
+      if rising_edge(clk) then
+        if to_decode_ready = '1' then
+          program_counter_latch <= to_decode_program_counter;
+          predicted_pc_latch    <= to_decode_predicted_pc;
+          instruction_latch     <= to_decode_instruction;
+          valid_latch           <= to_decode_valid;
 
-          pc_curr_out      <= pc_curr_latch;
-          pc_next_out      <= pc_next_latch;
-          instr_out_signal <= instr_latch;
-          valid_output     <= valid_latch;
-
+          from_decode_sign_extension <=
+            std_logic_vector(resize(signed(instruction_latch(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
+                                    SIGN_EXTENSION_SIZE));
+          from_decode_program_counter    <= program_counter_latch;
+          from_decode_predicted_pc       <= predicted_pc_latch;
+          from_decode_instruction_signal <= instruction_latch;
+          from_decode_valid              <= valid_latch;
         end if;
 
-        if wb_sel = rs1_p and wb_enable = '1' then
-          rs1_data <= wb_data;
-        elsif stall = '0' then
-          rs1_data <= rs1_reg;
+        if to_rf_select = previous_rs1_select and to_rf_valid = '1' then
+          from_decode_rs1_data <= to_rf_data;
+        elsif to_decode_ready = '1' then
+          from_decode_rs1_data <= rs1_data;
         end if;
-        if wb_sel = rs2_p and wb_enable = '1' then
-          rs2_data <= wb_data;
-        elsif stall = '0' then
-          rs2_data <= rs2_reg;
+        if to_rf_select = previous_rs2_select and to_rf_valid = '1' then
+          from_decode_rs2_data <= to_rf_data;
+        elsif to_decode_ready = '1' then
+          from_decode_rs2_data <= rs2_data;
         end if;
-        if wb_sel = rs3_p and wb_enable = '1' then
-          rs3_data <= wb_data;
-        elsif stall = '0' then
-          rs3_data <= rs3_reg;
+        if to_rf_select = previous_rs3_select and to_rf_valid = '1' then
+          from_decode_rs3_data <= to_rf_data;
+        elsif to_decode_ready = '1' then
+          from_decode_rs3_data <= rs3_data;
         end if;
 
         if reset = '1' or flush = '1' then
-          valid_output <= '0';
-          valid_latch  <= '0';
+          from_decode_valid <= '0';
+          valid_latch       <= '0';
         end if;
       end if;
     end process decode_stage;
-    subseq_instr <= instr_latch;
-    subseq_valid <= valid_latch;
+    from_decode_next_instruction <= instruction_latch;
+    from_decode_next_valid       <= valid_latch;
 
   end generate two_cycle;
 
 
   one_cycle : if PIPELINE_STAGES = 1 generate
-    rs1 <= to_decode_instruction(19 downto 15)      when stall = '0' else instr_out_signal(19 downto 15);
-    rs2 <= to_decode_instruction(24 downto 20)      when stall = '0' else instr_out_signal(24 downto 20);
-    rs3 <= to_decode_instruction(REGISTER_RD'range) when stall = '0' else instr_out_signal(REGISTER_RD'range);
+    rs1_select <= to_decode_instruction(REGISTER_RS1'range) when to_decode_ready = '1' else
+                  from_decode_instruction_signal(REGISTER_RS1'range);
+    rs2_select <= to_decode_instruction(REGISTER_RS2'range) when to_decode_ready = '1' else
+                  from_decode_instruction_signal(REGISTER_RS2'range);
+    rs3_select <= to_decode_instruction(REGISTER_RD'range) when to_decode_ready = '1' else
+                  from_decode_instruction_signal(REGISTER_RD'range);
 
     decode_flushed <= not to_decode_valid;
     decode_stage : process (clk) is
-    begin  -- process decode_stage
-      if rising_edge(clk) then          -- rising clock edge
-        if not stall = '1' then
-          sign_extension <= std_logic_vector(
-            resize(signed(to_decode_instruction(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
-                   SIGN_EXTENSION_SIZE));
-          pc_curr_out      <= to_decode_program_counter;
-          pc_next_out      <= to_decode_predicted_pc;
-          instr_out_signal <= to_decode_instruction;
-          valid_output     <= to_decode_valid;
+    begin
+      if rising_edge(clk) then
+        if to_decode_ready = '1' then
+          from_decode_sign_extension <=
+            std_logic_vector(resize(signed(to_decode_instruction(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
+                                    SIGN_EXTENSION_SIZE));
+          from_decode_program_counter    <= to_decode_program_counter;
+          from_decode_predicted_pc       <= to_decode_predicted_pc;
+          from_decode_instruction_signal <= to_decode_instruction;
+          from_decode_valid              <= to_decode_valid;
         end if;
 
 
         if reset = '1' or flush = '1' then
-          valid_output <= '0';
+          from_decode_valid <= '0';
         end if;
       end if;
     end process decode_stage;
-    subseq_instr <= to_decode_instruction;
-    subseq_valid <= to_decode_valid;
-    rs1_data     <= rs1_reg;
-    rs2_data     <= rs2_reg;
-    rs3_data     <= rs3_reg;
+    from_decode_next_instruction <= to_decode_instruction;
+    from_decode_next_valid       <= to_decode_valid;
+    from_decode_rs1_data         <= rs1_data;
+    from_decode_rs2_data         <= rs2_data;
+    from_decode_rs3_data         <= rs3_data;
   end generate one_cycle;
 
 end architecture;

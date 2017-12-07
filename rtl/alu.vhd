@@ -5,7 +5,6 @@ library work;
 use work.utils.all;
 use work.constants_pkg.all;
 use work.constants_pkg.all;
---use IEEE.std_logic_arith.all;
 
 entity arithmetic_unit is
   generic (
@@ -22,7 +21,7 @@ entity arithmetic_unit is
     clk                : in  std_logic;
     valid_instr        : in  std_logic;
     simd_op_size       : in  std_logic_vector(1 downto 0);
-    stall_from_execute : in  std_logic;
+    from_execute_ready : in  std_logic;
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -160,7 +159,7 @@ architecture rtl of arithmetic_unit is
 
 
   signal arith_msb_mask : std_logic_vector(3 downto 0);
-begin  -- architecture rtl
+begin
 
 
   immediate_value <= unsigned(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0)&
@@ -324,7 +323,7 @@ begin  -- architecture rtl
           rshifted_result <= unsigned(mul_dest(REGISTER_SIZE-1 downto 0));
         end if;
         shifted_result_valid <= mul_dest_valid and sh_enable;
-        if stall_from_execute = '0' then
+        if from_execute_ready = '1' then
           shifted_result_valid <= '0';
         end if;
       end if;
@@ -534,7 +533,7 @@ begin  -- architecture rtl
         -- then we want to flush the valid signals
         -- Another way of phrasing this is that unless we have an LVE instruction we only want
         -- mul_dest_valid to be high for one cycle
-        if stall_from_execute = '0' then
+        if from_execute_ready = '1' then
           mul_ab_valid   <= '0';
           mul_dest_valid <= '0';
         end if;
@@ -582,6 +581,7 @@ begin  -- architecture rtl
   alu_ready <= div_ready and mul_ready and sh_ready;
 end architecture;
 
+
 -------------------------------------------------------------------------------
 -- Shifter
 -------------------------------------------------------------------------------
@@ -590,7 +590,6 @@ use ieee.std_logic_1164.all;
 use IEEE.NUMERIC_STD.all;
 library work;
 use work.utils.all;
-
 
 entity shifter is
   generic (
@@ -613,7 +612,7 @@ architecture rtl of shifter is
   constant SHIFT_AMT_SIZE : natural := shift_amt'length;
   signal left_tmp         : signed(REGISTER_SIZE downto 0);
   signal right_tmp        : signed(REGISTER_SIZE downto 0);
-begin  -- architecture rtl
+begin
   assert SINGLE_CYCLE = 1 or SINGLE_CYCLE = 8 or SINGLE_CYCLE = 32 report "Bad SHIFTER_MAX_CYCLES Value" severity failure;
 
   cycle1 : if SINGLE_CYCLE = 1 generate
@@ -728,14 +727,13 @@ end architecture rtl;
 
 
 -------------------------------------------------------------------------------
--- DIVISION
+-- Divider
 -------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.NUMERIC_STD.all;
 library work;
 use work.utils.all;
-
 
 entity divider is
   generic (
@@ -771,7 +769,7 @@ architecture rtl of divider is
   signal div_res    : unsigned(REGISTER_SIZE-1 downto 0);
   signal rem_res    : unsigned(REGISTER_SIZE-1 downto 0);
   signal min_signed : unsigned(REGISTER_SIZE-1 downto 0);
-begin  -- architecture rtl
+begin
 
   div_neg_op1 <= not unsigned_div when signed(rs1_data) < 0 else '0';
   div_neg_op2 <= not unsigned_div when signed(rs2_data) < 0 else '0';

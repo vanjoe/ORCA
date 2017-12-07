@@ -85,7 +85,7 @@ begin
       we_depth(0)       <= wr_en_d1;
       chip_sel_depth(0) <= chip_sel;
       data_register : process (clk) is
-      begin  -- process data_register
+      begin
         if rising_edge(clk) then
           data_out <= data_out_depth(0);
         end if;
@@ -105,7 +105,7 @@ begin
       end generate deep_ram_gen;
       standby_depth <= not chip_sel_depth;
       data_register : process (clk) is
-      begin  -- process data_register
+      begin
         if rising_edge(clk) then
           depth_select_out <= depth_select_in;
           data_out         <= data_out_depth(to_integer(depth_select_out));
@@ -252,7 +252,7 @@ architecture rtl of ram_4port is
   signal ren0_d1     : std_logic;
   signal ren1_d1     : std_logic;
   signal data_in3_d1 : std_logic_vector(MEM_WIDTH-1 downto 0);
-begin  -- architecture rtl
+begin
   last_port_sel <= SLAVE_ACCESS when (ren3_d1 or wen3_d1) = '1' else LVE_ACCESS;
 
   process(clk)

@@ -417,7 +417,7 @@ architecture rtl of memory_interface is
   signal dcacheint_oimm_waitrequest   : std_logic;
 
   signal axi_resetn : std_logic;
-begin  -- architecture rtl
+begin
   assert (AVALON_AUX + WISHBONE_AUX + LMB_AUX) < 2 report
     "At most one auxiliary interface type (AVALON_AUX, WISHBONE_AUX, LMB_AUX) must be enabled"
     severity failure;
@@ -860,8 +860,8 @@ begin  -- architecture rtl
     --It's not explicitly stated but looking at Xilinx's HDL it's clear that
     --Ready can't be asserted on the same cycle as the strobe signals.
     process (clk) is
-    begin  -- process
-      if rising_edge(clk) then          -- rising clock edge
+    begin
+      if rising_edge(clk) then
         if ILMB_Ready = '1' then
           iread_in_flight  <= '0';
           iwrite_in_flight <= '0';
@@ -875,15 +875,15 @@ begin  -- architecture rtl
           end if;
         end if;
 
-        if reset = '1' then             -- synchronous reset (active high)
+        if reset = '1' then
           iread_in_flight  <= '0';
           iwrite_in_flight <= '0';
         end if;
       end if;
     end process;
     process (clk) is
-    begin  -- process
-      if rising_edge(clk) then          -- rising clock edge
+    begin
+      if rising_edge(clk) then
         if DLMB_Ready = '1' then
           dread_in_flight  <= '0';
           dwrite_in_flight <= '0';
@@ -897,7 +897,7 @@ begin  -- architecture rtl
           end if;
         end if;
 
-        if reset = '1' then             -- synchronous reset (active high)
+        if reset = '1' then
           dread_in_flight  <= '0';
           dwrite_in_flight <= '0';
         end if;

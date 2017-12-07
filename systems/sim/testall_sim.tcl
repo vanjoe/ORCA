@@ -16,7 +16,7 @@ foreach f $files {
 	 file copy -force $f test.hex
 	 restart -f
 	 onbreak {resume}
-	 when {system/vectorblox_orca_0/core/X/instruction == x"00000073" && system/vectorblox_orca_0/core/X/valid_input == "1" } {stop}
+	 when {system/vectorblox_orca_0/core/X/to_execute_instruction == x"00000073" && system/vectorblox_orca_0/core/X/to_execute_valid == "1" } {stop}
 
 	 if { [string match "*.elf*" $f ] } {
 		  #some of the unit tests may have to run for a much longer time

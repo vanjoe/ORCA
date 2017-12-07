@@ -19,7 +19,7 @@ entity branch_unit is
     rs2_data                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     current_pc                 : in  unsigned(REGISTER_SIZE-1 downto 0);
     predicted_pc               : in  unsigned(REGISTER_SIZE-1 downto 0);
-    instr                      : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    instruction                : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     sign_extension             : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     less_than                  : in  std_logic;
     data_out                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -55,13 +55,13 @@ architecture rtl of branch_unit is
 
   signal take_if_branch : std_logic;
 
-  alias func3  : std_logic_vector(2 downto 0) is instr(INSTR_FUNC3'range);
-  alias opcode : std_logic_vector(6 downto 0) is instr(6 downto 0);
+  alias func3  : std_logic_vector(2 downto 0) is instruction(INSTR_FUNC3'range);
+  alias opcode : std_logic_vector(6 downto 0) is instruction(6 downto 0);
 
   signal is_jal_op  : std_logic;
   signal is_jalr_op : std_logic;
   signal is_br_op   : std_logic;
-begin  -- architecture
+begin
   with func3 select
     msb_mask <=
     '0' when BLTU_OP,
@@ -86,12 +86,12 @@ begin  -- architecture
     '0'                      when others;
 
   b_imm <= unsigned(sign_extension(REGISTER_SIZE-13 downto 0) &
-                    instr(7) & instr(30 downto 25) &instr(11 downto 8) & "0");
+                    instruction(7) & instruction(30 downto 25) &instruction(11 downto 8) & "0");
 
   jalr_imm <= unsigned(sign_extension(REGISTER_SIZE-12-1 downto 0) &
-                       instr(31 downto 21) & "0");
-  jal_imm <= unsigned(RESIZE(signed(instr(31) & instr(19 downto 12) & instr(20) &
-                                    instr(30 downto 21)&"0"), REGISTER_SIZE));
+                       instruction(31 downto 21) & "0");
+  jal_imm <= unsigned(RESIZE(signed(instruction(31) & instruction(19 downto 12) & instruction(20) &
+                                    instruction(30 downto 21)&"0"), REGISTER_SIZE));
 
   no_predictor_gen : if BTB_ENTRIES = 0 generate
     signal mispredict : std_logic;

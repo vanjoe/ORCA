@@ -758,7 +758,6 @@ package rv_components is
       reset : in std_logic;
 
       decode_flushed : out std_logic;
-      stall          : in  std_logic;
       flush          : in  std_logic;
 
       to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -768,21 +767,22 @@ package rv_components is
       from_decode_ready         : out std_logic;
 
       --writeback signals
-      wb_sel    : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      wb_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      wb_enable : in std_logic;
+      to_rf_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      to_rf_valid  : in std_logic;
 
       --output signals
-      rs1_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs3_data       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sign_extension : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-      pc_curr_out    : out unsigned(REGISTER_SIZE-1 downto 0);
-      pc_next_out    : out unsigned(REGISTER_SIZE-1 downto 0);
-      instr_out      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      subseq_instr   : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      subseq_valid   : out std_logic;
-      valid_output   : out std_logic
+      from_decode_rs1_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      from_decode_rs2_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      from_decode_rs3_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      from_decode_sign_extension   : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+      from_decode_program_counter  : out unsigned(REGISTER_SIZE-1 downto 0);
+      from_decode_predicted_pc     : out unsigned(REGISTER_SIZE-1 downto 0);
+      from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      from_decode_next_valid       : out std_logic;
+      from_decode_valid            : out std_logic;
+      to_decode_ready              : in  std_logic
       );
   end component decode;
 
@@ -815,17 +815,17 @@ package rv_components is
       program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
 
       --From previous stage
-      valid_input        : in     std_logic;
-      current_pc         : in     unsigned(REGISTER_SIZE-1 downto 0);
-      predicted_pc       : in     unsigned(REGISTER_SIZE-1 downto 0);
-      instruction        : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      subseq_instr       : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      subseq_valid       : in     std_logic;
-      rs1_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs3_data           : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sign_extension     : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-      stall_from_execute : buffer std_logic;
+      to_execute_valid            : in     std_logic;
+      to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
+      to_execute_predicted_pc     : in     unsigned(REGISTER_SIZE-1 downto 0);
+      to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      to_execute_next_valid       : in     std_logic;
+      to_execute_rs1_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      to_execute_rs2_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      to_execute_rs3_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+      to_execute_sign_extension   : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+      from_execute_ready          : buffer std_logic;
 
       --To PC correction
       to_pc_correction_data        : out    unsigned(REGISTER_SIZE-1 downto 0);
@@ -835,9 +835,9 @@ package rv_components is
       from_pc_correction_ready     : in     std_logic;
 
       --To register file
-      wb_sel    : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      wb_data   : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-      wb_enable : buffer std_logic;
+      to_rf_select : buffer std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      to_rf_data   : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+      to_rf_valid  : buffer std_logic;
 
       --Data Orca-internal memory-mapped master
       lsu_oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -915,7 +915,7 @@ package rv_components is
       clk                : in  std_logic;
       valid_instr        : in  std_logic;
       simd_op_size       : in  std_logic_vector(1 downto 0);
-      stall_from_execute : in  std_logic;
+      from_execute_ready : in  std_logic;
       rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -948,7 +948,7 @@ package rv_components is
       rs2_data                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       current_pc                 : in  unsigned(REGISTER_SIZE-1 downto 0);
       predicted_pc               : in  unsigned(REGISTER_SIZE-1 downto 0);
-      instr                      : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      instruction                : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       sign_extension             : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       less_than                  : in  std_logic;
       data_out                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -1000,14 +1000,13 @@ package rv_components is
       WRITE_FIRST_SMALL_RAMS : boolean
       );
     port (
-      clk         : in std_logic;
-      valid_input : in std_logic;
-      rs1_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      rs2_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      rs3_sel     : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      wb_sel      : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      wb_data     : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      wb_enable   : in std_logic;
+      clk        : in std_logic;
+      rs1_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      rs2_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      rs3_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      wb_select  : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      wb_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      wb_enable  : in std_logic;
 
       rs1_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
