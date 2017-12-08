@@ -21,16 +21,19 @@ TEST_ATTR int test_2()
       register uint32_t result3;
       register uint32_t *temp_pointer = &temp_location[word];
       register uint32_t write_value   = word+run;
-      asm volatile ("sw %4, 0(%5)\n"
-                    "lw %0, 0(%5)\n"
-                    "sw %4, 4(%5)\n"
-                    "lw %1, 4(%5)\n"    
-                    "sw %4, 8(%5)\n"
-                    "lw %2, 8(%5)\n"    
-                    "sw %4, 12(%5)\n"
-                    "lw %3, 12(%5)\n"
+      asm volatile ("ori a0, %4, 0\n"
+                    "ori a1, %5, 0\n"
+                    "sw a0, 0(a1)\n"
+                    "lw %0, 0(a1)\n"
+                    "sw a0, 4(a1)\n"
+                    "lw %1, 4(a1)\n"    
+                    "sw a0, 8(a1)\n"
+                    "lw %2, 8(a1)\n"    
+                    "sw a0, 12(a1)\n"
+                    "lw %3, 12(a1)\n"
                     : "=r"(result0), "=r"(result1), "=r"(result2), "=r"(result3)
                     : "r"(write_value), "r"(temp_pointer)
+                    : "a0", "a1"
                     );
       if(result0 != write_value){
         return 1;
@@ -66,16 +69,19 @@ TEST_ATTR int test_3()
       register uint16_t result3;
       register uint16_t *temp_pointer = &temp_location[word];
       register uint16_t write_value   = word+run;
-      asm volatile ("sh %4, 0(%5)\n"
-                    "lhu %0, 0(%5)\n"
-                    "sh %4, 2(%5)\n"
-                    "lhu %1, 2(%5)\n"    
-                    "sh %4, 4(%5)\n"
-                    "lhu %2, 4(%5)\n"    
-                    "sh %4, 6(%5)\n"
-                    "lhu %3, 6(%5)\n"
+      asm volatile ("ori a0, %4, 0\n"
+                    "ori a1, %5, 0\n"
+                    "sh a0, 0(a1)\n"
+                    "lhu %0, 0(a1)\n"
+                    "sh a0, 2(a1)\n"
+                    "lhu %1, 2(a1)\n"    
+                    "sh a0, 4(a1)\n"
+                    "lhu %2, 4(a1)\n"    
+                    "sh a0, 6(a1)\n"
+                    "lhu %3, 6(a1)\n"
                     : "=r"(result0), "=r"(result1), "=r"(result2), "=r"(result3)
                     : "r"(write_value), "r"(temp_pointer)
+                    : "a0", "a1"
                     );
       if(result0 != write_value){
         return 1;
@@ -111,16 +117,19 @@ TEST_ATTR int test_4()
       register uint8_t result3;
       register uint8_t *temp_pointer = &temp_location[word];
       register uint8_t write_value   = word+run;
-      asm volatile ("sb %4, 0(%5)\n"
-                    "lbu %0, 0(%5)\n"
-                    "sb %4, 1(%5)\n"
-                    "lbu %1, 1(%5)\n"    
-                    "sb %4, 2(%5)\n"
-                    "lbu %2, 2(%5)\n"    
-                    "sb %4, 3(%5)\n"
-                    "lbu %3, 3(%5)\n"
+      asm volatile ("ori a0, %4, 0\n"
+                    "ori a1, %5, 0\n"
+                    "sb a0, 0(a1)\n"
+                    "lbu %0, 0(a1)\n"
+                    "sb a0, 1(a1)\n"
+                    "lbu %1, 1(a1)\n"    
+                    "sb a0, 2(a1)\n"
+                    "lbu %2, 2(a1)\n"    
+                    "sb a0, 3(a1)\n"
+                    "lbu %3, 3(a1)\n"
                     : "=r"(result0), "=r"(result1), "=r"(result2), "=r"(result3)
                     : "r"(write_value), "r"(temp_pointer)
+                    : "a0", "a1"
                     );
       if(result0 != write_value){
         return 1;
@@ -141,7 +150,23 @@ TEST_ATTR int test_4()
 }
 
 //this macro runs the test, and returns the test number on failure
-#define do_test(i) do{if ( test_##i () ) return i;}while(0)
+#define do_test(TEST_NUMBER) do{                \
+    if(test_##TEST_NUMBER()){                   \
+      asm volatile ("slli x28, %0,  1\n"        \
+                    "ori  x28, x28, 1\n"        \
+                    "fence.i\n"                 \
+                    "ecall\n"                   \
+                    : : "r"(TEST_NUMBER));      \
+        return TEST_NUMBER;                     \
+    }                                           \
+  } while(0)
+
+#define pass_test() do{                         \
+    asm volatile ("addi x28, x0, 1\n"           \
+                  "fence.i\n"                   \
+                  "ecall\n");                   \
+    return 0;                                   \
+  } while(0)
 
 int main()
 {
@@ -150,8 +175,8 @@ int main()
   do_test(3);
   do_test(4);
 
+  pass_test();
   return 0;
-
 }
 
 int handle_interrupt(int cause, int epc, int regs[32]) {
