@@ -13,6 +13,7 @@ set -o pipefail
 	 ./configure --with-xlen=32 2>&1
 	 make clean &>/dev/null
 	 make -k isa -j10 >/dev/null 2>&1 || true
+
 )
 
 TEST_DIR=${RISCV_TEST_DIR}/isa
@@ -57,3 +58,9 @@ do
 	 ) &
 done
 wait
+
+(
+ 	 #cleanup edits
+	 cd ${RISCV_TEST_DIR}/env
+	 git checkout .
+)

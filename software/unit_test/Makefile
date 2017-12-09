@@ -19,17 +19,22 @@ INCLUDE_DIRS:=$(RISCV_ENV_DIR) $(RISCV_TESTS_DIR)/isa/macros/scalar ../
 
 INCLUDE_DIRS:=$(addprefix -I,$(INCLUDE_DIRS))
 LINK_FILE=link.ld
-DEP_FILES=$(wildcard *.d)
+
+DEPENDS_DIR=depends
+DEP_FILES=$(wildcard $(DEPENDS_DIR)/*.d)
+
 -include $(DEP_FILES)
-$(TEST_ASM_ELF): %.elf : %.S | $(RISCV_ENV_DIR)
-	$(CC) $(C_FLAGS)  $(INCLUDE_DIRS) -T$(LINK_FILE) $^ -o $@
+$(DEPENDS_DIR):
+	mkdir -p $@
+$(TEST_ASM_ELF): %.elf : %.S | $(RISCV_ENV_DIR) $(DEPENDS_DIR)
+	$(CC) $(C_FLAGS)  $(INCLUDE_DIRS) -T$(LINK_FILE) $^ -o $@  -MD -MF $(DEPENDS_DIR)/$(basename $@).d
 	$(OBJDUMP) -D $@ > $*.dump
 
-$(TEST_C_ELF): %.elf : %.c crt.S | $(RISCV_ENV_DIR)
-	$(CC) $(C_FLAGS) -O2 $(INCLUDE_DIRS) -T$(LINK_FILE) $^ -o $@
+$(TEST_C_ELF): %.elf : %.c crt.S | $(RISCV_ENV_DIR) $(DEPENDS_DIR)
+	$(CC) $(C_FLAGS) -O2 $(INCLUDE_DIRS) -T$(LINK_FILE) $^ -o $@ -MD -MF $(DEPENDS_DIR)/$(basename $@).d
 	$(OBJDUMP) -D $@ > $*.dump
 
 all:$(TEST_ASM_ELF) $(TEST_C_ELF)
 
 clean:
-	rm -rf $(TEST_ASM_ELF) $(TEST_C_ELF) $(DEP_FILES)
+	rm -rf $(TEST_ASM_ELF) $(TEST_C_ELF) $(DEPENDS_DIR)
