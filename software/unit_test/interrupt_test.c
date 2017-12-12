@@ -149,7 +149,23 @@ TEST_ATTR int interrupt_latency_test(int cycles)
 
 
 //this macro runs the test, and returns the test number on failure
-#define do_test(i) do{if ( test_##i () ) return i;}while(0)
+#define do_test(TEST_NUMBER) do{                \
+    int result = test_##TEST_NUMBER();          \
+    if(result){                                 \
+      asm volatile ("ori  x28, %0, 0\n"         \
+                    "fence.i\n"                 \
+                    "ecall\n"                   \
+                    : : "r"(result));           \
+      return result;                            \
+    }                                           \
+  } while(0)
+
+#define pass_test() do{                         \
+    asm volatile ("addi x28, x0, 1\n"           \
+                  "fence.i\n"                   \
+                  "ecall\n");                   \
+    return 0;                                   \
+  } while(0)
 
 int main()
 {
@@ -167,6 +183,6 @@ int main()
 			return i+6;
 	}
 
+  pass_test();
 	return 0;
-
 }

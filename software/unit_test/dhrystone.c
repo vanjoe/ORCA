@@ -129,14 +129,14 @@ Boolean Func_2 (Str_30 Str_1_Par_Ref, Str_30 Str_2_Par_Ref);
  
 /* variables for time measurement: */
  
-#define Too_Small_Time 0.000100
+#define Too_Small_Time_uSecs 100
 /* Measurements should last at least 100 microseconds */
  
-uint32_t          Begin_Cycle,
+uint64_t          Begin_Cycle,
   End_Cycle;
-double User_Time;
+uint64_t User_Time_uSecs;
  
-double          Microseconds,
+uint64_t          Microseconds,
   Dhrystones_Per_Second,
   Vax_Mips;
  
@@ -153,8 +153,6 @@ int test_2()
   printf ("Dhrystone Benchmark, Version 2.1 (Language: C or C++)\r\n");
   printf ("\r\n");
 
-  double dtime();
- 
   One_Fifty   Int_1_Loc;
   REG   One_Fifty   Int_2_Loc;
   One_Fifty   Int_3_Loc;
@@ -232,12 +230,10 @@ int test_2()
       Number_Of_Runs);
   */
 
-  Number_Of_Runs = 1;
+  Number_Of_Runs = 2;
 
   do
     {
-
-      Number_Of_Runs = Number_Of_Runs * 2;
       count = count - 1;
       Arr_2_Glob [8][7] = 10;
         
@@ -298,20 +294,16 @@ int test_2()
       /**************/
 
       End_Cycle = get_time();
-      User_Time = ((double)(End_Cycle - Begin_Cycle))/SYS_CLK;
+      User_Time_uSecs = ((End_Cycle - Begin_Cycle)*1000*1000)/SYS_CLK;
              
-      printf("%d runs %d.%d seconds %d runs/second\r\n", (int)Number_Of_Runs, (int)User_Time, ((int)(User_Time*10.0))%10, (int)(Number_Of_Runs/User_Time));
-      if (User_Time > Too_Small_Time)
+      if (User_Time_uSecs > Too_Small_Time_uSecs)
         {
           count = 0;
         }
       else
         {
-          double ratio = Too_Small_Time/User_Time;
-          if (ratio > 1.8)
-            {
-              Number_Of_Runs = (int)((ratio/1.8) + 1.0);
-            }
+          Number_Of_Runs = (Number_Of_Runs*Too_Small_Time_uSecs)/User_Time_uSecs;
+          Number_Of_Runs += Number_Of_Runs >> 1;
         }
     }   /* calibrate/run do while */
   while (count >0);
@@ -444,7 +436,7 @@ int test_2()
   printf ("\r\n");
     
  
-  if (User_Time < Too_Small_Time)
+  if (User_Time_uSecs < Too_Small_Time_uSecs)
     {
       printf ("Measured time too small to obtain meaningful results\r\n");
       printf ("Please increase number of runs\r\n");
@@ -452,10 +444,9 @@ int test_2()
     }
   else
     {
-      Microseconds = User_Time * Mic_secs_Per_Second 
-        / (double) Number_Of_Runs;
-      Dhrystones_Per_Second = (double) Number_Of_Runs / User_Time;
-      Vax_Mips = Dhrystones_Per_Second / 1757.0;
+      Microseconds = User_Time_uSecs / Number_Of_Runs;
+      Dhrystones_Per_Second = (Number_Of_Runs * 1000*1000) / User_Time_uSecs;
+      Vax_Mips = (Number_Of_Runs * 1000*1000) / (User_Time_uSecs * 1757);
  
       printf ("Microseconds for one run through Dhrystone: ");
       printf ("%12.2lf \r\n", Microseconds);
@@ -735,20 +726,6 @@ register int    l;
   while (l--) *d++ = *s++;
 }
 #endif
-
-double dtime()
-{
-  
-  /* #include <ctype.h> */
-
-#define HZ SYS_CLK
-  uint32_t tnow;
-
-  double q;
-  tnow = get_time();
-  q = (double)tnow / (double)HZ;     
-  return q;
-}
 
  Boolean Func_3 (Enumeration Enum_Par_Val); 
  

@@ -341,10 +341,9 @@ entity orca is
 end entity orca;
 
 architecture rtl of orca is
-  --Might want to bring this out to the top level.  Changing to true will
-  --utilize DRAM/MRAM that supports write-first mode instead of using a
-  --RAM with bypass.
-  constant WRITE_FIRST_SMALL_RAMS : boolean := FAMILY = "XILINX" or FAMILY = "ALTERA";
+  --Might want to bring these out to the top level.
+  constant WRITE_FIRST_SMALL_RAMS   : boolean  := FAMILY = "XILINX" or FAMILY = "ALTERA";
+  constant MAX_OUTSTANDING_REQUESTS : positive := 4;
 
   --Currently only AXI3 supported so fix $ burstlength to 16 max
   constant ICACHE_MAX_BURSTLENGTH : positive := 16;
@@ -445,6 +444,7 @@ begin
       WISHBONE_SINGLE_CYCLE_READS  => 0,  --For now assumed not supported; can be
                                           --brought to top level if needed
       MAX_IFETCHES_IN_FLIGHT       => MAX_IFETCHES_IN_FLIGHT,
+      MAX_OUTSTANDING_REQUESTS     => MAX_OUTSTANDING_REQUESTS,
       INSTRUCTION_REQUEST_REGISTER => INSTRUCTION_REQUEST_REGISTER,
       INSTRUCTION_RETURN_REGISTER  => INSTRUCTION_RETURN_REGISTER,
       IUC_REQUEST_REGISTER         => IUC_REQUEST_REGISTER,

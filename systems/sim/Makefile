@@ -1,11 +1,17 @@
-
+-include config.mk
+BUS_TYPES := avalon axi cached csmith
 
 ifndef BUS_TYPE
 $(info INFO: BUS_TYPE not defined, defaulting to avalon )
 BUS_TYPE=avalon
 endif
+ifeq ($(filter $(BUS_TYPE), $(BUS_TYPES)),)
+$(error BUS_TYPE $(BUS_TYPE) is not in the list of bus types ($(BUS_TYPES)))
+endif
 
 all:
+
+SYSTEMS=$(BUS_TYPES:%=system_%)
 SYSTEM=system_$(BUS_TYPE)
 QSYS_FILE=$(SYSTEM).qsys
 SIM_WAVES_FILE=sim_waves_system_$(BUS_TYPE).tcl
@@ -41,7 +47,7 @@ all: $(SYSTEM)/simulation/mentor/msim_setup.tcl
 sim: all $(SIM_FILE) $(SIM_WAVES_FILE)
 	vsim -do $(SIM_FILE)
 clean:
-	rm -rf system_avalon system_csmith system_axi test test.hex
+	rm -rf $(SYSTEMS) test test.hex
 	rm -rf *_axi.tcl *_avalon.tcl transcript *.sopcinfo platform.info
 	rm -rf .qsys_edit
 

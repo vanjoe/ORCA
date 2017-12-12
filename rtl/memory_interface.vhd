@@ -19,6 +19,7 @@ entity memory_interface is
 
     WISHBONE_SINGLE_CYCLE_READS  : natural range 0 to 1;
     MAX_IFETCHES_IN_FLIGHT       : positive range 1 to 4;
+    MAX_OUTSTANDING_REQUESTS     : positive;
     INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2;
     INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1;
     IUC_REQUEST_REGISTER         : natural range 0 to 2;
@@ -416,7 +417,7 @@ architecture rtl of memory_interface is
   signal dcacheint_oimm_readdatavalid : std_logic;
   signal dcacheint_oimm_waitrequest   : std_logic;
 
-  signal axi_resetn : std_logic;
+  signal aresetn : std_logic;
 begin
   assert (AVALON_AUX + WISHBONE_AUX + LMB_AUX) < 2 report
     "At most one auxiliary interface type (AVALON_AUX, WISHBONE_AUX, LMB_AUX) must be enabled"
@@ -426,6 +427,8 @@ begin
   --need them.
   ifetch_oimm_writedata  <= (others => '-');
   ifetch_oimm_byteenable <= (others => '1');
+
+  aresetn <= not reset;
 
   -----------------------------------------------------------------------------
   -- Instruction cache and mux
@@ -497,6 +500,7 @@ begin
     signal ic_oimm_requestvalid       : std_logic;
     signal ic_oimm_readnotwrite       : std_logic;
     signal ic_oimm_writedata          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+    signal ic_oimm_writelast          : std_logic;
     signal ic_oimm_readdata           : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal ic_oimm_readdatavalid      : std_logic;
     signal ic_oimm_waitrequest        : std_logic;
@@ -532,6 +536,7 @@ begin
         c_oimm_requestvalid       => ic_oimm_requestvalid,
         c_oimm_readnotwrite       => ic_oimm_readnotwrite,
         c_oimm_writedata          => ic_oimm_writedata,
+        c_oimm_writelast          => ic_oimm_writelast,
         c_oimm_readdata           => ic_oimm_readdata,
         c_oimm_readdatavalid      => ic_oimm_readdatavalid,
         c_oimm_waitrequest        => ic_oimm_waitrequest
@@ -539,14 +544,16 @@ begin
 
     ic_master : axi_master
       generic map (
-        ADDRESS_WIDTH   => REGISTER_SIZE,
-        DATA_WIDTH      => REGISTER_SIZE,
-        ID_WIDTH        => 4,
-        MAX_BURSTLENGTH => ICACHE_MAX_BURSTLENGTH
+        ADDRESS_WIDTH            => REGISTER_SIZE,
+        DATA_WIDTH               => REGISTER_SIZE,
+        ID_WIDTH                 => 4,
+        MAX_BURSTLENGTH          => ICACHE_MAX_BURSTLENGTH,
+        MAX_OUTSTANDING_REQUESTS => 0
         )
       port map (
         clk     => clk,
-        aresetn => axi_resetn,
+        reset   => reset,
+        aresetn => aresetn,
 
         oimm_address            => ic_oimm_address,
         oimm_burstlength        => ic_oimm_burstlength,
@@ -555,6 +562,7 @@ begin
         oimm_requestvalid       => ic_oimm_requestvalid,
         oimm_readnotwrite       => ic_oimm_readnotwrite,
         oimm_writedata          => ic_oimm_writedata,
+        oimm_writelast          => ic_oimm_writelast,
         oimm_readdata           => ic_oimm_readdata,
         oimm_readdatavalid      => ic_oimm_readdatavalid,
         oimm_waitrequest        => ic_oimm_waitrequest,
@@ -699,6 +707,7 @@ begin
     signal dc_oimm_requestvalid       : std_logic;
     signal dc_oimm_readnotwrite       : std_logic;
     signal dc_oimm_writedata          : std_logic_vector(REGISTER_SIZE-1 downto 0);
+    signal dc_oimm_writelast          : std_logic;
     signal dc_oimm_readdata           : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal dc_oimm_readdatavalid      : std_logic;
     signal dc_oimm_waitrequest        : std_logic;
@@ -734,6 +743,7 @@ begin
         c_oimm_requestvalid       => dc_oimm_requestvalid,
         c_oimm_readnotwrite       => dc_oimm_readnotwrite,
         c_oimm_writedata          => dc_oimm_writedata,
+        c_oimm_writelast          => dc_oimm_writelast,
         c_oimm_readdata           => dc_oimm_readdata,
         c_oimm_readdatavalid      => dc_oimm_readdatavalid,
         c_oimm_waitrequest        => dc_oimm_waitrequest
@@ -741,14 +751,16 @@ begin
 
     dc_master : axi_master
       generic map (
-        ADDRESS_WIDTH   => REGISTER_SIZE,
-        DATA_WIDTH      => REGISTER_SIZE,
-        ID_WIDTH        => 4,
-        MAX_BURSTLENGTH => DCACHE_MAX_BURSTLENGTH
+        ADDRESS_WIDTH            => REGISTER_SIZE,
+        DATA_WIDTH               => REGISTER_SIZE,
+        ID_WIDTH                 => 4,
+        MAX_BURSTLENGTH          => DCACHE_MAX_BURSTLENGTH,
+        MAX_OUTSTANDING_REQUESTS => MAX_OUTSTANDING_REQUESTS
         )
       port map (
         clk     => clk,
-        aresetn => axi_resetn,
+        reset   => reset,
+        aresetn => aresetn,
 
         oimm_address            => dc_oimm_address,
         oimm_burstlength        => dc_oimm_burstlength,
@@ -757,6 +769,7 @@ begin
         oimm_requestvalid       => dc_oimm_requestvalid,
         oimm_readnotwrite       => dc_oimm_readnotwrite,
         oimm_writedata          => dc_oimm_writedata,
+        oimm_writelast          => dc_oimm_writelast,
         oimm_readdata           => dc_oimm_readdata,
         oimm_readdatavalid      => dc_oimm_readdatavalid,
         oimm_waitrequest        => dc_oimm_waitrequest,
@@ -1084,17 +1097,17 @@ begin
     instr_STB_O <= '0';
   end generate wishbone_disabled;
 
-  axi_resetn <= not reset;
-
   iuc_master_gen : if IUC_ADDR_BASE /= IUC_ADDR_LAST generate
     iuc_master : a4l_master
       generic map (
-        ADDRESS_WIDTH => REGISTER_SIZE,
-        DATA_WIDTH    => REGISTER_SIZE
+        ADDRESS_WIDTH            => REGISTER_SIZE,
+        DATA_WIDTH               => REGISTER_SIZE,
+        MAX_OUTSTANDING_REQUESTS => 0
         )
       port map (
         clk     => clk,
-        aresetn => axi_resetn,
+        reset   => reset,
+        aresetn => aresetn,
 
         oimm_address       => iuc_oimm_address,
         oimm_byteenable    => iuc_oimm_byteenable,
@@ -1163,12 +1176,14 @@ begin
   duc_master_gen : if DUC_ADDR_BASE /= DUC_ADDR_LAST generate
     duc_master : a4l_master
       generic map (
-        ADDRESS_WIDTH => REGISTER_SIZE,
-        DATA_WIDTH    => REGISTER_SIZE
+        ADDRESS_WIDTH            => REGISTER_SIZE,
+        DATA_WIDTH               => REGISTER_SIZE,
+        MAX_OUTSTANDING_REQUESTS => MAX_OUTSTANDING_REQUESTS
         )
       port map (
         clk     => clk,
-        aresetn => axi_resetn,
+        reset   => reset,
+        aresetn => aresetn,
 
         oimm_address       => duc_oimm_address,
         oimm_byteenable    => duc_oimm_byteenable,

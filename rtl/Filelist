@@ -18,6 +18,7 @@ bram_sdp_write_first.vhd
 cache.vhd
 cache_controller.vhd
 cache_mux.vhd
+oimm_throttler.vhd
 a4l_master.vhd
 axi_master.vhd
 oimm_register.vhd

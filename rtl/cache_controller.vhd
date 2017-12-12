@@ -39,6 +39,7 @@ entity cache_controller is
     c_oimm_requestvalid       : out std_logic;
     c_oimm_readnotwrite       : out std_logic;
     c_oimm_writedata          : out std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
+    c_oimm_writelast          : out std_logic;
     c_oimm_readdata           : in  std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
     c_oimm_readdatavalid      : in  std_logic;
     c_oimm_waitrequest        : in  std_logic
@@ -108,12 +109,14 @@ architecture rtl of cache_controller is
   signal read_oimm_readabort             : std_logic;
   signal read_oimm_waitrequest           : std_logic;
 begin
+  --Write-through mode: writes are all length 1, reads are all BURST_LENGTH
   c_oimm_burstlength <=
     std_logic_vector(to_unsigned(1, c_oimm_burstlength'length)) when c_write = '1' else
     std_logic_vector(to_unsigned(BURST_LENGTH, c_oimm_burstlength'length));
   c_oimm_burstlength_minus1 <=
     std_logic_vector(to_unsigned(0, c_oimm_burstlength_minus1'length)) when c_write = '1' else
     std_logic_vector(to_unsigned(BURST_LENGTH-1, c_oimm_burstlength_minus1'length));
+  c_oimm_writelast <= '1';
 
   c_oimm_address(ADDRESS_WIDTH-1 downto log2(LINE_SIZE)) <=
     read_lastaddress(ADDRESS_WIDTH-1 downto log2(LINE_SIZE));

@@ -7,8 +7,8 @@ use work.utils.all;
 
 entity bram_microsemi is
   generic (
-    RAM_DEPTH : integer := 1024;        -- this is the maximum
-    RAM_WIDTH : integer := 32
+    RAM_DEPTH : integer;
+    RAM_WIDTH : integer
     );
   port (
     clk : in std_logic;

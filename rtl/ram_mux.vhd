@@ -6,8 +6,8 @@ use work.utils.all;
 
 entity ram_mux is
   generic (
-    ADDRESS_WIDTH : natural := 32;
-    DATA_WIDTH    : natural := 32
+    ADDRESS_WIDTH : natural;
+    DATA_WIDTH    : natural
     );
   port (
     -- init signals

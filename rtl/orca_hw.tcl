@@ -61,6 +61,7 @@ add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
 add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
 add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH cache_mux.vhd
 add_fileset_file vblox_orca/oimm_register.vhd VHDL PATH oimm_register.vhd
+add_fileset_file vblox_orca/oimm_throttler.vhd VHDL PATH oimm_throttler.vhd
 add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
 add_fileset_file vblox_orca/cache_controller.vhd VHDL PATH cache_controller.vhd
 add_fileset_file vblox_orca/cache.vhd VHDL PATH cache.vhd
@@ -89,6 +90,7 @@ add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
 add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
 add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH cache_mux.vhd
 add_fileset_file vblox_orca/oimm_register.vhd VHDL PATH oimm_register.vhd
+add_fileset_file vblox_orca/oimm_throttler.vhd VHDL PATH oimm_throttler.vhd
 add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
 add_fileset_file vblox_orca/cache_controller.vhd VHDL PATH cache_controller.vhd
 add_fileset_file vblox_orca/cache.vhd VHDL PATH cache.vhd
@@ -537,8 +539,8 @@ add_interface axi_duc axi start
 set_interface_property axi_duc associatedClock clock
 set_interface_property axi_duc associatedReset reset
 set_interface_property axi_duc readIssuingCapability 1
-set_interface_property axi_duc writeIssuingCapability 1
-set_interface_property axi_duc combinedIssuingCapability 1
+set_interface_property axi_duc writeIssuingCapability 4
+set_interface_property axi_duc combinedIssuingCapability 4
 set_interface_property axi_duc ENABLED true
 set_interface_property axi_duc EXPORT_OF ""
 set_interface_property axi_duc PORT_NAME_MAP ""
@@ -588,9 +590,9 @@ add_interface_port axi_duc DUC_WVALID wvalid Output 1
 add_interface axi_iuc axi start
 set_interface_property axi_iuc associatedClock clock
 set_interface_property axi_iuc associatedReset reset
-set_interface_property axi_iuc readIssuingCapability 2
+set_interface_property axi_iuc readIssuingCapability 3
 set_interface_property axi_iuc writeIssuingCapability 1
-set_interface_property axi_iuc combinedIssuingCapability 1
+set_interface_property axi_iuc combinedIssuingCapability 3
 set_interface_property axi_iuc ENABLED true
 set_interface_property axi_iuc EXPORT_OF ""
 set_interface_property axi_iuc PORT_NAME_MAP ""
@@ -640,9 +642,9 @@ add_interface_port axi_iuc IUC_WVALID wvalid Output 1
 add_interface axi_ic_master axi start
 set_interface_property axi_ic_master associatedClock clock
 set_interface_property axi_ic_master associatedReset reset
-set_interface_property axi_ic_master readIssuingCapability 2
+set_interface_property axi_ic_master readIssuingCapability 3
 set_interface_property axi_ic_master writeIssuingCapability 1
-set_interface_property axi_ic_master combinedIssuingCapability 1
+set_interface_property axi_ic_master combinedIssuingCapability 3
 set_interface_property axi_ic_master ENABLED true
 set_interface_property axi_ic_master EXPORT_OF ""
 set_interface_property axi_ic_master PORT_NAME_MAP ""
@@ -692,9 +694,9 @@ add_interface_port axi_ic_master IC_WVALID wvalid Output 1
 add_interface axi_dc_master axi start
 set_interface_property axi_dc_master associatedClock clock
 set_interface_property axi_dc_master associatedReset reset
-set_interface_property axi_dc_master readIssuingCapability 2
-set_interface_property axi_dc_master writeIssuingCapability 1
-set_interface_property axi_dc_master combinedIssuingCapability 1
+set_interface_property axi_dc_master readIssuingCapability 1
+set_interface_property axi_dc_master writeIssuingCapability 4
+set_interface_property axi_dc_master combinedIssuingCapability 4
 set_interface_property axi_dc_master ENABLED true
 set_interface_property axi_dc_master EXPORT_OF ""
 set_interface_property axi_dc_master PORT_NAME_MAP ""
@@ -945,12 +947,16 @@ proc log_out {out_str} {
 }
 
 proc elaboration_callback {} {
-
     if { [get_parameter_value MULTIPLY_ENABLE] } {
         set_display_item_property SHIFTER_MAX_CYCLES ENABLED false
     } else {
         set_display_item_property SHIFTER_MAX_CYCLES ENABLED true
     }
+
+    set_interface_property axi_ic_master readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
+    set_interface_property axi_ic_master combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
+    set_interface_property axi_iuc       readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
+    set_interface_property axi_iuc       combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
 
     if { [get_parameter_value LVE_ENABLE] } {
         set_interface_property scratchpad_clk ENABLED true

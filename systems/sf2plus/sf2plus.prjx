@@ -1407,6 +1407,11 @@ STATE="utd"
 TIME="1504030848"
 SIZE="8775"
 ENDFILE
+VALUE "<project>/hdl/oimm_throttler.vhd,hdl"
+STATE="utd"
+TIME="1504030848"
+SIZE="8775"
+ENDFILE
 VALUE "<project>/hdl/axi_master.vhd,hdl"
 STATE="utd"
 TIME="1504030848"
@@ -2661,6 +2666,7 @@ ACTIVEVIEW;Top_Fabric_Master
 ENDLIST
 LIST ModuleSubBlockList
 LIST "a4l_master::work::rv_components","hdl/a4l_master.vhd","FALSE","FALSE"
+LIST "oimm_throttler::work::rv_components","hdl/oimm_throttler.vhd","FALSE","FALSE"
 LIST "axi_master::work::rv_components","hdl/axi_master.vhd","FALSE","FALSE"
 ENDLIST
 LIST "AddressController::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.102/rtl/vlog/core/Axi4CrossBar/AddressController.v","FALSE","FALSE"
@@ -2939,6 +2945,7 @@ SUBBLOCK "my_mss::work","component/work/my_mss/my_mss.v","TRUE","FALSE"
 ENDLIST
 LIST "orca::work::rv_components","hdl/orca.vhd","FALSE","FALSE"
 SUBBLOCK "a4l_master::work::rv_components","hdl/a4l_master.vhd","FALSE","FALSE"
+SUBBLOCK "oimm_throttler::work::rv_components","hdl/oimm_throttler.vhd","FALSE","FALSE"
 SUBBLOCK "axi_master::work::rv_components","hdl/axi_master.vhd","FALSE","FALSE"
 SUBBLOCK "cache_mux::work::rv_components","hdl/cache_mux.vhd","FALSE","FALSE"
 SUBBLOCK "cache_controller::work::rv_components","hdl/cache_controller.vhd","FALSE","FALSE"
@@ -2999,6 +3006,7 @@ LIST "RoundRobinArb::work","component/Actel/DirectCore/CoreAXI4Interconnect/2.2.
 ENDLIST
 LIST "rv_components::work","hdl/components.vhd","FALSE","FALSE"
 SUBBLOCK "a4l_master::work::rv_components","hdl/a4l_master.vhd","FALSE","FALSE"
+SUBBLOCK "oimm_throttler::work::rv_components","hdl/oimm_throttler.vhd","FALSE","FALSE"
 SUBBLOCK "axi_master::work::rv_components","hdl/axi_master.vhd","FALSE","FALSE"
 SUBBLOCK "arithmetic_unit::work::rv_components","hdl/alu.vhd","FALSE","FALSE"
 SUBBLOCK "bram_microsemi::work::rv_components","hdl/bram_microsemi.vhd","FALSE","FALSE"

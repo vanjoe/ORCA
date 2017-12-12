@@ -10,10 +10,10 @@ use work.rv_components.all;
 entity lve_top is
   generic (
     REGISTER_SIZE    : natural;
-    SLAVE_DATA_WIDTH : natural := 32;
+    SLAVE_DATA_WIDTH : natural;
     POWER_OPTIMIZED  : boolean;
-    SCRATCHPAD_SIZE  : integer := 1024;
-    FAMILY           : string  := "ALTERA"
+    SCRATCHPAD_SIZE  : integer;
+    FAMILY           : string
     );
   port (
     clk            : in  std_logic;

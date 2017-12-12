@@ -20,9 +20,9 @@ entity register_file is
     wb_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     wb_enable  : in std_logic;
 
-    rs1_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs3_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0)
+    rs1_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs3_data : out std_logic_vector(REGISTER_SIZE-1 downto 0)
     );
 end;
 

@@ -6,19 +6,20 @@ use work.utils.all;
 use work.rv_components.all;
 
 -------------------------------------------------------------------------------
--- AXI master from Avalon master.
--- Assumes the incoming Avalon interface has constantBurstBehavior.
+-- AXI master from OIMM master.
 -------------------------------------------------------------------------------
 
 entity axi_master is
   generic (
-    ADDRESS_WIDTH   : integer  := 32;
-    DATA_WIDTH      : integer  := 32;
-    ID_WIDTH        : positive := 4;
-    MAX_BURSTLENGTH : positive := 16
+    ADDRESS_WIDTH            : integer;
+    DATA_WIDTH               : integer;
+    ID_WIDTH                 : positive;
+    MAX_BURSTLENGTH          : positive;
+    MAX_OUTSTANDING_REQUESTS : natural
     );
   port (
     clk     : in std_logic;
+    reset   : in std_logic;
     aresetn : in std_logic;
 
     --Orca-internal memory-mapped slave
@@ -29,6 +30,7 @@ entity axi_master is
     oimm_requestvalid       : in     std_logic;
     oimm_readnotwrite       : in     std_logic;
     oimm_writedata          : in     std_logic_vector(DATA_WIDTH-1 downto 0);
+    oimm_writelast          : in     std_logic;
     oimm_readdata           : out    std_logic_vector(DATA_WIDTH-1 downto 0);
     oimm_readdatavalid      : out    std_logic;
     oimm_waitrequest        : buffer std_logic;
@@ -83,42 +85,66 @@ architecture rtl of axi_master is
   constant PROT_VAL   : std_logic_vector(2 downto 0) := "000";
   constant LOCK_VAL   : std_logic_vector(1 downto 0) := "00";
 
-  signal AWVALID_internal       : std_logic;
-  signal WVALID_internal        : std_logic;
-  signal WLAST_internal         : std_logic;
-  signal aw_sending             : std_logic;
-  signal aw_sent                : std_logic;
-  signal w_sending              : std_logic;
-  signal w_sent                 : std_logic;
-  signal writes_left            : unsigned(log2(MAX_BURSTLENGTH)-1 downto 0);
-  signal writes_left_registered : unsigned(log2(MAX_BURSTLENGTH)-1 downto 0);
-  signal write_burst_start      : std_logic;
+  signal unthrottled_oimm_readcomplete  : std_logic;
+  signal unthrottled_oimm_writecomplete : std_logic;
+  signal unthrottled_oimm_waitrequest   : std_logic;
+  signal throttled_oimm_requestvalid    : std_logic;
+
+  signal AWVALID_signal : std_logic;
+  signal WVALID_signal  : std_logic;
+  signal aw_sending     : std_logic;
+  signal aw_sent        : std_logic;
+  signal w_sending      : std_logic;
+  signal w_sent         : std_logic;
 begin
+  request_throttler : oimm_throttler
+    generic map (
+      MAX_OUTSTANDING_REQUESTS => MAX_OUTSTANDING_REQUESTS
+      )
+    port map (
+      clk   => clk,
+      reset => reset,
+
+      --Orca-internal memory-mapped slave
+      slave_oimm_requestvalid => oimm_requestvalid,
+      slave_oimm_readnotwrite => oimm_readnotwrite,
+      slave_oimm_writelast    => oimm_writelast,
+      slave_oimm_waitrequest  => oimm_waitrequest,
+
+      --Orca-internal memory-mapped master
+      master_oimm_requestvalid  => throttled_oimm_requestvalid,
+      master_oimm_readcomplete  => unthrottled_oimm_readcomplete,
+      master_oimm_writecomplete => unthrottled_oimm_writecomplete,
+      master_oimm_waitrequest   => unthrottled_oimm_waitrequest
+      );
+
+  unthrottled_oimm_readcomplete  <= RVALID and RLAST;
+  unthrottled_oimm_writecomplete <= BVALID;
+
   oimm_readdata      <= RDATA;
   oimm_readdatavalid <= RVALID;
 
-  oimm_waitrequest <= (not ARREADY) when oimm_readnotwrite = '1' else
-                      (((not AWREADY) and (not aw_sent) and (WLAST_internal or w_sent)) or
-                       ((not WREADY) and (not w_sent)));
+  unthrottled_oimm_waitrequest <= (not ARREADY) when oimm_readnotwrite = '1' else
+                                  (((not AWREADY) and (not aw_sent) and (oimm_writelast or w_sent)) or
+                                   ((not WREADY) and (not w_sent)));
 
-  AWID             <= (others => '0');
-  AWADDR           <= oimm_address;
-  AWLEN            <= oimm_burstlength_minus1;
-  AWSIZE           <= std_logic_vector(to_unsigned(log2(DATA_WIDTH/8), 3));
-  AWBURST          <= BURST_INCR;
-  AWLOCK           <= LOCK_VAL;
-  AWCACHE          <= CACHE_VAL;
-  AWPROT           <= PROT_VAL;
-  AWVALID_internal <= (oimm_requestvalid and (not oimm_readnotwrite)) and (not aw_sent);
-  AWVALID          <= AWVALID_internal;
-  WID              <= (others => '0');
-  WSTRB            <= oimm_byteenable;
-  WVALID_internal  <= (oimm_requestvalid and (not oimm_readnotwrite)) and (not w_sent);
-  WVALID           <= WVALID_internal;
-  WLAST_internal   <= '1' when writes_left = to_unsigned(0, writes_left'length) else '0';
-  WLAST            <= WLAST_internal;
-  WDATA            <= oimm_writedata;
-  BREADY           <= '1';
+  AWID           <= (others => '0');
+  AWADDR         <= oimm_address;
+  AWLEN          <= oimm_burstlength_minus1;
+  AWSIZE         <= std_logic_vector(to_unsigned(log2(DATA_WIDTH/8), 3));
+  AWBURST        <= BURST_INCR;
+  AWLOCK         <= LOCK_VAL;
+  AWCACHE        <= CACHE_VAL;
+  AWPROT         <= PROT_VAL;
+  AWVALID_signal <= (throttled_oimm_requestvalid and (not oimm_readnotwrite)) and (not aw_sent);
+  AWVALID        <= AWVALID_signal;
+  WID            <= (others => '0');
+  WSTRB          <= oimm_byteenable;
+  WVALID_signal  <= (throttled_oimm_requestvalid and (not oimm_readnotwrite)) and (not w_sent);
+  WVALID         <= WVALID_signal;
+  WLAST          <= oimm_writelast;
+  WDATA          <= oimm_writedata;
+  BREADY         <= '1';
 
   ARID    <= (others => '0');
   ARADDR  <= oimm_address;
@@ -128,12 +154,11 @@ begin
   ARLOCK  <= LOCK_VAL;
   ARCACHE <= CACHE_VAL;
   ARPROT  <= PROT_VAL;
-  ARVALID <= oimm_readnotwrite and oimm_requestvalid;
+  ARVALID <= oimm_readnotwrite and throttled_oimm_requestvalid;
   RREADY  <= '1';
 
-  aw_sending  <= AWVALID_internal and AWREADY;
-  w_sending   <= WVALID_internal and WLAST_internal and WREADY;
-  writes_left <= unsigned(oimm_burstlength_minus1) when write_burst_start = '1' else writes_left_registered;
+  aw_sending <= AWVALID_signal and AWREADY;
+  w_sending  <= WVALID_signal and oimm_writelast and WREADY;
   process (clk) is
   begin
     if rising_edge(clk) then
@@ -153,20 +178,10 @@ begin
           w_sent <= '1';
         end if;
       end if;
-      if WVALID_internal = '1' and WREADY = '1' then
-        write_burst_start      <= '0';
-        writes_left_registered <= writes_left - to_unsigned(1, writes_left_registered'length);
-      end if;
-
-      if (aw_sending = '1' or aw_sent = '1') and (w_sending = '1' or w_sent = '1') then
-        write_burst_start <= '1';
-      end if;
-
 
       if aresetn = '0' then
-        write_burst_start <= '1';
-        aw_sent           <= '0';
-        w_sent            <= '0';
+        aw_sent <= '0';
+        w_sent  <= '0';
       end if;
     end if;
   end process;

@@ -354,6 +354,7 @@ package rv_components is
 
       WISHBONE_SINGLE_CYCLE_READS  : natural range 0 to 1;
       MAX_IFETCHES_IN_FLIGHT       : positive range 1 to 4;
+      MAX_OUTSTANDING_REQUESTS     : positive;
       INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2;
       INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1;
       IUC_REQUEST_REGISTER         : natural range 0 to 2;
@@ -1006,9 +1007,9 @@ package rv_components is
       wb_data    : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       wb_enable  : in std_logic;
 
-      rs1_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs3_data : buffer std_logic_vector(REGISTER_SIZE-1 downto 0)
+      rs1_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs2_data : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs3_data : out std_logic_vector(REGISTER_SIZE-1 downto 0)
       );
   end component register_file;
 
@@ -1052,7 +1053,7 @@ package rv_components is
   type VCUSTOM_ENUM is (VCUSTOM0, VCUSTOM1, VCUSTOM2, VCUSTOM3, VCUSTOM4, VCUSTOM5, VCUSTOM6, VCUSTOM7);
   component lve_ci is
     generic (
-      REGISTER_SIZE : positive := 32
+      REGISTER_SIZE : positive
       );
     port (
       clk   : in std_logic;
@@ -1079,10 +1080,10 @@ package rv_components is
   component lve_top is
     generic (
       REGISTER_SIZE    : natural;
-      SLAVE_DATA_WIDTH : natural := 32;
+      SLAVE_DATA_WIDTH : natural;
       POWER_OPTIMIZED  : boolean;
-      SCRATCHPAD_SIZE  : integer := 1024;
-      FAMILY           : string  := "GENERIC"
+      SCRATCHPAD_SIZE  : integer;
+      FAMILY           : string
       );
     port (
       clk            : in std_logic;
@@ -1115,8 +1116,8 @@ package rv_components is
 
   component ram_mux is
     generic (
-      ADDRESS_WIDTH : natural := 32;
-      DATA_WIDTH    : natural := 32
+      ADDRESS_WIDTH : natural;
+      DATA_WIDTH    : natural
       );
     port (
       -- init signals
@@ -1162,8 +1163,8 @@ package rv_components is
 
   component bram_microsemi is
     generic (
-      RAM_DEPTH : integer := 1024;      -- this is the maximum
-      RAM_WIDTH : integer := 32
+      RAM_DEPTH : integer;
+      RAM_WIDTH : integer
       );
     port (
       clk : in std_logic;
@@ -1184,11 +1185,13 @@ package rv_components is
 
   component a4l_master is
     generic (
-      ADDRESS_WIDTH : integer := 32;
-      DATA_WIDTH    : integer := 32
+      ADDRESS_WIDTH            : integer;
+      DATA_WIDTH               : integer;
+      MAX_OUTSTANDING_REQUESTS : natural
       );
     port (
       clk     : in std_logic;
+      reset   : in std_logic;
       aresetn : in std_logic;
 
       --Orca-internal memory-mapped slave
@@ -1230,13 +1233,15 @@ package rv_components is
 
   component axi_master is
     generic (
-      ADDRESS_WIDTH   : integer  := 32;
-      DATA_WIDTH      : integer  := 32;
-      ID_WIDTH        : positive := 4;
-      MAX_BURSTLENGTH : positive := 16
+      ADDRESS_WIDTH            : integer;
+      DATA_WIDTH               : integer;
+      ID_WIDTH                 : positive;
+      MAX_BURSTLENGTH          : positive;
+      MAX_OUTSTANDING_REQUESTS : natural
       );
     port (
       clk     : in std_logic;
+      reset   : in std_logic;
       aresetn : in std_logic;
 
       --Orca-internal memory-mapped slave
@@ -1247,6 +1252,7 @@ package rv_components is
       oimm_requestvalid       : in     std_logic;
       oimm_readnotwrite       : in     std_logic;
       oimm_writedata          : in     std_logic_vector(DATA_WIDTH-1 downto 0);
+      oimm_writelast          : in     std_logic;
       oimm_readdata           : out    std_logic_vector(DATA_WIDTH-1 downto 0);
       oimm_readdatavalid      : out    std_logic;
       oimm_waitrequest        : buffer std_logic;
@@ -1300,7 +1306,7 @@ package rv_components is
       MEM_DEPTH       : natural;
       MEM_WIDTH       : natural;
       POWER_OPTIMIZED : boolean;
-      FAMILY          : string := "GENERIC"
+      FAMILY          : string
       );
     port (
       clk            : in std_logic;
@@ -1338,24 +1344,6 @@ package rv_components is
       );
   end component;
 
-  component bram_tdp_behav is
-    generic (
-      RAM_DEPTH : integer := 1024;
-      RAM_WIDTH : integer := 8
-      );
-    port (
-      address_a  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
-      address_b  : in  std_logic_vector(log2(RAM_DEPTH)-1 downto 0);
-      clk        : in  std_logic;
-      data_a     : in  std_logic_vector(RAM_WIDTH-1 downto 0);
-      data_b     : in  std_logic_vector(RAM_WIDTH-1 downto 0);
-      wren_a     : in  std_logic;
-      wren_b     : in  std_logic;
-      readdata_a : out std_logic_vector(RAM_WIDTH-1 downto 0);
-      readdata_b : out std_logic_vector(RAM_WIDTH-1 downto 0)
-      );
-  end component;
-
   component cache_controller is
     generic (
       CACHE_SIZE            : natural;
@@ -1389,6 +1377,7 @@ package rv_components is
       c_oimm_requestvalid       : out std_logic;
       c_oimm_readnotwrite       : out std_logic;
       c_oimm_writedata          : out std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
+      c_oimm_writelast          : out std_logic;
       c_oimm_readdata           : in  std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
       c_oimm_readdatavalid      : in  std_logic;
       c_oimm_waitrequest        : in  std_logic
@@ -1523,6 +1512,28 @@ package rv_components is
       master_oimm_writedata     : out std_logic_vector(DATA_WIDTH-1 downto 0);
       master_oimm_readdata      : in  std_logic_vector(DATA_WIDTH-1 downto 0);
       master_oimm_readdatavalid : in  std_logic;
+      master_oimm_waitrequest   : in  std_logic
+      );
+  end component;
+
+  component oimm_throttler is
+    generic (
+      MAX_OUTSTANDING_REQUESTS : natural
+      );
+    port (
+      clk   : in std_logic;
+      reset : in std_logic;
+
+      --Orca-internal memory-mapped slave
+      slave_oimm_requestvalid : in  std_logic;
+      slave_oimm_readnotwrite : in  std_logic;
+      slave_oimm_writelast    : in  std_logic;
+      slave_oimm_waitrequest  : out std_logic;
+
+      --Orca-internal memory-mapped master
+      master_oimm_requestvalid  : out std_logic;
+      master_oimm_readcomplete  : in  std_logic;
+      master_oimm_writecomplete : in  std_logic;
       master_oimm_waitrequest   : in  std_logic
       );
   end component;

@@ -51,5 +51,5 @@ proc add_wave_branch { } {
 }
 
 proc add_wave_all { } {
-    orca_add_wave_all "add wave" "add wave -divider" /system/vectorblox_orca_0 false true
+    orca_add_wave_all "add wave" "add wave -divider" /system/vectorblox_orca_0
 }

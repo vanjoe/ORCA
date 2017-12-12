@@ -11,7 +11,7 @@ use work.rv_components.all;
 
 entity lve_ci is
   generic (
-    REGISTER_SIZE : positive := 32
+    REGISTER_SIZE : positive
     );
   port (
     clk   : in std_logic;

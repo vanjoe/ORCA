@@ -6,11 +6,13 @@ use work.rv_components.all;
 
 entity a4l_master is
   generic (
-    ADDRESS_WIDTH : integer := 32;
-    DATA_WIDTH    : integer := 32
+    ADDRESS_WIDTH            : integer;
+    DATA_WIDTH               : integer;
+    MAX_OUTSTANDING_REQUESTS : natural
     );
   port (
     clk     : in std_logic;
+    reset   : in std_logic;
     aresetn : in std_logic;
 
     --Orca-internal memory-mapped slave
@@ -51,35 +53,62 @@ entity a4l_master is
 end entity a4l_master;
 
 architecture rtl of a4l_master is
-  signal oimm_waitrequest_signal : std_logic;
+  constant PROT_VAL : std_logic_vector(2 downto 0) := "000";
 
-  constant PROT_VAL     : std_logic_vector(2 downto 0) := "000";
+  signal unthrottled_oimm_readcomplete  : std_logic;
+  signal unthrottled_oimm_writecomplete : std_logic;
+  signal unthrottled_oimm_waitrequest : std_logic;
+  signal throttled_oimm_requestvalid  : std_logic;
+
   signal AWVALID_signal : std_logic;
   signal WVALID_signal  : std_logic;
   signal aw_sent        : std_logic;
   signal w_sent         : std_logic;
 begin
-  oimm_waitrequest <= oimm_waitrequest_signal;
-  AWVALID          <= AWVALID_signal;
-  WVALID           <= WVALID_signal;
+  request_throttler : oimm_throttler
+    generic map (
+      MAX_OUTSTANDING_REQUESTS => MAX_OUTSTANDING_REQUESTS
+      )
+    port map (
+      clk   => clk,
+      reset => reset,
+
+      --Orca-internal memory-mapped slave
+      slave_oimm_requestvalid => oimm_requestvalid,
+      slave_oimm_readnotwrite => oimm_readnotwrite,
+      slave_oimm_writelast    => '1',
+      slave_oimm_waitrequest  => oimm_waitrequest,
+
+      --Orca-internal memory-mapped master
+      master_oimm_requestvalid  => throttled_oimm_requestvalid,
+      master_oimm_readcomplete  => unthrottled_oimm_readcomplete,
+      master_oimm_writecomplete => unthrottled_oimm_writecomplete,
+      master_oimm_waitrequest   => unthrottled_oimm_waitrequest
+      );
+
+  unthrottled_oimm_readcomplete  <= RVALID;
+  unthrottled_oimm_writecomplete <= BVALID;
+
+  AWVALID <= AWVALID_signal;
+  WVALID  <= WVALID_signal;
 
   oimm_readdata      <= RDATA;
   oimm_readdatavalid <= RVALID;
 
-  oimm_waitrequest_signal <= (not ARREADY) when oimm_readnotwrite = '1' else
-                             (((not AWREADY) and (not aw_sent)) or ((not WREADY) and (not w_sent)));
+  unthrottled_oimm_waitrequest <= (not ARREADY) when oimm_readnotwrite = '1' else
+                                  (((not AWREADY) and (not aw_sent)) or ((not WREADY) and (not w_sent)));
 
   AWADDR         <= oimm_address;
   AWPROT         <= PROT_VAL;
-  AWVALID_signal <= ((not oimm_readnotwrite) and oimm_requestvalid) and (not aw_sent);
+  AWVALID_signal <= ((not oimm_readnotwrite) and throttled_oimm_requestvalid) and (not aw_sent);
   WSTRB          <= oimm_byteenable;
-  WVALID_signal  <= ((not oimm_readnotwrite) and oimm_requestvalid) and (not w_sent);
+  WVALID_signal  <= ((not oimm_readnotwrite) and throttled_oimm_requestvalid) and (not w_sent);
   WDATA          <= oimm_writedata;
   BREADY         <= '1';
 
   ARADDR  <= oimm_address;
   ARPROT  <= PROT_VAL;
-  ARVALID <= oimm_readnotwrite and oimm_requestvalid;
+  ARVALID <= oimm_readnotwrite and throttled_oimm_requestvalid;
   RREADY  <= '1';
 
   process (clk) is
@@ -92,7 +121,7 @@ begin
         w_sent <= '1';
       end if;
 
-      if oimm_waitrequest_signal = '0' then
+      if unthrottled_oimm_waitrequest = '0' then
         aw_sent <= '0';
         w_sent  <= '0';
       end if;

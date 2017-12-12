@@ -39,13 +39,8 @@ entity arithmetic_unit is
 end entity arithmetic_unit;
 
 architecture rtl of arithmetic_unit is
-
   constant SHIFTER_USE_MULTIPLIER : boolean := MULTIPLY_ENABLE;
   constant SHIFT_SC               : natural := conditional(SHIFTER_USE_MULTIPLIER, 0, SHIFTER_MAX_CYCLES);
-
-  --op codes
-
-  constant UP_IMM_IMMEDIATE_SIZE : integer := 20;
 
   alias func3  : std_logic_vector(2 downto 0) is instruction(INSTR_FUNC3'range);
   alias func7  : std_logic_vector(6 downto 0) is instruction(31 downto 25);
@@ -88,7 +83,7 @@ architecture rtl of arithmetic_unit is
   signal quotient         : unsigned(REGISTER_SIZE-1 downto 0);
   signal remainder        : unsigned(REGISTER_SIZE-1 downto 0);
 
-                                        --min signed value
+  --min signed value
   signal min_s : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal zero : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -161,7 +156,7 @@ architecture rtl of arithmetic_unit is
 begin
 
 
-  immediate_value <= unsigned(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0)&
+  immediate_value <= unsigned(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0) &
                               instruction(31 downto 20));
   data1 <= (others => '0') when source_valid = '0' and POWER_OPTIMIZED else
            unsigned(rs1_data);
@@ -446,7 +441,7 @@ begin
           data_out       <= (others => '-');
           data_out_valid <= '0';
       end case;
-    end if;  --clock
+    end if;
   end process;
 
   mul_gen : if MULTIPLY_ENABLE generate
@@ -522,10 +517,8 @@ begin
         mul_dest_shift_amt <= mul_ab_shift_amt;
         mul_dest_valid     <= mul_ab_valid;
 
-        --if we don't want to pipeline multiple multiplies (as is the case when we are not using LVE)
-        -- then we want to flush the valid signals
-        -- Another way of phrasing this is that unless we have an LVE instruction we only want
-        -- mul_dest_valid to be high for one cycle
+        --If we don't want to pipeline multiple multiplies (as is the case when we are not using LVE)
+        --we only want mul_dest_valid to be high for one cycle
         if from_execute_ready = '1' then
           mul_ab_valid   <= '0';
           mul_dest_valid <= '0';
