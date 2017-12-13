@@ -14,7 +14,7 @@ export SCRIPT_DIR=$(readlink -f $(dirname $0))
 mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 
-export BINUTILS_VERSION=2.29
+export BINUTILS_VERSION=2.28
 export GCC_VERSION=7.2.0
 export NEWLIB_VERSION=2.5.0.20170922
 
@@ -23,7 +23,9 @@ export NEWLIB_VERSION=2.5.0.20170922
 [ ! -f newlib-$NEWLIB_VERSION.tar.gz ] && wget ftp://sourceware.org/pub/newlib/newlib-$NEWLIB_VERSION.tar.gz
 (
 	 printf "Extracting Archives ... "
-	 rm -rf binutils-$BINUTILS_VERSION gcc-$GCC_VERSION newlib-$NEWLIB_VERSION
+	 rm -rf binutils-$BINUTILS_VERSION
+	 rm -rf gcc-$GCC_VERSION
+	 #rm -rf newlib-$NEWLIB_VERSION
 	 tar -xf binutils-$BINUTILS_VERSION.tar.gz &
 	 tar -xf gcc-$GCC_VERSION.tar.gz &
 	 tar -xf newlib-$NEWLIB_VERSION.tar.gz &
