@@ -17,6 +17,8 @@ entity oimm_register is
     clk   : in std_logic;
     reset : in std_logic;
 
+    register_idle : out std_logic;
+
     --Orca-internal memory-mapped slave
     slave_oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     slave_oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
@@ -58,6 +60,8 @@ begin
     master_oimm_writedata           <= slave_oimm_writedata;
 
     slave_oimm_waitrequest_signal <= master_oimm_waitrequest;
+
+    register_idle <= '1'; --idle is state-only
   end generate no_request_register_gen;
 
   --Light register; breaks waitrequest/stall combinational path but does not break
@@ -103,6 +107,8 @@ begin
         end if;
       end if;
     end process;
+
+    register_idle <= not slave_oimm_waitrequest_signal; --idle is state-only
   end generate light_request_register_gen;
 
   --Full register; breaks waitrequest/stall combinational path and address/etc.
@@ -165,6 +171,8 @@ begin
         end if;
       end if;
     end process;
+
+    register_idle <= not master_oimm_requestvalid_signal; --idle is state-only
   end generate full_request_register_gen;
 
   -----------------------------------------------------------------------------

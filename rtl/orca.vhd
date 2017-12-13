@@ -349,6 +349,10 @@ architecture rtl of orca is
   constant ICACHE_MAX_BURSTLENGTH : positive := 16;
   constant DCACHE_MAX_BURSTLENGTH : positive := 16;
 
+  signal from_icache_control_ready : std_logic;
+  signal to_icache_control_valid   : std_logic;
+  signal memory_interface_idle     : std_logic;
+
   signal lsu_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lsu_oimm_byteenable    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
   signal lsu_oimm_requestvalid  : std_logic;
@@ -398,6 +402,12 @@ begin
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
+
+      --ICache control (Invalidate/flush/writeback)
+      from_icache_control_ready => from_icache_control_ready,
+      to_icache_control_valid   => to_icache_control_valid,
+
+      memory_interface_idle => memory_interface_idle,
 
       --Instruction memory-mapped master
       ifetch_oimm_address       => ifetch_oimm_address,
@@ -480,6 +490,12 @@ begin
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
+
+      --ICache control (Invalidate/flush/writeback)
+      from_icache_control_ready => from_icache_control_ready,
+      to_icache_control_valid   => to_icache_control_valid,
+
+      memory_interface_idle => memory_interface_idle,
 
       --Instruction memory-mapped master
       ifetch_oimm_address       => ifetch_oimm_address,

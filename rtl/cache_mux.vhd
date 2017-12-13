@@ -38,6 +38,8 @@ entity cache_mux is
     clk   : in std_logic;
     reset : in std_logic;
 
+    cache_mux_idle : out std_logic;
+
     --Orca-internal memory-mapped slave
     oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
@@ -81,6 +83,7 @@ entity cache_mux is
 end entity cache_mux;
 
 architecture rtl of cache_mux is
+  signal internal_register_idle      : std_logic;
   signal internal_oimm_address       : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
   signal internal_oimm_byteenable    : std_logic_vector((DATA_WIDTH/8)-1 downto 0);
   signal internal_oimm_requestvalid  : std_logic;
@@ -113,6 +116,7 @@ architecture rtl of cache_mux is
   signal internal_uc_oimm_readdata      : std_logic_vector(DATA_WIDTH-1 downto 0);
   signal internal_uc_oimm_readdatavalid : std_logic;
   signal internal_uc_oimm_waitrequest   : std_logic;
+  signal uc_register_idle               : std_logic;
 
   signal internal_aux_oimm_address       : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
   signal internal_aux_oimm_byteenable    : std_logic_vector((DATA_WIDTH/8)-1 downto 0);
@@ -122,6 +126,7 @@ architecture rtl of cache_mux is
   signal internal_aux_oimm_readdata      : std_logic_vector(DATA_WIDTH-1 downto 0);
   signal internal_aux_oimm_readdatavalid : std_logic;
   signal internal_aux_oimm_waitrequest   : std_logic;
+  signal aux_register_idle               : std_logic;
 begin
   -----------------------------------------------------------------------------
   -- Optional Internal OIMM Register
@@ -136,6 +141,8 @@ begin
     port map (
       clk   => clk,
       reset => reset,
+
+      register_idle => internal_register_idle,
 
       --Orca-internal memory-mapped slave
       slave_oimm_address       => oimm_address,
@@ -177,7 +184,8 @@ begin
   no_aux_gen : if AUX_ADDR_BASE = AUX_ADDR_LAST generate
     aux_select <= '0';
     no_uc_gen : if UC_ADDR_BASE = UC_ADDR_LAST generate
-      uc_select <= '0';
+      uc_select      <= '0';
+      cache_mux_idle <= internal_register_idle;
       no_c_gen : if CACHE_SIZE = 0 generate
         c_select                    <= '0';
         internal_oimm_readdata      <= (others => '-');
@@ -193,6 +201,7 @@ begin
       end generate has_c_gen;
     end generate no_uc_gen;
     has_uc_gen : if UC_ADDR_BASE /= UC_ADDR_LAST generate
+      cache_mux_idle <= internal_register_idle and uc_register_idle;
       no_c_gen : if CACHE_SIZE = 0 generate
         c_select                    <= '0';
         uc_select                   <= '1';
@@ -222,7 +231,8 @@ begin
   end generate no_aux_gen;
   has_aux_gen : if AUX_ADDR_BASE /= AUX_ADDR_LAST generate
     no_uc_gen : if UC_ADDR_BASE = UC_ADDR_LAST generate
-      uc_select <= '0';
+      uc_select      <= '0';
+      cache_mux_idle <= internal_register_idle and aux_register_idle;
       no_c_gen : if CACHE_SIZE = 0 generate
         aux_select                  <= '1';
         c_select                    <= '0';
@@ -253,6 +263,7 @@ begin
         '1' when ((unsigned(internal_oimm_address) >= unsigned(AUX_ADDR_BASE(ADDRESS_WIDTH-1 downto 0))) and
                   (unsigned(internal_oimm_address) <= unsigned(AUX_ADDR_LAST(ADDRESS_WIDTH-1 downto 0)))) else
         '0';
+      cache_mux_idle <= internal_register_idle and uc_register_idle and aux_register_idle;
       no_c_gen : if CACHE_SIZE = 0 generate
         uc_select              <= not aux_select;
         c_select               <= '0';
@@ -411,6 +422,8 @@ begin
       clk   => clk,
       reset => reset,
 
+      register_idle => uc_register_idle,
+
       --Orca-internal memory-mapped slave
       slave_oimm_address       => internal_uc_oimm_address,
       slave_oimm_byteenable    => internal_uc_oimm_byteenable,
@@ -446,6 +459,8 @@ begin
       clk   => clk,
       reset => reset,
 
+      register_idle => aux_register_idle,
+
       --Orca-internal memory-mapped slave
       slave_oimm_address       => internal_aux_oimm_address,
       slave_oimm_byteenable    => internal_aux_oimm_byteenable,
@@ -466,7 +481,6 @@ begin
       master_oimm_readdatavalid => aux_oimm_readdatavalid,
       master_oimm_waitrequest   => aux_oimm_waitrequest
       );
-
 
   -----------------------------------------------------------------------------
   -- Assertions

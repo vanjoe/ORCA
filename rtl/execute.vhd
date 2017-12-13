@@ -34,12 +34,20 @@ entity execute is
     scratchpad_clk : in std_logic;
     reset          : in std_logic;
 
-    flush_pipeline  : out std_logic;
-    execute_flushed : out std_logic;
-    pipeline_empty  : in  std_logic;
-    program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
+    global_interrupts     : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+    program_counter       : in unsigned(REGISTER_SIZE-1 downto 0);
+    core_idle             : in std_logic;
+    memory_interface_idle : in std_logic;
 
-    --From previous stage
+    --LVE Scratchpad memory-mapped slave
+    sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+    sp_byte_en   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+    sp_write_en  : in  std_logic;
+    sp_read_en   : in  std_logic;
+    sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    sp_ack       : out std_logic;
+
     to_execute_valid            : in     std_logic;
     to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
     to_execute_predicted_pc     : in     unsigned(REGISTER_SIZE-1 downto 0);
@@ -51,6 +59,9 @@ entity execute is
     to_execute_rs3_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     to_execute_sign_extension   : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     from_execute_ready          : buffer std_logic;
+
+    --quash_execute input isn't needed as mispredicts have already resolved
+    execute_idle : out std_logic;
 
     --To PC correction
     to_pc_correction_data        : out    unsigned(REGISTER_SIZE-1 downto 0);
@@ -74,16 +85,10 @@ entity execute is
     lsu_oimm_readdatavalid : in     std_logic;
     lsu_oimm_waitrequest   : in     std_logic;
 
-    --Scratchpad memory-mapped slave
-    sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-    sp_byte_en   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-    sp_write_en  : in  std_logic;
-    sp_read_en   : in  std_logic;
-    sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_ack       : out std_logic;
+    --ICache control (Invalidate/flush/writeback)
+    from_icache_control_ready : in  std_logic;
+    to_icache_control_valid   : out std_logic;
 
-    global_interrupts : in     std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
     interrupt_pending : buffer std_logic
     );
 end entity execute;
@@ -112,26 +117,29 @@ architecture behavioural of execute is
   signal rs3_mux : fwd_mux_t;
 
   --Writeback data sources (LVE does not write back to regfile)
-  signal alu_data_out       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal alu_data_out_valid : std_logic;
-  signal br_data_out        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal br_data_enable     : std_logic;
-  signal ld_data_out        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal alu_data_out       : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal from_branch_valid  : std_logic;
+  signal from_branch_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal ld_data_enable     : std_logic;
-  signal sys_data_out       : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sys_data_enable    : std_logic;
+  signal ld_data_out        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal from_syscall_valid : std_logic;
+  signal from_syscall_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   --Ready signals (branch unit always ready)
-  signal alu_ready     : std_logic;
-  signal lsu_ready     : std_logic;
-  signal lve_ready     : std_logic;
-  signal syscall_ready : std_logic;
+  signal alu_ready          : std_logic;
+  signal lsu_ready          : std_logic;
+  signal lve_ready          : std_logic;
+  signal from_syscall_ready : std_logic;
 
   signal branch_to_pc_correction_valid : std_logic;
   signal branch_to_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
 
   signal writeback_stall_from_lsu : std_logic;
   signal load_in_progress         : std_logic;
+
+  signal lsu_idle    : std_logic;
+  signal memory_idle : std_logic;
 
   signal syscall_to_pc_correction_valid : std_logic;
   signal syscall_to_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
@@ -143,10 +151,10 @@ architecture behavioural of execute is
   signal lve_alu_source_valid : std_logic;
   signal simd_op_size         : std_logic_vector(1 downto 0);
 
-  signal stall_to_execute : std_logic;
-  signal to_rf_mux        : std_logic_vector(1 downto 0);
+  signal from_writeback_ready : std_logic;
+  signal to_rf_mux            : std_logic_vector(1 downto 0);
 begin
-  valid_instr <= to_execute_valid and (not stall_to_execute);
+  valid_instr <= to_execute_valid and from_writeback_ready;
 
   -----------------------------------------------------------------------------
   -- REGISTER FORWADING
@@ -167,14 +175,14 @@ begin
   rs3_data <= alu_data_out when rs3_mux = ALU_FWD else
               to_execute_rs3_data;
 
-  from_execute_ready <= (not to_execute_valid) or ((not stall_to_execute) and
+  from_execute_ready <= (not to_execute_valid) or (from_writeback_ready and
                                                    lsu_ready and
                                                    (alu_ready or lve_was_executing) and
                                                    lve_ready and
-                                                   syscall_ready);
+                                                   from_syscall_ready);
 
   --No forward stall; system calls, loads, and branches aren't forwarded.
-  use_after_produce_stall <= sys_data_enable or load_in_progress or br_data_enable when
+  use_after_produce_stall <= from_syscall_valid or load_in_progress or from_branch_valid when
                              to_rf_select = rs1 or to_rf_select = rs2 or (to_rf_select = rs3 and LVE_ENABLE = 1) else
                              '0';
 
@@ -183,7 +191,7 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      if stall_to_execute = '0' then
+      if from_writeback_ready = '1' then
         rs1_mux <= NO_FWD;
         rs2_mux <= NO_FWD;
         rs3_mux <= NO_FWD;
@@ -244,18 +252,21 @@ begin
       BTB_ENTRIES         => BTB_ENTRIES
       )
     port map (
-      clk                        => clk,
-      reset                      => reset,
-      valid                      => valid_instr,
-      stall                      => stall_to_execute,
-      rs1_data                   => rs1_data,
-      rs2_data                   => rs2_data,
-      current_pc                 => to_execute_program_counter,
-      predicted_pc               => to_execute_predicted_pc,
-      instruction                => to_execute_instruction,
-      sign_extension             => to_execute_sign_extension,
-      data_out                   => br_data_out,
-      data_enable                => br_data_enable,
+      clk   => clk,
+      reset => reset,
+
+      to_branch_valid => valid_instr,
+      rs1_data        => rs1_data,
+      rs2_data        => rs2_data,
+      current_pc      => to_execute_program_counter,
+      predicted_pc    => to_execute_predicted_pc,
+      instruction     => to_execute_instruction,
+      sign_extension  => to_execute_sign_extension,
+
+      from_branch_valid => from_branch_valid,
+      from_branch_data  => from_branch_data,
+      to_branch_ready   => from_writeback_ready,
+
       to_pc_correction_data      => branch_to_pc_correction_data,
       to_pc_correction_source_pc => to_pc_correction_source_pc,
       to_pc_correction_valid     => branch_to_pc_correction_valid,
@@ -268,8 +279,11 @@ begin
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE
       )
     port map (
-      clk                      => clk,
-      reset                    => reset,
+      clk   => clk,
+      reset => reset,
+
+      lsu_idle => lsu_idle,
+
       valid                    => valid_instr,
       rs1_data                 => rs1_data,
       rs2_data                 => rs2_data,
@@ -291,6 +305,7 @@ begin
       oimm_waitrequest   => lsu_oimm_waitrequest
       );
 
+  memory_idle <= memory_interface_idle and lsu_idle;
   syscall : system_calls
     generic map (
       REGISTER_SIZE         => REGISTER_SIZE,
@@ -304,25 +319,29 @@ begin
     port map (
       clk   => clk,
       reset => reset,
-      valid => valid_instr,
 
-      syscall_ready => syscall_ready,
+      global_interrupts => global_interrupts,
+      core_idle         => core_idle,
+      memory_idle       => memory_idle,
+      program_counter   => program_counter,
 
-      rs1_data    => rs1_data,
-      instruction => to_execute_instruction,
-      data_out    => sys_data_out,
-      data_enable => sys_data_enable,
+      to_syscall_valid   => valid_instr,
+      rs1_data           => rs1_data,
+      instruction        => to_execute_instruction,
+      current_pc         => to_execute_program_counter,
+      from_syscall_ready => from_syscall_ready,
 
-      current_pc               => to_execute_program_counter,
+      from_syscall_valid => from_syscall_valid,
+      from_syscall_data  => from_syscall_data,
+
       to_pc_correction_data    => syscall_to_pc_correction_data,
       to_pc_correction_valid   => syscall_to_pc_correction_valid,
       from_pc_correction_ready => from_pc_correction_ready,
 
-      interrupt_pending => interrupt_pending,
-      pipeline_empty    => pipeline_empty,
-      global_interrupts => global_interrupts,
+      from_icache_control_ready => from_icache_control_ready,
+      to_icache_control_valid   => to_icache_control_valid,
 
-      program_counter => program_counter
+      interrupt_pending => interrupt_pending
       );
 
   enable_lve : if LVE_ENABLE /= 0 generate
@@ -392,64 +411,71 @@ begin
   --pipeline anyway.
   to_pc_correction_predictable <= not syscall_to_pc_correction_valid;
 
-  flush_pipeline  <= to_pc_correction_valid;
-  execute_flushed <= (not to_execute_valid) and (not writeback_stall_from_lsu);
+  --Intuitively execute_idle is lsu_idle and alu_idle and branch_idle etc. for
+  --all the functional units.  In practice the idle signal is only needed for
+  --interrupts, and it's fine to take an interrupt as long as the branch and
+  --syscall units have finished updating the PC and we're not waiting on a
+  --load.  Even though for instance the ALU may have some internal state, since
+  --the execute unit is serialized it won't assert ready back to the decode
+  --unit until it has finished the instruction.
+  --Also note intuitively we'd want a writeback_idle signal as interrupts can
+  --be taken before writeback has occurred; however since there's no
+  --backpressure from writeback we can always guarantee that the writeback will
+  --occur before the interrupt handler decodes an instruction and reads a
+  --register.
+  execute_idle <= lsu_idle and (not to_pc_correction_valid);
 
 
   ------------------------------------------------------------------------------
   -- Writeback
   ------------------------------------------------------------------------------
-  stall_to_execute <= use_after_produce_stall or writeback_stall_from_lsu;
+  from_writeback_ready <= (not use_after_produce_stall) and (not writeback_stall_from_lsu);
 
   process(clk)
   begin
     if rising_edge(clk) then
-      if stall_to_execute = '0' then
+      if from_writeback_ready = '1' then
         to_rf_select <= rd;
       end if;
     end if;
   end process;
 
-  to_rf_mux <= "00" when sys_data_enable = '1' else
+  to_rf_mux <= "00" when from_syscall_valid = '1' else
                "01" when load_in_progress = '1' else
-               "10" when br_data_enable = '1' else
+               "10" when from_branch_valid = '1' else
                "11";
 
   with to_rf_mux select
     to_rf_data <=
-    sys_data_out when "00",
-    ld_data_out  when "01",
-    br_data_out  when "10",
-    alu_data_out when others;
+    from_syscall_data when "00",
+    ld_data_out       when "01",
+    from_branch_data  when "10",
+    alu_data_out      when others;
 
-  to_rf_valid <= (sys_data_enable or
+  to_rf_valid <= (from_syscall_valid or
                   ld_data_enable or
-                  br_data_enable or
+                  from_branch_valid or
                   (alu_data_out_valid and (not lve_was_executing))) when
                  to_rf_select /= std_logic_vector(REGISTER_ZERO) else
                  '0';
 
 
   -------------------------------------------------------------------------------
-  -- Assertions for simulation
+  -- Simulation assertions and debug
   -------------------------------------------------------------------------------
+--pragma translate_off
   process(clk)
   begin
     if rising_edge(clk) then
       if reset = '0' then
-        assert (bool_to_int(sys_data_enable) +
+        assert (bool_to_int(from_syscall_valid) +
                 bool_to_int(ld_data_enable) +
-                bool_to_int(br_data_enable) +
+                bool_to_int(from_branch_valid) +
                 bool_to_int(alu_data_out_valid)) <= 1 report "Multiple Data Enables Asserted" severity failure;
       end if;
     end if;
   end process;
 
-  -----------------------------------------------------------------------------
-  -- This process does some debug printing during simulation,
-  -- it should have no impact on synthesis
-  -----------------------------------------------------------------------------
---pragma translate_off
   my_print : process(clk)
     variable my_line          : line;   -- type 'line' comes from textio
     variable last_valid_pc    : unsigned(REGISTER_SIZE-1 downto 0);

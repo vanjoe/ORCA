@@ -56,6 +56,12 @@ entity memory_interface is
     scratchpad_clk : in std_logic;
     reset          : in std_logic;
 
+    --ICache control (Invalidate/flush/writeback)
+    from_icache_control_ready : out std_logic;
+    to_icache_control_valid   : in  std_logic;
+
+    memory_interface_idle : out std_logic;
+
     --Instruction Orca-internal memory-mapped master
     ifetch_oimm_address       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     ifetch_oimm_requestvalid  : in  std_logic;
@@ -363,6 +369,11 @@ architecture rtl of memory_interface is
   constant A4L_LOCK_VAL   : std_logic_vector(1 downto 0) := "00";
   constant A4L_CACHE_VAL  : std_logic_vector(3 downto 0) := "0000";
 
+  signal icache_mux_idle : std_logic;
+  signal dcache_mux_idle : std_logic;
+  signal icache_idle     : std_logic;
+  signal dcache_idle     : std_logic;
+
   signal iuc_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal iuc_oimm_byteenable    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
   signal iuc_oimm_requestvalid  : std_logic;
@@ -430,6 +441,8 @@ begin
 
   aresetn <= not reset;
 
+  memory_interface_idle <= icache_mux_idle and dcache_mux_idle and icache_idle and dcache_idle;
+
   -----------------------------------------------------------------------------
   -- Instruction cache and mux
   -----------------------------------------------------------------------------
@@ -454,6 +467,8 @@ begin
     port map (
       clk   => clk,
       reset => reset,
+
+      cache_mux_idle => icache_mux_idle,
 
       oimm_address       => ifetch_oimm_address,
       oimm_byteenable    => ifetch_oimm_byteenable,
@@ -519,6 +534,11 @@ begin
       port map (
         clk   => clk,
         reset => reset,
+
+        from_cache_control_ready => from_icache_control_ready,
+        to_cache_control_valid   => to_icache_control_valid,
+
+        cache_idle => icache_idle,
 
         cacheint_oimm_address       => icacheint_oimm_address,
         cacheint_oimm_byteenable    => icacheint_oimm_byteenable,
@@ -610,6 +630,9 @@ begin
         );
   end generate instruction_cache_gen;
   no_instruction_cache_gen : if ICACHE_SIZE = 0 generate
+    from_icache_control_ready <= '1';
+    icache_idle               <= '1';
+
     IC_AWID    <= (others => '0');
     IC_AWADDR  <= (others => '0');
     IC_AWLEN   <= (others => '0');
@@ -661,6 +684,8 @@ begin
     port map (
       clk   => clk,
       reset => reset,
+
+      cache_mux_idle => dcache_mux_idle,
 
       oimm_address       => lsu_oimm_address,
       oimm_byteenable    => lsu_oimm_byteenable,
@@ -726,6 +751,11 @@ begin
       port map (
         clk   => clk,
         reset => reset,
+
+        from_cache_control_ready => open,
+        to_cache_control_valid   => '0',
+
+        cache_idle => dcache_idle,
 
         cacheint_oimm_address       => dcacheint_oimm_address,
         cacheint_oimm_byteenable    => dcacheint_oimm_byteenable,
@@ -817,6 +847,8 @@ begin
         );
   end generate data_cache_gen;
   no_data_cache_gen : if DCACHE_SIZE = 0 generate
+    dcache_idle <= '1';
+
     DC_AWID    <= (others => '0');
     DC_AWADDR  <= (others => '0');
     DC_AWLEN   <= (others => '0');

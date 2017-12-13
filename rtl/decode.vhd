@@ -19,8 +19,10 @@ entity decode is
     clk   : in std_logic;
     reset : in std_logic;
 
-    decode_flushed : out std_logic;
-    flush          : in  std_logic;
+    --writeback signals
+    to_rf_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_rf_valid  : in std_logic;
 
     to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
@@ -28,12 +30,9 @@ entity decode is
     to_decode_valid           : in  std_logic;
     from_decode_ready         : out std_logic;
 
-    --writeback signals
-    to_rf_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    to_rf_valid  : in std_logic;
+    quash_decode : in  std_logic;
+    decode_idle  : out std_logic;
 
-    --output signals
     from_decode_rs1_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_decode_rs2_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_decode_rs3_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -50,6 +49,21 @@ end;
 
 architecture rtl of decode is
   signal from_decode_instruction_signal : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal from_decode_valid_signal       : std_logic;
+  signal from_decode_ready_signal       : std_logic;
+
+  alias to_decode_rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    to_decode_instruction(REGISTER_RS1'range);
+  alias to_decode_rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    to_decode_instruction(REGISTER_RS2'range);
+  alias to_decode_rs3_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    to_decode_instruction(REGISTER_RD'range);
+  alias from_decode_rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    from_decode_instruction_signal(REGISTER_RS1'range);
+  alias from_decode_rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    from_decode_instruction_signal(REGISTER_RS2'range);
+  alias from_decode_rs3_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    from_decode_instruction_signal(REGISTER_RD'range);
 
   signal rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
@@ -64,7 +78,8 @@ architecture rtl of decode is
   signal wb_enable : std_logic;
 begin
   from_decode_instruction <= from_decode_instruction_signal;
-  from_decode_ready       <= to_decode_ready;
+  from_decode_valid       <= from_decode_valid_signal;
+  from_decode_ready       <= from_decode_ready_signal;
 
   the_register_file : register_file
     generic map (
@@ -99,86 +114,104 @@ begin
   end generate reg_rst_nen;
 
   two_cycle : if PIPELINE_STAGES = 2 generate
-    signal previous_rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    signal previous_rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-    signal previous_rs3_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+    signal from_stage1_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
+    signal from_stage1_predicted_pc    : unsigned(REGISTER_SIZE-1 downto 0);
+    signal from_stage1_instruction     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    signal from_stage1_valid           : std_logic;
+    signal to_stage1_ready             : std_logic;
 
-    signal program_counter_latch : unsigned(REGISTER_SIZE-1 downto 0);
-    signal predicted_pc_latch    : unsigned(REGISTER_SIZE-1 downto 0);
-    signal instruction_latch     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    signal valid_latch           : std_logic;
+    alias from_stage1_rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+      from_stage1_instruction(REGISTER_RS1'range);
+    alias from_stage1_rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+      from_stage1_instruction(REGISTER_RS2'range);
+    alias from_stage1_rs3_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+      from_stage1_instruction(REGISTER_RD'range);
   begin
-    rs1_select <= to_decode_instruction(REGISTER_RS1'range) when to_decode_ready = '1' else
-                  instruction_latch(REGISTER_RS1'range);
-    rs2_select <= to_decode_instruction(REGISTER_RS2'range) when to_decode_ready = '1' else
-                  instruction_latch(REGISTER_RS2'range);
-    rs3_select <= to_decode_instruction(REGISTER_RD'range) when to_decode_ready = '1' else
-                  instruction_latch(REGISTER_RD'range);
+    rs1_select <= to_decode_rs1_select when to_stage1_ready = '1' else
+                  from_stage1_rs1_select;
+    rs2_select <= to_decode_rs2_select when to_stage1_ready = '1' else
+                  from_stage1_rs2_select;
+    rs3_select <= to_decode_rs3_select when to_stage1_ready = '1' else
+                  from_stage1_rs3_select;
 
-    previous_rs1_select <= instruction_latch(REGISTER_RS1'range) when to_decode_ready = '1' else
-                           from_decode_instruction_signal(REGISTER_RS1'range);
-    previous_rs2_select <= instruction_latch(REGISTER_RS2'range) when to_decode_ready = '1' else
-                           from_decode_instruction_signal(REGISTER_RS2'range);
-    previous_rs3_select <= instruction_latch(REGISTER_RD'range) when to_decode_ready = '1' else
-                           from_decode_instruction_signal(REGISTER_RD'range);
-
-    decode_flushed <= not (to_decode_valid or valid_latch);
-
+    to_stage1_ready          <= to_decode_ready or (not from_decode_valid_signal);
+    from_decode_ready_signal <= to_stage1_ready or (not from_stage1_valid);
     decode_stage : process (clk) is
     begin
       if rising_edge(clk) then
+        if to_stage1_ready = '1' then
+          from_stage1_valid <= '0';
+        end if;
         if to_decode_ready = '1' then
-          program_counter_latch <= to_decode_program_counter;
-          predicted_pc_latch    <= to_decode_predicted_pc;
-          instruction_latch     <= to_decode_instruction;
-          valid_latch           <= to_decode_valid;
+          from_decode_valid_signal <= '0';
+        end if;
 
+        if from_decode_ready_signal = '1' then
+          from_stage1_program_counter <= to_decode_program_counter;
+          from_stage1_predicted_pc    <= to_decode_predicted_pc;
+          from_stage1_instruction     <= to_decode_instruction;
+          from_stage1_valid           <= to_decode_valid;
+        end if;
+
+        if to_stage1_ready = '1' then
           from_decode_sign_extension <=
-            std_logic_vector(resize(signed(instruction_latch(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
+            std_logic_vector(resize(signed(from_stage1_instruction(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
                                     SIGN_EXTENSION_SIZE));
-          from_decode_program_counter    <= program_counter_latch;
-          from_decode_predicted_pc       <= predicted_pc_latch;
-          from_decode_instruction_signal <= instruction_latch;
-          from_decode_valid              <= valid_latch;
+          from_decode_program_counter    <= from_stage1_program_counter;
+          from_decode_predicted_pc       <= from_stage1_predicted_pc;
+          from_decode_instruction_signal <= from_stage1_instruction;
+          from_decode_valid_signal       <= from_stage1_valid;
+          from_decode_rs1_data           <= rs1_data;
+          from_decode_rs2_data           <= rs2_data;
+          from_decode_rs3_data           <= rs3_data;
         end if;
 
-        if to_rf_select = previous_rs1_select and to_rf_valid = '1' then
-          from_decode_rs1_data <= to_rf_data;
-        elsif to_decode_ready = '1' then
-          from_decode_rs1_data <= rs1_data;
-        end if;
-        if to_rf_select = previous_rs2_select and to_rf_valid = '1' then
-          from_decode_rs2_data <= to_rf_data;
-        elsif to_decode_ready = '1' then
-          from_decode_rs2_data <= rs2_data;
-        end if;
-        if to_rf_select = previous_rs3_select and to_rf_valid = '1' then
-          from_decode_rs3_data <= to_rf_data;
-        elsif to_decode_ready = '1' then
-          from_decode_rs3_data <= rs3_data;
+        --Bypass registers already read out of register file
+        if to_rf_valid = '1' then
+          if to_stage1_ready = '1' then  --Bypass registers just being read in
+            if to_rf_select = from_stage1_rs1_select then
+              from_decode_rs1_data <= to_rf_data;
+            end if;
+            if to_rf_select = from_stage1_rs2_select then
+              from_decode_rs2_data <= to_rf_data;
+            end if;
+            if to_rf_select = from_stage1_rs3_select then
+              from_decode_rs3_data <= to_rf_data;
+            end if;
+          else                           --Bypass data already read in
+            if to_rf_select = from_decode_rs1_select then
+              from_decode_rs1_data <= to_rf_data;
+            end if;
+            if to_rf_select = from_decode_rs2_select then
+              from_decode_rs2_data <= to_rf_data;
+            end if;
+            if to_rf_select = from_decode_rs3_select then
+              from_decode_rs3_data <= to_rf_data;
+            end if;
+          end if;
         end if;
 
-        if reset = '1' or flush = '1' then
-          from_decode_valid <= '0';
-          valid_latch       <= '0';
+        if reset = '1' or quash_decode = '1' then
+          from_decode_valid_signal <= '0';
+          from_stage1_valid        <= '0';
         end if;
       end if;
     end process decode_stage;
-    from_decode_next_instruction <= instruction_latch;
-    from_decode_next_valid       <= valid_latch;
+    decode_idle                  <= (not from_stage1_valid) and (not from_decode_valid_signal);
+    from_decode_next_instruction <= from_stage1_instruction;
+    from_decode_next_valid       <= from_stage1_valid;
 
   end generate two_cycle;
 
 
   one_cycle : if PIPELINE_STAGES = 1 generate
-    rs1_select <= to_decode_instruction(REGISTER_RS1'range) when to_decode_ready = '1' else
-                  from_decode_instruction_signal(REGISTER_RS1'range);
-    rs2_select <= to_decode_instruction(REGISTER_RS2'range) when to_decode_ready = '1' else
-                  from_decode_instruction_signal(REGISTER_RS2'range);
-    rs3_select <= to_decode_instruction(REGISTER_RD'range) when to_decode_ready = '1' else
-                  from_decode_instruction_signal(REGISTER_RD'range);
+    rs1_select <= to_decode_rs1_select when to_decode_ready = '1' else
+                  from_decode_rs1_select;
+    rs2_select <= to_decode_rs2_select when to_decode_ready = '1' else
+                  from_decode_rs2_select;
+    rs3_select <= to_decode_rs3_select when to_decode_ready = '1' else
+                  from_decode_rs3_select;
 
-    decode_flushed <= not to_decode_valid;
     decode_stage : process (clk) is
     begin
       if rising_edge(clk) then
@@ -189,15 +222,17 @@ begin
           from_decode_program_counter    <= to_decode_program_counter;
           from_decode_predicted_pc       <= to_decode_predicted_pc;
           from_decode_instruction_signal <= to_decode_instruction;
-          from_decode_valid              <= to_decode_valid;
+          from_decode_valid_signal       <= to_decode_valid;
         end if;
 
 
-        if reset = '1' or flush = '1' then
-          from_decode_valid <= '0';
+        if reset = '1' or quash_decode = '1' then
+          from_decode_valid_signal <= '0';
         end if;
       end if;
     end process decode_stage;
+    decode_idle                  <= not from_decode_valid_signal;
+    from_decode_ready_signal     <= to_decode_ready;
     from_decode_next_instruction <= to_decode_instruction;
     from_decode_next_valid       <= to_decode_valid;
     from_decode_rs1_data         <= rs1_data;

@@ -391,6 +391,12 @@ package rv_components is
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
 
+      --ICache control (Invalidate/flush/writeback)
+      from_icache_control_ready : out std_logic;
+      to_icache_control_valid   : in  std_logic;
+
+      memory_interface_idle : out std_logic;
+
       --Instruction Orca-internal memory-mapped master
       ifetch_oimm_address       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       ifetch_oimm_requestvalid  : in  std_logic;
@@ -714,6 +720,12 @@ package rv_components is
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
 
+      --ICache control (Invalidate/flush/writeback)
+      from_icache_control_ready : in  std_logic;
+      to_icache_control_valid   : out std_logic;
+
+      memory_interface_idle : in std_logic;
+
       --Instruction Orca-internal memory-mapped master
       ifetch_oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
       ifetch_oimm_requestvalid  : buffer std_logic;
@@ -758,8 +770,10 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
-      decode_flushed : out std_logic;
-      flush          : in  std_logic;
+      --writeback signals
+      to_rf_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+      to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      to_rf_valid  : in std_logic;
 
       to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
@@ -767,12 +781,9 @@ package rv_components is
       to_decode_valid           : in  std_logic;
       from_decode_ready         : out std_logic;
 
-      --writeback signals
-      to_rf_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-      to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      to_rf_valid  : in std_logic;
+      quash_decode : in  std_logic;
+      decode_idle  : out std_logic;
 
-      --output signals
       from_decode_rs1_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       from_decode_rs2_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       from_decode_rs3_data         : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -810,12 +821,20 @@ package rv_components is
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
 
-      flush_pipeline  : out std_logic;
-      execute_flushed : out std_logic;
-      pipeline_empty  : in  std_logic;
-      program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
+      global_interrupts     : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+      program_counter       : in unsigned(REGISTER_SIZE-1 downto 0);
+      core_idle             : in std_logic;
+      memory_interface_idle : in std_logic;
 
-      --From previous stage
+      --LVE Scratchpad memory-mapped slave
+      sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
+      sp_byte_en   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
+      sp_write_en  : in  std_logic;
+      sp_read_en   : in  std_logic;
+      sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      sp_ack       : out std_logic;
+
       to_execute_valid            : in     std_logic;
       to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
       to_execute_predicted_pc     : in     unsigned(REGISTER_SIZE-1 downto 0);
@@ -827,6 +846,9 @@ package rv_components is
       to_execute_rs3_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       to_execute_sign_extension   : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       from_execute_ready          : buffer std_logic;
+
+      --quash_execute input isn't needed as mispredicts have already resolved
+      execute_idle : out std_logic;
 
       --To PC correction
       to_pc_correction_data        : out    unsigned(REGISTER_SIZE-1 downto 0);
@@ -850,16 +872,10 @@ package rv_components is
       lsu_oimm_readdatavalid : in     std_logic;
       lsu_oimm_waitrequest   : in     std_logic;
 
-      --Scratchpad memory-mapped slave
-      sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-      sp_byte_en   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-      sp_write_en  : in  std_logic;
-      sp_read_en   : in  std_logic;
-      sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_ack       : out std_logic;
+      --ICache control (Invalidate/flush/writeback)
+      from_icache_control_ready : in  std_logic;
+      to_icache_control_valid   : out std_logic;
 
-      global_interrupts : in     std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
       interrupt_pending : buffer std_logic
       );
   end component execute;
@@ -875,9 +891,7 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
-      interrupt_pending : in     std_logic;
-      ifetch_flushed    : out    std_logic;
-      program_counter   : buffer unsigned(REGISTER_SIZE-1 downto 0);
+      interrupt_pending : in std_logic;
 
       to_pc_correction_data        : in     unsigned(REGISTER_SIZE-1 downto 0);
       to_pc_correction_source_pc   : in     unsigned(REGISTER_SIZE-1 downto 0);
@@ -885,11 +899,16 @@ package rv_components is
       to_pc_correction_predictable : in     std_logic;
       from_pc_correction_ready     : buffer std_logic;
 
+      --quash_ifetch is handled by to_pc_correction_valid
+      ifetch_idle : out std_logic;
+
       from_ifetch_instruction     : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       from_ifetch_program_counter : out unsigned(REGISTER_SIZE-1 downto 0);
       from_ifetch_predicted_pc    : out unsigned(REGISTER_SIZE-1 downto 0);
       from_ifetch_valid           : out std_logic;
       to_ifetch_ready             : in  std_logic;
+
+      program_counter : buffer unsigned(REGISTER_SIZE-1 downto 0);
 
       --Orca-internal memory-mapped master
       oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -940,18 +959,21 @@ package rv_components is
       BTB_ENTRIES         : natural
       );
     port (
-      clk                        : in  std_logic;
-      stall                      : in  std_logic;
-      valid                      : in  std_logic;
-      reset                      : in  std_logic;
-      rs1_data                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      current_pc                 : in  unsigned(REGISTER_SIZE-1 downto 0);
-      predicted_pc               : in  unsigned(REGISTER_SIZE-1 downto 0);
-      instruction                : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      sign_extension             : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-      data_out                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_enable                : out std_logic;
+      clk   : in std_logic;
+      reset : in std_logic;
+
+      to_branch_valid : in std_logic;
+      rs1_data        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs2_data        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      current_pc      : in unsigned(REGISTER_SIZE-1 downto 0);
+      predicted_pc    : in unsigned(REGISTER_SIZE-1 downto 0);
+      instruction     : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      sign_extension  : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+
+      from_branch_valid : out std_logic;
+      from_branch_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      to_branch_ready   : in  std_logic;
+
       to_pc_correction_data      : out unsigned(REGISTER_SIZE-1 downto 0);
       to_pc_correction_source_pc : out unsigned(REGISTER_SIZE-1 downto 0);
       to_pc_correction_valid     : out std_logic;
@@ -967,6 +989,8 @@ package rv_components is
     port (
       clk   : in std_logic;
       reset : in std_logic;
+
+      lsu_idle : out std_logic;
 
       valid                    : in     std_logic;
       rs1_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -1024,29 +1048,32 @@ package rv_components is
       COUNTER_LENGTH        : natural
       );
     port (
-      clk           : in  std_logic;
-      reset         : in  std_logic;
-      valid         : in  std_logic;
-      syscall_ready : out std_logic;
-      rs1_data      : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instruction   : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      clk   : in std_logic;
+      reset : in std_logic;
 
-      data_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data_enable : out std_logic;
+      global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+      core_idle         : in std_logic;
+      memory_idle       : in std_logic;
+      program_counter   : in unsigned(REGISTER_SIZE-1 downto 0);
 
-      current_pc               : in  unsigned(REGISTER_SIZE-1 downto 0);
+      to_syscall_valid   : in  std_logic;
+      current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
+      instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      from_syscall_ready : out std_logic;
+
+      from_syscall_valid : out std_logic;
+      from_syscall_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
       to_pc_correction_data    : out unsigned(REGISTER_SIZE-1 downto 0);
       to_pc_correction_valid   : out std_logic;
       from_pc_correction_ready : in  std_logic;
 
-      -- The interrupt_pending signal goes to the Instruction Fetch stage.
-      interrupt_pending : buffer std_logic;
-      global_interrupts : in     std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
-      -- Signals when an interrupt may proceed.
-      pipeline_empty    : in     std_logic;
+      --ICache control (Invalidate/flush/writeback)
+      from_icache_control_ready : in     std_logic;
+      to_icache_control_valid   : buffer std_logic;
 
-      -- Which instruction to return to upon exit.
-      program_counter : in unsigned(REGISTER_SIZE-1 downto 0)
+      interrupt_pending : buffer std_logic
       );
   end component system_calls;
 
@@ -1359,6 +1386,12 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
+      --Cache control (Invalidate/flush/writeback)
+      from_cache_control_ready : out std_logic;
+      to_cache_control_valid   : in  std_logic;
+
+      cache_idle : out std_logic;
+
       --Cache interface Orca-internal memory-mapped slave
       cacheint_oimm_address       : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
       cacheint_oimm_byteenable    : in     std_logic_vector((INTERNAL_WIDTH/8)-1 downto 0);
@@ -1441,6 +1474,8 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
+      cache_mux_idle : out std_logic;
+
       --Orca-internal memory-mapped slave
       oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
       oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
@@ -1493,6 +1528,8 @@ package rv_components is
     port (
       clk   : in std_logic;
       reset : in std_logic;
+
+      register_idle : out std_logic;
 
       --Orca-internal memory-mapped slave
       slave_oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);

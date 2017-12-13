@@ -21,6 +21,12 @@ entity cache_controller is
     clk   : in std_logic;
     reset : in std_logic;
 
+    --Cache control (Invalidate/flush/writeback)
+    from_cache_control_ready : out std_logic;
+    to_cache_control_valid   : in  std_logic;
+
+    cache_idle  : out std_logic;
+    
     --Cache interface Orca-internal memory-mapped slave
     cacheint_oimm_address       : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     cacheint_oimm_byteenable    : in     std_logic_vector((INTERNAL_WIDTH/8)-1 downto 0);
@@ -109,6 +115,12 @@ architecture rtl of cache_controller is
   signal read_oimm_readabort             : std_logic;
   signal read_oimm_waitrequest           : std_logic;
 begin
+  --Idle when no reads in flight (either hit or miss), not waiting on a
+  --writeback, and not clearing/invalidating the cache.  Will need to add
+  --write_miss for writeback cache with alloc-on-write.
+  --Idle is state-only; do not check for incoming requests
+  cache_idle <= (not read_oimm_readdatavalid) and (not read_miss) and (not c_write) and cache_ready;
+
   --Write-through mode: writes are all length 1, reads are all BURST_LENGTH
   c_oimm_burstlength <=
     std_logic_vector(to_unsigned(1, c_oimm_burstlength'length)) when c_write = '1' else
@@ -132,9 +144,10 @@ begin
   c_oimm_writedata    <= c_write_data;
   c_oimm_byteenable   <= c_write_byteenable when c_write = '1' else (others => '1');
 
-  process(control_state, cache_management_line, read_miss, write_offset_next, c_oimm_readdatavalid, c_oimm_waitrequest, c_read, c_write)
+  process(control_state, cache_management_line, read_miss, write_offset_next, c_oimm_readdatavalid, c_oimm_waitrequest, c_read, c_write, to_cache_control_valid)
   begin
     next_control_state              <= control_state;
+    from_cache_control_ready        <= '0';
     increment_cache_management_line <= '0';
     cache_ready                     <= '1';
     c_offset_reset                  <= '0';
@@ -160,6 +173,11 @@ begin
           write_offset_reset <= '1';
           write_tag_update   <= '1';
           write_tag_valid    <= '0';
+        else
+          from_cache_control_ready <= '1';
+          if to_cache_control_valid = '1' then
+            next_control_state <= CLEAR;
+          end if;
         end if;
 
       when CACHE_MISSED =>
@@ -263,9 +281,9 @@ begin
   write_oimm_byteenable   <= (others => '1') when read_miss = '1' else c_write_byteenable;
   write_oimm_requestvalid <= c_oimm_readdatavalid or (write_on_hit and (not read_miss));
 
-  read_oimm_requestvalid    <= cacheint_oimm_requestvalid and
-                               ((not c_write) or (not c_oimm_waitrequest)) and
-                               cache_ready;
+  read_oimm_requestvalid <= cacheint_oimm_requestvalid and
+                            ((not c_write) or (not c_oimm_waitrequest)) and
+                            cache_ready;
   read_oimm_speculative     <= not cacheint_oimm_readnotwrite;
   cacheint_oimm_waitrequest <= read_oimm_waitrequest or
                                (c_write and c_oimm_waitrequest) or

@@ -18,9 +18,7 @@ entity instruction_fetch is
     clk   : in std_logic;
     reset : in std_logic;
 
-    interrupt_pending : in  std_logic;
-    ifetch_flushed    : out std_logic;
-    program_counter   : buffer unsigned(REGISTER_SIZE-1 downto 0);
+    interrupt_pending : in std_logic;
 
     to_pc_correction_data        : in     unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_source_pc   : in     unsigned(REGISTER_SIZE-1 downto 0);
@@ -28,11 +26,16 @@ entity instruction_fetch is
     to_pc_correction_predictable : in     std_logic;
     from_pc_correction_ready     : buffer std_logic;
 
+    --quash_ifetch is handled by to_pc_correction_valid
+    ifetch_idle                 : out std_logic;
+
     from_ifetch_instruction     : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     from_ifetch_program_counter : out unsigned(REGISTER_SIZE-1 downto 0);
     from_ifetch_predicted_pc    : out unsigned(REGISTER_SIZE-1 downto 0);
     from_ifetch_valid           : out std_logic;
     to_ifetch_ready             : in  std_logic;
+
+    program_counter : buffer unsigned(REGISTER_SIZE-1 downto 0);
 
     --Orca-internal memory-mapped master
     oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -70,8 +73,8 @@ architecture rtl of instruction_fetch is
 
   signal next_pc_fifo_usedw          : unsigned(log2(MAX_IFETCHES_IN_FLIGHT+1)-1 downto 0);
   signal next_instruction_fifo_usedw : unsigned(log2(MAX_IFETCHES_IN_FLIGHT+1)-1 downto 0);
-  signal squashed_fetches_in_flight  : unsigned(log2(MAX_IFETCHES_IN_FLIGHT+1)-1 downto 0);
-  signal squashing_readdata          : std_logic;
+  signal fetches_to_quash            : unsigned(log2(MAX_IFETCHES_IN_FLIGHT+1)-1 downto 0);
+  signal quashing_readdata           : std_logic;
 
   signal instruction_fifo_write     : std_logic;
   signal instruction_fifo_read      : std_logic;
@@ -83,9 +86,10 @@ architecture rtl of instruction_fetch is
 
   signal ifetch_valid : std_logic;
 begin
-  --Stage is flushed when there are no instruction being fetched, no
-  --instructions waiting to dispatch, and no PC correction waiting
-  ifetch_flushed <= (not waiting_for_not_waitrequest) and pc_fifo_empty and (not to_pc_correction_valid);
+  --Stage is idle when there are no instruction being fetched (either waiting
+  --for waitrequest to go low or readdatavalid to be returned) and no
+  --instructions waiting to be dispatched.
+  ifetch_idle <= (not waiting_for_not_waitrequest) and (not quashing_readdata) and pc_fifo_empty;
 
   --No branch predictor; assume PC+4
   no_btb_gen : if BTB_ENTRIES = 0 generate
@@ -178,33 +182,34 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      if oimm_readdatavalid = '1' and squashing_readdata = '1' then
-        squashed_fetches_in_flight <= squashed_fetches_in_flight - to_unsigned(1, squashed_fetches_in_flight'length);
+      if oimm_readdatavalid = '1' and quashing_readdata = '1' then
+        fetches_to_quash <= fetches_to_quash - to_unsigned(1, fetches_to_quash'length);
       end if;
 
       if to_pc_correction_valid = '1' and from_pc_correction_ready = '1' then
-        program_counter            <= to_pc_correction_data;
-        squashed_fetches_in_flight <= next_pc_fifo_usedw - next_instruction_fifo_usedw;
+        program_counter  <= to_pc_correction_data;
+        fetches_to_quash <= next_pc_fifo_usedw - next_instruction_fifo_usedw;
       elsif oimm_requestvalid = '1' and oimm_waitrequest = '0' then
         program_counter <= predicted_program_counter;
       end if;
 
       if reset = '1' then
-        program_counter            <= unsigned(RESET_VECTOR(REGISTER_SIZE-1 downto 0));
-        squashed_fetches_in_flight <= to_unsigned(0, squashed_fetches_in_flight'length);
+        program_counter  <= unsigned(RESET_VECTOR(REGISTER_SIZE-1 downto 0));
+        fetches_to_quash <= to_unsigned(0, fetches_to_quash'length);
       end if;
     end if;
   end process;
-  squashing_readdata <= '1' when squashed_fetches_in_flight /= to_unsigned(0, squashed_fetches_in_flight'length) else '0';
+  quashing_readdata <= '1' when fetches_to_quash /= to_unsigned(0, fetches_to_quash'length) else '0';
 
   --Don't fetch when updating the PC, no more instructions can fit in the
   --instruction FIFO, or an interrupt is pending
-  ready_for_next_fetch <= not (to_pc_correction_valid or
-                               (not pc_fifo_can_accept_data) or
-                               interrupt_pending);
+  ready_for_next_fetch <= (not reset) and
+                          (not to_pc_correction_valid) and
+                          pc_fifo_can_accept_data and
+                          (not interrupt_pending);
 
   oimm_readnotwrite <= '1';
-  oimm_requestvalid <= (not reset) and (waiting_for_not_waitrequest or ready_for_next_fetch);
+  oimm_requestvalid <= waiting_for_not_waitrequest or ready_for_next_fetch;
   oimm_address      <= std_logic_vector(program_counter);
 
   --Per spec must hold the request valid once initiated
@@ -428,16 +433,16 @@ begin
   bypass_gen : if FIFO_BYPASS generate
     from_ifetch_instruction <= instruction_fifo_readdata when instruction_fifo_empty = '0' else
                                oimm_readdata;
-    ifetch_valid           <= (not instruction_fifo_empty) or (oimm_readdatavalid and (not squashing_readdata));
+    ifetch_valid           <= (not instruction_fifo_empty) or (oimm_readdatavalid and (not quashing_readdata));
     instruction_fifo_read  <= pc_fifo_read and (not instruction_fifo_empty);
-    instruction_fifo_write <= (oimm_readdatavalid and (not squashing_readdata)) and
+    instruction_fifo_write <= (oimm_readdatavalid and (not quashing_readdata)) and
                               ((not to_ifetch_ready) or (not instruction_fifo_empty));
   end generate bypass_gen;
   no_bypass_gen : if not FIFO_BYPASS generate
     from_ifetch_instruction <= instruction_fifo_readdata;
     ifetch_valid            <= not instruction_fifo_empty;
     instruction_fifo_read   <= pc_fifo_read;
-    instruction_fifo_write  <= (oimm_readdatavalid and (not squashing_readdata));
+    instruction_fifo_write  <= (oimm_readdatavalid and (not quashing_readdata));
   end generate no_bypass_gen;
 
   from_ifetch_valid           <= ifetch_valid;

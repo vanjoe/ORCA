@@ -14,6 +14,8 @@ entity load_store_unit is
     clk   : in std_logic;
     reset : in std_logic;
 
+    lsu_idle : out std_logic;
+
     valid                    : in     std_logic;
     rs1_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -113,6 +115,7 @@ begin
   --and it hasn't arrived yet
   writeback_stall_from_lsu <= load_in_progress and (not oimm_readdatavalid);
   lsu_ready                <= ((not read_instr) and (not write_instr)) or (not oimm_waitrequest);
+  lsu_idle                 <= not load_in_progress;  --idle is state-only
 
   process(clk)
   begin

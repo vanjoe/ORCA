@@ -32,6 +32,12 @@ entity orca_core is
     scratchpad_clk : in std_logic;
     reset          : in std_logic;
 
+    --ICache control (Invalidate/flush/writeback)
+    from_icache_control_ready : in  std_logic;
+    to_icache_control_valid   : out std_logic;
+
+    memory_interface_idle : in std_logic;
+
     --Instruction Orca-internal memory-mapped master
     ifetch_oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     ifetch_oimm_requestvalid  : buffer std_logic;
@@ -66,19 +72,18 @@ end entity orca_core;
 architecture rtl of orca_core is
   signal interrupt_pending : std_logic;
 
-  signal flush_pipeline  : std_logic;
-  signal ifetch_flushed  : std_logic;
-  signal decode_flushed  : std_logic;
-  signal execute_flushed : std_logic;
-  signal pipeline_empty  : std_logic;
+  signal ifetch_idle  : std_logic;
+  signal decode_idle  : std_logic;
+  signal execute_idle : std_logic;
+  signal core_idle    : std_logic;
 
   signal program_counter : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal execute_to_ifetch_pc_correction_data        : unsigned(REGISTER_SIZE-1 downto 0);
-  signal execute_to_ifetch_pc_correction_source_pc   : unsigned(REGISTER_SIZE-1 downto 0);
-  signal execute_to_ifetch_pc_correction_valid       : std_logic;
-  signal execute_to_ifetch_pc_correction_predictable : std_logic;
-  signal ifetch_to_execute_pc_correction_ready       : std_logic;
+  signal to_pc_correction_data        : unsigned(REGISTER_SIZE-1 downto 0);
+  signal to_pc_correction_source_pc   : unsigned(REGISTER_SIZE-1 downto 0);
+  signal to_pc_correction_valid       : std_logic;
+  signal to_pc_correction_predictable : std_logic;
+  signal from_pc_correction_ready     : std_logic;
 
   signal ifetch_to_decode_instruction     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
   signal ifetch_to_decode_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
@@ -115,21 +120,23 @@ begin
       clk   => clk,
       reset => reset,
 
-      interrupt_pending => interrupt_pending,
-      ifetch_flushed    => ifetch_flushed,
-      program_counter   => program_counter,
+      to_pc_correction_data        => to_pc_correction_data,
+      to_pc_correction_source_pc   => to_pc_correction_source_pc,
+      to_pc_correction_valid       => to_pc_correction_valid,
+      to_pc_correction_predictable => to_pc_correction_predictable,
+      from_pc_correction_ready     => from_pc_correction_ready,
 
-      to_pc_correction_data        => execute_to_ifetch_pc_correction_data,
-      to_pc_correction_source_pc   => execute_to_ifetch_pc_correction_source_pc,
-      to_pc_correction_valid       => execute_to_ifetch_pc_correction_valid,
-      to_pc_correction_predictable => execute_to_ifetch_pc_correction_predictable,
-      from_pc_correction_ready     => ifetch_to_execute_pc_correction_ready,
+      interrupt_pending => interrupt_pending,
+
+      ifetch_idle => ifetch_idle,
 
       from_ifetch_instruction     => ifetch_to_decode_instruction,
       from_ifetch_program_counter => ifetch_to_decode_program_counter,
       from_ifetch_predicted_pc    => ifetch_to_decode_predicted_pc,
       from_ifetch_valid           => from_ifetch_valid,
       to_ifetch_ready             => decode_to_ifetch_ready,
+
+      program_counter => program_counter,
 
       oimm_address       => ifetch_oimm_address,
       oimm_readnotwrite  => ifetch_oimm_readnotwrite,
@@ -139,7 +146,7 @@ begin
       oimm_waitrequest   => ifetch_oimm_waitrequest
       );
 
-  to_decode_valid <= from_ifetch_valid and (not flush_pipeline);
+  to_decode_valid <= from_ifetch_valid and (not to_pc_correction_valid);
   D : decode
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
@@ -153,8 +160,9 @@ begin
       clk   => clk,
       reset => reset,
 
-      decode_flushed => decode_flushed,
-      flush          => flush_pipeline,
+      to_rf_select => execute_to_rf_select,
+      to_rf_data   => execute_to_rf_data,
+      to_rf_valid  => execute_to_rf_valid,
 
       to_decode_program_counter => ifetch_to_decode_program_counter,
       to_decode_predicted_pc    => ifetch_to_decode_predicted_pc,
@@ -162,12 +170,9 @@ begin
       to_decode_valid           => to_decode_valid,
       from_decode_ready         => decode_to_ifetch_ready,
 
-      --writeback signals
-      to_rf_select => execute_to_rf_select,
-      to_rf_data   => execute_to_rf_data,
-      to_rf_valid  => execute_to_rf_valid,
+      quash_decode => to_pc_correction_valid,
+      decode_idle  => decode_idle,
 
-      --output signals
       from_decode_rs1_data         => decode_to_execute_rs1_data,
       from_decode_rs2_data         => decode_to_execute_rs2_data,
       from_decode_rs3_data         => decode_to_execute_rs3_data,
@@ -181,7 +186,7 @@ begin
       to_decode_ready              => execute_to_decode_ready
       );
 
-  to_execute_valid <= from_decode_valid and (not flush_pipeline);
+  to_execute_valid <= from_decode_valid and (not to_pc_correction_valid);
   X : execute
     generic map (
       REGISTER_SIZE         => REGISTER_SIZE,
@@ -205,12 +210,19 @@ begin
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
 
-      flush_pipeline  => flush_pipeline,
-      execute_flushed => execute_flushed,
-      pipeline_empty  => pipeline_empty,
-      program_counter => program_counter,
+      global_interrupts     => global_interrupts,
+      program_counter       => program_counter,
+      core_idle             => core_idle,
+      memory_interface_idle => memory_interface_idle,
 
-      --From previous stage
+      sp_address   => sp_address,
+      sp_byte_en   => sp_byte_en,
+      sp_write_en  => sp_write_en,
+      sp_read_en   => sp_read_en,
+      sp_writedata => sp_writedata,
+      sp_readdata  => sp_readdata,
+      sp_ack       => sp_ack,
+
       to_execute_valid            => to_execute_valid,
       to_execute_program_counter  => decode_to_execute_program_counter,
       to_execute_predicted_pc     => decode_to_execute_predicted_pc,
@@ -223,19 +235,18 @@ begin
       to_execute_sign_extension   => decode_to_execute_sign_extension,
       from_execute_ready          => execute_to_decode_ready,
 
-      --To PC correction
-      to_pc_correction_data        => execute_to_ifetch_pc_correction_data,
-      to_pc_correction_source_pc   => execute_to_ifetch_pc_correction_source_pc,
-      to_pc_correction_valid       => execute_to_ifetch_pc_correction_valid,
-      to_pc_correction_predictable => execute_to_ifetch_pc_correction_predictable,
-      from_pc_correction_ready     => ifetch_to_execute_pc_correction_ready,
+      execute_idle => execute_idle,
 
-      --To register file
+      to_pc_correction_data        => to_pc_correction_data,
+      to_pc_correction_source_pc   => to_pc_correction_source_pc,
+      to_pc_correction_valid       => to_pc_correction_valid,
+      to_pc_correction_predictable => to_pc_correction_predictable,
+      from_pc_correction_ready     => from_pc_correction_ready,
+
       to_rf_select => execute_to_rf_select,
       to_rf_data   => execute_to_rf_data,
       to_rf_valid  => execute_to_rf_valid,
 
-      --Data memory-mapped master
       lsu_oimm_address       => lsu_oimm_address,
       lsu_oimm_byteenable    => lsu_oimm_byteenable,
       lsu_oimm_requestvalid  => lsu_oimm_requestvalid,
@@ -245,19 +256,11 @@ begin
       lsu_oimm_readdatavalid => lsu_oimm_readdatavalid,
       lsu_oimm_waitrequest   => lsu_oimm_waitrequest,
 
-      --Scratchpad memory-mapped slave
-      sp_address   => sp_address,
-      sp_byte_en   => sp_byte_en,
-      sp_write_en  => sp_write_en,
-      sp_read_en   => sp_read_en,
-      sp_writedata => sp_writedata,
-      sp_readdata  => sp_readdata,
-      sp_ack       => sp_ack,
+      from_icache_control_ready => from_icache_control_ready,
+      to_icache_control_valid   => to_icache_control_valid,
 
-      -- Interrupt lines
-      global_interrupts => global_interrupts,
       interrupt_pending => interrupt_pending
       );
 
-  pipeline_empty <= ifetch_flushed and decode_flushed and execute_flushed;
+  core_idle <= ifetch_idle and decode_idle and execute_idle;
 end architecture rtl;

@@ -11,18 +11,21 @@ entity branch_unit is
     BTB_ENTRIES         : natural
     );
   port (
-    clk                        : in  std_logic;
-    stall                      : in  std_logic;
-    valid                      : in  std_logic;
-    reset                      : in  std_logic;
-    rs1_data                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data                   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    current_pc                 : in  unsigned(REGISTER_SIZE-1 downto 0);
-    predicted_pc               : in  unsigned(REGISTER_SIZE-1 downto 0);
-    instruction                : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    sign_extension             : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-    data_out                   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_enable                : out std_logic;
+    clk   : in std_logic;
+    reset : in std_logic;
+
+    to_branch_valid   : in  std_logic;
+    rs1_data          : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data          : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    current_pc        : in  unsigned(REGISTER_SIZE-1 downto 0);
+    predicted_pc      : in  unsigned(REGISTER_SIZE-1 downto 0);
+    instruction       : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    sign_extension    : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+
+    from_branch_valid : out std_logic;
+    from_branch_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_branch_ready   : in  std_logic;
+
     to_pc_correction_data      : out unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_source_pc : out unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_valid     : out std_logic;
@@ -109,8 +112,8 @@ begin
           to_pc_correction_valid <= '0';
         end if;
 
-        if stall = '0' then
-          if valid = '1' then
+        if to_branch_ready = '1' then
+          if to_branch_valid = '1' then
             to_pc_correction_data      <= target_pc;
             to_pc_correction_source_pc <= current_pc;
 
@@ -144,8 +147,8 @@ begin
           to_pc_correction_valid_if_mispredicted <= '0';
         end if;
 
-        if stall = '0' then
-          if valid = '1' then
+        if to_branch_ready = '1' then
+          if to_branch_valid = '1' then
             previously_targeted_pc     <= target_pc;
             to_pc_correction_source_pc <= current_pc;
             previously_predicted_pc    <= predicted_pc;
@@ -181,15 +184,15 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      data_enable <= '0';
+      from_branch_valid <= '0';
 
-      if stall = '0' then
-        data_out    <= std_logic_vector(nbranch_target);
-        data_enable <= valid and (is_jal_op or is_jalr_op);
+      if to_branch_ready = '1' then
+        from_branch_data  <= std_logic_vector(nbranch_target);
+        from_branch_valid <= to_branch_valid and (is_jal_op or is_jalr_op);
       end if;
 
       if reset = '1' then
-        data_enable <= '0';
+        from_branch_valid <= '0';
       end if;
     end if;
   end process;

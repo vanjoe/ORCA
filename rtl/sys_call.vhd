@@ -14,29 +14,32 @@ entity system_calls is
     COUNTER_LENGTH        : natural
     );
   port (
-    clk           : in  std_logic;
-    reset         : in  std_logic;
-    valid         : in  std_logic;
-    syscall_ready : out std_logic;
-    rs1_data      : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instruction   : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    clk   : in std_logic;
+    reset : in std_logic;
 
-    data_out    : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_enable : out std_logic;
+    global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+    core_idle         : in std_logic;
+    memory_idle       : in std_logic;
+    program_counter   : in unsigned(REGISTER_SIZE-1 downto 0);
 
-    current_pc               : in  unsigned(REGISTER_SIZE-1 downto 0);
+    to_syscall_valid   : in  std_logic;
+    current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
+    instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    from_syscall_ready : out std_logic;
+
+    from_syscall_valid : out std_logic;
+    from_syscall_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
     to_pc_correction_data    : out unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_valid   : out std_logic;
     from_pc_correction_ready : in  std_logic;
 
-    -- The interrupt_pending signal goes to the Instruction Fetch stage.
-    interrupt_pending : buffer std_logic;
-    global_interrupts : in     std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
-    -- Signals when an interrupt may proceed.
-    pipeline_empty    : in     std_logic;
+    --ICache control (Invalidate/flush/writeback)
+    from_icache_control_ready : in     std_logic;
+    to_icache_control_valid   : buffer std_logic;
 
-    -- Which instruction to return to upon exit.
-    program_counter : in unsigned(REGISTER_SIZE-1 downto 0)
+    interrupt_pending : buffer std_logic
     );
 end entity system_calls;
 
@@ -141,24 +144,33 @@ begin
     when others;
 
   --Sleep CSR is for power optimized versions only; costs area and fmax otherwise
-  syscall_ready <= '0' when POWER_OPTIMIZED and (instruction(MAJOR_OP'range) = SYSTEM_OP and
-                                                 csr_select = CSR_SLEEP and
-                                                 csr_write_val /= mtime) else '1';
+  from_syscall_ready <= '0' when POWER_OPTIMIZED and (instruction(MAJOR_OP'range) = SYSTEM_OP and
+                                                      csr_select = CSR_SLEEP and
+                                                      csr_write_val /= mtime) else '1';
 
   process(clk)
   begin
     if rising_edge(clk) then
-      data_enable <= '0';
-      data_out    <= csr_read_val;
+      from_syscall_valid <= '0';
+      from_syscall_data  <= csr_read_val;
 
       --Hold pc_correction causing signals until they have been processed
       if from_pc_correction_ready = '1' then
         was_mret    <= '0';
-        was_fence_i <= '0';
         was_illegal <= '0';
+
+        --On FENCE.I hold the PC correction until all pending writebacks have
+        --occurred and the icache is flushed.
+        if memory_idle = '1' and (from_icache_control_ready = '1' or to_icache_control_valid = '0') then
+          was_fence_i <= '0';
+        end if;
       end if;
 
-      if valid = '1' then
+      if from_icache_control_ready = '1' then
+        to_icache_control_valid <= '0';
+      end if;
+
+      if to_syscall_valid = '1' then
         next_fence_pc <= unsigned(current_pc) + to_unsigned(4, next_fence_pc'length);
         if legal_instr /= '1' and ENABLE_EXCEPTIONS then
           -----------------------------------------------------------------------------
@@ -175,7 +187,7 @@ begin
             -- CSR Read/Write
             -----------------------------------------------------------------------------
             if (not POWER_OPTIMIZED) or (csr_select /= CSR_SLEEP) then
-              data_enable <= '1';
+              from_syscall_valid <= '1';
             end if;
 
             -- Disable csr writes if exceptions are not enabled.
@@ -214,7 +226,8 @@ begin
           -- A FENCE instruction is a NOP.
           -- A FENCE.I instruction is a pipeline flush.
           if instruction(12) = '1' then
-            was_fence_i <= '1';
+            was_fence_i             <= '1';
+            to_icache_control_valid <= '1';
           end if;
         end if;
       end if;
@@ -223,7 +236,7 @@ begin
         interrupt_pc_correction_valid <= '0';
       end if;
 
-      if interrupt_pending = '1' and pipeline_empty = '1' and ENABLE_EXCEPTIONS then
+      if interrupt_pending = '1' and core_idle = '1' and ENABLE_EXCEPTIONS then
         interrupt_pc_correction_valid <= '1';
 
         -- Latch in mepc the cycle before interrupt_pc_correction_valid goes high.
@@ -238,15 +251,19 @@ begin
 
       if reset = '1' then
         interrupt_pc_correction_valid <= '0';
+        was_fence_i                   <= '0';
+        was_mret                      <= '0';
+        was_illegal                   <= '0';
+        to_icache_control_valid       <= '0';
 
         if ENABLE_EXCEPTIONS then
+          -- Note that mip and meipend are read-only registers.
           mstatus(CSR_MSTATUS_MIE)  <= '0';
           mstatus(CSR_MSTATUS_MPIE) <= '0';
           mie                       <= (others => '0');
           mepc                      <= (others => '0');
           mcause                    <= (others => '0');
           meimask                   <= (others => '0');
-                                        -- Note that mip and meipend are read-only registers.
         end if;
       end if;
     end if;
@@ -325,10 +342,10 @@ begin
               (opcode7 = BRANCH_OP and func3 /= "010" and func3 /= "011") or
               (opcode7 = LOAD_OP and func3 /= "011" and func3 /= "110" and func3 /= "111") or
               (opcode7 = STORE_OP and (func3 = "000" or func3 = "001" or func3 = "010")) or
-              opcode7 = ALUI_OP or      -- Does not catch illegal
-                                        -- shift amounts
+              opcode7 = ALUI_OP or  -- Does not catch illegal
+                                                  -- shift amounts
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
-              (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
+              (opcode7 = FENCE_OP) or  -- All fence ops are treated as legal
               (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /= SYSTEM_EBREAK) or
               opcode7 = LVE_OP) else '0';
 end architecture;
