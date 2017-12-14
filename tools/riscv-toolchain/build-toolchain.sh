@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if [ -z "$RISCV_INSTALL" ]
 then
         echo "RISCV_INSTALL not defined, please define it to path for installing toolchain ... exiting" >&2
@@ -77,10 +77,11 @@ fi
 
 #newlib
 (
+	 rm -rf build-newlib
 	 mkdir build-newlib
 	 cd build-newlib
 	 ../newlib-$NEWLIB_VERSION/configure --target=riscv32-unknown-elf --prefix=$RISCV_INSTALL
-	 make && make install
+	 make -j$(( `nproc` * 2)) && make install
 )
 #copy this script to the installation directory
 cp $SCRIPT_FILE $RISCV_INSTALL/build-script.sh
