@@ -28,7 +28,6 @@ entity orca is
     LVE_ENABLE                   : natural range 0 to 1          := 0;
     ENABLE_EXT_INTERRUPTS        : natural range 0 to 1          := 0;
     NUM_EXT_INTERRUPTS           : positive range 1 to 32        := 1;
-    SCRATCHPAD_ADDR_BITS         : positive                      := 10;
     INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2          := 0;
     INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1          := 0;
     IUC_REQUEST_REGISTER         : natural range 0 to 2          := 0;
@@ -62,7 +61,6 @@ entity orca is
     );
   port (
     clk            : in std_logic;
-    scratchpad_clk : in std_logic;
     reset          : in std_logic;
 
     -------------------------------------------------------------------------------
@@ -309,34 +307,28 @@ entity orca is
     DLMB_UE           : in  std_logic                              := '0';
 
     -------------------------------------------------------------------------------
-    -- Scratchpad Slave
-    -------------------------------------------------------------------------------
-    --Avalon scratchpad slave
-    avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
-    avm_scratch_byteenable    : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0)    := (others => '0');
-    avm_scratch_read          : in  std_logic                                         := '0';
-    avm_scratch_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    avm_scratch_write         : in  std_logic                                         := '0';
-    avm_scratch_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0)        := (others => '0');
-    avm_scratch_waitrequest   : out std_logic;
-    avm_scratch_readdatavalid : out std_logic;
-
-    --WISHBONE scratchpad slave
-    sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
-    sp_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)        := (others => '0');
-    sp_WE_I    : in  std_logic                                         := '0';
-    sp_SEL_I   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0)    := (others => '0');
-    sp_STB_I   : in  std_logic                                         := '0';
-    sp_ACK_O   : out std_logic;
-    sp_CYC_I   : in  std_logic                                         := '0';
-    sp_CTI_I   : in  std_logic_vector(2 downto 0)                      := (others => '0');
-    sp_STALL_O : out std_logic;
-
-    -------------------------------------------------------------------------------
     -- Interrupts
     -------------------------------------------------------------------------------
-    global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
+    global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0');
+
+    ---------------------------------------------------------------------------
+    -- Vector Co-Processor Port
+    ---------------------------------------------------------------------------
+    vcp_data0 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_data1 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_data2 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+    vcp_instruction      : out std_logic_vector(40 downto 0);
+    vcp_valid_instr      : out std_logic ;
+    vcp_ready            : in  std_logic := '1';
+    vcp_executing        : in  std_logic := '0';
+    vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    vcp_alu_op_size      : in  std_logic_vector(1 downto 0) := (others => '0');
+    vcp_alu_source_valid : in  std_logic := '0';
+    vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_alu_result_valid : out std_logic
+
     );
 end entity orca;
 
@@ -369,13 +361,6 @@ architecture rtl of orca is
   signal ifetch_oimm_waitrequest   : std_logic;
   signal ifetch_oimm_readdatavalid : std_logic;
 
-  signal sp_address   : std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
-  signal sp_byte_en   : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-  signal sp_write_en  : std_logic;
-  signal sp_read_en   : std_logic;
-  signal sp_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sp_readdata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal sp_ack       : std_logic;
 begin
   core : orca_core
     generic map (
@@ -394,14 +379,12 @@ begin
       LVE_ENABLE             => LVE_ENABLE,
       ENABLE_EXT_INTERRUPTS  => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS     => NUM_EXT_INTERRUPTS,
-      SCRATCHPAD_SIZE        => 2**SCRATCHPAD_ADDR_BITS,
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS,
       FAMILY                 => FAMILY
       )
     port map (
-      clk            => clk,
-      scratchpad_clk => scratchpad_clk,
-      reset          => reset,
+      clk   => clk,
+      reset => reset,
 
       --ICache control (Invalidate/flush/writeback)
       from_icache_control_ready => from_icache_control_ready,
@@ -427,14 +410,19 @@ begin
       lsu_oimm_readdatavalid => lsu_oimm_readdatavalid,
       lsu_oimm_waitrequest   => lsu_oimm_waitrequest,
 
-      --Scratchpad memory-mapped slave
-      sp_address   => sp_address,
-      sp_byte_en   => sp_byte_en,
-      sp_write_en  => sp_write_en,
-      sp_read_en   => sp_read_en,
-      sp_writedata => sp_writedata,
-      sp_readdata  => sp_readdata,
-      sp_ack       => sp_ack,
+      vcp_data0            => vcp_data0,
+      vcp_data1            => vcp_data1,
+      vcp_data2            => vcp_data2,
+      vcp_instruction      => vcp_instruction,
+      vcp_valid_instr      => vcp_valid_instr,
+      vcp_ready            => vcp_ready,
+      vcp_executing        => vcp_executing,
+      vcp_alu_data1        => vcp_alu_data1,
+      vcp_alu_data2        => vcp_alu_data2,
+      vcp_alu_op_size      => vcp_alu_op_size,
+      vcp_alu_source_valid => vcp_alu_source_valid,
+      vcp_alu_result       => vcp_alu_result,
+      vcp_alu_result_valid => vcp_alu_result_valid,
 
       global_interrupts => global_interrupts
       );
@@ -442,7 +430,6 @@ begin
   the_memory_interface : memory_interface
     generic map (
       REGISTER_SIZE         => REGISTER_SIZE,
-      SCRATCHPAD_ADDR_BITS  => SCRATCHPAD_ADDR_BITS,
       WRITE_FIRST_SUPPORTED => false,  --May be able to enable on some families
       --to save bypass logic
 
@@ -488,7 +475,6 @@ begin
       )
     port map (
       clk            => clk,
-      scratchpad_clk => scratchpad_clk,
       reset          => reset,
 
       --ICache control (Invalidate/flush/writeback)
@@ -514,15 +500,6 @@ begin
       lsu_oimm_readdata      => lsu_oimm_readdata,
       lsu_oimm_readdatavalid => lsu_oimm_readdatavalid,
       lsu_oimm_waitrequest   => lsu_oimm_waitrequest,
-
-      --Scratchpad memory-mapped slave
-      sp_address   => sp_address,
-      sp_byte_en   => sp_byte_en,
-      sp_write_en  => sp_write_en,
-      sp_read_en   => sp_read_en,
-      sp_writedata => sp_writedata,
-      sp_readdata  => sp_readdata,
-      sp_ack       => sp_ack,
 
       -------------------------------------------------------------------------------
       --AVALON
@@ -765,32 +742,7 @@ begin
       DLMB_Ready        => DLMB_Ready,
       DLMB_Wait         => DLMB_Wait,
       DLMB_CE           => DLMB_CE,
-      DLMB_UE           => DLMB_UE,
-
-      -------------------------------------------------------------------------------
-      -- Scratchpad Slave
-      -------------------------------------------------------------------------------
-      --Avalon scratchpad slave
-      avm_scratch_address       => avm_scratch_address,
-      avm_scratch_byteenable    => avm_scratch_byteenable,
-      avm_scratch_read          => avm_scratch_read,
-      avm_scratch_readdata      => avm_scratch_readdata,
-      avm_scratch_write         => avm_scratch_write,
-      avm_scratch_writedata     => avm_scratch_writedata,
-      avm_scratch_waitrequest   => avm_scratch_waitrequest,
-      avm_scratch_readdatavalid => avm_scratch_readdatavalid,
-
-      --WISHBONE scratchpad slave
-      sp_ADR_I   => sp_ADR_I,
-      sp_DAT_O   => sp_DAT_O,
-      sp_DAT_I   => sp_DAT_I,
-      sp_WE_I    => sp_WE_I,
-      sp_SEL_I   => sp_SEL_I,
-      sp_STB_I   => sp_STB_I,
-      sp_ACK_O   => sp_ACK_O,
-      sp_CYC_I   => sp_CYC_I,
-      sp_CTI_I   => sp_CTI_I,
-      sp_STALL_O => sp_STALL_O
+      DLMB_UE           => DLMB_UE
       );
 
   assert ENABLE_EXT_INTERRUPTS = 0 or ENABLE_EXCEPTIONS /= 0 report "External interrupts are enabled but exceptions are not enabled so they will never be processed; please disable extrnal interrupts (set ENABLE_EXT_INTERRUPTS to 0) or enable exceptions (set ENABLE_EXCEPTIONS to 1)" severity failure;

@@ -56,7 +56,7 @@ add_fileset_file vblox_orca/orca.vhd VHDL PATH orca.vhd TOP_LEVEL_FILE
 add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd TOP_LEVEL_FILE
 add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
-add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
+add_fileset_file vblox_orca/vcp_handler.vhd VHDL PATH vcp_handler.vhd
 add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
 add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
 add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH cache_mux.vhd
@@ -85,7 +85,7 @@ add_fileset_file vblox_orca/orca.vhd VHDL PATH orca.vhd
 add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd
 add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
 add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
-add_fileset_file vblox_orca/lve_top.vhd VHDL PATH lve_top.vhd
+add_fileset_file vblox_orca/vcp_handler.vhd VHDL PATH vcp_handler.vhd
 add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
 add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
 add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH cache_mux.vhd
@@ -207,7 +207,7 @@ set_display_item_property ENABLE_EXCEPTIONS DISPLAY_HINT boolean
 
 add_parameter ENABLE_EXT_INTERRUPTS natural 0
 set_parameter_property ENABLE_EXT_INTERRUPTS DISPLAY_NAME "Enable Interrupts"
-set_parameter_property ENABLE_EXT_INTERRUPTS DESCRIPTION "Enable handling of external interrupts" 
+set_parameter_property ENABLE_EXT_INTERRUPTS DESCRIPTION "Enable handling of external interrupts"
 set_parameter_property ENABLE_EXT_INTERRUPTS TYPE NATURAL
 set_parameter_property ENABLE_EXT_INTERRUPTS UNITS None
 set_parameter_property ENABLE_EXT_INTERRUPTS ALLOWED_RANGES 0:1
@@ -334,17 +334,6 @@ set_parameter_property LVE_ENABLE ALLOWED_RANGES 0:1
 set_parameter_property LVE_ENABLE HDL_PARAMETER true
 set_display_item_property LVE_ENABLE DISPLAY_HINT boolean
 
-add_parameter SCRATCHPAD_SIZE integer 64
-set_parameter_property SCRATCHPAD_SIZE DISPLAY_NAME "        Scratchpad size"
-set_parameter_property SCRATCHPAD_SIZE DESCRIPTION "        Scratchpad size"
-set_parameter_property SCRATCHPAD_SIZE UNITS kilobytes
-set_parameter_property SCRATCHPAD_SIZE HDL_PARAMETER false
-set_parameter_property SCRATCHPAD_SIZE visible true 
-
-add_parameter SCRATCHPAD_ADDR_BITS integer 10
-set_parameter_property SCRATCHPAD_ADDR_BITS HDL_PARAMETER true
-set_parameter_property SCRATCHPAD_ADDR_BITS visible false 
-set_parameter_property SCRATCHPAD_ADDR_BITS derived true
 
 add_parameter IUC_ADDR_BASE Std_Logic_Vector 32'h00000000
 set_parameter_property IUC_ADDR_BASE DEFAULT_VALUE 32'h00000000
@@ -386,11 +375,11 @@ add_parameter ICACHE_LINE_SIZE NATURAL 32
 set_parameter_property ICACHE_LINE_SIZE HDL_PARAMETER true
 set_parameter_property ICACHE_LINE_SIZE visible true
 
-add_parameter ICACHE_EXTERNAL_WIDTH integer 32 
+add_parameter ICACHE_EXTERNAL_WIDTH integer 32
 set_parameter_property ICACHE_EXTERNAL_WIDTH HDL_PARAMETER true
 set_parameter_property ICACHE_EXTERNAL_WIDTH visible true
 
-add_parameter ICACHE_BURST_EN integer 0 
+add_parameter ICACHE_BURST_EN integer 0
 set_parameter_property ICACHE_BURST_EN HDL_PARAMETER true
 set_parameter_property ICACHE_BURST_EN ALLOWED_RANGES 0:1
 set_parameter_property ICACHE_BURST_EN visible true
@@ -435,11 +424,11 @@ add_parameter DCACHE_LINE_SIZE NATURAL 32
 set_parameter_property DCACHE_LINE_SIZE HDL_PARAMETER true
 set_parameter_property DCACHE_LINE_SIZE visible true
 
-add_parameter DCACHE_EXTERNAL_WIDTH integer 32 
+add_parameter DCACHE_EXTERNAL_WIDTH integer 32
 set_parameter_property DCACHE_EXTERNAL_WIDTH HDL_PARAMETER true
 set_parameter_property DCACHE_EXTERNAL_WIDTH visible true
 
-add_parameter DCACHE_BURST_EN integer 0 
+add_parameter DCACHE_BURST_EN integer 0
 set_parameter_property DCACHE_BURST_EN HDL_PARAMETER true
 set_parameter_property DCACHE_BURST_EN ALLOWED_RANGES 0:1
 set_parameter_property DCACHE_BURST_EN visible true
@@ -452,9 +441,9 @@ set_parameter_property POWER_OPTIMIZED HDL_PARAMETER true
 set_parameter_property POWER_OPTIMIZED ALLOWED_RANGES 0:1
 set_display_item_property POWER_OPTIMIZED DISPLAY_HINT boolean
 
-add_parameter FAMILY string ALTERA 
+add_parameter FAMILY string ALTERA
 set_parameter_property FAMILY HDL_PARAMETER true
-set_parameter_property FAMILY visible false 
+set_parameter_property FAMILY visible false
 
 #
 # display items
@@ -472,15 +461,6 @@ set_interface_property clock CMSIS_SVD_VARIABLES ""
 set_interface_property clock SVD_ADDRESS_GROUP ""
 
 add_interface_port clock clk clk Input 1
-
-add_interface scratchpad_clk clock end
-set_interface_property scratchpad_clk clockRate 0
-set_interface_property scratchpad_clk EXPORT_OF ""
-set_interface_property scratchpad_clk PORT_NAME_MAP ""
-set_interface_property scratchpad_clk CMSIS_SVD_VARIABLES ""
-set_interface_property scratchpad_clk SVD_ADDRESS_GROUP ""
-
-add_interface_port scratchpad_clk scratchpad_clk clk Input 1
 
 #
 # connection point reset
@@ -773,40 +753,29 @@ add_interface_port instruction avm_instruction_readdata readdata Input register_
 add_interface_port instruction avm_instruction_waitrequest waitrequest Input 1
 add_interface_port instruction avm_instruction_readdatavalid readdatavalid Input 1
 
-#
-# connection point scratch
-#
-add_interface scratch avalon slave
 
-set_interface_property scratch addressUnits SYMBOLS
-set_interface_property scratch associatedClock clock
-set_interface_property scratch associatedReset reset
-set_interface_property scratch bitsPerSymbol 8
-set_interface_property scratch burstOnBurstBoundariesOnly false
-set_interface_property scratch burstcountUnits WORDS
-set_interface_property scratch holdTime 0
-set_interface_property scratch linewrapBursts false
-set_interface_property scratch maximumPendingReadTransactions 1
-set_interface_property scratch maximumPendingWriteTransactions 0
-set_interface_property scratch readLatency 0
-set_interface_property scratch readWaitTime 1
-set_interface_property scratch setupTime 0
-set_interface_property scratch timingUnits Cycles
-set_interface_property scratch writeWaitTime 0
-set_interface_property scratch ENABLED true
-set_interface_property scratch EXPORT_OF ""
-set_interface_property scratch PORT_NAME_MAP ""
-set_interface_property scratch CMSIS_SVD_VARIABLES ""
-set_interface_property scratch SVD_ADDRESS_GROUP ""
+#
+# connection point vcp
+#
+add_interface vcp conduit end
+set_interface_property vcp associatedClock clock
+set_interface_property vcp associatedReset reset
+set_interface_property vcp ENABLED true
 
-add_interface_port scratch avm_scratch_address address Input scratchpad_addr_bits
-add_interface_port scratch avm_scratch_byteenable byteenable Input register_size/8
-add_interface_port scratch avm_scratch_read read Input 1
-add_interface_port scratch avm_scratch_readdata readdata Output register_size
-add_interface_port scratch avm_scratch_write write Input 1
-add_interface_port scratch avm_scratch_writedata writedata Input register_size
-add_interface_port scratch avm_scratch_waitrequest waitrequest Output 1
-add_interface_port scratch avm_scratch_readdatavalid readdatavalid Output 1
+add_interface_port vcp vcp_data0            data0             Output register_size
+add_interface_port vcp vcp_data1            data1             Output register_size
+add_interface_port vcp vcp_data2            data2             Output register_size
+add_interface_port vcp vcp_instruction      instruction       Output 41
+add_interface_port vcp vcp_valid_instr      valid_instr       Output 1
+add_interface_port vcp vcp_ready            ready             Input 1
+add_interface_port vcp vcp_executing        executing         Input 1
+add_interface_port vcp vcp_alu_data1        alu_data1         Input register_size
+add_interface_port vcp vcp_alu_data2        alu_data2         Input register_size
+add_interface_port vcp vcp_alu_op_size      alu_op_size       Input 2
+add_interface_port vcp vcp_alu_source_valid alu_source_valid  Input  1
+add_interface_port vcp vcp_alu_result       alu_result        Output register_size
+add_interface_port vcp vcp_alu_result_valid alu_result_valid  Output 1
+
 
 #
 # connection point global_interrupts
@@ -867,28 +836,6 @@ add_interface_port wishbone_iuc       instr_CYC_O    CYC_O     output 1
 add_interface_port wishbone_iuc       instr_CTI_O    CTI_O     output 3
 add_interface_port wishbone_iuc       instr_STALL_I  STALL_I   input  1
 
-#
-# connection point sp_wishbone (disabled)
-#
-add_interface sp_wishbone conduit end
-set_interface_property sp_wishbone associatedClock ""
-set_interface_property sp_wishbone associatedReset ""
-set_interface_property sp_wishbone ENABLED false
-set_interface_property sp_wishbone EXPORT_OF ""
-set_interface_property sp_wishbone PORT_NAME_MAP ""
-set_interface_property sp_wishbone CMSIS_SVD_VARIABLES ""
-set_interface_property sp_wishbone SVD_ADDRESS_GROUP ""
-
-add_interface_port sp_wishbone       sp_ADR_I     ADR_O     input  scratchpad_addr_bits
-add_interface_port sp_wishbone       sp_DAT_O     DAT_I     output REGISTER_SIZE
-add_interface_port sp_wishbone       sp_DAT_I     DAT_O     input  REGISTER_SIZE
-add_interface_port sp_wishbone       sp_WE_I      WE_O      input  1
-add_interface_port sp_wishbone       sp_SEL_I     SEL_O     input  REGISTER_SIZE/8
-add_interface_port sp_wishbone       sp_STB_I     STB_O     input  1
-add_interface_port sp_wishbone       sp_ACK_O     ACK_I     output 1
-add_interface_port sp_wishbone       sp_CYC_I     CYC_O     input  1
-add_interface_port sp_wishbone       sp_CTI_I     CTI_O     input  3
-add_interface_port sp_wishbone       sp_STALL_O   STALL_I   output 1
 
 #
 # connection point lmb_iuc (disabled)
@@ -959,19 +906,9 @@ proc elaboration_callback {} {
     set_interface_property axi_iuc       combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
 
     if { [get_parameter_value LVE_ENABLE] } {
-        set_interface_property scratchpad_clk ENABLED true
-        set_interface_property scratch ENABLED true
-        set_parameter_property SCRATCHPAD_SIZE visible true
+        set_interface_property vcp ENABLED true
     } else {
-        set_interface_property scratchpad_clk ENABLED false
-        set_interface_property scratch ENABLED false
-        set_parameter_property SCRATCHPAD_SIZE visible false
-    }
-    set sp_size [expr 1024*[get_parameter_value SCRATCHPAD_SIZE ] ]
-    set log_size [log2 $sp_size]
-    set_parameter_value SCRATCHPAD_ADDR_BITS $log_size
-    if { [expr 2**$log_size != $sp_size ] } {
-        send_message Error "Scratchpad size is not a power of two"
+        set_interface_property vcp ENABLED false
     }
 
     if { [get_parameter_value ENABLE_EXCEPTIONS] } {

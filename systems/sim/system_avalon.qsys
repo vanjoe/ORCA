@@ -357,6 +357,14 @@
          type = "String";
       }
    }
+   element system_avalon
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
    element vblox1
    {
       datum _originalDeviceFamily
@@ -403,14 +411,6 @@
       {
          value = "3";
          type = "int";
-      }
-   }
-   element vectorblox_orca_0.scratch
-   {
-      datum baseAddress
-      {
-         value = "65536";
-         type = "String";
       }
    }
 }
@@ -520,7 +520,7 @@
   <parameter name="IUC_ADDR_LAST" value="0" />
   <parameter name="IUC_REQUEST_REGISTER" value="1" />
   <parameter name="IUC_RETURN_REGISTER" value="0" />
-  <parameter name="LVE_ENABLE" value="1" />
+  <parameter name="LVE_ENABLE" value="0" />
   <parameter name="MAX_IFETCHES_IN_FLIGHT" value="3" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="NUM_EXT_INTERRUPTS" value="1" />
@@ -528,7 +528,6 @@
   <parameter name="POWER_OPTIMIZED" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="0" />
-  <parameter name="SCRATCHPAD_SIZE" value="64" />
   <parameter name="SHIFTER_MAX_CYCLES" value="32" />
  </module>
  <connection
@@ -552,26 +551,12 @@
  <connection
    kind="avalon"
    version="15.1"
-   start="vectorblox_orca_0.data"
-   end="vectorblox_orca_0.scratch">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x04000000" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection
-   kind="avalon"
-   version="15.1"
    start="vectorblox_orca_0.instruction"
    end="onchip_memory2_0.s2">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection
-   kind="clock"
-   version="15.1"
-   start="clock_gen_0.clk_2x"
-   end="vectorblox_orca_0.scratchpad_clk" />
  <connection
    kind="clock"
    version="15.1"

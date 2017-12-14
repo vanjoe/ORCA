@@ -29,7 +29,6 @@ package rv_components is
       LVE_ENABLE                   : natural range 0 to 1          := 0;
       ENABLE_EXT_INTERRUPTS        : natural range 0 to 1          := 0;
       NUM_EXT_INTERRUPTS           : positive range 1 to 32        := 1;
-      SCRATCHPAD_ADDR_BITS         : positive                      := 10;
       INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2          := 0;
       INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1          := 0;
       IUC_REQUEST_REGISTER         : natural range 0 to 2          := 0;
@@ -62,9 +61,8 @@ package rv_components is
       FAMILY                       : string                        := "GENERIC"
       );
     port (
-      clk            : in std_logic;
-      scratchpad_clk : in std_logic;
-      reset          : in std_logic;
+      clk   : in std_logic;
+      reset : in std_logic;
 
       -------------------------------------------------------------------------------
       --AVALON
@@ -310,31 +308,6 @@ package rv_components is
       DLMB_UE           : in  std_logic                              := '0';
 
       -------------------------------------------------------------------------------
-      -- Scratchpad Slave
-      -------------------------------------------------------------------------------
-      --Avalon scratchpad slave
-      avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
-      avm_scratch_byteenable    : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0)    := (others => '0');
-      avm_scratch_read          : in  std_logic                                         := '0';
-      avm_scratch_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_scratch_write         : in  std_logic                                         := '0';
-      avm_scratch_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0)        := (others => '0');
-      avm_scratch_waitrequest   : out std_logic;
-      avm_scratch_readdatavalid : out std_logic;
-
-      --WISHBONE scratchpad slave
-      sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0) := (others => '0');
-      sp_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)        := (others => '0');
-      sp_WE_I    : in  std_logic                                         := '0';
-      sp_SEL_I   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0)    := (others => '0');
-      sp_STB_I   : in  std_logic                                         := '0';
-      sp_ACK_O   : out std_logic;
-      sp_CYC_I   : in  std_logic                                         := '0';
-      sp_CTI_I   : in  std_logic_vector(2 downto 0)                      := (others => '0');
-      sp_STALL_O : out std_logic;
-
-      -------------------------------------------------------------------------------
       -- Interrupts
       -------------------------------------------------------------------------------
       global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0) := (others => '0')
@@ -344,7 +317,6 @@ package rv_components is
   component memory_interface is
     generic (
       REGISTER_SIZE         : positive range 32 to 32;
-      SCRATCHPAD_ADDR_BITS  : positive;
       WRITE_FIRST_SUPPORTED : boolean;
 
       --Auxiliary Interface Select
@@ -387,9 +359,8 @@ package rv_components is
       DCACHE_BURST_EN              : integer range 0 to 1
       );
     port (
-      clk            : in std_logic;
-      scratchpad_clk : in std_logic;
-      reset          : in std_logic;
+      clk   : in std_logic;
+      reset : in std_logic;
 
       --ICache control (Invalidate/flush/writeback)
       from_icache_control_ready : out std_logic;
@@ -415,14 +386,6 @@ package rv_components is
       lsu_oimm_readdatavalid : out std_logic;
       lsu_oimm_waitrequest   : out std_logic;
 
-      --Scratchpad memory-mapped slave
-      sp_address   : out std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
-      sp_byte_en   : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-      sp_write_en  : out std_logic;
-      sp_read_en   : out std_logic;
-      sp_writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_ack       : in  std_logic;
 
       -------------------------------------------------------------------------------
       --AVALON
@@ -665,33 +628,9 @@ package rv_components is
       DLMB_Ready        : in  std_logic;
       DLMB_Wait         : in  std_logic;
       DLMB_CE           : in  std_logic;
-      DLMB_UE           : in  std_logic;
-
-      -------------------------------------------------------------------------------
-      -- Scratchpad Slave
-      -------------------------------------------------------------------------------
-      --Avalon scratchpad slave
-      avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
-      avm_scratch_byteenable    : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-      avm_scratch_read          : in  std_logic;
-      avm_scratch_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_scratch_write         : in  std_logic;
-      avm_scratch_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      avm_scratch_waitrequest   : out std_logic;
-      avm_scratch_readdatavalid : out std_logic;
-
-      --WISHBONE scratchpad slave
-      sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
-      sp_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_WE_I    : in  std_logic;
-      sp_SEL_I   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-      sp_STB_I   : in  std_logic;
-      sp_ACK_O   : out std_logic;
-      sp_CYC_I   : in  std_logic;
-      sp_CTI_I   : in  std_logic_vector(2 downto 0);
-      sp_STALL_O : out std_logic
+      DLMB_UE           : in  std_logic
       );
+
   end component;
 
   component orca_core is
@@ -711,14 +650,12 @@ package rv_components is
       ENABLE_EXT_INTERRUPTS  : natural range 0 to 1;
       NUM_EXT_INTERRUPTS     : positive range 1 to 32;
       LVE_ENABLE             : natural range 0 to 1;
-      SCRATCHPAD_SIZE        : integer;
       WRITE_FIRST_SMALL_RAMS : boolean;
       FAMILY                 : string
       );
     port (
-      clk            : in std_logic;
-      scratchpad_clk : in std_logic;
-      reset          : in std_logic;
+      clk   : in std_logic;
+      reset : in std_logic;
 
       --ICache control (Invalidate/flush/writeback)
       from_icache_control_ready : in  std_logic;
@@ -744,16 +681,26 @@ package rv_components is
       lsu_oimm_readdatavalid : in     std_logic;
       lsu_oimm_waitrequest   : in     std_logic;
 
-      --Scratchpad memory-mapped slave
-      sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-      sp_byte_en   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-      sp_write_en  : in  std_logic;
-      sp_read_en   : in  std_logic;
-      sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_ack       : out std_logic;
+      global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
 
-      global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0)
+      ---------------------------------------------------------------------------
+      -- Vector Co-Processor Port
+      ---------------------------------------------------------------------------
+      vcp_data0 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_data1 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_data2 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+      vcp_instruction      : out std_logic_vector(40 downto 0);
+      vcp_valid_instr      : out std_logic;
+      vcp_ready            : in  std_logic;
+      vcp_executing        : in  std_logic;
+      vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
+      vcp_alu_source_valid : in  std_logic;
+      vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_alu_result_valid : out std_logic
+
       );
   end component orca_core;
 
@@ -813,27 +760,16 @@ package rv_components is
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
       NUM_EXT_INTERRUPTS    : positive range 1 to 32;
       LVE_ENABLE            : natural;
-      SCRATCHPAD_SIZE       : integer;
       FAMILY                : string
       );
     port (
-      clk            : in std_logic;
-      scratchpad_clk : in std_logic;
-      reset          : in std_logic;
+      clk   : in std_logic;
+      reset : in std_logic;
 
       global_interrupts     : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
       program_counter       : in unsigned(REGISTER_SIZE-1 downto 0);
       core_idle             : in std_logic;
       memory_interface_idle : in std_logic;
-
-      --LVE Scratchpad memory-mapped slave
-      sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-      sp_byte_en   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-      sp_write_en  : in  std_logic;
-      sp_read_en   : in  std_logic;
-      sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      sp_ack       : out std_logic;
 
       to_execute_valid            : in     std_logic;
       to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
@@ -876,7 +812,26 @@ package rv_components is
       from_icache_control_ready : in  std_logic;
       to_icache_control_valid   : out std_logic;
 
-      interrupt_pending : buffer std_logic
+      interrupt_pending : buffer std_logic;
+
+      ---------------------------------------------------------------------------
+      -- Vector Co-Processor Port
+      ---------------------------------------------------------------------------
+      vcp_data0 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_data1 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_data2 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+      vcp_instruction      : out std_logic_vector(40 downto 0);
+      vcp_valid_instr      : out std_logic;
+      vcp_ready            : in  std_logic;
+      vcp_executing        : in  std_logic;
+      vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
+      vcp_alu_source_valid : in  std_logic;
+      vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_alu_result_valid : out std_logic
+
       );
   end component execute;
 
@@ -1077,69 +1032,6 @@ package rv_components is
       );
   end component system_calls;
 
-  type VCUSTOM_ENUM is (VCUSTOM0, VCUSTOM1, VCUSTOM2, VCUSTOM3, VCUSTOM4, VCUSTOM5, VCUSTOM6, VCUSTOM7);
-  component lve_ci is
-    generic (
-      REGISTER_SIZE : positive
-      );
-    port (
-      clk   : in std_logic;
-      reset : in std_logic;
-
-      pause : in std_logic;
-
-      func : in VCUSTOM_ENUM;
-
-      valid_in : in std_logic;
-      data1_in : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      data2_in : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-
-      align1_in : in std_logic_vector(1 downto 0);
-      align2_in : in std_logic_vector(1 downto 0);
-
-      valid_out        : out std_logic;
-      byte_en_out      : out std_logic_vector(3 downto 0);
-      write_enable_out : out std_logic;
-      data_out         : out std_logic_vector(REGISTER_SIZE-1 downto 0)
-      );
-  end component lve_ci;
-
-  component lve_top is
-    generic (
-      REGISTER_SIZE    : natural;
-      SLAVE_DATA_WIDTH : natural;
-      POWER_OPTIMIZED  : boolean;
-      SCRATCHPAD_SIZE  : integer;
-      FAMILY           : string
-      );
-    port (
-      clk            : in std_logic;
-      scratchpad_clk : in std_logic;
-      reset          : in std_logic;
-      instruction    : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      valid_instr    : in std_logic;
-      rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs3_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-
-      slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-      slave_read_en  : in  std_logic;
-      slave_write_en : in  std_logic;
-      slave_byte_en  : in  std_logic_vector((SLAVE_DATA_WIDTH/8)-1 downto 0);
-      slave_data_in  : in  std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
-      slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
-      slave_ack      : out std_logic;
-
-      lve_ready            : out std_logic;
-      lve_executing        : out std_logic;
-      lve_alu_data1        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      lve_alu_data2        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-      lve_alu_op_size      : out std_logic_vector(1 downto 0);
-      lve_alu_source_valid : out std_logic;
-      lve_alu_result       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      lve_alu_result_valid : in  std_logic
-      );
-  end component;
 
   component ram_mux is
     generic (
@@ -1327,49 +1219,6 @@ package rv_components is
       RREADY : out std_logic
       );
   end component axi_master;
-
-  component ram_4port is
-    generic (
-      MEM_DEPTH       : natural;
-      MEM_WIDTH       : natural;
-      POWER_OPTIMIZED : boolean;
-      FAMILY          : string
-      );
-    port (
-      clk            : in std_logic;
-      scratchpad_clk : in std_logic;
-      reset          : in std_logic;
-
-      pause_lve_in  : in  std_logic;
-      pause_lve_out : out std_logic;
-                                        --read source A
-      raddr0        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      ren0          : in  std_logic;
-      scalar_value  : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-      scalar_enable : in  std_logic;
-      data_out0     : out std_logic_vector(MEM_WIDTH-1 downto 0);
-                                        --read source B
-      raddr1        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      ren1          : in  std_logic;
-      enum_value    : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-      enum_enable   : in  std_logic;
-      data_out1     : out std_logic_vector(MEM_WIDTH-1 downto 0);
-      ack01         : out std_logic;
-                                        --write dest
-      waddr2        : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      byte_en2      : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-      wen2          : in  std_logic;
-      data_in2      : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-                                        --external slave port
-      rwaddr3       : in  std_logic_vector(log2(MEM_DEPTH)-1 downto 0);
-      wen3          : in  std_logic;
-      ren3          : in  std_logic;    --cannot be asserted same cycle as wen3
-      byte_en3      : in  std_logic_vector(MEM_WIDTH/8-1 downto 0);
-      data_in3      : in  std_logic_vector(MEM_WIDTH-1 downto 0);
-      ack3          : out std_logic;
-      data_out3     : out std_logic_vector(MEM_WIDTH-1 downto 0)
-      );
-  end component;
 
   component cache_controller is
     generic (
@@ -1591,5 +1440,29 @@ package rv_components is
       );
   end component;
 
+  component vcp_handler is
+
+    generic (
+      REGISTER_SIZE : integer;
+      LVE_ENABLE    : integer
+      );
+
+    port (
+      clk         : in std_logic;
+      reset       : in std_logic;
+      instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      valid_instr : in std_logic;
+
+      rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      rs3_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+      vcp_data0 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_data1 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_data2 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+      vcp_instruction : out std_logic_vector(40 downto 0);
+      vcp_valid_instr : out std_logic);
+  end component;
 
 end package rv_components;

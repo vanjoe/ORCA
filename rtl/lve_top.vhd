@@ -21,12 +21,8 @@ entity lve_top is
     reset          : in  std_logic;
     instruction    : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     valid_instr    : in  std_logic;
-    stall_out      : out std_logic;
 
-    rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs3_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
---    wb_data        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
 
     slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
     slave_read_en  : in  std_logic;
@@ -35,6 +31,10 @@ entity lve_top is
     slave_data_in  : in  std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
     slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
     slave_ack      : out std_logic;
+
+    rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs3_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     lve_ready            : out    std_logic;
     lve_executing        : out    std_logic;
