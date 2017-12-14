@@ -57,11 +57,9 @@ architecture rtl of system_calls is
   -- CSR signals. These are initialized to zero so that if any bits are never
   -- assigned, they act like constants.
   signal mstatus  : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mie      : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mepc     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mcause   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mbadaddr : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mip      : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mtime    : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mtimeh   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal meimask  : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
@@ -71,7 +69,7 @@ architecture rtl of system_calls is
   alias func3 is instruction(INSTR_FUNC3'range);
   alias imm is instruction(CSR_ZIMM'range);
 
-  signal bit_sel       : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  alias bit_sel        : std_logic_vector(REGISTER_SIZE-1 downto 0) is rs1_data;
   signal csr_read_val  : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal csr_write_val : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
@@ -88,7 +86,7 @@ architecture rtl of system_calls is
 begin
   instr_check : instruction_legal
     generic map (
-      check_legal_instructions => true
+      check_legal_instructions => ENABLE_EXCEPTIONS
       )
     port map (
       instruction => instruction,
@@ -112,21 +110,17 @@ begin
 
   with csr_select select
     csr_read_val <=
-    mstatus  when CSR_MSTATUS,
-    mepc     when CSR_MEPC,
-    mcause   when CSR_MCAUSE,
-    mbadaddr when CSR_MBADADDR,
-    mip      when CSR_MIP,
-    meimask  when CSR_MEIMASK,
-    meipend  when CSR_MEIPEND,
-    mtime    when CSR_MTIME,
-    mtimeh   when CSR_MTIMEH,
-    mtime    when CSR_UTIME,
-    mtimeh   when CSR_UTIMEH,
-
+    mstatus         when CSR_MSTATUS,
+    mepc            when CSR_MEPC,
+    mcause          when CSR_MCAUSE,
+    mbadaddr        when CSR_MBADADDR,
+    meimask         when CSR_MEIMASK,
+    meipend         when CSR_MEIPEND,
+    mtime           when CSR_MTIME,
+    mtimeh          when CSR_MTIMEH,
+    mtime           when CSR_UTIME,
+    mtimeh          when CSR_UTIMEH,
     (others => '0') when others;
-
-  bit_sel <= rs1_data;
 
   with func3 select
     csr_write_val <=
@@ -136,9 +130,9 @@ begin
     when CSRRS_FUNC3,
     csr_read_val(31 downto 5) & (csr_read_val(CSR_ZIMM'length-1 downto 0) or imm)
     when CSRRSI_FUNC3,
-    csr_read_val and not bit_sel
+    csr_read_val and (not bit_sel)
     when CSRRC_FUNC3,
-    csr_read_val(31 downto 5) & (csr_read_val(CSR_ZIMM'length-1 downto 0) and not imm)
+    csr_read_val(31 downto 5) & (csr_read_val(CSR_ZIMM'length-1 downto 0) and (not imm))
     when CSRRCI_FUNC3,
     csr_read_val
     when others;
@@ -148,6 +142,107 @@ begin
                                                       csr_select = CSR_SLEEP and
                                                       csr_write_val /= mtime) else '1';
 
+
+  exceptions_gen : if ENABLE_EXCEPTIONS generate
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        --Hold pc_correction causing signals until they have been processed
+        if from_pc_correction_ready = '1' then
+          was_mret    <= '0';
+          was_illegal <= '0';
+        end if;
+
+        if to_syscall_valid = '1' then
+          if legal_instr /= '1' then
+            -----------------------------------------------------------------------------
+            -- Handle Illegal Instructions
+            -----------------------------------------------------------------------------
+            mstatus(CSR_MSTATUS_MIE)  <= '0';
+            mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
+            mcause                    <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, mcause'length));
+            mepc                      <= std_logic_vector(current_pc);
+            was_illegal               <= '1';
+          elsif instruction(MAJOR_OP'range) = SYSTEM_OP then
+            if func3 /= "000" then
+              -----------------------------------------------------------------------------
+              -- CSR Read/Write
+              -----------------------------------------------------------------------------
+              case csr_select is
+                when CSR_MSTATUS =>
+                  -- Only 2 bits are writeable.
+                  mstatus(CSR_MSTATUS_MIE)  <= csr_write_val(CSR_MSTATUS_MIE);
+                  mstatus(CSR_MSTATUS_MPIE) <= csr_write_val(CSR_MSTATUS_MPIE);
+                when CSR_MEPC =>
+                  mepc <= csr_write_val;
+                when CSR_MCAUSE =>
+                  mcause <= csr_write_val;
+                when CSR_MBADADDR =>
+                  mbadaddr <= csr_write_val;
+                when CSR_MEIMASK =>
+                  meimask <= csr_write_val;
+                --Note that meipend is read-only
+                when others => null;
+              end case;
+            elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
+              -----------------------------------------------------------------------------
+              -- Other System Instructions (mret)
+              -----------------------------------------------------------------------------
+              if instruction(31 downto 30) = "00" and instruction(27 downto 20) = "00000010" then
+                -- We only have one privilege level (M), so treat all [USHM]RET instructions
+                -- as the same.
+                mstatus(CSR_MSTATUS_MIE)  <= mstatus(CSR_MSTATUS_MPIE);
+                mstatus(CSR_MSTATUS_MPIE) <= '0';
+                was_mret                  <= '1';
+              end if;
+            end if;
+          end if;
+        end if;
+
+        if from_pc_correction_ready = '1' then
+          interrupt_pc_correction_valid <= '0';
+        end if;
+
+        if interrupt_pending = '1' and core_idle = '1' then
+          interrupt_pc_correction_valid <= '1';
+
+          -- Latch in mepc the cycle before interrupt_pc_correction_valid goes high.
+          -- When interrupt_pc_correction_valid goes high, the next_pc of the instruction fetch will
+          -- be corrected to the interrupt reset vector.
+          mepc                      <= std_logic_vector(program_counter);
+          mstatus(CSR_MSTATUS_MIE)  <= '0';
+          mstatus(CSR_MSTATUS_MPIE) <= '1';
+          mcause(mcause'left)       <= '1';
+          mcause(3 downto 0)        <= std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, 4));
+        end if;
+
+        if reset = '1' then
+          was_mret                      <= '0';
+          was_illegal                   <= '0';
+          interrupt_pc_correction_valid <= '0';
+          --Note that meipend is read-only
+          mstatus(CSR_MSTATUS_MIE)      <= '0';
+          mstatus(CSR_MSTATUS_MPIE)     <= '0';
+          mepc                          <= (others => '0');
+          mcause                        <= (others => '0');
+          meimask                       <= (others => '0');
+        end if;
+      end if;
+    end process;
+    mstatus(REGISTER_SIZE-1 downto CSR_MSTATUS_MPIE+1)   <= (others => '0');
+    mstatus(CSR_MSTATUS_MPIE-1 downto CSR_MSTATUS_MIE+1) <= (others => '0');
+    mstatus(CSR_MSTATUS_MIE-1 downto 0)                  <= (others => '0');
+  end generate exceptions_gen;
+  no_exceptions_gen : if not ENABLE_EXCEPTIONS generate
+    was_mret                      <= '0';
+    was_illegal                   <= '0';
+    interrupt_pc_correction_valid <= '0';
+    mstatus                       <= (others => '0');
+    mepc                          <= (others => '0');
+    mcause                        <= (others => '0');
+    meimask                       <= (others => '0');
+  end generate no_exceptions_gen;
+
   process(clk)
   begin
     if rising_edge(clk) then
@@ -156,8 +251,6 @@ begin
 
       --Hold pc_correction causing signals until they have been processed
       if from_pc_correction_ready = '1' then
-        was_mret    <= '0';
-        was_illegal <= '0';
 
         --On FENCE.I hold the PC correction until all pending writebacks have
         --occurred and the icache is flushed.
@@ -172,99 +265,35 @@ begin
 
       if to_syscall_valid = '1' then
         next_fence_pc <= unsigned(current_pc) + to_unsigned(4, next_fence_pc'length);
-        if legal_instr /= '1' and ENABLE_EXCEPTIONS then
-          -----------------------------------------------------------------------------
-          -- Handle Illegal Instructions
-          -----------------------------------------------------------------------------
-          mstatus(CSR_MSTATUS_MIE)  <= '0';
-          mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
-          mcause                    <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, mcause'length));
-          mepc                      <= std_logic_vector(current_pc);
-          was_illegal               <= '1';
-        elsif instruction(MAJOR_OP'range) = SYSTEM_OP then
-          if func3 /= "000" then
-            -----------------------------------------------------------------------------
-            -- CSR Read/Write
-            -----------------------------------------------------------------------------
-            if (not POWER_OPTIMIZED) or (csr_select /= CSR_SLEEP) then
-              from_syscall_valid <= '1';
+        if legal_instr = '1' then
+          if instruction(MAJOR_OP'range) = SYSTEM_OP then
+            if func3 /= "000" then
+              -----------------------------------------------------------------------------
+              -- CSR Read/Write
+              -----------------------------------------------------------------------------
+              if (not POWER_OPTIMIZED) or (csr_select /= CSR_SLEEP) then
+                from_syscall_valid <= '1';
+              end if;
+            elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
+              -----------------------------------------------------------------------------
+              -- Other System Instructions
+              -----------------------------------------------------------------------------
+              null;
             end if;
-
-            -- Disable csr writes if exceptions are not enabled.
-            if ENABLE_EXCEPTIONS then
-              case csr_select is
-                when CSR_MSTATUS =>
-                  -- Only 2 bits are writeable.
-                  mstatus(CSR_MSTATUS_MIE)  <= csr_write_val(CSR_MSTATUS_MIE);
-                  mstatus(CSR_MSTATUS_MPIE) <= csr_write_val(CSR_MSTATUS_MPIE);
-                when CSR_MEPC =>
-                  mepc <= csr_write_val;
-                when CSR_MCAUSE =>
-                  mcause <= csr_write_val;
-                when CSR_MBADADDR =>
-                  mbadaddr <= csr_write_val;
-                when CSR_MEIMASK =>
-                  meimask <= csr_write_val;
-                                        -- Note that mip and meipend are read-only registers.
-                when others => null;
-              end case;
-
+          elsif instruction(MAJOR_OP'range) = FENCE_OP then
+            -- A FENCE instruction is a NOP.
+            -- A FENCE.I instruction is a pipeline flush.
+            if instruction(12) = '1' then
+              was_fence_i             <= '1';
+              to_icache_control_valid <= '1';
             end if;
-          elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
-            -----------------------------------------------------------------------------
-            -- Other System Instructions (mret)
-            -----------------------------------------------------------------------------
-            if instruction(31 downto 30) = "00" and instruction(27 downto 20) = "00000010" and ENABLE_EXCEPTIONS then
-              -- We only have one privilege level (M), so treat all [USHM]RET instructions
-              -- as the same.
-              mstatus(CSR_MSTATUS_MIE)  <= mstatus(CSR_MSTATUS_MPIE);
-              mstatus(CSR_MSTATUS_MPIE) <= '0';
-              was_mret                  <= '1';
-            end if;
-          end if;
-        elsif instruction(MAJOR_OP'range) = FENCE_OP then
-          -- A FENCE instruction is a NOP.
-          -- A FENCE.I instruction is a pipeline flush.
-          if instruction(12) = '1' then
-            was_fence_i             <= '1';
-            to_icache_control_valid <= '1';
           end if;
         end if;
-      end if;
-
-      if from_pc_correction_ready = '1' then
-        interrupt_pc_correction_valid <= '0';
-      end if;
-
-      if interrupt_pending = '1' and core_idle = '1' and ENABLE_EXCEPTIONS then
-        interrupt_pc_correction_valid <= '1';
-
-        -- Latch in mepc the cycle before interrupt_pc_correction_valid goes high.
-        -- When interrupt_pc_correction_valid goes high, the next_pc of the instruction fetch will
-        -- be corrected to the interrupt reset vector.
-        mepc                      <= std_logic_vector(program_counter);
-        mstatus(CSR_MSTATUS_MIE)  <= '0';
-        mstatus(CSR_MSTATUS_MPIE) <= '1';
-        mcause(mcause'left)       <= '1';
-        mcause(3 downto 0)        <= std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, 4));
       end if;
 
       if reset = '1' then
-        interrupt_pc_correction_valid <= '0';
         was_fence_i                   <= '0';
-        was_mret                      <= '0';
-        was_illegal                   <= '0';
         to_icache_control_valid       <= '0';
-
-        if ENABLE_EXCEPTIONS then
-          -- Note that mip and meipend are read-only registers.
-          mstatus(CSR_MSTATUS_MIE)  <= '0';
-          mstatus(CSR_MSTATUS_MPIE) <= '0';
-          mie                       <= (others => '0');
-          mepc                      <= (others => '0');
-          mcause                    <= (others => '0');
-          meimask                   <= (others => '0');
-        end if;
       end if;
     end if;
   end process;
@@ -342,10 +371,10 @@ begin
               (opcode7 = BRANCH_OP and func3 /= "010" and func3 /= "011") or
               (opcode7 = LOAD_OP and func3 /= "011" and func3 /= "110" and func3 /= "111") or
               (opcode7 = STORE_OP and (func3 = "000" or func3 = "001" or func3 = "010")) or
-              opcode7 = ALUI_OP or  -- Does not catch illegal
-                                                  -- shift amounts
+              opcode7 = ALUI_OP or      -- Does not catch illegal
+                                        -- shift amounts
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
-              (opcode7 = FENCE_OP) or  -- All fence ops are treated as legal
+              (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
               (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /= SYSTEM_EBREAK) or
               opcode7 = LVE_OP) else '0';
 end architecture;
