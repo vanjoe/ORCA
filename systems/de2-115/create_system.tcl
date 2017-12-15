@@ -348,7 +348,6 @@ proc compose { } {
     set_instance_parameter_value the_vectorblox_orca {IAUX_RETURN_REGISTER} {0}
     set_instance_parameter_value the_vectorblox_orca {PIPELINE_STAGES} {5}
     set_instance_parameter_value the_vectorblox_orca {LVE_ENABLE} {0}
-    set_instance_parameter_value the_vectorblox_orca {SCRATCHPAD_SIZE} {64}
     set_instance_parameter_value the_vectorblox_orca {IUC_ADDR_BASE} {0}
     set_instance_parameter_value the_vectorblox_orca {IUC_ADDR_LAST} {0}
     set_instance_parameter_value the_vectorblox_orca {IAUX_ADDR_BASE} {0}
