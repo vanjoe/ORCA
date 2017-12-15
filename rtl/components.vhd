@@ -16,50 +16,63 @@ package rv_components is
       WISHBONE_AUX : natural range 0 to 1 := 0;
       LMB_AUX      : natural range 0 to 1 := 0;
 
-      RESET_VECTOR                 : std_logic_vector(31 downto 0) := X"00000000";
-      INTERRUPT_VECTOR             : std_logic_vector(31 downto 0) := X"00000200";
-      MAX_IFETCHES_IN_FLIGHT       : positive range 1 to 4         := 1;
-      BTB_ENTRIES                  : natural                       := 0;
-      MULTIPLY_ENABLE              : natural range 0 to 1          := 0;
-      DIVIDE_ENABLE                : natural range 0 to 1          := 0;
-      SHIFTER_MAX_CYCLES           : natural                       := 1;
-      COUNTER_LENGTH               : natural                       := 0;
-      ENABLE_EXCEPTIONS            : natural                       := 1;
-      PIPELINE_STAGES              : natural range 4 to 5          := 5;
-      LVE_ENABLE                   : natural range 0 to 1          := 0;
-      ENABLE_EXT_INTERRUPTS        : natural range 0 to 1          := 0;
-      NUM_EXT_INTERRUPTS           : positive range 1 to 32        := 1;
-      SCRATCHPAD_ADDR_BITS         : positive                      := 10;
-      INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2          := 0;
-      INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1          := 0;
-      IUC_REQUEST_REGISTER         : natural range 0 to 2          := 0;
-      IUC_RETURN_REGISTER          : natural range 0 to 1          := 0;
-      IUC_ADDR_BASE                : std_logic_vector(31 downto 0) := X"00000000";
-      IUC_ADDR_LAST                : std_logic_vector(31 downto 0) := X"00000000";
-      IAUX_REQUEST_REGISTER        : natural range 0 to 2          := 0;
-      IAUX_RETURN_REGISTER         : natural range 0 to 1          := 0;
-      IAUX_ADDR_BASE               : std_logic_vector(31 downto 0) := X"00000000";
-      IAUX_ADDR_LAST               : std_logic_vector(31 downto 0) := X"FFFFFFFF";
-      ICACHE_SIZE                  : natural                       := 0;
-      ICACHE_LINE_SIZE             : positive range 16 to 256      := 32;
-      ICACHE_EXTERNAL_WIDTH        : positive                      := 32;
-      ICACHE_BURST_EN              : natural range 0 to 1          := 0;
-      DATA_REQUEST_REGISTER        : natural range 0 to 2          := 0;
-      DATA_RETURN_REGISTER         : natural range 0 to 1          := 0;
-      DUC_REQUEST_REGISTER         : natural range 0 to 2          := 1;
-      DUC_RETURN_REGISTER          : natural range 0 to 1          := 0;
-      DUC_ADDR_BASE                : std_logic_vector(31 downto 0) := X"00000000";
-      DUC_ADDR_LAST                : std_logic_vector(31 downto 0) := X"00000000";
-      DAUX_REQUEST_REGISTER        : natural range 0 to 2          := 1;
-      DAUX_RETURN_REGISTER         : natural range 0 to 1          := 0;
-      DAUX_ADDR_BASE               : std_logic_vector(31 downto 0) := X"00000000";
-      DAUX_ADDR_LAST               : std_logic_vector(31 downto 0) := X"FFFFFFFF";
-      DCACHE_SIZE                  : natural                       := 0;
-      DCACHE_LINE_SIZE             : positive range 16 to 256      := 32;
-      DCACHE_EXTERNAL_WIDTH        : positive                      := 32;
-      DCACHE_BURST_EN              : natural range 0 to 1          := 0;
-      POWER_OPTIMIZED              : natural range 0 to 1          := 0;
-      FAMILY                       : string                        := "GENERIC"
+      RESET_VECTOR           : std_logic_vector(31 downto 0) := X"00000000";
+      INTERRUPT_VECTOR       : std_logic_vector(31 downto 0) := X"00000200";
+      MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4         := 1;
+      BTB_ENTRIES            : natural                       := 0;
+      MULTIPLY_ENABLE        : natural range 0 to 1          := 0;
+      DIVIDE_ENABLE          : natural range 0 to 1          := 0;
+      SHIFTER_MAX_CYCLES     : natural                       := 1;
+      COUNTER_LENGTH         : natural                       := 0;
+      ENABLE_EXCEPTIONS      : natural                       := 1;
+      PIPELINE_STAGES        : natural range 4 to 5          := 5;
+      LVE_ENABLE             : natural range 0 to 1          := 0;
+      ENABLE_EXT_INTERRUPTS  : natural range 0 to 1          := 0;
+      NUM_EXT_INTERRUPTS     : positive range 1 to 32        := 1;
+      SCRATCHPAD_ADDR_BITS   : positive                      := 10;
+      POWER_OPTIMIZED        : natural range 0 to 1          := 0;
+      FAMILY                 : string                        := "GENERIC";
+
+      --Memory interface configuration
+      INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2 := 0;
+      INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1 := 0;
+
+      IUC_REQUEST_REGISTER : natural range 0 to 2          := 0;
+      IUC_RETURN_REGISTER  : natural range 0 to 1          := 0;
+      IUC_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
+      IUC_ADDR_LAST        : std_logic_vector(31 downto 0) := X"00000000";
+
+      IAUX_REQUEST_REGISTER : natural range 0 to 2          := 0;
+      IAUX_RETURN_REGISTER  : natural range 0 to 1          := 0;
+      IAUX_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
+      IAUX_ADDR_LAST        : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+
+      IC_REQUEST_REGISTER   : natural range 0 to 2     := 0;
+      IC_RETURN_REGISTER    : natural range 0 to 1     := 0;
+      ICACHE_SIZE           : natural                  := 0;
+      ICACHE_LINE_SIZE      : positive range 16 to 256 := 32;
+      ICACHE_EXTERNAL_WIDTH : positive                 := 32;
+      ICACHE_BURST_EN       : natural range 0 to 1     := 0;
+
+      DATA_REQUEST_REGISTER : natural range 0 to 2 := 0;
+      DATA_RETURN_REGISTER  : natural range 0 to 1 := 0;
+
+      DUC_REQUEST_REGISTER : natural range 0 to 2          := 1;
+      DUC_RETURN_REGISTER  : natural range 0 to 1          := 0;
+      DUC_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
+      DUC_ADDR_LAST        : std_logic_vector(31 downto 0) := X"00000000";
+
+      DAUX_REQUEST_REGISTER : natural range 0 to 2          := 1;
+      DAUX_RETURN_REGISTER  : natural range 0 to 1          := 0;
+      DAUX_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
+      DAUX_ADDR_LAST        : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+
+      DC_REQUEST_REGISTER   : natural range 0 to 2     := 1;
+      DC_RETURN_REGISTER    : natural range 0 to 1     := 0;
+      DCACHE_SIZE           : natural                  := 0;
+      DCACHE_LINE_SIZE      : positive range 16 to 256 := 32;
+      DCACHE_EXTERNAL_WIDTH : positive                 := 32;
+      DCACHE_BURST_EN       : natural range 0 to 1     := 0
       );
     port (
       clk            : in std_logic;
@@ -355,31 +368,43 @@ package rv_components is
       WISHBONE_SINGLE_CYCLE_READS  : natural range 0 to 1;
       MAX_IFETCHES_IN_FLIGHT       : positive range 1 to 4;
       MAX_OUTSTANDING_REQUESTS     : positive;
+
       INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2;
       INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1;
+
       IUC_REQUEST_REGISTER         : natural range 0 to 2;
       IUC_RETURN_REGISTER          : natural range 0 to 1;
       IUC_ADDR_BASE                : std_logic_vector(31 downto 0);
       IUC_ADDR_LAST                : std_logic_vector(31 downto 0);
+
       IAUX_REQUEST_REGISTER        : natural range 0 to 2;
       IAUX_RETURN_REGISTER         : natural range 0 to 1;
       IAUX_ADDR_BASE               : std_logic_vector(31 downto 0);
       IAUX_ADDR_LAST               : std_logic_vector(31 downto 0);
+
+      IC_REQUEST_REGISTER          : natural range 0 to 2;
+      IC_RETURN_REGISTER           : natural range 0 to 1;
       ICACHE_SIZE                  : natural;
       ICACHE_LINE_SIZE             : integer range 16 to 256;
       ICACHE_EXTERNAL_WIDTH        : integer;
       ICACHE_MAX_BURSTLENGTH       : positive;
       ICACHE_BURST_EN              : integer range 0 to 1;
+
       DATA_REQUEST_REGISTER        : natural range 0 to 2;
       DATA_RETURN_REGISTER         : natural range 0 to 1;
+
       DUC_REQUEST_REGISTER         : natural range 0 to 2;
       DUC_RETURN_REGISTER          : natural range 0 to 1;
       DUC_ADDR_BASE                : std_logic_vector(31 downto 0);
       DUC_ADDR_LAST                : std_logic_vector(31 downto 0);
+
       DAUX_REQUEST_REGISTER        : natural range 0 to 2;
       DAUX_RETURN_REGISTER         : natural range 0 to 1;
       DAUX_ADDR_BASE               : std_logic_vector(31 downto 0);
       DAUX_ADDR_LAST               : std_logic_vector(31 downto 0);
+
+      DC_REQUEST_REGISTER          : natural range 0 to 2;
+      DC_RETURN_REGISTER           : natural range 0 to 1;
       DCACHE_SIZE                  : natural;
       DCACHE_LINE_SIZE             : integer range 16 to 256;
       DCACHE_EXTERNAL_WIDTH        : integer;
@@ -400,7 +425,6 @@ package rv_components is
       --Instruction Orca-internal memory-mapped master
       ifetch_oimm_address       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       ifetch_oimm_requestvalid  : in  std_logic;
-      ifetch_oimm_readnotwrite  : in  std_logic;
       ifetch_oimm_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       ifetch_oimm_waitrequest   : out std_logic;
       ifetch_oimm_readdatavalid : out std_logic;
@@ -729,7 +753,6 @@ package rv_components is
       --Instruction Orca-internal memory-mapped master
       ifetch_oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
       ifetch_oimm_requestvalid  : buffer std_logic;
-      ifetch_oimm_readnotwrite  : out    std_logic;
       ifetch_oimm_readdata      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       ifetch_oimm_waitrequest   : in     std_logic;
       ifetch_oimm_readdatavalid : in     std_logic;
@@ -912,7 +935,6 @@ package rv_components is
 
       --Orca-internal memory-mapped master
       oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-      oimm_readnotwrite  : out    std_logic;
       oimm_requestvalid  : buffer std_logic;
       oimm_readdata      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
       oimm_readdatavalid : in     std_logic;
@@ -1264,12 +1286,16 @@ package rv_components is
       DATA_WIDTH               : integer;
       ID_WIDTH                 : positive;
       MAX_BURSTLENGTH          : positive;
-      MAX_OUTSTANDING_REQUESTS : natural
+      MAX_OUTSTANDING_REQUESTS : natural;
+      REQUEST_REGISTER         : natural range 0 to 2;
+      RETURN_REGISTER          : natural range 0 to 1
       );
     port (
       clk     : in std_logic;
       reset   : in std_logic;
       aresetn : in std_logic;
+
+      master_idle : out std_logic;
 
       --Orca-internal memory-mapped slave
       oimm_address            : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
@@ -1478,10 +1504,10 @@ package rv_components is
 
       --Orca-internal memory-mapped slave
       oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-      oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+      oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0) := (others => '1');
       oimm_requestvalid  : in  std_logic;
-      oimm_readnotwrite  : in  std_logic;
-      oimm_writedata     : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+      oimm_readnotwrite  : in  std_logic := '1';
+      oimm_writedata     : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '-');
       oimm_readdata      : out std_logic_vector(DATA_WIDTH-1 downto 0);
       oimm_readdatavalid : out std_logic;
       oimm_waitrequest   : out std_logic;
@@ -1522,6 +1548,7 @@ package rv_components is
     generic (
       ADDRESS_WIDTH    : positive;
       DATA_WIDTH       : positive;
+      MAX_BURSTLENGTH  : positive := 2;
       REQUEST_REGISTER : natural range 0 to 2;
       RETURN_REGISTER  : natural range 0 to 1
       );
@@ -1532,24 +1559,30 @@ package rv_components is
       register_idle : out std_logic;
 
       --Orca-internal memory-mapped slave
-      slave_oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-      slave_oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
-      slave_oimm_requestvalid  : in  std_logic;
-      slave_oimm_readnotwrite  : in  std_logic;
-      slave_oimm_writedata     : in  std_logic_vector(DATA_WIDTH-1 downto 0);
-      slave_oimm_readdata      : out std_logic_vector(DATA_WIDTH-1 downto 0);
-      slave_oimm_readdatavalid : out std_logic;
-      slave_oimm_waitrequest   : out std_logic;
+      slave_oimm_address            : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+      slave_oimm_burstlength        : in  std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0) := (0      => '1', others => '0');
+      slave_oimm_burstlength_minus1 : in  std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0)   := (others => '0');
+      slave_oimm_byteenable         : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+      slave_oimm_requestvalid       : in  std_logic;
+      slave_oimm_readnotwrite       : in  std_logic;
+      slave_oimm_writedata          : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+      slave_oimm_writelast          : in  std_logic                                            := '1';
+      slave_oimm_readdata           : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      slave_oimm_readdatavalid      : out std_logic;
+      slave_oimm_waitrequest        : out std_logic;
 
       --Orca-internal memory-mapped master
-      master_oimm_address       : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-      master_oimm_byteenable    : out std_logic_vector((DATA_WIDTH/8)-1 downto 0);
-      master_oimm_requestvalid  : out std_logic;
-      master_oimm_readnotwrite  : out std_logic;
-      master_oimm_writedata     : out std_logic_vector(DATA_WIDTH-1 downto 0);
-      master_oimm_readdata      : in  std_logic_vector(DATA_WIDTH-1 downto 0);
-      master_oimm_readdatavalid : in  std_logic;
-      master_oimm_waitrequest   : in  std_logic
+      master_oimm_address            : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+      master_oimm_burstlength        : out std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0);
+      master_oimm_burstlength_minus1 : out std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
+      master_oimm_byteenable         : out std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+      master_oimm_requestvalid       : out std_logic;
+      master_oimm_readnotwrite       : out std_logic;
+      master_oimm_writedata          : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      master_oimm_writelast          : out std_logic;
+      master_oimm_readdata           : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+      master_oimm_readdatavalid      : in  std_logic;
+      master_oimm_waitrequest        : in  std_logic
       );
   end component;
 

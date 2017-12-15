@@ -22,34 +22,38 @@ proc init_gui { IPINST } {
 #    ipgui::add_param $IPINST -name "SCRATCHPAD_ADDR_BITS" -parent $lvePage
     
     set memoryAndCachePage [ipgui::add_page $IPINST -name "Memory and Cache"]
-    ipgui::add_param $IPINST -name "DATA_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
-    ipgui::add_param $IPINST -name "DATA_RETURN_REGISTER"  -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "DUC_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
-    ipgui::add_param $IPINST -name "DUC_RETURN_REGISTER"  -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "DAUX_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
-    ipgui::add_param $IPINST -name "DAUX_RETURN_REGISTER"  -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DATA_REQUEST_REGISTER"        -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "DATA_RETURN_REGISTER"         -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DC_REQUEST_REGISTER"          -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "DC_RETURN_REGISTER"           -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DUC_REQUEST_REGISTER"         -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "DUC_RETURN_REGISTER"          -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DAUX_REQUEST_REGISTER"        -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "DAUX_RETURN_REGISTER"         -parent $memoryAndCachePage
     ipgui::add_param $IPINST -name "INSTRUCTION_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
     ipgui::add_param $IPINST -name "INSTRUCTION_RETURN_REGISTER"  -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "IUC_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
-    ipgui::add_param $IPINST -name "IUC_RETURN_REGISTER"  -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "IAUX_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox
-    ipgui::add_param $IPINST -name "IAUX_RETURN_REGISTER"  -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "IUC_ADDR_BASE"         -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "IUC_ADDR_LAST"         -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "IAUX_ADDR_BASE"        -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "IAUX_ADDR_LAST"        -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "ICACHE_SIZE"           -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "ICACHE_LINE_SIZE"      -parent $memoryAndCachePage
-#    ipgui::add_param $IPINST -name "ICACHE_EXTERNAL_WIDTH" -parent $memoryAndCachePage
-#    ipgui::add_param $IPINST -name "ICACHE_BURST_EN"       -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "DUC_ADDR_BASE"         -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "DUC_ADDR_LAST"         -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "DAUX_ADDR_BASE"        -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "DAUX_ADDR_LAST"        -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "DCACHE_SIZE"           -parent $memoryAndCachePage
-    ipgui::add_param $IPINST -name "DCACHE_LINE_SIZE"      -parent $memoryAndCachePage
-#    ipgui::add_param $IPINST -name "DCACHE_EXTERNAL_WIDTH" -parent $memoryAndCachePage
-#    ipgui::add_param $IPINST -name "DCACHE_BURST_EN"       -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "IC_REQUEST_REGISTER"          -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "IC_RETURN_REGISTER"           -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "IUC_REQUEST_REGISTER"         -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "IUC_RETURN_REGISTER"          -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "IAUX_REQUEST_REGISTER"        -parent $memoryAndCachePage -widget comboBox
+    ipgui::add_param $IPINST -name "IAUX_RETURN_REGISTER"         -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "IUC_ADDR_BASE"                -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "IUC_ADDR_LAST"                -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "IAUX_ADDR_BASE"               -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "IAUX_ADDR_LAST"               -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "ICACHE_SIZE"                  -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "ICACHE_LINE_SIZE"             -parent $memoryAndCachePage
+#    ipgui::add_param $IPINST -name "ICACHE_EXTERNAL_WIDTH"        -parent $memoryAndCachePage
+#    ipgui::add_param $IPINST -name "ICACHE_BURST_EN"              -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DUC_ADDR_BASE"                -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DUC_ADDR_LAST"                -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DAUX_ADDR_BASE"               -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DAUX_ADDR_LAST"               -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DCACHE_SIZE"                  -parent $memoryAndCachePage
+    ipgui::add_param $IPINST -name "DCACHE_LINE_SIZE"             -parent $memoryAndCachePage
+#    ipgui::add_param $IPINST -name "DCACHE_EXTERNAL_WIDTH"        -parent $memoryAndCachePage
+#    ipgui::add_param $IPINST -name "DCACHE_BURST_EN"              -parent $memoryAndCachePage
 }
 
 proc update_PARAM_VALUE.AVALON_AUX { PARAM_VALUE.AVALON_AUX } {
@@ -85,6 +89,24 @@ proc update_PARAM_VALUE.DATA_RETURN_REGISTER { PARAM_VALUE.DATA_RETURN_REGISTER 
 
 proc validate_PARAM_VALUE.DATA_RETURN_REGISTER { PARAM_VALUE.DATA_RETURN_REGISTER } {
 	# Procedure called to validate DATA_RETURN_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.DC_REQUEST_REGISTER { PARAM_VALUE.DC_REQUEST_REGISTER } {
+	# Procedure called to update DC_REQUEST_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.DC_REQUEST_REGISTER { PARAM_VALUE.DC_REQUEST_REGISTER } {
+	# Procedure called to validate DC_REQUEST_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.DC_RETURN_REGISTER { PARAM_VALUE.DC_RETURN_REGISTER } {
+	# Procedure called to update DC_RETURN_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.DC_RETURN_REGISTER { PARAM_VALUE.DC_RETURN_REGISTER } {
+	# Procedure called to validate DC_RETURN_REGISTER
 	return true
 }
 
@@ -139,6 +161,24 @@ proc update_PARAM_VALUE.INSTRUCTION_RETURN_REGISTER { PARAM_VALUE.INSTRUCTION_RE
 
 proc validate_PARAM_VALUE.INSTRUCTION_RETURN_REGISTER { PARAM_VALUE.INSTRUCTION_RETURN_REGISTER } {
 	# Procedure called to validate INSTRUCTION_RETURN_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.IC_REQUEST_REGISTER { PARAM_VALUE.IC_REQUEST_REGISTER } {
+	# Procedure called to update IC_REQUEST_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.IC_REQUEST_REGISTER { PARAM_VALUE.IC_REQUEST_REGISTER } {
+	# Procedure called to validate IC_REQUEST_REGISTER
+	return true
+}
+
+proc update_PARAM_VALUE.IC_RETURN_REGISTER { PARAM_VALUE.IC_RETURN_REGISTER } {
+	# Procedure called to update IC_RETURN_REGISTER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.IC_RETURN_REGISTER { PARAM_VALUE.IC_RETURN_REGISTER } {
+	# Procedure called to validate IC_RETURN_REGISTER
 	return true
 }
 
@@ -560,6 +600,16 @@ proc update_MODELPARAM_VALUE.DATA_RETURN_REGISTER { MODELPARAM_VALUE.DATA_RETURN
 	set_property value [get_property value ${PARAM_VALUE.DATA_RETURN_REGISTER}] ${MODELPARAM_VALUE.DATA_RETURN_REGISTER}
 }
 
+proc update_MODELPARAM_VALUE.DC_REQUEST_REGISTER { MODELPARAM_VALUE.DC_REQUEST_REGISTER PARAM_VALUE.DC_REQUEST_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.DC_REQUEST_REGISTER}] ${MODELPARAM_VALUE.DC_REQUEST_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.DC_RETURN_REGISTER { MODELPARAM_VALUE.DC_RETURN_REGISTER PARAM_VALUE.DC_RETURN_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.DC_RETURN_REGISTER}] ${MODELPARAM_VALUE.DC_RETURN_REGISTER}
+}
+
 proc update_MODELPARAM_VALUE.DUC_REQUEST_REGISTER { MODELPARAM_VALUE.DUC_REQUEST_REGISTER PARAM_VALUE.DUC_REQUEST_REGISTER } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.DUC_REQUEST_REGISTER}] ${MODELPARAM_VALUE.DUC_REQUEST_REGISTER}
@@ -588,6 +638,16 @@ proc update_MODELPARAM_VALUE.INSTRUCTION_REQUEST_REGISTER { MODELPARAM_VALUE.INS
 proc update_MODELPARAM_VALUE.INSTRUCTION_RETURN_REGISTER { MODELPARAM_VALUE.INSTRUCTION_RETURN_REGISTER PARAM_VALUE.INSTRUCTION_RETURN_REGISTER } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.INSTRUCTION_RETURN_REGISTER}] ${MODELPARAM_VALUE.INSTRUCTION_RETURN_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.IC_REQUEST_REGISTER { MODELPARAM_VALUE.IC_REQUEST_REGISTER PARAM_VALUE.IC_REQUEST_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.IC_REQUEST_REGISTER}] ${MODELPARAM_VALUE.IC_REQUEST_REGISTER}
+}
+
+proc update_MODELPARAM_VALUE.IC_RETURN_REGISTER { MODELPARAM_VALUE.IC_RETURN_REGISTER PARAM_VALUE.IC_RETURN_REGISTER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.IC_RETURN_REGISTER}] ${MODELPARAM_VALUE.IC_RETURN_REGISTER}
 }
 
 proc update_MODELPARAM_VALUE.IUC_REQUEST_REGISTER { MODELPARAM_VALUE.IUC_REQUEST_REGISTER PARAM_VALUE.IUC_REQUEST_REGISTER } {

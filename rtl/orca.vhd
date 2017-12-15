@@ -15,50 +15,63 @@ entity orca is
     WISHBONE_AUX : natural range 0 to 1 := 0;
     LMB_AUX      : natural range 0 to 1 := 0;
 
-    RESET_VECTOR                 : std_logic_vector(31 downto 0) := X"00000000";
-    INTERRUPT_VECTOR             : std_logic_vector(31 downto 0) := X"00000200";
-    MAX_IFETCHES_IN_FLIGHT       : positive range 1 to 4         := 1;
-    BTB_ENTRIES                  : natural                       := 0;
-    MULTIPLY_ENABLE              : natural range 0 to 1          := 0;
-    DIVIDE_ENABLE                : natural range 0 to 1          := 0;
-    SHIFTER_MAX_CYCLES           : natural                       := 1;
-    COUNTER_LENGTH               : natural                       := 0;
-    ENABLE_EXCEPTIONS            : natural                       := 1;
-    PIPELINE_STAGES              : natural range 4 to 5          := 5;
-    LVE_ENABLE                   : natural range 0 to 1          := 0;
-    ENABLE_EXT_INTERRUPTS        : natural range 0 to 1          := 0;
-    NUM_EXT_INTERRUPTS           : positive range 1 to 32        := 1;
-    SCRATCHPAD_ADDR_BITS         : positive                      := 10;
-    INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2          := 0;
-    INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1          := 0;
-    IUC_REQUEST_REGISTER         : natural range 0 to 2          := 0;
-    IUC_RETURN_REGISTER          : natural range 0 to 1          := 0;
-    IUC_ADDR_BASE                : std_logic_vector(31 downto 0) := X"00000000";
-    IUC_ADDR_LAST                : std_logic_vector(31 downto 0) := X"00000000";
-    IAUX_REQUEST_REGISTER        : natural range 0 to 2          := 0;
-    IAUX_RETURN_REGISTER         : natural range 0 to 1          := 0;
-    IAUX_ADDR_BASE               : std_logic_vector(31 downto 0) := X"00000000";
-    IAUX_ADDR_LAST               : std_logic_vector(31 downto 0) := X"FFFFFFFF";
-    ICACHE_SIZE                  : natural                       := 0;
-    ICACHE_LINE_SIZE             : positive range 16 to 256      := 32;
-    ICACHE_EXTERNAL_WIDTH        : positive                      := 32;
-    ICACHE_BURST_EN              : natural range 0 to 1          := 0;
-    DATA_REQUEST_REGISTER        : natural range 0 to 2          := 0;
-    DATA_RETURN_REGISTER         : natural range 0 to 1          := 0;
-    DUC_REQUEST_REGISTER         : natural range 0 to 2          := 1;
-    DUC_RETURN_REGISTER          : natural range 0 to 1          := 0;
-    DUC_ADDR_BASE                : std_logic_vector(31 downto 0) := X"00000000";
-    DUC_ADDR_LAST                : std_logic_vector(31 downto 0) := X"00000000";
-    DAUX_REQUEST_REGISTER        : natural range 0 to 2          := 1;
-    DAUX_RETURN_REGISTER         : natural range 0 to 1          := 0;
-    DAUX_ADDR_BASE               : std_logic_vector(31 downto 0) := X"00000000";
-    DAUX_ADDR_LAST               : std_logic_vector(31 downto 0) := X"FFFFFFFF";
-    DCACHE_SIZE                  : natural                       := 0;
-    DCACHE_LINE_SIZE             : positive range 16 to 256      := 32;
-    DCACHE_EXTERNAL_WIDTH        : positive                      := 32;
-    DCACHE_BURST_EN              : natural range 0 to 1          := 0;
-    POWER_OPTIMIZED              : natural range 0 to 1          := 0;
-    FAMILY                       : string                        := "GENERIC"
+    RESET_VECTOR           : std_logic_vector(31 downto 0) := X"00000000";
+    INTERRUPT_VECTOR       : std_logic_vector(31 downto 0) := X"00000200";
+    MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4         := 1;
+    BTB_ENTRIES            : natural                       := 0;
+    MULTIPLY_ENABLE        : natural range 0 to 1          := 0;
+    DIVIDE_ENABLE          : natural range 0 to 1          := 0;
+    SHIFTER_MAX_CYCLES     : natural                       := 1;
+    COUNTER_LENGTH         : natural                       := 0;
+    ENABLE_EXCEPTIONS      : natural                       := 1;
+    PIPELINE_STAGES        : natural range 4 to 5          := 5;
+    LVE_ENABLE             : natural range 0 to 1          := 0;
+    ENABLE_EXT_INTERRUPTS  : natural range 0 to 1          := 0;
+    NUM_EXT_INTERRUPTS     : positive range 1 to 32        := 1;
+    SCRATCHPAD_ADDR_BITS   : positive                      := 10;
+    POWER_OPTIMIZED        : natural range 0 to 1          := 0;
+    FAMILY                 : string                        := "GENERIC";
+
+    --Memory interface configuration
+    INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2 := 0;
+    INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1 := 0;
+
+    IUC_REQUEST_REGISTER : natural range 0 to 2          := 0;
+    IUC_RETURN_REGISTER  : natural range 0 to 1          := 0;
+    IUC_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
+    IUC_ADDR_LAST        : std_logic_vector(31 downto 0) := X"00000000";
+
+    IAUX_REQUEST_REGISTER : natural range 0 to 2          := 0;
+    IAUX_RETURN_REGISTER  : natural range 0 to 1          := 0;
+    IAUX_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
+    IAUX_ADDR_LAST        : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+
+    IC_REQUEST_REGISTER   : natural range 0 to 2     := 0;
+    IC_RETURN_REGISTER    : natural range 0 to 1     := 0;
+    ICACHE_SIZE           : natural                  := 0;
+    ICACHE_LINE_SIZE      : positive range 16 to 256 := 32;
+    ICACHE_EXTERNAL_WIDTH : positive                 := 32;
+    ICACHE_BURST_EN       : natural range 0 to 1     := 0;
+
+    DATA_REQUEST_REGISTER : natural range 0 to 2 := 0;
+    DATA_RETURN_REGISTER  : natural range 0 to 1 := 0;
+
+    DUC_REQUEST_REGISTER : natural range 0 to 2          := 1;
+    DUC_RETURN_REGISTER  : natural range 0 to 1          := 0;
+    DUC_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
+    DUC_ADDR_LAST        : std_logic_vector(31 downto 0) := X"00000000";
+
+    DAUX_REQUEST_REGISTER : natural range 0 to 2          := 1;
+    DAUX_RETURN_REGISTER  : natural range 0 to 1          := 0;
+    DAUX_ADDR_BASE        : std_logic_vector(31 downto 0) := X"00000000";
+    DAUX_ADDR_LAST        : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+
+    DC_REQUEST_REGISTER   : natural range 0 to 2     := 1;
+    DC_RETURN_REGISTER    : natural range 0 to 1     := 0;
+    DCACHE_SIZE           : natural                  := 0;
+    DCACHE_LINE_SIZE      : positive range 16 to 256 := 32;
+    DCACHE_EXTERNAL_WIDTH : positive                 := 32;
+    DCACHE_BURST_EN       : natural range 0 to 1     := 0
     );
   port (
     clk            : in std_logic;
@@ -364,7 +377,6 @@ architecture rtl of orca is
 
   signal ifetch_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal ifetch_oimm_requestvalid  : std_logic;
-  signal ifetch_oimm_readnotwrite  : std_logic;
   signal ifetch_oimm_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal ifetch_oimm_waitrequest   : std_logic;
   signal ifetch_oimm_readdatavalid : std_logic;
@@ -412,7 +424,6 @@ begin
       --Instruction memory-mapped master
       ifetch_oimm_address       => ifetch_oimm_address,
       ifetch_oimm_requestvalid  => ifetch_oimm_requestvalid,
-      ifetch_oimm_readnotwrite  => ifetch_oimm_readnotwrite,
       ifetch_oimm_readdata      => ifetch_oimm_readdata,
       ifetch_oimm_waitrequest   => ifetch_oimm_waitrequest,
       ifetch_oimm_readdatavalid => ifetch_oimm_readdatavalid,
@@ -451,40 +462,52 @@ begin
       WISHBONE_AUX => WISHBONE_AUX,
       LMB_AUX      => LMB_AUX,
 
-      WISHBONE_SINGLE_CYCLE_READS  => 0,  --For now assumed not supported; can be
-                                          --brought to top level if needed
-      MAX_IFETCHES_IN_FLIGHT       => MAX_IFETCHES_IN_FLIGHT,
-      MAX_OUTSTANDING_REQUESTS     => MAX_OUTSTANDING_REQUESTS,
+      WISHBONE_SINGLE_CYCLE_READS => 0,  --For now assumed not supported; can be
+                                         --brought to top level if needed
+      MAX_IFETCHES_IN_FLIGHT      => MAX_IFETCHES_IN_FLIGHT,
+      MAX_OUTSTANDING_REQUESTS    => MAX_OUTSTANDING_REQUESTS,
+
       INSTRUCTION_REQUEST_REGISTER => INSTRUCTION_REQUEST_REGISTER,
       INSTRUCTION_RETURN_REGISTER  => INSTRUCTION_RETURN_REGISTER,
-      IUC_REQUEST_REGISTER         => IUC_REQUEST_REGISTER,
-      IUC_RETURN_REGISTER          => IUC_RETURN_REGISTER,
-      IUC_ADDR_BASE                => IUC_ADDR_BASE,
-      IUC_ADDR_LAST                => IUC_ADDR_LAST,
-      IAUX_REQUEST_REGISTER        => IAUX_REQUEST_REGISTER,
-      IAUX_RETURN_REGISTER         => IAUX_RETURN_REGISTER,
-      IAUX_ADDR_BASE               => IAUX_ADDR_BASE,
-      IAUX_ADDR_LAST               => IAUX_ADDR_LAST,
-      ICACHE_SIZE                  => ICACHE_SIZE,
-      ICACHE_LINE_SIZE             => ICACHE_LINE_SIZE,
-      ICACHE_EXTERNAL_WIDTH        => ICACHE_EXTERNAL_WIDTH,
-      ICACHE_MAX_BURSTLENGTH       => ICACHE_MAX_BURSTLENGTH,
-      ICACHE_BURST_EN              => ICACHE_BURST_EN,
-      DATA_REQUEST_REGISTER        => DATA_REQUEST_REGISTER,
-      DATA_RETURN_REGISTER         => DATA_RETURN_REGISTER,
-      DUC_REQUEST_REGISTER         => DUC_REQUEST_REGISTER,
-      DUC_RETURN_REGISTER          => DUC_RETURN_REGISTER,
-      DUC_ADDR_BASE                => DUC_ADDR_BASE,
-      DUC_ADDR_LAST                => DUC_ADDR_LAST,
-      DAUX_REQUEST_REGISTER        => DAUX_REQUEST_REGISTER,
-      DAUX_RETURN_REGISTER         => DAUX_RETURN_REGISTER,
-      DAUX_ADDR_BASE               => DAUX_ADDR_BASE,
-      DAUX_ADDR_LAST               => DAUX_ADDR_LAST,
-      DCACHE_SIZE                  => DCACHE_SIZE,
-      DCACHE_LINE_SIZE             => DCACHE_LINE_SIZE,
-      DCACHE_EXTERNAL_WIDTH        => DCACHE_EXTERNAL_WIDTH,
-      DCACHE_MAX_BURSTLENGTH       => DCACHE_MAX_BURSTLENGTH,
-      DCACHE_BURST_EN              => DCACHE_BURST_EN
+
+      IUC_REQUEST_REGISTER => IUC_REQUEST_REGISTER,
+      IUC_RETURN_REGISTER  => IUC_RETURN_REGISTER,
+      IUC_ADDR_BASE        => IUC_ADDR_BASE,
+      IUC_ADDR_LAST        => IUC_ADDR_LAST,
+
+      IAUX_REQUEST_REGISTER => IAUX_REQUEST_REGISTER,
+      IAUX_RETURN_REGISTER  => IAUX_RETURN_REGISTER,
+      IAUX_ADDR_BASE        => IAUX_ADDR_BASE,
+      IAUX_ADDR_LAST        => IAUX_ADDR_LAST,
+
+      IC_REQUEST_REGISTER    => IC_REQUEST_REGISTER,
+      IC_RETURN_REGISTER     => IC_RETURN_REGISTER,
+      ICACHE_SIZE            => ICACHE_SIZE,
+      ICACHE_LINE_SIZE       => ICACHE_LINE_SIZE,
+      ICACHE_EXTERNAL_WIDTH  => ICACHE_EXTERNAL_WIDTH,
+      ICACHE_MAX_BURSTLENGTH => ICACHE_MAX_BURSTLENGTH,
+      ICACHE_BURST_EN        => ICACHE_BURST_EN,
+
+      DATA_REQUEST_REGISTER => DATA_REQUEST_REGISTER,
+      DATA_RETURN_REGISTER  => DATA_RETURN_REGISTER,
+
+      DUC_REQUEST_REGISTER => DUC_REQUEST_REGISTER,
+      DUC_RETURN_REGISTER  => DUC_RETURN_REGISTER,
+      DUC_ADDR_BASE        => DUC_ADDR_BASE,
+      DUC_ADDR_LAST        => DUC_ADDR_LAST,
+
+      DAUX_REQUEST_REGISTER => DAUX_REQUEST_REGISTER,
+      DAUX_RETURN_REGISTER  => DAUX_RETURN_REGISTER,
+      DAUX_ADDR_BASE        => DAUX_ADDR_BASE,
+      DAUX_ADDR_LAST        => DAUX_ADDR_LAST,
+
+      DC_REQUEST_REGISTER    => DC_REQUEST_REGISTER,
+      DC_RETURN_REGISTER     => DC_RETURN_REGISTER,
+      DCACHE_SIZE            => DCACHE_SIZE,
+      DCACHE_LINE_SIZE       => DCACHE_LINE_SIZE,
+      DCACHE_EXTERNAL_WIDTH  => DCACHE_EXTERNAL_WIDTH,
+      DCACHE_MAX_BURSTLENGTH => DCACHE_MAX_BURSTLENGTH,
+      DCACHE_BURST_EN        => DCACHE_BURST_EN
       )
     port map (
       clk            => clk,
@@ -500,7 +523,6 @@ begin
       --Instruction memory-mapped master
       ifetch_oimm_address       => ifetch_oimm_address,
       ifetch_oimm_requestvalid  => ifetch_oimm_requestvalid,
-      ifetch_oimm_readnotwrite  => ifetch_oimm_readnotwrite,
       ifetch_oimm_readdata      => ifetch_oimm_readdata,
       ifetch_oimm_waitrequest   => ifetch_oimm_waitrequest,
       ifetch_oimm_readdatavalid => ifetch_oimm_readdatavalid,

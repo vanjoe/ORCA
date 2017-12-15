@@ -39,7 +39,6 @@ entity instruction_fetch is
 
     --Orca-internal memory-mapped master
     oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-    oimm_readnotwrite  : out    std_logic;
     oimm_requestvalid  : buffer std_logic;
     oimm_readdata      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
     oimm_readdatavalid : in     std_logic;
@@ -208,7 +207,6 @@ begin
                           pc_fifo_can_accept_data and
                           (not interrupt_pending);
 
-  oimm_readnotwrite <= '1';
   oimm_requestvalid <= waiting_for_not_waitrequest or ready_for_next_fetch;
   oimm_address      <= std_logic_vector(program_counter);
 
