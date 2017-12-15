@@ -89,6 +89,9 @@ architecture rtl of axi_master is
   constant PROT_VAL   : std_logic_vector(2 downto 0) := "000";
   constant LOCK_VAL   : std_logic_vector(1 downto 0) := "00";
 
+  signal register_idle  : std_logic;
+  signal throttler_idle : std_logic;
+
   signal registered_oimm_address            : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
   signal registered_oimm_burstlength        : std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0);
   signal registered_oimm_burstlength_minus1 : std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
@@ -113,6 +116,8 @@ architecture rtl of axi_master is
   signal w_sending      : std_logic;
   signal w_sent         : std_logic;
 begin
+  master_idle <= register_idle and throttler_idle;
+
   -----------------------------------------------------------------------------
   -- Optional OIMM register
   -----------------------------------------------------------------------------
@@ -128,7 +133,7 @@ begin
       clk   => clk,
       reset => reset,
 
-      register_idle => master_idle,
+      register_idle => register_idle,
 
       --Orca-internal memory-mapped slave
       slave_oimm_address            => oimm_address,
@@ -167,6 +172,8 @@ begin
     port map (
       clk   => clk,
       reset => reset,
+
+      throttler_idle => throttler_idle,
 
       --Orca-internal memory-mapped slave
       slave_oimm_requestvalid => registered_oimm_requestvalid,

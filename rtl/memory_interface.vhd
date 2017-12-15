@@ -392,6 +392,8 @@ architecture rtl of memory_interface is
   signal dcache_idle              : std_logic;
   signal ic_master_idle           : std_logic;
   signal dc_master_idle           : std_logic;
+  signal iuc_master_idle          : std_logic;
+  signal duc_master_idle          : std_logic;
 
   signal iuc_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal iuc_oimm_byteenable    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
@@ -458,7 +460,8 @@ begin
   memory_interface_idle <= iinternal_register_idle and dinternal_register_idle and
                            iexternal_registers_idle and dexternal_registers_idle and
                            icache_idle and dcache_idle and
-                           ic_master_idle and dc_master_idle;
+                           ic_master_idle and dc_master_idle and
+                           iuc_master_idle and duc_master_idle;
 
   -----------------------------------------------------------------------------
   -- Instruction cache and mux
@@ -1176,6 +1179,8 @@ begin
         reset   => reset,
         aresetn => aresetn,
 
+        master_idle => iuc_master_idle,
+
         oimm_address       => iuc_oimm_address,
         oimm_byteenable    => iuc_oimm_byteenable,
         oimm_requestvalid  => iuc_oimm_requestvalid,
@@ -1211,6 +1216,8 @@ begin
         );
   end generate iuc_master_gen;
   no_iuc_master_gen : if IUC_ADDR_BASE = IUC_ADDR_LAST generate
+    iuc_master_idle <= '1';
+
     IUC_AWADDR  <= (others => '0');
     IUC_AWPROT  <= (others => '0');
     IUC_AWVALID <= '0';
@@ -1252,6 +1259,8 @@ begin
         reset   => reset,
         aresetn => aresetn,
 
+        master_idle => duc_master_idle,
+
         oimm_address       => duc_oimm_address,
         oimm_byteenable    => duc_oimm_byteenable,
         oimm_requestvalid  => duc_oimm_requestvalid,
@@ -1287,6 +1296,8 @@ begin
         );
   end generate duc_master_gen;
   no_duc_master_gen : if DUC_ADDR_BASE = DUC_ADDR_LAST generate
+    duc_master_idle <= '1';
+
     DUC_AWADDR  <= (others => '0');
     DUC_AWPROT  <= (others => '0');
     DUC_AWVALID <= '0';

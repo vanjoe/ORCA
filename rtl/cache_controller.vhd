@@ -147,7 +147,7 @@ begin
   c_oimm_writedata    <= c_write_data;
   c_oimm_byteenable   <= c_write_byteenable when c_write = '1' else (others => '1');
 
-  process(control_state, cache_management_line, read_miss, write_offset_next, c_oimm_readdatavalid, c_oimm_waitrequest, c_read, c_write, to_cache_control_valid)
+  process(control_state, cache_management_line, read_miss, write_offset_next, c_oimm_readdatavalid, c_oimm_waitrequest, c_read, c_write, to_cache_control_valid, to_cache_control_command, precache_idle)
   begin
     next_control_state              <= control_state;
     from_cache_control_ready        <= '0';

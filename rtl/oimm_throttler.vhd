@@ -17,6 +17,8 @@ entity oimm_throttler is
     clk   : in std_logic;
     reset : in std_logic;
 
+    throttler_idle : out std_logic;
+
     --Orca-internal memory-mapped slave
     slave_oimm_requestvalid : in  std_logic;
     slave_oimm_readnotwrite : in  std_logic;
@@ -39,6 +41,7 @@ begin
   dont_throttle_gen : if MAX_OUTSTANDING_REQUESTS = 0 generate
     master_oimm_requestvalid      <= slave_oimm_requestvalid;
     slave_oimm_waitrequest_signal <= master_oimm_waitrequest;
+    throttler_idle                <= '1';
   end generate dont_throttle_gen;
   throttle_gen : if MAX_OUTSTANDING_REQUESTS > 0 generate
     signal request_accepted : std_logic;
@@ -67,7 +70,8 @@ begin
           end if;
         end if;
       end process;
-      throttle <= outstanding_request and (not (master_oimm_readcomplete or master_oimm_writecomplete));
+      throttle       <= outstanding_request and (not (master_oimm_readcomplete or master_oimm_writecomplete));
+      throttler_idle <= not outstanding_request;
     end generate one_outstanding_request_gen;
     multiple_outstanding_requests_gen : if MAX_OUTSTANDING_REQUESTS > 1 generate
       signal outstanding_requests      : unsigned(log2(MAX_OUTSTANDING_REQUESTS+1)-1 downto 0);
@@ -107,6 +111,8 @@ begin
           end if;
         end if;
       end process;
+      throttler_idle <= '1' when outstanding_requests = to_unsigned(0, outstanding_requests'length) else '0';
     end generate multiple_outstanding_requests_gen;
   end generate throttle_gen;
+
 end architecture rtl;

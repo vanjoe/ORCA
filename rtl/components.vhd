@@ -1276,6 +1276,8 @@ package rv_components is
       reset   : in std_logic;
       aresetn : in std_logic;
 
+      master_idle : out std_logic;
+
       --Orca-internal memory-mapped slave
       oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
       oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
@@ -1631,6 +1633,8 @@ package rv_components is
     port (
       clk   : in std_logic;
       reset : in std_logic;
+
+      throttler_idle : out std_logic;
 
       --Orca-internal memory-mapped slave
       slave_oimm_requestvalid : in  std_logic;
