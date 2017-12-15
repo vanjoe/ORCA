@@ -10,10 +10,10 @@ use work.lve_components.all;
 
 entity lve_top is
   generic (
-    POWER_OPTIMIZED  : integer := 0;
-    SCRATCHPAD_ADDR_BITS  : integer := 16;
-    AXI_ENABLE : integer range 0 to 1;
-    WISHBONE_ENABLE :integer range 0 to 1 );
+    POWER_OPTIMIZED      : integer := 0;
+    SCRATCHPAD_ADDR_BITS : integer := 16;
+    AXI_ENABLE           : integer range 0 to 1;
+    WISHBONE_ENABLE      : integer range 0 to 1);
   port (
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
@@ -27,10 +27,10 @@ entity lve_top is
     slave_WE_I    : in  std_logic;
     slave_SEL_I   : in  std_logic_vector((LVE_WIDTH/8)-1 downto 0);
     slave_STB_I   : in  std_logic;
-    slave_ACK_O   : out std_logic                                  := '0';
+    slave_ACK_O   : out std_logic                              := '0';
     slave_CYC_I   : in  std_logic;
     slave_CTI_I   : in  std_logic_vector(2 downto 0);
-    slave_STALL_O : out std_logic                                  := '0';
+    slave_STALL_O : out std_logic                              := '0';
 
     -------------------------------------------------------------------------------
     --AXI
@@ -110,44 +110,55 @@ begin  -- architecture rtl
 
   assert (WISHBONE_ENABLE + AXI_ENABLE) = 1 report "Exactly one bus type must be enabled" severity failure;
 
-  axi_handler: if AXI_ENABLE = 1 generate
-    signal reading : std_logic;
-    signal writing : std_logic;
-    signal busy : std_logic;
+  axi_handler : if AXI_ENABLE = 1 generate
+    signal reading     : std_logic;
+    signal writing     : std_logic;
+    signal busy        : std_logic;
+    signal ID_register : std_logic_vector(slave_rid'range);
   begin
-    busy <= reading or writing;
-    slave_awready <= not busy;
+    busy          <= reading or writing;
+    slave_awready <= not busy and slave_awvalid and slave_wvalid;
+    slave_wready  <= not busy and slave_awvalid and slave_wvalid;
     slave_arready <= not busy;
 
     slave_bvalid <= writing and slave_ack;
     slave_rvalid <= reading and slave_ack;
-    slave_rdata <= slave_data_out;
+    slave_rdata  <= slave_data_out;
+    slave_bid    <= ID_register;
+    slave_rid    <= ID_register;
 
-
+    slave_rresp <= (others => '0');
+    slave_rlast <= '1';
+    slave_bresp <= (others => '0');
 
     process (clk) is
     begin  -- process
       if rising_edge(clk) then          -- rising clock edge
-        slave_address <= slave_araddr;
+        slave_address <= slave_awaddr;
         if slave_arvalid = '1' then
-          slave_address <= slave_awaddr;
+          slave_address <= slave_araddr;
         end if;
-        slave_data_in <= slave_wdata;
-        slave_byte_en <= slave_wstrb;
-        slave_read_en <= slave_arvalid;
-        slave_write_en <= slave_awvalid;     --FIXME: assume wvalid is the same as awvalid
-
+        slave_data_in  <= slave_wdata;
+        slave_byte_en  <= slave_wstrb;
+        slave_read_en  <= slave_arvalid and not busy;
+        slave_write_en <= slave_awvalid  and slave_wvalid and not busy;
         if slave_arvalid = '1' then
-          reading <= '1';
+          reading     <= '1';
+          ID_register <= slave_arid;
         end if;
-        if slave_awvalid = '1' then
-          writing <= '1';
+        if (slave_awvalid and slave_wvalid) = '1' then
+          writing     <= '1';
+          ID_register <= slave_awid;
         end if;
-        if slave_ack ='1' then
+        if slave_ack = '1' then
           reading <= '0';
           writing <= '0';
         end if;
-
+        if reset = '1' then
+          reading     <= '0';
+          writing     <= '0';
+          ID_register <= (others => '0');
+        end if;
       end if;
     end process;
 
@@ -157,8 +168,8 @@ begin  -- architecture rtl
 
   core : lve_core
     generic map (
-      POWER_OPTIMIZED  => POWER_OPTIMIZED,
-      SCRATCHPAD_SIZE  => 2**SCRATCHPAD_ADDR_BITS)
+      POWER_OPTIMIZED => POWER_OPTIMIZED,
+      SCRATCHPAD_SIZE => 2**SCRATCHPAD_ADDR_BITS)
 
     port map (
       clk            => clk,

@@ -29,8 +29,8 @@ entity execute is
     FAMILY                : string
     );
   port (
-    clk            : in std_logic;
-    reset          : in std_logic;
+    clk   : in std_logic;
+    reset : in std_logic;
 
     global_interrupts     : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
     program_counter       : in unsigned(REGISTER_SIZE-1 downto 0);
@@ -351,7 +351,7 @@ begin
   vcp_port : vcp_handler
     generic map (
       REGISTER_SIZE => REGISTER_SIZE,
-      LVE_ENABLE => LVE_ENABLE)
+      LVE_ENABLE    => LVE_ENABLE)
     port map (
       clk             => clk,
       reset           => reset,
@@ -365,7 +365,8 @@ begin
       vcp_data2       => vcp_data2,
       vcp_instruction => vcp_instruction,
       vcp_valid_instr => vcp_valid_instr);
-
+  vcp_alu_result_valid <= alu_data_out_valid;
+  vcp_alu_result       <= alu_data_out;
   vcp_was_executing <= vcp_executing when rising_edge(clk);
 
   ------------------------------------------------------------------------------

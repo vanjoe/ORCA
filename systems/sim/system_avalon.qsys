@@ -523,8 +523,10 @@
    version="1.0"
    enabled="1" />
  <module name="lve_0" kind="lve" version="1.0" enabled="1">
+  <parameter name="AXI_ENABLE" value="1" />
   <parameter name="POWER_OPTIMIZED" value="0" />
-  <parameter name="SCRATCHPAD_SIZE" value="65536" />
+  <parameter name="SCRATCHPAD_ADDR_BITS" value="16" />
+  <parameter name="WISHBONE_ENABLE" value="0" />
  </module>
  <module
    name="onchip_memory2_0"
@@ -653,7 +655,7 @@
  <connection
    kind="clock"
    version="15.1"
-   start="clock_gen_0.clk_3x"
+   start="clock_gen_0.clk_2x"
    end="lve_0.clk_2x" />
  <connection
    kind="clock"
