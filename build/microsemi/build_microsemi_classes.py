@@ -54,12 +54,16 @@ DEFAULT_ENABLE_EXCEPTIONS=1
 DEFAULT_PIPELINE_STAGES=5
 DEFAULT_DATA_REQUEST_REGISTER=0
 DEFAULT_DATA_RETURN_REGISTER=0
+DEFAULT_DC_REQUEST_REGISTER=1
+DEFAULT_DC_RETURN_REGISTER=0
 DEFAULT_DUC_REQUEST_REGISTER=2
 DEFAULT_DUC_RETURN_REGISTER=1
 DEFAULT_DAUX_REQUEST_REGISTER=2
 DEFAULT_DAUX_RETURN_REGISTER=1
 DEFAULT_INSTRUCTION_REQUEST_REGISTER=0
 DEFAULT_INSTRUCTION_RETURN_REGISTER=0
+DEFAULT_IC_REQUEST_REGISTER=1
+DEFAULT_IC_RETURN_REGISTER=0
 DEFAULT_IUC_REQUEST_REGISTER=1
 DEFAULT_IUC_RETURN_REGISTER=0
 DEFAULT_IAUX_REQUEST_REGISTER=1
@@ -104,12 +108,16 @@ class Mcsm_Orca_BuildCfg(Orca_BuildCfgBase):
                  pipeline_stages=DEFAULT_PIPELINE_STAGES,
                  data_request_register=DEFAULT_DATA_REQUEST_REGISTER,
                  data_return_register=DEFAULT_DATA_RETURN_REGISTER,
+                 dc_request_register=DEFAULT_DC_REQUEST_REGISTER,
+                 dc_return_register=DEFAULT_DC_RETURN_REGISTER,
                  duc_request_register=DEFAULT_DUC_REQUEST_REGISTER,
                  duc_return_register=DEFAULT_DUC_RETURN_REGISTER,
                  daux_request_register=DEFAULT_DAUX_REQUEST_REGISTER,
                  daux_return_register=DEFAULT_DAUX_RETURN_REGISTER,
                  instruction_request_register=DEFAULT_INSTRUCTION_REQUEST_REGISTER,
                  instruction_return_register=DEFAULT_INSTRUCTION_RETURN_REGISTER,
+                 ic_request_register=DEFAULT_IC_REQUEST_REGISTER,
+                 ic_return_register=DEFAULT_IC_RETURN_REGISTER,
                  iuc_request_register=DEFAULT_IUC_REQUEST_REGISTER,
                  iuc_return_register=DEFAULT_IUC_RETURN_REGISTER,
                  iaux_request_register=DEFAULT_IAUX_REQUEST_REGISTER,
@@ -155,12 +163,16 @@ class Mcsm_Orca_BuildCfg(Orca_BuildCfgBase):
               pipeline_stages,
               data_request_register,
               data_return_register,
+              dc_request_register,
+              dc_return_register,
               duc_request_register,
               duc_return_register,
               daux_request_register,
               daux_return_register,
               instruction_request_register,
               instruction_return_register,
+              ic_request_register,
+              ic_return_register,
               iuc_request_register,
               iuc_return_register,
               iaux_request_register,
@@ -256,6 +268,10 @@ class Mcsm_Orca_BuildCfg(Orca_BuildCfgBase):
               '\\1( %s )' % self.data_request_register),
              (r'(.DATA_RETURN_REGISTER\s+)\( \d+ \)',
               '\\1( %s )' % self.data_return_register),
+             (r'(.DC_REQUEST_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.dc_request_register),
+             (r'(.DC_RETURN_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.dc_return_register),
              (r'(.DUC_REQUEST_REGISTER\s+)\( \d+ \)',
               '\\1( %s )' % self.duc_request_register),
              (r'(.DUC_RETURN_REGISTER\s+)\( \d+ \)',
@@ -268,6 +284,10 @@ class Mcsm_Orca_BuildCfg(Orca_BuildCfgBase):
               '\\1( %s )' % self.instruction_request_register),
              (r'(.INSTRUCTION_RETURN_REGISTER\s+)\( \d+ \)',
               '\\1( %s )' % self.instruction_return_register),
+             (r'(.IC_REQUEST_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.ic_request_register),
+             (r'(.IC_RETURN_REGISTER\s+)\( \d+ \)',
+              '\\1( %s )' % self.ic_return_register),
              (r'(.IUC_REQUEST_REGISTER\s+)\( \d+ \)',
               '\\1( %s )' % self.iuc_request_register),
              (r'(.IUC_RETURN_REGISTER\s+)\( \d+ \)',

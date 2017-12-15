@@ -41,7 +41,6 @@ entity orca_core is
     --Instruction Orca-internal memory-mapped master
     ifetch_oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     ifetch_oimm_requestvalid  : buffer std_logic;
-    ifetch_oimm_readnotwrite  : out    std_logic;
     ifetch_oimm_readdata      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     ifetch_oimm_waitrequest   : in     std_logic;
     ifetch_oimm_readdatavalid : in     std_logic;
@@ -139,7 +138,6 @@ begin
       program_counter => program_counter,
 
       oimm_address       => ifetch_oimm_address,
-      oimm_readnotwrite  => ifetch_oimm_readnotwrite,
       oimm_requestvalid  => ifetch_oimm_requestvalid,
       oimm_readdata      => ifetch_oimm_readdata,
       oimm_readdatavalid => ifetch_oimm_readdatavalid,

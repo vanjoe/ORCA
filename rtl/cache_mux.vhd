@@ -42,10 +42,10 @@ entity cache_mux is
 
     --Orca-internal memory-mapped slave
     oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-    oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+    oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0) := (others => '1');
     oimm_requestvalid  : in  std_logic;
-    oimm_readnotwrite  : in  std_logic;
-    oimm_writedata     : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+    oimm_readnotwrite  : in  std_logic := '1';
+    oimm_writedata     : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '-');
     oimm_readdata      : out std_logic_vector(DATA_WIDTH-1 downto 0);
     oimm_readdatavalid : out std_logic;
     oimm_waitrequest   : out std_logic;
