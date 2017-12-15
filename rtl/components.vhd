@@ -416,9 +416,15 @@ package rv_components is
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
 
-      --ICache control (Invalidate/flush/writeback)
+      --ICache control (Invalidate/flush/writeback/enable/disable)
       from_icache_control_ready : out std_logic;
       to_icache_control_valid   : in  std_logic;
+      to_icache_control_command : in  cache_control_command;
+
+      --DCache control (Invalidate/flush/writeback/enable/disable)
+      from_dcache_control_ready : out std_logic;
+      to_dcache_control_valid   : in  std_logic;
+      to_dcache_control_command : in  cache_control_command;
 
       memory_interface_idle : out std_logic;
 
@@ -737,16 +743,25 @@ package rv_components is
       LVE_ENABLE             : natural range 0 to 1;
       SCRATCHPAD_SIZE        : integer;
       WRITE_FIRST_SMALL_RAMS : boolean;
-      FAMILY                 : string
+      FAMILY                 : string;
+
+      HAS_ICACHE : boolean;
+      HAS_DCACHE : boolean
       );
     port (
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
 
-      --ICache control (Invalidate/flush/writeback)
-      from_icache_control_ready : in  std_logic;
-      to_icache_control_valid   : out std_logic;
+      --ICache control (Invalidate/flush/writeback/enable/disable)
+      from_icache_control_ready : in     std_logic;
+      to_icache_control_valid   : buffer std_logic;
+      to_icache_control_command : out    cache_control_command;
+
+      --DCache control (Invalidate/flush/writeback/enable/disable)
+      from_dcache_control_ready : in     std_logic;
+      to_dcache_control_valid   : buffer std_logic;
+      to_dcache_control_command : out    cache_control_command;
 
       memory_interface_idle : in std_logic;
 
@@ -837,7 +852,10 @@ package rv_components is
       NUM_EXT_INTERRUPTS    : positive range 1 to 32;
       LVE_ENABLE            : natural;
       SCRATCHPAD_SIZE       : integer;
-      FAMILY                : string
+      FAMILY                : string;
+      
+      HAS_ICACHE : boolean;
+      HAS_DCACHE : boolean
       );
     port (
       clk            : in std_logic;
@@ -895,9 +913,15 @@ package rv_components is
       lsu_oimm_readdatavalid : in     std_logic;
       lsu_oimm_waitrequest   : in     std_logic;
 
-      --ICache control (Invalidate/flush/writeback)
-      from_icache_control_ready : in  std_logic;
-      to_icache_control_valid   : out std_logic;
+      --ICache control (Invalidate/flush/writeback/enable/disable)
+      from_icache_control_ready : in     std_logic;
+      to_icache_control_valid   : buffer std_logic;
+      to_icache_control_command : out    cache_control_command;
+
+      --DCache control (Invalidate/flush/writeback/enable/disable)
+      from_dcache_control_ready : in     std_logic;
+      to_dcache_control_valid   : buffer std_logic;
+      to_dcache_control_command : out    cache_control_command;
 
       interrupt_pending : buffer std_logic
       );
@@ -1061,13 +1085,18 @@ package rv_components is
 
   component system_calls is
     generic (
-      REGISTER_SIZE         : natural;
-      INTERRUPT_VECTOR      : std_logic_vector(31 downto 0);
-      POWER_OPTIMIZED       : boolean;
+      REGISTER_SIZE   : natural;
+      COUNTER_LENGTH  : natural;
+      POWER_OPTIMIZED : boolean;
+
+      INTERRUPT_VECTOR : std_logic_vector(31 downto 0);
+
       ENABLE_EXCEPTIONS     : boolean;
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
       NUM_EXT_INTERRUPTS    : positive range 1 to 32;
-      COUNTER_LENGTH        : natural
+
+      HAS_ICACHE : boolean;
+      HAS_DCACHE : boolean
       );
     port (
       clk   : in std_logic;
@@ -1091,9 +1120,13 @@ package rv_components is
       to_pc_correction_valid   : out std_logic;
       from_pc_correction_ready : in  std_logic;
 
-      --ICache control (Invalidate/flush/writeback)
       from_icache_control_ready : in     std_logic;
       to_icache_control_valid   : buffer std_logic;
+      to_icache_control_command : out    cache_control_command;
+
+      from_dcache_control_ready : in     std_logic;
+      to_dcache_control_valid   : buffer std_logic;
+      to_dcache_control_command : out    cache_control_command;
 
       interrupt_pending : buffer std_logic
       );
@@ -1415,8 +1448,10 @@ package rv_components is
       --Cache control (Invalidate/flush/writeback)
       from_cache_control_ready : out std_logic;
       to_cache_control_valid   : in  std_logic;
+      to_cache_control_command : in  cache_control_command;
 
-      cache_idle : out std_logic;
+      precache_idle : in std_logic;
+      cache_idle    : out std_logic;
 
       --Cache interface Orca-internal memory-mapped slave
       cacheint_oimm_address       : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
@@ -1487,10 +1522,12 @@ package rv_components is
       INTERNAL_RETURN_REGISTER  : natural range 0 to 1;
       CACHE_SIZE                : natural;
       CACHE_LINE_SIZE           : positive range 16 to 256;
+
       UC_REQUEST_REGISTER       : natural range 0 to 2;
       UC_RETURN_REGISTER        : natural range 0 to 1;
       UC_ADDR_BASE              : std_logic_vector(31 downto 0);
       UC_ADDR_LAST              : std_logic_vector(31 downto 0);
+
       AUX_REQUEST_REGISTER      : natural range 0 to 2;
       AUX_RETURN_REGISTER       : natural range 0 to 1;
       AUX_ADDR_BASE             : std_logic_vector(31 downto 0);
@@ -1500,7 +1537,8 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
-      cache_mux_idle : out std_logic;
+      internal_register_idle  : out std_logic;
+      external_registers_idle : out std_logic;
 
       --Orca-internal memory-mapped slave
       oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);

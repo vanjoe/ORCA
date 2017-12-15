@@ -5,6 +5,7 @@ use IEEE.NUMERIC_STD.all;
 library work;
 use work.rv_components.all;
 use work.utils.all;
+use work.constants_pkg.all;
 
 entity orca is
   generic (
@@ -364,7 +365,12 @@ architecture rtl of orca is
 
   signal from_icache_control_ready : std_logic;
   signal to_icache_control_valid   : std_logic;
-  signal memory_interface_idle     : std_logic;
+  signal to_icache_control_command : cache_control_command;
+  signal from_dcache_control_ready : std_logic;
+  signal to_dcache_control_valid   : std_logic;
+  signal to_dcache_control_command : cache_control_command;
+
+  signal memory_interface_idle : std_logic;
 
   signal lsu_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal lsu_oimm_byteenable    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
@@ -408,16 +414,23 @@ begin
       NUM_EXT_INTERRUPTS     => NUM_EXT_INTERRUPTS,
       SCRATCHPAD_SIZE        => 2**SCRATCHPAD_ADDR_BITS,
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS,
-      FAMILY                 => FAMILY
+      FAMILY                 => FAMILY,
+
+      HAS_ICACHE => ICACHE_SIZE /= 0,
+      HAS_DCACHE => DCACHE_SIZE /= 0
       )
     port map (
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
 
-      --ICache control (Invalidate/flush/writeback)
       from_icache_control_ready => from_icache_control_ready,
       to_icache_control_valid   => to_icache_control_valid,
+      to_icache_control_command => to_icache_control_command,
+
+      from_dcache_control_ready => from_dcache_control_ready,
+      to_dcache_control_valid   => to_dcache_control_valid,
+      to_dcache_control_command => to_dcache_control_command,
 
       memory_interface_idle => memory_interface_idle,
 
@@ -514,9 +527,15 @@ begin
       scratchpad_clk => scratchpad_clk,
       reset          => reset,
 
-      --ICache control (Invalidate/flush/writeback)
+      --ICache control (Invalidate/flush/writeback/enable/disable)
       from_icache_control_ready => from_icache_control_ready,
       to_icache_control_valid   => to_icache_control_valid,
+      to_icache_control_command => to_icache_control_command,
+
+      --DCache control (Invalidate/flush/writeback/enable/disable)
+      from_dcache_control_ready => from_dcache_control_ready,
+      to_dcache_control_valid   => to_dcache_control_valid,
+      to_dcache_control_command => to_dcache_control_command,
 
       memory_interface_idle => memory_interface_idle,
 

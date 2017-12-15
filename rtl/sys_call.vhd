@@ -5,13 +5,18 @@ use work.constants_pkg.all;
 
 entity system_calls is
   generic (
-    REGISTER_SIZE         : natural;
-    INTERRUPT_VECTOR      : std_logic_vector(31 downto 0);
-    POWER_OPTIMIZED       : boolean;
+    REGISTER_SIZE   : natural;
+    COUNTER_LENGTH  : natural;
+    POWER_OPTIMIZED : boolean;
+
+    INTERRUPT_VECTOR : std_logic_vector(31 downto 0);
+
     ENABLE_EXCEPTIONS     : boolean;
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
-    COUNTER_LENGTH        : natural
+
+    HAS_ICACHE : boolean;
+    HAS_DCACHE : boolean
     );
   port (
     clk   : in std_logic;
@@ -35,9 +40,13 @@ entity system_calls is
     to_pc_correction_valid   : out std_logic;
     from_pc_correction_ready : in  std_logic;
 
-    --ICache control (Invalidate/flush/writeback)
     from_icache_control_ready : in     std_logic;
     to_icache_control_valid   : buffer std_logic;
+    to_icache_control_command : out    cache_control_command;
+
+    from_dcache_control_ready : in     std_logic;
+    to_dcache_control_valid   : buffer std_logic;
+    to_dcache_control_command : out    cache_control_command;
 
     interrupt_pending : buffer std_logic
     );
@@ -64,6 +73,7 @@ architecture rtl of system_calls is
   signal mtimeh   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal meimask  : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal meipend  : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mcache   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
 
   alias csr_select is instruction(CSR_ADDRESS'range);
   alias func3 is instruction(INSTR_FUNC3'range);
@@ -120,6 +130,7 @@ begin
     mtimeh          when CSR_MTIMEH,
     mtime           when CSR_UTIME,
     mtimeh          when CSR_UTIMEH,
+    mcache          when CSR_MCACHE,
     (others => '0') when others;
 
   with func3 select
@@ -243,6 +254,64 @@ begin
     meimask                       <= (others => '0');
   end generate no_exceptions_gen;
 
+  has_icache_gen : if HAS_ICACHE generate
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        if to_syscall_valid = '1' then
+          if legal_instr = '1' then
+            if instruction(MAJOR_OP'range) = SYSTEM_OP then
+              if func3 /= "000" then
+                -----------------------------------------------------------------------------
+                -- CSR Read/Write
+                -----------------------------------------------------------------------------
+                if csr_select = CSR_MCACHE then
+                  mcache(CSR_MCACHE_IENABLE) <= csr_read_val(CSR_MCACHE_IENABLE);
+                end if;
+              end if;
+            end if;
+          end if;
+        end if;
+
+        if reset = '1' then
+          mcache(CSR_MCACHE_IENABLE) <= '0';
+        end if;
+      end if;
+    end process;
+  end generate has_icache_gen;
+  no_icache_gen : if not HAS_ICACHE generate
+    mcache(CSR_MCACHE_IENABLE) <= '0';
+  end generate no_icache_gen;
+  has_dcache_gen : if HAS_DCACHE generate
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        if to_syscall_valid = '1' then
+          if legal_instr = '1' then
+            if instruction(MAJOR_OP'range) = SYSTEM_OP then
+              if func3 /= "000" then
+                -----------------------------------------------------------------------------
+                -- CSR Read/Write
+                -----------------------------------------------------------------------------
+                if csr_select = CSR_MCACHE then
+                  mcache(CSR_MCACHE_DENABLE) <= csr_read_val(CSR_MCACHE_DENABLE);
+                end if;
+              end if;
+            end if;
+          end if;
+        end if;
+
+        if reset = '1' then
+          mcache(CSR_MCACHE_DENABLE) <= '0';
+        end if;
+      end if;
+    end process;
+  end generate has_dcache_gen;
+  no_dcache_gen : if not HAS_DCACHE generate
+    mcache(CSR_MCACHE_DENABLE) <= '0';
+  end generate no_dcache_gen;
+  mcache(REGISTER_SIZE-1 downto CSR_MCACHE_DENABLE+1) <= (others => '0');
+
   process(clk)
   begin
     if rising_edge(clk) then
@@ -253,7 +322,8 @@ begin
       if from_pc_correction_ready = '1' then
 
         --On FENCE.I hold the PC correction until all pending writebacks have
-        --occurred and the icache is flushed.
+        --occurred and the ICache is flushed (from_icache_control_ready is
+        --hardwired to '1' when no ICache is present).
         if memory_idle = '1' and (from_icache_control_ready = '1' or to_icache_control_valid = '0') then
           was_fence_i <= '0';
         end if;
@@ -265,6 +335,22 @@ begin
 
       if to_syscall_valid = '1' then
         next_fence_pc <= unsigned(current_pc) + to_unsigned(4, next_fence_pc'length);
+
+        if HAS_ICACHE then
+          if csr_read_val(CSR_MCACHE_IENABLE) = '1' then
+            to_icache_control_command <= ENABLE;
+          else
+            to_icache_control_command <= DISABLE;
+          end if;
+        end if;
+        if HAS_DCACHE then
+          if csr_read_val(CSR_MCACHE_DENABLE) = '1' then
+            to_dcache_control_command <= ENABLE;
+          else
+            to_dcache_control_command <= DISABLE;
+          end if;
+        end if;
+
         if legal_instr = '1' then
           if instruction(MAJOR_OP'range) = SYSTEM_OP then
             if func3 /= "000" then
@@ -274,6 +360,24 @@ begin
               if (not POWER_OPTIMIZED) or (csr_select /= CSR_SLEEP) then
                 from_syscall_valid <= '1';
               end if;
+
+              --Changing cacheability does a FENCE.I as a form of backpressure
+              --(no instructions fetched/executing until cacheability change is
+              --done).
+              if csr_select = CSR_MCACHE then
+                if HAS_ICACHE then
+                  if mcache(CSR_MCACHE_IENABLE) /= csr_read_val(CSR_MCACHE_IENABLE) then
+                    was_fence_i             <= '1';
+                    to_icache_control_valid <= '1';
+                  end if;
+                end if;
+                if HAS_DCACHE then
+                  if mcache(CSR_MCACHE_DENABLE) /= csr_read_val(CSR_MCACHE_DENABLE) then
+                    was_fence_i             <= '1';
+                    to_dcache_control_valid <= '1';
+                  end if;
+                end if;
+              end if;
             elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
               -----------------------------------------------------------------------------
               -- Other System Instructions
@@ -281,19 +385,23 @@ begin
               null;
             end if;
           elsif instruction(MAJOR_OP'range) = FENCE_OP then
+            to_icache_control_command <= INVALIDATE;
+            to_dcache_control_command <= WRITEBACK;
             -- A FENCE instruction is a NOP.
             -- A FENCE.I instruction is a pipeline flush.
             if instruction(12) = '1' then
               was_fence_i             <= '1';
               to_icache_control_valid <= '1';
+              to_dcache_control_valid <= '1';
             end if;
           end if;
         end if;
       end if;
 
       if reset = '1' then
-        was_fence_i                   <= '0';
-        to_icache_control_valid       <= '0';
+        was_fence_i             <= '0';
+        to_icache_control_valid <= '0';
+        to_dcache_control_valid <= '0';
       end if;
     end if;
   end process;

@@ -27,7 +27,10 @@ entity execute is
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
     LVE_ENABLE            : natural;
     SCRATCHPAD_SIZE       : integer;
-    FAMILY                : string
+    FAMILY                : string;
+
+    HAS_ICACHE : boolean;
+    HAS_DCACHE : boolean
     );
   port (
     clk            : in std_logic;
@@ -85,9 +88,15 @@ entity execute is
     lsu_oimm_readdatavalid : in     std_logic;
     lsu_oimm_waitrequest   : in     std_logic;
 
-    --ICache control (Invalidate/flush/writeback)
-    from_icache_control_ready : in  std_logic;
-    to_icache_control_valid   : out std_logic;
+    --ICache control (Invalidate/flush/writeback/enable/disable)
+    from_icache_control_ready : in     std_logic;
+    to_icache_control_valid   : buffer std_logic;
+    to_icache_control_command : out    cache_control_command;
+
+    --DCache control (Invalidate/flush/writeback/enable/disable)
+    from_dcache_control_ready : in     std_logic;
+    to_dcache_control_valid   : buffer std_logic;
+    to_dcache_control_command : out    cache_control_command;
 
     interrupt_pending : buffer std_logic
     );
@@ -308,13 +317,18 @@ begin
   memory_idle <= memory_interface_idle and lsu_idle;
   syscall : system_calls
     generic map (
-      REGISTER_SIZE         => REGISTER_SIZE,
-      INTERRUPT_VECTOR      => INTERRUPT_VECTOR,
-      POWER_OPTIMIZED       => POWER_OPTIMIZED,
+      REGISTER_SIZE   => REGISTER_SIZE,
+      COUNTER_LENGTH  => COUNTER_LENGTH,
+      POWER_OPTIMIZED => POWER_OPTIMIZED,
+
+      INTERRUPT_VECTOR => INTERRUPT_VECTOR,
+
       ENABLE_EXCEPTIONS     => ENABLE_EXCEPTIONS,
       ENABLE_EXT_INTERRUPTS => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
-      COUNTER_LENGTH        => COUNTER_LENGTH
+
+      HAS_ICACHE => HAS_ICACHE,
+      HAS_DCACHE => HAS_DCACHE
       )
     port map (
       clk   => clk,
@@ -340,6 +354,11 @@ begin
 
       from_icache_control_ready => from_icache_control_ready,
       to_icache_control_valid   => to_icache_control_valid,
+      to_icache_control_command => to_icache_control_command,
+
+      from_dcache_control_ready => from_dcache_control_ready,
+      to_dcache_control_valid   => to_dcache_control_valid,
+      to_dcache_control_command => to_dcache_control_command,
 
       interrupt_pending => interrupt_pending
       );

@@ -5,6 +5,7 @@ use IEEE.numeric_std.all;
 library work;
 use work.rv_components.all;
 use work.utils.all;
+use work.constants_pkg.all;
 
 entity cache_controller is
   generic (
@@ -24,8 +25,10 @@ entity cache_controller is
     --Cache control (Invalidate/flush/writeback)
     from_cache_control_ready : out std_logic;
     to_cache_control_valid   : in  std_logic;
+    to_cache_control_command : in  cache_control_command;
 
-    cache_idle  : out std_logic;
+    precache_idle : in std_logic;
+    cache_idle    : out std_logic;
     
     --Cache interface Orca-internal memory-mapped slave
     cacheint_oimm_address       : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
@@ -80,7 +83,7 @@ architecture rtl of cache_controller is
   signal read_miss        : std_logic;
   signal read_lastaddress : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
 
-  type control_state_t is (CLEAR, IDLE, CACHE_MISSED, WAIT_FOR_HIT);
+  type control_state_t is (INVALIDATE, IDLE, CACHE_MISSED, WAIT_FOR_HIT);
   signal control_state           : control_state_t;
   signal next_control_state      : control_state_t;
   signal write_oimm_address      : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
@@ -156,7 +159,7 @@ begin
     write_tag_update                <= '0';
     write_tag_valid                 <= '0';
     case control_state is
-      when CLEAR =>
+      when INVALIDATE =>
         cache_ready                     <= '0';
         write_tag_update                <= '1';
         increment_cache_management_line <= '1';
@@ -174,9 +177,15 @@ begin
           write_tag_update   <= '1';
           write_tag_valid    <= '0';
         else
-          from_cache_control_ready <= '1';
-          if to_cache_control_valid = '1' then
-            next_control_state <= CLEAR;
+          if precache_idle = '1' then
+            from_cache_control_ready <= '1';
+            if to_cache_control_valid = '1' then
+              case to_cache_control_command is
+                when INVALIDATE =>
+                  next_control_state <= INVALIDATE;
+                when others => null;
+              end case;
+            end if;
           end if;
         end if;
 
@@ -255,7 +264,7 @@ begin
       end if;
 
       if reset = '1' then
-        control_state         <= CLEAR;
+        control_state         <= INVALIDATE;
         c_read                <= '0';
         c_offset              <= to_unsigned(0, c_offset'length);
         c_offset_next         <= to_unsigned(BYTES_PER_BURST, c_offset_next'length);

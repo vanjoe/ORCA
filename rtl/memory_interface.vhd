@@ -5,6 +5,7 @@ use IEEE.NUMERIC_STD.all;
 library work;
 use work.rv_components.all;
 use work.utils.all;
+use work.constants_pkg.all;
 
 entity memory_interface is
   generic (
@@ -68,9 +69,15 @@ entity memory_interface is
     scratchpad_clk : in std_logic;
     reset          : in std_logic;
 
-    --ICache control (Invalidate/flush/writeback)
+    --ICache control (Invalidate/flush/writeback/enable/disable)
     from_icache_control_ready : out std_logic;
     to_icache_control_valid   : in  std_logic;
+    to_icache_control_command : in  cache_control_command;
+
+    --DCache control (Invalidate/flush/writeback/enable/disable)
+    from_dcache_control_ready : out std_logic;
+    to_dcache_control_valid   : in  std_logic;
+    to_dcache_control_command : in  cache_control_command;
 
     memory_interface_idle : out std_logic;
 
@@ -377,12 +384,14 @@ architecture rtl of memory_interface is
   constant A4L_LOCK_VAL   : std_logic_vector(1 downto 0) := "00";
   constant A4L_CACHE_VAL  : std_logic_vector(3 downto 0) := "0000";
 
-  signal icache_mux_idle : std_logic;
-  signal dcache_mux_idle : std_logic;
-  signal icache_idle     : std_logic;
-  signal dcache_idle     : std_logic;
-  signal ic_master_idle  : std_logic;
-  signal dc_master_idle  : std_logic;
+  signal iinternal_register_idle  : std_logic;
+  signal iexternal_registers_idle : std_logic;
+  signal dinternal_register_idle  : std_logic;
+  signal dexternal_registers_idle : std_logic;
+  signal icache_idle              : std_logic;
+  signal dcache_idle              : std_logic;
+  signal ic_master_idle           : std_logic;
+  signal dc_master_idle           : std_logic;
 
   signal iuc_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal iuc_oimm_byteenable    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
@@ -446,8 +455,10 @@ begin
 
   aresetn <= not reset;
 
-  memory_interface_idle <=
-    icache_mux_idle and dcache_mux_idle and icache_idle and dcache_idle and ic_master_idle and dc_master_idle;
+  memory_interface_idle <= iinternal_register_idle and dinternal_register_idle and
+                           iexternal_registers_idle and dexternal_registers_idle and
+                           icache_idle and dcache_idle and
+                           ic_master_idle and dc_master_idle;
 
   -----------------------------------------------------------------------------
   -- Instruction cache and mux
@@ -461,20 +472,23 @@ begin
       INTERNAL_RETURN_REGISTER  => INSTRUCTION_RETURN_REGISTER,
       CACHE_SIZE                => ICACHE_SIZE,
       CACHE_LINE_SIZE           => ICACHE_LINE_SIZE,
-      UC_REQUEST_REGISTER       => IUC_REQUEST_REGISTER,
-      UC_RETURN_REGISTER        => IUC_RETURN_REGISTER,
-      UC_ADDR_BASE              => IUC_ADDR_BASE,
-      UC_ADDR_LAST              => IUC_ADDR_LAST,
-      AUX_REQUEST_REGISTER      => IAUX_REQUEST_REGISTER,
-      AUX_RETURN_REGISTER       => IAUX_RETURN_REGISTER,
-      AUX_ADDR_BASE             => IAUX_ADDR_BASE,
-      AUX_ADDR_LAST             => IAUX_ADDR_LAST
+
+      UC_REQUEST_REGISTER => IUC_REQUEST_REGISTER,
+      UC_RETURN_REGISTER  => IUC_RETURN_REGISTER,
+      UC_ADDR_BASE        => IUC_ADDR_BASE,
+      UC_ADDR_LAST        => IUC_ADDR_LAST,
+
+      AUX_REQUEST_REGISTER => IAUX_REQUEST_REGISTER,
+      AUX_RETURN_REGISTER  => IAUX_RETURN_REGISTER,
+      AUX_ADDR_BASE        => IAUX_ADDR_BASE,
+      AUX_ADDR_LAST        => IAUX_ADDR_LAST
       )
     port map (
       clk   => clk,
       reset => reset,
 
-      cache_mux_idle => icache_mux_idle,
+      internal_register_idle  => iinternal_register_idle,
+      external_registers_idle => iexternal_registers_idle,
 
       oimm_address       => ifetch_oimm_address,
       oimm_requestvalid  => ifetch_oimm_requestvalid,
@@ -540,8 +554,10 @@ begin
 
         from_cache_control_ready => from_icache_control_ready,
         to_cache_control_valid   => to_icache_control_valid,
+        to_cache_control_command => to_icache_control_command,
 
-        cache_idle => icache_idle,
+        precache_idle => iinternal_register_idle,
+        cache_idle    => icache_idle,
 
         cacheint_oimm_address       => icacheint_oimm_address,
         cacheint_oimm_byteenable    => icacheint_oimm_byteenable,
@@ -680,20 +696,23 @@ begin
       INTERNAL_RETURN_REGISTER  => DATA_RETURN_REGISTER,
       CACHE_SIZE                => DCACHE_SIZE,
       CACHE_LINE_SIZE           => DCACHE_LINE_SIZE,
-      UC_REQUEST_REGISTER       => DUC_REQUEST_REGISTER,
-      UC_RETURN_REGISTER        => DUC_RETURN_REGISTER,
-      UC_ADDR_BASE              => DUC_ADDR_BASE,
-      UC_ADDR_LAST              => DUC_ADDR_LAST,
-      AUX_REQUEST_REGISTER      => DAUX_REQUEST_REGISTER,
-      AUX_RETURN_REGISTER       => DAUX_RETURN_REGISTER,
-      AUX_ADDR_BASE             => DAUX_ADDR_BASE,
-      AUX_ADDR_LAST             => DAUX_ADDR_LAST
+
+      UC_REQUEST_REGISTER => DUC_REQUEST_REGISTER,
+      UC_RETURN_REGISTER  => DUC_RETURN_REGISTER,
+      UC_ADDR_BASE        => DUC_ADDR_BASE,
+      UC_ADDR_LAST        => DUC_ADDR_LAST,
+
+      AUX_REQUEST_REGISTER => DAUX_REQUEST_REGISTER,
+      AUX_RETURN_REGISTER  => DAUX_RETURN_REGISTER,
+      AUX_ADDR_BASE        => DAUX_ADDR_BASE,
+      AUX_ADDR_LAST        => DAUX_ADDR_LAST
       )
     port map (
       clk   => clk,
       reset => reset,
 
-      cache_mux_idle => dcache_mux_idle,
+      internal_register_idle  => dinternal_register_idle,
+      external_registers_idle => dexternal_registers_idle,
 
       oimm_address       => lsu_oimm_address,
       oimm_byteenable    => lsu_oimm_byteenable,
@@ -760,10 +779,12 @@ begin
         clk   => clk,
         reset => reset,
 
-        from_cache_control_ready => open,
-        to_cache_control_valid   => '0',
+        from_cache_control_ready => from_dcache_control_ready,
+        to_cache_control_valid   => to_dcache_control_valid,
+        to_cache_control_command => to_dcache_control_command,
 
-        cache_idle => dcache_idle,
+        precache_idle => dinternal_register_idle,
+        cache_idle    => dcache_idle,
 
         cacheint_oimm_address       => dcacheint_oimm_address,
         cacheint_oimm_byteenable    => dcacheint_oimm_byteenable,
@@ -859,8 +880,9 @@ begin
         );
   end generate data_cache_gen;
   no_data_cache_gen : if DCACHE_SIZE = 0 generate
-    dcache_idle    <= '1';
-    dc_master_idle <= '1';
+    from_dcache_control_ready <= '1';
+    dcache_idle               <= '1';
+    dc_master_idle            <= '1';
 
     DC_AWID    <= (others => '0');
     DC_AWADDR  <= (others => '0');

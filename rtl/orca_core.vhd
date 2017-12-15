@@ -25,16 +25,25 @@ entity orca_core is
     LVE_ENABLE             : natural range 0 to 1;
     SCRATCHPAD_SIZE        : integer;
     WRITE_FIRST_SMALL_RAMS : boolean;
-    FAMILY                 : string
+    FAMILY                 : string;
+
+    HAS_ICACHE : boolean;
+    HAS_DCACHE : boolean
     );
   port (
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
     reset          : in std_logic;
 
-    --ICache control (Invalidate/flush/writeback)
-    from_icache_control_ready : in  std_logic;
-    to_icache_control_valid   : out std_logic;
+    --ICache control (Invalidate/flush/writeback/enable/disable)
+    from_icache_control_ready : in     std_logic;
+    to_icache_control_valid   : buffer std_logic;
+    to_icache_control_command : out    cache_control_command;
+
+    --DCache control (Invalidate/flush/writeback/enable/disable)
+    from_dcache_control_ready : in     std_logic;
+    to_dcache_control_valid   : buffer std_logic;
+    to_dcache_control_command : out    cache_control_command;
 
     memory_interface_idle : in std_logic;
 
@@ -201,7 +210,10 @@ begin
       NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
       LVE_ENABLE            => LVE_ENABLE,
       SCRATCHPAD_SIZE       => SCRATCHPAD_SIZE,
-      FAMILY                => FAMILY
+      FAMILY                => FAMILY,
+
+      HAS_ICACHE => HAS_ICACHE,
+      HAS_DCACHE => HAS_DCACHE
       )
     port map (
       clk            => clk,
@@ -256,6 +268,11 @@ begin
 
       from_icache_control_ready => from_icache_control_ready,
       to_icache_control_valid   => to_icache_control_valid,
+      to_icache_control_command => to_icache_control_command,
+
+      from_dcache_control_ready => from_dcache_control_ready,
+      to_dcache_control_valid   => to_dcache_control_valid,
+      to_dcache_control_command => to_dcache_control_command,
 
       interrupt_pending => interrupt_pending
       );

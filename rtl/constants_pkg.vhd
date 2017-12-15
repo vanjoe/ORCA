@@ -50,7 +50,6 @@ package constants_pkg is
   constant REGISTER_RD  : unsigned(11 downto 7)  := (others => '0');
 
 
-
   --Major OP codes instr(6 downto 0)
   constant MAJOR_OP   : std_logic_vector(6 downto 0) := (others => '-');
   constant JAL_OP     : std_logic_vector(6 downto 0) := "1101111";
@@ -165,5 +164,10 @@ package constants_pkg is
   constant LVE_HALF_SIZE : std_logic_vector(1 downto 0) := "10";
   constant LVE_WORD_SIZE : std_logic_vector(1 downto 0) := "11";
 
+
+  ------------------------------------------------------------------------------
+  -- Types
+  ------------------------------------------------------------------------------
+  type cache_control_command is (INVALIDATE, FLUSH, WRITEBACK, ENABLE, DISABLE);
 
 end package constants_pkg;
