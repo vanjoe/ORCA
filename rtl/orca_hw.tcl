@@ -55,7 +55,6 @@ add_fileset_file vblox_orca/register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file vblox_orca/orca.vhd VHDL PATH orca.vhd TOP_LEVEL_FILE
 add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd TOP_LEVEL_FILE
 add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
 add_fileset_file vblox_orca/vcp_handler.vhd VHDL PATH vcp_handler.vhd
 add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
 add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
@@ -84,7 +83,6 @@ add_fileset_file vblox_orca/register_file.vhd VHDL PATH register_file.vhd
 add_fileset_file vblox_orca/orca.vhd VHDL PATH orca.vhd
 add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd
 add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file vblox_orca/4port_mem.vhd VHDL PATH 4port_mem.vhd
 add_fileset_file vblox_orca/vcp_handler.vhd VHDL PATH vcp_handler.vhd
 add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
 add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd

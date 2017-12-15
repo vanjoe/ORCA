@@ -7,12 +7,8 @@ use STD.TEXTIO.all;
 library work;
 use work.utils.all;
 use work.constants_pkg.all;
-use work.rv_components.all;
-
+use work.lve_components.all;
 entity lve_ci is
-  generic (
-    REGISTER_SIZE : positive
-    );
   port (
     clk   : in std_logic;
     reset : in std_logic;
@@ -22,8 +18,8 @@ entity lve_ci is
     pause : in std_logic;
 
     valid_in : in std_logic;
-    data1_in : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data2_in : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    data1_in : in std_logic_vector(LVE_WIDTH-1 downto 0);
+    data2_in : in std_logic_vector(LVE_WIDTH-1 downto 0);
 
     align1_in : in std_logic_vector(1 downto 0);
     align2_in : in std_logic_vector(1 downto 0);
@@ -31,7 +27,7 @@ entity lve_ci is
     valid_out        : out std_logic;
     byte_en_out      : out std_logic_vector(3 downto 0);
     write_enable_out : out std_logic;
-    data_out         : out std_logic_vector(REGISTER_SIZE-1 downto 0)
+    data_out         : out std_logic_vector(LVE_WIDTH-1 downto 0)
     );
 end entity;
 
@@ -41,11 +37,11 @@ architecture rtl of lve_ci is
   --For testing pipeline the result
 
 
-  signal cust0_out_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal cust0_out_data : std_logic_vector(LVE_WIDTH-1 downto 0);
   signal cust0_byte     : std_logic_vector(7 downto 0);
   signal cust0_byte_en  : std_logic_vector(3 downto 0);
 
-  signal half_add_sum : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal half_add_sum : std_logic_vector(LVE_WIDTH-1 downto 0);
 
   signal conv_weights : std_logic_vector(8 downto 0);
   type row_t is array(0 to 3) of signed(8 downto 0);
@@ -72,7 +68,7 @@ architecture rtl of lve_ci is
   signal conv_sum1 : sum_t;
 
   signal conv_valid_data    : std_logic_vector(2 downto 0);
-  signal conv_data_out      : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal conv_data_out      : std_logic_vector(LVE_WIDTH-1 downto 0);
   signal conv_we, conv_done : std_logic;
 begin
 
