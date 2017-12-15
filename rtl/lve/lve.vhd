@@ -141,12 +141,12 @@ begin  -- architecture rtl
         slave_data_in  <= slave_wdata;
         slave_byte_en  <= slave_wstrb;
         slave_read_en  <= slave_arvalid and not busy;
-        slave_write_en <= slave_awvalid  and slave_wvalid and not busy;
-        if slave_arvalid = '1' then
+        slave_write_en <= slave_awvalid and slave_wvalid and not busy;
+        if (slave_arvalid and not busy) = '1'  then
           reading     <= '1';
           ID_register <= slave_arid;
         end if;
-        if (slave_awvalid and slave_wvalid) = '1' then
+        if (slave_awvalid and slave_wvalid and not busy) = '1' then
           writing     <= '1';
           ID_register <= slave_awid;
         end if;
@@ -162,9 +162,20 @@ begin  -- architecture rtl
       end if;
     end process;
 
-
-
   end generate axi_handler;
+
+  wishbone_handler : if WISHBONE_ENABLE = 1 generate
+
+    --Inputs
+    slave_address  <= slave_ADR_I;
+    slave_write_en <= slave_STB_I and slave_CYC_I and slave_WE_I;
+    slave_read_en  <= slave_STB_I and slave_CYC_I and not slave_WE_I;
+    slave_byte_en  <= slave_SEL_I;
+    slave_data_in  <= slave_DAT_I;
+    --outputs
+    slave_DAT_O    <= slave_data_out;
+    slave_ack_O    <= slave_ack;
+  end generate wishbone_handler;
 
   core : lve_core
     generic map (
