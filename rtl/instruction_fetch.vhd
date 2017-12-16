@@ -270,11 +270,11 @@ begin
     next_pc_fifo_usedw <=
       to_unsigned(1, next_pc_fifo_usedw'length) when pc_fifo_write = '1' else
       to_unsigned(0, next_pc_fifo_usedw'length) when pc_fifo_read = '1' else
-      next_pc_fifo_usedw;
+      pc_fifo_usedw;
     next_instruction_fifo_usedw <=
       to_unsigned(1, next_instruction_fifo_usedw'length) when instruction_fifo_write = '1' else
       to_unsigned(0, next_instruction_fifo_usedw'length) when instruction_fifo_read = '1' else
-      next_instruction_fifo_usedw;
+      instruction_fifo_usedw;
     process(clk)
     begin
       if rising_edge(clk) then
