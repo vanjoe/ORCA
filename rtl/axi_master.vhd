@@ -15,12 +15,16 @@ entity axi_master is
     DATA_WIDTH               : integer;
     ID_WIDTH                 : positive;
     MAX_BURSTLENGTH          : positive;
-    MAX_OUTSTANDING_REQUESTS : natural
+    MAX_OUTSTANDING_REQUESTS : natural;
+    REQUEST_REGISTER         : natural range 0 to 2;
+    RETURN_REGISTER          : natural range 0 to 1
     );
   port (
     clk     : in std_logic;
     reset   : in std_logic;
     aresetn : in std_logic;
+
+    master_idle : out std_logic;
 
     --Orca-internal memory-mapped slave
     oimm_address            : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
@@ -85,6 +89,21 @@ architecture rtl of axi_master is
   constant PROT_VAL   : std_logic_vector(2 downto 0) := "000";
   constant LOCK_VAL   : std_logic_vector(1 downto 0) := "00";
 
+  signal register_idle  : std_logic;
+  signal throttler_idle : std_logic;
+
+  signal registered_oimm_address            : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+  signal registered_oimm_burstlength        : std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0);
+  signal registered_oimm_burstlength_minus1 : std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
+  signal registered_oimm_byteenable         : std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+  signal registered_oimm_requestvalid       : std_logic;
+  signal registered_oimm_readnotwrite       : std_logic;
+  signal registered_oimm_writedata          : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal registered_oimm_writelast          : std_logic;
+  signal unregistered_oimm_readdata         : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal unregistered_oimm_readdatavalid    : std_logic;
+  signal unregistered_oimm_waitrequest      : std_logic;
+
   signal unthrottled_oimm_readcomplete  : std_logic;
   signal unthrottled_oimm_writecomplete : std_logic;
   signal unthrottled_oimm_waitrequest   : std_logic;
@@ -97,6 +116,55 @@ architecture rtl of axi_master is
   signal w_sending      : std_logic;
   signal w_sent         : std_logic;
 begin
+  master_idle <= register_idle and throttler_idle;
+
+  -----------------------------------------------------------------------------
+  -- Optional OIMM register
+  -----------------------------------------------------------------------------
+  optional_oimm_register : oimm_register
+    generic map (
+      ADDRESS_WIDTH    => ADDRESS_WIDTH,
+      DATA_WIDTH       => DATA_WIDTH,
+      MAX_BURSTLENGTH  => MAX_BURSTLENGTH,
+      REQUEST_REGISTER => REQUEST_REGISTER,
+      RETURN_REGISTER  => RETURN_REGISTER
+      )
+    port map (
+      clk   => clk,
+      reset => reset,
+
+      register_idle => register_idle,
+
+      --Orca-internal memory-mapped slave
+      slave_oimm_address            => oimm_address,
+      slave_oimm_burstlength        => oimm_burstlength,
+      slave_oimm_burstlength_minus1 => oimm_burstlength_minus1,
+      slave_oimm_byteenable         => oimm_byteenable,
+      slave_oimm_requestvalid       => oimm_requestvalid,
+      slave_oimm_readnotwrite       => oimm_readnotwrite,
+      slave_oimm_writedata          => oimm_writedata,
+      slave_oimm_writelast          => oimm_writelast,
+      slave_oimm_readdata           => oimm_readdata,
+      slave_oimm_readdatavalid      => oimm_readdatavalid,
+      slave_oimm_waitrequest        => oimm_waitrequest,
+
+      --Orca-internal memory-mapped master
+      master_oimm_address            => registered_oimm_address,
+      master_oimm_burstlength        => registered_oimm_burstlength,
+      master_oimm_burstlength_minus1 => registered_oimm_burstlength_minus1,
+      master_oimm_byteenable         => registered_oimm_byteenable,
+      master_oimm_requestvalid       => registered_oimm_requestvalid,
+      master_oimm_readnotwrite       => registered_oimm_readnotwrite,
+      master_oimm_writedata          => registered_oimm_writedata,
+      master_oimm_writelast          => registered_oimm_writelast,
+      master_oimm_readdata           => unregistered_oimm_readdata,
+      master_oimm_readdatavalid      => unregistered_oimm_readdatavalid,
+      master_oimm_waitrequest        => unregistered_oimm_waitrequest
+      );
+
+  -----------------------------------------------------------------------------
+  -- Optional OIMM request throttler
+  -----------------------------------------------------------------------------
   request_throttler : oimm_throttler
     generic map (
       MAX_OUTSTANDING_REQUESTS => MAX_OUTSTANDING_REQUESTS
@@ -105,11 +173,13 @@ begin
       clk   => clk,
       reset => reset,
 
+      throttler_idle => throttler_idle,
+
       --Orca-internal memory-mapped slave
-      slave_oimm_requestvalid => oimm_requestvalid,
-      slave_oimm_readnotwrite => oimm_readnotwrite,
-      slave_oimm_writelast    => oimm_writelast,
-      slave_oimm_waitrequest  => oimm_waitrequest,
+      slave_oimm_requestvalid => registered_oimm_requestvalid,
+      slave_oimm_readnotwrite => registered_oimm_readnotwrite,
+      slave_oimm_writelast    => registered_oimm_writelast,
+      slave_oimm_waitrequest  => unregistered_oimm_waitrequest,
 
       --Orca-internal memory-mapped master
       master_oimm_requestvalid  => throttled_oimm_requestvalid,
@@ -118,47 +188,51 @@ begin
       master_oimm_waitrequest   => unthrottled_oimm_waitrequest
       );
 
+
+  -----------------------------------------------------------------------------
+  -- OIMM to AXI logic
+  -----------------------------------------------------------------------------
   unthrottled_oimm_readcomplete  <= RVALID and RLAST;
   unthrottled_oimm_writecomplete <= BVALID;
 
-  oimm_readdata      <= RDATA;
-  oimm_readdatavalid <= RVALID;
+  unregistered_oimm_readdata      <= RDATA;
+  unregistered_oimm_readdatavalid <= RVALID;
 
-  unthrottled_oimm_waitrequest <= (not ARREADY) when oimm_readnotwrite = '1' else
-                                  (((not AWREADY) and (not aw_sent) and (oimm_writelast or w_sent)) or
+  unthrottled_oimm_waitrequest <= (not ARREADY) when registered_oimm_readnotwrite = '1' else
+                                  (((not AWREADY) and (not aw_sent) and (registered_oimm_writelast or w_sent)) or
                                    ((not WREADY) and (not w_sent)));
 
   AWID           <= (others => '0');
-  AWADDR         <= oimm_address;
-  AWLEN          <= oimm_burstlength_minus1;
+  AWADDR         <= registered_oimm_address;
+  AWLEN          <= registered_oimm_burstlength_minus1;
   AWSIZE         <= std_logic_vector(to_unsigned(log2(DATA_WIDTH/8), 3));
   AWBURST        <= BURST_INCR;
   AWLOCK         <= LOCK_VAL;
   AWCACHE        <= CACHE_VAL;
   AWPROT         <= PROT_VAL;
-  AWVALID_signal <= (throttled_oimm_requestvalid and (not oimm_readnotwrite)) and (not aw_sent);
+  AWVALID_signal <= (throttled_oimm_requestvalid and (not registered_oimm_readnotwrite)) and (not aw_sent);
   AWVALID        <= AWVALID_signal;
   WID            <= (others => '0');
-  WSTRB          <= oimm_byteenable;
-  WVALID_signal  <= (throttled_oimm_requestvalid and (not oimm_readnotwrite)) and (not w_sent);
+  WSTRB          <= registered_oimm_byteenable;
+  WVALID_signal  <= (throttled_oimm_requestvalid and (not registered_oimm_readnotwrite)) and (not w_sent);
   WVALID         <= WVALID_signal;
-  WLAST          <= oimm_writelast;
-  WDATA          <= oimm_writedata;
+  WLAST          <= registered_oimm_writelast;
+  WDATA          <= registered_oimm_writedata;
   BREADY         <= '1';
 
   ARID    <= (others => '0');
-  ARADDR  <= oimm_address;
-  ARLEN   <= oimm_burstlength_minus1;
+  ARADDR  <= registered_oimm_address;
+  ARLEN   <= registered_oimm_burstlength_minus1;
   ARSIZE  <= std_logic_vector(to_unsigned(log2(DATA_WIDTH/8), 3));
   ARBURST <= BURST_INCR;
   ARLOCK  <= LOCK_VAL;
   ARCACHE <= CACHE_VAL;
   ARPROT  <= PROT_VAL;
-  ARVALID <= oimm_readnotwrite and throttled_oimm_requestvalid;
+  ARVALID <= registered_oimm_readnotwrite and throttled_oimm_requestvalid;
   RREADY  <= '1';
 
   aw_sending <= AWVALID_signal and AWREADY;
-  w_sending  <= WVALID_signal and oimm_writelast and WREADY;
+  w_sending  <= WVALID_signal and registered_oimm_writelast and WREADY;
   process (clk) is
   begin
     if rising_edge(clk) then

@@ -5883,6 +5883,16 @@
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DATA_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>DC_REQUEST_REGISTER</spirit:name>
+        <spirit:displayName>DC Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">1</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>DC_RETURN_REGISTER</spirit:name>
+        <spirit:displayName>DC Return Register</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DC_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1">0</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>DUC_REQUEST_REGISTER</spirit:name>
         <spirit:displayName>DUC Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DUC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">2</spirit:value>
@@ -5911,6 +5921,16 @@
         <spirit:name>INSTRUCTION_RETURN_REGISTER</spirit:name>
         <spirit:displayName>Instruction Return Register</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.INSTRUCTION_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1">0</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>IC_REQUEST_REGISTER</spirit:name>
+        <spirit:displayName>IC Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">1</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>IC_RETURN_REGISTER</spirit:name>
+        <spirit:displayName>IC Return Register</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IC_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>IUC_REQUEST_REGISTER</spirit:name>
@@ -6348,6 +6368,16 @@
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DATA_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
+      <spirit:name>DC_REQUEST_REGISTER</spirit:name>
+      <spirit:displayName>DC Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">1</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>DC_RETURN_REGISTER</spirit:name>
+      <spirit:displayName>DC Return Register</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DC_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
       <spirit:name>DUC_REQUEST_REGISTER</spirit:name>
       <spirit:displayName>DUC Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DUC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">2</spirit:value>
@@ -6376,6 +6406,16 @@
       <spirit:name>INSTRUCTION_RETURN_REGISTER</spirit:name>
       <spirit:displayName>Instruction Return Register</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.INSTRUCTION_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>IC_REQUEST_REGISTER</spirit:name>
+      <spirit:displayName>IC Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.IC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">1</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>IC_RETURN_REGISTER</spirit:name>
+      <spirit:displayName>IC Return Register</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.IC_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>IUC_REQUEST_REGISTER</spirit:name>

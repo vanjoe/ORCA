@@ -55,12 +55,16 @@ DEFAULT_ENABLE_EXCEPTIONS=1
 DEFAULT_PIPELINE_STAGES=5
 DEFAULT_DATA_REQUEST_REGISTER=0
 DEFAULT_DATA_RETURN_REGISTER=0
+DEFAULT_DC_REQUEST_REGISTER=1
+DEFAULT_DC_RETURN_REGISTER=0
 DEFAULT_DUC_REQUEST_REGISTER=2
 DEFAULT_DUC_RETURN_REGISTER=1
 DEFAULT_DAUX_REQUEST_REGISTER=2
 DEFAULT_DAUX_RETURN_REGISTER=1
 DEFAULT_INSTRUCTION_REQUEST_REGISTER=0
 DEFAULT_INSTRUCTION_RETURN_REGISTER=0
+DEFAULT_IC_REQUEST_REGISTER=1
+DEFAULT_IC_RETURN_REGISTER=0
 DEFAULT_IUC_REQUEST_REGISTER=1
 DEFAULT_IUC_RETURN_REGISTER=0
 DEFAULT_IAUX_REQUEST_REGISTER=1
@@ -105,12 +109,16 @@ class Alt_Orca_BuildCfg(Orca_BuildCfgBase):
                  pipeline_stages=DEFAULT_PIPELINE_STAGES,
                  data_request_register=DEFAULT_DATA_REQUEST_REGISTER,
                  data_return_register=DEFAULT_DATA_RETURN_REGISTER,
+                 dc_request_register=DEFAULT_DC_REQUEST_REGISTER,
+                 dc_return_register=DEFAULT_DC_RETURN_REGISTER,
                  duc_request_register=DEFAULT_DUC_REQUEST_REGISTER,
                  duc_return_register=DEFAULT_DUC_RETURN_REGISTER,
                  daux_request_register=DEFAULT_DAUX_REQUEST_REGISTER,
                  daux_return_register=DEFAULT_DAUX_RETURN_REGISTER,
                  instruction_request_register=DEFAULT_INSTRUCTION_REQUEST_REGISTER,
                  instruction_return_register=DEFAULT_INSTRUCTION_RETURN_REGISTER,
+                 ic_request_register=DEFAULT_IC_REQUEST_REGISTER,
+                 ic_return_register=DEFAULT_IC_RETURN_REGISTER,
                  iuc_request_register=DEFAULT_IUC_REQUEST_REGISTER,
                  iuc_return_register=DEFAULT_IUC_RETURN_REGISTER,
                  iaux_request_register=DEFAULT_IAUX_REQUEST_REGISTER,
@@ -158,12 +166,16 @@ class Alt_Orca_BuildCfg(Orca_BuildCfgBase):
               pipeline_stages,
               data_request_register,
               data_return_register,
+              dc_request_register,
+              dc_return_register,
               duc_request_register,
               duc_return_register,
               daux_request_register,
               daux_return_register,
               instruction_request_register,
               instruction_return_register,
+              ic_request_register,
+              ic_return_register,
               iuc_request_register,
               iuc_return_register,
               iaux_request_register,
@@ -274,12 +286,16 @@ class Alt_Orca_BuildCfg(Orca_BuildCfgBase):
         f.write('PIPELINE_STAGES=%s\n' % self.pipeline_stages)
         f.write('DATA_REQUEST_REGISTER=%s\n' % self.data_request_register)
         f.write('DATA_RETURN_REGISTER=%s\n' % self.data_return_register)
+        f.write('DC_REQUEST_REGISTER=%s\n' % self.dc_request_register)
+        f.write('DC_RETURN_REGISTER=%s\n' % self.dc_return_register)
         f.write('DUC_REQUEST_REGISTER=%s\n' % self.duc_request_register)
         f.write('DUC_RETURN_REGISTER=%s\n' % self.duc_return_register)
         f.write('DAUX_REQUEST_REGISTER=%s\n' % self.daux_request_register)
         f.write('DAUX_RETURN_REGISTER=%s\n' % self.daux_return_register)
         f.write('INSTRUCTION_REQUEST_REGISTER=%s\n' % self.instruction_request_register)
         f.write('INSTRUCTION_RETURN_REGISTER=%s\n' % self.instruction_return_register)
+        f.write('IC_REQUEST_REGISTER=%s\n' % self.ic_request_register)
+        f.write('IC_RETURN_REGISTER=%s\n' % self.ic_return_register)
         f.write('IUC_REQUEST_REGISTER=%s\n' % self.iuc_request_register)
         f.write('IUC_RETURN_REGISTER=%s\n' % self.iuc_return_register)
         f.write('IAUX_REQUEST_REGISTER=%s\n' % self.iaux_request_register)
@@ -901,7 +917,7 @@ class Alt_Orca_BuildCfg(Orca_BuildCfgBase):
         #Kill any nios2-terminal processes owned by the user that may be hogging the JTAG bus.
         #This is overkill and should get fixed to selectively kill only a process that's actually
         #using the board we need.
-        killall_terms_returcode = subprocess.call('killall nios2-terminal', shell=True)
+        killall_terms_returncode = subprocess.call('killall nios2-terminal', shell=True)
         if not killall_terms_returncode:
             logging.info("Warning, killed a nios2-terminal process before programming .sof", self.dstdir)
 

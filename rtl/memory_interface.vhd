@@ -5,6 +5,7 @@ use IEEE.NUMERIC_STD.all;
 library work;
 use work.rv_components.all;
 use work.utils.all;
+use work.constants_pkg.all;
 
 entity memory_interface is
   generic (
@@ -16,54 +17,71 @@ entity memory_interface is
     WISHBONE_AUX : natural range 0 to 1;
     LMB_AUX      : natural range 0 to 1;
 
-    WISHBONE_SINGLE_CYCLE_READS  : natural range 0 to 1;
-    MAX_IFETCHES_IN_FLIGHT       : positive range 1 to 4;
-    MAX_OUTSTANDING_REQUESTS     : positive;
+    WISHBONE_SINGLE_CYCLE_READS : natural range 0 to 1;
+    MAX_IFETCHES_IN_FLIGHT      : positive range 1 to 4;
+    MAX_OUTSTANDING_REQUESTS    : positive;
+
     INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2;
     INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1;
-    IUC_REQUEST_REGISTER         : natural range 0 to 2;
-    IUC_RETURN_REGISTER          : natural range 0 to 1;
-    IUC_ADDR_BASE                : std_logic_vector(31 downto 0);
-    IUC_ADDR_LAST                : std_logic_vector(31 downto 0);
-    IAUX_REQUEST_REGISTER        : natural range 0 to 2;
-    IAUX_RETURN_REGISTER         : natural range 0 to 1;
-    IAUX_ADDR_BASE               : std_logic_vector(31 downto 0);
-    IAUX_ADDR_LAST               : std_logic_vector(31 downto 0);
-    ICACHE_SIZE                  : natural;
-    ICACHE_LINE_SIZE             : integer range 16 to 256;
-    ICACHE_EXTERNAL_WIDTH        : integer;
-    ICACHE_MAX_BURSTLENGTH       : positive;
-    ICACHE_BURST_EN              : integer range 0 to 1;
-    DATA_REQUEST_REGISTER        : natural range 0 to 2;
-    DATA_RETURN_REGISTER         : natural range 0 to 1;
-    DUC_REQUEST_REGISTER         : natural range 0 to 2;
-    DUC_RETURN_REGISTER          : natural range 0 to 1;
-    DUC_ADDR_BASE                : std_logic_vector(31 downto 0);
-    DUC_ADDR_LAST                : std_logic_vector(31 downto 0);
-    DAUX_REQUEST_REGISTER        : natural range 0 to 2;
-    DAUX_RETURN_REGISTER         : natural range 0 to 1;
-    DAUX_ADDR_BASE               : std_logic_vector(31 downto 0);
-    DAUX_ADDR_LAST               : std_logic_vector(31 downto 0);
-    DCACHE_SIZE                  : natural;
-    DCACHE_LINE_SIZE             : integer range 16 to 256;
-    DCACHE_EXTERNAL_WIDTH        : integer;
-    DCACHE_MAX_BURSTLENGTH       : positive;
-    DCACHE_BURST_EN              : integer range 0 to 1
+
+    IUC_REQUEST_REGISTER : natural range 0 to 2;
+    IUC_RETURN_REGISTER  : natural range 0 to 1;
+    IUC_ADDR_BASE        : std_logic_vector(31 downto 0);
+    IUC_ADDR_LAST        : std_logic_vector(31 downto 0);
+
+    IAUX_REQUEST_REGISTER : natural range 0 to 2;
+    IAUX_RETURN_REGISTER  : natural range 0 to 1;
+    IAUX_ADDR_BASE        : std_logic_vector(31 downto 0);
+    IAUX_ADDR_LAST        : std_logic_vector(31 downto 0);
+
+    IC_REQUEST_REGISTER    : natural range 0 to 2;
+    IC_RETURN_REGISTER     : natural range 0 to 1;
+    ICACHE_SIZE            : natural;
+    ICACHE_LINE_SIZE       : integer range 16 to 256;
+    ICACHE_EXTERNAL_WIDTH  : integer;
+    ICACHE_MAX_BURSTLENGTH : positive;
+    ICACHE_BURST_EN        : integer range 0 to 1;
+
+    DATA_REQUEST_REGISTER : natural range 0 to 2;
+    DATA_RETURN_REGISTER  : natural range 0 to 1;
+
+    DUC_REQUEST_REGISTER : natural range 0 to 2;
+    DUC_RETURN_REGISTER  : natural range 0 to 1;
+    DUC_ADDR_BASE        : std_logic_vector(31 downto 0);
+    DUC_ADDR_LAST        : std_logic_vector(31 downto 0);
+
+    DAUX_REQUEST_REGISTER : natural range 0 to 2;
+    DAUX_RETURN_REGISTER  : natural range 0 to 1;
+    DAUX_ADDR_BASE        : std_logic_vector(31 downto 0);
+    DAUX_ADDR_LAST        : std_logic_vector(31 downto 0);
+
+    DC_REQUEST_REGISTER    : natural range 0 to 2;
+    DC_RETURN_REGISTER     : natural range 0 to 1;
+    DCACHE_SIZE            : natural;
+    DCACHE_LINE_SIZE       : integer range 16 to 256;
+    DCACHE_EXTERNAL_WIDTH  : integer;
+    DCACHE_MAX_BURSTLENGTH : positive;
+    DCACHE_BURST_EN        : integer range 0 to 1
     );
   port (
     clk            : in std_logic;
     reset          : in std_logic;
 
-    --ICache control (Invalidate/flush/writeback)
+    --ICache control (Invalidate/flush/writeback/enable/disable)
     from_icache_control_ready : out std_logic;
     to_icache_control_valid   : in  std_logic;
+    to_icache_control_command : in  cache_control_command;
+
+    --DCache control (Invalidate/flush/writeback/enable/disable)
+    from_dcache_control_ready : out std_logic;
+    to_dcache_control_valid   : in  std_logic;
+    to_dcache_control_command : in  cache_control_command;
 
     memory_interface_idle : out std_logic;
 
     --Instruction Orca-internal memory-mapped master
     ifetch_oimm_address       : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     ifetch_oimm_requestvalid  : in  std_logic;
-    ifetch_oimm_readnotwrite  : in  std_logic;
     ifetch_oimm_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     ifetch_oimm_waitrequest   : out std_logic;
     ifetch_oimm_readdatavalid : out std_logic;
@@ -325,19 +343,22 @@ entity memory_interface is
 end entity memory_interface;
 
 architecture rtl of memory_interface is
-  signal ifetch_oimm_byteenable : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-  signal ifetch_oimm_writedata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-
   constant A4L_BURST_LEN  : std_logic_vector(3 downto 0) := "0000";
   constant A4L_BURST_SIZE : std_logic_vector(2 downto 0) := std_logic_vector(to_unsigned(log2(REGISTER_SIZE/8), 3));
   constant A4L_BURST_INCR : std_logic_vector(1 downto 0) := "01";
   constant A4L_LOCK_VAL   : std_logic_vector(1 downto 0) := "00";
   constant A4L_CACHE_VAL  : std_logic_vector(3 downto 0) := "0000";
 
-  signal icache_mux_idle : std_logic;
-  signal dcache_mux_idle : std_logic;
-  signal icache_idle     : std_logic;
-  signal dcache_idle     : std_logic;
+  signal iinternal_register_idle  : std_logic;
+  signal iexternal_registers_idle : std_logic;
+  signal dinternal_register_idle  : std_logic;
+  signal dexternal_registers_idle : std_logic;
+  signal icache_idle              : std_logic;
+  signal dcache_idle              : std_logic;
+  signal ic_master_idle           : std_logic;
+  signal dc_master_idle           : std_logic;
+  signal iuc_master_idle          : std_logic;
+  signal duc_master_idle          : std_logic;
 
   signal iuc_oimm_address       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal iuc_oimm_byteenable    : std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
@@ -399,14 +420,13 @@ begin
     "At most one auxiliary interface type (AVALON_AUX, WISHBONE_AUX, LMB_AUX) must be enabled"
     severity failure;
 
-  --Instruction master is read only, fill in these signals for submodules that
-  --need them.
-  ifetch_oimm_writedata  <= (others => '-');
-  ifetch_oimm_byteenable <= (others => '1');
-
   aresetn <= not reset;
 
-  memory_interface_idle <= icache_mux_idle and dcache_mux_idle and icache_idle and dcache_idle;
+  memory_interface_idle <= iinternal_register_idle and dinternal_register_idle and
+                           iexternal_registers_idle and dexternal_registers_idle and
+                           icache_idle and dcache_idle and
+                           ic_master_idle and dc_master_idle and
+                           iuc_master_idle and duc_master_idle;
 
   -----------------------------------------------------------------------------
   -- Instruction cache and mux
@@ -420,26 +440,26 @@ begin
       INTERNAL_RETURN_REGISTER  => INSTRUCTION_RETURN_REGISTER,
       CACHE_SIZE                => ICACHE_SIZE,
       CACHE_LINE_SIZE           => ICACHE_LINE_SIZE,
-      UC_REQUEST_REGISTER       => IUC_REQUEST_REGISTER,
-      UC_RETURN_REGISTER        => IUC_RETURN_REGISTER,
-      UC_ADDR_BASE              => IUC_ADDR_BASE,
-      UC_ADDR_LAST              => IUC_ADDR_LAST,
-      AUX_REQUEST_REGISTER      => IAUX_REQUEST_REGISTER,
-      AUX_RETURN_REGISTER       => IAUX_RETURN_REGISTER,
-      AUX_ADDR_BASE             => IAUX_ADDR_BASE,
-      AUX_ADDR_LAST             => IAUX_ADDR_LAST
+
+      UC_REQUEST_REGISTER => IUC_REQUEST_REGISTER,
+      UC_RETURN_REGISTER  => IUC_RETURN_REGISTER,
+      UC_ADDR_BASE        => IUC_ADDR_BASE,
+      UC_ADDR_LAST        => IUC_ADDR_LAST,
+
+      AUX_REQUEST_REGISTER => IAUX_REQUEST_REGISTER,
+      AUX_RETURN_REGISTER  => IAUX_RETURN_REGISTER,
+      AUX_ADDR_BASE        => IAUX_ADDR_BASE,
+      AUX_ADDR_LAST        => IAUX_ADDR_LAST
       )
     port map (
       clk   => clk,
       reset => reset,
 
-      cache_mux_idle => icache_mux_idle,
+      internal_register_idle  => iinternal_register_idle,
+      external_registers_idle => iexternal_registers_idle,
 
       oimm_address       => ifetch_oimm_address,
-      oimm_byteenable    => ifetch_oimm_byteenable,
       oimm_requestvalid  => ifetch_oimm_requestvalid,
-      oimm_readnotwrite  => ifetch_oimm_readnotwrite,
-      oimm_writedata     => ifetch_oimm_writedata,
       oimm_readdata      => ifetch_oimm_readdata,
       oimm_readdatavalid => ifetch_oimm_readdatavalid,
       oimm_waitrequest   => ifetch_oimm_waitrequest,
@@ -502,8 +522,10 @@ begin
 
         from_cache_control_ready => from_icache_control_ready,
         to_cache_control_valid   => to_icache_control_valid,
+        to_cache_control_command => to_icache_control_command,
 
-        cache_idle => icache_idle,
+        precache_idle => iinternal_register_idle,
+        cache_idle    => icache_idle,
 
         cacheint_oimm_address       => icacheint_oimm_address,
         cacheint_oimm_byteenable    => icacheint_oimm_byteenable,
@@ -533,12 +555,16 @@ begin
         DATA_WIDTH               => REGISTER_SIZE,
         ID_WIDTH                 => 4,
         MAX_BURSTLENGTH          => ICACHE_MAX_BURSTLENGTH,
-        MAX_OUTSTANDING_REQUESTS => 0
+        MAX_OUTSTANDING_REQUESTS => 0,
+        REQUEST_REGISTER         => IC_REQUEST_REGISTER,
+        RETURN_REGISTER          => IC_RETURN_REGISTER
         )
       port map (
         clk     => clk,
         reset   => reset,
         aresetn => aresetn,
+
+        master_idle => ic_master_idle,
 
         oimm_address            => ic_oimm_address,
         oimm_burstlength        => ic_oimm_burstlength,
@@ -597,6 +623,7 @@ begin
   no_instruction_cache_gen : if ICACHE_SIZE = 0 generate
     from_icache_control_ready <= '1';
     icache_idle               <= '1';
+    ic_master_idle            <= '1';
 
     IC_AWID    <= (others => '0');
     IC_AWADDR  <= (others => '0');
@@ -637,20 +664,23 @@ begin
       INTERNAL_RETURN_REGISTER  => DATA_RETURN_REGISTER,
       CACHE_SIZE                => DCACHE_SIZE,
       CACHE_LINE_SIZE           => DCACHE_LINE_SIZE,
-      UC_REQUEST_REGISTER       => DUC_REQUEST_REGISTER,
-      UC_RETURN_REGISTER        => DUC_RETURN_REGISTER,
-      UC_ADDR_BASE              => DUC_ADDR_BASE,
-      UC_ADDR_LAST              => DUC_ADDR_LAST,
-      AUX_REQUEST_REGISTER      => DAUX_REQUEST_REGISTER,
-      AUX_RETURN_REGISTER       => DAUX_RETURN_REGISTER,
-      AUX_ADDR_BASE             => DAUX_ADDR_BASE,
-      AUX_ADDR_LAST             => DAUX_ADDR_LAST
+
+      UC_REQUEST_REGISTER => DUC_REQUEST_REGISTER,
+      UC_RETURN_REGISTER  => DUC_RETURN_REGISTER,
+      UC_ADDR_BASE        => DUC_ADDR_BASE,
+      UC_ADDR_LAST        => DUC_ADDR_LAST,
+
+      AUX_REQUEST_REGISTER => DAUX_REQUEST_REGISTER,
+      AUX_RETURN_REGISTER  => DAUX_RETURN_REGISTER,
+      AUX_ADDR_BASE        => DAUX_ADDR_BASE,
+      AUX_ADDR_LAST        => DAUX_ADDR_LAST
       )
     port map (
       clk   => clk,
       reset => reset,
 
-      cache_mux_idle => dcache_mux_idle,
+      internal_register_idle  => dinternal_register_idle,
+      external_registers_idle => dexternal_registers_idle,
 
       oimm_address       => lsu_oimm_address,
       oimm_byteenable    => lsu_oimm_byteenable,
@@ -717,10 +747,12 @@ begin
         clk   => clk,
         reset => reset,
 
-        from_cache_control_ready => open,
-        to_cache_control_valid   => '0',
+        from_cache_control_ready => from_dcache_control_ready,
+        to_cache_control_valid   => to_dcache_control_valid,
+        to_cache_control_command => to_dcache_control_command,
 
-        cache_idle => dcache_idle,
+        precache_idle => dinternal_register_idle,
+        cache_idle    => dcache_idle,
 
         cacheint_oimm_address       => dcacheint_oimm_address,
         cacheint_oimm_byteenable    => dcacheint_oimm_byteenable,
@@ -750,12 +782,16 @@ begin
         DATA_WIDTH               => REGISTER_SIZE,
         ID_WIDTH                 => 4,
         MAX_BURSTLENGTH          => DCACHE_MAX_BURSTLENGTH,
-        MAX_OUTSTANDING_REQUESTS => MAX_OUTSTANDING_REQUESTS
+        MAX_OUTSTANDING_REQUESTS => MAX_OUTSTANDING_REQUESTS,
+        REQUEST_REGISTER         => DC_REQUEST_REGISTER,
+        RETURN_REGISTER          => DC_RETURN_REGISTER
         )
       port map (
         clk     => clk,
         reset   => reset,
         aresetn => aresetn,
+
+        master_idle => dc_master_idle,
 
         oimm_address            => dc_oimm_address,
         oimm_burstlength        => dc_oimm_burstlength,
@@ -812,7 +848,9 @@ begin
         );
   end generate data_cache_gen;
   no_data_cache_gen : if DCACHE_SIZE = 0 generate
-    dcache_idle <= '1';
+    from_dcache_control_ready <= '1';
+    dcache_idle               <= '1';
+    dc_master_idle            <= '1';
 
     DC_AWID    <= (others => '0');
     DC_AWADDR  <= (others => '0');
@@ -1061,6 +1099,8 @@ begin
         reset   => reset,
         aresetn => aresetn,
 
+        master_idle => iuc_master_idle,
+
         oimm_address       => iuc_oimm_address,
         oimm_byteenable    => iuc_oimm_byteenable,
         oimm_requestvalid  => iuc_oimm_requestvalid,
@@ -1096,6 +1136,8 @@ begin
         );
   end generate iuc_master_gen;
   no_iuc_master_gen : if IUC_ADDR_BASE = IUC_ADDR_LAST generate
+    iuc_master_idle <= '1';
+
     IUC_AWADDR  <= (others => '0');
     IUC_AWPROT  <= (others => '0');
     IUC_AWVALID <= '0';
@@ -1137,6 +1179,8 @@ begin
         reset   => reset,
         aresetn => aresetn,
 
+        master_idle => duc_master_idle,
+
         oimm_address       => duc_oimm_address,
         oimm_byteenable    => duc_oimm_byteenable,
         oimm_requestvalid  => duc_oimm_requestvalid,
@@ -1172,6 +1216,8 @@ begin
         );
   end generate duc_master_gen;
   no_duc_master_gen : if DUC_ADDR_BASE = DUC_ADDR_LAST generate
+    duc_master_idle <= '1';
+
     DUC_AWADDR  <= (others => '0');
     DUC_AWPROT  <= (others => '0');
     DUC_AWVALID <= '0';

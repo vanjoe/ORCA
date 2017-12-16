@@ -50,7 +50,6 @@ package constants_pkg is
   constant REGISTER_RD  : unsigned(11 downto 7)  := (others => '0');
 
 
-
   --Major OP codes instr(6 downto 0)
   constant MAJOR_OP   : std_logic_vector(6 downto 0) := (others => '-');
   constant JAL_OP     : std_logic_vector(6 downto 0) := "1101111";
@@ -83,14 +82,20 @@ package constants_pkg is
   constant CSR_MTIMEH   : std_logic_vector(11 downto 0)  := x"F81";
   constant CSR_UTIME    : std_logic_vector(11 downto 0)  := x"C01";
   constant CSR_UTIMEH   : std_logic_vector(11 downto 0)  := x"C81";
-  constant CSR_SLEEP    : std_logic_vector(11 downto 0)  := x"800";
 
   --NON-STANDARD
-  constant CSR_MEIMASK      : std_logic_vector(11 downto 0) := x"7C0";
-  constant CSR_MEIPEND      : std_logic_vector(11 downto 0) := x"FC0";
-  --CSR BITS
-  constant CSR_MSTATUS_MIE  : integer                       := 3;
-  constant CSR_MSTATUS_MPIE : integer                       := 7;
+  constant CSR_SLEEP   : std_logic_vector(11 downto 0) := x"800";
+  constant CSR_MEIMASK : std_logic_vector(11 downto 0) := x"7C0";
+  constant CSR_MEIPEND : std_logic_vector(11 downto 0) := x"FC0";
+  constant CSR_MCACHE  : std_logic_vector(11 downto 0) := x"BC0";
+
+  --CSR_MSTATUS BITS
+  constant CSR_MSTATUS_MIE  : natural := 3;
+  constant CSR_MSTATUS_MPIE : natural := 7;
+
+  --CSR_MCACHE BITS
+  constant CSR_MCACHE_IENABLE : natural := 0;
+  constant CSR_MCACHE_DENABLE : natural := 1;
 
   --constant CSR_MCAUSE_MEXT    : integer := 16#8000000B#;
   constant CSR_MCAUSE_ILLEGAL : integer := 2;
@@ -159,5 +164,10 @@ package constants_pkg is
   constant LVE_HALF_SIZE : std_logic_vector(1 downto 0) := "10";
   constant LVE_WORD_SIZE : std_logic_vector(1 downto 0) := "11";
 
+
+  ------------------------------------------------------------------------------
+  -- Types
+  ------------------------------------------------------------------------------
+  type cache_control_command is (INVALIDATE, FLUSH, WRITEBACK, ENABLE, DISABLE);
 
 end package constants_pkg;

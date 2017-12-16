@@ -235,6 +235,22 @@ set_parameter_property DATA_RETURN_REGISTER DESCRIPTION "Register data master re
 at the cost of higher load latency."
 set_parameter_property DATA_RETURN_REGISTER ALLOWED_RANGES {0,1}
 
+add_parameter          DC_REQUEST_REGISTER natural 1
+set_parameter_property DC_REQUEST_REGISTER DEFAULT_VALUE 1
+set_parameter_property DC_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DC_REQUEST_REGISTER DISPLAY_NAME "DC Request Register"
+set_parameter_property DC_REQUEST_REGISTER DESCRIPTION "Register DC master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property DC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+
+add_parameter          DC_RETURN_REGISTER natural 0
+set_parameter_property DC_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property DC_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DC_RETURN_REGISTER DISPLAY_NAME "DC Return Register"
+set_parameter_property DC_RETURN_REGISTER DESCRIPTION "Register DC master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property DC_RETURN_REGISTER ALLOWED_RANGES {0,1}
+
 add_parameter          DUC_REQUEST_REGISTER natural 2
 set_parameter_property DUC_REQUEST_REGISTER DEFAULT_VALUE 2
 set_parameter_property DUC_REQUEST_REGISTER HDL_PARAMETER true
@@ -282,6 +298,22 @@ set_parameter_property INSTRUCTION_RETURN_REGISTER DISPLAY_NAME "Instruction Ret
 set_parameter_property INSTRUCTION_RETURN_REGISTER DESCRIPTION "Register instruction master readdata for higher fmax \
 at the cost of higher load latency."
 set_parameter_property INSTRUCTION_RETURN_REGISTER ALLOWED_RANGES {0,1}
+
+add_parameter          IC_REQUEST_REGISTER natural 1
+set_parameter_property IC_REQUEST_REGISTER DEFAULT_VALUE 1
+set_parameter_property IC_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property IC_REQUEST_REGISTER DISPLAY_NAME "IC Request Register"
+set_parameter_property IC_REQUEST_REGISTER DESCRIPTION "Register IC master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property IC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+
+add_parameter          IC_RETURN_REGISTER natural 0
+set_parameter_property IC_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property IC_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property IC_RETURN_REGISTER DISPLAY_NAME "IC Return Register"
+set_parameter_property IC_RETURN_REGISTER DESCRIPTION "Register IC master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property IC_RETURN_REGISTER ALLOWED_RANGES {0,1}
 
 add_parameter          IUC_REQUEST_REGISTER natural 1
 set_parameter_property IUC_REQUEST_REGISTER DEFAULT_VALUE 1

@@ -24,22 +24,30 @@ entity orca_core is
     NUM_EXT_INTERRUPTS     : positive range 1 to 32;
     LVE_ENABLE             : natural range 0 to 1;
     WRITE_FIRST_SMALL_RAMS : boolean;
-    FAMILY                 : string
+    FAMILY                 : string;
+
+    HAS_ICACHE : boolean;
+    HAS_DCACHE : boolean
     );
   port (
     clk   : in std_logic;
     reset : in std_logic;
 
-    --ICache control (Invalidate/flush/writeback)
-    from_icache_control_ready : in  std_logic;
-    to_icache_control_valid   : out std_logic;
+    --ICache control (Invalidate/flush/writeback/enable/disable)
+    from_icache_control_ready : in     std_logic;
+    to_icache_control_valid   : buffer std_logic;
+    to_icache_control_command : out    cache_control_command;
+
+    --DCache control (Invalidate/flush/writeback/enable/disable)
+    from_dcache_control_ready : in     std_logic;
+    to_dcache_control_valid   : buffer std_logic;
+    to_dcache_control_command : out    cache_control_command;
 
     memory_interface_idle : in std_logic;
 
     --Instruction Orca-internal memory-mapped master
     ifetch_oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     ifetch_oimm_requestvalid  : buffer std_logic;
-    ifetch_oimm_readnotwrite  : out    std_logic;
     ifetch_oimm_readdata      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     ifetch_oimm_waitrequest   : in     std_logic;
     ifetch_oimm_readdatavalid : in     std_logic;
@@ -147,7 +155,6 @@ begin
       program_counter => program_counter,
 
       oimm_address       => ifetch_oimm_address,
-      oimm_readnotwrite  => ifetch_oimm_readnotwrite,
       oimm_requestvalid  => ifetch_oimm_requestvalid,
       oimm_readdata      => ifetch_oimm_readdata,
       oimm_readdatavalid => ifetch_oimm_readdatavalid,
@@ -210,7 +217,9 @@ begin
       ENABLE_EXT_INTERRUPTS => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
       LVE_ENABLE            => LVE_ENABLE,
-      FAMILY                => FAMILY
+      FAMILY                => FAMILY,
+      HAS_ICACHE => HAS_ICACHE,
+      HAS_DCACHE => HAS_DCACHE
       )
     port map (
       clk   => clk,
@@ -257,6 +266,11 @@ begin
 
       from_icache_control_ready => from_icache_control_ready,
       to_icache_control_valid   => to_icache_control_valid,
+      to_icache_control_command => to_icache_control_command,
+
+      from_dcache_control_ready => from_dcache_control_ready,
+      to_dcache_control_valid   => to_dcache_control_valid,
+      to_dcache_control_command => to_dcache_control_command,
 
       interrupt_pending => interrupt_pending,
 

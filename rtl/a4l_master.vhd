@@ -15,6 +15,8 @@ entity a4l_master is
     reset   : in std_logic;
     aresetn : in std_logic;
 
+    master_idle : out std_logic;
+
     --Orca-internal memory-mapped slave
     oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
@@ -55,6 +57,8 @@ end entity a4l_master;
 architecture rtl of a4l_master is
   constant PROT_VAL : std_logic_vector(2 downto 0) := "000";
 
+  signal throttler_idle : std_logic;
+  
   signal unthrottled_oimm_readcomplete  : std_logic;
   signal unthrottled_oimm_writecomplete : std_logic;
   signal unthrottled_oimm_waitrequest : std_logic;
@@ -65,6 +69,8 @@ architecture rtl of a4l_master is
   signal aw_sent        : std_logic;
   signal w_sent         : std_logic;
 begin
+  master_idle <= throttler_idle;
+  
   request_throttler : oimm_throttler
     generic map (
       MAX_OUTSTANDING_REQUESTS => MAX_OUTSTANDING_REQUESTS
@@ -72,6 +78,8 @@ begin
     port map (
       clk   => clk,
       reset => reset,
+
+      throttler_idle => throttler_idle,
 
       --Orca-internal memory-mapped slave
       slave_oimm_requestvalid => oimm_requestvalid,

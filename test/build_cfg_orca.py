@@ -217,6 +217,23 @@ ORCA_BUILDS = \
                                     daux_addr_last=0,
                                     dcache_size=8192,
                                     uart_cfg=ZEDBOARD_UART_CFG),
+                  Xil_Orca_BuildCfg(system='zedboard',
+                                    reset_vector=0xC0000000,
+                                    interrupt_vector=0xC0000200,
+                                    btb_entries=0,
+                                    iuc_addr_base=0,
+                                    iuc_addr_last=0xFFFFFFFF,
+                                    iaux_addr_base=0,
+                                    iaux_addr_last=0,
+                                    icache_size=0,
+                                    duc_addr_base=0,
+                                    duc_addr_last=0xFFFFFFFF,
+                                    daux_addr_base=0,
+                                    daux_addr_last=0,
+                                    dcache_size=0,
+                                    max_ifetches_in_flight=0,
+                                    pipeline_stages=4,
+                                    uart_cfg=ZEDBOARD_UART_CFG),
               ]
 
 
