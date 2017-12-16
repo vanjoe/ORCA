@@ -315,6 +315,9 @@ begin
               pc_fifo_readdata <= pc_fifo_writedata;
             end if;
           else
+            if pc_fifo_empty = '1' then
+              pc_fifo_readdata <= pc_fifo_writedata;
+            end if;
             pc_fifo_full <= not pc_fifo_empty;
           end if;
         elsif pc_fifo_read = '1' then
@@ -334,6 +337,9 @@ begin
             end if;
           else
             instruction_fifo_full <= not instruction_fifo_empty;
+            if instruction_fifo_empty = '1' then
+              instruction_fifo_readdata <= instruction_fifo_writedata;
+            end if;
           end if;
         elsif instruction_fifo_read = '1' then
           instruction_fifo_full     <= '0';
