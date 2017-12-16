@@ -14,12 +14,14 @@ proc com { args } {
                      ../../rtl/orca.vhd                 \
                      ../../rtl/orca_core.vhd            \
                      ../../rtl/sys_call.vhd             \
-                     ../../rtl/lve_ci.vhd               \
                      ../../rtl/memory_interface.vhd     \
                      ../../rtl/cache_mux.vhd            \
-                     ../../rtl/lve_top.vhd              \
 							../../rtl/oimm_register.vhd        \
-                     ../../rtl/4port_mem_ultraplus.vhd  \
+							../../rtl/lve/lve_components.vhd   \
+                     ../../rtl/lve/lve_ci.vhd           \
+							../../rtl/lve/lve_core.vhd         \
+							../../rtl/lve/lve.vhd              \
+                     ../../rtl/lve/4port_mem_ultraplus.vhd  \
                      hdl/top_util_pkg.vhd               \
                      hdl/top_component_pkg.vhd          \
                      hdl/wb_ram.vhd                     \
@@ -107,37 +109,7 @@ proc com { args } {
 
 }
 
-proc wave_LVE { } {
-    if {[examine /top_tb/dut/sub_top/WITH_LVE/rv/LVE_ENABLE]} {
-   add wave -noupdate -divider "LVE"
-   add wave -hex /top_tb/dut/sub_top/WITH_LVE/rv/core/X/enable_lve/lve/*
-   add wave -noupdate -divider "LVE Scratchpad"
-   add wave -hex /top_tb/dut/sub_top/WITH_LVE/rv/core/X/enable_lve/lve/scratchpad_memory/*
-   add wave -noupdate -divider "LVE CI"
-   add wave -hex /top_tb/dut/sub_top/WITH_LVE/rv/core/X/enable_lve/lve/the_lve_ci/*
-    }
-}
-
-proc wave_X { } {
-    add wave -noupdate -divider "Execute (full)"
-    add wave -hex /top_tb/dut/sub_top/WITH_LVE/rv/core/X/*
-}
-
-proc wave_ALU { } {
-    add wave -noupdate -divider "ALU (full)"
-    add wave -hex /top_tb/dut/sub_top/WITH_LVE/rv/core/X/alu/*
-}
-
-proc wave_RF { } {
-    add wave -noupdate -divider "Register File (full)"
-    add wave -hex /top_tb/dut/sub_top/WITH_LVE/rv/core/D/the_register_file/*
-}
-
-proc wave_Top { } {
-    add wave -noupdate -divider "Orca top level (full)"
-    add wave -hex /top_tb/dut/sub_top/WITH_LVE/rv/core/*
-}
-
+source ../sim_waves.tcl
 proc recom { t {extra_waves false} } {
     noview wave
 
@@ -145,22 +117,9 @@ proc recom { t {extra_waves false} } {
 
     vsim -t 1ns work.top_tb
     add log -r *
-    add wave -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/clk
-    add wave -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/reset
-    add wave -noupdate -divider Decode
-    add wave -hex -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/D/the_register_file/registers(28)
-    add wave -noupdate -divider Execute
-    add wave -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/X/valid_instr
-    add wave -hex -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/X/pc_current
-    add wave -hex -noupdate /top_tb/dut/sub_top/WITH_LVE/rv/core/X/instruction
 
-    if { $extra_waves } {
-        wave_RF
-        wave_Top
-        wave_X
-        wave_ALU
-        wave_LVE
-    }
+	 orca_reset_waves "add wave" "add wave -divider" /top_tb/dut/sub_top/WITH_LVE/rv
+
 
     run $t
 }

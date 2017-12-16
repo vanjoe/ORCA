@@ -12,8 +12,8 @@ entity lve_top is
   generic (
     POWER_OPTIMIZED      : integer := 0;
     SCRATCHPAD_ADDR_BITS : integer := 16;
-    AXI_ENABLE           : integer range 0 to 1;
-    WISHBONE_ENABLE      : integer range 0 to 1);
+    AXI_ENABLE           : integer range 0 to 1 := 0;
+    WISHBONE_ENABLE      : integer range 0 to 1 := 0);
   port (
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
