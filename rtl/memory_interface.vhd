@@ -10,7 +10,6 @@ use work.constants_pkg.all;
 entity memory_interface is
   generic (
     REGISTER_SIZE         : positive range 32 to 32;
-    SCRATCHPAD_ADDR_BITS  : positive;
     WRITE_FIRST_SUPPORTED : boolean;
 
     --Auxiliary Interface Select
@@ -66,7 +65,6 @@ entity memory_interface is
     );
   port (
     clk            : in std_logic;
-    scratchpad_clk : in std_logic;
     reset          : in std_logic;
 
     --ICache control (Invalidate/flush/writeback/enable/disable)
@@ -98,14 +96,6 @@ entity memory_interface is
     lsu_oimm_readdatavalid : out std_logic;
     lsu_oimm_waitrequest   : out std_logic;
 
-    --Scratchpad memory-mapped slave
-    sp_address   : out std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
-    sp_byte_en   : out std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-    sp_write_en  : out std_logic;
-    sp_read_en   : out std_logic;
-    sp_writedata : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_readdata  : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_ack       : in  std_logic;
 
     -------------------------------------------------------------------------------
     --AVALON
@@ -348,32 +338,7 @@ entity memory_interface is
     DLMB_Ready        : in  std_logic;
     DLMB_Wait         : in  std_logic;
     DLMB_CE           : in  std_logic;
-    DLMB_UE           : in  std_logic;
-
-    -------------------------------------------------------------------------------
-    -- Scratchpad Slave
-    -------------------------------------------------------------------------------
-    --Avalon scratchpad slave
-    avm_scratch_address       : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
-    avm_scratch_byteenable    : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-    avm_scratch_read          : in  std_logic;
-    avm_scratch_readdata      : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    avm_scratch_write         : in  std_logic;
-    avm_scratch_writedata     : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    avm_scratch_waitrequest   : out std_logic;
-    avm_scratch_readdatavalid : out std_logic;
-
-    --WISHBONE scratchpad slave
-    sp_ADR_I   : in  std_logic_vector(SCRATCHPAD_ADDR_BITS-1 downto 0);
-    sp_DAT_O   : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_DAT_I   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_WE_I    : in  std_logic;
-    sp_SEL_I   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-    sp_STB_I   : in  std_logic;
-    sp_ACK_O   : out std_logic;
-    sp_CYC_I   : in  std_logic;
-    sp_CTI_I   : in  std_logic_vector(2 downto 0);
-    sp_STALL_O : out std_logic
+    DLMB_UE           : in  std_logic
     );
 end entity memory_interface;
 
@@ -1014,9 +979,6 @@ begin
   -- AVALON auxiliary interface
   -----------------------------------------------------------------------------
   avalon_enabled : if AVALON_AUX /= 0 generate
-    signal scratch_reading : std_logic;
-    signal scratch_writing : std_logic;
-  begin
     avm_instruction_address <= iaux_oimm_address;
     avm_instruction_read    <= iaux_oimm_readnotwrite and iaux_oimm_requestvalid;
     iaux_oimm_readdata      <= avm_instruction_readdata;
@@ -1032,36 +994,6 @@ begin
     daux_oimm_waitrequest   <= avm_data_waitrequest;
     daux_oimm_readdatavalid <= avm_data_readdatavalid;
 
-    sp_address              <= avm_scratch_address;
-    sp_byte_en              <= avm_scratch_byteenable;
-    sp_read_en              <= avm_scratch_read;
-    sp_write_en             <= avm_scratch_write;
-    sp_writedata            <= avm_scratch_writedata;
-    avm_scratch_readdata    <= sp_readdata;
-    avm_scratch_waitrequest <= (scratch_reading or scratch_writing) and (not sp_ack);
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        if (scratch_reading = '0' and scratch_writing = '0') or sp_ack = '1' then
-          scratch_reading <= avm_scratch_read;
-          scratch_writing <= avm_scratch_write;
-        end if;
-
-        if reset = '1' then
-          scratch_reading <= '0';
-          scratch_writing <= '0';
-        end if;
-      end if;
-    end process;
-    --Note this is not generic for WISHBONE where apparently ACK can be combinational based on
-    --STB/CYC (Avalon requires at least one clock edge between read and readdatavalid).
-    --However, the scratchpad will always have at least one cycle of delay so
-    --this is valid.
-    avm_scratch_readdatavalid <= sp_ack and scratch_reading;
-
-    sp_DAT_O   <= (others => '0');
-    sp_ACK_O   <= '0';
-    sp_STALL_O <= '1';
   end generate avalon_enabled;
   avalon_disabled : if AVALON_AUX = 0 generate
     avm_data_address          <= (others => '0');
@@ -1071,19 +1003,7 @@ begin
     avm_data_writedata        <= (others => '0');
     avm_instruction_address   <= (others => '0');
     avm_instruction_read      <= '0';
-    avm_scratch_readdata      <= (others => '0');
-    avm_scratch_waitrequest   <= '1';
-    avm_scratch_readdatavalid <= '0';
 
-    --Default to WISHBONE slave if not Avalon (LVE not interfaced to AXI yet)
-    sp_address   <= sp_ADR_I;
-    sp_DAT_O     <= sp_readdata;
-    sp_writedata <= sp_DAT_I;
-    sp_write_en  <= sp_WE_I and sp_STB_I and sp_CYC_I;
-    sp_read_en   <= not sp_WE_I and sp_STB_I and sp_CYC_I;
-    sp_byte_en   <= sp_SEL_I;
-    sp_ACK_O     <= sp_ack;
-    sp_STALL_O   <= '0';
   end generate avalon_disabled;
 
   -----------------------------------------------------------------------------

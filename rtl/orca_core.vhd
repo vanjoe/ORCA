@@ -23,7 +23,6 @@ entity orca_core is
     ENABLE_EXT_INTERRUPTS  : natural range 0 to 1;
     NUM_EXT_INTERRUPTS     : positive range 1 to 32;
     LVE_ENABLE             : natural range 0 to 1;
-    SCRATCHPAD_SIZE        : integer;
     WRITE_FIRST_SMALL_RAMS : boolean;
     FAMILY                 : string;
 
@@ -31,9 +30,8 @@ entity orca_core is
     HAS_DCACHE : boolean
     );
   port (
-    clk            : in std_logic;
-    scratchpad_clk : in std_logic;
-    reset          : in std_logic;
+    clk   : in std_logic;
+    reset : in std_logic;
 
     --ICache control (Invalidate/flush/writeback/enable/disable)
     from_icache_control_ready : in     std_logic;
@@ -64,14 +62,24 @@ entity orca_core is
     lsu_oimm_readdatavalid : in     std_logic;
     lsu_oimm_waitrequest   : in     std_logic;
 
-    --Scratchpad memory-mapped slave
-    sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-    sp_byte_en   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-    sp_write_en  : in  std_logic;
-    sp_read_en   : in  std_logic;
-    sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_ack       : out std_logic;
+
+    ---------------------------------------------------------------------------
+    -- Vector Co-Processor Port
+    ---------------------------------------------------------------------------
+    vcp_data0 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_data1 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_data2 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+    vcp_instruction      : out std_logic_vector(40 downto 0);
+    vcp_valid_instr      : out std_logic;
+    vcp_ready            : in  std_logic;
+    vcp_executing        : in  std_logic;
+    vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
+    vcp_alu_source_valid : in  std_logic;
+    vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_alu_result_valid : out std_logic;
 
     global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0)
     );
@@ -209,29 +217,19 @@ begin
       ENABLE_EXT_INTERRUPTS => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
       LVE_ENABLE            => LVE_ENABLE,
-      SCRATCHPAD_SIZE       => SCRATCHPAD_SIZE,
       FAMILY                => FAMILY,
-
       HAS_ICACHE => HAS_ICACHE,
       HAS_DCACHE => HAS_DCACHE
       )
     port map (
-      clk            => clk,
-      scratchpad_clk => scratchpad_clk,
-      reset          => reset,
+      clk   => clk,
+      reset => reset,
 
       global_interrupts     => global_interrupts,
       program_counter       => program_counter,
       core_idle             => core_idle,
       memory_interface_idle => memory_interface_idle,
 
-      sp_address   => sp_address,
-      sp_byte_en   => sp_byte_en,
-      sp_write_en  => sp_write_en,
-      sp_read_en   => sp_read_en,
-      sp_writedata => sp_writedata,
-      sp_readdata  => sp_readdata,
-      sp_ack       => sp_ack,
 
       to_execute_valid            => to_execute_valid,
       to_execute_program_counter  => decode_to_execute_program_counter,
@@ -274,7 +272,22 @@ begin
       to_dcache_control_valid   => to_dcache_control_valid,
       to_dcache_control_command => to_dcache_control_command,
 
-      interrupt_pending => interrupt_pending
+      interrupt_pending => interrupt_pending,
+
+      vcp_data0            => vcp_data0,
+      vcp_data1            => vcp_data1,
+      vcp_data2            => vcp_data2,
+      vcp_instruction      => vcp_instruction,
+      vcp_valid_instr      => vcp_valid_instr,
+      vcp_ready            => vcp_ready,
+      vcp_executing        => vcp_executing,
+      vcp_alu_data1        => vcp_alu_data1,
+      vcp_alu_data2        => vcp_alu_data2,
+      vcp_alu_op_size      => vcp_alu_op_size,
+      vcp_alu_source_valid => vcp_alu_source_valid,
+      vcp_alu_result       => vcp_alu_result,
+      vcp_alu_result_valid => vcp_alu_result_valid
+
       );
 
   core_idle <= ifetch_idle and decode_idle and execute_idle;

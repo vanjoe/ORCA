@@ -26,6 +26,7 @@ gui-qsys: $(QSYS_FILE)
 $(SYSTEM)/simulation/mentor/msim_setup.tcl: $(QSYS_FILE)
 	qsys-generate --simulation=vhdl $^
 	(cd $(SYSTEM)/simulation/submodules/vblox_orca; for i in *.vhd; do if [ -f ../../../../rtl/$$i ] ; then ln -sf ../../../../rtl/$$i $$i; fi; done; )
+	(cd $(SYSTEM)/simulation/submodules/vblox_lve; for i in *.vhd; do if [ -f ../../../../rtl/lve/$$i ] ; then ln -sf ../../../../rtl/lve/$$i $$i; fi; done; )
 
 test/rv32ui-p-add.qex:
 	../../tools/generate_hex_files.sh
@@ -44,7 +45,7 @@ testall: test/rv32ui-p-add.qex $(SYSTEM)/simulation/mentor/msim_setup.tcl $(TEST
 all: $(SYSTEM)/simulation/mentor/msim_setup.tcl
 	(cd $(SYSTEM)/simulation/mentor/; ln -sf ../../../test.hex .)
 
-sim: all $(SIM_FILE) $(SIM_WAVES_FILE)
+sim: all $(SIM_FILE) $(SIM_WAVES_FILE)  $(SYSTEM)/simulation/mentor/msim_setup.tcl
 	vsim -do $(SIM_FILE)
 clean:
 	rm -rf $(SYSTEMS) test test.hex

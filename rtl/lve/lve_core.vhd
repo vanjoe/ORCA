@@ -5,49 +5,46 @@ use IEEE.numeric_std.all;
 library work;
 use work.utils.all;
 use work.constants_pkg.all;
-use work.rv_components.all;
+use work.lve_components.all;
 
-entity lve_top is
+entity lve_core is
   generic (
-    REGISTER_SIZE    : natural;
-    SLAVE_DATA_WIDTH : natural;
-    POWER_OPTIMIZED  : boolean;
-    SCRATCHPAD_SIZE  : integer;
-    FAMILY           : string
+    POWER_OPTIMIZED : integer := 0;
+    SCRATCHPAD_SIZE : integer := 64*1024
     );
   port (
-    clk            : in  std_logic;
-    scratchpad_clk : in  std_logic;
-    reset          : in  std_logic;
-    instruction    : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    valid_instr    : in  std_logic;
-    stall_out      : out std_logic;
+    clk            : in std_logic;
+    scratchpad_clk : in std_logic;
+    reset          : in std_logic;
+    instruction    : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    valid_instr    : in std_logic;
 
-    rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs3_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
---    wb_data        : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
 
     slave_address  : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
     slave_read_en  : in  std_logic;
     slave_write_en : in  std_logic;
-    slave_byte_en  : in  std_logic_vector((SLAVE_DATA_WIDTH/8)-1 downto 0);
-    slave_data_in  : in  std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
-    slave_data_out : out std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
+    slave_byte_en  : in  std_logic_vector((LVE_WIDTH/8)-1 downto 0);
+    slave_data_in  : in  std_logic_vector(LVE_WIDTH-1 downto 0);
+    slave_data_out : out std_logic_vector(LVE_WIDTH-1 downto 0);
     slave_ack      : out std_logic;
+
+    rs1_data : in std_logic_vector(LVE_WIDTH-1 downto 0);
+    rs2_data : in std_logic_vector(LVE_WIDTH-1 downto 0);
+    rs3_data : in std_logic_vector(LVE_WIDTH-1 downto 0);
 
     lve_ready            : out    std_logic;
     lve_executing        : out    std_logic;
-    lve_alu_data1        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
-    lve_alu_data2        : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lve_alu_data1        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
+    lve_alu_data2        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
     lve_alu_op_size      : out    std_logic_vector(1 downto 0);
     lve_alu_source_valid : out    std_logic;
-    lve_alu_result       : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lve_alu_result       : in     std_logic_vector(LVE_WIDTH-1 downto 0);
     lve_alu_result_valid : in     std_logic
     );
 end entity;
 
-architecture rtl of lve_top is
+architecture rtl of lve_core is
   signal lve_instr       : std_logic;
   signal valid_lve_instr : std_logic;
   --parts of the instruction
@@ -69,16 +66,16 @@ architecture rtl of lve_top is
   signal zero_length_vector : std_logic;  --don't do anything for zero length vector
 
   --counters
-  signal elems_left_read  : unsigned(ptr'range);
-  signal elems_left_write : unsigned(ptr'range);
-  signal rows_left_read   : unsigned(ptr'range);
-  signal rows_left_write  : unsigned(ptr'range);
-  signal enum_value       : unsigned(REGISTER_SIZE-1 downto 0);
+  signal elems_left_read  : unsigned(ptr'range) :=(others => '0');
+  signal elems_left_write : unsigned(ptr'range) :=(others => '0');
+  signal rows_left_read   : unsigned(ptr'range) :=(others => '0');
+  signal rows_left_write  : unsigned(ptr'range) :=(others => '0');
+  signal enum_value       : unsigned(LVE_WIDTH-1 downto 0) :=(others => '0');
 
   --pointers
-  signal srca_ptr      : unsigned(ptr'range);
-  signal srcb_ptr      : unsigned(ptr'range);
-  signal dest_ptr      : unsigned(ptr'range);
+  signal srca_ptr      : unsigned(ptr'range) := (others => '0');
+  signal srcb_ptr      : unsigned(ptr'range) := (others => '0');
+  signal dest_ptr      : unsigned(ptr'range) := (others => '0');
   signal srca_row_ptr  : unsigned(ptr'range);
   signal srcb_row_ptr  : unsigned(ptr'range);
   signal dest_row_ptr  : unsigned(ptr'range);
@@ -88,9 +85,9 @@ architecture rtl of lve_top is
 
 
   --accumulator registers
-  signal result_muxed    : unsigned(REGISTER_SIZE-1 downto 0);
-  signal accumulator     : unsigned(REGISTER_SIZE-1 downto 0);
-  signal accumulator_reg : unsigned(REGISTER_SIZE-1 downto 0);
+  signal result_muxed    : unsigned(LVE_WIDTH-1 downto 0);
+  signal accumulator     : unsigned(LVE_WIDTH-1 downto 0);
+  signal accumulator_reg : unsigned(LVE_WIDTH-1 downto 0);
 
   --misc FSM state
   signal op5_alu    : std_logic;
@@ -100,11 +97,11 @@ architecture rtl of lve_top is
 
   --scratchpad
   signal wr_data_ready    : std_logic;
-  signal writeback_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal writeback_data   : std_logic_vector(LVE_WIDTH-1 downto 0);
   signal rd_en            : std_logic;
-  signal scalar_value     : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal srca_data_read   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal srcb_data_read   : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal scalar_value     : std_logic_vector(LVE_WIDTH-1 downto 0);
+  signal srca_data_read   : std_logic_vector(LVE_WIDTH-1 downto 0);
+  signal srcb_data_read   : std_logic_vector(LVE_WIDTH-1 downto 0);
   signal lve_source_valid : std_logic;
   signal wb_en            : std_logic;
   signal wb_byte_en       : std_logic_vector(3 downto 0);
@@ -112,7 +109,7 @@ architecture rtl of lve_top is
 --Move instruction signals
   signal mov_result_valid : std_logic;
   signal mov_wb_en        : std_logic;
-  signal mov_data_out     : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mov_data_out     : std_logic_vector(LVE_WIDTH-1 downto 0);
 
   --external pointer
   signal external_port_enable : std_logic;
@@ -120,14 +117,14 @@ architecture rtl of lve_top is
   signal slave_address_reg    : std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
   signal slave_read_en_reg    : std_logic;
   signal slave_write_en_reg   : std_logic;
-  signal slave_byte_en_reg    : std_logic_vector((SLAVE_DATA_WIDTH/8)-1 downto 0);
-  signal slave_data_in_reg    : std_logic_vector(SLAVE_DATA_WIDTH-1 downto 0);
+  signal slave_byte_en_reg    : std_logic_vector((LVE_WIDTH/8)-1 downto 0);
+  signal slave_data_in_reg    : std_logic_vector(LVE_WIDTH-1 downto 0);
 
   signal ci_func      : VCUSTOM_ENUM;
   signal ci_byte_en   : std_logic_vector(3 downto 0);
   signal ci_valid_in  : std_logic;
   signal ci_valid_out : std_logic;
-  signal ci_data_out  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal ci_data_out  : std_logic_vector(LVE_WIDTH-1 downto 0);
   signal ci_we        : std_logic;
 
 
@@ -271,7 +268,7 @@ begin
   -- logic here.
   -----------------------------------------------------------------------------
   mov_sgt_instr : process(clk)
-    variable sgt_a, sgt_b : signed(REGISTER_SIZE downto 0);
+    variable sgt_a, sgt_b : signed(LVE_WIDTH downto 0);
     variable sgt_msb_msk  : std_logic;
     variable is_zero      : boolean;
   begin
@@ -347,8 +344,6 @@ begin
 
 
   ci : lve_ci
-    generic map (
-      REGISTER_SIZE => REGISTER_SIZE)
     port map (
       clk              => clk,
       reset            => reset,
@@ -379,8 +374,7 @@ begin
     generic map (
       MEM_WIDTH       => 32,
       MEM_DEPTH       => SCRATCHPAD_SIZE/4,
-      POWER_OPTIMIZED => POWER_OPTIMIZED,
-      FAMILY          => FAMILY)
+      POWER_OPTIMIZED => POWER_OPTIMIZED = 1)
     port map (
       clk            => clk,
       scratchpad_clk => scratchpad_clk,

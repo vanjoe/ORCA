@@ -6,6 +6,7 @@ library work;
 use work.top_component_pkg.all;
 use work.top_util_pkg.all;
 use work.rv_components.all;
+use work.lve_components.all;
 
 entity vhdl_top is
   generic (
@@ -507,27 +508,39 @@ begin
       master_ACK_I   => sp_ACK);
 
   WITH_LVE : if USE_LVE = 1 generate
+    signal vcp_data0 : std_logic_vector(LVE_WIDTH-1 downto 0);
+    signal vcp_data1 : std_logic_vector(LVE_WIDTH-1 downto 0);
+    signal vcp_data2 : std_logic_vector(LVE_WIDTH-1 downto 0);
 
+    signal vcp_instruction      : std_logic_vector(40 downto 0);
+    signal vcp_valid_instr      : std_logic;
+    signal vcp_ready            : std_logic;
+    signal vcp_executing        : std_logic;
+    signal vcp_alu_data1        : std_logic_vector(LVE_WIDTH-1 downto 0);
+    signal vcp_alu_data2        : std_logic_vector(LVE_WIDTH-1 downto 0);
+    signal vcp_alu_op_size      : std_logic_vector(1 downto 0);
+    signal vcp_alu_source_valid : std_logic;
+    signal vcp_alu_result       : std_logic_vector(LVE_WIDTH-1 downto 0);
+    signal vcp_alu_result_valid : std_logic;
+  begin
     rv : component orca
       generic map (
-        REGISTER_SIZE        => REGISTER_SIZE,
-        RESET_VECTOR         => x"00000000",
-        WISHBONE_AUX         => 1,
-        MULTIPLY_ENABLE      => 1,
-        DIVIDE_ENABLE        => 0,
-        POWER_OPTIMIZED      => 0,
-        SHIFTER_MAX_CYCLES   => 32,
-        COUNTER_LENGTH       => 32,
-        PIPELINE_STAGES      => 4,
-        LVE_ENABLE           => 1,
-        ENABLE_EXCEPTIONS    => 0,
-        SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
-        FAMILY               => "LATTICE")
+        REGISTER_SIZE          => REGISTER_SIZE,
+        RESET_VECTOR           => x"00000000",
+        WISHBONE_AUX           => 1,
+        MULTIPLY_ENABLE        => 1,
+        DIVIDE_ENABLE          => 0,
+        POWER_OPTIMIZED        => 0,
+        SHIFTER_MAX_CYCLES     => 32,
+        COUNTER_LENGTH         => 32,
+        PIPELINE_STAGES        => 4,
+        LVE_ENABLE             => 1,
+        ENABLE_EXCEPTIONS      => 0,
+        FAMILY                 => "LATTICE")
       port map(
 
-        clk            => clk,
-        scratchpad_clk => clk_3x,
-        reset          => reset,
+        clk   => clk,
+        reset => reset,
 
         data_ADR_O   => data_ADR_O,
         data_DAT_I   => data_DAT_I,
@@ -548,40 +561,81 @@ begin
         instr_CTI_O   => instr_CTI_O,
         instr_STALL_I => instr_STALL_I,
 
-        sp_ADR_I   => sp_ADR,
-        sp_DAT_O   => sp_RDAT,
-        sp_DAT_I   => sp_WDAT,
-        sp_WE_I    => sp_WE,
-        sp_SEL_I   => sp_SEL,
-        sp_STB_I   => sp_STB,
-        sp_ACK_O   => sp_ACK,
-        sp_CYC_I   => sp_CYC,
-        sp_CTI_I   => sp_CTI,
-        sp_STALL_O => sp_STALL,
+        vcp_data0 => vcp_data0,
+        vcp_data1 => vcp_data1,
+        vcp_data2 => vcp_data2,
+
+        vcp_instruction      => vcp_instruction,
+        vcp_valid_instr      => vcp_valid_instr,
+        vcp_ready            => vcp_ready,
+        vcp_executing        => vcp_executing,
+        vcp_alu_data1        => vcp_alu_data1,
+        vcp_alu_data2        => vcp_alu_data2,
+        vcp_alu_op_size      => vcp_alu_op_size,
+        vcp_alu_source_valid => vcp_alu_source_valid,
+        vcp_alu_result       => vcp_alu_result,
+        vcp_alu_result_valid => vcp_alu_result_valid,
 
         global_interrupts => (others => '0'));
+
+    lve : lve_top
+      generic map (
+        POWER_OPTIMIZED      => 1,
+        SCRATCHPAD_ADDR_BITS => log2(SCRATCHPAD_SIZE),
+        WISHBONE_ENABLE      => 1)
+      port map (
+        clk            => clk,
+        scratchpad_clk => clk_3x,
+        reset          => reset,
+
+        slave_ADR_I   => sp_ADR,
+        slave_DAT_O   => sp_RDAT,
+        slave_DAT_I   => sp_WDAT,
+        slave_WE_I    => sp_WE,
+        slave_SEL_I   => sp_SEL,
+        slave_STB_I   => sp_STB,
+        slave_ACK_O   => sp_ACK,
+        slave_CYC_I   => sp_CYC,
+        slave_CTI_I   => sp_CTI,
+        slave_STALL_O => sp_STALL,
+
+        vcp_data0 => vcp_data0,
+        vcp_data1 => vcp_data1,
+        vcp_data2 => vcp_data2,
+
+        vcp_instruction      => vcp_instruction,
+        vcp_valid_instr      => vcp_valid_instr,
+        vcp_ready            => vcp_ready,
+        vcp_executing        => vcp_executing,
+        vcp_alu_data1        => vcp_alu_data1,
+        vcp_alu_data2        => vcp_alu_data2,
+        vcp_alu_op_size      => vcp_alu_op_size,
+        vcp_alu_source_valid => vcp_alu_source_valid,
+        vcp_alu_result       => vcp_alu_result,
+        vcp_alu_result_valid => vcp_alu_result_valid
+        );
+
+
   end generate WITH_LVE;
 
   WITHOUT_LVE : if USE_LVE = 0 generate
     rv : component orca
       generic map (
-        REGISTER_SIZE         => REGISTER_SIZE,
-        RESET_VECTOR          => x"00000000",
-        WISHBONE_AUX          => 1,
-        MULTIPLY_ENABLE       => 1,
-        DIVIDE_ENABLE         => 0,
-        SHIFTER_MAX_CYCLES    => 32,
-        COUNTER_LENGTH        => 32,
-        PIPELINE_STAGES       => 4,
-        LVE_ENABLE            => 0,
-        ENABLE_EXCEPTIONS     => 0,
-        SCRATCHPAD_ADDR_BITS  => log2(SCRATCHPAD_SIZE),
-        FAMILY                => "LATTICE")
+        REGISTER_SIZE      => REGISTER_SIZE,
+        RESET_VECTOR       => x"00000000",
+        WISHBONE_AUX       => 1,
+        MULTIPLY_ENABLE    => 1,
+        DIVIDE_ENABLE      => 0,
+        SHIFTER_MAX_CYCLES => 32,
+        COUNTER_LENGTH     => 32,
+        PIPELINE_STAGES    => 4,
+        LVE_ENABLE         => 0,
+        ENABLE_EXCEPTIONS  => 0,
+        FAMILY             => "LATTICE")
       port map(
 
-        clk            => clk,
-        scratchpad_clk => clk_3x,
-        reset          => reset,
+        clk   => clk,
+        reset => reset,
 
         data_ADR_O   => data_ADR_O,
         data_DAT_I   => data_DAT_I,
@@ -838,8 +892,8 @@ begin
 
       );
   sccb_pio_dat_o(sccb_pio_dat_o'left downto pio_out'length) <= (others => '0');
-  sccb_sda                                                    <= pio_out(0) when pio_oe(0) = '1' else 'Z';
-  pio_in(0)                                                   <= sccb_sda;
+  sccb_sda                                                  <= pio_out(0) when pio_oe(0) = '1' else 'Z';
+  pio_in(0)                                                 <= sccb_sda;
 
   sccb_scl  <= pio_out(1) when pio_oe(1) = '1' else 'Z';
   pio_in(1) <= sccb_scl;

@@ -26,30 +26,19 @@ entity execute is
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
     LVE_ENABLE            : natural;
-    SCRATCHPAD_SIZE       : integer;
     FAMILY                : string;
-
-    HAS_ICACHE : boolean;
-    HAS_DCACHE : boolean
+    HAS_ICACHE            : boolean;
+    HAS_DCACHE            : boolean
     );
   port (
-    clk            : in std_logic;
-    scratchpad_clk : in std_logic;
-    reset          : in std_logic;
+    clk   : in std_logic;
+    reset : in std_logic;
 
     global_interrupts     : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
     program_counter       : in unsigned(REGISTER_SIZE-1 downto 0);
     core_idle             : in std_logic;
     memory_interface_idle : in std_logic;
 
-    --LVE Scratchpad memory-mapped slave
-    sp_address   : in  std_logic_vector(log2(SCRATCHPAD_SIZE)-1 downto 0);
-    sp_byte_en   : in  std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
-    sp_write_en  : in  std_logic;
-    sp_read_en   : in  std_logic;
-    sp_writedata : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_readdata  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    sp_ack       : out std_logic;
 
     to_execute_valid            : in     std_logic;
     to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
@@ -98,7 +87,25 @@ entity execute is
     to_dcache_control_valid   : buffer std_logic;
     to_dcache_control_command : out    cache_control_command;
 
-    interrupt_pending : buffer std_logic
+    interrupt_pending : buffer std_logic;
+    ---------------------------------------------------------------------------
+    -- Vector Co-Processor Port
+    ---------------------------------------------------------------------------
+    vcp_data0         : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_data1         : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_data2         : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+
+    vcp_instruction      : out std_logic_vector(40 downto 0);
+    vcp_valid_instr      : out std_logic;
+    vcp_ready            : in  std_logic;
+    vcp_executing        : in  std_logic;
+    vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
+    vcp_alu_source_valid : in  std_logic;
+    vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_alu_result_valid : out std_logic
+
     );
 end entity execute;
 
@@ -138,7 +145,6 @@ architecture behavioural of execute is
   --Ready signals (branch unit always ready)
   signal alu_ready          : std_logic;
   signal lsu_ready          : std_logic;
-  signal lve_ready          : std_logic;
   signal from_syscall_ready : std_logic;
 
   signal branch_to_pc_correction_valid : std_logic;
@@ -153,15 +159,12 @@ architecture behavioural of execute is
   signal syscall_to_pc_correction_valid : std_logic;
   signal syscall_to_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal lve_executing        : std_logic;
-  signal lve_was_executing    : std_logic;
-  signal lve_alu_data1        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal lve_alu_data2        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal lve_alu_source_valid : std_logic;
-  signal simd_op_size         : std_logic_vector(1 downto 0);
+  signal simd_op_size : std_logic_vector(1 downto 0);
 
   signal from_writeback_ready : std_logic;
   signal to_rf_mux            : std_logic_vector(1 downto 0);
+
+  signal vcp_was_executing : std_logic;
 begin
   valid_instr <= to_execute_valid and from_writeback_ready;
 
@@ -175,10 +178,10 @@ begin
   -- propogate if the next instruction uses them.
   --
   -----------------------------------------------------------------------------
-  rs1_data <= lve_alu_data1 when lve_alu_source_valid = '1' else
+  rs1_data <= vcp_alu_data1 when vcp_alu_source_valid = '1' else
               alu_data_out when rs1_mux = ALU_FWD else
               to_execute_rs1_data;
-  rs2_data <= lve_alu_data2 when lve_alu_source_valid = '1' else
+  rs2_data <= vcp_alu_data2 when vcp_alu_source_valid = '1' else
               alu_data_out when rs2_mux = ALU_FWD else
               to_execute_rs2_data;
   rs3_data <= alu_data_out when rs3_mux = ALU_FWD else
@@ -186,8 +189,8 @@ begin
 
   from_execute_ready <= (not to_execute_valid) or (from_writeback_ready and
                                                    lsu_ready and
-                                                   (alu_ready or lve_was_executing) and
-                                                   lve_ready and
+                                                   (alu_ready or vcp_was_executing) and
+                                                   (vcp_ready or bool_to_sl(LVE_ENABLE = 0)) and
                                                    from_syscall_ready);
 
   --No forward stall; system calls, loads, and branches aren't forwarded.
@@ -249,9 +252,9 @@ begin
       data_out_valid     => alu_data_out_valid,
       alu_ready          => alu_ready,
 
-      lve_data1        => lve_alu_data1,
-      lve_data2        => lve_alu_data2,
-      lve_source_valid => lve_alu_source_valid
+      lve_data1        => vcp_alu_data1,
+      lve_data2        => vcp_alu_data2,
+      lve_source_valid => vcp_alu_source_valid
       );
 
   branch : branch_unit
@@ -363,62 +366,26 @@ begin
       interrupt_pending => interrupt_pending
       );
 
-  enable_lve : if LVE_ENABLE /= 0 generate
-    lve : lve_top
-      generic map (
-        REGISTER_SIZE    => REGISTER_SIZE,
-        SCRATCHPAD_SIZE  => SCRATCHPAD_SIZE,
-        POWER_OPTIMIZED  => POWER_OPTIMIZED,
-        SLAVE_DATA_WIDTH => REGISTER_SIZE,
-        FAMILY           => FAMILY
-        )
-      port map (
-        clk            => clk,
-        scratchpad_clk => scratchpad_clk,
-        reset          => reset,
-        instruction    => to_execute_instruction,
-        valid_instr    => valid_instr,
-
-        rs1_data => rs1_data,
-        rs2_data => rs2_data,
-        rs3_data => rs3_data,
-
-        slave_address  => sp_address,
-        slave_read_en  => sp_read_en,
-        slave_write_en => sp_write_en,
-        slave_byte_en  => sp_byte_en,
-        slave_data_in  => sp_writedata,
-        slave_data_out => sp_readdata,
-        slave_ack      => sp_ack,
-
-        lve_ready            => lve_ready,
-        lve_executing        => lve_executing,
-        lve_alu_data1        => lve_alu_data1,
-        lve_alu_data2        => lve_alu_data2,
-        lve_alu_op_size      => simd_op_size,
-        lve_alu_source_valid => lve_alu_source_valid,
-        lve_alu_result       => alu_data_out,
-        lve_alu_result_valid => alu_data_out_valid
-        );
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        lve_was_executing <= lve_executing;
-      end if;
-    end process;
-  end generate enable_lve;
-  n_enable_lve : if LVE_ENABLE = 0 generate
-    lve_ready            <= '1';
-    lve_executing        <= '0';
-    lve_was_executing    <= '0';
-    simd_op_size         <= LVE_WORD_SIZE;
-    lve_alu_source_valid <= '0';
-    lve_alu_data1        <= (others => '-');
-    lve_alu_data2        <= (others => '-');
-    sp_readdata          <= (others => '-');
-    sp_ack               <= '-';
-  end generate n_enable_lve;
-
+  vcp_port : vcp_handler
+    generic map (
+      REGISTER_SIZE => REGISTER_SIZE,
+      LVE_ENABLE    => LVE_ENABLE)
+    port map (
+      clk             => clk,
+      reset           => reset,
+      instruction     => to_execute_instruction,
+      valid_instr     => valid_instr,
+      rs1_data        => rs1_data,
+      rs2_data        => rs2_data,
+      rs3_data        => rs3_data,
+      vcp_data0       => vcp_data0,
+      vcp_data1       => vcp_data1,
+      vcp_data2       => vcp_data2,
+      vcp_instruction => vcp_instruction,
+      vcp_valid_instr => vcp_valid_instr);
+  vcp_alu_result_valid <= alu_data_out_valid;
+  vcp_alu_result       <= alu_data_out;
+  vcp_was_executing    <= vcp_executing when rising_edge(clk);
 
   ------------------------------------------------------------------------------
   -- PC correction (branch mispredict, interrupt, etc.)
@@ -474,7 +441,7 @@ begin
   to_rf_valid <= (from_syscall_valid or
                   ld_data_enable or
                   from_branch_valid or
-                  (alu_data_out_valid and (not lve_was_executing))) when
+                  (alu_data_out_valid and (not vcp_was_executing))) when
                  to_rf_select /= std_logic_vector(REGISTER_ZERO) else
                  '0';
 

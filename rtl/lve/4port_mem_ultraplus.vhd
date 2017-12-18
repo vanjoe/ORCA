@@ -10,8 +10,7 @@ use work.utils.all;
 entity ram_1port is
   generic (
     MEM_DEPTH : natural := 1024;
-    MEM_WIDTH : natural := 32;
-    FAMILY    : string  := "GENERIC"
+    MEM_WIDTH : natural := 32
     );
   port (
     clk        : in  std_logic;
@@ -42,98 +41,77 @@ architecture behav of ram_1port is
       DATAOUT    : out std_logic_vector(15 downto 0));
   end component;
 
+  constant SPRAM_ADDR_BITS : positive := 14;
+  constant SPRAM_WIDTH     : positive := 16;
+  constant MEM_DEPTH_RAMS  : positive := (MEM_DEPTH+(2**SPRAM_ADDR_BITS)-1)/(2**SPRAM_ADDR_BITS);
+
+  signal spram_address : std_logic_vector(SPRAM_ADDR_BITS-1 downto 0);
+  type mask_wren_vector is array (natural range <>) of std_logic_vector(3 downto 0);
+  signal mask_wren     : mask_wren_vector((MEM_WIDTH/SPRAM_WIDTH)-1 downto 0);
+
+  signal we_depth       : std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
+  type data_out_vector is array (natural range <>) of std_logic_vector(MEM_WIDTH-1 downto 0);
+  signal data_out_depth : data_out_vector(MEM_DEPTH_RAMS-1 downto 0);
+  signal chip_sel_depth : std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
+  signal standby_depth  : std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
+
 begin
 
-  behavioural_ram : if FAMILY /= "LATTICE" generate
-    type ram_type is array (0 to MEM_DEPTH-1) of std_logic_vector(MEM_WIDTH-1 downto 0);
-    signal ram : ram_type;
-    signal Q   : std_logic_vector(MEM_WIDTH-1 downto 0);
-  begin
-    process (clk)
+
+  spram_address <= std_logic_vector(resize(unsigned(addr_d1), SPRAM_ADDR_BITS));
+
+  one_deep_gen : if MEM_DEPTH <= (2**SPRAM_ADDR_BITS) generate
+    we_depth(0)       <= wr_en_d1;
+    chip_sel_depth(0) <= chip_sel;
+    data_register : process (clk) is
     begin
       if rising_edge(clk) then
-        Q        <= ram(to_integer(unsigned(addr_d1)));
-        data_out <= Q;
-        for b in 0 to (MEM_WIDTH/8)-1 loop
-          if wr_en_d1 = '1' and byte_en_d1(b) = '1' then
-            ram(to_integer(unsigned(addr_d1)))(((b+1)*8)-1 downto b*8) <= data_in_d1(8*(b+1)-1 downto 8*b);
-          end if;
-        end loop;  -- b
+        data_out <= data_out_depth(0);
       end if;
-    end process;
-
-  end generate behavioural_ram;
-
-  lattice_ram : if FAMILY = "LATTICE" generate
-    constant SPRAM_ADDR_BITS : positive := 14;
-    constant SPRAM_WIDTH     : positive := 16;
-    constant MEM_DEPTH_RAMS  : positive := (MEM_DEPTH+(2**SPRAM_ADDR_BITS)-1)/(2**SPRAM_ADDR_BITS);
-
-    signal spram_address : std_logic_vector(SPRAM_ADDR_BITS-1 downto 0);
-    type mask_wren_vector is array (natural range <>) of std_logic_vector(3 downto 0);
-    signal mask_wren     : mask_wren_vector((MEM_WIDTH/SPRAM_WIDTH)-1 downto 0);
-
-    signal we_depth       : std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
-    type data_out_vector is array (natural range <>) of std_logic_vector(MEM_WIDTH-1 downto 0);
-    signal data_out_depth : data_out_vector(MEM_DEPTH_RAMS-1 downto 0);
-    signal chip_sel_depth : std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
-    signal standby_depth  : std_logic_vector(MEM_DEPTH_RAMS-1 downto 0);
+    end process data_register;
+  end generate one_deep_gen;
+  multiple_deep_gen : if MEM_DEPTH > (2**SPRAM_ADDR_BITS) generate
+    signal depth_select_in  : unsigned((log2(MEM_DEPTH)-SPRAM_ADDR_BITS)-1 downto 0);
+    signal depth_select_out : unsigned((log2(MEM_DEPTH)-SPRAM_ADDR_BITS)-1 downto 0);
   begin
-    spram_address <= std_logic_vector(resize(unsigned(addr_d1), SPRAM_ADDR_BITS));
+    depth_select_in <= unsigned(addr_d1(addr_d1'left downto SPRAM_ADDR_BITS));
 
-    one_deep_gen : if MEM_DEPTH <= (2**SPRAM_ADDR_BITS) generate
-      we_depth(0)       <= wr_en_d1;
-      chip_sel_depth(0) <= chip_sel;
-      data_register : process (clk) is
-      begin
-        if rising_edge(clk) then
-          data_out <= data_out_depth(0);
-        end if;
-      end process data_register;
-    end generate one_deep_gen;
-    multiple_deep_gen : if MEM_DEPTH > (2**SPRAM_ADDR_BITS) generate
-      signal depth_select_in  : unsigned((log2(MEM_DEPTH)-SPRAM_ADDR_BITS)-1 downto 0);
-      signal depth_select_out : unsigned((log2(MEM_DEPTH)-SPRAM_ADDR_BITS)-1 downto 0);
+    deep_ram_gen : for gdepth in MEM_DEPTH_RAMS-1 downto 0 generate
+      we_depth(gdepth) <= wr_en_d1 when (depth_select_in = to_unsigned(gdepth, log2(MEM_DEPTH)-SPRAM_ADDR_BITS)) else
+                          '0';
+      chip_sel_depth(gdepth) <= chip_sel when (depth_select_in = to_unsigned(gdepth, log2(MEM_DEPTH)-SPRAM_ADDR_BITS)) else
+                                '0';
+    end generate deep_ram_gen;
+    standby_depth <= not chip_sel_depth;
+    data_register : process (clk) is
     begin
-      depth_select_in <= unsigned(addr_d1(addr_d1'left downto SPRAM_ADDR_BITS));
+      if rising_edge(clk) then
+        depth_select_out <= depth_select_in;
+        data_out         <= data_out_depth(to_integer(depth_select_out));
+      end if;
+    end process data_register;
+  end generate multiple_deep_gen;
 
-      deep_ram_gen : for gdepth in MEM_DEPTH_RAMS-1 downto 0 generate
-        we_depth(gdepth) <= wr_en_d1 when (depth_select_in = to_unsigned(gdepth, log2(MEM_DEPTH)-SPRAM_ADDR_BITS)) else
-                            '0';
-        chip_sel_depth(gdepth) <= chip_sel when (depth_select_in = to_unsigned(gdepth, log2(MEM_DEPTH)-SPRAM_ADDR_BITS)) else
-                                  '0';
-      end generate deep_ram_gen;
-      standby_depth <= not chip_sel_depth;
-      data_register : process (clk) is
-      begin
-        if rising_edge(clk) then
-          depth_select_out <= depth_select_in;
-          data_out         <= data_out_depth(to_integer(depth_select_out));
-        end if;
-      end process data_register;
-    end generate multiple_deep_gen;
+  parallel_ram_gen : for gram in (MEM_WIDTH/SPRAM_WIDTH)-1 downto 0 generate
+    mask_wren(gram) <= byte_en_d1((gram*2)+1) & byte_en_d1((gram*2)+1) & byte_en_d1((gram*2)+0) & byte_en_d1((gram*2)+0);
 
-    parallel_ram_gen : for gram in (MEM_WIDTH/SPRAM_WIDTH)-1 downto 0 generate
-      mask_wren(gram) <= byte_en_d1((gram*2)+1) & byte_en_d1((gram*2)+1) & byte_en_d1((gram*2)+0) & byte_en_d1((gram*2)+0);
+    deep_ram_gen : for gdepth in MEM_DEPTH_RAMS-1 downto 0 generate
 
-      deep_ram_gen : for gdepth in MEM_DEPTH_RAMS-1 downto 0 generate
-
-        SPRAM : component SB_SPRAM256KA
-          port map (
-            ADDRESS    => spram_address,
-            DATAIN     => data_in_d1(((gram+1)*SPRAM_WIDTH)-1 downto gram*SPRAM_WIDTH),
-            MASKWREN   => mask_wren(gram),
-            WREN       => we_depth(gdepth),
-            CHIPSELECT => chip_sel_depth(gdepth),
-            CLOCK      => clk,
-            STANDBY    => standby_depth(gdepth),
-            SLEEP      => '0',
-            POWEROFF   => '1',
-            DATAOUT    => data_out_depth(gdepth)(((gram+1)*SPRAM_WIDTH)-1 downto gram*SPRAM_WIDTH)
-            );
-      end generate deep_ram_gen;
-    end generate parallel_ram_gen;
-  end generate lattice_ram;
+      SPRAM : component SB_SPRAM256KA
+        port map (
+          ADDRESS    => spram_address,
+          DATAIN     => data_in_d1(((gram+1)*SPRAM_WIDTH)-1 downto gram*SPRAM_WIDTH),
+          MASKWREN   => mask_wren(gram),
+          WREN       => we_depth(gdepth),
+          CHIPSELECT => chip_sel_depth(gdepth),
+          CLOCK      => clk,
+          STANDBY    => standby_depth(gdepth),
+          SLEEP      => '0',
+          POWEROFF   => '1',
+          DATAOUT    => data_out_depth(gdepth)(((gram+1)*SPRAM_WIDTH)-1 downto gram*SPRAM_WIDTH)
+          );
+    end generate deep_ram_gen;
+  end generate parallel_ram_gen;
 
 end architecture behav;
 
@@ -152,8 +130,7 @@ entity ram_4port is
   generic (
     MEM_DEPTH       : natural;
     MEM_WIDTH       : natural;
-    POWER_OPTIMIZED : boolean;
-    FAMILY          : string
+    POWER_OPTIMIZED : boolean
     );
   port (
     clk            : in std_logic;
@@ -196,8 +173,7 @@ architecture rtl of ram_4port is
   component ram_1port is
     generic (
       MEM_DEPTH : natural := 1024;
-      MEM_WIDTH : natural := 32;
-      FAMILY    : string  := "GENERIC"
+      MEM_WIDTH : natural := 32
       );
     port (
       clk        : in  std_logic;
@@ -362,8 +338,7 @@ begin
   actual_ram : component ram_1port
     generic map (
       MEM_DEPTH => MEM_DEPTH,
-      MEM_WIDTH => MEM_WIDTH,
-      FAMILY    => FAMILY)
+      MEM_WIDTH => MEM_WIDTH)
     port map (
       clk        => scratchpad_clk,
       byte_en_d1 => actual_byte_en_d1,
