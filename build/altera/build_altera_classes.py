@@ -924,7 +924,7 @@ class Alt_Orca_BuildCfg(Orca_BuildCfgBase):
         # Configure will work.
         jtagd_output = subprocess.check_output('jtagd', stderr=subprocess.STDOUT)
         cmd = 'jtagconfig'
-        tries_left = 5
+        tries_left = 2
 
         while 1:
             try:

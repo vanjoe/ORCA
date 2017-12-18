@@ -1018,7 +1018,7 @@ class Xil_Orca_SWTest(Orca_SWTest):
         family = self.build_cfg.family
         pgm_cmd = 'ELF_FILE=NONE make -C {} pgm'.format(self.build_cfg.dstdir)
 
-        tries_remaining = 3
+        tries_remaining = 2
         success = False
         timeout_length = 300
 
@@ -1075,7 +1075,7 @@ class Xil_Orca_SWTest(Orca_SWTest):
             
         run_cmd = 'ELF_FILE=NONE make -C {} run'.format(self.build_cfg.dstdir)
 
-        tries_remaining = 3
+        tries_remaining = 2
         success = False
         timeout_length = 300
 

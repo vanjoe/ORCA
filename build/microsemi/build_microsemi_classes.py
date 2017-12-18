@@ -956,7 +956,7 @@ class Mcsm_Orca_SWTest(Orca_SWTest):
             
         # Program the bitstream.
         cmd = 'make -C {} microsemi_pgm'.format(self.build_cfg.dstdir)
-        tries_remaining = 10
+        tries_remaining = 2
         while(1):
             logging.info('Attempting to flash device ({} tries remaining).'\
                 .format(tries_remaining))
