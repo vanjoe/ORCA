@@ -525,22 +525,22 @@ begin
   begin
     rv : component orca
       generic map (
-        REGISTER_SIZE        => REGISTER_SIZE,
-        RESET_VECTOR         => x"00000000",
-        WISHBONE_AUX         => 1,
-        MULTIPLY_ENABLE      => 1,
-        DIVIDE_ENABLE        => 0,
-        POWER_OPTIMIZED      => 0,
-        SHIFTER_MAX_CYCLES   => 32,
-        COUNTER_LENGTH       => 32,
-        PIPELINE_STAGES      => 4,
-        LVE_ENABLE           => 1,
-        ENABLE_EXCEPTIONS    => 0,
-        FAMILY               => "LATTICE")
+        REGISTER_SIZE          => REGISTER_SIZE,
+        RESET_VECTOR           => x"00000000",
+        WISHBONE_AUX           => 1,
+        MULTIPLY_ENABLE        => 1,
+        DIVIDE_ENABLE          => 0,
+        POWER_OPTIMIZED        => 0,
+        SHIFTER_MAX_CYCLES     => 32,
+        COUNTER_LENGTH         => 32,
+        PIPELINE_STAGES        => 4,
+        LVE_ENABLE             => 1,
+        ENABLE_EXCEPTIONS      => 0,
+        FAMILY                 => "LATTICE")
       port map(
 
-        clk            => clk,
-        reset          => reset,
+        clk   => clk,
+        reset => reset,
 
         data_ADR_O   => data_ADR_O,
         data_DAT_I   => data_DAT_I,
@@ -621,21 +621,21 @@ begin
   WITHOUT_LVE : if USE_LVE = 0 generate
     rv : component orca
       generic map (
-        REGISTER_SIZE        => REGISTER_SIZE,
-        RESET_VECTOR         => x"00000000",
-        WISHBONE_AUX         => 1,
-        MULTIPLY_ENABLE      => 1,
-        DIVIDE_ENABLE        => 0,
-        SHIFTER_MAX_CYCLES   => 32,
-        COUNTER_LENGTH       => 32,
-        PIPELINE_STAGES      => 4,
-        LVE_ENABLE           => 0,
-        ENABLE_EXCEPTIONS    => 0,
-        FAMILY               => "LATTICE")
+        REGISTER_SIZE      => REGISTER_SIZE,
+        RESET_VECTOR       => x"00000000",
+        WISHBONE_AUX       => 1,
+        MULTIPLY_ENABLE    => 1,
+        DIVIDE_ENABLE      => 0,
+        SHIFTER_MAX_CYCLES => 32,
+        COUNTER_LENGTH     => 32,
+        PIPELINE_STAGES    => 4,
+        LVE_ENABLE         => 0,
+        ENABLE_EXCEPTIONS  => 0,
+        FAMILY             => "LATTICE")
       port map(
 
-        clk            => clk,
-        reset          => reset,
+        clk   => clk,
+        reset => reset,
 
         data_ADR_O   => data_ADR_O,
         data_DAT_I   => data_DAT_I,

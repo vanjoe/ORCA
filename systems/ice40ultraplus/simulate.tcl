@@ -16,6 +16,7 @@ proc com { args } {
                      ../../rtl/sys_call.vhd             \
                      ../../rtl/memory_interface.vhd     \
                      ../../rtl/cache_mux.vhd            \
+							../../rtl/vcp_handler.vhd          \
 							../../rtl/oimm_register.vhd        \
 							../../rtl/lve/lve_components.vhd   \
                      ../../rtl/lve/lve_ci.vhd           \

@@ -374,8 +374,7 @@ begin
     generic map (
       MEM_WIDTH       => 32,
       MEM_DEPTH       => SCRATCHPAD_SIZE/4,
-      POWER_OPTIMIZED => POWER_OPTIMIZED = 1,
-      FAMILY          => "ALTERA")
+      POWER_OPTIMIZED => POWER_OPTIMIZED = 1)
     port map (
       clk            => clk,
       scratchpad_clk => scratchpad_clk,
