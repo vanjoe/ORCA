@@ -158,8 +158,7 @@ package lve_components is
     generic (
       MEM_DEPTH       : natural;
       MEM_WIDTH       : natural;
-      POWER_OPTIMIZED : boolean;
-      FAMILY          : string
+      POWER_OPTIMIZED : boolean
       );
     port (
       clk            : in std_logic;

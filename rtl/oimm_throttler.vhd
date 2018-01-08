@@ -19,13 +19,13 @@ entity oimm_throttler is
 
     throttler_idle : out std_logic;
 
-    --Orca-internal memory-mapped slave
+    --ORCA-internal memory-mapped slave
     slave_oimm_requestvalid : in  std_logic;
     slave_oimm_readnotwrite : in  std_logic;
     slave_oimm_writelast    : in  std_logic;
     slave_oimm_waitrequest  : out std_logic;
 
-    --Orca-internal memory-mapped master
+    --ORCA-internal memory-mapped master
     master_oimm_requestvalid  : out std_logic;
     master_oimm_readcomplete  : in  std_logic;
     master_oimm_writecomplete : in  std_logic;

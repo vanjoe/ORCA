@@ -14,7 +14,7 @@ entity axi_master is
     ADDRESS_WIDTH            : integer;
     DATA_WIDTH               : integer;
     ID_WIDTH                 : positive;
-    MAX_BURSTLENGTH          : positive;
+    LOG2_BURSTLENGTH         : positive;
     MAX_OUTSTANDING_REQUESTS : natural;
     REQUEST_REGISTER         : natural range 0 to 2;
     RETURN_REGISTER          : natural range 0 to 1
@@ -26,23 +26,22 @@ entity axi_master is
 
     master_idle : out std_logic;
 
-    --Orca-internal memory-mapped slave
-    oimm_address            : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-    oimm_burstlength        : in     std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0);
-    oimm_burstlength_minus1 : in     std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
-    oimm_byteenable         : in     std_logic_vector((DATA_WIDTH/8)-1 downto 0);
-    oimm_requestvalid       : in     std_logic;
-    oimm_readnotwrite       : in     std_logic;
-    oimm_writedata          : in     std_logic_vector(DATA_WIDTH-1 downto 0);
-    oimm_writelast          : in     std_logic;
-    oimm_readdata           : out    std_logic_vector(DATA_WIDTH-1 downto 0);
-    oimm_readdatavalid      : out    std_logic;
-    oimm_waitrequest        : buffer std_logic;
+    --ORCA-internal memory-mapped slave
+    oimm_address            : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+    oimm_burstlength_minus1 : in  std_logic_vector(LOG2_BURSTLENGTH-1 downto 0);
+    oimm_byteenable         : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
+    oimm_requestvalid       : in  std_logic;
+    oimm_readnotwrite       : in  std_logic;
+    oimm_writedata          : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+    oimm_writelast          : in  std_logic;
+    oimm_readdata           : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    oimm_readdatavalid      : out std_logic;
+    oimm_waitrequest        : out std_logic;
 
     --AXI memory-mapped master
     AWID    : out std_logic_vector(ID_WIDTH-1 downto 0);
     AWADDR  : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-    AWLEN   : out std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
+    AWLEN   : out std_logic_vector(LOG2_BURSTLENGTH-1 downto 0);
     AWSIZE  : out std_logic_vector(2 downto 0);
     AWBURST : out std_logic_vector(1 downto 0);
     AWLOCK  : out std_logic_vector(1 downto 0);
@@ -65,7 +64,7 @@ entity axi_master is
 
     ARID    : out std_logic_vector(ID_WIDTH-1 downto 0);
     ARADDR  : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-    ARLEN   : out std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
+    ARLEN   : out std_logic_vector(LOG2_BURSTLENGTH-1 downto 0);
     ARSIZE  : out std_logic_vector(2 downto 0);
     ARBURST : out std_logic_vector(1 downto 0);
     ARLOCK  : out std_logic_vector(1 downto 0);
@@ -93,8 +92,7 @@ architecture rtl of axi_master is
   signal throttler_idle : std_logic;
 
   signal registered_oimm_address            : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-  signal registered_oimm_burstlength        : std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0);
-  signal registered_oimm_burstlength_minus1 : std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
+  signal registered_oimm_burstlength_minus1 : std_logic_vector(LOG2_BURSTLENGTH-1 downto 0);
   signal registered_oimm_byteenable         : std_logic_vector((DATA_WIDTH/8)-1 downto 0);
   signal registered_oimm_requestvalid       : std_logic;
   signal registered_oimm_readnotwrite       : std_logic;
@@ -125,7 +123,7 @@ begin
     generic map (
       ADDRESS_WIDTH    => ADDRESS_WIDTH,
       DATA_WIDTH       => DATA_WIDTH,
-      MAX_BURSTLENGTH  => MAX_BURSTLENGTH,
+      LOG2_BURSTLENGTH => LOG2_BURSTLENGTH,
       REQUEST_REGISTER => REQUEST_REGISTER,
       RETURN_REGISTER  => RETURN_REGISTER
       )
@@ -135,9 +133,8 @@ begin
 
       register_idle => register_idle,
 
-      --Orca-internal memory-mapped slave
+      --ORCA-internal memory-mapped slave
       slave_oimm_address            => oimm_address,
-      slave_oimm_burstlength        => oimm_burstlength,
       slave_oimm_burstlength_minus1 => oimm_burstlength_minus1,
       slave_oimm_byteenable         => oimm_byteenable,
       slave_oimm_requestvalid       => oimm_requestvalid,
@@ -148,9 +145,8 @@ begin
       slave_oimm_readdatavalid      => oimm_readdatavalid,
       slave_oimm_waitrequest        => oimm_waitrequest,
 
-      --Orca-internal memory-mapped master
+      --ORCA-internal memory-mapped master
       master_oimm_address            => registered_oimm_address,
-      master_oimm_burstlength        => registered_oimm_burstlength,
       master_oimm_burstlength_minus1 => registered_oimm_burstlength_minus1,
       master_oimm_byteenable         => registered_oimm_byteenable,
       master_oimm_requestvalid       => registered_oimm_requestvalid,
@@ -175,13 +171,13 @@ begin
 
       throttler_idle => throttler_idle,
 
-      --Orca-internal memory-mapped slave
+      --ORCA-internal memory-mapped slave
       slave_oimm_requestvalid => registered_oimm_requestvalid,
       slave_oimm_readnotwrite => registered_oimm_readnotwrite,
       slave_oimm_writelast    => registered_oimm_writelast,
       slave_oimm_waitrequest  => unregistered_oimm_waitrequest,
 
-      --Orca-internal memory-mapped master
+      --ORCA-internal memory-mapped master
       master_oimm_requestvalid  => throttled_oimm_requestvalid,
       master_oimm_readcomplete  => unthrottled_oimm_readcomplete,
       master_oimm_writecomplete => unthrottled_oimm_writecomplete,

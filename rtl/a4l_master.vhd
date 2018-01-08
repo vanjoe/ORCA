@@ -17,7 +17,7 @@ entity a4l_master is
 
     master_idle : out std_logic;
 
-    --Orca-internal memory-mapped slave
+    --ORCA-internal memory-mapped slave
     oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
     oimm_requestvalid  : in  std_logic;
@@ -81,13 +81,13 @@ begin
 
       throttler_idle => throttler_idle,
 
-      --Orca-internal memory-mapped slave
+      --ORCA-internal memory-mapped slave
       slave_oimm_requestvalid => oimm_requestvalid,
       slave_oimm_readnotwrite => oimm_readnotwrite,
       slave_oimm_writelast    => '1',
       slave_oimm_waitrequest  => oimm_waitrequest,
 
-      --Orca-internal memory-mapped master
+      --ORCA-internal memory-mapped master
       master_oimm_requestvalid  => throttled_oimm_requestvalid,
       master_oimm_readcomplete  => unthrottled_oimm_readcomplete,
       master_oimm_writecomplete => unthrottled_oimm_writecomplete,

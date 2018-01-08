@@ -24,7 +24,7 @@ proc create_bd {proj_dir proj_name bd_file bd_changes} {
     set bd_design [glob $proj_dir/$proj_name.srcs/[current_fileset]/bd/*/*.bd]
     open_bd_design $bd_design
     foreach {property value} $bd_changes {
-	puts "Changing Orca parameter: set_property -dict [list CONFIG.$property $value] [get_bd_cells orca]"
+	puts "Changing ORCA parameter: set_property -dict [list CONFIG.$property $value] [get_bd_cells orca]"
         set_property -dict [list CONFIG.$property $value] [get_bd_cells orca]
     }
     validate_bd_design -force

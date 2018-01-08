@@ -10,7 +10,7 @@ entity oimm_register is
   generic (
     ADDRESS_WIDTH    : positive;
     DATA_WIDTH       : positive;
-    MAX_BURSTLENGTH  : positive := 2;
+    LOG2_BURSTLENGTH : positive := 2;
     REQUEST_REGISTER : natural range 0 to 2;
     RETURN_REGISTER  : natural range 0 to 1
     );
@@ -20,23 +20,23 @@ entity oimm_register is
 
     register_idle : out std_logic;
 
-    --Orca-internal memory-mapped slave
+    --ORCA-internal memory-mapped slave
     slave_oimm_address            : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-    slave_oimm_burstlength        : in  std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0) := (0      => '1', others => '0');
-    slave_oimm_burstlength_minus1 : in  std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0)   := (others => '0');
+    slave_oimm_burstlength        : in  std_logic_vector(LOG2_BURSTLENGTH downto 0)   := (0      => '1', others => '0');
+    slave_oimm_burstlength_minus1 : in  std_logic_vector(LOG2_BURSTLENGTH-1 downto 0) := (others => '0');
     slave_oimm_byteenable         : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0);
     slave_oimm_requestvalid       : in  std_logic;
     slave_oimm_readnotwrite       : in  std_logic;
     slave_oimm_writedata          : in  std_logic_vector(DATA_WIDTH-1 downto 0);
-    slave_oimm_writelast          : in  std_logic                                            := '1';
+    slave_oimm_writelast          : in  std_logic                                     := '1';
     slave_oimm_readdata           : out std_logic_vector(DATA_WIDTH-1 downto 0);
     slave_oimm_readdatavalid      : out std_logic;
     slave_oimm_waitrequest        : out std_logic;
 
-    --Orca-internal memory-mapped master
+    --ORCA-internal memory-mapped master
     master_oimm_address            : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-    master_oimm_burstlength        : out std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0);
-    master_oimm_burstlength_minus1 : out std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
+    master_oimm_burstlength        : out std_logic_vector(LOG2_BURSTLENGTH downto 0);
+    master_oimm_burstlength_minus1 : out std_logic_vector(LOG2_BURSTLENGTH-1 downto 0);
     master_oimm_byteenable         : out std_logic_vector((DATA_WIDTH/8)-1 downto 0);
     master_oimm_requestvalid       : out std_logic;
     master_oimm_readnotwrite       : out std_logic;
@@ -79,8 +79,8 @@ begin
   --waitrequest, but will reduce throughput if the slave does.
   light_request_register_gen : if REQUEST_REGISTER = 1 generate
     signal slave_oimm_address_held            : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-    signal slave_oimm_burstlength_held        : std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0);
-    signal slave_oimm_burstlength_minus1_held : std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
+    signal slave_oimm_burstlength_held        : std_logic_vector(LOG2_BURSTLENGTH downto 0);
+    signal slave_oimm_burstlength_minus1_held : std_logic_vector(LOG2_BURSTLENGTH-1 downto 0);
     signal slave_oimm_byteenable_held         : std_logic_vector((DATA_WIDTH/8)-1 downto 0);
     signal slave_oimm_requestvalid_held       : std_logic;
     signal slave_oimm_readnotwrite_held       : std_logic;
@@ -134,8 +134,8 @@ begin
   --path. Always adds one cycle of latency but does not reduce throughput.
   full_request_register_gen : if REQUEST_REGISTER /= 0 and REQUEST_REGISTER /= 1 generate
     signal registered_oimm_address            : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-    signal registered_oimm_burstlength        : std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0);
-    signal registered_oimm_burstlength_minus1 : std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
+    signal registered_oimm_burstlength        : std_logic_vector(LOG2_BURSTLENGTH downto 0);
+    signal registered_oimm_burstlength_minus1 : std_logic_vector(LOG2_BURSTLENGTH-1 downto 0);
     signal registered_oimm_byteenable         : std_logic_vector((DATA_WIDTH/8)-1 downto 0);
     signal registered_oimm_requestvalid       : std_logic;
     signal registered_oimm_readnotwrite       : std_logic;

@@ -1,5 +1,5 @@
 #
-# Orca "Orca" v1.0
+# ORCA "ORCA" v1.0
 #  2015.11.09.13:16:38
 #
 #
@@ -20,14 +20,14 @@ proc log2 { num } {
 #
 # module orca
 #
-set_module_property DESCRIPTION "Orca, a RISC-V implementation by Vectorblox"
+set_module_property DESCRIPTION "ORCA, a RISC-V implementation by Vectorblox"
 set_module_property NAME vectorblox_orca
 set_module_property VERSION 1.0
 set_module_property INTERNAL false
 set_module_property OPAQUE_ADDRESS_MAP true
 set_module_property AUTHOR "VectorBlox Computing Inc."
 set_module_property GROUP "VectorBlox Computing Inc./Processors"
-set_module_property DISPLAY_NAME "Orca (RISC-V)"
+set_module_property DISPLAY_NAME "ORCA (RISC-V)"
 set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
 set_module_property EDITABLE true
 set_module_property REPORT_TO_TALKBACK false
@@ -39,7 +39,7 @@ add_documentation_link "Documentation" https://github.com/VectorBlox/risc-v
 # file sets
 #
 add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
-set_fileset_property QUARTUS_SYNTH TOP_LEVEL Orca
+set_fileset_property QUARTUS_SYNTH TOP_LEVEL ORCA
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
 add_fileset_file vblox_orca/utils.vhd VHDL PATH utils.vhd
@@ -67,7 +67,7 @@ add_fileset_file vblox_orca/cache.vhd VHDL PATH cache.vhd
 add_fileset_file vblox_orca/bram_sdp_write_first.vhd VHDL PATH bram_sdp_write_first.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
-set_fileset_property SIM_VHDL TOP_LEVEL Orca
+set_fileset_property SIM_VHDL TOP_LEVEL ORCA
 set_fileset_property SIM_VHDL ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property SIM_VHDL ENABLE_FILE_OVERWRITE_MODE false
 add_fileset_file vblox_orca/utils.vhd VHDL PATH utils.vhd
@@ -105,24 +105,6 @@ set_parameter_property REGISTER_SIZE UNITS None
 set_parameter_property REGISTER_SIZE ALLOWED_RANGES {32}
 set_parameter_property REGISTER_SIZE HDL_PARAMETER true
 set_parameter_property REGISTER_SIZE visible false
-
-add_parameter          AVALON_AUX natural 1
-set_parameter_property AVALON_AUX ALLOWED_RANGES 0:1
-set_parameter_property AVALON_AUX HDL_PARAMETER true
-set_parameter_property AVALON_AUX visible false
-set_parameter_property AVALON_AUX derived true
-
-add_parameter          LMB_AUX natural 0
-set_parameter_property LMB_AUX ALLOWED_RANGES 0:1
-set_parameter_property LMB_AUX HDL_PARAMETER true
-set_parameter_property LMB_AUX visible false
-set_parameter_property LMB_AUX derived true
-
-add_parameter          WISHBONE_AUX natural 0
-set_parameter_property WISHBONE_AUX ALLOWED_RANGES 0:1
-set_parameter_property WISHBONE_AUX HDL_PARAMETER true
-set_parameter_property WISHBONE_AUX visible false
-set_parameter_property WISHBONE_AUX derived true
 
 add_parameter RESET_VECTOR Std_Logic_Vector 32'h00000000
 set_parameter_property RESET_VECTOR DEFAULT_VALUE 32'h00000000
@@ -203,6 +185,23 @@ set_parameter_property ENABLE_EXCEPTIONS ALLOWED_RANGES 0:1
 set_parameter_property ENABLE_EXCEPTIONS HDL_PARAMETER true
 set_display_item_property ENABLE_EXCEPTIONS DISPLAY_HINT boolean
 
+add_parameter          PIPELINE_STAGES natural 5
+set_parameter_property PIPELINE_STAGES HDL_PARAMETER true
+set_parameter_property PIPELINE_STAGES DISPLAY_NAME "Pipeline Stages"
+set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipeline stages, 4 stages is smaller\
+but 5 stages has a higher fmax"
+set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
+
+add_parameter VCP_ENABLE natural 0
+set_parameter_property VCP_ENABLE DEFAULT_VALUE 0
+set_parameter_property VCP_ENABLE DISPLAY_NAME "Vector Extensions"
+set_parameter_property VCP_ENABLE DESCRIPTION "Enable Vector Extensions"
+set_parameter_property VCP_ENABLE TYPE NATURAL
+set_parameter_property VCP_ENABLE UNITS None
+set_parameter_property VCP_ENABLE ALLOWED_RANGES 0:1
+set_parameter_property VCP_ENABLE HDL_PARAMETER true
+set_display_item_property VCP_ENABLE DISPLAY_HINT boolean
+
 add_parameter ENABLE_EXT_INTERRUPTS natural 0
 set_parameter_property ENABLE_EXT_INTERRUPTS DISPLAY_NAME "Enable Interrupts"
 set_parameter_property ENABLE_EXT_INTERRUPTS DESCRIPTION "Enable handling of external interrupts"
@@ -219,69 +218,101 @@ set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "       External Interrup
 set_parameter_property NUM_EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (maximum 32)."
 set_parameter_property NUM_EXT_INTERRUPTS visible false
 
-add_parameter          DATA_REQUEST_REGISTER natural 0
-set_parameter_property DATA_REQUEST_REGISTER DEFAULT_VALUE 0
-set_parameter_property DATA_REQUEST_REGISTER HDL_PARAMETER true
-set_parameter_property DATA_REQUEST_REGISTER DISPLAY_NAME "Data Request Register"
-set_parameter_property DATA_REQUEST_REGISTER DESCRIPTION "Register data master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property DATA_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+add_parameter POWER_OPTIMIZED natural
+set_parameter_property POWER_OPTIMIZED DEFAULT_VALUE 0
+set_parameter_property POWER_OPTIMIZED DISPLAY_NAME "Optimize for Power"
+set_parameter_property POWER_OPTIMIZED DESCRIPTION "Improve power usage at the expense of area"
+set_parameter_property POWER_OPTIMIZED HDL_PARAMETER true
+set_parameter_property POWER_OPTIMIZED ALLOWED_RANGES 0:1
+set_display_item_property POWER_OPTIMIZED DISPLAY_HINT boolean
 
-add_parameter          DATA_RETURN_REGISTER natural 0
-set_parameter_property DATA_RETURN_REGISTER DEFAULT_VALUE 0
-set_parameter_property DATA_RETURN_REGISTER HDL_PARAMETER true
-set_parameter_property DATA_RETURN_REGISTER DISPLAY_NAME "Data Return Register"
-set_parameter_property DATA_RETURN_REGISTER DESCRIPTION "Register data master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property DATA_RETURN_REGISTER ALLOWED_RANGES {0,1}
+add_parameter FAMILY string INTEL
+set_parameter_property FAMILY HDL_PARAMETER true
+set_parameter_property FAMILY visible false
 
-add_parameter          DC_REQUEST_REGISTER natural 1
-set_parameter_property DC_REQUEST_REGISTER DEFAULT_VALUE 1
-set_parameter_property DC_REQUEST_REGISTER HDL_PARAMETER true
-set_parameter_property DC_REQUEST_REGISTER DISPLAY_NAME "DC Request Register"
-set_parameter_property DC_REQUEST_REGISTER DESCRIPTION "Register DC master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property DC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+add_parameter LOG2_BURSTLENGTH positive 4
+set_parameter_property LOG2_BURSTLENGTH HDL_PARAMETER true
+set_parameter_property LOG2_BURSTLENGTH ALLOWED_RANGES 1:8
+set_parameter_property LOG2_BURSTLENGTH visible false
 
-add_parameter          DC_RETURN_REGISTER natural 0
-set_parameter_property DC_RETURN_REGISTER DEFAULT_VALUE 0
-set_parameter_property DC_RETURN_REGISTER HDL_PARAMETER true
-set_parameter_property DC_RETURN_REGISTER DISPLAY_NAME "DC Return Register"
-set_parameter_property DC_RETURN_REGISTER DESCRIPTION "Register DC master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property DC_RETURN_REGISTER ALLOWED_RANGES {0,1}
+add_parameter AXI_ID_WIDTH positive 2
+set_parameter_property AXI_ID_WIDTH HDL_PARAMETER true
+set_parameter_property AXI_ID_WIDTH ALLOWED_RANGES 2:8
+set_parameter_property AXI_ID_WIDTH visible false
 
-add_parameter          DUC_REQUEST_REGISTER natural 2
-set_parameter_property DUC_REQUEST_REGISTER DEFAULT_VALUE 2
-set_parameter_property DUC_REQUEST_REGISTER HDL_PARAMETER true
-set_parameter_property DUC_REQUEST_REGISTER DISPLAY_NAME "DUC Request Register"
-set_parameter_property DUC_REQUEST_REGISTER DESCRIPTION "Register DUC master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property DUC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+add_parameter          AVALON_AUX natural 1
+set_parameter_property AVALON_AUX ALLOWED_RANGES 0:1
+set_parameter_property AVALON_AUX HDL_PARAMETER true
+set_parameter_property AVALON_AUX visible false
+set_parameter_property AVALON_AUX derived true
 
-add_parameter          DUC_RETURN_REGISTER natural 1
-set_parameter_property DUC_RETURN_REGISTER DEFAULT_VALUE 1
-set_parameter_property DUC_RETURN_REGISTER HDL_PARAMETER true
-set_parameter_property DUC_RETURN_REGISTER DISPLAY_NAME "DUC Return Register"
-set_parameter_property DUC_RETURN_REGISTER DESCRIPTION "Register DUC master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property DUC_RETURN_REGISTER ALLOWED_RANGES {0,1}
+add_parameter          LMB_AUX natural 0
+set_parameter_property LMB_AUX ALLOWED_RANGES 0:1
+set_parameter_property LMB_AUX HDL_PARAMETER true
+set_parameter_property LMB_AUX visible false
+set_parameter_property LMB_AUX derived true
 
-add_parameter          DAUX_REQUEST_REGISTER natural 2
-set_parameter_property DAUX_REQUEST_REGISTER DEFAULT_VALUE 2
-set_parameter_property DAUX_REQUEST_REGISTER HDL_PARAMETER true
-set_parameter_property DAUX_REQUEST_REGISTER DISPLAY_NAME "Data avalon Request Register"
-set_parameter_property DAUX_REQUEST_REGISTER DESCRIPTION "Register data avalon master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property DAUX_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+add_parameter          WISHBONE_AUX natural 0
+set_parameter_property WISHBONE_AUX ALLOWED_RANGES 0:1
+set_parameter_property WISHBONE_AUX HDL_PARAMETER true
+set_parameter_property WISHBONE_AUX visible false
+set_parameter_property WISHBONE_AUX derived true
 
-add_parameter          DAUX_RETURN_REGISTER natural 1
-set_parameter_property DAUX_RETURN_REGISTER DEFAULT_VALUE 1
-set_parameter_property DAUX_RETURN_REGISTER HDL_PARAMETER true
-set_parameter_property DAUX_RETURN_REGISTER DISPLAY_NAME "Data avalon Return Register"
-set_parameter_property DAUX_RETURN_REGISTER DESCRIPTION "Register data avalon master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property DAUX_RETURN_REGISTER ALLOWED_RANGES {0,1}
+add_parameter          AUX_MEMORY_REGIONS natural 1
+set_parameter_property AUX_MEMORY_REGIONS DEFAULT_VALUE 1
+set_parameter_property AUX_MEMORY_REGIONS HDL_PARAMETER true
+set_parameter_property AUX_MEMORY_REGIONS DISPLAY_NAME "Auxiliary Memory Regions (Avalon uncached) "
+set_parameter_property AUX_MEMORY_REGIONS ALLOWED_RANGES 0:4
+
+add_parameter AMR0_ADDR_BASE Std_Logic_Vector 32'h00000000
+set_parameter_property AMR0_ADDR_BASE DEFAULT_VALUE 32'h00000000
+set_parameter_property AMR0_ADDR_BASE DISPLAY_NAME "Auxiliary Memory Region 0 Start Address"
+set_parameter_property AMR0_ADDR_BASE UNITS None
+set_parameter_property AMR0_ADDR_BASE WIDTH 32
+set_parameter_property AMR0_ADDR_BASE HDL_PARAMETER true
+set_parameter_property AMR0_ADDR_BASE visible true
+
+add_parameter AMR0_ADDR_LAST Std_Logic_Vector 32'h00000000
+set_parameter_property AMR0_ADDR_LAST DEFAULT_VALUE 32'h00000000
+set_parameter_property AMR0_ADDR_LAST DISPLAY_NAME "Auxiliary Memory Region 0 Last Address"
+set_parameter_property AMR0_ADDR_LAST UNITS None
+set_parameter_property AMR0_ADDR_LAST WIDTH 32
+set_parameter_property AMR0_ADDR_LAST HDL_PARAMETER true
+set_parameter_property AMR0_ADDR_LAST visible true
+
+add_parameter          UC_MEMORY_REGIONS natural 0
+set_parameter_property UC_MEMORY_REGIONS DEFAULT_VALUE 0
+set_parameter_property UC_MEMORY_REGIONS HDL_PARAMETER true
+set_parameter_property UC_MEMORY_REGIONS DISPLAY_NAME "Uncached Memory Regions (AXI4-Lite)"
+set_parameter_property UC_MEMORY_REGIONS ALLOWED_RANGES 0:4
+
+add_parameter UMR0_ADDR_BASE Std_Logic_Vector 32'h00000000
+set_parameter_property UMR0_ADDR_BASE DEFAULT_VALUE 32'h00000000
+set_parameter_property UMR0_ADDR_BASE DISPLAY_NAME "Uncached Memory Region 0 Start Address"
+set_parameter_property UMR0_ADDR_BASE UNITS None
+set_parameter_property UMR0_ADDR_BASE WIDTH 32
+set_parameter_property UMR0_ADDR_BASE HDL_PARAMETER true
+set_parameter_property UMR0_ADDR_BASE visible true
+
+add_parameter UMR0_ADDR_LAST Std_Logic_Vector 32'h00000000
+set_parameter_property UMR0_ADDR_LAST DEFAULT_VALUE 32'h00000000
+set_parameter_property UMR0_ADDR_LAST DISPLAY_NAME "Uncached Memory Region 0 Last Address"
+set_parameter_property UMR0_ADDR_LAST UNITS None
+set_parameter_property UMR0_ADDR_LAST WIDTH 32
+set_parameter_property UMR0_ADDR_LAST HDL_PARAMETER true
+set_parameter_property UMR0_ADDR_LAST visible true
+
+add_parameter ICACHE_SIZE NATURAL 0
+set_parameter_property ICACHE_SIZE HDL_PARAMETER true
+set_parameter_property ICACHE_SIZE visible true
+
+add_parameter ICACHE_LINE_SIZE NATURAL 32
+set_parameter_property ICACHE_LINE_SIZE HDL_PARAMETER true
+set_parameter_property ICACHE_LINE_SIZE visible true
+
+add_parameter ICACHE_EXTERNAL_WIDTH integer 32
+set_parameter_property ICACHE_EXTERNAL_WIDTH HDL_PARAMETER true
+set_parameter_property ICACHE_EXTERNAL_WIDTH visible true
 
 add_parameter          INSTRUCTION_REQUEST_REGISTER natural 0
 set_parameter_property INSTRUCTION_REQUEST_REGISTER DEFAULT_VALUE 0
@@ -298,22 +329,6 @@ set_parameter_property INSTRUCTION_RETURN_REGISTER DISPLAY_NAME "Instruction Ret
 set_parameter_property INSTRUCTION_RETURN_REGISTER DESCRIPTION "Register instruction master readdata for higher fmax \
 at the cost of higher load latency."
 set_parameter_property INSTRUCTION_RETURN_REGISTER ALLOWED_RANGES {0,1}
-
-add_parameter          IC_REQUEST_REGISTER natural 1
-set_parameter_property IC_REQUEST_REGISTER DEFAULT_VALUE 1
-set_parameter_property IC_REQUEST_REGISTER HDL_PARAMETER true
-set_parameter_property IC_REQUEST_REGISTER DISPLAY_NAME "IC Request Register"
-set_parameter_property IC_REQUEST_REGISTER DESCRIPTION "Register IC master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property IC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
-
-add_parameter          IC_RETURN_REGISTER natural 0
-set_parameter_property IC_RETURN_REGISTER DEFAULT_VALUE 0
-set_parameter_property IC_RETURN_REGISTER HDL_PARAMETER true
-set_parameter_property IC_RETURN_REGISTER DISPLAY_NAME "IC Return Register"
-set_parameter_property IC_RETURN_REGISTER DESCRIPTION "Register IC master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property IC_RETURN_REGISTER ALLOWED_RANGES {0,1}
 
 add_parameter          IUC_REQUEST_REGISTER natural 1
 set_parameter_property IUC_REQUEST_REGISTER DEFAULT_VALUE 1
@@ -347,104 +362,21 @@ set_parameter_property IAUX_RETURN_REGISTER DESCRIPTION "Register instruction av
 at the cost of higher load latency."
 set_parameter_property IAUX_RETURN_REGISTER ALLOWED_RANGES {0,1}
 
-add_parameter          PIPELINE_STAGES natural 5
-set_parameter_property PIPELINE_STAGES HDL_PARAMETER true
-set_parameter_property PIPELINE_STAGES DISPLAY_NAME "Pipeline Stages"
-set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipeline stages, 4 stages is smaller\
-but 5 stages has a higher fmax"
-set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
+add_parameter          IC_REQUEST_REGISTER natural 1
+set_parameter_property IC_REQUEST_REGISTER DEFAULT_VALUE 1
+set_parameter_property IC_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property IC_REQUEST_REGISTER DISPLAY_NAME "IC Request Register"
+set_parameter_property IC_REQUEST_REGISTER DESCRIPTION "Register IC master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property IC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
 
-add_parameter LVE_ENABLE natural 0
-set_parameter_property LVE_ENABLE DEFAULT_VALUE 0
-set_parameter_property LVE_ENABLE DISPLAY_NAME "Vector Extensions"
-set_parameter_property LVE_ENABLE DESCRIPTION "Enable Vector Extensions"
-set_parameter_property LVE_ENABLE TYPE NATURAL
-set_parameter_property LVE_ENABLE UNITS None
-set_parameter_property LVE_ENABLE ALLOWED_RANGES 0:1
-set_parameter_property LVE_ENABLE HDL_PARAMETER true
-set_display_item_property LVE_ENABLE DISPLAY_HINT boolean
-
-
-add_parameter IUC_ADDR_BASE Std_Logic_Vector 32'h00000000
-set_parameter_property IUC_ADDR_BASE DEFAULT_VALUE 32'h00000000
-set_parameter_property IUC_ADDR_BASE DISPLAY_NAME "Uncached Instruction AXI4-Lite Start Address"
-set_parameter_property IUC_ADDR_BASE UNITS None
-set_parameter_property IUC_ADDR_BASE WIDTH 32
-set_parameter_property IUC_ADDR_BASE HDL_PARAMETER true
-set_parameter_property IUC_ADDR_BASE visible true
-
-add_parameter IUC_ADDR_LAST Std_Logic_Vector 32'h00000000
-set_parameter_property IUC_ADDR_LAST DEFAULT_VALUE 32'h00000000
-set_parameter_property IUC_ADDR_LAST DISPLAY_NAME "Uncached Instruction AXI4-Lite End Address"
-set_parameter_property IUC_ADDR_LAST UNITS None
-set_parameter_property IUC_ADDR_LAST WIDTH 32
-set_parameter_property IUC_ADDR_LAST HDL_PARAMETER true
-set_parameter_property IUC_ADDR_LAST visible true
-
-add_parameter IAUX_ADDR_BASE Std_Logic_Vector 32'h00000000
-set_parameter_property IAUX_ADDR_BASE DEFAULT_VALUE 32'h00000000
-set_parameter_property IAUX_ADDR_BASE DISPLAY_NAME "Uncached Instruction Auxiliary Interface Start Address"
-set_parameter_property IAUX_ADDR_BASE UNITS None
-set_parameter_property IAUX_ADDR_BASE WIDTH 32
-set_parameter_property IAUX_ADDR_BASE HDL_PARAMETER true
-set_parameter_property IAUX_ADDR_BASE visible true
-
-add_parameter IAUX_ADDR_LAST Std_Logic_Vector 32'hFFFFFFFF
-set_parameter_property IAUX_ADDR_LAST DEFAULT_VALUE 32'hFFFFFFFF
-set_parameter_property IAUX_ADDR_LAST DISPLAY_NAME "Uncached Instruction Auxiliary Interface End Address"
-set_parameter_property IAUX_ADDR_LAST UNITS None
-set_parameter_property IAUX_ADDR_LAST WIDTH 32
-set_parameter_property IAUX_ADDR_LAST HDL_PARAMETER true
-set_parameter_property IAUX_ADDR_LAST visible true
-
-add_parameter ICACHE_SIZE NATURAL 0
-set_parameter_property ICACHE_SIZE HDL_PARAMETER true
-set_parameter_property ICACHE_SIZE visible true
-
-add_parameter ICACHE_LINE_SIZE NATURAL 32
-set_parameter_property ICACHE_LINE_SIZE HDL_PARAMETER true
-set_parameter_property ICACHE_LINE_SIZE visible true
-
-add_parameter ICACHE_EXTERNAL_WIDTH integer 32
-set_parameter_property ICACHE_EXTERNAL_WIDTH HDL_PARAMETER true
-set_parameter_property ICACHE_EXTERNAL_WIDTH visible true
-
-add_parameter ICACHE_BURST_EN integer 0
-set_parameter_property ICACHE_BURST_EN HDL_PARAMETER true
-set_parameter_property ICACHE_BURST_EN ALLOWED_RANGES 0:1
-set_parameter_property ICACHE_BURST_EN visible true
-
-add_parameter DUC_ADDR_BASE Std_Logic_Vector 32'h00000000
-set_parameter_property DUC_ADDR_BASE DEFAULT_VALUE 32'h00000000
-set_parameter_property DUC_ADDR_BASE DISPLAY_NAME "Uncached Data AXI4-Lite Start Address"
-set_parameter_property DUC_ADDR_BASE UNITS None
-set_parameter_property DUC_ADDR_BASE WIDTH 32
-set_parameter_property DUC_ADDR_BASE HDL_PARAMETER true
-set_parameter_property DUC_ADDR_BASE visible true
-
-add_parameter DUC_ADDR_LAST Std_Logic_Vector 32'h00000000
-set_parameter_property DUC_ADDR_LAST DEFAULT_VALUE 32'h00000000
-set_parameter_property DUC_ADDR_LAST DISPLAY_NAME "Uncached Data AXI4-Lite End Address"
-set_parameter_property DUC_ADDR_LAST UNITS None
-set_parameter_property DUC_ADDR_LAST WIDTH 32
-set_parameter_property DUC_ADDR_LAST HDL_PARAMETER true
-set_parameter_property DUC_ADDR_LAST visible true
-
-add_parameter DAUX_ADDR_BASE Std_Logic_Vector 32'h00000000
-set_parameter_property DAUX_ADDR_BASE DEFAULT_VALUE 32'h00000000
-set_parameter_property DAUX_ADDR_BASE DISPLAY_NAME "Uncached Data Auxiliary Interface Start Address"
-set_parameter_property DAUX_ADDR_BASE UNITS None
-set_parameter_property DAUX_ADDR_BASE WIDTH 32
-set_parameter_property DAUX_ADDR_BASE HDL_PARAMETER true
-set_parameter_property DAUX_ADDR_BASE visible true
-
-add_parameter DAUX_ADDR_LAST Std_Logic_Vector 32'hFFFFFFFF
-set_parameter_property DAUX_ADDR_LAST DEFAULT_VALUE 32'hFFFFFFFF
-set_parameter_property DAUX_ADDR_LAST DISPLAY_NAME "Uncached Data Auxiliary Interface End Address"
-set_parameter_property DAUX_ADDR_LAST UNITS None
-set_parameter_property DAUX_ADDR_LAST WIDTH 32
-set_parameter_property DAUX_ADDR_LAST HDL_PARAMETER true
-set_parameter_property DAUX_ADDR_LAST visible true
+add_parameter          IC_RETURN_REGISTER natural 0
+set_parameter_property IC_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property IC_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property IC_RETURN_REGISTER DISPLAY_NAME "IC Return Register"
+set_parameter_property IC_RETURN_REGISTER DESCRIPTION "Register IC master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property IC_RETURN_REGISTER ALLOWED_RANGES {0,1}
 
 add_parameter DCACHE_SIZE NATURAL 0
 set_parameter_property DCACHE_SIZE HDL_PARAMETER true
@@ -458,22 +390,69 @@ add_parameter DCACHE_EXTERNAL_WIDTH integer 32
 set_parameter_property DCACHE_EXTERNAL_WIDTH HDL_PARAMETER true
 set_parameter_property DCACHE_EXTERNAL_WIDTH visible true
 
-add_parameter DCACHE_BURST_EN integer 0
-set_parameter_property DCACHE_BURST_EN HDL_PARAMETER true
-set_parameter_property DCACHE_BURST_EN ALLOWED_RANGES 0:1
-set_parameter_property DCACHE_BURST_EN visible true
+add_parameter          DATA_REQUEST_REGISTER natural 0
+set_parameter_property DATA_REQUEST_REGISTER DEFAULT_VALUE 0
+set_parameter_property DATA_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DATA_REQUEST_REGISTER DISPLAY_NAME "Data Request Register"
+set_parameter_property DATA_REQUEST_REGISTER DESCRIPTION "Register data master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property DATA_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
 
-add_parameter POWER_OPTIMIZED natural
-set_parameter_property POWER_OPTIMIZED DEFAULT_VALUE 0
-set_parameter_property POWER_OPTIMIZED DISPLAY_NAME "Optimize for Power"
-set_parameter_property POWER_OPTIMIZED DESCRIPTION "Improve power usage at the expense of area"
-set_parameter_property POWER_OPTIMIZED HDL_PARAMETER true
-set_parameter_property POWER_OPTIMIZED ALLOWED_RANGES 0:1
-set_display_item_property POWER_OPTIMIZED DISPLAY_HINT boolean
+add_parameter          DATA_RETURN_REGISTER natural 0
+set_parameter_property DATA_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property DATA_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DATA_RETURN_REGISTER DISPLAY_NAME "Data Return Register"
+set_parameter_property DATA_RETURN_REGISTER DESCRIPTION "Register data master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property DATA_RETURN_REGISTER ALLOWED_RANGES {0,1}
 
-add_parameter FAMILY string ALTERA
-set_parameter_property FAMILY HDL_PARAMETER true
-set_parameter_property FAMILY visible false
+add_parameter          DUC_REQUEST_REGISTER natural 2
+set_parameter_property DUC_REQUEST_REGISTER DEFAULT_VALUE 2
+set_parameter_property DUC_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DUC_REQUEST_REGISTER DISPLAY_NAME "DUC Request Register"
+set_parameter_property DUC_REQUEST_REGISTER DESCRIPTION "Register DUC master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property DUC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+
+add_parameter          DUC_RETURN_REGISTER natural 1
+set_parameter_property DUC_RETURN_REGISTER DEFAULT_VALUE 1
+set_parameter_property DUC_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DUC_RETURN_REGISTER DISPLAY_NAME "DUC Return Register"
+set_parameter_property DUC_RETURN_REGISTER DESCRIPTION "Register DUC master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property DUC_RETURN_REGISTER ALLOWED_RANGES {0,1}
+
+add_parameter          DAUX_REQUEST_REGISTER natural 2
+set_parameter_property DAUX_REQUEST_REGISTER DEFAULT_VALUE 2
+set_parameter_property DAUX_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DAUX_REQUEST_REGISTER DISPLAY_NAME "Data avalon Request Register"
+set_parameter_property DAUX_REQUEST_REGISTER DESCRIPTION "Register data avalon master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property DAUX_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+
+add_parameter          DAUX_RETURN_REGISTER natural 1
+set_parameter_property DAUX_RETURN_REGISTER DEFAULT_VALUE 1
+set_parameter_property DAUX_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DAUX_RETURN_REGISTER DISPLAY_NAME "Data avalon Return Register"
+set_parameter_property DAUX_RETURN_REGISTER DESCRIPTION "Register data avalon master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property DAUX_RETURN_REGISTER ALLOWED_RANGES {0,1}
+
+add_parameter          DC_REQUEST_REGISTER natural 1
+set_parameter_property DC_REQUEST_REGISTER DEFAULT_VALUE 1
+set_parameter_property DC_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DC_REQUEST_REGISTER DISPLAY_NAME "DC Request Register"
+set_parameter_property DC_REQUEST_REGISTER DESCRIPTION "Register DC master request for higher fmax.  \
+0/Off, 1/Light, 2/Full."
+set_parameter_property DC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+
+add_parameter          DC_RETURN_REGISTER natural 0
+set_parameter_property DC_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property DC_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DC_RETURN_REGISTER DISPLAY_NAME "DC Return Register"
+set_parameter_property DC_RETURN_REGISTER DESCRIPTION "Register DC master readdata for higher fmax \
+at the cost of higher load latency."
+set_parameter_property DC_RETURN_REGISTER ALLOWED_RANGES {0,1}
 
 #
 # display items
@@ -560,8 +539,8 @@ set_interface_property axi_duc SVD_ADDRESS_GROUP ""
 add_interface_port axi_duc DUC_ARADDR araddr Output register_size
 add_interface_port axi_duc DUC_ARBURST arburst Output 2
 add_interface_port axi_duc DUC_ARCACHE arcache Output 4
-add_interface_port axi_duc DUC_ARID arid Output 4
-add_interface_port axi_duc DUC_ARLEN arlen Output 4
+add_interface_port axi_duc DUC_ARID arid Output axi_id_width
+add_interface_port axi_duc DUC_ARLEN arlen Output log2_burstlength
 add_interface_port axi_duc DUC_ARLOCK arlock Output 2
 add_interface_port axi_duc DUC_ARPROT arprot Output 3
 add_interface_port axi_duc DUC_ARREADY arready Input 1
@@ -570,25 +549,25 @@ add_interface_port axi_duc DUC_ARVALID arvalid Output 1
 add_interface_port axi_duc DUC_AWADDR awaddr Output register_size
 add_interface_port axi_duc DUC_AWBURST awburst Output 2
 add_interface_port axi_duc DUC_AWCACHE awcache Output 4
-add_interface_port axi_duc DUC_AWID awid Output 4
-add_interface_port axi_duc DUC_AWLEN awlen Output 4
+add_interface_port axi_duc DUC_AWID awid Output axi_id_width
+add_interface_port axi_duc DUC_AWLEN awlen Output log2_burstlength
 add_interface_port axi_duc DUC_AWLOCK awlock Output 2
 add_interface_port axi_duc DUC_AWPROT awprot Output 3
 add_interface_port axi_duc DUC_AWREADY awready Input 1
 add_interface_port axi_duc DUC_AWSIZE awsize Output 3
 add_interface_port axi_duc DUC_AWVALID awvalid Output 1
-add_interface_port axi_duc DUC_BID bid Input 4
+add_interface_port axi_duc DUC_BID bid Input axi_id_width
 add_interface_port axi_duc DUC_BREADY bready Output 1
 add_interface_port axi_duc DUC_BRESP bresp Input 2
 add_interface_port axi_duc DUC_BVALID bvalid Input 1
 add_interface_port axi_duc DUC_RDATA rdata Input register_size
-add_interface_port axi_duc DUC_RID rid Input 4
+add_interface_port axi_duc DUC_RID rid Input axi_id_width
 add_interface_port axi_duc DUC_RLAST rlast Input 1
 add_interface_port axi_duc DUC_RREADY rready Output 1
 add_interface_port axi_duc DUC_RRESP rresp Input 2
 add_interface_port axi_duc DUC_RVALID rvalid Input 1
 add_interface_port axi_duc DUC_WDATA wdata Output register_size
-add_interface_port axi_duc DUC_WID wid Output 4
+add_interface_port axi_duc DUC_WID wid Output axi_id_width
 add_interface_port axi_duc DUC_WLAST wlast Output 1
 add_interface_port axi_duc DUC_WREADY wready Input 1
 add_interface_port axi_duc DUC_WSTRB wstrb Output register_size/8
@@ -612,8 +591,8 @@ set_interface_property axi_iuc SVD_ADDRESS_GROUP ""
 add_interface_port axi_iuc IUC_ARADDR araddr Output register_size
 add_interface_port axi_iuc IUC_ARBURST arburst Output 2
 add_interface_port axi_iuc IUC_ARCACHE arcache Output 4
-add_interface_port axi_iuc IUC_ARID arid Output 4
-add_interface_port axi_iuc IUC_ARLEN arlen Output 4
+add_interface_port axi_iuc IUC_ARID arid Output axi_id_width
+add_interface_port axi_iuc IUC_ARLEN arlen Output log2_burstlength
 add_interface_port axi_iuc IUC_ARLOCK arlock Output 2
 add_interface_port axi_iuc IUC_ARPROT arprot Output 3
 add_interface_port axi_iuc IUC_ARREADY arready Input 1
@@ -622,25 +601,25 @@ add_interface_port axi_iuc IUC_ARVALID arvalid Output 1
 add_interface_port axi_iuc IUC_AWADDR awaddr Output register_size
 add_interface_port axi_iuc IUC_AWBURST awburst Output 2
 add_interface_port axi_iuc IUC_AWCACHE awcache Output 4
-add_interface_port axi_iuc IUC_AWID awid Output 4
-add_interface_port axi_iuc IUC_AWLEN awlen Output 4
+add_interface_port axi_iuc IUC_AWID awid Output axi_id_width
+add_interface_port axi_iuc IUC_AWLEN awlen Output log2_burstlength
 add_interface_port axi_iuc IUC_AWLOCK awlock Output 2
 add_interface_port axi_iuc IUC_AWPROT awprot Output 3
 add_interface_port axi_iuc IUC_AWREADY awready Input 1
 add_interface_port axi_iuc IUC_AWSIZE awsize Output 3
 add_interface_port axi_iuc IUC_AWVALID awvalid Output 1
-add_interface_port axi_iuc IUC_BID bid Input 4
+add_interface_port axi_iuc IUC_BID bid Input axi_id_width
 add_interface_port axi_iuc IUC_BREADY bready Output 1
 add_interface_port axi_iuc IUC_BRESP bresp Input 2
 add_interface_port axi_iuc IUC_BVALID bvalid Input 1
 add_interface_port axi_iuc IUC_RDATA rdata Input register_size
-add_interface_port axi_iuc IUC_RID rid Input 4
+add_interface_port axi_iuc IUC_RID rid Input axi_id_width
 add_interface_port axi_iuc IUC_RLAST rlast Input 1
 add_interface_port axi_iuc IUC_RREADY rready Output 1
 add_interface_port axi_iuc IUC_RRESP rresp Input 2
 add_interface_port axi_iuc IUC_RVALID rvalid Input 1
 add_interface_port axi_iuc IUC_WDATA wdata Output register_size
-add_interface_port axi_iuc IUC_WID wid Output 4
+add_interface_port axi_iuc IUC_WID wid Output axi_id_width
 add_interface_port axi_iuc IUC_WLAST wlast Output 1
 add_interface_port axi_iuc IUC_WREADY wready Input 1
 add_interface_port axi_iuc IUC_WSTRB wstrb Output register_size/8
@@ -652,9 +631,9 @@ add_interface_port axi_iuc IUC_WVALID wvalid Output 1
 add_interface axi_ic_master axi start
 set_interface_property axi_ic_master associatedClock clock
 set_interface_property axi_ic_master associatedReset reset
-set_interface_property axi_ic_master readIssuingCapability 3
+set_interface_property axi_ic_master readIssuingCapability 4
 set_interface_property axi_ic_master writeIssuingCapability 1
-set_interface_property axi_ic_master combinedIssuingCapability 3
+set_interface_property axi_ic_master combinedIssuingCapability 4
 set_interface_property axi_ic_master ENABLED true
 set_interface_property axi_ic_master EXPORT_OF ""
 set_interface_property axi_ic_master PORT_NAME_MAP ""
@@ -664,8 +643,8 @@ set_interface_property axi_ic_master SVD_ADDRESS_GROUP ""
 add_interface_port axi_ic_master IC_ARADDR araddr Output register_size
 add_interface_port axi_ic_master IC_ARBURST arburst Output 2
 add_interface_port axi_ic_master IC_ARCACHE arcache Output 4
-add_interface_port axi_ic_master IC_ARID arid Output 4
-add_interface_port axi_ic_master IC_ARLEN arlen Output 4
+add_interface_port axi_ic_master IC_ARID arid Output axi_id_width
+add_interface_port axi_ic_master IC_ARLEN arlen Output log2_burstlength
 add_interface_port axi_ic_master IC_ARLOCK arlock Output 2
 add_interface_port axi_ic_master IC_ARPROT arprot Output 3
 add_interface_port axi_ic_master IC_ARREADY arready Input 1
@@ -674,25 +653,25 @@ add_interface_port axi_ic_master IC_ARVALID arvalid Output 1
 add_interface_port axi_ic_master IC_AWADDR awaddr Output register_size
 add_interface_port axi_ic_master IC_AWBURST awburst Output 2
 add_interface_port axi_ic_master IC_AWCACHE awcache Output 4
-add_interface_port axi_ic_master IC_AWID awid Output 4
-add_interface_port axi_ic_master IC_AWLEN awlen Output 4
+add_interface_port axi_ic_master IC_AWID awid Output axi_id_width
+add_interface_port axi_ic_master IC_AWLEN awlen Output log2_burstlength
 add_interface_port axi_ic_master IC_AWLOCK awlock Output 2
 add_interface_port axi_ic_master IC_AWPROT awprot Output 3
 add_interface_port axi_ic_master IC_AWREADY awready Input 1
 add_interface_port axi_ic_master IC_AWSIZE awsize Output 3
 add_interface_port axi_ic_master IC_AWVALID awvalid Output 1
-add_interface_port axi_ic_master IC_BID bid Input 4
+add_interface_port axi_ic_master IC_BID bid Input axi_id_width
 add_interface_port axi_ic_master IC_BREADY bready Output 1
 add_interface_port axi_ic_master IC_BRESP bresp Input 2
 add_interface_port axi_ic_master IC_BVALID bvalid Input 1
 add_interface_port axi_ic_master IC_RDATA rdata Input register_size
-add_interface_port axi_ic_master IC_RID rid Input 4
+add_interface_port axi_ic_master IC_RID rid Input axi_id_width
 add_interface_port axi_ic_master IC_RLAST rlast Input 1
 add_interface_port axi_ic_master IC_RREADY rready Output 1
 add_interface_port axi_ic_master IC_RRESP rresp Input 2
 add_interface_port axi_ic_master IC_RVALID rvalid Input 1
 add_interface_port axi_ic_master IC_WDATA wdata Output register_size
-add_interface_port axi_ic_master IC_WID wid Output 4
+add_interface_port axi_ic_master IC_WID wid Output axi_id_width
 add_interface_port axi_ic_master IC_WLAST wlast Output 1
 add_interface_port axi_ic_master IC_WREADY wready Input 1
 add_interface_port axi_ic_master IC_WSTRB wstrb Output register_size/8
@@ -716,8 +695,8 @@ set_interface_property axi_dc_master SVD_ADDRESS_GROUP ""
 add_interface_port axi_dc_master DC_ARADDR araddr Output register_size
 add_interface_port axi_dc_master DC_ARBURST arburst Output 2
 add_interface_port axi_dc_master DC_ARCACHE arcache Output 4
-add_interface_port axi_dc_master DC_ARID arid Output 4
-add_interface_port axi_dc_master DC_ARLEN arlen Output 4
+add_interface_port axi_dc_master DC_ARID arid Output axi_id_width
+add_interface_port axi_dc_master DC_ARLEN arlen Output log2_burstlength
 add_interface_port axi_dc_master DC_ARLOCK arlock Output 2
 add_interface_port axi_dc_master DC_ARPROT arprot Output 3
 add_interface_port axi_dc_master DC_ARREADY arready Input 1
@@ -726,25 +705,25 @@ add_interface_port axi_dc_master DC_ARVALID arvalid Output 1
 add_interface_port axi_dc_master DC_AWADDR awaddr Output register_size
 add_interface_port axi_dc_master DC_AWBURST awburst Output 2
 add_interface_port axi_dc_master DC_AWCACHE awcache Output 4
-add_interface_port axi_dc_master DC_AWID awid Output 4
-add_interface_port axi_dc_master DC_AWLEN awlen Output 4
+add_interface_port axi_dc_master DC_AWID awid Output axi_id_width
+add_interface_port axi_dc_master DC_AWLEN awlen Output log2_burstlength
 add_interface_port axi_dc_master DC_AWLOCK awlock Output 2
 add_interface_port axi_dc_master DC_AWPROT awprot Output 3
 add_interface_port axi_dc_master DC_AWREADY awready Input 1
 add_interface_port axi_dc_master DC_AWSIZE awsize Output 3
 add_interface_port axi_dc_master DC_AWVALID awvalid Output 1
-add_interface_port axi_dc_master DC_BID bid Input 4
+add_interface_port axi_dc_master DC_BID bid Input axi_id_width
 add_interface_port axi_dc_master DC_BREADY bready Output 1
 add_interface_port axi_dc_master DC_BRESP bresp Input 2
 add_interface_port axi_dc_master DC_BVALID bvalid Input 1
 add_interface_port axi_dc_master DC_RDATA rdata Input register_size
-add_interface_port axi_dc_master DC_RID rid Input 4
+add_interface_port axi_dc_master DC_RID rid Input axi_id_width
 add_interface_port axi_dc_master DC_RLAST rlast Input 1
 add_interface_port axi_dc_master DC_RREADY rready Output 1
 add_interface_port axi_dc_master DC_RRESP rresp Input 2
 add_interface_port axi_dc_master DC_RVALID rvalid Input 1
 add_interface_port axi_dc_master DC_WDATA wdata Output register_size
-add_interface_port axi_dc_master DC_WID wid Output 4
+add_interface_port axi_dc_master DC_WID wid Output axi_id_width
 add_interface_port axi_dc_master DC_WLAST wlast Output 1
 add_interface_port axi_dc_master DC_WREADY wready Input 1
 add_interface_port axi_dc_master DC_WSTRB wstrb Output register_size/8
@@ -935,7 +914,7 @@ proc elaboration_callback {} {
     set_interface_property axi_iuc       readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
     set_interface_property axi_iuc       combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
 
-    if { [get_parameter_value LVE_ENABLE] } {
+    if { [get_parameter_value VCP_ENABLE] } {
         set_interface_property vcp ENABLED true
     } else {
         set_interface_property vcp ENABLED false
@@ -966,24 +945,18 @@ proc elaboration_callback {} {
     } else {
         set_interface_property axi_dc_master ENABLED false
     }
-    if { [get_parameter_value IUC_ADDR_BASE] != [get_parameter_value IUC_ADDR_LAST] } {
+    if { [get_parameter_value UC_MEMORY_REGIONS] != 0 } {
+        set_interface_property axi_duc ENABLED true
         set_interface_property axi_iuc ENABLED true
     } else {
         set_interface_property axi_iuc ENABLED false
-    }
-    if { [get_parameter_value DUC_ADDR_BASE] != [get_parameter_value DUC_ADDR_LAST] } {
-        set_interface_property axi_duc ENABLED true
-    } else {
         set_interface_property axi_duc ENABLED false
     }
-    if { [get_parameter_value IAUX_ADDR_BASE] != [get_parameter_value IAUX_ADDR_LAST] } {
+    if { [get_parameter_value AUX_MEMORY_REGIONS] != 0 } {
         set_interface_property instruction ENABLED true
-    } else {
-        set_interface_property instruction ENABLED false
-    }
-    if { [get_parameter_value DAUX_ADDR_BASE] != [get_parameter_value DAUX_ADDR_LAST] } {
         set_interface_property data ENABLED true
     } else {
+        set_interface_property instruction ENABLED false
         set_interface_property data ENABLED false
     }
 }

@@ -369,42 +369,32 @@
    version="1.0"
    enabled="1">
   <parameter name="AUTO_GLOBAL_INTERRUPTS_INTERRUPTS_USED" value="1" />
+  <parameter name="AUX_MEMORY_REGIONS" value="0" />
   <parameter name="BTB_ENTRIES" value="16" />
   <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DATA_REQUEST_REGISTER" value="0" />
   <parameter name="DATA_RETURN_REGISTER" value="0" />
-  <parameter name="DAUX_ADDR_BASE" value="0" />
-  <parameter name="DAUX_ADDR_LAST" value="0" />
   <parameter name="DAUX_REQUEST_REGISTER" value="2" />
   <parameter name="DAUX_RETURN_REGISTER" value="1" />
-  <parameter name="DCACHE_BURST_EN" value="0" />
   <parameter name="DCACHE_EXTERNAL_WIDTH" value="32" />
   <parameter name="DCACHE_LINE_SIZE" value="32" />
   <parameter name="DCACHE_SIZE" value="0" />
   <parameter name="DIVIDE_ENABLE" value="1" />
-  <parameter name="DUC_ADDR_BASE" value="0" />
-  <parameter name="DUC_ADDR_LAST" value="4294967295" />
   <parameter name="DUC_REQUEST_REGISTER" value="2" />
   <parameter name="DUC_RETURN_REGISTER" value="1" />
   <parameter name="ENABLE_EXCEPTIONS" value="1" />
   <parameter name="ENABLE_EXT_INTERRUPTS" value="1" />
   <parameter name="FAMILY" value="ALTERA" />
-  <parameter name="IAUX_ADDR_BASE" value="0" />
-  <parameter name="IAUX_ADDR_LAST" value="0" />
   <parameter name="IAUX_REQUEST_REGISTER" value="0" />
   <parameter name="IAUX_RETURN_REGISTER" value="0" />
-  <parameter name="ICACHE_BURST_EN" value="0" />
   <parameter name="ICACHE_EXTERNAL_WIDTH" value="32" />
   <parameter name="ICACHE_LINE_SIZE" value="32" />
   <parameter name="ICACHE_SIZE" value="0" />
   <parameter name="INSTRUCTION_REQUEST_REGISTER" value="0" />
   <parameter name="INSTRUCTION_RETURN_REGISTER" value="0" />
   <parameter name="INTERRUPT_VECTOR" value="512" />
-  <parameter name="IUC_ADDR_BASE" value="0" />
-  <parameter name="IUC_ADDR_LAST" value="4294967295" />
   <parameter name="IUC_REQUEST_REGISTER" value="0" />
   <parameter name="IUC_RETURN_REGISTER" value="0" />
-  <parameter name="LVE_ENABLE" value="1" />
   <parameter name="MAX_IFETCHES_IN_FLIGHT" value="3" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="NUM_EXT_INTERRUPTS" value="1" />
@@ -413,6 +403,10 @@
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="0" />
   <parameter name="SHIFTER_MAX_CYCLES" value="32" />
+  <parameter name="UC_MEMORY_REGIONS" value="1" />
+  <parameter name="UMR0_ADDR_BASE" value="0" />
+  <parameter name="UMR0_ADDR_LAST" value="4294967295" />
+  <parameter name="VCP_ENABLE" value="1" />
  </module>
  <connection
    kind="avalon"

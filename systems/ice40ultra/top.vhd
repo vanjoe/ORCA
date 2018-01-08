@@ -371,7 +371,7 @@ begin
       COUNTER_LENGTH        => 32,
       ENABLE_EXCEPTIONS     => 1,
       PIPELINE_STAGES       => 4,
-      LVE_ENABLE            => 0,
+      VCP_ENABLE            => 0,
       ENABLE_EXT_INTERRUPTS => 0,
       SCRATCHPAD_ADDR_BITS  => 10,
       POWER_OPTIMIZED       => 0,

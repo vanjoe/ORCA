@@ -37,7 +37,7 @@ entity instruction_fetch is
 
     program_counter : buffer unsigned(REGISTER_SIZE-1 downto 0);
 
-    --Orca-internal memory-mapped master
+    --ORCA-internal memory-mapped master
     oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     oimm_requestvalid  : buffer std_logic;
     oimm_readdata      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);

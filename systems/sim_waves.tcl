@@ -16,12 +16,12 @@ proc orca_add_wave_data_masters { add_wave_cmd add_divider_cmd prefix } {
     catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_gen/dc_master/request_throttler/throttle_gen/multiple_outstanding_requests_gen/*" } error
 
     eval "[string trim $add_divider_cmd \"] \"ORCA AXI DUC Master\""
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/duc_master_gen/duc_master/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/uc_masters_gen/duc_master/*" } error
     eval "[string trim $add_divider_cmd \"] \"ORCA AXI DUC Throttler\""
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/duc_master_gen/duc_master/request_throttler/*" } error
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/duc_master_gen/duc_master/request_throttler/throttle_gen/*" } error
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/duc_master_gen/duc_master/request_throttler/throttle_gen/one_outstanding_request_gen/*" } error
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/duc_master_gen/duc_master/request_throttler/throttle_gen/multiple_outstanding_requests_gen/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/uc_masters_gen/duc_master/request_throttler/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/uc_masters_gen/duc_master/request_throttler/throttle_gen/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/uc_masters_gen/duc_master/request_throttler/throttle_gen/one_outstanding_request_gen/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/uc_masters_gen/duc_master/request_throttler/throttle_gen/multiple_outstanding_requests_gen/*" } error
 
     eval "[string trim $add_divider_cmd \"] \"ORCA Avalon AUX Master\""
     eval "[string trim $add_wave_cmd \"] $prefix/avm_data_*"
@@ -37,12 +37,12 @@ proc orca_add_wave_instruction_masters { add_wave_cmd add_divider_cmd prefix } {
     catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_gen/ic_master/request_throttler/throttle_gen/multiple_outstanding_requests_gen/*" } error
 
     eval "[string trim $add_divider_cmd \"] \"ORCA AXI IUC Master\""
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/iuc_master_gen/iuc_master/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/uc_masters_gen/iuc_master/*" } error
     eval "[string trim $add_divider_cmd \"] \"ORCA AXI IUC Throttler\""
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/iuc_master_gen/iuc_master/request_throttler/*" } error
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/iuc_master_gen/iuc_master/request_throttler/throttle_gen/*" } error
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/iuc_master_gen/iuc_master/request_throttler/throttle_gen/one_outstanding_request_gen/*" } error
-    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/iuc_master_gen/iuc_master/request_throttler/throttle_gen/multiple_outstanding_requests_gen/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/uc_masters_gen/iuc_master/request_throttler/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/uc_masters_gen/iuc_master/request_throttler/throttle_gen/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/uc_masters_gen/iuc_master/request_throttler/throttle_gen/one_outstanding_request_gen/*" } error
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/uc_masters_gen/iuc_master/request_throttler/throttle_gen/multiple_outstanding_requests_gen/*" } error
 
     eval "[string trim $add_divider_cmd \"] \"ORCA Avalon IUC Master\""
     eval "[string trim $add_wave_cmd \"] $prefix/avm_instruction_*"

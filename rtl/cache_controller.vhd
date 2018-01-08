@@ -14,9 +14,8 @@ entity cache_controller is
     ADDRESS_WIDTH         : positive;
     INTERNAL_WIDTH        : positive;
     EXTERNAL_WIDTH        : positive;
-    MAX_BURSTLENGTH       : positive;
-    WRITE_FIRST_SUPPORTED : boolean;
-    BURST_EN              : natural range 0 to 1
+    LOG2_BURSTLENGTH      : positive;
+    WRITE_FIRST_SUPPORTED : boolean
     );
   port (
     clk   : in std_logic;
@@ -27,10 +26,10 @@ entity cache_controller is
     to_cache_control_valid   : in  std_logic;
     to_cache_control_command : in  cache_control_command;
 
-    precache_idle : in std_logic;
+    precache_idle : in  std_logic;
     cache_idle    : out std_logic;
-    
-    --Cache interface Orca-internal memory-mapped slave
+
+    --Cache interface ORCA-internal memory-mapped slave
     cacheint_oimm_address       : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     cacheint_oimm_byteenable    : in     std_logic_vector((INTERNAL_WIDTH/8)-1 downto 0);
     cacheint_oimm_requestvalid  : in     std_logic;
@@ -40,10 +39,10 @@ entity cache_controller is
     cacheint_oimm_readdatavalid : out    std_logic;
     cacheint_oimm_waitrequest   : buffer std_logic;
 
-    --Cached Orca-internal memory-mapped master
+    --Cached ORCA-internal memory-mapped master
     c_oimm_address            : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-    c_oimm_burstlength        : out std_logic_vector(log2(MAX_BURSTLENGTH+1)-1 downto 0);
-    c_oimm_burstlength_minus1 : out std_logic_vector(log2(MAX_BURSTLENGTH)-1 downto 0);
+    c_oimm_burstlength        : out std_logic_vector(LOG2_BURSTLENGTH downto 0);
+    c_oimm_burstlength_minus1 : out std_logic_vector(LOG2_BURSTLENGTH-1 downto 0);
     c_oimm_byteenable         : out std_logic_vector((EXTERNAL_WIDTH/8)-1 downto 0);
     c_oimm_requestvalid       : out std_logic;
     c_oimm_readnotwrite       : out std_logic;
@@ -63,18 +62,14 @@ architecture rtl of cache_controller is
   function compute_burst_length
     return positive is
   begin  -- function compute_burst_length
-    if BURST_EN = 0 then
-      return 1;
-    end if;
-
-    if LINE_SIZE/(EXTERNAL_WIDTH/8) > MAX_BURSTLENGTH then
-      return MAX_BURSTLENGTH;
+    if LINE_SIZE/(EXTERNAL_WIDTH/8) > (2**LOG2_BURSTLENGTH) then
+      return 2**LOG2_BURSTLENGTH;
     end if;
 
     return LINE_SIZE/(EXTERNAL_WIDTH/8);
   end function compute_burst_length;
 
-  constant BURST_LENGTH : positive range 1 to MAX_BURSTLENGTH := compute_burst_length;
+  constant BURST_LENGTH : positive range 1 to (2**LOG2_BURSTLENGTH) := compute_burst_length;
 
   constant BYTES_PER_RVALID : positive := EXTERNAL_WIDTH/8;
   constant BYTES_PER_BURST  : positive := BYTES_PER_RVALID*BURST_LENGTH;

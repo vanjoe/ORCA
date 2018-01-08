@@ -84,18 +84,36 @@ package constants_pkg is
   constant CSR_UTIMEH   : std_logic_vector(11 downto 0)  := x"C81";
 
   --NON-STANDARD
-  constant CSR_SLEEP   : std_logic_vector(11 downto 0) := x"800";
-  constant CSR_MEIMASK : std_logic_vector(11 downto 0) := x"7C0";
-  constant CSR_MEIPEND : std_logic_vector(11 downto 0) := x"FC0";
-  constant CSR_MCACHE  : std_logic_vector(11 downto 0) := x"BC0";
+  constant CSR_SLEEP      : std_logic_vector(11 downto 0) := x"800";
+  constant CSR_MEIMASK    : std_logic_vector(11 downto 0) := x"7C0";
+  constant CSR_MEIPEND    : std_logic_vector(11 downto 0) := x"FC0";
+  constant CSR_MCACHE     : std_logic_vector(11 downto 0) := x"BC0";
+  constant CSR_MAMR0_BASE : std_logic_vector(11 downto 0) := x"BD0";
+  constant CSR_MAMR1_BASE : std_logic_vector(11 downto 0) := x"BD1";
+  constant CSR_MAMR2_BASE : std_logic_vector(11 downto 0) := x"BD2";
+  constant CSR_MAMR3_BASE : std_logic_vector(11 downto 0) := x"BD3";
+  constant CSR_MAMR0_LAST : std_logic_vector(11 downto 0) := x"BD8";
+  constant CSR_MAMR1_LAST : std_logic_vector(11 downto 0) := x"BD9";
+  constant CSR_MAMR2_LAST : std_logic_vector(11 downto 0) := x"BDA";
+  constant CSR_MAMR3_LAST : std_logic_vector(11 downto 0) := x"BDB";
+  constant CSR_MUMR0_BASE : std_logic_vector(11 downto 0) := x"BE0";
+  constant CSR_MUMR1_BASE : std_logic_vector(11 downto 0) := x"BE1";
+  constant CSR_MUMR2_BASE : std_logic_vector(11 downto 0) := x"BE2";
+  constant CSR_MUMR3_BASE : std_logic_vector(11 downto 0) := x"BE3";
+  constant CSR_MUMR0_LAST : std_logic_vector(11 downto 0) := x"BE8";
+  constant CSR_MUMR1_LAST : std_logic_vector(11 downto 0) := x"BE9";
+  constant CSR_MUMR2_LAST : std_logic_vector(11 downto 0) := x"BEA";
+  constant CSR_MUMR3_LAST : std_logic_vector(11 downto 0) := x"BEB";
 
   --CSR_MSTATUS BITS
   constant CSR_MSTATUS_MIE  : natural := 3;
   constant CSR_MSTATUS_MPIE : natural := 7;
 
   --CSR_MCACHE BITS
-  constant CSR_MCACHE_IENABLE : natural := 0;
-  constant CSR_MCACHE_DENABLE : natural := 1;
+  constant CSR_MCACHE_IEXISTS : natural := 0;
+  constant CSR_MCACHE_DEXISTS : natural := 1;
+  constant CSR_MCACHE_AMRS    : std_logic_vector(19 downto 16) := (others => '0');
+  constant CSR_MCACHE_UMRS    : std_logic_vector(23 downto 20) := (others => '0');
 
   --constant CSR_MCAUSE_MEXT    : integer := 16#8000000B#;
   constant CSR_MCAUSE_ILLEGAL : integer := 2;
@@ -168,6 +186,6 @@ package constants_pkg is
   ------------------------------------------------------------------------------
   -- Types
   ------------------------------------------------------------------------------
-  type cache_control_command is (INVALIDATE, FLUSH, WRITEBACK, ENABLE, DISABLE);
+  type cache_control_command is (INVALIDATE, FLUSH, WRITEBACK);
 
 end package constants_pkg;

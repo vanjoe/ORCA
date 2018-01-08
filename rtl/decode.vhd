@@ -10,7 +10,7 @@ entity decode is
   generic (
     REGISTER_SIZE          : positive;
     SIGN_EXTENSION_SIZE    : positive;
-    LVE_ENABLE             : boolean;
+    VCP_ENABLE             : boolean;
     PIPELINE_STAGES        : natural range 1 to 2;
     WRITE_FIRST_SMALL_RAMS : boolean;
     FAMILY                 : string
@@ -85,7 +85,7 @@ begin
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
       REGISTER_NAME_SIZE     => REGISTER_NAME_SIZE,
-      READ_PORTS             => CONDITIONAL(LVE_ENABLE, 3, 2),
+      READ_PORTS             => CONDITIONAL(VCP_ENABLE, 3, 2),
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS
       )
     port map(

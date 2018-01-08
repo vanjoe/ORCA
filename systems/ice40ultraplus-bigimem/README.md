@@ -21,7 +21,7 @@ They are connected to the various slaves according to the following table
 
 The boot memory is a ROM that is preconfigured in the bitstream,it is responsible with initializing the
 larger imem and dmem rams. The Boot ROM is not readable or writable by any other port other than
-the instruction port.The Orca Data port can talk to all of the other slaves.
+the instruction port.The ORCA Data port can talk to all of the other slaves.
 
 ## Building the system
 

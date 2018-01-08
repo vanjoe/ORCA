@@ -27,7 +27,7 @@ entity load_store_unit is
     data_enable              : out    std_logic;
     load_in_progress         : buffer std_logic;
 
-    --Orca-internal memory-mapped master
+    --ORCA-internal memory-mapped master
     oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     oimm_byteenable    : out    std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     oimm_requestvalid  : buffer std_logic;

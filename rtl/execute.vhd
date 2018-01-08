@@ -25,10 +25,19 @@ entity execute is
     ENABLE_EXCEPTIONS     : boolean;
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
-    LVE_ENABLE            : natural;
+    VCP_ENABLE            : boolean;
     FAMILY                : string;
-    HAS_ICACHE            : boolean;
-    HAS_DCACHE            : boolean
+
+    AUX_MEMORY_REGIONS : natural range 0 to 4;
+    AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
+    AMR0_ADDR_LAST     : std_logic_vector(31 downto 0);
+
+    UC_MEMORY_REGIONS : natural range 0 to 4;
+    UMR0_ADDR_BASE    : std_logic_vector(31 downto 0);
+    UMR0_ADDR_LAST    : std_logic_vector(31 downto 0);
+
+    HAS_ICACHE : boolean;
+    HAS_DCACHE : boolean
     );
   port (
     clk   : in std_logic;
@@ -38,7 +47,6 @@ entity execute is
     program_counter       : in unsigned(REGISTER_SIZE-1 downto 0);
     core_idle             : in std_logic;
     memory_interface_idle : in std_logic;
-
 
     to_execute_valid            : in     std_logic;
     to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
@@ -67,7 +75,7 @@ entity execute is
     to_rf_data   : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     to_rf_valid  : buffer std_logic;
 
-    --Data Orca-internal memory-mapped master
+    --Data ORCA-internal memory-mapped master
     lsu_oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     lsu_oimm_byteenable    : out    std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     lsu_oimm_requestvalid  : buffer std_logic;
@@ -77,24 +85,28 @@ entity execute is
     lsu_oimm_readdatavalid : in     std_logic;
     lsu_oimm_waitrequest   : in     std_logic;
 
-    --ICache control (Invalidate/flush/writeback/enable/disable)
+    --ICache control (Invalidate/flush/writeback)
     from_icache_control_ready : in     std_logic;
     to_icache_control_valid   : buffer std_logic;
     to_icache_control_command : out    cache_control_command;
 
-    --DCache control (Invalidate/flush/writeback/enable/disable)
+    --DCache control (Invalidate/flush/writeback)
     from_dcache_control_ready : in     std_logic;
     to_dcache_control_valid   : buffer std_logic;
     to_dcache_control_command : out    cache_control_command;
 
-    interrupt_pending : buffer std_logic;
-    ---------------------------------------------------------------------------
-    -- Vector Co-Processor Port
-    ---------------------------------------------------------------------------
-    vcp_data0         : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    vcp_data1         : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    vcp_data2         : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    --Auxiliary/Uncached memory regions
+    amr_base_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+    amr_last_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+    umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+    umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
+    interrupt_pending : buffer std_logic;
+
+    --Vector coprocessor port
+    vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_data1            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_data2            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
     vcp_ready            : in  std_logic;
@@ -105,7 +117,6 @@ entity execute is
     vcp_alu_source_valid : in  std_logic;
     vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_result_valid : out std_logic
-
     );
 end entity execute;
 
@@ -190,12 +201,12 @@ begin
   from_execute_ready <= (not to_execute_valid) or (from_writeback_ready and
                                                    lsu_ready and
                                                    (alu_ready or vcp_was_executing) and
-                                                   (vcp_ready or bool_to_sl(LVE_ENABLE = 0)) and
+                                                   (vcp_ready or bool_to_sl(not VCP_ENABLE)) and
                                                    from_syscall_ready);
 
   --No forward stall; system calls, loads, and branches aren't forwarded.
   use_after_produce_stall <= from_syscall_valid or load_in_progress or from_branch_valid when
-                             to_rf_select = rs1 or to_rf_select = rs2 or (to_rf_select = rs3 and LVE_ENABLE = 1) else
+                             to_rf_select = rs1 or to_rf_select = rs2 or (to_rf_select = rs3 and VCP_ENABLE) else
                              '0';
 
   --Calculate forwarding muxes for next instruction in advance in order to
@@ -326,9 +337,19 @@ begin
 
       INTERRUPT_VECTOR => INTERRUPT_VECTOR,
 
+      VCP_ENABLE => VCP_ENABLE,
+
       ENABLE_EXCEPTIONS     => ENABLE_EXCEPTIONS,
       ENABLE_EXT_INTERRUPTS => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
+
+      AUX_MEMORY_REGIONS => AUX_MEMORY_REGIONS,
+      AMR0_ADDR_BASE     => AMR0_ADDR_BASE,
+      AMR0_ADDR_LAST     => AMR0_ADDR_LAST,
+
+      UC_MEMORY_REGIONS => UC_MEMORY_REGIONS,
+      UMR0_ADDR_BASE    => UMR0_ADDR_BASE,
+      UMR0_ADDR_LAST    => UMR0_ADDR_LAST,
 
       HAS_ICACHE => HAS_ICACHE,
       HAS_DCACHE => HAS_DCACHE
@@ -363,29 +384,41 @@ begin
       to_dcache_control_valid   => to_dcache_control_valid,
       to_dcache_control_command => to_dcache_control_command,
 
+      amr_base_addrs => amr_base_addrs,
+      amr_last_addrs => amr_last_addrs,
+      umr_base_addrs => umr_base_addrs,
+      umr_last_addrs => umr_last_addrs,
+
       interrupt_pending => interrupt_pending
       );
 
   vcp_port : vcp_handler
     generic map (
       REGISTER_SIZE => REGISTER_SIZE,
-      LVE_ENABLE    => LVE_ENABLE)
+      VCP_ENABLE    => VCP_ENABLE
+      )
     port map (
-      clk             => clk,
-      reset           => reset,
-      instruction     => to_execute_instruction,
-      valid_instr     => valid_instr,
-      rs1_data        => rs1_data,
-      rs2_data        => rs2_data,
-      rs3_data        => rs3_data,
-      vcp_data0       => vcp_data0,
-      vcp_data1       => vcp_data1,
-      vcp_data2       => vcp_data2,
-      vcp_instruction => vcp_instruction,
-      vcp_valid_instr => vcp_valid_instr);
+      clk   => clk,
+      reset => reset,
+
+      instruction   => to_execute_instruction,
+      valid_instr   => valid_instr,
+      vcp_executing => vcp_executing,
+
+      rs1_data => rs1_data,
+      rs2_data => rs2_data,
+      rs3_data => rs3_data,
+
+      vcp_data0 => vcp_data0,
+      vcp_data1 => vcp_data1,
+      vcp_data2 => vcp_data2,
+
+      vcp_instruction   => vcp_instruction,
+      vcp_valid_instr   => vcp_valid_instr,
+      vcp_was_executing => vcp_was_executing
+      );
   vcp_alu_result_valid <= alu_data_out_valid;
   vcp_alu_result       <= alu_data_out;
-  vcp_was_executing    <= vcp_executing when rising_edge(clk);
 
   ------------------------------------------------------------------------------
   -- PC correction (branch mispredict, interrupt, etc.)

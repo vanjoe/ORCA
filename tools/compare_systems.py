@@ -196,11 +196,11 @@ class system:
         if os.path.exists(synth_rpt):
             with open(synth_rpt) as f:
                 rpt_string = f.read()
-                self.cpu_prefit_size=int(re.findall(r"^;\s+\|Orca:vectorblox_orca_0\|\s+; (\d+)",rpt_string,re.MULTILINE)[0])
+                self.cpu_prefit_size=int(re.findall(r"^;\s+\|ORCA:vectorblox_orca_0\|\s+; (\d+)",rpt_string,re.MULTILINE)[0])
         if os.path.exists(fit_rpt):
             with open(fit_rpt) as f:
                 rpt_string = f.read()
-                self.cpu_postfit_size=int(re.findall(r"^;\s+\|Orca:vectorblox_orca_0\|\s+; (\d+)",rpt_string,re.MULTILINE)[0])
+                self.cpu_postfit_size=int(re.findall(r"^;\s+\|ORCA:vectorblox_orca_0\|\s+; (\d+)",rpt_string,re.MULTILINE)[0])
         with open(self.directory+"/summary.txt","w") as f:
             f.write('BRANCH_PREDICTION="%s"\n'   %self.branch_prediction)
             f.write('BTB_SIZE="%s"\n'            %self.btb_size)

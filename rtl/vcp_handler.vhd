@@ -10,16 +10,17 @@ use work.constants_pkg.all;
 
 
 entity vcp_handler is
-
   generic (
     REGISTER_SIZE : integer;
-    LVE_ENABLE    : integer);
-
+    VCP_ENABLE    : boolean
+    );
   port (
-    clk         : in std_logic;
-    reset       : in std_logic;
-    instruction : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    valid_instr : in std_logic;
+    clk   : in std_logic;
+    reset : in std_logic;
+
+    instruction   : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    valid_instr   : in std_logic;
+    vcp_executing : in std_logic;
 
     rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -29,9 +30,9 @@ entity vcp_handler is
     vcp_data1 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_data2 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-    vcp_instruction : out std_logic_vector(40 downto 0);
-    vcp_valid_instr : out std_logic
-
+    vcp_instruction   : out std_logic_vector(40 downto 0);
+    vcp_valid_instr   : out std_logic;
+    vcp_was_executing : out std_logic
     );
 end entity vcp_handler;
 
@@ -48,10 +49,23 @@ begin  -- architecture rtl
   vcp_instruction(35 downto 34) <= "10";  --b size
   vcp_instruction(33 downto 32) <= "10";  --b size
   vcp_instruction(31 downto 0)  <= instruction(31 downto 0);
-  vcp_valid_instr               <= valid_instr when instruction(6 downto 0) = LVE_OP and LVE_ENABLE = 1 else '0';
 
   vcp_data0 <= rs1_data;
   vcp_data1 <= rs2_data;
   vcp_data2 <= rs3_data;
+
+  vcp_enabled_gen : if VCP_ENABLE generate
+    vcp_valid_instr <= valid_instr when instruction(6 downto 0) = LVE_OP else '0';
+    process (clk) is
+    begin
+      if rising_edge(clk) then
+        vcp_was_executing <= vcp_executing;
+      end if;
+    end process;
+  end generate vcp_enabled_gen;
+  vcp_disabled_gen : if not VCP_ENABLE generate
+    vcp_valid_instr   <= '0';
+    vcp_was_executing <= '0';
+  end generate vcp_disabled_gen;
 
 end architecture rtl;

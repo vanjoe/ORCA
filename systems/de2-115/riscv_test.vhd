@@ -24,20 +24,24 @@ end entity riscv_test;
 architecture rtl of riscv_test is
   component system is
     port (
-      clk_clk       : in  std_logic := '0';  --             clk.clk
-      hex0_export   : out std_logic_vector(31 downto 0);  --            hex0.export
-      hex1_export   : out std_logic_vector(31 downto 0);  --            hex1.export
-      hex2_export   : out std_logic_vector(31 downto 0);  --            hex2.export
-      hex3_export   : out std_logic_vector(31 downto 0);  --            hex3.export
-      ledg_export   : out std_logic_vector(31 downto 0);  --            ledg.export
-      ledr_export   : out std_logic_vector(31 downto 0);  --            ledr.export
-      reset_reset_n : in  std_logic := '0'   --           reset.reset_n
+      clk_clk                     : in  std_logic := 'X';  -- clk
+      hex0_export                 : out std_logic_vector(31 downto 0);  -- export
+      hex1_export                 : out std_logic_vector(31 downto 0);  -- export
+      hex2_export                 : out std_logic_vector(31 downto 0);  -- export
+      hex3_export                 : out std_logic_vector(31 downto 0);  -- export
+      ledg_export                 : out std_logic_vector(31 downto 0);  -- export
+      ledr_export                 : out std_logic_vector(31 downto 0);  -- export
+      reset_reset_n               : in  std_logic := 'X';  -- reset_n
+      the_altpll_areset_export    : in  std_logic := 'X';  -- export
+      the_altpll_locked_export    : out std_logic;         -- export
+      the_altpll_phasedone_export : out std_logic          -- export
       );
-  end component;
+  end component system;
 
   signal hex_input   : std_logic_vector(31 downto 0);
   signal clk         : std_logic;
   signal reset       : std_logic;
+  signal resetn      : std_logic;
   signal ledg_export : std_logic_vector(31 downto 0);
   signal ledr_export : std_logic_vector(31 downto 0);
   signal hex3_export : std_logic_vector(31 downto 0);
@@ -72,19 +76,23 @@ architecture rtl of riscv_test is
     return to_ret;
   end function;
 begin
-  clk   <= clock_50;
-  reset <= key(1);
+  clk    <= clock_50;
+  resetn <= key(1);
+  reset  <= not key(1);
 
   rv : component system
     port map (
-      clk_clk       => clk,
-      reset_reset_n => reset,
-      ledg_export   => ledg_export,
-      ledr_export   => ledr_export,
-      hex3_export   => hex3_export,
-      hex2_export   => hex2_export,
-      hex1_export   => hex1_export,
-      hex0_export   => hex0_export
+      clk_clk                     => clk,
+      reset_reset_n               => resetn,
+      ledg_export                 => ledg_export,
+      ledr_export                 => ledr_export,
+      hex3_export                 => hex3_export,
+      hex2_export                 => hex2_export,
+      hex1_export                 => hex1_export,
+      hex0_export                 => hex0_export,
+      the_altpll_areset_export    => reset,
+      the_altpll_locked_export    => LEDG(5),
+      the_altpll_phasedone_export => LEDG(6)
       );
 
   hex_input <=
@@ -104,6 +112,6 @@ begin
   HEX7 <= seven_segment(hex_input(31 downto 28));
 
   LEDR             <= ledr_export(17 downto 0);
-  LEDG(6 downto 0) <= ledg_export(6 downto 0);
-  LEDG(7)          <= reset;
+  LEDG(4 downto 0) <= ledg_export(4 downto 0);
+  LEDG(7)          <= resetn;
 end;

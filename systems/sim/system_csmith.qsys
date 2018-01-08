@@ -311,20 +311,16 @@
   <parameter name="ENABLE_EXT_INTERRUPTS" value="0" />
   <parameter name="EXT_INTERRUPTS" value="1" />
   <parameter name="FAMILY" value="ALTERA" />
-  <parameter name="ICACHE_BURST_EN" value="0" />
   <parameter name="ICACHE_EXTERNAL_WIDTH" value="32" />
   <parameter name="ICACHE_LINE_SIZE" value="32" />
   <parameter name="ICACHE_SIZE" value="0" />
   <parameter name="INTERRUPT_VECTOR" value="512" />
-  <parameter name="IUC_ADDR_BASE" value="0" />
-  <parameter name="IUC_ADDR_LAST" value="0" />
   <parameter name="LVE_ENABLE" value="0" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="PIPELINE_STAGES" value="4" />
   <parameter name="POWER_OPTIMIZED" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="-2147483648" />
-  <parameter name="SCRATCHPAD_SIZE" value="1024" />
   <parameter name="SHIFTER_MAX_CYCLES" value="32" />
  </module>
  <connection

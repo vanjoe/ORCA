@@ -1,6 +1,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+
+library work;
+use work.utils.all;
 use work.constants_pkg.all;
 
 entity system_calls is
@@ -14,6 +17,16 @@ entity system_calls is
     ENABLE_EXCEPTIONS     : boolean;
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
+
+    VCP_ENABLE : boolean;
+
+    AUX_MEMORY_REGIONS : natural range 0 to 4;
+    AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
+    AMR0_ADDR_LAST     : std_logic_vector(31 downto 0);
+
+    UC_MEMORY_REGIONS : natural range 0 to 4;
+    UMR0_ADDR_BASE    : std_logic_vector(31 downto 0);
+    UMR0_ADDR_LAST    : std_logic_vector(31 downto 0);
 
     HAS_ICACHE : boolean;
     HAS_DCACHE : boolean
@@ -33,8 +46,8 @@ entity system_calls is
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_syscall_ready : out std_logic;
 
-    from_syscall_valid : out std_logic;
-    from_syscall_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    from_syscall_valid : out    std_logic;
+    from_syscall_data  : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     to_pc_correction_data    : out unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_valid   : out std_logic;
@@ -48,6 +61,11 @@ entity system_calls is
     to_dcache_control_valid   : buffer std_logic;
     to_dcache_control_command : out    cache_control_command;
 
+    amr_base_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+    amr_last_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+    umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+    umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+
     interrupt_pending : buffer std_logic
     );
 end entity system_calls;
@@ -55,7 +73,8 @@ end entity system_calls;
 architecture rtl of system_calls is
   component instruction_legal is
     generic (
-      check_legal_instructions : boolean
+      CHECK_LEGAL_INSTRUCTIONS : boolean;
+      VCP_ENABLE               : boolean
       );
     port (
       instruction : in  std_logic_vector(instruction_size-1 downto 0);
@@ -75,7 +94,8 @@ architecture rtl of system_calls is
   signal meipend  : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mcache   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
 
-  alias csr_select is instruction(CSR_ADDRESS'range);
+  --Assign csr_select instead of alias to get csr_select'right = 0 for indexing
+  signal csr_select : std_logic_vector(CSR_ADDRESS'length-1 downto 0);
   alias func3 is instruction(INSTR_FUNC3'range);
   alias imm is instruction(CSR_ZIMM'range);
 
@@ -93,10 +113,26 @@ architecture rtl of system_calls is
   signal interrupt_pc_correction_valid : std_logic;
 
   signal time_counter : unsigned(63 downto 0);
+
+  --Uncached/Auxiliary memory region CSR signals.  Will be assigned 0's if unused.
+  type csr_vector is array (natural range <>) of std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal mamr_base       : csr_vector(3 downto 0);
+  signal mamr_last       : csr_vector(3 downto 0);
+  signal mumr_base       : csr_vector(3 downto 0);
+  signal mumr_last       : csr_vector(3 downto 0);
+  signal amr_base_select : std_logic_vector(3 downto 0);
+  signal amr_last_select : std_logic_vector(3 downto 0);
+  signal umr_base_select : std_logic_vector(3 downto 0);
+  signal umr_last_select : std_logic_vector(3 downto 0);
+  signal amr_base_write  : std_logic_vector(3 downto 0);
+  signal amr_last_write  : std_logic_vector(3 downto 0);
+  signal umr_base_write  : std_logic_vector(3 downto 0);
+  signal umr_last_write  : std_logic_vector(3 downto 0);
 begin
   instr_check : instruction_legal
     generic map (
-      check_legal_instructions => ENABLE_EXCEPTIONS
+      CHECK_LEGAL_INSTRUCTIONS => ENABLE_EXCEPTIONS,
+      VCP_ENABLE               => VCP_ENABLE
       )
     port map (
       instruction => instruction,
@@ -118,6 +154,7 @@ begin
   mtimeh <= std_logic_vector(time_counter(time_counter'left downto time_counter'left-REGISTER_SIZE+1))
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
 
+  csr_select <= instruction(CSR_ADDRESS'range);
   with csr_select select
     csr_read_val <=
     mstatus         when CSR_MSTATUS,
@@ -131,6 +168,22 @@ begin
     mtime           when CSR_UTIME,
     mtimeh          when CSR_UTIMEH,
     mcache          when CSR_MCACHE,
+    mamr_base(0)    when CSR_MAMR0_BASE,
+    mamr_base(1)    when CSR_MAMR1_BASE,
+    mamr_base(2)    when CSR_MAMR2_BASE,
+    mamr_base(3)    when CSR_MAMR3_BASE,
+    mamr_last(0)    when CSR_MAMR0_LAST,
+    mamr_last(1)    when CSR_MAMR1_LAST,
+    mamr_last(2)    when CSR_MAMR2_LAST,
+    mamr_last(3)    when CSR_MAMR3_LAST,
+    mumr_base(0)    when CSR_MUMR0_BASE,
+    mumr_base(1)    when CSR_MUMR1_BASE,
+    mumr_base(2)    when CSR_MUMR2_BASE,
+    mumr_base(3)    when CSR_MUMR3_BASE,
+    mumr_last(0)    when CSR_MUMR0_LAST,
+    mumr_last(1)    when CSR_MUMR1_LAST,
+    mumr_last(2)    when CSR_MUMR2_LAST,
+    mumr_last(3)    when CSR_MUMR3_LAST,
     (others => '0') when others;
 
   with func3 select
@@ -254,69 +307,129 @@ begin
     meimask                       <= (others => '0');
   end generate no_exceptions_gen;
 
-  has_icache_gen : if HAS_ICACHE generate
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        if to_syscall_valid = '1' then
-          if legal_instr = '1' then
-            if instruction(MAJOR_OP'range) = SYSTEM_OP then
-              if func3 /= "000" then
-                -----------------------------------------------------------------------------
-                -- CSR Read/Write
-                -----------------------------------------------------------------------------
-                if csr_select = CSR_MCACHE then
-                  mcache(CSR_MCACHE_IENABLE) <= csr_read_val(CSR_MCACHE_IENABLE);
-                end if;
+  memory_region_registers_gen : for gregister in 3 downto 0 generate
+    amr_gen : if (AUX_MEMORY_REGIONS > gregister) and ((UC_MEMORY_REGIONS /= 0) or HAS_ICACHE or HAS_DCACHE) generate
+      amr_base_select(gregister) <=
+        '1' when (csr_select(csr_select'left downto 3) = CSR_MAMR0_BASE(CSR_MAMR0_BASE'left downto 3) and
+                  unsigned(csr_select(2 downto 0)) = to_unsigned(gregister, 3)) else
+        '0';
+      amr_last_select(gregister) <=
+        '1' when (csr_select(csr_select'left downto 3) = CSR_MAMR0_LAST(CSR_MAMR0_LAST'left downto 3) and
+                  unsigned(csr_select(2 downto 0)) = to_unsigned(gregister, 3)) else
+        '0';
+
+      process(clk)
+      begin
+        if rising_edge(clk) then
+          --Don't write the new AMR until the pipeline and memory interface are
+          --flushed
+          if from_pc_correction_ready = '1' then
+            if (memory_idle = '1' and
+                (from_icache_control_ready = '1' or to_icache_control_valid = '0') and
+                (from_dcache_control_ready = '1' or to_dcache_control_valid = '0')) then
+              if amr_base_write(gregister) = '1' then
+                mamr_base(gregister) <= from_syscall_data;
+              end if;
+              if amr_last_write(gregister) = '1' then
+                mamr_last(gregister) <= from_syscall_data;
               end if;
             end if;
           end if;
-        end if;
 
-        if reset = '1' then
-          mcache(CSR_MCACHE_IENABLE) <= '0';
+          if reset = '1' then
+            if gregister = 0 then
+              mamr_base(gregister) <= AMR0_ADDR_BASE;
+              mamr_last(gregister) <= AMR0_ADDR_LAST;
+            else
+              mamr_base(gregister) <= (others => '0');
+              mamr_last(gregister) <= (others => '0');
+            end if;
+          end if;
         end if;
-      end if;
-    end process;
+      end process;
+    end generate amr_gen;
+    no_amr_gen : if ((AUX_MEMORY_REGIONS <= gregister) or
+                     ((UC_MEMORY_REGIONS = 0) and (not HAS_ICACHE) and (not HAS_DCACHE))) generate
+      amr_base_select(gregister) <= '0';
+      amr_last_select(gregister) <= '0';
+      mamr_base(gregister)       <= (others => '0');
+      mamr_last(gregister)       <= (others => '0');
+    end generate no_amr_gen;
+    umr_gen : if (UC_MEMORY_REGIONS > gregister) and ((AUX_MEMORY_REGIONS /= 0) or HAS_ICACHE or HAS_DCACHE) generate
+      umr_base_select(gregister) <=
+        '1' when (csr_select(csr_select'left downto 3) = CSR_MUMR0_BASE(CSR_MUMR0_BASE'left downto 3) and
+                  unsigned(csr_select(2 downto 0)) = to_unsigned(gregister, 3)) else
+        '0';
+      umr_last_select(gregister) <=
+        '1' when (csr_select(csr_select'left downto 3) = CSR_MUMR0_LAST(CSR_MUMR0_LAST'left downto 3) and
+                  unsigned(csr_select(2 downto 0)) = to_unsigned(gregister, 3)) else
+        '0';
+
+      process(clk)
+      begin
+        if rising_edge(clk) then
+          --Don't write the new UMR until the pipeline and memory interface are
+          --flushed
+          if from_pc_correction_ready = '1' then
+            if (memory_idle = '1' and
+                (from_icache_control_ready = '1' or to_icache_control_valid = '0') and
+                (from_dcache_control_ready = '1' or to_dcache_control_valid = '0')) then
+              if umr_base_write(gregister) = '1' then
+                mumr_base(gregister) <= from_syscall_data;
+              end if;
+              if umr_last_write(gregister) = '1' then
+                mumr_last(gregister) <= from_syscall_data;
+              end if;
+            end if;
+          end if;
+
+          if reset = '1' then
+            if gregister = 0 then
+              mumr_base(gregister) <= UMR0_ADDR_BASE;
+              mumr_last(gregister) <= UMR0_ADDR_LAST;
+            else
+              mumr_base(gregister) <= (others => '0');
+              mumr_last(gregister) <= (others => '0');
+            end if;
+          end if;
+        end if;
+      end process;
+    end generate umr_gen;
+    no_umr_gen : if ((UC_MEMORY_REGIONS <= gregister) or
+                     ((AUX_MEMORY_REGIONS = 0) and (not HAS_ICACHE) and (not HAS_DCACHE))) generate
+      umr_base_select(gregister) <= '0';
+      umr_last_select(gregister) <= '0';
+      mumr_base(gregister)       <= (others => '0');
+      mumr_last(gregister)       <= (others => '0');
+    end generate no_umr_gen;
+  end generate memory_region_registers_gen;
+  amr_gen : for gregister in imax(AUX_MEMORY_REGIONS, 1)-1 downto 0 generate
+    amr_base_addrs(((gregister+1)*REGISTER_SIZE)-1 downto gregister*REGISTER_SIZE) <= mamr_base(gregister);
+    amr_last_addrs(((gregister+1)*REGISTER_SIZE)-1 downto gregister*REGISTER_SIZE) <= mamr_last(gregister);
+  end generate amr_gen;
+  umr_gen : for gregister in imax(UC_MEMORY_REGIONS, 1)-1 downto 0 generate
+    umr_base_addrs(((gregister+1)*REGISTER_SIZE)-1 downto gregister*REGISTER_SIZE) <= mumr_base(gregister);
+    umr_last_addrs(((gregister+1)*REGISTER_SIZE)-1 downto gregister*REGISTER_SIZE) <= mumr_last(gregister);
+  end generate umr_gen;
+
+  has_icache_gen : if HAS_ICACHE generate
+    mcache(CSR_MCACHE_IEXISTS) <= '1';
   end generate has_icache_gen;
   no_icache_gen : if not HAS_ICACHE generate
-    mcache(CSR_MCACHE_IENABLE) <= '0';
+    mcache(CSR_MCACHE_IEXISTS) <= '0';
   end generate no_icache_gen;
   has_dcache_gen : if HAS_DCACHE generate
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        if to_syscall_valid = '1' then
-          if legal_instr = '1' then
-            if instruction(MAJOR_OP'range) = SYSTEM_OP then
-              if func3 /= "000" then
-                -----------------------------------------------------------------------------
-                -- CSR Read/Write
-                -----------------------------------------------------------------------------
-                if csr_select = CSR_MCACHE then
-                  mcache(CSR_MCACHE_DENABLE) <= csr_read_val(CSR_MCACHE_DENABLE);
-                end if;
-              end if;
-            end if;
-          end if;
-        end if;
-
-        if reset = '1' then
-          mcache(CSR_MCACHE_DENABLE) <= '0';
-        end if;
-      end if;
-    end process;
+    mcache(CSR_MCACHE_DEXISTS) <= '1';
   end generate has_dcache_gen;
   no_dcache_gen : if not HAS_DCACHE generate
-    mcache(CSR_MCACHE_DENABLE) <= '0';
+    mcache(CSR_MCACHE_DEXISTS) <= '0';
   end generate no_dcache_gen;
-  mcache(REGISTER_SIZE-1 downto CSR_MCACHE_DENABLE+1) <= (others => '0');
+  mcache(REGISTER_SIZE-1 downto CSR_MCACHE_DEXISTS+1) <= (others => '0');
 
   process(clk)
   begin
     if rising_edge(clk) then
       from_syscall_valid <= '0';
-      from_syscall_data  <= csr_read_val;
 
       --Hold pc_correction causing signals until they have been processed
       if from_pc_correction_ready = '1' then
@@ -324,8 +437,14 @@ begin
         --On FENCE.I hold the PC correction until all pending writebacks have
         --occurred and the ICache is flushed (from_icache_control_ready is
         --hardwired to '1' when no ICache is present).
-        if memory_idle = '1' and (from_icache_control_ready = '1' or to_icache_control_valid = '0') then
-          was_fence_i <= '0';
+        if (memory_idle = '1' and
+            (from_icache_control_ready = '1' or to_icache_control_valid = '0') and
+            (from_dcache_control_ready = '1' or to_dcache_control_valid = '0')) then
+          was_fence_i    <= '0';
+          amr_base_write <= (others => '0');
+          amr_last_write <= (others => '0');
+          umr_base_write <= (others => '0');
+          umr_last_write <= (others => '0');
         end if;
       end if;
 
@@ -336,21 +455,6 @@ begin
       if to_syscall_valid = '1' then
         next_fence_pc <= unsigned(current_pc) + to_unsigned(4, next_fence_pc'length);
 
-        if HAS_ICACHE then
-          if csr_read_val(CSR_MCACHE_IENABLE) = '1' then
-            to_icache_control_command <= ENABLE;
-          else
-            to_icache_control_command <= DISABLE;
-          end if;
-        end if;
-        if HAS_DCACHE then
-          if csr_read_val(CSR_MCACHE_DENABLE) = '1' then
-            to_dcache_control_command <= ENABLE;
-          else
-            to_dcache_control_command <= DISABLE;
-          end if;
-        end if;
-
         if legal_instr = '1' then
           if instruction(MAJOR_OP'range) = SYSTEM_OP then
             if func3 /= "000" then
@@ -359,25 +463,18 @@ begin
               -----------------------------------------------------------------------------
               if (not POWER_OPTIMIZED) or (csr_select /= CSR_SLEEP) then
                 from_syscall_valid <= '1';
+                from_syscall_data  <= csr_read_val;
               end if;
 
-              --Changing cacheability does a FENCE.I as a form of backpressure
-              --(no instructions fetched/executing until cacheability change is
-              --done).
-              if csr_select = CSR_MCACHE then
-                if HAS_ICACHE then
-                  if mcache(CSR_MCACHE_IENABLE) /= csr_read_val(CSR_MCACHE_IENABLE) then
-                    was_fence_i             <= '1';
-                    to_icache_control_valid <= '1';
-                  end if;
-                end if;
-                if HAS_DCACHE then
-                  if mcache(CSR_MCACHE_DENABLE) /= csr_read_val(CSR_MCACHE_DENABLE) then
-                    was_fence_i             <= '1';
-                    to_dcache_control_valid <= '1';
-                  end if;
-                end if;
+              --Changing cacheability flushes the pipeline and clears the
+              --memory interface before resuming.
+              if or_slv(amr_base_select or amr_last_select or umr_base_select or umr_last_select) = '1' then
+                was_fence_i <= '1';
               end if;
+              amr_base_write <= amr_base_select;
+              amr_last_write <= amr_last_select;
+              umr_base_write <= umr_base_select;
+              umr_last_write <= umr_last_select;
             elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
               -----------------------------------------------------------------------------
               -- Other System Instructions
@@ -402,6 +499,10 @@ begin
         was_fence_i             <= '0';
         to_icache_control_valid <= '0';
         to_dcache_control_valid <= '0';
+        amr_base_write          <= (others => '0');
+        amr_last_write          <= (others => '0');
+        umr_base_write          <= (others => '0');
+        umr_last_write          <= (others => '0');
       end if;
     end if;
   end process;
@@ -456,7 +557,8 @@ use work.constants_pkg.all;
 
 entity instruction_legal is
   generic (
-    CHECK_LEGAL_INSTRUCTIONS : boolean
+    CHECK_LEGAL_INSTRUCTIONS : boolean;
+    VCP_ENABLE               : boolean
     );
   port (
     instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
@@ -484,5 +586,5 @@ begin
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
               (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
               (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /= SYSTEM_EBREAK) or
-              opcode7 = LVE_OP) else '0';
+              (opcode7 = LVE_OP and VCP_ENABLE)) else '0';
 end architecture;

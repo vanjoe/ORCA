@@ -53,46 +53,52 @@ DEFAULT_SHIFTER_MAX_CYCLES=1
 DEFAULT_COUNTER_LENGTH=32
 DEFAULT_ENABLE_EXCEPTIONS=1
 DEFAULT_PIPELINE_STAGES=5
-DEFAULT_DATA_REQUEST_REGISTER=0
-DEFAULT_DATA_RETURN_REGISTER=0
-DEFAULT_DC_REQUEST_REGISTER=1
-DEFAULT_DC_RETURN_REGISTER=0
-DEFAULT_DUC_REQUEST_REGISTER=2
-DEFAULT_DUC_RETURN_REGISTER=1
-DEFAULT_DAUX_REQUEST_REGISTER=2
-DEFAULT_DAUX_RETURN_REGISTER=1
+DEFAULT_LVE_ENABLE=0
+DEFAULT_ENABLE_EXT_INTERRUPTS=0
+DEFAULT_NUM_EXT_INTERRUPTS=1
+DEFAULT_POWER_OPTIMIZED=0
+
+DEFAULT_LOG2_BURSTLENGTH=8
+DEFAULT_AXI_ID_WIDTH=1
+
+DEFAULT_AUX_MEMORY_REGIONS=1
+DEFAULT_AMR0_ADDR_BASE=0x00000000
+DEFAULT_AMR0_ADDR_LAST=0x00000000
+
+DEFAULT_UC_MEMORY_REGIONS=1
+DEFAULT_UMR0_ADDR_BASE=0xC0000000
+DEFAULT_UMR0_ADDR_LAST=0xFFFFFFFF
+
+DEFAULT_ICACHE_SIZE=8192
+DEFAULT_ICACHE_LINE_SIZE=32
+DEFAULT_ICACHE_EXTERNAL_WIDTH=32
+
 DEFAULT_INSTRUCTION_REQUEST_REGISTER=0
 DEFAULT_INSTRUCTION_RETURN_REGISTER=0
-DEFAULT_IC_REQUEST_REGISTER=1
-DEFAULT_IC_RETURN_REGISTER=0
 DEFAULT_IUC_REQUEST_REGISTER=1
 DEFAULT_IUC_RETURN_REGISTER=0
 DEFAULT_IAUX_REQUEST_REGISTER=1
 DEFAULT_IAUX_RETURN_REGISTER=0
-DEFAULT_LVE_ENABLE=0
-DEFAULT_ENABLE_EXT_INTERRUPTS=0
-DEFAULT_NUM_EXT_INTERRUPTS=1
-DEFAULT_SCRATCHPAD_ADDR_BITS=10
-DEFAULT_IUC_ADDR_BASE=0xC0000000
-DEFAULT_IUC_ADDR_LAST=0xFFFFFFFF
-DEFAULT_IAUX_ADDR_BASE=0xB0000000
-DEFAULT_IAUX_ADDR_LAST=0xBFFFFFFF
-DEFAULT_ICACHE_SIZE=0
-DEFAULT_ICACHE_LINE_SIZE=16
-DEFAULT_ICACHE_EXTERNAL_WIDTH=32
-DEFAULT_ICACHE_BURST_EN=1
-DEFAULT_DUC_ADDR_BASE=0xC0000000
-DEFAULT_DUC_ADDR_LAST=0xFFFFFFFF
-DEFAULT_DAUX_ADDR_BASE=0xB0000000
-DEFAULT_DAUX_ADDR_LAST=0xBFFFFFFF
-DEFAULT_DCACHE_SIZE=0
-DEFAULT_DCACHE_LINE_SIZE=16
+DEFAULT_IC_REQUEST_REGISTER=1
+DEFAULT_IC_RETURN_REGISTER=0
+
+DEFAULT_DCACHE_SIZE=8192
+DEFAULT_DCACHE_LINE_SIZE=32
 DEFAULT_DCACHE_EXTERNAL_WIDTH=32
-DEFAULT_DCACHE_BURST_EN=1
-DEFAULT_POWER_OPTIMIZED=0
+
+DEFAULT_DATA_REQUEST_REGISTER=0
+DEFAULT_DATA_RETURN_REGISTER=0
+DEFAULT_DUC_REQUEST_REGISTER=2
+DEFAULT_DUC_RETURN_REGISTER=1
+DEFAULT_DAUX_REQUEST_REGISTER=2
+DEFAULT_DAUX_RETURN_REGISTER=1
+DEFAULT_DC_REQUEST_REGISTER=1
+DEFAULT_DC_RETURN_REGISTER=0
+
+DEFAULT_UART_CFG=Xil_Uart_Cfg('/dev/ttyACM0', 115200)
 
 ##########################################################################
-class Xil_Orca_BuildCfg(Orca_BuildCfgBase):
+class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
 
     ######################################################################
     def __init__(self,
@@ -107,98 +113,185 @@ class Xil_Orca_BuildCfg(Orca_BuildCfgBase):
                  counter_length=DEFAULT_COUNTER_LENGTH,
                  enable_exceptions=DEFAULT_ENABLE_EXCEPTIONS,
                  pipeline_stages=DEFAULT_PIPELINE_STAGES,
-                 data_request_register=DEFAULT_DATA_REQUEST_REGISTER,
-                 data_return_register=DEFAULT_DATA_RETURN_REGISTER,
-                 dc_request_register=DEFAULT_DC_REQUEST_REGISTER,
-                 dc_return_register=DEFAULT_DC_RETURN_REGISTER,
-                 duc_request_register=DEFAULT_DUC_REQUEST_REGISTER,
-                 duc_return_register=DEFAULT_DUC_RETURN_REGISTER,
-                 daux_request_register=DEFAULT_DAUX_REQUEST_REGISTER,
-                 daux_return_register=DEFAULT_DAUX_RETURN_REGISTER,
+                 vcp_enable=DEFAULT_VCP_ENABLE,
+                 enable_ext_interrupts=DEFAULT_ENABLE_EXT_INTERRUPTS,
+                 num_ext_interrupts=DEFAULT_NUM_EXT_INTERRUPTS,
+                 power_optimized=DEFAULT_POWER_OPTIMIZED,
+                 log2_burstlength=DEFAULT_LOG2_BURSTLENGTH,
+                 axi_id_width=DEFAULT_AXI_ID_WIDTH,
+                 aux_memory_regions=DEFAULT_AUX_MEMORY_REGIONS,
+                 amr0_addr_base=DEFAULT_AMR0_ADDR_BASE,
+                 amr0_addr_last=DEFAULT_AMR0_ADDR_LAST,
+                 uc_memory_regions=DEFAULT_UC_MEMORY_REGIONS,
+                 umr0_addr_base=DEFAULT_UMR0_ADDR_BASE,
+                 umr0_addr_last=DEFAULT_UMR0_ADDR_LAST,
+                 icache_size=DEFAULT_ICACHE_SIZE,
+                 icache_line_size=DEFAULT_ICACHE_LINE_SIZE,
+                 icache_external_width=DEFAULT_ICACHE_EXTERNAL_WIDTH,
                  instruction_request_register=DEFAULT_INSTRUCTION_REQUEST_REGISTER,
                  instruction_return_register=DEFAULT_INSTRUCTION_RETURN_REGISTER,
-                 ic_request_register=DEFAULT_IC_REQUEST_REGISTER,
-                 ic_return_register=DEFAULT_IC_RETURN_REGISTER,
                  iuc_request_register=DEFAULT_IUC_REQUEST_REGISTER,
                  iuc_return_register=DEFAULT_IUC_RETURN_REGISTER,
                  iaux_request_register=DEFAULT_IAUX_REQUEST_REGISTER,
                  iaux_return_register=DEFAULT_IAUX_RETURN_REGISTER,
-                 lve_enable=DEFAULT_LVE_ENABLE,
-                 enable_ext_interrupts=DEFAULT_ENABLE_EXT_INTERRUPTS,
-                 num_ext_interrupts=DEFAULT_NUM_EXT_INTERRUPTS,
-                 scratchpad_addr_bits=DEFAULT_SCRATCHPAD_ADDR_BITS,
-                 iuc_addr_base=DEFAULT_IUC_ADDR_BASE,
-                 iuc_addr_last=DEFAULT_IUC_ADDR_LAST,
-                 iaux_addr_base=DEFAULT_IAUX_ADDR_BASE,
-                 iaux_addr_last=DEFAULT_IAUX_ADDR_LAST,
-                 icache_size=DEFAULT_ICACHE_SIZE,
-                 icache_line_size=DEFAULT_ICACHE_LINE_SIZE,
-                 icache_external_width=DEFAULT_ICACHE_EXTERNAL_WIDTH,
-                 icache_burst_en=DEFAULT_ICACHE_BURST_EN,
-                 duc_addr_base=DEFAULT_DUC_ADDR_BASE,
-                 duc_addr_last=DEFAULT_DUC_ADDR_LAST,
-                 daux_addr_base=DEFAULT_DAUX_ADDR_BASE,
-                 daux_addr_last=DEFAULT_DAUX_ADDR_LAST,
+                 ic_request_register=DEFAULT_IC_REQUEST_REGISTER,
+                 ic_return_register=DEFAULT_IC_RETURN_REGISTER,
                  dcache_size=DEFAULT_DCACHE_SIZE,
                  dcache_line_size=DEFAULT_DCACHE_LINE_SIZE,
                  dcache_external_width=DEFAULT_DCACHE_EXTERNAL_WIDTH,
-                 dcache_burst_en=DEFAULT_DCACHE_BURST_EN,
-                 power_optimized=DEFAULT_POWER_OPTIMIZED,
+                 data_request_register=DEFAULT_DATA_REQUEST_REGISTER,
+                 data_return_register=DEFAULT_DATA_RETURN_REGISTER,
+                 duc_request_register=DEFAULT_DUC_REQUEST_REGISTER,
+                 duc_return_register=DEFAULT_DUC_RETURN_REGISTER,
+                 daux_request_register=DEFAULT_DAUX_REQUEST_REGISTER,
+                 daux_return_register=DEFAULT_DAUX_RETURN_REGISTER,
+                 dc_request_register=DEFAULT_DC_REQUEST_REGISTER,
+                 dc_return_register=DEFAULT_DC_RETURN_REGISTER,
                  opt_sysid='',
                  dstdir='',
                  skip_sw_tests=False,
                  iterate_bsp_opt_flags=False,
-                 uart_cfg=None):
+                 uart_cfg=DEFAULT_UART_CFG):
 
-        super(Xil_Orca_BuildCfg, self).__init__(\
-              system,
-              reset_vector,
-              interrupt_vector,
-              max_ifetches_in_flight,
-              btb_entries,
-              multiply_enable,
-              divide_enable,
-              shifter_max_cycles,
-              counter_length,
-              enable_exceptions,
-              pipeline_stages,
-              data_request_register,
-              data_return_register,
-              dc_request_register,
-              dc_return_register,
-              duc_request_register,
-              duc_return_register,
-              daux_request_register,
-              daux_return_register,
-              instruction_request_register,
-              instruction_return_register,
-              ic_request_register,
-              ic_return_register,
-              iuc_request_register,
-              iuc_return_register,
-              iaux_request_register,
-              iaux_return_register,
-              lve_enable,
-              enable_ext_interrupts,
-              num_ext_interrupts,
-              scratchpad_addr_bits,
-              iuc_addr_base,
-              iuc_addr_last,
-              iaux_addr_base,
-              iaux_addr_last,
-              icache_size,
-              icache_line_size,
-              icache_external_width,
-              icache_burst_en,
-              duc_addr_base,
-              duc_addr_last,
-              daux_addr_base,
-              daux_addr_last,
-              dcache_size,
-              dcache_line_size,
-              dcache_external_width,
-              dcache_burst_en,
-              power_optimized,
+        build_id = '%s%s' % \
+            (system,
+             opt_sysid)
+        if reset_vector != DEFAULT_RESET_VECTOR:
+            build_id += '_rv%X' % reset_vector
+        if interrupt_vector != DEFAULT_INTERRUPT_VECTOR:
+            build_id += '_iv%X' % interrupt_vector
+        if max_ifetches_in_flight != DEFAULT_MAX_IFETCHES_IN_FLIGHT:
+            build_id += '_mif%d' % max_ifetches_in_flight
+        if btb_entries != DEFAULT_BTB_ENTRIES:
+            build_id += '_btb%d' % btb_entries
+        if multiply_enable != DEFAULT_MULTIPLY_ENABLE:
+            build_id += '_me%d' % multiply_enable
+        if divide_enable != DEFAULT_DIVIDE_ENABLE:
+            build_id += '_de%d' % divide_enable
+        if shifter_max_cycles != DEFAULT_SHIFTER_MAX_CYCLES:
+            build_id += '_smc%d' % shifter_max_cycles
+        if counter_length != DEFAULT_COUNTER_LENGTH:
+            build_id += '_cl%d' % counter_length
+        if enable_exceptions != DEFAULT_ENABLE_EXCEPTIONS:
+            build_id += '_ex%d' % enable_exceptions
+        if pipeline_stages != DEFAULT_PIPELINE_STAGES:
+            build_id += '_ps%d' % pipeline_stages
+        if vcp_enable != DEFAULT_VCP_ENABLE:
+            build_id += '_vcp%d' % vcp_enable
+        if enable_ext_interrupts != DEFAULT_ENABLE_EXT_INTERRUPTS:
+            build_id += '_int%d' % enable_ext_interrupts
+        if num_ext_interrupts != DEFAULT_NUM_EXT_INTERRUPTS:
+            build_id += '_%d' % num_ext_interrupts
+        if power_optimized != DEFAULT_POWER_OPTIMIZED:
+            build_id += '_po%d' % power_optimized
+        if log2_burstlength != DEFAULT_LOG2_BURSTLENGTH:
+            build_id += '_l2b%d' % log2_burstlength
+        if axi_id_width != DEFAULT_AXI_ID_WIDTH:
+            build_id += '_aid%d' % axi_id_width
+        if aux_memory_regions != DEFAULT_AUX_MEMORY_REGIONS:
+            build_id += '_amr%d' % aux_memory_regions
+        if amr0_addr_base != DEFAULT_AMR0_ADDR_BASE:
+            build_id += '_amrb%X' % amr0_addr_base
+        if amr0_addr_last != DEFAULT_AMR0_ADDR_LAST:
+            build_id += '_amrl%X' % amr0_addr_last
+        if uc_memory_regions != DEFAULT_UC_MEMORY_REGIONS:
+            build_id += '_umr%d' % uc_memory_regions
+        if umr0_addr_base != DEFAULT_UMR0_ADDR_BASE:
+            build_id += '_umrb%X' % umr0_addr_base
+        if umr0_addr_last != DEFAULT_UMR0_ADDR_LAST:
+            build_id += '_umrl%X' % umr0_addr_last
+        if icache_size != DEFAULT_ICACHE_SIZE:
+            build_id += '_ics%d' % icache_size
+        if icache_line_size != DEFAULT_ICACHE_LINE_SIZE:
+            build_id += '_icl%d' % icache_line_size
+        if icache_external_width != DEFAULT_ICACHE_EXTERNAL_WIDTH:
+            build_id += '_ice%d' % icache_external_width
+        if instruction_request_register != DEFAULT_INSTRUCTION_REQUEST_REGISTER:
+            build_id += '_irqr%d' % instruction_request_register
+        if instruction_return_register != DEFAULT_INSTRUCTION_RETURN_REGISTER:
+            build_id += '_irtr%d' % instruction_return_register
+        if iuc_request_register != DEFAULT_IUC_REQUEST_REGISTER:
+            build_id += '_iucrqr%d' % iuc_request_register
+        if iuc_return_register != DEFAULT_IUC_RETURN_REGISTER:
+            build_id += '_iucrtr%d' % iuc_return_register
+        if iaux_request_register != DEFAULT_IAUX_REQUEST_REGISTER:
+            build_id += '_iauxrqr%d' % iaux_request_register
+        if iaux_return_register != DEFAULT_IAUX_RETURN_REGISTER:
+            build_id += '_iauxrtr%d' % iaux_return_register
+        if ic_request_register != DEFAULT_IC_REQUEST_REGISTER:
+            build_id += '_icrqr%d' % ic_request_register
+        if ic_return_register != DEFAULT_IC_RETURN_REGISTER:
+            build_id += '_icrtr%d' % ic_return_register
+        if dcache_size != DEFAULT_DCACHE_SIZE:
+            build_id += '_dcs%d' % dcache_size
+        if dcache_line_size != DEFAULT_DCACHE_LINE_SIZE:
+            build_id += '_dcl%d' % dcache_line_size
+        if dcache_external_width != DEFAULT_DCACHE_EXTERNAL_WIDTH:
+            build_id += '_dce%d' % dcache_external_width
+        if data_request_register != DEFAULT_DATA_REQUEST_REGISTER:
+            build_id += '_drqr%d' % data_request_register
+        if data_return_register != DEFAULT_DATA_RETURN_REGISTER:
+            build_id += '_drtr%d' % data_return_register
+        if duc_request_register != DEFAULT_DUC_REQUEST_REGISTER:
+            build_id += '_ducrqr%d' % duc_request_register
+        if duc_return_register != DEFAULT_DUC_RETURN_REGISTER:
+            build_id += '_ducrtr%d' % duc_return_register
+        if daux_request_register != DEFAULT_DAUX_REQUEST_REGISTER:
+            build_id += '_dauxrqr%d' % daux_request_register
+        if daux_return_register != DEFAULT_DAUX_RETURN_REGISTER:
+            build_id += '_dauxrtr%d' % daux_return_register
+        if dc_request_register != DEFAULT_DC_REQUEST_REGISTER:
+            build_id += '_dcrqr%d' % dc_request_register
+        if dc_return_register != DEFAULT_DC_RETURN_REGISTER:
+            build_id += '_dcrtr%d' % dc_return_register
+
+        super(Xil_ORCA_BuildCfg, self).__init__(\
+              system=system,
+              build_id=build_id,
+              reset_vector=reset_vector,
+              interrupt_vector=interrupt_vector,
+              max_ifetches_in_flight=max_ifetches_in_flight,
+              btb_entries=btb_entries,
+              multiply_enable=multiply_enable,
+              divide_enable=divide_enable,
+              shifter_max_cycles=shifter_max_cycles,
+              counter_length=counter_length,
+              enable_exceptions=enable_exceptions,
+              pipeline_stages=pipeline_stages,
+              vcp_enable=vcp_enable,
+              enable_ext_interrupts=enable_ext_interrupts,
+              num_ext_interrupts=num_ext_interrupts,
+              power_optimized=power_optimized,
+              log2_burstlength=log2_burstlength,
+              axi_id_width=axi_id_width,
+              aux_memory_regions=aux_memory_regions,
+              amr0_addr_base=amr0_addr_base,
+              amr0_addr_last=amr0_addr_last,
+              uc_memory_regions=uc_memory_regions,
+              umr0_addr_base=umr0_addr_base,
+              umr0_addr_last=umr0_addr_last,
+              icache_size=icache_size,
+              icache_line_size=icache_line_size,
+              icache_external_width=icache_external_width,
+              instruction_request_register=instruction_request_register,
+              instruction_return_register=instruction_return_register,
+              iuc_request_register=iuc_request_register,
+              iuc_return_register=iuc_return_register,
+              iaux_request_register=iaux_request_register,
+              iaux_return_register=iaux_return_register,
+              ic_request_register=ic_request_register,
+              ic_return_register=ic_return_register,
+              dcache_size=dcache_size,
+              dcache_line_size=dcache_line_size,
+              dcache_external_width=dcache_external_width,
+              data_request_register=data_request_register,
+              data_return_register=data_return_register,
+              duc_request_register=duc_request_register,
+              duc_return_register=duc_return_register,
+              daux_request_register=daux_request_register,
+              daux_return_register=daux_return_register,
+              dc_request_register=dc_request_register,
+              dc_return_register=dc_return_register,
               opt_sysid=opt_sysid,
               dstdir=dstdir,
               skip_sw_tests=skip_sw_tests,
@@ -210,7 +303,7 @@ class Xil_Orca_BuildCfg(Orca_BuildCfgBase):
     ######################################################################
     def setup_sw_build_dirs(self, sw_build_dirs, test_ignore_list):
         self.sw_build_dirs = \
-            [Xil_Orca_SWBuildDir(self, swbd, test_ignore_list) for swbd in sw_build_dirs]
+            [Xil_ORCA_SWBuildDir(self, swbd, test_ignore_list) for swbd in sw_build_dirs]
 
     ######################################################################
     def setup_build(self, build_root, keep_existing=False,
@@ -250,7 +343,7 @@ class Xil_Orca_BuildCfg(Orca_BuildCfgBase):
         # Note: ignore the software directory, as that will be different
         # in this test suite than it is in the systems project.
         shutil.copytree('../systems'+'/'+self.system, self.dstdir,
-            ignore=shutil.ignore_patterns('software', 'project', '*~', '#*', '.#*'))
+            ignore=shutil.ignore_patterns('software', 'project', '*~', '#*', '.#*', '.Xil'))
 
         # Symlink to the and scripts dir for all test builds.
         rel_symlink('../scripts', self.dstdir)
@@ -262,8 +355,8 @@ class Xil_Orca_BuildCfg(Orca_BuildCfgBase):
         f = open('config.mk', 'a')
         f.write('SYSTEM=%s\n' % self.system)
         f.write('OPTIONAL_SYSID=%s\n' % self.opt_sysid)
-        f.write('RESET_VECTOR=0x%s\n' % format(self.reset_vector, '08x'))
-        f.write('INTERRUPT_VECTOR=0x%s\n' % format(self.interrupt_vector, '08x'))
+        f.write('RESET_VECTOR=%s\n' % self.reset_vector)
+        f.write('INTERRUPT_VECTOR=%s\n' % self.interrupt_vector)
         f.write('MAX_IFETCHES_IN_FLIGHT=%s\n' % self.max_ifetches_in_flight)
         f.write('BTB_ENTRIES=%s\n' % self.btb_entries)
         f.write('MULTIPLY_ENABLE=%s\n' % self.multiply_enable)
@@ -272,43 +365,40 @@ class Xil_Orca_BuildCfg(Orca_BuildCfgBase):
         f.write('COUNTER_LENGTH=%s\n' % self.counter_length)
         f.write('ENABLE_EXCEPTIONS=%s\n' % self.enable_exceptions)
         f.write('PIPELINE_STAGES=%s\n' % self.pipeline_stages)
-        f.write('DATA_REQUEST_REGISTER=%s\n' % self.data_request_register)
-        f.write('DATA_RETURN_REGISTER=%s\n' % self.data_return_register)
-        f.write('DC_REQUEST_REGISTER=%s\n' % self.dc_request_register)
-        f.write('DC_RETURN_REGISTER=%s\n' % self.dc_return_register)
-        f.write('DUC_REQUEST_REGISTER=%s\n' % self.duc_request_register)
-        f.write('DUC_RETURN_REGISTER=%s\n' % self.duc_return_register)
-        f.write('DAUX_REQUEST_REGISTER=%s\n' % self.daux_request_register)
-        f.write('DAUX_RETURN_REGISTER=%s\n' % self.daux_return_register)
+        f.write('VCP_ENABLE=%s\n' % self.vcp_enable)
+        f.write('ENABLE_EXT_INTERRUPTS=%s\n' % self.enable_ext_interrupts)
+        f.write('NUM_EXT_INTERRUPTS=%s\n' % self.num_ext_interrupts)
+        f.write('POWER_OPTIMIZED=%s\n' % self.power_optimized)
+        f.write('LOG2_BURSTLENGTH=%s\n' % self.log2_burstlength)
+        f.write('AXI_ID_WIDTH=%s\n' % self.axi_id_width)
+        f.write('AUX_MEMORY_REGIONS=%s\n' % self.aux_memory_regions)
+        f.write('AMR0_ADDR_BASE=%s\n' % self.amr0_addr_base)
+        f.write('AMR0_ADDR_LAST=%s\n' % self.amr0_addr_last)
+        f.write('UC_MEMORY_REGIONS=%s\n' % self.uc_memory_regions)
+        f.write('UMR0_ADDR_BASE=%s\n' % self.umr0_addr_base)
+        f.write('UMR0_ADDR_LAST=%s\n' % self.umr0_addr_last)
+        f.write('ICACHE_SIZE=%s\n' % self.icache_size)
+        f.write('ICACHE_LINE_SIZE=%s\n' % self.icache_line_size)
+        f.write('ICACHE_EXTERNAL_WIDTH=%s\n' % self.icache_external_width)
         f.write('INSTRUCTION_REQUEST_REGISTER=%s\n' % self.instruction_request_register)
         f.write('INSTRUCTION_RETURN_REGISTER=%s\n' % self.instruction_return_register)
-        f.write('IC_REQUEST_REGISTER=%s\n' % self.ic_request_register)
-        f.write('IC_RETURN_REGISTER=%s\n' % self.ic_return_register)
         f.write('IUC_REQUEST_REGISTER=%s\n' % self.iuc_request_register)
         f.write('IUC_RETURN_REGISTER=%s\n' % self.iuc_return_register)
         f.write('IAUX_REQUEST_REGISTER=%s\n' % self.iaux_request_register)
         f.write('IAUX_RETURN_REGISTER=%s\n' % self.iaux_return_register)
-        f.write('LVE_ENABLE=%s\n' % self.lve_enable)
-        f.write('ENABLE_EXT_INTERRUPTS=%s\n' % self.enable_ext_interrupts)
-        f.write('NUM_EXT_INTERRUPTS=%s\n' % self.num_ext_interrupts)
-        f.write('SCRATCHPAD_ADDR_BITS=%s\n' % self.scratchpad_addr_bits)
-        f.write('IUC_ADDR_BASE=0x%s\n' % format(self.iuc_addr_base, '08x'))
-        f.write('IUC_ADDR_LAST=0x%s\n' % format(self.iuc_addr_last, '08x'))
-        f.write('IAUX_ADDR_BASE=0x%s\n' % format(self.iaux_addr_base, '08x'))
-        f.write('IAUX_ADDR_LAST=0x%s\n' % format(self.iaux_addr_last, '08x'))
-        f.write('ICACHE_SIZE=%s\n' % self.icache_size)
-        f.write('ICACHE_LINE_SIZE=%s\n' % self.icache_line_size)
-        f.write('ICACHE_EXTERNAL_WIDTH=%s\n' % self.icache_external_width)
-        f.write('ICACHE_BURST_EN=%s\n' % self.icache_burst_en)
-        f.write('DUC_ADDR_BASE=0x%s\n' % format(self.duc_addr_base, '08x'))
-        f.write('DUC_ADDR_LAST=0x%s\n' % format(self.duc_addr_last, '08x'))
-        f.write('DAUX_ADDR_BASE=0x%s\n' % format(self.daux_addr_base, '08x'))
-        f.write('DAUX_ADDR_LAST=0x%s\n' % format(self.daux_addr_last, '08x'))
+        f.write('IC_REQUEST_REGISTER=%s\n' % self.ic_request_register)
+        f.write('IC_RETURN_REGISTER=%s\n' % self.ic_return_register)
         f.write('DCACHE_SIZE=%s\n' % self.dcache_size)
         f.write('DCACHE_LINE_SIZE=%s\n' % self.dcache_line_size)
         f.write('DCACHE_EXTERNAL_WIDTH=%s\n' % self.dcache_external_width)
-        f.write('DCACHE_BURST_EN=%s\n' % self.dcache_burst_en)
-        f.write('POWER_OPTIMIZED=%s\n' % self.power_optimized)
+        f.write('DATA_REQUEST_REGISTER=%s\n' % self.data_request_register)
+        f.write('DATA_RETURN_REGISTER=%s\n' % self.data_return_register)
+        f.write('DUC_REQUEST_REGISTER=%s\n' % self.duc_request_register)
+        f.write('DUC_RETURN_REGISTER=%s\n' % self.duc_return_register)
+        f.write('DAUX_REQUEST_REGISTER=%s\n' % self.daux_request_register)
+        f.write('DAUX_RETURN_REGISTER=%s\n' % self.daux_return_register)
+        f.write('DC_REQUEST_REGISTER=%s\n' % self.dc_request_register)
+        f.write('DC_RETURN_REGISTER=%s\n' % self.dc_return_register)
         f.close()
 
         os.chdir(cwd)
@@ -370,7 +460,7 @@ class Xil_Orca_BuildCfg(Orca_BuildCfgBase):
                     # force the script to re-run the test no matter what, as 
                     # the .elf file would be newer than the log file. This 
                     # comparison between the file ages is done in 
-                    # Alt_Orca_SWTest.run(), which is called later when the 
+                    # Alt_ORCA_SWTest.run(), which is called later when the 
                     # software tests are run.
                     f.write('make %s -C software/%s &> ' \
                         'software/%s/log/compile_log\n' \
@@ -905,14 +995,14 @@ class Xil_Orca_BuildCfg(Orca_BuildCfgBase):
                         break
 
 ##########################################################################
-class Xil_Orca_SWBuildDir(Orca_SWBuildDir):
+class Xil_ORCA_SWBuildDir(ORCA_SWBuildDir):
     def create_tests(self, test_list_cleaned):
         self.test_list = \
-            [Xil_Orca_SWTest(self.build_cfg, self, t) for t in test_list_cleaned] 
+            [Xil_ORCA_SWTest(self.build_cfg, self, t) for t in test_list_cleaned] 
 
     
 ##########################################################################
-class Xil_Orca_SWTest(Orca_SWTest):
+class Xil_ORCA_SWTest(ORCA_SWTest):
 
     ######################################################################
     # It seems to be common for the Vivado hardware manager to hang silently
@@ -1105,7 +1195,10 @@ class Xil_Orca_SWTest(Orca_SWTest):
         if tries_remaining <= 0:
             logging.info('Out of attempts to perform JTAG initialization.')
             if term_process.poll() != None:
-                os.killpg(term_process.pid, signal.SIGTERM)
+                try:
+                    os.killpg(term_process.pid, signal.SIGTERM)
+                except OSError:
+                    pass
             return -1
 
 

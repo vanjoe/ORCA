@@ -18,42 +18,52 @@ use work.utils.all;
 
 entity cache_mux is
   generic (
-    ADDRESS_WIDTH             : positive;
-    DATA_WIDTH                : positive;
-    MAX_OUTSTANDING_READS     : positive;
+    ADDRESS_WIDTH : positive;
+    DATA_WIDTH    : positive;
+
+    MAX_OUTSTANDING_READS : positive;
+
+    AUX_MEMORY_REGIONS : natural range 0 to 4;
+    AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
+    AMR0_ADDR_LAST     : std_logic_vector(31 downto 0);
+
+    UC_MEMORY_REGIONS : natural range 0 to 4;
+    UMR0_ADDR_BASE    : std_logic_vector(31 downto 0);
+    UMR0_ADDR_LAST    : std_logic_vector(31 downto 0);
+
+    CACHE_SIZE      : natural;
+    CACHE_LINE_SIZE : positive range 16 to 256;
+
     INTERNAL_REQUEST_REGISTER : natural range 0 to 2;
     INTERNAL_RETURN_REGISTER  : natural range 0 to 1;
-    CACHE_SIZE                : natural;
-    CACHE_LINE_SIZE           : positive range 16 to 256;
-
     UC_REQUEST_REGISTER       : natural range 0 to 2;
     UC_RETURN_REGISTER        : natural range 0 to 1;
-    UC_ADDR_BASE              : std_logic_vector(31 downto 0);
-    UC_ADDR_LAST              : std_logic_vector(31 downto 0);
-
     AUX_REQUEST_REGISTER      : natural range 0 to 2;
-    AUX_RETURN_REGISTER       : natural range 0 to 1;
-    AUX_ADDR_BASE             : std_logic_vector(31 downto 0);
-    AUX_ADDR_LAST             : std_logic_vector(31 downto 0)
+    AUX_RETURN_REGISTER       : natural range 0 to 1
     );
   port (
     clk   : in std_logic;
     reset : in std_logic;
 
+    amr_base_addrs : in std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*ADDRESS_WIDTH)-1 downto 0);
+    amr_last_addrs : in std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*ADDRESS_WIDTH)-1 downto 0);
+    umr_base_addrs : in std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*ADDRESS_WIDTH)-1 downto 0);
+    umr_last_addrs : in std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*ADDRESS_WIDTH)-1 downto 0);
+
     internal_register_idle  : out std_logic;
     external_registers_idle : out std_logic;
 
-    --Orca-internal memory-mapped slave
+    --ORCA-internal memory-mapped slave
     oimm_address       : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     oimm_byteenable    : in  std_logic_vector((DATA_WIDTH/8)-1 downto 0) := (others => '1');
     oimm_requestvalid  : in  std_logic;
-    oimm_readnotwrite  : in  std_logic := '1';
-    oimm_writedata     : in  std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '-');
+    oimm_readnotwrite  : in  std_logic                                   := '1';
+    oimm_writedata     : in  std_logic_vector(DATA_WIDTH-1 downto 0)     := (others => '-');
     oimm_readdata      : out std_logic_vector(DATA_WIDTH-1 downto 0);
     oimm_readdatavalid : out std_logic;
     oimm_waitrequest   : out std_logic;
 
-    --Cache interface Orca-internal memory-mapped master
+    --Cache interface ORCA-internal memory-mapped master
     cacheint_oimm_address       : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     cacheint_oimm_byteenable    : out std_logic_vector((DATA_WIDTH/8)-1 downto 0);
     cacheint_oimm_requestvalid  : out std_logic;
@@ -63,7 +73,7 @@ entity cache_mux is
     cacheint_oimm_readdatavalid : in  std_logic;
     cacheint_oimm_waitrequest   : in  std_logic;
 
-    --Uncached Orca-internal memory-mapped master
+    --Uncached ORCA-internal memory-mapped master
     uc_oimm_address       : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     uc_oimm_byteenable    : out std_logic_vector((DATA_WIDTH/8)-1 downto 0);
     uc_oimm_requestvalid  : out std_logic;
@@ -73,7 +83,7 @@ entity cache_mux is
     uc_oimm_readdatavalid : in  std_logic;
     uc_oimm_waitrequest   : in  std_logic;
 
-    --Tightly-coupled memory Orca-internal memory-mapped master
+    --Tightly-coupled memory ORCA-internal memory-mapped master
     aux_oimm_address       : out std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     aux_oimm_byteenable    : out std_logic_vector((DATA_WIDTH/8)-1 downto 0);
     aux_oimm_requestvalid  : out std_logic;
@@ -104,6 +114,14 @@ architecture rtl of cache_mux is
   signal c_max_outstanding_reads    : std_logic;
   signal uc_max_outstanding_reads   : std_logic;
   signal aux_max_outstanding_reads  : std_logic;
+
+  type address_vector is array (natural range <>) of unsigned(ADDRESS_WIDTH-1 downto 0);
+  signal amr_base_addr     : address_vector(imax(AUX_MEMORY_REGIONS, 1)-1 downto 0);
+  signal amr_last_addr     : address_vector(imax(AUX_MEMORY_REGIONS, 1)-1 downto 0);
+  signal amr_address_match : std_logic_vector(imax(AUX_MEMORY_REGIONS, 1)-1 downto 0);
+  signal umr_base_addr     : address_vector(imax(UC_MEMORY_REGIONS, 1)-1 downto 0);
+  signal umr_last_addr     : address_vector(imax(UC_MEMORY_REGIONS, 1)-1 downto 0);
+  signal umr_address_match : std_logic_vector(imax(AUX_MEMORY_REGIONS, 1)-1 downto 0);
 
   signal c_select   : std_logic;
   signal uc_select  : std_logic;
@@ -146,7 +164,7 @@ begin
 
       register_idle => internal_register_idle,
 
-      --Orca-internal memory-mapped slave
+      --ORCA-internal memory-mapped slave
       slave_oimm_address       => oimm_address,
       slave_oimm_byteenable    => oimm_byteenable,
       slave_oimm_requestvalid  => oimm_requestvalid,
@@ -156,7 +174,7 @@ begin
       slave_oimm_readdatavalid => oimm_readdatavalid,
       slave_oimm_waitrequest   => oimm_waitrequest,
 
-      --Orca-internal memory-mapped master
+      --ORCA-internal memory-mapped master
       master_oimm_address       => internal_oimm_address,
       master_oimm_byteenable    => internal_oimm_byteenable,
       master_oimm_requestvalid  => internal_oimm_requestvalid,
@@ -180,20 +198,41 @@ begin
   internal_aux_oimm_byteenable <= internal_oimm_byteenable;
   internal_aux_oimm_writedata  <= internal_oimm_writedata;
 
+  amr_gen : for gregister in imax(AUX_MEMORY_REGIONS, 1)-1 downto 0 generate
+    amr_base_addr(gregister) <=
+      unsigned(amr_base_addrs(((gregister+1)*ADDRESS_WIDTH)-1 downto gregister*ADDRESS_WIDTH));
+    amr_last_addr(gregister) <=
+      unsigned(amr_last_addrs(((gregister+1)*ADDRESS_WIDTH)-1 downto gregister*ADDRESS_WIDTH));
+    amr_address_match(gregister) <=
+      '1' when ((unsigned(internal_oimm_address) >= amr_base_addr(gregister)) and
+                (unsigned(internal_oimm_address) <= amr_last_addr(gregister))) else
+      '0';
+  end generate amr_gen;
+  umr_gen : for gregister in imax(UC_MEMORY_REGIONS, 1)-1 downto 0 generate
+    umr_base_addr(gregister) <=
+      unsigned(umr_base_addrs(((gregister+1)*ADDRESS_WIDTH)-1 downto gregister*ADDRESS_WIDTH));
+    umr_last_addr(gregister) <=
+      unsigned(umr_last_addrs(((gregister+1)*ADDRESS_WIDTH)-1 downto gregister*ADDRESS_WIDTH));
+    umr_address_match(gregister) <=
+      '1' when ((unsigned(internal_oimm_address) >= umr_base_addr(gregister)) and
+                (unsigned(internal_oimm_address) <= umr_last_addr(gregister))) else
+      '0';
+  end generate umr_gen;
+
   --Generate control signals depending on which interfaces are enabled and if
   --the address ranges overalp.  Cache has all unspecified addresses.  If AUX
   --and UC overlap use AUX.
-  no_aux_gen : if AUX_ADDR_BASE = AUX_ADDR_LAST generate
+  no_aux_gen : if AUX_MEMORY_REGIONS = 0 generate
     aux_select <= '0';
-    no_uc_gen : if UC_ADDR_BASE = UC_ADDR_LAST generate
-      uc_select      <= '0';
+    no_uc_gen : if UC_MEMORY_REGIONS = 0 generate
+      uc_select               <= '0';
       external_registers_idle <= '1';
       no_c_gen : if CACHE_SIZE = 0 generate
         c_select                    <= '0';
         internal_oimm_readdata      <= (others => '-');
         internal_oimm_readdatavalid <= '0';
         assert true report
-          "Error; Cache is disabled (CACHE_SIZE = 0), UC interface is disabled (UC_ADDR_BASE = UC_ADDR_LAST), and AUX interface is disabled (AUX_ADDR_BASE = AUX_ADDR_LAST).  At least one interface must be enabled."
+          "Error; Cache is disabled (CACHE_SIZE = 0), UC interface is disabled (UC_MEMORY_REGIONS = 0), and AUX interface is disabled (AUX_MEMORY_REGIONS = 0).  At least one interface must be enabled."
           severity failure;
       end generate no_c_gen;
       has_c_gen : if CACHE_SIZE /= 0 generate
@@ -202,131 +241,76 @@ begin
         internal_oimm_readdatavalid <= cacheint_oimm_readdatavalid;
       end generate has_c_gen;
     end generate no_uc_gen;
-    has_uc_gen : if UC_ADDR_BASE /= UC_ADDR_LAST generate
+    has_uc_gen : if UC_MEMORY_REGIONS /= 0 generate
       external_registers_idle <= uc_register_idle;
       no_c_gen : if CACHE_SIZE = 0 generate
         c_select                    <= '0';
         uc_select                   <= '1';
         internal_oimm_readdata      <= internal_uc_oimm_readdata;
         internal_oimm_readdatavalid <= internal_uc_oimm_readdatavalid;
-        assert not ((unsigned(UC_ADDR_BASE) /= to_unsigned(0, UC_ADDR_BASE'length)) or
-                    (signed(UC_ADDR_LAST) /= to_signed(-1, UC_ADDR_LAST'length))) report
-          "Warning; Cache is disabled (CACHE_SIZE = 0) and AUX interface is disabled (AUX_ADDR_BASE = AUX_ADDR_LAST) but UC address range does not encompass the full address range.  All accesses will go to UC interface, even those not in the UC address range.  Please set UC address range to the full address range."
-          severity warning;
+        assert not ((unsigned(UMR0_ADDR_BASE) /= to_unsigned(0, UMR0_ADDR_BASE'length)) or
+                    (signed(UMR0_ADDR_LAST) /= to_signed(-1, UMR0_ADDR_LAST'length))) report
+          "Warning; Cache is disabled (CACHE_SIZE = 0) and AUX interface is disabled (AUX_MEMORY_REGIONS = 0) but UMR0 address range does not encompass the full address range.  All accesses will go to UC interface, even those not in the UMR0 address range."
+          severity note;
+        assert UC_MEMORY_REGIONS = 1 report
+          "Warning; Cache is disabled (CACHE_SIZE = 0) and AUX interface is disabled (AUX_MEMORY_REGIONS = 0) but UC_MEMORY_REGIONS is greater than 1.  Multiple UC_MEMORY_REGIONS are superflous in this configuration as all accesses will use the UC memory interface."
+          severity note;
       end generate no_c_gen;
       has_c_gen : if CACHE_SIZE /= 0 generate
-        uc_select <=
-          '1' when ((unsigned(internal_oimm_address) >= unsigned(UC_ADDR_BASE(ADDRESS_WIDTH-1 downto 0))) and
-                    (unsigned(internal_oimm_address) <= unsigned(UC_ADDR_LAST(ADDRESS_WIDTH-1 downto 0)))) else
-          '0';
-        c_select <= not uc_select;
+        uc_select <= or_slv(umr_address_match);
+        c_select  <= and_slv(not umr_address_match);
 
         internal_oimm_readdata <= cacheint_oimm_readdata when cacheint_oimm_readdatavalid = '1' else
                                   internal_uc_oimm_readdata;
         internal_oimm_readdatavalid <= cacheint_oimm_readdatavalid or internal_uc_oimm_readdatavalid;
-        assert not ((unsigned(UC_ADDR_BASE) = to_unsigned(0, UC_ADDR_BASE'length)) and
-                    (signed(UC_ADDR_LAST) = to_signed(-1, UC_ADDR_LAST'length))) report
-          "Error; Cache is enabled (CACHE_SIZE /= 0) but UC address range encompasses the full address range so no accesses will go to the cache.  Please disable the cache or set the UC address range to not encompass the full address range."
-          severity failure;
       end generate has_c_gen;
     end generate has_uc_gen;
   end generate no_aux_gen;
-  has_aux_gen : if AUX_ADDR_BASE /= AUX_ADDR_LAST generate
-    no_uc_gen : if UC_ADDR_BASE = UC_ADDR_LAST generate
-      uc_select      <= '0';
+  has_aux_gen : if AUX_MEMORY_REGIONS /= 0 generate
+    no_uc_gen : if UC_MEMORY_REGIONS = 0 generate
+      uc_select               <= '0';
       external_registers_idle <= aux_register_idle;
       no_c_gen : if CACHE_SIZE = 0 generate
         aux_select                  <= '1';
         c_select                    <= '0';
         internal_oimm_readdata      <= internal_aux_oimm_readdata;
         internal_oimm_readdatavalid <= internal_aux_oimm_readdatavalid;
-        assert not ((unsigned(AUX_ADDR_BASE) /= to_unsigned(0, AUX_ADDR_BASE'length)) or
-                    (signed(AUX_ADDR_LAST) /= to_signed(-1, AUX_ADDR_LAST'length))) report
-          "Warning; Cache is disabled (CACHE_SIZE = 0) and UC interface is disabled (UC_ADDR_BASE = UC_ADDR_LAST) but AUX address range does not encompass the full address range.  All accesses will go to AUX interface, even those not in the AUX address range.  Please set AUX address range to the full address range."
-          severity warning;
+        assert not ((unsigned(AMR0_ADDR_BASE) /= to_unsigned(0, AMR0_ADDR_BASE'length)) or
+                    (signed(AMR0_ADDR_LAST) /= to_signed(-1, AMR0_ADDR_LAST'length))) report
+          "Warning; Cache is disabled (CACHE_SIZE = 0) and UC interface is disabled (UC_MEMORY_REGIONS = 0) but AMR0 address range does not encompass the full address range.  All accesses will go to AUX interface, even those not in the AMR0 address range."
+          severity note;
+        assert AUX_MEMORY_REGIONS = 1 report
+          "Warning; Cache is disabled (CACHE_SIZE = 0) and UC interface is disabled (UC_MEMORY_REGIONS = 0) but AUX_MEMORY_REGIONS is greater than 1.  Multiple AUX_MEMORY_REGIONS are superflous in this configuration as all accesses will use the AUX memory interface."
+          severity note;
       end generate no_c_gen;
       has_c_gen : if CACHE_SIZE /= 0 generate
-        aux_select <=
-          '1' when ((unsigned(internal_oimm_address) >= unsigned(AUX_ADDR_BASE(ADDRESS_WIDTH-1 downto 0))) and
-                    (unsigned(internal_oimm_address) <= unsigned(AUX_ADDR_LAST(ADDRESS_WIDTH-1 downto 0)))) else
-          '0';
-        c_select               <= not aux_select;
+        aux_select             <= or_slv(amr_address_match);
+        c_select               <= and_slv(not amr_address_match);
         internal_oimm_readdata <= cacheint_oimm_readdata when cacheint_oimm_readdatavalid = '1' else
                                   internal_aux_oimm_readdata;
         internal_oimm_readdatavalid <= cacheint_oimm_readdatavalid or internal_aux_oimm_readdatavalid;
-        assert not ((unsigned(AUX_ADDR_BASE) <= to_unsigned(0, AUX_ADDR_BASE'length)) and
-                    (signed(AUX_ADDR_LAST) = to_signed(-1, AUX_ADDR_LAST'length))) report
-          "Error; Cache is enabled (CACHE_SIZE /= 0) but AUX address range encompasses the full address range so no accesses will go to the cache.  Please disable the cache or set the AUX address range to not encompass the full address range."
-          severity failure;
       end generate has_c_gen;
     end generate no_uc_gen;
-    has_uc_gen : if UC_ADDR_BASE /= UC_ADDR_LAST generate
-      aux_select <=
-        '1' when ((unsigned(internal_oimm_address) >= unsigned(AUX_ADDR_BASE(ADDRESS_WIDTH-1 downto 0))) and
-                  (unsigned(internal_oimm_address) <= unsigned(AUX_ADDR_LAST(ADDRESS_WIDTH-1 downto 0)))) else
-        '0';
+    has_uc_gen : if UC_MEMORY_REGIONS /= 0 generate
+      aux_select              <= or_slv(amr_address_match);
       external_registers_idle <= uc_register_idle and aux_register_idle;
       no_c_gen : if CACHE_SIZE = 0 generate
-        uc_select              <= not aux_select;
+        uc_select              <= and_slv(not amr_address_match);
         c_select               <= '0';
         internal_oimm_readdata <= internal_uc_oimm_readdata when internal_uc_oimm_readdatavalid = '1' else
                                   internal_aux_oimm_readdata;
         internal_oimm_readdatavalid <= internal_uc_oimm_readdatavalid or internal_aux_oimm_readdatavalid;
-
-        assert not ((unsigned(UC_ADDR_BASE) /= to_unsigned(0, UC_ADDR_BASE'length)) or
-                    (signed(UC_ADDR_LAST) /= to_signed(-1, UC_ADDR_LAST'length))) report
-          "Warning; Cache is disabled (CACHE_SIZE = 0) and UC interface is enabled (UC_ADDR_BASE /= UC_ADDR_LAST) but UC address range does not encompass the full address range.  Any accesses outside the AUX address range will go to the UC interface, even those not in the UC address range.  Please set UC address range to the full address range."
-          severity warning;
       end generate no_c_gen;
       has_c_gen : if CACHE_SIZE /= 0 generate
-        overlap_gen : if ((unsigned(AUX_ADDR_BASE(ADDRESS_WIDTH-1 downto 0)) <=
-                           unsigned(UC_ADDR_LAST(ADDRESS_WIDTH-1 downto 0))) and
-                          (unsigned(AUX_ADDR_LAST(ADDRESS_WIDTH-1 downto 0)) >=
-                           unsigned(UC_ADDR_BASE(ADDRESS_WIDTH-1 downto 0)))) generate
-          uc_select <= (not aux_select) when
-                       ((unsigned(internal_oimm_address) >= unsigned(UC_ADDR_BASE(ADDRESS_WIDTH-1 downto 0))) and
-                        (unsigned(internal_oimm_address) <= unsigned(UC_ADDR_LAST(ADDRESS_WIDTH-1 downto 0)))) else
-                       '0';
-          assert true report
-            "AUX and UC port addresses overlap; AUX will be used for overlapping addresses."
-            severity note;
-        end generate overlap_gen;
-        no_overlap_gen : if ((unsigned(AUX_ADDR_BASE(ADDRESS_WIDTH-1 downto 0)) >
-                              unsigned(UC_ADDR_LAST(ADDRESS_WIDTH-1 downto 0))) or
-                             (unsigned(AUX_ADDR_LAST(ADDRESS_WIDTH-1 downto 0)) <
-                              unsigned(UC_ADDR_BASE(ADDRESS_WIDTH-1 downto 0)))) generate
-          uc_select <=
-            '1' when ((unsigned(internal_oimm_address) >= unsigned(UC_ADDR_BASE(ADDRESS_WIDTH-1 downto 0))) and
-                      (unsigned(internal_oimm_address) <= unsigned(UC_ADDR_LAST(ADDRESS_WIDTH-1 downto 0)))) else
-            '0';
-          assert true report
-            "AUX and UC port addresses do not overlap"
-            severity note;
-        end generate no_overlap_gen;
-        c_select               <= (not uc_select) and (not aux_select);
+        uc_select              <= and_slv(not amr_address_match) and or_slv(umr_address_match);
+        c_select               <= and_slv(not amr_address_match) and and_slv(not umr_address_match);
         internal_oimm_readdata <= cacheint_oimm_readdata when cacheint_oimm_readdatavalid = '1' else
                                   internal_uc_oimm_readdata when internal_uc_oimm_readdatavalid = '1' else
                                   internal_aux_oimm_readdata;
         internal_oimm_readdatavalid <= cacheint_oimm_readdatavalid or
                                        internal_uc_oimm_readdatavalid or
                                        internal_aux_oimm_readdatavalid;
-
-        assert not (((unsigned(UC_ADDR_BASE) = to_unsigned(0, UC_ADDR_BASE'length)) and
-                     ((signed(UC_ADDR_LAST) = to_signed(-1, UC_ADDR_LAST'length)) or
-                      ((signed(AUX_ADDR_LAST) = to_signed(-1, AUX_ADDR_LAST'length)) and
-                       (unsigned(AUX_ADDR_BASE) <= (unsigned(UC_ADDR_LAST) + to_unsigned(1, UC_ADDR_LAST'length)))))) or
-                    ((unsigned(AUX_ADDR_BASE) = to_unsigned(0, AUX_ADDR_BASE'length)) and
-                     ((signed(AUX_ADDR_LAST) = to_signed(-1, AUX_ADDR_LAST'length)) or
-                      ((signed(UC_ADDR_LAST) = to_signed(-1, UC_ADDR_LAST'length)) and
-                       (unsigned(UC_ADDR_BASE) <= (unsigned(AUX_ADDR_LAST) + to_unsigned(1, AUX_ADDR_LAST'length)))))))
-          report
-          "Error; Cache is enabled (CACHE_SIZE /= 0) but UC and AUX interfaces cover the entire address range so no accesses will go to cache.  Please disable cache or set the UC and AUX address ranges to not encompass the entire address range."
-          severity failure;
       end generate has_c_gen;
-      assert not ((unsigned(AUX_ADDR_BASE) <= unsigned(UC_ADDR_BASE)) and
-                  (unsigned(AUX_ADDR_LAST) >= unsigned(UC_ADDR_LAST))) report
-        "Error; UC interface is enabled (UC_ADDR_BASE /= UC_ADDR_LAST) but AUX address range encompasses the UC address range so no accesses will go to UC.  Please disable UC or set the AUX address range to not encompass the UC address range."
-        severity failure;
     end generate has_uc_gen;
   end generate has_aux_gen;
 
@@ -426,7 +410,7 @@ begin
 
       register_idle => uc_register_idle,
 
-      --Orca-internal memory-mapped slave
+      --ORCA-internal memory-mapped slave
       slave_oimm_address       => internal_uc_oimm_address,
       slave_oimm_byteenable    => internal_uc_oimm_byteenable,
       slave_oimm_requestvalid  => internal_uc_oimm_requestvalid,
@@ -436,7 +420,7 @@ begin
       slave_oimm_readdatavalid => internal_uc_oimm_readdatavalid,
       slave_oimm_waitrequest   => internal_uc_oimm_waitrequest,
 
-      --Orca-internal memory-mapped master
+      --ORCA-internal memory-mapped master
       master_oimm_address       => uc_oimm_address,
       master_oimm_byteenable    => uc_oimm_byteenable,
       master_oimm_requestvalid  => uc_oimm_requestvalid,
@@ -463,7 +447,7 @@ begin
 
       register_idle => aux_register_idle,
 
-      --Orca-internal memory-mapped slave
+      --ORCA-internal memory-mapped slave
       slave_oimm_address       => internal_aux_oimm_address,
       slave_oimm_byteenable    => internal_aux_oimm_byteenable,
       slave_oimm_requestvalid  => internal_aux_oimm_requestvalid,
@@ -473,7 +457,7 @@ begin
       slave_oimm_readdatavalid => internal_aux_oimm_readdatavalid,
       slave_oimm_waitrequest   => internal_aux_oimm_waitrequest,
 
-      --Orca-internal memory-mapped master
+      --ORCA-internal memory-mapped master
       master_oimm_address       => aux_oimm_address,
       master_oimm_byteenable    => aux_oimm_byteenable,
       master_oimm_requestvalid  => aux_oimm_requestvalid,
@@ -483,110 +467,5 @@ begin
       master_oimm_readdatavalid => aux_oimm_readdatavalid,
       master_oimm_waitrequest   => aux_oimm_waitrequest
       );
-
-  -----------------------------------------------------------------------------
-  -- Assertions
-  -----------------------------------------------------------------------------
-
-  --Note that this should use to_integer(unsigned(...)) or even better print
-  --out a hex version of the actual slv, but using signed because VHDL integers
-  --(or even naturals) can't go to 2^31 or bigger
-  assert not (unsigned(AUX_ADDR_BASE) > unsigned(AUX_ADDR_LAST)) report
-    "Error; AUX_ADDR_BASE (" &
-    integer'image(to_integer(signed(AUX_ADDR_BASE))) &
-    ") is greater than AUX_ADDR_LAST (" &
-    integer'image(to_integer(signed(AUX_ADDR_LAST))) &
-    ")."
-    severity failure;
-
-  --Note the (30 downto 0) here is because in VHDL integers are signed 32-bit
-  --at most; for mod powers of 2 we only care about the lower bits anyway
-  assert not ((AUX_ADDR_BASE /= AUX_ADDR_LAST) and
-              (CACHE_SIZE /= 0) and
-              ((to_integer(unsigned(AUX_ADDR_BASE(30 downto 0))) mod CACHE_LINE_SIZE) /= 0)) report
-    "Error; AUX_ADDR_BASE (" &
-    integer'image(to_integer(signed(AUX_ADDR_BASE))) &
-    ") must be aligned to CACHE_LINE_SIZE (" &
-    positive'image(CACHE_LINE_SIZE) &
-    ") when cache is enabled."
-    severity failure;
-
-  assert not ((AUX_ADDR_BASE /= AUX_ADDR_LAST) and
-              (CACHE_SIZE = 0) and
-              ((to_integer(unsigned(AUX_ADDR_BASE(30 downto 0))) mod (DATA_WIDTH/8)) /= 0)) report
-    "Error; AUX_ADDR_BASE (" &
-    integer'image(to_integer(signed(AUX_ADDR_BASE))) &
-    ") must be aligned to DATA_WIDTH/8 (" &
-    positive'image(DATA_WIDTH/8) &
-    ") when cache is disabled."
-    severity failure;
-
-  assert not ((AUX_ADDR_BASE /= AUX_ADDR_LAST) and
-              (CACHE_SIZE /= 0) and
-              ((to_integer(unsigned(AUX_ADDR_LAST(30 downto 0))) mod CACHE_LINE_SIZE) /= (CACHE_LINE_SIZE-1))) report
-    "Error; AUX_ADDR_LAST (" &
-    integer'image(to_integer(signed(AUX_ADDR_LAST))) &
-    ") mod CACHE_LINE_SIZE (" &
-    positive'image(CACHE_LINE_SIZE) &
-    ") must be CACHE_LINE_SIZE-1 when cache is enabled."
-    severity failure;
-
-  assert not ((AUX_ADDR_BASE /= AUX_ADDR_LAST) and
-              (CACHE_SIZE = 0) and
-              ((to_integer(unsigned(AUX_ADDR_LAST(30 downto 0))) mod (DATA_WIDTH/8)) /= ((DATA_WIDTH/8)-1))) report
-    "Error; AUX_ADDR_LAST (" &
-    integer'image(to_integer(signed(AUX_ADDR_LAST))) &
-    ") mod DATA_WIDTH/8 (" &
-    positive'image(DATA_WIDTH/8) &
-    ") must be (DATA_WIDTH/8)-1 when cache is disabled."
-    severity failure;
-
-  assert not (unsigned(UC_ADDR_BASE) > unsigned(UC_ADDR_LAST)) report
-    "Error; UC_ADDR_BASE (" &
-    integer'image(to_integer(signed(UC_ADDR_BASE))) &
-    ") is greater than UC_ADDR_LAST (" &
-    integer'image(to_integer(signed(UC_ADDR_LAST))) &
-    ")."
-    severity failure;
-
-  assert not ((UC_ADDR_BASE /= UC_ADDR_LAST) and
-              (CACHE_SIZE /= 0) and
-              ((to_integer(unsigned(UC_ADDR_BASE(30 downto 0))) mod CACHE_LINE_SIZE) /= 0)) report
-    "Error; UC_ADDR_BASE (" &
-    integer'image(to_integer(signed(UC_ADDR_BASE))) &
-    ") must be aligned to CACHE_LINE_SIZE (" &
-    positive'image(CACHE_LINE_SIZE) &
-    ") when cache is enabled."
-    severity failure;
-
-  assert not ((UC_ADDR_BASE /= UC_ADDR_LAST) and
-              (CACHE_SIZE = 0) and
-              ((to_integer(unsigned(UC_ADDR_BASE(30 downto 0))) mod (DATA_WIDTH/8)) /= 0)) report
-    "Error; UC_ADDR_BASE (" &
-    integer'image(to_integer(signed(UC_ADDR_BASE))) &
-    ") must be aligned to DATA_WIDTH/8 (" &
-    positive'image(DATA_WIDTH/8) &
-    ") when cache is disabled."
-    severity failure;
-
-  assert not ((UC_ADDR_BASE /= UC_ADDR_LAST) and
-              (CACHE_SIZE /= 0) and
-              ((to_integer(unsigned(UC_ADDR_LAST(30 downto 0))) mod CACHE_LINE_SIZE) /= (CACHE_LINE_SIZE-1))) report
-    "Error; UC_ADDR_LAST (" &
-    integer'image(to_integer(signed(UC_ADDR_LAST))) &
-    ") mod CACHE_LINE_SIZE (" &
-    positive'image(CACHE_LINE_SIZE) &
-    ") must be CACHE_LINE_SIZE-1 when cache is enabled."
-    severity failure;
-
-  assert not ((UC_ADDR_BASE /= UC_ADDR_LAST) and
-              (CACHE_SIZE = 0) and
-              ((to_integer(unsigned(UC_ADDR_LAST(30 downto 0))) mod (DATA_WIDTH/8)) /= ((DATA_WIDTH/8)-1))) report
-    "Error; UC_ADDR_LAST (" &
-    integer'image(to_integer(signed(UC_ADDR_LAST))) &
-    ") mod DATA_WIDTH/8 (" &
-    positive'image(DATA_WIDTH/8) &
-    ") must be (DATA_WIDTH/8)-1 when cache is disabled."
-    severity failure;
 
 end architecture;

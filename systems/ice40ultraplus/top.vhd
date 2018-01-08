@@ -534,7 +534,7 @@ begin
         SHIFTER_MAX_CYCLES     => 32,
         COUNTER_LENGTH         => 32,
         PIPELINE_STAGES        => 4,
-        LVE_ENABLE             => 1,
+        VCP_ENABLE             => 1,
         ENABLE_EXCEPTIONS      => 0,
         FAMILY                 => "LATTICE")
       port map(
@@ -629,7 +629,7 @@ begin
         SHIFTER_MAX_CYCLES => 32,
         COUNTER_LENGTH     => 32,
         PIPELINE_STAGES    => 4,
-        LVE_ENABLE         => 0,
+        VCP_ENABLE         => 0,
         ENABLE_EXCEPTIONS  => 0,
         FAMILY             => "LATTICE")
       port map(

@@ -87,7 +87,7 @@ proc com {} {
 }
 
 proc wave_LVE { } {
-    if {[examine /top_tb/dut/rv/LVE_ENABLE]} {
+    if {[examine /top_tb/dut/rv/VCP_ENABLE]} {
 	add wave -noupdate -divider "LVE"
 	add wave -hex /top_tb/dut/rv/core/X/enable_lve/lve/*
 	add wave -noupdate -divider "LVE Scratchpad"
@@ -113,7 +113,7 @@ proc wave_RF { } {
 }
 
 proc wave_Top { } {
-    add wave -noupdate -divider "Orca top level (full)"
+    add wave -noupdate -divider "ORCA top level (full)"
     add wave -hex /top_tb/dut/rv/core/*
 }
 

@@ -22,9 +22,17 @@ entity orca_core is
     PIPELINE_STAGES        : natural range 4 to 5;
     ENABLE_EXT_INTERRUPTS  : natural range 0 to 1;
     NUM_EXT_INTERRUPTS     : positive range 1 to 32;
-    LVE_ENABLE             : natural range 0 to 1;
+    VCP_ENABLE             : boolean;
     WRITE_FIRST_SMALL_RAMS : boolean;
     FAMILY                 : string;
+
+    AUX_MEMORY_REGIONS : natural range 0 to 4;
+    AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
+    AMR0_ADDR_LAST     : std_logic_vector(31 downto 0);
+
+    UC_MEMORY_REGIONS : natural range 0 to 4;
+    UMR0_ADDR_BASE    : std_logic_vector(31 downto 0);
+    UMR0_ADDR_LAST    : std_logic_vector(31 downto 0);
 
     HAS_ICACHE : boolean;
     HAS_DCACHE : boolean
@@ -33,26 +41,28 @@ entity orca_core is
     clk   : in std_logic;
     reset : in std_logic;
 
-    --ICache control (Invalidate/flush/writeback/enable/disable)
+    global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
+
+    --ICache control (Invalidate/flush/writeback)
     from_icache_control_ready : in     std_logic;
     to_icache_control_valid   : buffer std_logic;
     to_icache_control_command : out    cache_control_command;
 
-    --DCache control (Invalidate/flush/writeback/enable/disable)
+    --DCache control (Invalidate/flush/writeback)
     from_dcache_control_ready : in     std_logic;
     to_dcache_control_valid   : buffer std_logic;
     to_dcache_control_command : out    cache_control_command;
 
     memory_interface_idle : in std_logic;
 
-    --Instruction Orca-internal memory-mapped master
+    --Instruction ORCA-internal memory-mapped master
     ifetch_oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     ifetch_oimm_requestvalid  : buffer std_logic;
     ifetch_oimm_readdata      : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     ifetch_oimm_waitrequest   : in     std_logic;
     ifetch_oimm_readdatavalid : in     std_logic;
 
-    --Data Orca-internal memory-mapped master
+    --Data ORCA-internal memory-mapped master
     lsu_oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
     lsu_oimm_byteenable    : out    std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     lsu_oimm_requestvalid  : buffer std_logic;
@@ -62,14 +72,16 @@ entity orca_core is
     lsu_oimm_readdatavalid : in     std_logic;
     lsu_oimm_waitrequest   : in     std_logic;
 
+    --Auxiliary/Uncached memory regions
+    amr_base_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+    amr_last_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+    umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+    umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
-    ---------------------------------------------------------------------------
-    -- Vector Co-Processor Port
-    ---------------------------------------------------------------------------
-    vcp_data0 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    vcp_data1 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    vcp_data2 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-
+    --Vector coprocessor port
+    vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_data1            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_data2            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
     vcp_ready            : in  std_logic;
@@ -79,9 +91,7 @@ entity orca_core is
     vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
     vcp_alu_source_valid : in  std_logic;
     vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
-    vcp_alu_result_valid : out std_logic;
-
-    global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0)
+    vcp_alu_result_valid : out std_logic
     );
 end entity orca_core;
 
@@ -166,7 +176,7 @@ begin
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE    => SIGN_EXTENSION_SIZE,
-      LVE_ENABLE             => LVE_ENABLE = 1,
+      VCP_ENABLE             => VCP_ENABLE,
       PIPELINE_STAGES        => PIPELINE_STAGES-3,
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS,
       FAMILY                 => FAMILY
@@ -216,8 +226,17 @@ begin
       ENABLE_EXCEPTIONS     => ENABLE_EXCEPTIONS = 1,
       ENABLE_EXT_INTERRUPTS => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
-      LVE_ENABLE            => LVE_ENABLE,
+      VCP_ENABLE            => VCP_ENABLE,
       FAMILY                => FAMILY,
+
+      AUX_MEMORY_REGIONS => AUX_MEMORY_REGIONS,
+      AMR0_ADDR_BASE     => AMR0_ADDR_BASE,
+      AMR0_ADDR_LAST     => AMR0_ADDR_LAST,
+
+      UC_MEMORY_REGIONS => UC_MEMORY_REGIONS,
+      UMR0_ADDR_BASE    => UMR0_ADDR_BASE,
+      UMR0_ADDR_LAST    => UMR0_ADDR_LAST,
+
       HAS_ICACHE => HAS_ICACHE,
       HAS_DCACHE => HAS_DCACHE
       )
@@ -272,6 +291,11 @@ begin
       to_dcache_control_valid   => to_dcache_control_valid,
       to_dcache_control_command => to_dcache_control_command,
 
+      amr_base_addrs => amr_base_addrs,
+      amr_last_addrs => amr_last_addrs,
+      umr_base_addrs => umr_base_addrs,
+      umr_last_addrs => umr_last_addrs,
+
       interrupt_pending => interrupt_pending,
 
       vcp_data0            => vcp_data0,
@@ -287,7 +311,6 @@ begin
       vcp_alu_source_valid => vcp_alu_source_valid,
       vcp_alu_result       => vcp_alu_result,
       vcp_alu_result_valid => vcp_alu_result_valid
-
       );
 
   core_idle <= ifetch_idle and decode_idle and execute_idle;

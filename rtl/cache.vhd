@@ -19,7 +19,7 @@ entity cache is
     clk   : in std_logic;
     reset : in std_logic;
 
-    --Read-only data Orca-internal memory-mapped slave
+    --Read-only data ORCA-internal memory-mapped slave
     read_oimm_address       : in     std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     read_oimm_requestvalid  : in     std_logic;
     read_oimm_speculative   : in     std_logic;
@@ -31,7 +31,7 @@ entity cache is
     read_lastaddress        : buffer std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     read_dirty_valid        : out    std_logic_vector(DIRTY_BITS downto 0);
 
-    --Write-only data Orca-internal memory-mapped slave
+    --Write-only data ORCA-internal memory-mapped slave
     write_oimm_address      : in std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     write_oimm_byteenable   : in std_logic_vector((WIDTH/8)-1 downto 0);
     write_oimm_requestvalid : in std_logic;

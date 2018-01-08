@@ -38,6 +38,27 @@
          type = "String";
       }
    }
+   element lve_0
+   {
+      datum _sortIndex
+      {
+         value = "5";
+         type = "int";
+      }
+   }
+   element lve_0.axi_slave
+   {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
+      datum baseAddress
+      {
+         value = "67108864";
+         type = "String";
+      }
+   }
    element onchip_memory2_0
    {
       datum _sortIndex
@@ -250,6 +271,38 @@
          type = "String";
       }
    }
+   element system_cached
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_cached
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_cached
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system_cached
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
    element vblox1
    {
       datum _originalDeviceFamily
@@ -298,19 +351,6 @@
          type = "int";
       }
    }
-   element vectorblox_orca_0.scratch
-   {
-      datum _lockedAddress
-      {
-         value = "1";
-         type = "boolean";
-      }
-      datum baseAddress
-      {
-         value = "67108864";
-         type = "String";
-      }
-   }
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
@@ -340,6 +380,12 @@
    kind="interrupt_generator"
    version="1.0"
    enabled="1" />
+ <module name="lve_0" kind="lve" version="1.0" enabled="1">
+  <parameter name="AXI_ENABLE" value="1" />
+  <parameter name="POWER_OPTIMIZED" value="0" />
+  <parameter name="SCRATCHPAD_ADDR_BITS" value="16" />
+  <parameter name="WISHBONE_ENABLE" value="0" />
+ </module>
  <module
    name="onchip_memory2_0"
    kind="altera_avalon_onchip_memory2"
@@ -382,43 +428,41 @@
    kind="vectorblox_orca"
    version="1.0"
    enabled="1">
+  <parameter name="AMR0_ADDR_BASE" value="16777216" />
+  <parameter name="AMR0_ADDR_LAST" value="4294967295" />
   <parameter name="AUTO_GLOBAL_INTERRUPTS_INTERRUPTS_USED" value="1" />
+  <parameter name="AUX_MEMORY_REGIONS" value="1" />
+  <parameter name="AXI_ID_WIDTH" value="2" />
   <parameter name="BTB_ENTRIES" value="16" />
   <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DATA_REQUEST_REGISTER" value="0" />
   <parameter name="DATA_RETURN_REGISTER" value="0" />
-  <parameter name="DAUX_ADDR_BASE" value="16777216" />
-  <parameter name="DAUX_ADDR_LAST" value="4294967295" />
   <parameter name="DAUX_REQUEST_REGISTER" value="2" />
   <parameter name="DAUX_RETURN_REGISTER" value="1" />
-  <parameter name="DCACHE_BURST_EN" value="1" />
   <parameter name="DCACHE_EXTERNAL_WIDTH" value="32" />
   <parameter name="DCACHE_LINE_SIZE" value="32" />
   <parameter name="DCACHE_SIZE" value="8192" />
+  <parameter name="DC_REQUEST_REGISTER" value="1" />
+  <parameter name="DC_RETURN_REGISTER" value="0" />
   <parameter name="DIVIDE_ENABLE" value="1" />
-  <parameter name="DUC_ADDR_BASE" value="0" />
-  <parameter name="DUC_ADDR_LAST" value="0" />
   <parameter name="DUC_REQUEST_REGISTER" value="2" />
   <parameter name="DUC_RETURN_REGISTER" value="1" />
   <parameter name="ENABLE_EXCEPTIONS" value="1" />
   <parameter name="ENABLE_EXT_INTERRUPTS" value="1" />
   <parameter name="FAMILY" value="ALTERA" />
-  <parameter name="IAUX_ADDR_BASE" value="0" />
-  <parameter name="IAUX_ADDR_LAST" value="0" />
   <parameter name="IAUX_REQUEST_REGISTER" value="0" />
   <parameter name="IAUX_RETURN_REGISTER" value="0" />
-  <parameter name="ICACHE_BURST_EN" value="1" />
   <parameter name="ICACHE_EXTERNAL_WIDTH" value="32" />
   <parameter name="ICACHE_LINE_SIZE" value="32" />
   <parameter name="ICACHE_SIZE" value="8192" />
+  <parameter name="IC_REQUEST_REGISTER" value="1" />
+  <parameter name="IC_RETURN_REGISTER" value="0" />
   <parameter name="INSTRUCTION_REQUEST_REGISTER" value="0" />
   <parameter name="INSTRUCTION_RETURN_REGISTER" value="0" />
   <parameter name="INTERRUPT_VECTOR" value="512" />
-  <parameter name="IUC_ADDR_BASE" value="0" />
-  <parameter name="IUC_ADDR_LAST" value="0" />
   <parameter name="IUC_REQUEST_REGISTER" value="0" />
   <parameter name="IUC_RETURN_REGISTER" value="0" />
-  <parameter name="LVE_ENABLE" value="1" />
+  <parameter name="LOG2_BURSTLENGTH" value="4" />
   <parameter name="MAX_IFETCHES_IN_FLIGHT" value="3" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="NUM_EXT_INTERRUPTS" value="1" />
@@ -426,9 +470,21 @@
   <parameter name="POWER_OPTIMIZED" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="0" />
-  <parameter name="SCRATCHPAD_SIZE" value="1024" />
   <parameter name="SHIFTER_MAX_CYCLES" value="32" />
+  <parameter name="UC_MEMORY_REGIONS" value="0" />
+  <parameter name="UMR0_ADDR_BASE" value="0" />
+  <parameter name="UMR0_ADDR_LAST" value="0" />
+  <parameter name="VCP_ENABLE" value="1" />
  </module>
+ <connection
+   kind="avalon"
+   version="15.1"
+   start="vectorblox_orca_0.axi_dc_master"
+   end="lve_0.axi_slave">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x04000000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
  <connection
    kind="avalon"
    version="15.1"
@@ -451,6 +507,15 @@
    kind="avalon"
    version="15.1"
    start="vectorblox_orca_0.data"
+   end="lve_0.axi_slave">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x04000000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.1"
+   start="vectorblox_orca_0.data"
    end="interrupt_generator_0.s0">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x01000000" />
@@ -460,16 +525,25 @@
    kind="avalon"
    version="15.1"
    start="vectorblox_orca_0.data"
-   end="vectorblox_orca_0.scratch">
+   end="onchip_memory2_0.s2">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x04000000" />
+  <parameter name="baseAddress" value="0x0000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.1"
+   start="vectorblox_orca_0.instruction"
+   end="onchip_memory2_0.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
    kind="clock"
    version="15.1"
    start="clock_gen_0.clk_2x"
-   end="vectorblox_orca_0.scratchpad_clk" />
+   end="lve_0.clk_2x" />
  <connection
    kind="clock"
    version="15.1"
@@ -491,6 +565,22 @@
    start="clock_gen_0.clock"
    end="interrupt_generator_0.clock" />
  <connection
+   kind="clock"
+   version="15.1"
+   start="clock_gen_0.clock"
+   end="lve_0.clock" />
+ <connection
+   kind="conduit"
+   version="15.1"
+   start="lve_0.vcp"
+   end="vectorblox_orca_0.vcp">
+  <parameter name="endPort" value="" />
+  <parameter name="endPortLSB" value="0" />
+  <parameter name="startPort" value="" />
+  <parameter name="startPortLSB" value="0" />
+  <parameter name="width" value="0" />
+ </connection>
+ <connection
    kind="interrupt"
    version="15.1"
    start="vectorblox_orca_0.global_interrupts"
@@ -507,6 +597,11 @@
    version="15.1"
    start="reset_source_0.reset"
    end="interrupt_generator_0.reset" />
+ <connection
+   kind="reset"
+   version="15.1"
+   start="reset_source_0.reset"
+   end="lve_0.reset" />
  <connection
    kind="reset"
    version="15.1"

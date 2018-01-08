@@ -16,7 +16,7 @@ builds: $(RV_TESTS_COPY)
 ################################################################################
 
 clean:
-	rm -rf builds/ builds.log $(RV_TESTS_COPY) *~
+	rm -rf builds/ builds.log $(RV_TESTS_COPY) *~ nohup.out \#*
 
 ################################################################################
 
