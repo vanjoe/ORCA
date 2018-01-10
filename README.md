@@ -329,26 +329,3 @@ to 1.
 If interrupts are not enabled (`ENABLE_EXT_INTERRUPTS` is set to 0 or
 `ENABLE_EXCEPTIONS` is set to 0) then `MEIMASK` and `MEIPEND` will both be read
 only and return 0. 
-
-
-Sleep CSR
-----------------------
-
-The standard way of sleeping a RISC-V processor is to set `MTIMECMP` and then
-use the `WIP` instruction to wait for an interrupt.  We chose to implement a
-non-standard sleep mode for very small systems without exception support that
-need a low power sleep mode.
-
-|**CSR Name** | **CSR Number** | **Access**|
-|:------------|:--------------:|:---------:|
-|SLEEP        | 0x800          | WO        |
-
-The `SLEEP` CSR is only available on systems where the `POWER_OPTIMIZED` generic
-is set to 1, and always reads as 0.  A write to the SLEEP CSR stall the
-processor until the value in `MTIME` is equal to the value being written.  If a
-value smaller than the current `MTIME` is written the processor will sleep until
-`MTIME` has wrapped around ~2^32 cycles later.  It is the programmers
-responsibility to ensure that the value being written is sufficiently far in the
-future for `MTIME` to not have passed the requested value before the CSR write
-executes, and it is not encouraged to be used on systems with interrupts or
-high/non-deterministic memory latencies.

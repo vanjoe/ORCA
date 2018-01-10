@@ -202,11 +202,8 @@ begin
     csr_readdata
     when others;
 
-  --Sleep CSR is for power optimized versions only; costs area and fmax otherwise
-  from_syscall_ready <= '0' when POWER_OPTIMIZED and (instruction(MAJOR_OP'range) = SYSTEM_OP and
-                                                      csr_select = CSR_SLEEP and
-                                                      csr_writedata /= mtime) else '1';
-
+  --Currently all syscall instructions execute without backpressure
+  from_syscall_ready <= '1';
 
   exceptions_gen : if ENABLE_EXCEPTIONS generate
     process(clk)
@@ -462,11 +459,9 @@ begin
               -----------------------------------------------------------------------------
               -- CSR Read/Write
               -----------------------------------------------------------------------------
-              if (not POWER_OPTIMIZED) or (csr_select /= CSR_SLEEP) then
-                from_syscall_valid <= '1';
-                from_syscall_data  <= csr_readdata;
-                last_csr_writedata <= csr_writedata;
-              end if;
+              from_syscall_valid <= '1';
+              from_syscall_data  <= csr_readdata;
+              last_csr_writedata <= csr_writedata;
 
               --Changing cacheability flushes the pipeline and clears the
               --memory interface before resuming.

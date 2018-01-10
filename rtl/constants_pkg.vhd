@@ -84,7 +84,6 @@ package constants_pkg is
   constant CSR_UTIMEH   : std_logic_vector(11 downto 0)  := x"C81";
 
   --NON-STANDARD
-  constant CSR_SLEEP      : std_logic_vector(11 downto 0) := x"800";
   constant CSR_MEIMASK    : std_logic_vector(11 downto 0) := x"7C0";
   constant CSR_MEIPEND    : std_logic_vector(11 downto 0) := x"FC0";
   constant CSR_MCACHE     : std_logic_vector(11 downto 0) := x"BC0";
