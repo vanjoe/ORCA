@@ -305,7 +305,7 @@ proc compose { } {
     set_instance_parameter_value the_onchip_memory2 {dataWidth} {32}
     set_instance_parameter_value the_onchip_memory2 {dualPort} {1}
     set_instance_parameter_value the_onchip_memory2 {initMemContent} {1}
-    set_instance_parameter_value the_onchip_memory2 {initializationFileName} {test.hex}
+    set_instance_parameter_value the_onchip_memory2 {initializationFileName} {software/test.hex}
     set_instance_parameter_value the_onchip_memory2 {instanceID} {NONE}
     set_instance_parameter_value the_onchip_memory2 {memorySize} {65536.0}
     set_instance_parameter_value the_onchip_memory2 {readDuringWriteMode} {DONT_CARE}

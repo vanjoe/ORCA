@@ -15,6 +15,7 @@
 *************************************************************************
 */
 
+#define ORCA_CLK 100000000
 #include "orca_time.h"
 #include "malloc.h"
 #include "dhry.h"
@@ -282,7 +283,7 @@ int main (int argc, char *argv[])
       /**************/
 
       End_Cycle = get_time();
-      User_Time = ((double)(End_Cycle - Begin_Cycle))/SYS_CLK;
+      User_Time = ((double)(End_Cycle - Begin_Cycle))/ORCA_CLK;
              
       printf("%d runs %d.%d seconds %d runs/second\r\n", (int)Number_Of_Runs, (int)User_Time, ((int)(User_Time*10.0))%10, (int)(Number_Of_Runs/User_Time));
       if (User_Time > Too_Small_Time)
@@ -722,7 +723,7 @@ double dtime()
   
   /* #include <ctype.h> */
 
-#define HZ SYS_CLK
+#define HZ ORCA_CLK
   uint32_t tnow;
 
   double q;

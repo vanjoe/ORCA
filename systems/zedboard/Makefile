@@ -20,9 +20,6 @@ IMPL_BIT=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.bit
 ORCA_SRCS=$(wildcard ../../rtl/*.vhd) ../../rtl/component.xml
 
 RESOURCE_TCL=report_resource_usage.tcl
-MMI_TCL=write_mmi.tcl
-BRAM_NAME=idram_gen
-MMI_FILE=$(BRAM_NAME).mmi
 OUT_BIT=out.bit
 
 PGM_TCL=pgm.tcl
@@ -228,9 +225,6 @@ link.ld::
 	sed "s/0x[0-9A-F]\([0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]\)/0x$$(printf "%01X" $$(expr $$(echo $$(printf "%d" $(IDRAM_BASE_ADDRESS))) / $$(echo $$(printf "%d" 0x10000000))))\1/g" $@ > tmp.$@
 	diff -q $@ tmp.$@; if [ $$? != 0 ]; then mv tmp.$@ $@; fi
 
-$(MMI_FILE): $(IMPL_BIT) $(MMI_TCL)
-	$(VIVADO_SOURCE) $(MMI_TCL) -tclargs mmi_wrapper $(PROJ_DIR) $(PROJ_NAME) $(BRAM_NAME) $(IDRAM_BASE_ADDRESS)
-
 $(ELF_FILE)::
 	make -C $(SW_DIR)
 
@@ -248,18 +242,8 @@ gui: $(BD_FILE)
 .PHONY: bitstream
 bitstream: $(OUT_BIT)
 
-ifeq ($(ELF_FILE), NONE)
 $(OUT_BIT): $(IMPL_BIT)
 	cp $(IMPL_BIT) $(OUT_BIT)
-else #ifeq ($(ELF_FILE), NONE)
-$(OUT_BIT): $(IMPL_BIT) $(MMI_FILE) $(ELF_FILE)
-	updatemem -force --meminfo $(MMI_FILE) \
-	--data $(ELF_FILE)                     \
-	--bit $(IMPL_BIT)                      \
-	--proc dummy                           \
-	--out $(OUT_BIT)
-	rm -f updatemem_*.backup.*
-endif #else #ifeq ($(ELF_FILE), NONE)
 
 resource_utilization.rpt: $(IMPL_BIT) $(RESOURCE_TCL)
 	$(VIVADO_SOURCE) $(RESOURCE_TCL) -tclargs report_resources $(PROJ_DIR) $(PROJ_NAME) $@
@@ -290,7 +274,7 @@ endif #else #ifeq ($(ELF_FILE), NONE)
 
 .PHONY: clean
 clean:
-	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) $(MMI_FILE) *.jou *.log tmp.* vivado_pid* export_sim/ test.bin jtag_init.tcl resource_utilization.rpt nohup.out
+	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) *.jou *.log tmp.* vivado_pid* export_sim/ test.bin jtag_init.tcl resource_utilization.rpt nohup.out *~  \#*
 	make clean -C $(SW_DIR)
 
 .DELETE_ON_ERROR:

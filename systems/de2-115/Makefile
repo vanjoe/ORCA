@@ -192,6 +192,7 @@ gui-qsys: $(QSYS_FILE)
 archiveBD: $(QIP_FILE)
 
 $(QIP_FILE): $(QSYS_FILE) ../../rtl/orca_hw.tcl
+	if [ -e $(SW_DIR)/Makefile ]; then make -C $(SW_DIR) $(HEX_FILE); fi
 	rm -f $(QSYS_HW_TCL)
 	rm -f $@
 	qsys-generate $(QSYS_FILE) --search-path="./,../../rtl/,$$" --synthesis=VHDL 2>&1 | tee ./synth.$(QSYS_FILE).log
@@ -212,6 +213,11 @@ copy-files: $(ORCA_SUBMODULE_FILES)
 
 $(TEST_SUBMODULE_FILES): system/synthesis/submodules/% : test_components/%
 	cp $^ $@
+
+.PHONY: gui-quartus
+gui-quartus: $(QIP_FILE) $(SUBMODULE_FILES) $(TOP_LEVEL_FILES)
+	quartus $(QPF_FILE) &
+
 
 $(MAP_RPT_FILE) : $(QIP_FILE) $(SUBMODULE_FILES) $(TOP_LEVEL_FILES) 
 	quartus_map $(QPF_FILE)
@@ -237,7 +243,7 @@ sta: $(STA_RPT_FILE)
 
 .phony: all clean qip map fit mif asm sta pgm run testbench sim help
 
-testbench: system/simulation/mentor/msim_setup.tcl
+testbench: system/simulation/mentor/software/$(HEX_FILE)
 
 system/simulation/mentor/msim_setup.tcl: $(QSYS_FILE) $(SUBMODULE_FILES)
 	qsys-generate $(QSYS_FILE) --search-path="./,../../rtl/,$$" --simulation=VHDL 2>&1 | tee ./sim.$(QSYS_FILE).log
@@ -246,7 +252,11 @@ system/simulation/mentor/msim_setup.tcl: $(QSYS_FILE) $(SUBMODULE_FILES)
 $(SW_DIR)/$(HEX_FILE):
 	$(MAKE) -C $(SW_DIR) $(HEX_FILE)
 
-sim: testbench $(SW_DIR)/$(HEX_FILE)
+system/simulation/mentor/software/$(HEX_FILE): system/simulation/mentor/msim_setup.tcl $(SW_DIR)/$(HEX_FILE)
+	mkdir -p system/simulation/mentor/software
+	cd system/simulation/mentor/software &&	ln -sf ../../../../software/$(HEX_FILE)
+
+sim: system/simulation/mentor/software/$(HEX_FILE)
 	vsim -do simulate.tcl
 
 clean:
@@ -254,6 +264,7 @@ clean:
 	rm -rf db/ incremental_db/
 	rm -rf *.log system.sopcinfo
 	rm -rf system.sof .qsys_edit/
+	rm -f *~ \#* PLL*_INFO.txt transcript jtag_init.tcl
 	$(MAKE) -C $(SW_DIR)/ clean || true
 
 
@@ -285,6 +296,9 @@ help:
 	@echo "   gui-qsys:"
 	@echo "     Open the system in the QSYS GUI"
 	@echo
+	@echo "   gui-quartus:"
+	@echo "     Open the project in the Quartus GUI"
+	@echo
 	@echo "   qip:"
 	@echo "     Run qsys-generate"
 	@echo
@@ -304,10 +318,10 @@ help:
 	@echo "     Clean all outputs"
 	@echo
 	@echo "   testbench:"
-	@echo "     Generate testbench from qsys file"
+	@echo "     Generate testbench from QSYS file"
 	@echo
 	@echo "   sim:"
-	@echo "     Run modelsim simulator"
+	@echo "     Run Modelsim simulator"
 	@echo
 	@echo "   pgm:"
 	@echo "     Program the attached de2-115 board"

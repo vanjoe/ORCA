@@ -33,23 +33,23 @@ Sample Systems
 We have provided multiple sample projects across different vendor platforms in
 the systems/ subdirectory.
 
-The first sample system targeting the DE2-115 (found in the TPad or Veek
-development systems) is located in the de2-115 directory. It uses the Intel
-toolchain and requires Quartus and Qsys.
+The zedboard directory contains a Xilinx Vivado sample project that targets the
+Zeboard development board using the Zynq-7000 XC7Z020-CLG484-1 SoC.
 
-A sample system using the Lattice iCEcube2 toolchain is located in the
-ice40ultra directory. It targets the iCE5LP4K chip.
+The de2-115 directory contains a Intel QSYS/Quartus project that targets the
+DE2-115 (found in the TPad or Veek development systems).
 
-In the sf2plus directory is a Microsemi SmartFusion2 sample project that targets
-the M2S150-FC1152 chip. It is built using the Libero toolchain.
+The ice40ultra directory contains a Lattice iCEcube2 project that targets the
+iCE5LP4K chip.
 
-The zedboard directory contains a Xilinx sample project that targets the
-Zynq-7000 XC7Z020-CLG484-1 SoC. It is built using the Vivado toolchain.
+The sf2plus directory contains a Microsemi Libero project that targets the
+SmartFusion2 M2S150-FC1152 chip.
 
-In addition to this example system we provide a system targeting a simulator
-such as modelsim. We use QSYS to help maintain these systems. The Libero tools
-include BFM models to simulate the SmartFusion2 system, and the Vivado tools
-include a simulator to debug a generated Vivado design.
+In addition to these example system we provide a system (in the sim directory)
+for use in debug and automated tests using Modelsim.  We use Intel QSYS to help
+maintain these systems and generate interconnect.  The example systems can be
+simulated in full if desired; see the README in each individual directory for
+details.
 
 
 ORCA Core Generics

@@ -1,4 +1,4 @@
-idram_gen.mmi
+*.mmi
 jtag_init.tcl
 
 project/

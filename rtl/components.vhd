@@ -61,7 +61,7 @@ package rv_components is
       IUC_RETURN_REGISTER          : natural range 0 to 1 := 0;
       IAUX_REQUEST_REGISTER        : natural range 0 to 2 := 0;
       IAUX_RETURN_REGISTER         : natural range 0 to 1 := 0;
-      IC_REQUEST_REGISTER          : natural range 0 to 2 := 0;
+      IC_REQUEST_REGISTER          : natural range 0 to 2 := 1;
       IC_RETURN_REGISTER           : natural range 0 to 1 := 0;
 
       --Data cache (DCACHE_SIZE 0 to disable)
@@ -71,11 +71,11 @@ package rv_components is
 
       --Data interface registers for timing/fmax
       --Request registers are 0/off, 1/light (waitrequest/ready only), 2/full
-      DATA_REQUEST_REGISTER : natural range 0 to 2 := 0;
+      DATA_REQUEST_REGISTER : natural range 0 to 2 := 1;
       DATA_RETURN_REGISTER  : natural range 0 to 1 := 0;
-      DUC_REQUEST_REGISTER  : natural range 0 to 2 := 1;
+      DUC_REQUEST_REGISTER  : natural range 0 to 2 := 0;
       DUC_RETURN_REGISTER   : natural range 0 to 1 := 0;
-      DAUX_REQUEST_REGISTER : natural range 0 to 2 := 1;
+      DAUX_REQUEST_REGISTER : natural range 0 to 2 := 0;
       DAUX_RETURN_REGISTER  : natural range 0 to 1 := 0;
       DC_REQUEST_REGISTER   : natural range 0 to 2 := 1;
       DC_RETURN_REGISTER    : natural range 0 to 1 := 0
@@ -1135,8 +1135,8 @@ package rv_components is
       rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       from_syscall_ready : out std_logic;
 
-      from_syscall_valid : out    std_logic;
-      from_syscall_data  : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+      from_syscall_valid : out std_logic;
+      from_syscall_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       to_pc_correction_data    : out unsigned(REGISTER_SIZE-1 downto 0);
       to_pc_correction_valid   : out std_logic;

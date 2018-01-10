@@ -61,7 +61,7 @@ entity orca is
     IUC_RETURN_REGISTER          : natural range 0 to 1 := 0;
     IAUX_REQUEST_REGISTER        : natural range 0 to 2 := 0;
     IAUX_RETURN_REGISTER         : natural range 0 to 1 := 0;
-    IC_REQUEST_REGISTER          : natural range 0 to 2 := 0;
+    IC_REQUEST_REGISTER          : natural range 0 to 2 := 1;
     IC_RETURN_REGISTER           : natural range 0 to 1 := 0;
 
     --Data cache (DCACHE_SIZE 0 to disable)
@@ -71,11 +71,11 @@ entity orca is
 
     --Data interface registers for timing/fmax
     --Request registers are 0/off, 1/light (waitrequest/ready only), 2/full
-    DATA_REQUEST_REGISTER : natural range 0 to 2 := 0;
+    DATA_REQUEST_REGISTER : natural range 0 to 2 := 1;
     DATA_RETURN_REGISTER  : natural range 0 to 1 := 0;
-    DUC_REQUEST_REGISTER  : natural range 0 to 2 := 1;
+    DUC_REQUEST_REGISTER  : natural range 0 to 2 := 0;
     DUC_RETURN_REGISTER   : natural range 0 to 1 := 0;
-    DAUX_REQUEST_REGISTER : natural range 0 to 2 := 1;
+    DAUX_REQUEST_REGISTER : natural range 0 to 2 := 0;
     DAUX_RETURN_REGISTER  : natural range 0 to 1 := 0;
     DC_REQUEST_REGISTER   : natural range 0 to 2 := 1;
     DC_RETURN_REGISTER    : natural range 0 to 1 := 0

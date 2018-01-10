@@ -129,6 +129,7 @@ architecture behavioural of execute is
 
   signal valid_instr             : std_logic;
   signal use_after_produce_stall : std_logic;
+  signal to_rf_select_writeable  : std_logic;
 
   signal rs1_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs2_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -205,9 +206,10 @@ begin
                                                    from_syscall_ready);
 
   --No forward stall; system calls, loads, and branches aren't forwarded.
-  use_after_produce_stall <= from_syscall_valid or load_in_progress or from_branch_valid when
-                             to_rf_select = rs1 or to_rf_select = rs2 or (to_rf_select = rs3 and VCP_ENABLE) else
-                             '0';
+  use_after_produce_stall <=
+    to_rf_select_writeable and (from_syscall_valid or load_in_progress or from_branch_valid) when
+    to_rf_select = rs1 or to_rf_select = rs2 or ((to_rf_select = rs3) and VCP_ENABLE) else
+    '0';
 
   --Calculate forwarding muxes for next instruction in advance in order to
   --minimize execute cycle time.
@@ -455,6 +457,11 @@ begin
     if rising_edge(clk) then
       if from_writeback_ready = '1' then
         to_rf_select <= rd;
+        if rd = std_logic_vector(REGISTER_ZERO) then
+          to_rf_select_writeable <= '0';
+        else
+          to_rf_select_writeable <= '1';
+        end if;
       end if;
     end if;
   end process;
@@ -471,12 +478,10 @@ begin
     from_branch_data  when "10",
     alu_data_out      when others;
 
-  to_rf_valid <= (from_syscall_valid or
-                  ld_data_enable or
-                  from_branch_valid or
-                  (alu_data_out_valid and (not vcp_was_executing))) when
-                 to_rf_select /= std_logic_vector(REGISTER_ZERO) else
-                 '0';
+  to_rf_valid <= to_rf_select_writeable and (from_syscall_valid or
+                                             ld_data_enable or
+                                             from_branch_valid or
+                                             (alu_data_out_valid and (not vcp_was_executing)));
 
 
   -------------------------------------------------------------------------------

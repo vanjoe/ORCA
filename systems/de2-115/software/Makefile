@@ -6,7 +6,7 @@ all:
 AS_SRCS=crt.S
 
 C_SRCS=
-C_SRCS+=main.c
+C_SRCS+=hello_world.c
 C_SRCS+=printf.c
 
 
@@ -56,7 +56,7 @@ all: $(TARGET).$(FORMAT) $(TARGET).mem
 
 .PHONY: clean
 clean:
-	rm -rf obj $(TARGET).elf $(TARGET).dump $(TARGET).bin $(TARGET).mif $(TARGET).mem
+	rm -rf obj *.elf *.dump *.bin *.mif *.mem *.hex *~ \#*
 
 -include $(wildcard obj/*.d)
 

@@ -46,8 +46,8 @@ entity system_calls is
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_syscall_ready : out std_logic;
 
-    from_syscall_valid : out    std_logic;
-    from_syscall_data  : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
+    from_syscall_valid : out std_logic;
+    from_syscall_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     to_pc_correction_data    : out unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_valid   : out std_logic;
@@ -100,8 +100,9 @@ architecture rtl of system_calls is
   alias imm is instruction(CSR_ZIMM'range);
 
   alias bit_sel        : std_logic_vector(REGISTER_SIZE-1 downto 0) is rs1_data;
-  signal csr_read_val  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal csr_write_val : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal csr_readdata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal csr_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal last_csr_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal legal_instr : std_logic;
 
@@ -156,7 +157,7 @@ begin
 
   csr_select <= instruction(CSR_ADDRESS'range);
   with csr_select select
-    csr_read_val <=
+    csr_readdata <=
     mstatus         when CSR_MSTATUS,
     mepc            when CSR_MEPC,
     mcause          when CSR_MCAUSE,
@@ -187,24 +188,24 @@ begin
     (others => '0') when others;
 
   with func3 select
-    csr_write_val <=
+    csr_writedata <=
     rs1_data
     when CSRRW_FUNC3,
-    csr_read_val or bit_sel
+    csr_readdata or bit_sel
     when CSRRS_FUNC3,
-    csr_read_val(31 downto 5) & (csr_read_val(CSR_ZIMM'length-1 downto 0) or imm)
+    csr_readdata(31 downto 5) & (csr_readdata(CSR_ZIMM'length-1 downto 0) or imm)
     when CSRRSI_FUNC3,
-    csr_read_val and (not bit_sel)
+    csr_readdata and (not bit_sel)
     when CSRRC_FUNC3,
-    csr_read_val(31 downto 5) & (csr_read_val(CSR_ZIMM'length-1 downto 0) and (not imm))
+    csr_readdata(31 downto 5) & (csr_readdata(CSR_ZIMM'length-1 downto 0) and (not imm))
     when CSRRCI_FUNC3,
-    csr_read_val
+    csr_readdata
     when others;
 
   --Sleep CSR is for power optimized versions only; costs area and fmax otherwise
   from_syscall_ready <= '0' when POWER_OPTIMIZED and (instruction(MAJOR_OP'range) = SYSTEM_OP and
                                                       csr_select = CSR_SLEEP and
-                                                      csr_write_val /= mtime) else '1';
+                                                      csr_writedata /= mtime) else '1';
 
 
   exceptions_gen : if ENABLE_EXCEPTIONS generate
@@ -235,16 +236,16 @@ begin
               case csr_select is
                 when CSR_MSTATUS =>
                   -- Only 2 bits are writeable.
-                  mstatus(CSR_MSTATUS_MIE)  <= csr_write_val(CSR_MSTATUS_MIE);
-                  mstatus(CSR_MSTATUS_MPIE) <= csr_write_val(CSR_MSTATUS_MPIE);
+                  mstatus(CSR_MSTATUS_MIE)  <= csr_writedata(CSR_MSTATUS_MIE);
+                  mstatus(CSR_MSTATUS_MPIE) <= csr_writedata(CSR_MSTATUS_MPIE);
                 when CSR_MEPC =>
-                  mepc <= csr_write_val;
+                  mepc <= csr_writedata;
                 when CSR_MCAUSE =>
-                  mcause <= csr_write_val;
+                  mcause <= csr_writedata;
                 when CSR_MBADADDR =>
-                  mbadaddr <= csr_write_val;
+                  mbadaddr <= csr_writedata;
                 when CSR_MEIMASK =>
-                  meimask <= csr_write_val;
+                  meimask <= csr_writedata;
                 --Note that meipend is read-only
                 when others => null;
               end case;
@@ -328,10 +329,10 @@ begin
                 (from_icache_control_ready = '1' or to_icache_control_valid = '0') and
                 (from_dcache_control_ready = '1' or to_dcache_control_valid = '0')) then
               if amr_base_write(gregister) = '1' then
-                mamr_base(gregister) <= from_syscall_data;
+                mamr_base(gregister) <= last_csr_writedata;
               end if;
               if amr_last_write(gregister) = '1' then
-                mamr_last(gregister) <= from_syscall_data;
+                mamr_last(gregister) <= last_csr_writedata;
               end if;
             end if;
           end if;
@@ -375,10 +376,10 @@ begin
                 (from_icache_control_ready = '1' or to_icache_control_valid = '0') and
                 (from_dcache_control_ready = '1' or to_dcache_control_valid = '0')) then
               if umr_base_write(gregister) = '1' then
-                mumr_base(gregister) <= from_syscall_data;
+                mumr_base(gregister) <= last_csr_writedata;
               end if;
               if umr_last_write(gregister) = '1' then
-                mumr_last(gregister) <= from_syscall_data;
+                mumr_last(gregister) <= last_csr_writedata;
               end if;
             end if;
           end if;
@@ -463,7 +464,8 @@ begin
               -----------------------------------------------------------------------------
               if (not POWER_OPTIMIZED) or (csr_select /= CSR_SLEEP) then
                 from_syscall_valid <= '1';
-                from_syscall_data  <= csr_read_val;
+                from_syscall_data  <= csr_readdata;
+                last_csr_writedata <= csr_writedata;
               end if;
 
               --Changing cacheability flushes the pipeline and clears the

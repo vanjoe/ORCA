@@ -67,11 +67,11 @@ TEST_IGNORE_LIST = [
 
     #May someday be supported
     'rv.*-csr',               #CSRs; we do not support them all
+    'rv.*-mcsr',              #M-mode CSRs
     'rv.*-ma_addr',           #Misaligned addresses; not yet supported but should be as a parameter
     'rv.*-rvc',               #Compressed instruction corner cases
     
     #Will likely never be supported
-    'rv.*-mcsr',              #M-mode CSRs; not supported
     'rv.*-sbreak',            #Syscall breakpoint; not supported
     'rv.*-dirty',             #VM referenced/dirty bits
     'rv.*-amo.*_w',           #Atomic instructions
@@ -88,22 +88,27 @@ ORCA_BUILDS = \
                                     btb_entries=0),
                   #Default Xilinx system
                   Xil_ORCA_BuildCfg(system='zedboard'),
-                  #LMB
+                  #No I$ system
                   Xil_ORCA_BuildCfg(system='zedboard',
-                                    amr0_addr_base=0xA0000000,
-                                    amr0_addr_last=0xBFFFFFFF),
-                  #Single-cycle IRAM system (No I$)
-                  Xil_ORCA_BuildCfg(system='zedboard',
-                                    reset_vector=0xC0000000,
-                                    interrupt_vector=0xC0000200,
                                     icache_size=0),
                   #No D$ system
                   Xil_ORCA_BuildCfg(system='zedboard',
                                     dcache_size=0),
-                  #Minimal system: TCRAM, no I$ or D$, no BTB, 4 stage, 1 ifetch in flight, no AMR, no exceptions, no divide
+                  #LMB, no $
                   Xil_ORCA_BuildCfg(system='zedboard',
-                                    reset_vector=0xC0000000,
-                                    interrupt_vector=0xC0000200,
+                                    amr0_addr_base=0xA0000000,
+                                    amr0_addr_last=0xBFFFFFFF,
+                                    icache_size=0,
+                                    dcache_size=0),
+                  #IUC, no $
+                  Xil_ORCA_BuildCfg(system='zedboard',
+                                    umr0_addr_base=0xA0000000,
+                                    icache_size=0,
+                                    dcache_size=0),
+                  #Minimal system (should fail mul/consective_instr (needs CSRs disabled with no exceptions)):
+                  #UC only, no I$ or D$, no BTB, 4 stage, 1 ifetch in flight, no AMR, no exceptions, no divide
+                  Xil_ORCA_BuildCfg(system='zedboard',
+                                    umr0_addr_base=0xA0000000,
                                     max_ifetches_in_flight=1,
                                     btb_entries=0,
                                     divide_enable=0,
@@ -112,10 +117,10 @@ ORCA_BUILDS = \
                                     aux_memory_regions=0,
                                     icache_size=0,
                                     dcache_size=0),
-                  #Bare system (may fail some tests): Minimal system, no multiply, 32-cycle shifter, no counters, no iuc_request_register
+                  #Bare system (should fail mul/div/rem/consective_instr (needs CSRs disabled with no exceptions)):
+                  #Minimal system, no multiply, 32-cycle shifter, no counters, no iuc_request_register
                   Xil_ORCA_BuildCfg(system='zedboard',
-                                    reset_vector=0xC0000000,
-                                    interrupt_vector=0xC0000200,
+                                    umr0_addr_base=0xA0000000,
                                     max_ifetches_in_flight=1,
                                     btb_entries=0,
                                     multiply_enable=0,

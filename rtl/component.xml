@@ -5470,7 +5470,7 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>INSTRUCTION_REQUEST_REGISTER</spirit:name>
         <spirit:displayName>Instruction Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.INSTRUCTION_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">0</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.INSTRUCTION_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">1</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>INSTRUCTION_RETURN_REGISTER</spirit:name>
@@ -5480,7 +5480,7 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>IUC_REQUEST_REGISTER</spirit:name>
         <spirit:displayName>IUC Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IUC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">1</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IUC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>IUC_RETURN_REGISTER</spirit:name>
@@ -5490,7 +5490,7 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>IAUX_REQUEST_REGISTER</spirit:name>
         <spirit:displayName>IAUX Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IAUX_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">1</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IAUX_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">2</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>IAUX_RETURN_REGISTER</spirit:name>
@@ -5525,7 +5525,7 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>DATA_REQUEST_REGISTER</spirit:name>
         <spirit:displayName>Data Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DATA_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">0</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DATA_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">1</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>DATA_RETURN_REGISTER</spirit:name>
@@ -5535,12 +5535,12 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>DUC_REQUEST_REGISTER</spirit:name>
         <spirit:displayName>DUC Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DUC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">2</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DUC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>DUC_RETURN_REGISTER</spirit:name>
         <spirit:displayName>DUC Return Register</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DUC_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1">1</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DUC_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>DAUX_REQUEST_REGISTER</spirit:name>
@@ -5550,7 +5550,7 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>DAUX_RETURN_REGISTER</spirit:name>
         <spirit:displayName>DAUX Return Register</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DAUX_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1">1</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DAUX_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>DC_REQUEST_REGISTER</spirit:name>
@@ -5924,7 +5924,7 @@
     <spirit:parameter>
       <spirit:name>INSTRUCTION_REQUEST_REGISTER</spirit:name>
       <spirit:displayName>Instruction Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.INSTRUCTION_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">0</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.INSTRUCTION_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">1</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>INSTRUCTION_RETURN_REGISTER</spirit:name>
@@ -5934,7 +5934,7 @@
     <spirit:parameter>
       <spirit:name>IUC_REQUEST_REGISTER</spirit:name>
       <spirit:displayName>IUC Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.IUC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">1</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.IUC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>IUC_RETURN_REGISTER</spirit:name>
@@ -5944,7 +5944,7 @@
     <spirit:parameter>
       <spirit:name>IAUX_REQUEST_REGISTER</spirit:name>
       <spirit:displayName>IAUX Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.IAUX_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">1</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.IAUX_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">2</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>IAUX_RETURN_REGISTER</spirit:name>
@@ -5979,7 +5979,7 @@
     <spirit:parameter>
       <spirit:name>DATA_REQUEST_REGISTER</spirit:name>
       <spirit:displayName>Data Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DATA_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">0</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DATA_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">1</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>DATA_RETURN_REGISTER</spirit:name>
@@ -5989,12 +5989,12 @@
     <spirit:parameter>
       <spirit:name>DUC_REQUEST_REGISTER</spirit:name>
       <spirit:displayName>DUC Request Register (0/Off, 1/Light, 2/Full)</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DUC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">2</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DUC_REQUEST_REGISTER" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>DUC_RETURN_REGISTER</spirit:name>
       <spirit:displayName>DUC Return Register</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DUC_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DUC_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>DAUX_REQUEST_REGISTER</spirit:name>
@@ -6004,7 +6004,7 @@
     <spirit:parameter>
       <spirit:name>DAUX_RETURN_REGISTER</spirit:name>
       <spirit:displayName>DAUX Return Register</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DAUX_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DAUX_RETURN_REGISTER" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>DC_REQUEST_REGISTER</spirit:name>
