@@ -5,6 +5,7 @@
 #include "orca_time.h"
 #include "cache_test.h"
 
+//Assembler macro to create a jump instruction
 #define J_FORWARD_BY(BYTES)                     \
   ((((BYTES) << 11) & 0x80000000) |             \
    (((BYTES) << 20) & 0x7FE00000) |             \
@@ -14,14 +15,18 @@
 
 #define WAIT_SECONDS_BEFORE_START 0
 
-#define RUN_ASM_TEST      1
-#define RUN_CACHED_LOOP   1
-#define RUN_CACHE_MISSES  1
+#define RUN_ASM_TEST             1
+#define RUN_3_INSTRUCTION_LOOP   1
+#define RUN_6_INSTRUCTION_LOOP   1
+#define RUN_BTB_MISSES           1
+#define RUN_CACHE_MISSES         1
+#define RUN_CACHE_AND_BTB_MISSES 1
 
 #define LOOP_RUNS 256
 
 #define CACHE_SIZE      8192
 #define CACHE_LINE_SIZE 32
+#define BTB_SIZE        64
 
 #define TEST_C   1
 #define TEST_AUX 1
@@ -33,6 +38,53 @@
 
 typedef void (*timing_loop)(uint32_t);
 
+//Creates a 6 instruction timing loop (2 jumps) for testing timing
+uint32_t timing_test(uint32_t *first_loop_ptr,
+                     uint32_t jump_size_bytes){
+      uint32_t *function_copy_ptr = (uint32_t *)(&idram_timing_loop);
+      uint32_t *function_copy_end = &idram_timing_loop_end;
+      uint32_t timing_loop_size   = (uint32_t)(function_copy_end-function_copy_ptr);
+
+      int word;
+      for(word = 0; word < timing_loop_size; word++){
+        first_loop_ptr[word] = function_copy_ptr[word];
+      }
+      for(word = 0; word < timing_loop_size; word++){
+        if(first_loop_ptr[word] != function_copy_ptr[word]){
+          ChangedPrint("Error copying function at word ");
+          print_hex(word);
+          ChangedPrint(" expected ");
+          print_hex(function_copy_ptr[word]);
+          ChangedPrint(" got ");
+          print_hex(first_loop_ptr[word]);
+          ChangedPrint("\r\n");
+        }
+      }
+      //Overwrite the jump back to the beginning of the loop to a jump
+      //forward to the next loop.
+      first_loop_ptr[2] = J_FORWARD_BY(jump_size_bytes-(2*sizeof(uint32_t)));
+
+      uint32_t *second_loop_ptr = (uint32_t *)(((uintptr_t)first_loop_ptr)+jump_size_bytes);
+      for(word = 0; word < timing_loop_size; word++){
+        second_loop_ptr[word] = function_copy_ptr[word];
+      }
+      //Overwrite the jump back to the beginning of the loop to a jump
+      //backward to the previous loop.  The function will ping-pong
+      //back and forth between these two loops.
+      second_loop_ptr[2] = J_FORWARD_BY(0-(jump_size_bytes+(2*sizeof(uint32_t))));
+
+      //IFENCE to make sure instruction cache gets the correct values
+      asm volatile("fence.i");
+    
+      timing_loop the_timing_loop = (timing_loop)(first_loop_ptr);
+  
+      uint32_t start_cycle = get_time();
+      (*the_timing_loop)(LOOP_RUNS);
+      uint32_t end_cycle = get_time();
+
+      return end_cycle-start_cycle;
+}
+
 int main(void) {
   if(WAIT_SECONDS_BEFORE_START){
     for(int i = 0; i < WAIT_SECONDS_BEFORE_START; i++){
@@ -40,10 +92,11 @@ int main(void) {
       ChangedPrint(" ...");
       delayms(1000);
     }
-    ChangedPrint("\r\n");
   }
 
-  uint8_t test_space[3*CACHE_SIZE];
+  ChangedPrint("\r\n\r\n\r\n");
+
+  uint8_t test_space[3*CACHE_SIZE];  //After alignment will have > 2*CACHE_SIZE to work in
   uint8_t *test_space_aligned = (uint8_t *)((((uintptr_t)test_space) + (CACHE_SIZE-1)) & (~(CACHE_SIZE-1)));
 
   uint32_t previous_amr0_addr_base = 0;
@@ -56,7 +109,7 @@ int main(void) {
     switch(type){
     case 0:
       if(TEST_C){
-        ChangedPrint("----------------------------------------\r\n-- CACHED\r\n----------------------------------------\r\n\r\n");
+        ChangedPrint("\r\n----------------------------------------\r\n-- CACHED\r\n----------------------------------------\r\n");
         //Disable the AUX interface
         disable_xmr(false, 0);
         //Change the UC interface to be only the peripherals
@@ -67,7 +120,7 @@ int main(void) {
       break;
     case 1:
       if(TEST_AUX){
-        ChangedPrint("----------------------------------------\r\n-- AUX\r\n----------------------------------------\r\n\r\n");
+        ChangedPrint("\r\n----------------------------------------\r\n-- AUX\r\n----------------------------------------\r\n");
         //Set the AUX memory interface to the non-UC addresses
         set_xmr(false, 0, 0x00000000, UC_MIN_MEMORY_BASE-1, &previous_amr0_addr_base, &previous_amr0_addr_last);
         //Change the UC interface to be only the peripherals
@@ -78,7 +131,7 @@ int main(void) {
       break;
     case 2:
       if(TEST_UC){
-        ChangedPrint("----------------------------------------\r\n-- UNCACHED\r\n----------------------------------------\r\n\r\n");
+        ChangedPrint("\r\n----------------------------------------\r\n-- UNCACHED\r\n----------------------------------------\r\n");
         //Change the UC interface to be everything (besides the AMRs which take priority)
         set_xmr(true, 0, 0x00000000, 0xFFFFFFFF, &previous_umr0_addr_base, &previous_umr0_addr_last);
         //Disable the AUX interface
@@ -88,23 +141,27 @@ int main(void) {
       }
       break;
     default:
-      ChangedPrint("Error in type\r\n");
+      ChangedPrint("\r\nError in type\r\n");
       continue;
       break;
     }
   
 #if RUN_ASM_TEST
     {
-      ChangedPrint("ASM test:\r\n");
+      ChangedPrint("ASM test: ");
 
       int result = cache_test((void *)test_space_aligned, 2*CACHE_SIZE, CACHE_SIZE, CACHE_LINE_SIZE);
-      ChangedPrint("ASM test returned ");
-      print_hex(result);
-      ChangedPrint("\r\n");
+      if(result){
+        ChangedPrint("ASM test failed with error code ");
+        print_hex(result);
+        ChangedPrint("\r\n");
+      } else {
+        ChangedPrint("ASM test passed\r\n");
+      }
     }
 #endif //#if RUN_ASM_TEST
   
-#if RUN_CACHED_LOOP
+#if RUN_3_INSTRUCTION_LOOP
     {
       ChangedPrint("3 instruction loop:\r\n");
       timing_loop the_timing_loop = &idram_timing_loop;
@@ -113,65 +170,69 @@ int main(void) {
       (*the_timing_loop)(LOOP_RUNS);
       uint32_t end_cycle = get_time();
   
-      print_hex(LOOP_RUNS);
-      ChangedPrint(" runs of 3 instruction loop from took ");
       print_hex(end_cycle-start_cycle);
-      ChangedPrint(" cycles.\r\n");
+      ChangedPrint(" cycles for ");
+      print_hex(LOOP_RUNS);
+      ChangedPrint(" runs of 3 instruction loop.\r\n");
     }
-#endif //#if RUN_CACHED_LOOP
+#endif //#if RUN_3_INSTRUCTION_LOOP
+
+#if RUN_6_INSTRUCTION_LOOP
+    {
+      ChangedPrint("3 instruction loop (jumping between two copies):\r\n");
+
+      uint32_t timing_loop_size = (uint32_t)(((uintptr_t)(&idram_timing_loop_end))-((uintptr_t)(&idram_timing_loop)));
+
+      uint32_t run_cycles = timing_test((uint32_t *)test_space_aligned, timing_loop_size);
+      
+      print_hex(run_cycles);
+      ChangedPrint(" cycles for ");
+      print_hex(LOOP_RUNS);
+      ChangedPrint(" runs of 3 instruction (2 copy) loop.\r\n");
+    }
+#endif //#if RUN_6_INSTRUCTION_LOOP
+
+#if RUN_BTB_MISSES
+    {
+      ChangedPrint("BTB misses:\r\n");
+
+      uint32_t run_cycles = timing_test((uint32_t *)test_space_aligned, (BTB_SIZE*sizeof(uint32_t)));
+  
+      print_hex(run_cycles);
+      ChangedPrint(" cycles for ");
+      print_hex(LOOP_RUNS);
+      ChangedPrint(" runs of 3 instruction (2 copy) BTB miss timing loop.\r\n");
+    }
+#endif //#if RUN_BTB_MISSES
 
 #if RUN_CACHE_MISSES
     {
       ChangedPrint("Cache misses:\r\n");
-      uint32_t *function_copy_ptr = (uint32_t *)(&idram_timing_loop);
-      uint32_t *function_copy_end = &idram_timing_loop_end;
-      uint32_t timing_loop_size   = (uint32_t)(function_copy_end-function_copy_ptr);
 
-      uint32_t *function_destination_ptr = (uint32_t *)test_space_aligned;
-
-      int word;
-      for(word = 0; word < timing_loop_size; word++){
-        function_destination_ptr[word] = function_copy_ptr[word];
-      }
-      ChangedPrint("Function copied to test_space.\r\n");
-      for(word = 0; word < timing_loop_size; word++){
-        if(function_destination_ptr[word] != function_copy_ptr[word]){
-          ChangedPrint("Error at word ");
-          print_hex(word);
-          ChangedPrint(" expected ");
-          print_hex(function_copy_ptr[word]);
-          ChangedPrint(" got ");
-          print_hex(function_destination_ptr[word]);
-          ChangedPrint("\r\n");
-        }
-      }
-      //Overwrite the jump back to the beginning of the loop to a jump
-      //forward to the next conflicting line in the cache.
-      function_destination_ptr[2] = J_FORWARD_BY(CACHE_SIZE-(2*sizeof(uint32_t)));
-
-      function_destination_ptr = (uint32_t *)(test_space_aligned+CACHE_SIZE);
-      for(word = 0; word < timing_loop_size; word++){
-        function_destination_ptr[word] = function_copy_ptr[word];
-      }
-      //Overwrite the jump back to the beginning of the loop to a jump
-      //backward to the previous conflicting line in the cache.  The
-      //function will ping-pong back and forth between these two lines
-      //and always cause a conflict miss.
-      function_destination_ptr[2] = J_FORWARD_BY(0-(CACHE_SIZE+(2*sizeof(uint32_t))));
-    
-    
-      timing_loop the_timing_loop = (timing_loop)(test_space_aligned);
+      //Increment by CACHE_SIZE + one word; this gives the same cache
+      //line for both timing loops but a different BTB entry (assuming
+      //more than one BTB entry)
+      uint32_t run_cycles = timing_test((uint32_t *)test_space_aligned, (CACHE_SIZE+sizeof(uint32_t)));
   
-      uint32_t start_cycle = get_time();
-      (*the_timing_loop)(LOOP_RUNS);
-      uint32_t end_cycle = get_time();
-  
+      print_hex(run_cycles);
+      ChangedPrint(" cycles for ");
       print_hex(LOOP_RUNS);
-      ChangedPrint(" runs of cache miss timing loop took ");
-      print_hex(end_cycle-start_cycle);
-      ChangedPrint(" cycles.\r\n");
+      ChangedPrint(" runs of 3 instruction (2 copy) cache miss timing loop.\r\n");
     }
 #endif //#if RUN_CACHE_MISSES
+
+#if RUN_CACHE_AND_BTB_MISSES
+    {
+      ChangedPrint("Cache and BTB misses:\r\n");
+
+      uint32_t run_cycles = timing_test((uint32_t *)test_space_aligned, CACHE_SIZE);
+  
+      print_hex(run_cycles);
+      ChangedPrint(" cycles for ");
+      print_hex(LOOP_RUNS);
+      ChangedPrint(" runs of 3 instruction (2 copy) cache and BTB miss timing loop.\r\n");
+    }
+#endif //#if RUN_CACHE_AND_BTB_MISSES
 
   }
 
@@ -184,7 +245,13 @@ int handle_interrupt(int cause, int epc, int regs[32])
 	if (!((cause >> 31) & 0x1)) {
 		// Handle illegal instruction
     // Nothing implemented yet; just print a debug message and hang.
-		ChangedPrint("Unhandled illegal instruction...\r\n");
+		ChangedPrint("Unhandled illegal instruction @");
+    print_hex(epc);
+    ChangedPrint(" cause ");
+    print_hex(cause);
+    ChangedPrint(" instruction ");
+    print_hex(*((uint32_t *)epc));
+    ChangedPrint("r\n\r\n");
 		for (;;);
 	}
 

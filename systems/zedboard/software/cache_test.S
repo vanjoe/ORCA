@@ -17,6 +17,9 @@ cache_test:
   sw   s10, 4(sp)
   sw   s11, 0(sp)
 
+//ASM cache tests should go here
+  addi a0, x0, 0      
+        
 cache_test_done:
   lw   s0, 44(sp)
   lw   s1, 40(sp)
