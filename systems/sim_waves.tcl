@@ -104,12 +104,19 @@ proc orca_add_wave_branch { add_wave_cmd add_divider_cmd prefix } {
     catch { eval "[string trim $add_wave_cmd \"] $prefix/core/X/branch/has_predictor_gen/*" } error
 }
 
+proc orca_add_wave_decode { add_wave_cmd add_divider_cmd prefix } {
+    eval "[string trim $add_divider_cmd \"] \"ORCA Decode\""
+    eval "[string trim $add_wave_cmd \"] $prefix/core/D/*"
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/core/D/two_cycle/*" } error
+}
+
 proc orca_add_wave_all { add_wave_cmd add_divider_cmd prefix } {
     orca_add_wave_instruction_masters $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_instruction_cache $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_data_masters $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_data_cache $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_instruction_fetch $add_wave_cmd $add_divider_cmd $prefix
+    orca_add_wave_decode $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_execute $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_alu $add_wave_cmd $add_divider_cmd $prefix
     orca_add_wave_branch $add_wave_cmd $add_divider_cmd $prefix

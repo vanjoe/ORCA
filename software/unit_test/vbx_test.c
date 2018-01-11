@@ -1,5 +1,5 @@
 
-#include "../vbx.h"
+#include "vbx.h"
 
 vbx_lve_t the_lve;
 

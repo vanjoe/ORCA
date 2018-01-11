@@ -920,7 +920,7 @@ package rv_components is
       umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
       umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
-      interrupt_pending : buffer std_logic;
+      pause_ifetch : out std_logic;
 
       --Vector coprocessor port
       vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -950,7 +950,7 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
-      interrupt_pending : in std_logic;
+      pause_ifetch : in std_logic;
 
       to_pc_correction_data        : in     unsigned(REGISTER_SIZE-1 downto 0);
       to_pc_correction_source_pc   : in     unsigned(REGISTER_SIZE-1 downto 0);
@@ -1155,7 +1155,7 @@ package rv_components is
       umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
       umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
-      interrupt_pending : buffer std_logic
+      pause_ifetch : out std_logic
       );
   end component system_calls;
 

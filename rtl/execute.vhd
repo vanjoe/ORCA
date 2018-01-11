@@ -101,7 +101,7 @@ entity execute is
     umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
-    interrupt_pending : buffer std_logic;
+    pause_ifetch : out std_logic;
 
     --Vector coprocessor port
     vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -391,7 +391,7 @@ begin
       umr_base_addrs => umr_base_addrs,
       umr_last_addrs => umr_last_addrs,
 
-      interrupt_pending => interrupt_pending
+      pause_ifetch => pause_ifetch
       );
 
   vcp_port : vcp_handler

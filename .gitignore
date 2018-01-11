@@ -48,3 +48,6 @@ tools/jtag_init.tcl
 
 nohup.out
 tools/riscv-toolchain/build
+
+csmith-compile/
+platform.info

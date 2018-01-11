@@ -18,7 +18,7 @@ entity instruction_fetch is
     clk   : in std_logic;
     reset : in std_logic;
 
-    interrupt_pending : in std_logic;
+    pause_ifetch : in std_logic;
 
     to_pc_correction_data        : in     unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_source_pc   : in     unsigned(REGISTER_SIZE-1 downto 0);
@@ -205,7 +205,7 @@ begin
   ready_for_next_fetch <= (not reset) and
                           (not to_pc_correction_valid) and
                           pc_fifo_can_accept_data and
-                          (not interrupt_pending);
+                          (not pause_ifetch);
 
   oimm_requestvalid <= waiting_for_not_waitrequest or ready_for_next_fetch;
   oimm_address      <= std_logic_vector(program_counter);

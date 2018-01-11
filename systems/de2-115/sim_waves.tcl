@@ -53,6 +53,10 @@ proc add_wave_branch { } {
     orca_add_wave_branch "add wave" "add wave -divider" /orca_system/the_vectorblox_orca
 }
 
+proc add_wave_decode { } {
+    orca_add_wave_decode "add wave" "add wave -divider" /orca_system/the_vectorblox_orca
+}
+
 proc add_wave_all { } {
     orca_add_wave_all "add wave" "add wave -divider" /orca_system/the_vectorblox_orca
 }

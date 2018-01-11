@@ -66,7 +66,7 @@ entity system_calls is
     umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
-    interrupt_pending : buffer std_logic
+    pause_ifetch : out std_logic
     );
 end entity system_calls;
 
@@ -99,9 +99,9 @@ architecture rtl of system_calls is
   alias func3 is instruction(INSTR_FUNC3'range);
   alias imm is instruction(CSR_ZIMM'range);
 
-  alias bit_sel        : std_logic_vector(REGISTER_SIZE-1 downto 0) is rs1_data;
-  signal csr_readdata  : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal csr_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  alias bit_sel             : std_logic_vector(REGISTER_SIZE-1 downto 0) is rs1_data;
+  signal csr_readdata       : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal csr_writedata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal last_csr_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal legal_instr : std_logic;
@@ -111,6 +111,8 @@ architecture rtl of system_calls is
   signal was_fence_i   : std_logic;
   signal next_fence_pc : unsigned(REGISTER_SIZE-1 downto 0);
 
+  signal fence_pending                 : std_logic;
+  signal interrupt_pending             : std_logic;
   signal interrupt_pc_correction_valid : std_logic;
 
   signal time_counter : unsigned(63 downto 0);
@@ -431,6 +433,7 @@ begin
 
       --Hold pc_correction causing signals until they have been processed
       if from_pc_correction_ready = '1' then
+        was_fence_i <= '0';
 
         --On FENCE.I hold the PC correction until all pending writebacks have
         --occurred and the ICache is flushed (from_icache_control_ready is
@@ -438,7 +441,8 @@ begin
         if (memory_idle = '1' and
             (from_icache_control_ready = '1' or to_icache_control_valid = '0') and
             (from_dcache_control_ready = '1' or to_dcache_control_valid = '0')) then
-          was_fence_i    <= '0';
+          fence_pending <= '0';
+
           amr_base_write <= (others => '0');
           amr_last_write <= (others => '0');
           umr_base_write <= (others => '0');
@@ -466,7 +470,8 @@ begin
               --Changing cacheability flushes the pipeline and clears the
               --memory interface before resuming.
               if or_slv(amr_base_select or amr_last_select or umr_base_select or umr_last_select) = '1' then
-                was_fence_i <= '1';
+                was_fence_i   <= '1';
+                fence_pending <= '1';
               end if;
               amr_base_write <= amr_base_select;
               amr_last_write <= amr_last_select;
@@ -485,6 +490,7 @@ begin
             -- A FENCE.I instruction is a pipeline flush.
             if instruction(12) = '1' then
               was_fence_i             <= '1';
+              fence_pending           <= '1';
               to_icache_control_valid <= '1';
               to_dcache_control_valid <= '1';
             end if;
@@ -494,6 +500,7 @@ begin
 
       if reset = '1' then
         was_fence_i             <= '0';
+        fence_pending           <= '0';
         to_icache_control_valid <= '0';
         to_dcache_control_valid <= '0';
         amr_base_write          <= (others => '0');
@@ -527,6 +534,8 @@ begin
     meipend <= (others => '0');
   end generate no_interrupts_gen;
   interrupt_pending <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 else '0';
+
+  pause_ifetch <= fence_pending or interrupt_pending;
 
   -- There are several reasons that sys_calls might send a pc correction
   -- global interrupt

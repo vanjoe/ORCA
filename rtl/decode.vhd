@@ -127,11 +127,11 @@ begin
     alias from_stage1_rs3_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
       from_stage1_instruction(REGISTER_RD'range);
   begin
-    rs1_select <= to_decode_rs1_select when to_stage1_ready = '1' else
+    rs1_select <= to_decode_rs1_select when from_decode_ready_signal = '1' else
                   from_stage1_rs1_select;
-    rs2_select <= to_decode_rs2_select when to_stage1_ready = '1' else
+    rs2_select <= to_decode_rs2_select when from_decode_ready_signal = '1' else
                   from_stage1_rs2_select;
-    rs3_select <= to_decode_rs3_select when to_stage1_ready = '1' else
+    rs3_select <= to_decode_rs3_select when from_decode_ready_signal = '1' else
                   from_stage1_rs3_select;
 
     to_stage1_ready          <= to_decode_ready or (not from_decode_valid_signal);
@@ -205,11 +205,11 @@ begin
 
 
   one_cycle : if PIPELINE_STAGES = 1 generate
-    rs1_select <= to_decode_rs1_select when to_decode_ready = '1' else
+    rs1_select <= to_decode_rs1_select when from_decode_ready_signal = '1' else
                   from_decode_rs1_select;
-    rs2_select <= to_decode_rs2_select when to_decode_ready = '1' else
+    rs2_select <= to_decode_rs2_select when from_decode_ready_signal = '1' else
                   from_decode_rs2_select;
-    rs3_select <= to_decode_rs3_select when to_decode_ready = '1' else
+    rs3_select <= to_decode_rs3_select when from_decode_ready_signal = '1' else
                   from_decode_rs3_select;
 
     decode_stage : process (clk) is

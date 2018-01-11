@@ -56,6 +56,10 @@ proc add_wave_branch { } {
     orca_add_wave_branch add_wave add_wave_divider /orca_system_wrapper/orca_system_i/orca/U0
 }
 
+proc add_wave_decode { } {
+    orca_add_wave_decode add_wave add_wave_divider /orca_system_wrapper/orca_system_i/orca/U0
+}
+
 proc add_wave_all { } {
     orca_add_wave_all add_wave add_wave_divider /orca_system_wrapper/orca_system_i/orca/U0
 }

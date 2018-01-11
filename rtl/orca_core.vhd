@@ -96,7 +96,7 @@ entity orca_core is
 end entity orca_core;
 
 architecture rtl of orca_core is
-  signal interrupt_pending : std_logic;
+  signal pause_ifetch : std_logic;
 
   signal ifetch_idle  : std_logic;
   signal decode_idle  : std_logic;
@@ -152,7 +152,7 @@ begin
       to_pc_correction_predictable => to_pc_correction_predictable,
       from_pc_correction_ready     => from_pc_correction_ready,
 
-      interrupt_pending => interrupt_pending,
+      pause_ifetch => pause_ifetch,
 
       ifetch_idle => ifetch_idle,
 
@@ -296,7 +296,7 @@ begin
       umr_base_addrs => umr_base_addrs,
       umr_last_addrs => umr_last_addrs,
 
-      interrupt_pending => interrupt_pending,
+      pause_ifetch => pause_ifetch,
 
       vcp_data0            => vcp_data0,
       vcp_data1            => vcp_data1,

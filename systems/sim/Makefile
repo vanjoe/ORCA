@@ -26,7 +26,7 @@ gui-qsys: $(QSYS_FILE)
 $(SYSTEM)/simulation/mentor/msim_setup.tcl: $(QSYS_FILE)
 	qsys-generate --simulation=vhdl $^
 	(cd $(SYSTEM)/simulation/submodules/vblox_orca; for i in *.vhd; do if [ -f ../../../../rtl/$$i ] ; then ln -sf ../../../../rtl/$$i $$i; fi; done; )
-	(cd $(SYSTEM)/simulation/submodules/vblox_lve; for i in *.vhd; do if [ -f ../../../../rtl/lve/$$i ] ; then ln -sf ../../../../rtl/lve/$$i $$i; fi; done; )
+	if [ -e $(SYSTEM)/simulation/submodules/vblox_lve ]; then (cd $(SYSTEM)/simulation/submodules/vblox_lve; for i in *.vhd; do if [ -f ../../../../rtl/lve/$$i ] ; then ln -sf ../../../../rtl/lve/$$i $$i; fi; done; ); fi
 
 test/rv32ui-p-add.qex:
 	../../tools/generate_hex_files.sh
@@ -49,7 +49,7 @@ sim: all $(SIM_FILE) $(SIM_WAVES_FILE)  $(SYSTEM)/simulation/mentor/msim_setup.t
 	vsim -do $(SIM_FILE)
 clean:
 	rm -rf $(SYSTEMS) test test.hex
-	rm -rf *_axi.tcl *_avalon.tcl transcript *.sopcinfo platform.info
+	rm -rf *_axi.tcl *_avalon.tcl transcript *.sopcinfo platform.info csmith-compile *~ \#*
 	rm -rf .qsys_edit
 
 .DELETE_ON_ERROR:
