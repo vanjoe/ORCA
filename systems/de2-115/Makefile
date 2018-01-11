@@ -1,19 +1,20 @@
 -include config.mk
 
-BD_NAME         ?= system
+BD_NAME         ?= orca_system
+PROJECT_NAME    ?= orca_project
 CREATE_QSYS_TCL ?= create_$(BD_NAME).tcl
 QSYS_HW_TCL     ?= $(BD_NAME)_hw.tcl
 QSYS_FILE       ?= $(BD_NAME).qsys
-QPF_FILE        ?= $(BD_NAME).qpf
+QPF_FILE        ?= $(PROJECT_NAME).qpf
 
 QIP_FILE     := $(BD_NAME)/synthesis/$(BD_NAME).qip
 SIP_FILE     := $(BD_NAME)/synthesis/$(BD_NAME).sip
 OUTPUT_DIR   := output_files
-MAP_RPT_FILE := $(OUTPUT_DIR)/$(BD_NAME).map.rpt
-FIT_RPT_FILE := $(OUTPUT_DIR)/$(BD_NAME).fit.rpt
-ASM_RPT_FILE := $(OUTPUT_DIR)/$(BD_NAME).asm.rpt
-MIF_RPT_FILE := $(OUTPUT_DIR)/$(BD_NAME).mif_update.rpt
-STA_RPT_FILE := $(OUTPUT_DIR)/$(BD_NAME).sta.rpt
+MAP_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).map.rpt
+FIT_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).fit.rpt
+ASM_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).asm.rpt
+MIF_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).mif_update.rpt
+STA_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).sta.rpt
 
 SW_DIR   ?= software
 BIN_FILE ?= test.bin
@@ -22,12 +23,12 @@ HEX_FILE ?= test.hex
 #Define DEVICE_FAMILY and DEVICE here
 include board_cfg.mk
 
-all: system.sof  $(STA_RPT_FILE)
+all: $(PROJECT_NAME).sof  $(STA_RPT_FILE)
 
 TEST_FILES+=$(wildcard test_components/*.vhd)
 
-ORCA_SUBMODULE_FILES=$(wildcard system/synthesis/submodules/vblox_orca/*.vhd)
-TEST_SUBMODULE_FILES=$(addprefix system/synthesis/submodules/,$(notdir $(TEST_FILES)))
+ORCA_SUBMODULE_FILES=$(wildcard $(BD_NAME)/synthesis/submodules/vblox_orca/*.vhd)
+TEST_SUBMODULE_FILES=$(addprefix $(BD_NAME)/synthesis/submodules/,$(notdir $(TEST_FILES)))
 JTAG_SUBMODULE_FILES=$(wildcard memory_mapped_reset/*.vhd) 
 SUBMODULE_FILES=$(ORCA_SUBMODULE_FILES) $(TEST_SUBMODULE_FILES) $(JTAG_SUBMODULE_FILES)
 TOP_LEVEL_FILES=$(wildcard *.vhd)
@@ -204,14 +205,14 @@ $(QIP_FILE): $(QSYS_FILE) ../../rtl/orca_hw.tcl
 	touch $(QSYS_FILE)
 	touch $@
 
-$(ORCA_SUBMODULE_FILES): system/synthesis/submodules/vblox_orca/% : ../../rtl/% | $(QIP_FILE)
+$(ORCA_SUBMODULE_FILES): $(BD_NAME)/synthesis/submodules/vblox_orca/% : ../../rtl/% | $(QIP_FILE)
 	 cp $^ $@
 
 .phony: copy-files
 
 copy-files: $(ORCA_SUBMODULE_FILES)
 
-$(TEST_SUBMODULE_FILES): system/synthesis/submodules/% : test_components/%
+$(TEST_SUBMODULE_FILES): $(BD_NAME)/synthesis/submodules/% : test_components/%
 	cp $^ $@
 
 .PHONY: gui-quartus
@@ -228,10 +229,10 @@ $(STA_RPT_FILE) : $(FIT_RPT_FILE)
 #$(MIF_RPT_FILE) : $(FIT_RPT_FILE)
 #	quartus_cdb --update_mif $(QPF_FILE)
 #$(ASM_RPT_FILE) : $(MIF_RPT_FILE)
-$(OUTPUT_DIR)/system.sof $(ASM_RPT_FILE) : $(FIT_RPT_FILE)
+$(OUTPUT_DIR)/$(PROJECT_NAME).sof $(ASM_RPT_FILE) : $(FIT_RPT_FILE)
 	quartus_asm $(QPF_FILE)
 
-system.sof: $(OUTPUT_DIR)/system.sof
+$(PROJECT_NAME).sof: $(OUTPUT_DIR)/$(PROJECT_NAME).sof
 	cp $(OUTPUT_DIR)/$@ $@
 
 qip: $(QIP_FILE)
@@ -243,33 +244,33 @@ sta: $(STA_RPT_FILE)
 
 .phony: all clean qip map fit mif asm sta pgm run testbench sim help
 
-testbench: system/simulation/mentor/software/$(HEX_FILE)
+testbench: $(BD_NAME)/simulation/mentor/software/$(HEX_FILE)
 
-system/simulation/mentor/msim_setup.tcl: $(QSYS_FILE) $(SUBMODULE_FILES)
+$(BD_NAME)/simulation/mentor/msim_setup.tcl: $(QSYS_FILE) $(SUBMODULE_FILES)
 	qsys-generate $(QSYS_FILE) --search-path="./,../../rtl/,$$" --simulation=VHDL 2>&1 | tee ./sim.$(QSYS_FILE).log
 	[ -e $@ ]
 
 $(SW_DIR)/$(HEX_FILE):
 	$(MAKE) -C $(SW_DIR) $(HEX_FILE)
 
-system/simulation/mentor/software/$(HEX_FILE): system/simulation/mentor/msim_setup.tcl $(SW_DIR)/$(HEX_FILE)
-	mkdir -p system/simulation/mentor/software
-	cd system/simulation/mentor/software &&	ln -sf ../../../../software/$(HEX_FILE)
+$(BD_NAME)/simulation/mentor/software/$(HEX_FILE): $(BD_NAME)/simulation/mentor/msim_setup.tcl $(SW_DIR)/$(HEX_FILE)
+	mkdir -p $(BD_NAME)/simulation/mentor/software
+	cd $(BD_NAME)/simulation/mentor/software &&	ln -sf ../../../../software/$(HEX_FILE)
 
-sim: system/simulation/mentor/software/$(HEX_FILE)
+sim: $(BD_NAME)/simulation/mentor/software/$(HEX_FILE)
 	vsim -do simulate.tcl
 
 clean:
-	rm -rf system/ $(OUTPUT_DIR) $(QSYS_HW_TCL) $(QSYS_FILE)
-	rm -rf db/ incremental_db/
-	rm -rf *.log system.sopcinfo
-	rm -rf system.sof .qsys_edit/
+	rm -rf $(BD_NAME)/ $(OUTPUT_DIR) $(QSYS_HW_TCL) $(QSYS_FILE)
+	rm -rf db/ incremental_db/ *.rpt* *.summary *.smsg
+	rm -rf *.log *.sopcinfo
+	rm -rf *.sof .qsys_edit/
 	rm -f *~ \#* PLL*_INFO.txt transcript jtag_init.tcl
 	$(MAKE) -C $(SW_DIR)/ clean || true
 
 
 ifneq ($(BIN_FILE), NONE)
-pgm: system.sof
+pgm: $(PROJECT_NAME).sof
 endif #ifneq ($(ELF_FILE), NONE)
 pgm:
 	quartus_pgm -m JTAG -o P\;$^

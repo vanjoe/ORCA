@@ -2,7 +2,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use ieee.numeric_std.all;
 
-entity riscv_test is
+entity orca_project is
   port(
     KEY      : in std_logic_vector(3 downto 0);
     SW       : in std_logic_vector(17 downto 0);
@@ -19,10 +19,10 @@ entity riscv_test is
     HEX1 : out std_logic_vector(6 downto 0);
     HEX0 : out std_logic_vector(6 downto 0)
     );
-end entity riscv_test;
+end entity orca_project;
 
-architecture rtl of riscv_test is
-  component system is
+architecture rtl of orca_project is
+  component orca_system is
     port (
       clk_clk                     : in  std_logic := 'X';  -- clk
       hex0_export                 : out std_logic_vector(31 downto 0);  -- export
@@ -36,7 +36,7 @@ architecture rtl of riscv_test is
       the_altpll_locked_export    : out std_logic;         -- export
       the_altpll_phasedone_export : out std_logic          -- export
       );
-  end component system;
+  end component orca_system;
 
   signal hex_input   : std_logic_vector(31 downto 0);
   signal clk         : std_logic;
@@ -80,7 +80,7 @@ begin
   resetn <= key(1);
   reset  <= not key(1);
 
-  rv : component system
+  rv : component orca_system
     port map (
       clk_clk                     => clk,
       reset_reset_n               => resetn,

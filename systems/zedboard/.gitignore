@@ -1,7 +1,6 @@
 *.mmi
 jtag_init.tcl
 
-project/
 *.bit
 
 software/hex_to_coe

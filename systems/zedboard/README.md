@@ -47,8 +47,8 @@ downloads the new program, then releases the reset to allow the program to run.
 
 To simulate, start by running `make sim`.  This builds the file
 software/test.coe which initializes the block RAMs, and generates and opens the
-design in Vivado sourcing the sim.tcl script.  Once in Vivado open the TCL
-console and use the following commands provided by sim.tcl:
+design in Vivado sourcing the simulate.tcl script.  Once in Vivado open the TCL
+console and use the following commands provided by simulate.tcl:
 
 * `reset_sim` - Reset the simulation and reload all IP to get source file changes.
 * `start_sim` - Launch a simulation, forcing signals that need to be forced,

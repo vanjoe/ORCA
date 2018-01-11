@@ -1,11 +1,11 @@
 -include config.mk
 
-BD_NAME     ?= design_1
+BD_NAME     ?= orca_system
 PROJECT_TCL ?= project.tcl
 BD_TCL      ?= $(BD_NAME).tcl
 
-PROJ_DIR  ?= project
-PROJ_NAME ?= project
+PROJ_DIR  ?= orca_project
+PROJ_NAME ?= orca_project
 
 SW_DIR   ?= software
 COE_FILE ?= $(SW_DIR)/test.coe
@@ -233,7 +233,7 @@ $(COE_FILE)::
 
 .PHONY: sim
 sim: $(BD_FILE) $(COE_FILE)
-	vivado -nolog -nojournal $(PROJ_FILE) -source sim.tcl &
+	vivado -nolog -nojournal $(PROJ_FILE) -source simulate.tcl &
 
 .PHONY: gui
 gui: $(BD_FILE)

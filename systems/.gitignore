@@ -2,7 +2,8 @@
 .qsys_edit/
 jtag_init.tcl
 qdb/
-system/
+orca_system/
+orca_project/
 *_defaults.qdf
 db/
 quartus_db/
@@ -16,3 +17,6 @@ synlog.tcl
 *_Implmnt/
 bootmem.mem
 init_*.imem
+*.smsg
+*.rpt*
+*.summary
