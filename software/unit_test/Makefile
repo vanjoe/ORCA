@@ -1,6 +1,6 @@
 all:
 
--include $(wildcard *.d)
+
 
 ARCH=rv32im
 LVE_EXT=xlve
@@ -10,10 +10,13 @@ OBJDUMP=$(PREFIX)objdump
 TEST_ASM=consecutive_instr.S
 TEST_C=simple_c_test.c vbx_test.c interrupt_test.c cmov_test.c back2back_load_store_test.c cache_test.c dhrystone.c
 
+OBJS=$(addprefix obj/,$(addsuffix .o,$(TEST_C) $(TEST_ASM)))
+
 TEST_ASM_ELF=$(addsuffix .elf,$(basename $(TEST_ASM)))
 TEST_C_ELF=$(addsuffix .elf,$(basename $(TEST_C)))
 
-C_FLAGS=-static -nostartfiles -march=$(ARCH) -Wa,-march=$(ARCH)$(LVE_EXT) -Wall
+C_FLAGS= -march=$(ARCH) -O3 -Wa,-march=$(ARCH)$(LVE_EXT) -Wall -MMD
+LD_FLAGS= -static -nostartfiles $(CFLAGS)
 RISCV_TESTS_DIR=../riscv-tests
 RISCV_ENV_DIR=$(RISCV_TESTS_DIR)/env/p
 
@@ -22,18 +25,27 @@ INCLUDE_DIRS:=$(RISCV_ENV_DIR) $(RISCV_TESTS_DIR)/isa/macros/scalar ../ ../vbx_l
 INCLUDE_DIRS:=$(addprefix -I,$(INCLUDE_DIRS))
 LINK_FILE=link.ld
 
-DEPENDS_DIR=depends
-DEP_FILES=$(wildcard $(DEPENDS_DIR)/*.d)
+
+DEP_FILES=$(wildcard obj/*.d)
 
 -include $(DEP_FILES)
 $(DEPENDS_DIR):
 	mkdir -p $@
-$(TEST_ASM_ELF): %.elf : %.S | $(RISCV_ENV_DIR) $(DEPENDS_DIR)
-	$(CC) $(C_FLAGS)  $(INCLUDE_DIRS) -T$(LINK_FILE) $^ -o $@  -MD -MF $(DEPENDS_DIR)/$(basename $@).d
+
+obj/:
+	mkdir -p obj/
+
+
+$(OBJS): obj/%.o : % | obj/
+	$(CC) -c $(C_FLAGS)  $(INCLUDE_DIRS) $< -o $@
+
+
+$(TEST_ASM_ELF): %.elf : obj/%.S.o | $(RISCV_ENV_DIR)
+	$(CC) $(LD_FLAGS)  -T$(LINK_FILE) $^ -o $@
 	$(OBJDUMP) -D $@ > $*.dump
 
-$(TEST_C_ELF): %.elf : %.c crt.S | $(RISCV_ENV_DIR) $(DEPENDS_DIR)
-	$(CC) $(C_FLAGS) -O3 $(INCLUDE_DIRS) -T$(LINK_FILE) $^ -o $@ -MD -MF $(DEPENDS_DIR)/$(basename $@).d
+$(TEST_C_ELF): %.elf : obj/%.c.o crt.S | $(RISCV_ENV_DIR)
+	$(CC) $(LD_FLAGS) -T$(LINK_FILE) $^ -o $@
 	$(OBJDUMP) -D $@ > $*.dump
 
 all:$(TEST_ASM_ELF) $(TEST_C_ELF)
