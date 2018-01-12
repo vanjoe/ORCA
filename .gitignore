@@ -37,7 +37,7 @@ work/
 *.log
 *.back
 *.bak
-
+**.o
 .Xil/
 vivado_*.str
 vivado_pid*.zip
