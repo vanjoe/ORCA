@@ -38,7 +38,7 @@ arith_instr=[instruction("vadd"     ,0,0,0,0),
              instruction('vcustom7' ,0,1,0,7),
 
 
-             #mxp instructions (Not used for now)
+             #mxp instructions
              instruction('vcmv_lez' ,1,0,0,0),
              instruction('vcmv_gtz' ,1,0,0,1),
              instruction('vcmv_ltz' ,1,0,0,2),
