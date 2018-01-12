@@ -176,7 +176,7 @@ def generate_special_instr( define_file,lve_extension_file):
     special_inst = [instruction('vbx_set_vl',0,'"s,t,d"'),
                     instruction('vbx_set_2d',1,'"d,s,t"'),
                     instruction('vbx_set_3d',2,'"d,s,t"'),
-                    instruction('vbx_get',3,'"d,s,t"'),
+                    instruction('vbx_get',3,'"d,s"'),
                     instruction('vbx_dma_tohost',4,'"d,s,t"'),
                     instruction('vbx_dma_tovec',5,'"d,s,t"'),
                     instruction('vbx_dma_2dstart',6,'"d,s,t"')]
@@ -184,6 +184,8 @@ def generate_special_instr( define_file,lve_extension_file):
 
     for si in special_inst:
         mask=0xFE00707F
+        if "t" not in si.registers:
+            mask |= (0x1F << 20)
         match=0x4200702B | (si.bit28_26 <<26)
         name = si.name
         uname = name.upper()
