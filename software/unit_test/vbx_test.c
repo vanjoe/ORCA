@@ -158,70 +158,84 @@ TEST_ATTR int test_8()
 }
 TEST_ATTR int test_9()
 {
-  int vlen=10;
-  vbx_set_vl(vlen);
-  vbx_word_t* a=((vbx_word_t*)SCRATCHPAD_BASE);
-  vbx_word_t* b=a+vlen;
-  vbx_word_t* c=b+vlen;
-  int acc_check=0;
-  for( int i=0;i<vlen;i++){
-	a[i]= 3+i;
-  }
-  for( int i=0;i<vlen;i++){
-	b[i] = 6+i;
-	acc_check+=b[i]*a[i];
-  }
+	int vlen=10;
+	vbx_set_vl(vlen);
+	vbx_word_t* a=((vbx_word_t*)SCRATCHPAD_BASE);
+	vbx_word_t* b=a+vlen;
+	vbx_word_t* c=b+vlen;
+	int acc_check=0;
+	for( int i=0;i<vlen;i++){
+		a[i]= 3+i;
+	}
+	for( int i=0;i<vlen;i++){
+		b[i] = 6+i;
+		acc_check+=b[i]*a[i];
+	}
 
-  vbx_acc(VVW,VMUL,c,b,a);
-  if (c[0] != acc_check){
-	 return 1; //TEST FAIL
-  }
+	vbx_acc(VVW,VMUL,c,b,a);
+	if (c[0] != acc_check){
+		return 1; //TEST FAIL
+	}
 
-  // TEST SUCCESS
-  return 0;
+	// TEST SUCCESS
+	return 0;
 
 }
 
 TEST_ATTR int test_10()
 {
-  int vlen=10;
-  vbx_word_t* a=((vbx_word_t*)SCRATCHPAD_BASE);
-  //force load word right before vbx instruction
-  vbx_word_t* volatile d=a+vlen;
-  for( int i=0;i<vlen;i++){
-	a[i]= 3+i;
-  }
-  vbx_set_vl(vlen);
-  vbx(VVW,VMOV,d,a,0);
-  for( int i=0;i<vlen;i++){
-  if (d[i] != a[i]){
-	 return 1; //TEST FAIL
-  }
-  }
-  // TEST SUCCESS
-  return 0;
+	int vlen=10;
+	vbx_word_t* a=((vbx_word_t*)SCRATCHPAD_BASE);
+	//force load word right before vbx instruction
+	vbx_word_t* volatile d=a+vlen;
+	for( int i=0;i<vlen;i++){
+		a[i]= 3+i;
+	}
+	vbx_set_vl(vlen);
+	vbx(VVW,VMOV,d,a,0);
+	for( int i=0;i<vlen;i++){
+		if (d[i] != a[i]){
+			return 1; //TEST FAIL
+		}
+	}
+	// TEST SUCCESS
+	return 0;
 
+}
+TEST_ATTR int test_11()
+{
+	int vlen=10,nrows=9,incra=8,incrb=7,incrd=6;
+	vbx_set_vl(vlen,nrows);
+	vbx_set_2D(incra,incrb,incrd);
+
+	if(vlen!=vbx_get_state(VBX_STATE_VECTOR_LENGTH))return 1;
+	if(nrows!=vbx_get_state(VBX_STATE_NROWS))return 2;
+	if(incra!=vbx_get_state(VBX_STATE_INCRA_2D))return 3;
+	if(incrb!=vbx_get_state(VBX_STATE_INCRB_2D))return 4;
+	if(incrd!=vbx_get_state(VBX_STATE_INCRD_2D))return 5;
+
+	return 0;
 }
 
 
 //this macro runs the test, and returns the test number on failure
-#define do_test(TEST_NUMBER) do{                \
-    if(test_##TEST_NUMBER()){                   \
-      asm volatile ("slli x28, %0,  1\n"        \
-                    "ori  x28, x28, 1\n"        \
-                    "fence.i\n"                 \
-                    "ecall\n"                   \
-                    : : "r"(TEST_NUMBER));      \
-        return TEST_NUMBER;                     \
-    }                                           \
-  } while(0)
+#define do_test(TEST_NUMBER) do{	  \
+		if(test_##TEST_NUMBER()){ \
+			asm volatile ("slli x28, %0,  1\n" \
+			              "ori  x28, x28, 1\n" \
+			              "fence.i\n" \
+			              "ecall\n" \
+			              : : "r"(TEST_NUMBER)); \
+			return TEST_NUMBER; \
+		} \
+	} while(0)
 
-#define pass_test() do{                         \
-    asm volatile ("addi x28, x0, 1\n"           \
-                  "fence.i\n"                   \
-                  "ecall\n");                   \
-    return 0;                                   \
-  } while(0)
+#define pass_test() do{	  \
+		asm volatile ("addi x28, x0, 1\n" \
+		              "fence.i\n" \
+		              "ecall\n"); \
+		return 0; \
+	} while(0)
 
 int main()
 {
@@ -234,8 +248,8 @@ int main()
 	do_test(8);
 	do_test(9);
 	do_test(10);
-
-  pass_test();
+	do_test(11);
+	pass_test();
 	return 0;
 
 }

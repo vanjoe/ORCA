@@ -85,6 +85,8 @@ entity orca_core is
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
     vcp_ready            : in  std_logic;
+    vcp_writeback_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_writeback_en     : in std_logic;
     vcp_executing        : in  std_logic;
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -304,6 +306,8 @@ begin
       vcp_instruction      => vcp_instruction,
       vcp_valid_instr      => vcp_valid_instr,
       vcp_ready            => vcp_ready,
+      vcp_writeback_data   => vcp_writeback_data,
+      vcp_writeback_en     => vcp_writeback_en,
       vcp_executing        => vcp_executing,
       vcp_alu_data1        => vcp_alu_data1,
       vcp_alu_data2        => vcp_alu_data2,

@@ -348,6 +348,8 @@ package rv_components is
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
       vcp_ready            : in  std_logic                                  := '1';
+      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+      vcp_writeback_en     : in  std_logic;
       vcp_executing        : in  std_logic                                  := '0';
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
@@ -382,9 +384,9 @@ package rv_components is
       UMR0_ADDR_BASE    : std_logic_vector(31 downto 0);
       UMR0_ADDR_LAST    : std_logic_vector(31 downto 0);
 
-      ICACHE_SIZE             : natural;
-      ICACHE_LINE_SIZE        : integer range 16 to 256;
-      ICACHE_EXTERNAL_WIDTH   : integer;
+      ICACHE_SIZE           : natural;
+      ICACHE_LINE_SIZE      : integer range 16 to 256;
+      ICACHE_EXTERNAL_WIDTH : integer;
 
       INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2;
       INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1;
@@ -395,9 +397,9 @@ package rv_components is
       IC_REQUEST_REGISTER          : natural range 0 to 2;
       IC_RETURN_REGISTER           : natural range 0 to 1;
 
-      DCACHE_SIZE             : natural;
-      DCACHE_LINE_SIZE        : integer range 16 to 256;
-      DCACHE_EXTERNAL_WIDTH   : integer;
+      DCACHE_SIZE           : natural;
+      DCACHE_LINE_SIZE      : integer range 16 to 256;
+      DCACHE_EXTERNAL_WIDTH : integer;
 
       DATA_REQUEST_REGISTER : natural range 0 to 2;
       DATA_RETURN_REGISTER  : natural range 0 to 1;
@@ -779,6 +781,8 @@ package rv_components is
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
       vcp_ready            : in  std_logic;
+      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+      vcp_writeback_en     : in  std_logic;
       vcp_executing        : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -929,6 +933,8 @@ package rv_components is
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
       vcp_ready            : in  std_logic;
+      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+      vcp_writeback_en     : in  std_logic;
       vcp_executing        : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -1155,7 +1161,10 @@ package rv_components is
       umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
       umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
-      pause_ifetch : out std_logic
+      pause_ifetch : out std_logic;
+
+      vcp_writeback_en   : in std_logic;
+      vcp_writeback_data : in std_logic_vector(REGISTER_SIZE -1 downto 0)
       );
   end component system_calls;
 

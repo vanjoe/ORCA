@@ -8,10 +8,9 @@ use work.constants_pkg.all;
 
 entity system_calls is
   generic (
-    REGISTER_SIZE   : natural;
-    COUNTER_LENGTH  : natural;
-    POWER_OPTIMIZED : boolean;
-
+    REGISTER_SIZE    : natural;
+    COUNTER_LENGTH   : natural;
+    POWER_OPTIMIZED  : boolean;
     INTERRUPT_VECTOR : std_logic_vector(31 downto 0);
 
     ENABLE_EXCEPTIONS     : boolean;
@@ -65,8 +64,10 @@ entity system_calls is
     amr_last_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+    pause_ifetch   : out std_logic;
 
-    pause_ifetch : out std_logic
+    vcp_writeback_en   : in std_logic;
+    vcp_writeback_data : in std_logic_vector(REGISTER_SIZE -1 downto 0)
     );
 end entity system_calls;
 
@@ -496,6 +497,16 @@ begin
             end if;
           end if;
         end if;
+      end if;
+
+      if VCP_ENABLE and vcp_writeback_en = '1' then
+        -- To avoid having a 4 5o one mux in execute, We add
+        -- the writebacks from the vcp here. Since the writebacks
+        -- are from vbx_get, which are sort of control/status
+        -- registers it could be construed that this is an
+        -- appropriate place for this logic
+        from_syscall_data  <= vcp_writeback_data;
+        from_syscall_valid <= '1';
       end if;
 
       if reset = '1' then

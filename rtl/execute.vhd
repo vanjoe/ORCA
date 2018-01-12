@@ -110,6 +110,8 @@ entity execute is
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
     vcp_ready            : in  std_logic;
+    vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+    vcp_writeback_en     : in  std_logic;
     vcp_executing        : in  std_logic;
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -190,10 +192,10 @@ begin
   -- propogate if the next instruction uses them.
   --
   -----------------------------------------------------------------------------
-  rs1_data <= vcp_alu_data1 when vcp_alu_source_valid = '1' else
+  rs1_data <= vcp_alu_data1 when VCP_ENABLE and vcp_alu_source_valid = '1' else
               alu_data_out when rs1_mux = ALU_FWD else
               to_execute_rs1_data;
-  rs2_data <= vcp_alu_data2 when vcp_alu_source_valid = '1' else
+  rs2_data <= vcp_alu_data2 when VCP_ENABLE and vcp_alu_source_valid = '1' else
               alu_data_out when rs2_mux = ALU_FWD else
               to_execute_rs2_data;
   rs3_data <= alu_data_out when rs3_mux = ALU_FWD else
@@ -391,7 +393,10 @@ begin
       umr_base_addrs => umr_base_addrs,
       umr_last_addrs => umr_last_addrs,
 
-      pause_ifetch => pause_ifetch
+      pause_ifetch => pause_ifetch,
+
+      vcp_writeback_data   => vcp_writeback_data,
+      vcp_writeback_en     => vcp_writeback_en
       );
 
   vcp_port : vcp_handler
