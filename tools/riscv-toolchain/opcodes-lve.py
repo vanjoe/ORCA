@@ -7,15 +7,18 @@ instruction = namedtuple('instruction',['name','bit40','bit30','bit25','bit14_12
 arith_instr=[instruction("vadd"     ,0,0,0,0),
              instruction("vsub"     ,0,1,0,0),
              instruction("vsll"     ,0,0,0,1),
+             instruction("vshl"     ,0,0,0,1), #alias
              instruction("vslt"     ,0,0,0,2),
              instruction("vsltu"    ,0,0,0,3),
              instruction("vxor"     ,0,0,0,4),
              instruction("vsrl"     ,0,0,0,5),
              instruction("vsra"     ,0,1,0,5),
+             instruction("vshr"     ,0,0,0,5), #alias
              instruction("vor"      ,0,0,0,6),
              instruction("vand"     ,0,0,0,7),
              instruction("vmul"     ,0,0,1,0),
              instruction("vmulh"    ,0,0,1,1),
+             instruction("vmulhi"   ,0,0,1,1), #alias
              instruction("vmulhus"  ,0,0,1,2), #oposite order of riscv
              instruction("vmulhu"   ,0,0,1,3),
              instruction("vdiv"     ,0,0,1,4),
