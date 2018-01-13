@@ -113,7 +113,7 @@ architecture rtl of orca_core is
   signal to_pc_correction_predictable : std_logic;
   signal from_pc_correction_ready     : std_logic;
 
-  signal ifetch_to_decode_instruction     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal ifetch_to_decode_instruction     : std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
   signal ifetch_to_decode_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
   signal ifetch_to_decode_predicted_pc    : unsigned(REGISTER_SIZE-1 downto 0);
   signal from_ifetch_valid                : std_logic;
@@ -126,8 +126,8 @@ architecture rtl of orca_core is
   signal decode_to_execute_sign_extension   : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
   signal decode_to_execute_program_counter  : unsigned(REGISTER_SIZE-1 downto 0);
   signal decode_to_execute_predicted_pc     : unsigned(REGISTER_SIZE-1 downto 0);
-  signal decode_to_execute_instruction      : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-  signal decode_to_execute_next_instruction : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal decode_to_execute_instruction      : std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+  signal decode_to_execute_next_instruction : std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
   signal decode_to_execute_next_valid       : std_logic;
   signal from_decode_valid                  : std_logic;
   signal execute_to_decode_ready            : std_logic;

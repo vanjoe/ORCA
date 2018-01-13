@@ -66,11 +66,37 @@ package utils is
     data_in : std_logic_vector
     )
     return std_logic;
+  function INSTRUCTION_SIZE (
+    LVE_ENABLE : boolean)
+    return integer ;
+  function INSTRUCTION_SIZE (
+    LVE_ENABLE : integer)
+    return integer ;
 
 end utils;
 
 
 package body utils is
+
+  function INSTRUCTION_SIZE (
+    LVE_ENABLE : boolean)
+    return integer is
+  begin  -- function INSTRUCTION_SIZE
+    if LVE_ENABLE then
+      return 64;
+    end if;
+    return 32;
+  end function INSTRUCTION_SIZE;
+
+  function INSTRUCTION_SIZE (
+    LVE_ENABLE : integer)
+    return integer is
+  begin  -- function INSTRUCTION_SIZE
+    if LVE_ENABLE /= 0 then
+      return 64;
+    end if;
+    return 32;
+  end function INSTRUCTION_SIZE;
 
   function imax(
     constant M : integer;

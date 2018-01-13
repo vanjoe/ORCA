@@ -24,7 +24,7 @@ entity decode is
     to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     to_rf_valid  : in std_logic;
 
-    to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
     to_decode_predicted_pc    : in  unsigned(REGISTER_SIZE-1 downto 0);
     to_decode_valid           : in  std_logic;
@@ -39,8 +39,8 @@ entity decode is
     from_decode_sign_extension   : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     from_decode_program_counter  : out unsigned(REGISTER_SIZE-1 downto 0);
     from_decode_predicted_pc     : out unsigned(REGISTER_SIZE-1 downto 0);
-    from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+    from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
     from_decode_next_valid       : out std_logic;
     from_decode_valid            : out std_logic;
     to_decode_ready              : in  std_logic
@@ -48,7 +48,7 @@ entity decode is
 end;
 
 architecture rtl of decode is
-  signal from_decode_instruction_signal : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal from_decode_instruction_signal : std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0) := (others => '0');
   signal from_decode_valid_signal       : std_logic;
   signal from_decode_ready_signal       : std_logic;
 
@@ -116,7 +116,7 @@ begin
   two_cycle : if PIPELINE_STAGES = 2 generate
     signal from_stage1_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
     signal from_stage1_predicted_pc    : unsigned(REGISTER_SIZE-1 downto 0);
-    signal from_stage1_instruction     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    signal from_stage1_instruction     : std_logic_vector(to_decode_instruction'range);
     signal from_stage1_valid           : std_logic;
     signal to_stage1_ready             : std_logic;
 
@@ -149,17 +149,17 @@ begin
         if from_decode_ready_signal = '1' then
           from_stage1_program_counter <= to_decode_program_counter;
           from_stage1_predicted_pc    <= to_decode_predicted_pc;
-          from_stage1_instruction     <= to_decode_instruction;
+          from_stage1_instruction <= to_decode_instruction;
           from_stage1_valid           <= to_decode_valid;
         end if;
 
         if to_stage1_ready = '1' then
           from_decode_sign_extension <=
-            std_logic_vector(resize(signed(from_stage1_instruction(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
+            std_logic_vector(resize(signed(from_stage1_instruction(from_stage1_instruction'left downto from_stage1_instruction'left)),
                                     SIGN_EXTENSION_SIZE));
           from_decode_program_counter    <= from_stage1_program_counter;
           from_decode_predicted_pc       <= from_stage1_predicted_pc;
-          from_decode_instruction_signal <= from_stage1_instruction;
+          from_decode_instruction_signal(31 downto 0) <= from_stage1_instruction;
           from_decode_valid_signal       <= from_stage1_valid;
           from_decode_rs1_data           <= rs1_data;
           from_decode_rs2_data           <= rs2_data;
@@ -198,7 +198,7 @@ begin
       end if;
     end process decode_stage;
     decode_idle                  <= (not from_stage1_valid) and (not from_decode_valid_signal);
-    from_decode_next_instruction <= from_stage1_instruction;
+    from_decode_next_instruction(31 downto 0) <= from_stage1_instruction;
     from_decode_next_valid       <= from_stage1_valid;
 
   end generate two_cycle;
@@ -217,11 +217,11 @@ begin
       if rising_edge(clk) then
         if to_decode_ready = '1' then
           from_decode_sign_extension <=
-            std_logic_vector(resize(signed(to_decode_instruction(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
+            std_logic_vector(resize(signed(to_decode_instruction(to_decode_instruction'left downto to_decode_instruction'left)),
                                     SIGN_EXTENSION_SIZE));
           from_decode_program_counter    <= to_decode_program_counter;
           from_decode_predicted_pc       <= to_decode_predicted_pc;
-          from_decode_instruction_signal <= to_decode_instruction;
+          from_decode_instruction_signal(31 downto 0) <= to_decode_instruction;
           from_decode_valid_signal       <= to_decode_valid;
         end if;
 

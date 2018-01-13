@@ -41,7 +41,7 @@ entity system_calls is
 
     to_syscall_valid   : in  std_logic;
     current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
-    instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    instruction        : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_syscall_ready : out std_logic;
 
@@ -78,7 +78,7 @@ architecture rtl of system_calls is
       VCP_ENABLE               : boolean
       );
     port (
-      instruction : in  std_logic_vector(instruction_size-1 downto 0);
+      instruction : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       legal       : out std_logic
       );
   end component;
@@ -571,6 +571,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.constants_pkg.all;
+use work.utils.all;
 
 entity instruction_legal is
   generic (
@@ -578,7 +579,7 @@ entity instruction_legal is
     VCP_ENABLE               : boolean
     );
   port (
-    instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    instruction : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     legal       : out std_logic
     );
 end entity;
@@ -603,5 +604,6 @@ begin
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
               (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
               (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /= SYSTEM_EBREAK) or
-              (opcode7 = LVE_OP and VCP_ENABLE)) else '0';
+              (opcode7 = LVE32_OP and VCP_ENABLE)or
+              (opcode7 = LVE64_OP and VCP_ENABLE)) else '0';
 end architecture;

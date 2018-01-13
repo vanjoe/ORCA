@@ -16,7 +16,7 @@ entity lve_core is
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
     reset          : in std_logic;
-    instruction    : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    instruction    : in std_logic_vector(31 downto 0);
     valid_instr    : in std_logic;
 
 
@@ -47,7 +47,7 @@ entity lve_core is
 end entity;
 
 architecture rtl of lve_core is
-  signal lve_instr       : std_logic;
+
   signal valid_lve_instr : std_logic;
   --parts of the instruction
   alias instr_major_op   : std_logic_vector is instruction(MAJOR_OP'range);
@@ -140,8 +140,7 @@ architecture rtl of lve_core is
   constant GET_STATE_BINCR : integer := 5;
 
 begin
-  lve_instr           <= '1' when instr_major_op = LVE_OP else '0';
-  valid_lve_instr     <= valid_instr and lve_instr;
+  valid_lve_instr     <= valid_instr;
   opcode5(4)          <= instruction(30);
   opcode5(3)          <= instruction(25);
   opcode5(2 downto 0) <= instruction(14 downto 12);

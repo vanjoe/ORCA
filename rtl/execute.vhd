@@ -51,8 +51,8 @@ entity execute is
     to_execute_valid            : in     std_logic;
     to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
     to_execute_predicted_pc     : in     unsigned(REGISTER_SIZE-1 downto 0);
-    to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+    to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
     to_execute_next_valid       : in     std_logic;
     to_execute_rs1_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     to_execute_rs2_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -179,6 +179,7 @@ architecture behavioural of execute is
   signal to_rf_mux            : std_logic_vector(1 downto 0);
 
   signal vcp_was_executing : std_logic;
+  constant instruction32 : std_logic_vector(31 downto 0) := (others => '0');
 begin
   valid_instr <= to_execute_valid and from_writeback_ready;
 
@@ -260,7 +261,7 @@ begin
       from_execute_ready => from_execute_ready,
       rs1_data           => rs1_data,
       rs2_data           => rs2_data,
-      instruction        => to_execute_instruction,
+      instruction        => to_execute_instruction(instruction32'range),
       sign_extension     => to_execute_sign_extension,
       current_pc         => to_execute_program_counter,
       data_out           => alu_data_out,
@@ -287,7 +288,7 @@ begin
       rs2_data        => rs2_data,
       current_pc      => to_execute_program_counter,
       predicted_pc    => to_execute_predicted_pc,
-      instruction     => to_execute_instruction,
+      instruction     => to_execute_instruction(instruction32'range),
       sign_extension  => to_execute_sign_extension,
 
       from_branch_valid => from_branch_valid,
@@ -314,7 +315,7 @@ begin
       valid                    => valid_instr,
       rs1_data                 => rs1_data,
       rs2_data                 => rs2_data,
-      instruction              => to_execute_instruction,
+      instruction              => to_execute_instruction(instruction32'range),
       sign_extension           => to_execute_sign_extension,
       writeback_stall_from_lsu => writeback_stall_from_lsu,
       lsu_ready                => lsu_ready,
@@ -369,7 +370,7 @@ begin
 
       to_syscall_valid   => valid_instr,
       rs1_data           => rs1_data,
-      instruction        => to_execute_instruction,
+      instruction        => to_execute_instruction(instruction32'range),
       current_pc         => to_execute_program_counter,
       from_syscall_ready => from_syscall_ready,
 
@@ -537,7 +538,12 @@ begin
         write(my_line, string'("executing pc = "));  -- formatting
         hwrite(my_line, (std_logic_vector(to_execute_program_counter)));  -- format type std_logic_vector as hex
         write(my_line, string'(" instr =  "));      -- formatting
-        hwrite(my_line, (to_execute_instruction));  -- format type std_logic_vector as hex
+        if to_execute_instruction(MAJOR_OP'range) = LVE64_OP then
+          hwrite(my_line, (to_execute_instruction));  -- format type std_logic_vector as hex
+        else
+          hwrite(my_line, (to_execute_instruction(31 downto 0)));  -- format type std_logic_vector as hex
+        end if;
+
         if from_execute_ready = '0' then
           write(my_line, string'(" stalling"));     -- formatting
         else

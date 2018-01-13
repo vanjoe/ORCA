@@ -18,7 +18,7 @@ entity vcp_handler is
     clk   : in std_logic;
     reset : in std_logic;
 
-    instruction   : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    instruction   : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
     valid_instr   : in std_logic;
     vcp_executing : in std_logic;
 
@@ -55,7 +55,7 @@ begin  -- architecture rtl
   vcp_data2 <= rs3_data;
 
   vcp_enabled_gen : if VCP_ENABLE generate
-    vcp_valid_instr <= valid_instr when instruction(6 downto 0) = LVE_OP else '0';
+    vcp_valid_instr <= valid_instr when instruction(MAJOR_OP'range) = LVE32_OP else '0';
     process (clk) is
     begin
       if rising_edge(clk) then

@@ -811,7 +811,7 @@ package rv_components is
       to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       to_rf_valid  : in std_logic;
 
-      to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
       to_decode_predicted_pc    : in  unsigned(REGISTER_SIZE-1 downto 0);
       to_decode_valid           : in  std_logic;
@@ -826,8 +826,8 @@ package rv_components is
       from_decode_sign_extension   : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       from_decode_program_counter  : out unsigned(REGISTER_SIZE-1 downto 0);
       from_decode_predicted_pc     : out unsigned(REGISTER_SIZE-1 downto 0);
-      from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+      from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
       from_decode_next_valid       : out std_logic;
       from_decode_valid            : out std_logic;
       to_decode_ready              : in  std_logic
@@ -874,8 +874,8 @@ package rv_components is
       to_execute_valid            : in     std_logic;
       to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
       to_execute_predicted_pc     : in     unsigned(REGISTER_SIZE-1 downto 0);
-      to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+      to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
       to_execute_next_valid       : in     std_logic;
       to_execute_rs1_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       to_execute_rs2_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -967,7 +967,7 @@ package rv_components is
       --quash_ifetch is handled by to_pc_correction_valid
       ifetch_idle : out std_logic;
 
-      from_ifetch_instruction     : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      from_ifetch_instruction     : out std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       from_ifetch_program_counter : out unsigned(REGISTER_SIZE-1 downto 0);
       from_ifetch_predicted_pc    : out unsigned(REGISTER_SIZE-1 downto 0);
       from_ifetch_valid           : out std_logic;
@@ -978,7 +978,7 @@ package rv_components is
       --ORCA-internal memory-mapped master
       oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
       oimm_requestvalid  : buffer std_logic;
-      oimm_readdata      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      oimm_readdata      : in     std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       oimm_readdatavalid : in     std_logic;
       oimm_waitrequest   : in     std_logic
       );
@@ -1002,7 +1002,7 @@ package rv_components is
       from_execute_ready : in  std_logic;
       rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      instruction        : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       sign_extension     : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
       data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -1031,7 +1031,7 @@ package rv_components is
       rs2_data        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       current_pc      : in unsigned(REGISTER_SIZE-1 downto 0);
       predicted_pc    : in unsigned(REGISTER_SIZE-1 downto 0);
-      instruction     : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      instruction     : in std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       sign_extension  : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
 
       from_branch_valid : out std_logic;
@@ -1059,7 +1059,7 @@ package rv_components is
       valid                    : in     std_logic;
       rs1_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instruction              : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      instruction              : in     std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       sign_extension           : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       writeback_stall_from_lsu : buffer std_logic;
       lsu_ready                : out    std_logic;
@@ -1137,7 +1137,7 @@ package rv_components is
 
       to_syscall_valid   : in  std_logic;
       current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
-      instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      instruction        : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       from_syscall_ready : out std_logic;
 
@@ -1613,7 +1613,7 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
-      instruction   : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      instruction   : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
       valid_instr   : in std_logic;
       vcp_executing : in std_logic;
 

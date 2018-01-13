@@ -7,9 +7,8 @@ use work.utils.all;
 
 package constants_pkg is
   constant SIGN_EXTENSION_SIZE : positive := 20;
-  constant INSTRUCTION_SIZE    : integer  := 32;
 
-  --REGISTER NAMES
+ --REGISTER NAMES
   constant REGISTER_NAME_SIZE : positive := 5;
 
   constant REGISTER_ZERO : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(0, REGISTER_NAME_SIZE);
@@ -50,7 +49,7 @@ package constants_pkg is
   constant REGISTER_RD  : unsigned(11 downto 7)  := (others => '0');
 
 
-  --Major OP codes instr(6 downto 0)
+--Major OP codes instr(6 downto 0)
   constant MAJOR_OP   : std_logic_vector(6 downto 0) := (others => '-');
   constant JAL_OP     : std_logic_vector(6 downto 0) := "1101111";
   constant JALR_OP    : std_logic_vector(6 downto 0) := "1100111";
@@ -63,7 +62,9 @@ package constants_pkg is
   constant FENCE_OP   : std_logic_vector(6 downto 0) := "0001111";
   constant SYSTEM_OP  : std_logic_vector(6 downto 0) := "1110011";
   constant CUSTOM0_OP : std_logic_vector(6 downto 0) := "0101011";
-  constant LVE_OP     : std_logic_vector(6 downto 0) := CUSTOM0_OP;
+  constant CUSTOM1_OP : std_logic_vector(6 downto 0) := "0111111";
+  constant LVE32_OP     : std_logic_vector(6 downto 0) := CUSTOM0_OP;
+  constant LVE64_OP     : std_logic_vector(6 downto 0) := CUSTOM1_OP;
   constant BRANCH_OP  : std_logic_vector(6 downto 0) := "1100011";
 
   constant OP_IMM_IMMEDIATE_SIZE : integer                        := 12;
@@ -83,7 +84,7 @@ package constants_pkg is
   constant CSR_UTIME    : std_logic_vector(11 downto 0)  := x"C01";
   constant CSR_UTIMEH   : std_logic_vector(11 downto 0)  := x"C81";
 
-  --NON-STANDARD
+--NON-STANDARD
   constant CSR_MEIMASK    : std_logic_vector(11 downto 0) := x"7C0";
   constant CSR_MEIPEND    : std_logic_vector(11 downto 0) := x"FC0";
   constant CSR_MCACHE     : std_logic_vector(11 downto 0) := x"BC0";
@@ -104,17 +105,17 @@ package constants_pkg is
   constant CSR_MUMR2_LAST : std_logic_vector(11 downto 0) := x"BEA";
   constant CSR_MUMR3_LAST : std_logic_vector(11 downto 0) := x"BEB";
 
-  --CSR_MSTATUS BITS
+--CSR_MSTATUS BITS
   constant CSR_MSTATUS_MIE  : natural := 3;
   constant CSR_MSTATUS_MPIE : natural := 7;
 
-  --CSR_MCACHE BITS
-  constant CSR_MCACHE_IEXISTS : natural := 0;
-  constant CSR_MCACHE_DEXISTS : natural := 1;
+--CSR_MCACHE BITS
+  constant CSR_MCACHE_IEXISTS : natural                        := 0;
+  constant CSR_MCACHE_DEXISTS : natural                        := 1;
   constant CSR_MCACHE_AMRS    : std_logic_vector(19 downto 16) := (others => '0');
   constant CSR_MCACHE_UMRS    : std_logic_vector(23 downto 20) := (others => '0');
 
-  --constant CSR_MCAUSE_MEXT    : integer := 16#8000000B#;
+--constant CSR_MCAUSE_MEXT    : integer := 16#8000000B#;
   constant CSR_MCAUSE_ILLEGAL : integer := 2;
   constant CSR_MCAUSE_EBREAK  : integer := 3;
   constant CSR_MCAUSE_MECALL  : integer := 11;
@@ -131,7 +132,7 @@ package constants_pkg is
   constant SYSTEM_EBREAK   : std_logic_vector(11 downto 0)  := x"001";
 
   constant INSTR_FUNC3 : std_logic_vector(14 downto 12) := "000";
-  --branch FUNC3 instr(14 downto 12)
+--branch FUNC3 instr(14 downto 12)
   constant BEQ_OP      : std_logic_vector(2 downto 0)   := "000";
   constant BNE_OP      : std_logic_vector(2 downto 0)   := "001";
   constant BLT_OP      : std_logic_vector(2 downto 0)   := "100";
@@ -139,7 +140,7 @@ package constants_pkg is
   constant BLTU_OP     : std_logic_vector(2 downto 0)   := "110";
   constant BGEU_OP     : std_logic_vector(2 downto 0)   := "111";
 
-  --Load store  func3 instr(14 downto 12)
+--Load store  func3 instr(14 downto 12)
   constant BYTE_SIZE   : std_logic_vector(2 downto 0) := "000";
   constant HALF_SIZE   : std_logic_vector(2 downto 0) := "001";
   constant WORD_SIZE   : std_logic_vector(2 downto 0) := "010";
@@ -148,7 +149,7 @@ package constants_pkg is
   constant STORE_INSTR : std_logic_vector(6 downto 0) := "0100011";
   constant LOAD_INSTR  : std_logic_vector(6 downto 0) := "0000011";
 
-  --alu func3
+--alu func3
   constant ADD_OP  : std_logic_vector(2 downto 0) := "000";
   constant SLL_OP  : std_logic_vector(2 downto 0) := "001";
   constant SLT_OP  : std_logic_vector(2 downto 0) := "010";
@@ -158,7 +159,7 @@ package constants_pkg is
   constant OR_OP   : std_logic_vector(2 downto 0) := "110";
   constant AND_OP  : std_logic_vector(2 downto 0) := "111";
 
-  --multipy func3
+--multipy func3
   constant MUL_OP    : std_logic_vector(2 downto 0) := "000";
   constant MULH_OP   : std_logic_vector(2 downto 0) := "001";
   constant MULHSU_OP : std_logic_vector(2 downto 0) := "010";
@@ -182,9 +183,9 @@ package constants_pkg is
   constant LVE_WORD_SIZE : std_logic_vector(1 downto 0) := "11";
 
 
-  ------------------------------------------------------------------------------
-  -- Types
-  ------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+-- Types
+------------------------------------------------------------------------------
   type cache_control_command is (INVALIDATE, FLUSH, WRITEBACK);
 
 end package constants_pkg;
