@@ -17,7 +17,7 @@ entity system_calls is
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
-    VCP_ENABLE : boolean;
+    VCP_ENABLE : natural;
 
     AUX_MEMORY_REGIONS : natural range 0 to 4;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
@@ -75,7 +75,7 @@ architecture rtl of system_calls is
   component instruction_legal is
     generic (
       CHECK_LEGAL_INSTRUCTIONS : boolean;
-      VCP_ENABLE               : boolean
+      VCP_ENABLE               : natural
       );
     port (
       instruction : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
@@ -499,7 +499,7 @@ begin
         end if;
       end if;
 
-      if VCP_ENABLE and vcp_writeback_en = '1' then
+      if VCP_ENABLE /= 0 and vcp_writeback_en = '1' then
         -- To avoid having a 4 5o one mux in execute, We add
         -- the writebacks from the vcp here. Since the writebacks
         -- are from vbx_get, which are sort of control/status
@@ -576,7 +576,7 @@ use work.utils.all;
 entity instruction_legal is
   generic (
     CHECK_LEGAL_INSTRUCTIONS : boolean;
-    VCP_ENABLE               : boolean
+    VCP_ENABLE               : natural
     );
   port (
     instruction : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
@@ -604,6 +604,6 @@ begin
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
               (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
               (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /= SYSTEM_EBREAK) or
-              (opcode7 = LVE32_OP and VCP_ENABLE)or
-              (opcode7 = LVE64_OP and VCP_ENABLE)) else '0';
+              (opcode7 = LVE32_OP and VCP_ENABLE /= 0)or
+              (opcode7 = LVE64_OP and VCP_ENABLE = 2)) else '0';
 end architecture;

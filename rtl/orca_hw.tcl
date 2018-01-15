@@ -198,7 +198,7 @@ set_parameter_property VCP_ENABLE DISPLAY_NAME "Vector Extensions"
 set_parameter_property VCP_ENABLE DESCRIPTION "Enable Vector Extensions"
 set_parameter_property VCP_ENABLE TYPE NATURAL
 set_parameter_property VCP_ENABLE UNITS None
-set_parameter_property VCP_ENABLE ALLOWED_RANGES 0:1
+set_parameter_property VCP_ENABLE ALLOWED_RANGES 0:2
 set_parameter_property VCP_ENABLE HDL_PARAMETER true
 set_display_item_property VCP_ENABLE DISPLAY_HINT boolean
 

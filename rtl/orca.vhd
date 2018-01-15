@@ -21,7 +21,7 @@ entity orca is
     COUNTER_LENGTH         : natural                       := 0;
     ENABLE_EXCEPTIONS      : natural                       := 1;
     PIPELINE_STAGES        : natural range 4 to 5          := 5;
-    VCP_ENABLE             : natural range 0 to 1          := 0;
+    VCP_ENABLE             : natural range 0 to 2          := 0;
     ENABLE_EXT_INTERRUPTS  : natural range 0 to 1          := 0;
     NUM_EXT_INTERRUPTS     : positive range 1 to 32        := 1;
     POWER_OPTIMIZED        : natural range 0 to 1          := 0;
@@ -409,7 +409,7 @@ begin
       COUNTER_LENGTH         => COUNTER_LENGTH,
       ENABLE_EXCEPTIONS      => ENABLE_EXCEPTIONS,
       PIPELINE_STAGES        => PIPELINE_STAGES,
-      VCP_ENABLE             => VCP_ENABLE /= 0,
+      VCP_ENABLE             => VCP_ENABLE,
       ENABLE_EXT_INTERRUPTS  => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS     => NUM_EXT_INTERRUPTS,
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS,

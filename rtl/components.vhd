@@ -21,7 +21,7 @@ package rv_components is
       COUNTER_LENGTH         : natural                       := 0;
       ENABLE_EXCEPTIONS      : natural                       := 1;
       PIPELINE_STAGES        : natural range 4 to 5          := 5;
-      VCP_ENABLE             : natural range 0 to 1          := 0;
+      VCP_ENABLE             : natural range 0 to 2          := 0;
       ENABLE_EXT_INTERRUPTS  : natural range 0 to 1          := 0;
       NUM_EXT_INTERRUPTS     : positive range 1 to 32        := 1;
       POWER_OPTIMIZED        : natural range 0 to 1          := 0;
@@ -718,7 +718,7 @@ package rv_components is
       PIPELINE_STAGES        : natural range 4 to 5;
       ENABLE_EXT_INTERRUPTS  : natural range 0 to 1;
       NUM_EXT_INTERRUPTS     : positive range 1 to 32;
-      VCP_ENABLE             : boolean;
+      VCP_ENABLE             : natural range 0 to 2 := 0;
       WRITE_FIRST_SMALL_RAMS : boolean;
       FAMILY                 : string;
 
@@ -797,7 +797,7 @@ package rv_components is
     generic (
       REGISTER_SIZE          : positive;
       SIGN_EXTENSION_SIZE    : positive;
-      VCP_ENABLE             : boolean;
+      VCP_ENABLE             : natural range 0 to 2 := 0;
       PIPELINE_STAGES        : natural range 1 to 2;
       WRITE_FIRST_SMALL_RAMS : boolean;
       FAMILY                 : string
@@ -827,7 +827,7 @@ package rv_components is
       from_decode_program_counter  : out unsigned(REGISTER_SIZE-1 downto 0);
       from_decode_predicted_pc     : out unsigned(REGISTER_SIZE-1 downto 0);
       from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
-      from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+      from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       from_decode_next_valid       : out std_logic;
       from_decode_valid            : out std_logic;
       to_decode_ready              : in  std_logic
@@ -848,7 +848,7 @@ package rv_components is
       ENABLE_EXCEPTIONS     : boolean;
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
       NUM_EXT_INTERRUPTS    : positive range 1 to 32;
-      VCP_ENABLE            : boolean;
+      VCP_ENABLE            : natural range 0 to 2 := 0;
       FAMILY                : string;
 
       AUX_MEMORY_REGIONS : natural range 0 to 4;
@@ -875,7 +875,7 @@ package rv_components is
       to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
       to_execute_predicted_pc     : in     unsigned(REGISTER_SIZE-1 downto 0);
       to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
-      to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+      to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       to_execute_next_valid       : in     std_logic;
       to_execute_rs1_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       to_execute_rs2_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -1113,7 +1113,7 @@ package rv_components is
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
       NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
-      VCP_ENABLE : boolean;
+      VCP_ENABLE : natural range 0 to 2 := 0;
 
       AUX_MEMORY_REGIONS : natural range 0 to 4;
       AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
@@ -1607,7 +1607,7 @@ package rv_components is
   component vcp_handler is
     generic (
       REGISTER_SIZE : integer;
-      VCP_ENABLE    : boolean
+      VCP_ENABLE    : natural range 0 to 2 := 0
       );
     port (
       clk   : in std_logic;

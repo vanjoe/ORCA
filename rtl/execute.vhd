@@ -25,7 +25,7 @@ entity execute is
     ENABLE_EXCEPTIONS     : boolean;
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
-    VCP_ENABLE            : boolean;
+    VCP_ENABLE            : natural;
     FAMILY                : string;
 
     AUX_MEMORY_REGIONS : natural range 0 to 4;
@@ -52,7 +52,7 @@ entity execute is
     to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
     to_execute_predicted_pc     : in     unsigned(REGISTER_SIZE-1 downto 0);
     to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
-    to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+    to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     to_execute_next_valid       : in     std_logic;
     to_execute_rs1_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     to_execute_rs2_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -193,10 +193,10 @@ begin
   -- propogate if the next instruction uses them.
   --
   -----------------------------------------------------------------------------
-  rs1_data <= vcp_alu_data1 when VCP_ENABLE and vcp_alu_source_valid = '1' else
+  rs1_data <= vcp_alu_data1 when VCP_ENABLE /=0 and vcp_alu_source_valid = '1' else
               alu_data_out when rs1_mux = ALU_FWD else
               to_execute_rs1_data;
-  rs2_data <= vcp_alu_data2 when VCP_ENABLE and vcp_alu_source_valid = '1' else
+  rs2_data <= vcp_alu_data2 when VCP_ENABLE /=0 and vcp_alu_source_valid = '1' else
               alu_data_out when rs2_mux = ALU_FWD else
               to_execute_rs2_data;
   rs3_data <= alu_data_out when rs3_mux = ALU_FWD else
@@ -205,13 +205,13 @@ begin
   from_execute_ready <= (not to_execute_valid) or (from_writeback_ready and
                                                    lsu_ready and
                                                    (alu_ready or vcp_was_executing) and
-                                                   (vcp_ready or bool_to_sl(not VCP_ENABLE)) and
+                                                   (vcp_ready or bool_to_sl(VCP_ENABLE = 0)) and
                                                    from_syscall_ready);
 
   --No forward stall; system calls, loads, and branches aren't forwarded.
   use_after_produce_stall <=
     to_rf_select_writeable and (from_syscall_valid or load_in_progress or from_branch_valid) when
-    to_rf_select = rs1 or to_rf_select = rs2 or ((to_rf_select = rs3) and VCP_ENABLE) else
+    to_rf_select = rs1 or to_rf_select = rs2 or ((to_rf_select = rs3) and VCP_ENABLE /= 0) else
     '0';
 
   --Calculate forwarding muxes for next instruction in advance in order to
