@@ -621,7 +621,7 @@
   <parameter name="MAX_IFETCHES_IN_FLIGHT" value="3" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="NUM_EXT_INTERRUPTS" value="1" />
-  <parameter name="PIPELINE_STAGES" value="4" />
+  <parameter name="PIPELINE_STAGES" value="5" />
   <parameter name="POWER_OPTIMIZED" value="0" />
   <parameter name="REGISTER_SIZE" value="32" />
   <parameter name="RESET_VECTOR" value="0" />
