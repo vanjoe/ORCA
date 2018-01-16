@@ -34,7 +34,6 @@ entity lve_core is
     rs3_data : in std_logic_vector(LVE_WIDTH-1 downto 0);
 
     lve_ready            : out    std_logic;
-    lve_executing        : out    std_logic;
     lve_writeback_data   : out    std_logic_vector(31 downto 0);
     lve_writeback_en     : out    std_logic;
     lve_alu_data1        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
@@ -279,7 +278,6 @@ begin
                    dest_row_ptr+dest_incr;
 
   executing     <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector;
-  lve_executing <= executing;
   lve_ready     <= not executing and not get_state;
 
 

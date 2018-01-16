@@ -88,7 +88,6 @@ entity lve_top is
     vcp_writeback_data   : out std_logic_vector(31 downto 0);
     vcp_writeback_en     : out std_logic;
     vcp_ready            : out std_logic;
-    vcp_executing        : out std_logic;
     vcp_alu_data1        : out std_logic_vector(LVE_WIDTH-1 downto 0);
     vcp_alu_data2        : out std_logic_vector(LVE_WIDTH-1 downto 0);
     vcp_alu_op_size      : out std_logic_vector(1 downto 0);
@@ -204,7 +203,6 @@ begin  -- architecture rtl
       instruction          => vcp_instruction(31 downto 0),
       valid_instr          => vcp_valid_instr,
       lve_ready            => vcp_ready,
-      lve_executing        => vcp_executing,
       lve_writeback_data   => vcp_writeback_data,
       lve_writeback_en      => vcp_writeback_en,
       lve_alu_data1        => vcp_alu_data1,

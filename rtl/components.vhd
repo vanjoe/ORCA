@@ -350,7 +350,6 @@ package rv_components is
       vcp_ready            : in  std_logic                                  := '1';
       vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
       vcp_writeback_en     : in  std_logic;
-      vcp_executing        : in  std_logic                                  := '0';
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
       vcp_alu_op_size      : in  std_logic_vector(1 downto 0)               := (others => '0');
@@ -783,7 +782,6 @@ package rv_components is
       vcp_ready            : in  std_logic;
       vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
       vcp_writeback_en     : in  std_logic;
-      vcp_executing        : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
@@ -935,7 +933,6 @@ package rv_components is
       vcp_ready            : in  std_logic;
       vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
       vcp_writeback_en     : in  std_logic;
-      vcp_executing        : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
@@ -1615,7 +1612,7 @@ package rv_components is
 
       instruction   : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
       valid_instr   : in std_logic;
-      vcp_executing : in std_logic;
+      vcp_ready     : in std_logic;
 
       rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);

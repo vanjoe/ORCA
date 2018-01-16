@@ -112,7 +112,6 @@ entity execute is
     vcp_ready            : in  std_logic;
     vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
     vcp_writeback_en     : in  std_logic;
-    vcp_executing        : in  std_logic;
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
@@ -411,7 +410,7 @@ begin
 
       instruction   => to_execute_instruction,
       valid_instr   => valid_instr,
-      vcp_executing => vcp_executing,
+      vcp_ready => vcp_ready,
 
       rs1_data => rs1_data,
       rs2_data => rs2_data,

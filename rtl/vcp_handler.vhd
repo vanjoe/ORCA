@@ -18,9 +18,9 @@ entity vcp_handler is
     clk   : in std_logic;
     reset : in std_logic;
 
-    instruction   : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
-    valid_instr   : in std_logic;
-    vcp_executing : in std_logic;
+    instruction : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+    valid_instr : in std_logic;
+    vcp_ready   : in std_logic;
 
     rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -43,8 +43,8 @@ begin  -- architecture rtl
 
 
   --extended bits
-  dsz                           <= instruction(31) & instruction(29);
-  instr_64bit                   <= instruction(MAJOR_OP'range) = LVE64_OP and VCP_ENABLE = 2;
+  dsz         <= instruction(31) & instruction(29);
+  instr_64bit <= instruction(MAJOR_OP'range) = LVE64_OP and VCP_ENABLE = 2;
 
   vcp_instruction(40)           <= instruction(40)           when instr_64bit else '0';  --extra instruction
   vcp_instruction(39)           <= instruction(39)           when instr_64bit else '0';  --masked
@@ -64,7 +64,7 @@ begin  -- architecture rtl
     process (clk) is
     begin
       if rising_edge(clk) then
-        vcp_was_executing <= vcp_executing;
+        vcp_was_executing <= not vcp_ready;
       end if;
     end process;
   end generate vcp_enabled_gen;

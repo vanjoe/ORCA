@@ -157,7 +157,6 @@ add_interface_port vcp vcp_valid_instr      valid_instr       Input  1
 add_interface_port vcp vcp_ready            ready             Output 1
 add_interface_port vcp vcp_writeback_data   writeback_data    Output 32
 add_interface_port vcp vcp_writeback_en     writeback_en      Output 1
-add_interface_port vcp vcp_executing        executing         Output 1
 add_interface_port vcp vcp_alu_data1        alu_data1         Output $width
 add_interface_port vcp vcp_alu_data2        alu_data2         Output $width
 add_interface_port vcp vcp_alu_op_size      alu_op_size       Output 2

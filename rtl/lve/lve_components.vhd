@@ -88,7 +88,6 @@ package lve_components is
       vcp_writeback_data   : out std_logic_vector(31 downto 0);
       vcp_writeback_en     : out std_logic;
       vcp_ready            : out std_logic;
-      vcp_executing        : out std_logic;
       vcp_alu_data1        : out std_logic_vector(LVE_WIDTH-1 downto 0);
       vcp_alu_data2        : out std_logic_vector(LVE_WIDTH-1 downto 0);
       vcp_alu_op_size      : out std_logic_vector(1 downto 0);
@@ -124,7 +123,6 @@ package lve_components is
       rs3_data : in std_logic_vector(LVE_WIDTH-1 downto 0);
 
       lve_ready            : out    std_logic;
-      lve_executing        : out    std_logic;
       lve_writeback_data   : out    std_logic_vector(31 downto 0);
       lve_writeback_en     : out    std_logic;
       lve_alu_data1        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
