@@ -85,16 +85,16 @@ architecture rtl of system_calls is
 
   -- CSR signals. These are initialized to zero so that if any bits are never
   -- assigned, they act like constants.
-  signal mstatus  : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mepc     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mcause   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mbadaddr : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mtime    : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mtimeh   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal meimask  : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal meipend  : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mcache   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-
+  signal mstatus    : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mepc       : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mcause     : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mbadaddr   : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mtime      : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mtimeh     : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal meimask    : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal meipend    : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mcache     : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal misa       : std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
   --Assign csr_select instead of alias to get csr_select'right = 0 for indexing
   signal csr_select : std_logic_vector(CSR_ADDRESS'length-1 downto 0);
   alias func3 is instruction(INSTR_FUNC3'range);
@@ -157,10 +157,12 @@ begin
   mtime  <= std_logic_vector(time_counter(REGISTER_SIZE - 1 downto 0)) when COUNTER_LENGTH /= 0 else (others => '0');
   mtimeh <= std_logic_vector(time_counter(time_counter'left downto time_counter'left-REGISTER_SIZE+1))
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
-
-  csr_select <= instruction(CSR_ADDRESS'range);
+  misa(misa'left downto misa'left-1) <= "01";
+  misa(23)                           <= '0' when VCP_ENABLE = 0 else '1';
+csr_select <= instruction(CSR_ADDRESS'range);
   with csr_select select
     csr_readdata <=
+    misa            when CSR_MISA,
     mstatus         when CSR_MSTATUS,
     mepc            when CSR_MEPC,
     mcause          when CSR_MCAUSE,

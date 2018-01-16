@@ -8,7 +8,7 @@ use work.utils.all;
 package constants_pkg is
   constant SIGN_EXTENSION_SIZE : positive := 20;
 
- --REGISTER NAMES
+  --REGISTER NAMES
   constant REGISTER_NAME_SIZE : positive := 5;
 
   constant REGISTER_ZERO : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(0, REGISTER_NAME_SIZE);
@@ -63,8 +63,8 @@ package constants_pkg is
   constant SYSTEM_OP  : std_logic_vector(6 downto 0) := "1110011";
   constant CUSTOM0_OP : std_logic_vector(6 downto 0) := "0101011";
   constant CUSTOM1_OP : std_logic_vector(6 downto 0) := "0111111";
-  constant LVE32_OP     : std_logic_vector(6 downto 0) := CUSTOM0_OP;
-  constant LVE64_OP     : std_logic_vector(6 downto 0) := CUSTOM1_OP;
+  constant LVE32_OP   : std_logic_vector(6 downto 0) := CUSTOM0_OP;
+  constant LVE64_OP   : std_logic_vector(6 downto 0) := CUSTOM1_OP;
   constant BRANCH_OP  : std_logic_vector(6 downto 0) := "1100011";
 
   constant OP_IMM_IMMEDIATE_SIZE : integer                        := 12;
@@ -74,6 +74,7 @@ package constants_pkg is
 
   constant CSR_ADDRESS  : std_logic_vector(31 downto 20) := (others => '0');
   constant CSR_MSTATUS  : std_logic_vector(11 downto 0)  := x"300";
+  constant CSR_MISA     : std_logic_vector(11 downto 0)  := x"301";
   constant CSR_MIE      : std_logic_vector(11 downto 0)  := x"304";
   constant CSR_MEPC     : std_logic_vector(11 downto 0)  := x"341";
   constant CSR_MCAUSE   : std_logic_vector(11 downto 0)  := x"342";
