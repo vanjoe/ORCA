@@ -85,8 +85,8 @@ entity orca_core is
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
     vcp_ready            : in  std_logic;
-    vcp_writeback_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    vcp_writeback_en     : in std_logic;
+    vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_writeback_en     : in  std_logic;
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
@@ -129,6 +129,7 @@ architecture rtl of orca_core is
   signal decode_to_execute_next_instruction : std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
   signal decode_to_execute_next_valid       : std_logic;
   signal from_decode_valid                  : std_logic;
+  signal decode_waiting_for_instr           : std_logic;
   signal execute_to_decode_ready            : std_logic;
 
   signal to_execute_valid     : std_logic;
@@ -137,7 +138,8 @@ architecture rtl of orca_core is
   signal execute_to_rf_valid  : std_logic;
 
   signal from_execute_pause_ifetch : std_logic;
-  signal to_ifetch_pause_ifetch : std_logic;
+  signal to_ifetch_pause_ifetch    : std_logic;
+
 begin
   I : instruction_fetch
     generic map (
@@ -212,6 +214,7 @@ begin
       from_decode_next_instruction => decode_to_execute_next_instruction,
       from_decode_next_valid       => decode_to_execute_next_valid,
       from_decode_valid            => from_decode_valid,
+      from_decode_wait_for_instr   => decode_waiting_for_instr,
       to_decode_ready              => execute_to_decode_ready
       );
 
@@ -318,6 +321,7 @@ begin
       vcp_alu_result_valid => vcp_alu_result_valid
       );
 
-  core_idle <= ifetch_idle and decode_idle and execute_idle;
-  to_ifetch_pause_ifetch <= '0' when decode_idle = '0' and execute_idle = '1' else from_execute_pause_ifetch;
+  core_idle              <= ifetch_idle and decode_idle and execute_idle;
+  to_ifetch_pause_ifetch <= '0' when (decode_waiting_for_instr and ifetch_idle) = '1' else from_execute_pause_ifetch;
+
 end architecture rtl;

@@ -171,10 +171,10 @@ TEST_ATTR int test_6()
 #define do_test(TEST_NUMBER) do{	  \
 		int result = test_##TEST_NUMBER(); \
 		if(result){ \
-			asm volatile ("ori  x28, %0, 0\n" \
+			asm volatile ("li  x28, %0\n" \
 			              "fence.i\n" \
 			              "ecall\n" \
-			              : : "r"(result)); \
+			              : : "i"(TEST_NUMBER)); \
 			return result; \
 		} \
 	} while(0)

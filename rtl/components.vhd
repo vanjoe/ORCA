@@ -828,6 +828,7 @@ package rv_components is
       from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       from_decode_next_valid       : out std_logic;
       from_decode_valid            : out std_logic;
+      from_decode_wait_for_instr   : out std_logic;
       to_decode_ready              : in  std_logic
       );
   end component decode;
@@ -1610,9 +1611,9 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
-      instruction   : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
-      valid_instr   : in std_logic;
-      vcp_ready     : in std_logic;
+      instruction : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+      valid_instr : in std_logic;
+      vcp_ready   : in std_logic;
 
       rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);

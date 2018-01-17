@@ -43,6 +43,7 @@ entity decode is
     from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     from_decode_next_valid       : out std_logic;
     from_decode_valid            : out std_logic;
+    from_decode_wait_for_instr   : out std_logic;
     to_decode_ready              : in  std_logic
     );
 end;
@@ -70,13 +71,13 @@ architecture rtl of decode is
   signal wb_select              : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal wb_data                : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal wb_enable              : std_logic;
-  signal waiting_for_secondhalf : std_logic;
+  signal waiting_for_secondhalf : std_logic := '0';
 
 begin
   from_decode_instruction <= from_decode_instruction_signal;
   from_decode_valid       <= from_decode_valid_signal;
   from_decode_ready       <= from_decode_ready_signal;
-
+  from_decode_wait_for_instr <= waiting_for_secondhalf;
   the_register_file : register_file
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
@@ -133,7 +134,7 @@ begin
     to_stage1_ready          <= to_decode_ready or (not from_decode_valid_signal);
     from_decode_ready_signal <= to_stage1_ready or (not from_stage1_valid);
 
-    waiting_for_secondhalf   <= from_stage1_valid and not to_decode_valid when from_stage1_instruction(MAJOR_OP'range) = LVE64_OP else '0';
+    waiting_for_secondhalf <= from_stage1_valid and not to_decode_valid when from_stage1_instruction(MAJOR_OP'range) = LVE64_OP else '0';
 
     decode_stage : process (clk) is
     begin
@@ -146,7 +147,7 @@ begin
         -- end if;
 
 
-        if (to_stage1_ready  or (not from_stage1_valid)) = '1'   and waiting_for_secondhalf = '0' then
+        if (to_stage1_ready or (not from_stage1_valid)) = '1' and waiting_for_secondhalf = '0' then
           from_stage1_program_counter <= to_decode_program_counter;
           from_stage1_predicted_pc    <= to_decode_predicted_pc;
           from_stage1_instruction     <= to_decode_instruction;
@@ -168,7 +169,7 @@ begin
           from_decode_rs3_data     <= rs3_data;
         end if;
 
-        if (from_stage1_valid and  to_decode_valid) = '1' and from_stage1_instruction(MAJOR_OP'range) = LVE64_OP then
+        if (from_stage1_valid and to_decode_valid) = '1' and from_stage1_instruction(MAJOR_OP'range) = LVE64_OP then
           from_stage1_valid <= '0';
         end if;
         --Bypass registers already read out of register file
@@ -199,7 +200,6 @@ begin
         if reset = '1' or quash_decode = '1' then
           from_decode_valid_signal <= '0';
           from_stage1_valid        <= '0';
-          waiting_for_secondhalf   <= '0';
         end if;
       end if;
     end process decode_stage;
