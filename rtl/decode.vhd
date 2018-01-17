@@ -132,24 +132,28 @@ begin
 
     to_stage1_ready          <= to_decode_ready or (not from_decode_valid_signal);
     from_decode_ready_signal <= to_stage1_ready or (not from_stage1_valid);
+
+    waiting_for_secondhalf   <= from_stage1_valid and not to_decode_valid when from_stage1_instruction(MAJOR_OP'range) = LVE64_OP else '0';
+
     decode_stage : process (clk) is
     begin
       if rising_edge(clk) then
-        if to_stage1_ready = '1' then
-          from_stage1_valid <= '0';
-        end if;
-        if to_decode_ready = '1' then
-          from_decode_valid_signal <= '0';
-        end if;
+        -- if to_stage1_ready = '1' then
+        --   from_stage1_valid <= '0';
+        -- end if;
+        -- if to_decode_ready = '1' then
+        --   from_decode_valid_signal <= '0';
+        -- end if;
 
-        if from_decode_ready_signal = '1' and waiting_for_secondhalf = '0' then
+
+        if (to_stage1_ready  or (not from_stage1_valid)) = '1'   and waiting_for_secondhalf = '0' then
           from_stage1_program_counter <= to_decode_program_counter;
           from_stage1_predicted_pc    <= to_decode_predicted_pc;
           from_stage1_instruction     <= to_decode_instruction;
           from_stage1_valid           <= to_decode_valid;
         end if;
 
-        if to_stage1_ready = '1' then
+        if to_decode_ready = '1' and waiting_for_secondhalf = '0' then
           from_decode_sign_extension <=
             std_logic_vector(resize(signed(from_stage1_instruction(from_stage1_instruction'left downto from_stage1_instruction'left)),
                                     SIGN_EXTENSION_SIZE));
@@ -162,19 +166,11 @@ begin
           from_decode_rs1_data     <= rs1_data;
           from_decode_rs2_data     <= rs2_data;
           from_decode_rs3_data     <= rs3_data;
-          if from_stage1_instruction(MAJOR_OP'range) = LVE64_OP then
-            --if this is a 64bit lve instruction,
-            --cancel the instructruction in stage1 if it is valid,
-            --otherwise set 'wait_for_second half to wait until it is
-            from_decode_valid_signal <= from_stage1_valid and to_decode_valid;
-            waiting_for_secondhalf   <= from_stage1_valid and not to_decode_valid;
-            if (from_stage1_valid and to_decode_valid) = '1' then
-              from_stage1_valid <= '0';
-            end if;
-
-          end if;
         end if;
 
+        if (from_stage1_valid and  to_decode_valid) = '1' and from_stage1_instruction(MAJOR_OP'range) = LVE64_OP then
+          from_stage1_valid <= '0';
+        end if;
         --Bypass registers already read out of register file
         if to_rf_valid = '1' then
           if to_stage1_ready = '1' then  --Bypass registers just being read in
@@ -207,7 +203,7 @@ begin
         end if;
       end if;
     end process decode_stage;
-    decode_idle                               <= (not from_stage1_valid) and (not from_decode_valid_signal);
+    decode_idle                               <= (not from_stage1_valid) and (not from_decode_valid_signal) and not waiting_for_secondhalf;
     from_decode_next_instruction(31 downto 0) <= from_stage1_instruction;
     from_decode_next_valid                    <= from_stage1_valid;
 

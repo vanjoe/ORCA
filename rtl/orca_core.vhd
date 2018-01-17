@@ -135,6 +135,9 @@ architecture rtl of orca_core is
   signal execute_to_rf_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal execute_to_rf_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal execute_to_rf_valid  : std_logic;
+
+  signal from_execute_pause_ifetch : std_logic;
+  signal to_ifetch_pause_ifetch : std_logic;
 begin
   I : instruction_fetch
     generic map (
@@ -153,7 +156,7 @@ begin
       to_pc_correction_predictable => to_pc_correction_predictable,
       from_pc_correction_ready     => from_pc_correction_ready,
 
-      pause_ifetch => pause_ifetch,
+      pause_ifetch => to_ifetch_pause_ifetch,
 
       ifetch_idle => ifetch_idle,
 
@@ -297,7 +300,7 @@ begin
       umr_base_addrs => umr_base_addrs,
       umr_last_addrs => umr_last_addrs,
 
-      pause_ifetch => pause_ifetch,
+      pause_ifetch => from_execute_pause_ifetch,
 
       vcp_data0            => vcp_data0,
       vcp_data1            => vcp_data1,
@@ -316,4 +319,5 @@ begin
       );
 
   core_idle <= ifetch_idle and decode_idle and execute_idle;
+  to_ifetch_pause_ifetch <= '0' when decode_idle = '0' and execute_idle = '1' else from_execute_pause_ifetch;
 end architecture rtl;

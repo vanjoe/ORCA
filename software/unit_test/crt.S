@@ -59,9 +59,6 @@ _isr:
   sw x30, 30*REGBYTES(sp)
   sw x31, 31*REGBYTES(sp)
 
-	// Clear the MPIE bit.
-	li a0, 0x00000080
-	csrc mstatus, a0
 
 	// Prepare the input registers for the interrupt handler.
   csrr a0, mcause
@@ -103,9 +100,7 @@ _isr:
   lw x31, 31*REGBYTES(sp)
 
   addi sp, sp, 272
-
 	// Re-enable interrupts.
-  csrs mstatus, 0x00000008
   mret
 
 
