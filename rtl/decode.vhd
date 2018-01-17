@@ -10,7 +10,7 @@ entity decode is
   generic (
     REGISTER_SIZE          : positive;
     SIGN_EXTENSION_SIZE    : positive;
-    VCP_ENABLE             : boolean;
+    VCP_ENABLE             : natural;
     PIPELINE_STAGES        : natural range 1 to 2;
     WRITE_FIRST_SMALL_RAMS : boolean;
     FAMILY                 : string
@@ -24,7 +24,7 @@ entity decode is
     to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     to_rf_valid  : in std_logic;
 
-    to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
     to_decode_predicted_pc    : in  unsigned(REGISTER_SIZE-1 downto 0);
     to_decode_valid           : in  std_logic;
@@ -39,31 +39,26 @@ entity decode is
     from_decode_sign_extension   : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     from_decode_program_counter  : out unsigned(REGISTER_SIZE-1 downto 0);
     from_decode_predicted_pc     : out unsigned(REGISTER_SIZE-1 downto 0);
-    from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+    from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     from_decode_next_valid       : out std_logic;
     from_decode_valid            : out std_logic;
+    from_decode_wait_for_instr   : out std_logic;
     to_decode_ready              : in  std_logic
     );
 end;
 
 architecture rtl of decode is
-  signal from_decode_instruction_signal : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal from_decode_instruction_signal : std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0) := (others => '0');
   signal from_decode_valid_signal       : std_logic;
   signal from_decode_ready_signal       : std_logic;
 
-  alias to_decode_rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
-    to_decode_instruction(REGISTER_RS1'range);
-  alias to_decode_rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
-    to_decode_instruction(REGISTER_RS2'range);
-  alias to_decode_rs3_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
-    to_decode_instruction(REGISTER_RD'range);
-  alias from_decode_rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
-    from_decode_instruction_signal(REGISTER_RS1'range);
-  alias from_decode_rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
-    from_decode_instruction_signal(REGISTER_RS2'range);
-  alias from_decode_rs3_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
-    from_decode_instruction_signal(REGISTER_RD'range);
+  alias to_decode_rs1_select   : std_logic_vector is to_decode_instruction(REGISTER_RS1'range);
+  alias to_decode_rs2_select   : std_logic_vector is to_decode_instruction(REGISTER_RS2'range);
+  alias to_decode_rs3_select   : std_logic_vector is to_decode_instruction(REGISTER_RD'range);
+  alias from_decode_rs1_select : std_logic_vector is from_decode_instruction_signal(REGISTER_RS1'range);
+  alias from_decode_rs2_select : std_logic_vector is from_decode_instruction_signal(REGISTER_RS2'range);
+  alias from_decode_rs3_select : std_logic_vector is from_decode_instruction_signal(REGISTER_RD'range);
 
   signal rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
@@ -73,19 +68,21 @@ architecture rtl of decode is
   signal rs2_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs3_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal wb_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
-  signal wb_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal wb_enable : std_logic;
+  signal wb_select              : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
+  signal wb_data                : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal wb_enable              : std_logic;
+  signal waiting_for_secondhalf : std_logic := '0';
+
 begin
   from_decode_instruction <= from_decode_instruction_signal;
   from_decode_valid       <= from_decode_valid_signal;
   from_decode_ready       <= from_decode_ready_signal;
-
+  from_decode_wait_for_instr <= waiting_for_secondhalf;
   the_register_file : register_file
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
       REGISTER_NAME_SIZE     => REGISTER_NAME_SIZE,
-      READ_PORTS             => CONDITIONAL(VCP_ENABLE, 3, 2),
+      READ_PORTS             => CONDITIONAL(VCP_ENABLE /= 0, 3, 2),
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS
       )
     port map(
@@ -116,7 +113,7 @@ begin
   two_cycle : if PIPELINE_STAGES = 2 generate
     signal from_stage1_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
     signal from_stage1_predicted_pc    : unsigned(REGISTER_SIZE-1 downto 0);
-    signal from_stage1_instruction     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    signal from_stage1_instruction     : std_logic_vector(to_decode_instruction'range);
     signal from_stage1_valid           : std_logic;
     signal to_stage1_ready             : std_logic;
 
@@ -136,36 +133,45 @@ begin
 
     to_stage1_ready          <= to_decode_ready or (not from_decode_valid_signal);
     from_decode_ready_signal <= to_stage1_ready or (not from_stage1_valid);
+
+    waiting_for_secondhalf <= from_stage1_valid and not to_decode_valid when from_stage1_instruction(MAJOR_OP'range) = LVE64_OP else '0';
+
     decode_stage : process (clk) is
     begin
       if rising_edge(clk) then
-        if to_stage1_ready = '1' then
-          from_stage1_valid <= '0';
-        end if;
-        if to_decode_ready = '1' then
-          from_decode_valid_signal <= '0';
-        end if;
+        -- if to_stage1_ready = '1' then
+        --   from_stage1_valid <= '0';
+        -- end if;
+        -- if to_decode_ready = '1' then
+        --   from_decode_valid_signal <= '0';
+        -- end if;
 
-        if from_decode_ready_signal = '1' then
+
+        if (to_stage1_ready or (not from_stage1_valid)) = '1' and waiting_for_secondhalf = '0' then
           from_stage1_program_counter <= to_decode_program_counter;
           from_stage1_predicted_pc    <= to_decode_predicted_pc;
           from_stage1_instruction     <= to_decode_instruction;
           from_stage1_valid           <= to_decode_valid;
         end if;
 
-        if to_stage1_ready = '1' then
+        if to_decode_ready = '1' and waiting_for_secondhalf = '0' then
           from_decode_sign_extension <=
-            std_logic_vector(resize(signed(from_stage1_instruction(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
+            std_logic_vector(resize(signed(from_stage1_instruction(from_stage1_instruction'left downto from_stage1_instruction'left)),
                                     SIGN_EXTENSION_SIZE));
-          from_decode_program_counter    <= from_stage1_program_counter;
-          from_decode_predicted_pc       <= from_stage1_predicted_pc;
-          from_decode_instruction_signal <= from_stage1_instruction;
-          from_decode_valid_signal       <= from_stage1_valid;
-          from_decode_rs1_data           <= rs1_data;
-          from_decode_rs2_data           <= rs2_data;
-          from_decode_rs3_data           <= rs3_data;
+          from_decode_program_counter                                                                                       <= from_stage1_program_counter;
+          from_decode_predicted_pc                                                                                          <= from_stage1_predicted_pc;
+          from_decode_instruction_signal(from_decode_instruction_signal'left downto from_decode_instruction_signal'left-31) <= to_decode_instruction;
+          from_decode_instruction_signal(31 downto 0)                                                                       <= from_stage1_instruction;
+
+          from_decode_valid_signal <= from_stage1_valid;
+          from_decode_rs1_data     <= rs1_data;
+          from_decode_rs2_data     <= rs2_data;
+          from_decode_rs3_data     <= rs3_data;
         end if;
 
+        if (from_stage1_valid and to_decode_valid) = '1' and from_stage1_instruction(MAJOR_OP'range) = LVE64_OP then
+          from_stage1_valid <= '0';
+        end if;
         --Bypass registers already read out of register file
         if to_rf_valid = '1' then
           if to_stage1_ready = '1' then  --Bypass registers just being read in
@@ -197,19 +203,20 @@ begin
         end if;
       end if;
     end process decode_stage;
-    decode_idle                  <= (not from_stage1_valid) and (not from_decode_valid_signal);
-    from_decode_next_instruction <= from_stage1_instruction;
-    from_decode_next_valid       <= from_stage1_valid;
+    decode_idle                               <= (not from_stage1_valid) and (not from_decode_valid_signal) and not waiting_for_secondhalf;
+    from_decode_next_instruction(31 downto 0) <= from_stage1_instruction;
+    from_decode_next_valid                    <= from_stage1_valid;
 
   end generate two_cycle;
 
 
   one_cycle : if PIPELINE_STAGES = 1 generate
-    rs1_select <= to_decode_rs1_select when from_decode_ready_signal = '1' else
+  begin
+    rs1_select <= to_decode_rs1_select when from_decode_ready_signal = '1' and waiting_for_secondhalf = '0' else
                   from_decode_rs1_select;
-    rs2_select <= to_decode_rs2_select when from_decode_ready_signal = '1' else
+    rs2_select <= to_decode_rs2_select when from_decode_ready_signal = '1' and waiting_for_secondhalf = '0' else
                   from_decode_rs2_select;
-    rs3_select <= to_decode_rs3_select when from_decode_ready_signal = '1' else
+    rs3_select <= to_decode_rs3_select when from_decode_ready_signal = '1' and waiting_for_secondhalf = '0' else
                   from_decode_rs3_select;
 
     decode_stage : process (clk) is
@@ -217,12 +224,35 @@ begin
       if rising_edge(clk) then
         if to_decode_ready = '1' then
           from_decode_sign_extension <=
-            std_logic_vector(resize(signed(to_decode_instruction(INSTRUCTION_SIZE-1 downto INSTRUCTION_SIZE-1)),
+            std_logic_vector(resize(signed(to_decode_instruction(to_decode_instruction'left downto to_decode_instruction'left)),
                                     SIGN_EXTENSION_SIZE));
-          from_decode_program_counter    <= to_decode_program_counter;
-          from_decode_predicted_pc       <= to_decode_predicted_pc;
-          from_decode_instruction_signal <= to_decode_instruction;
-          from_decode_valid_signal       <= to_decode_valid;
+          from_decode_program_counter <= to_decode_program_counter;
+          from_decode_predicted_pc    <= to_decode_predicted_pc;
+
+          if VCP_ENABLE = 2 then
+            if to_decode_valid = '1' then
+              if to_decode_instruction(6 downto 0) = LVE64_OP then
+                waiting_for_secondhalf                      <= '1';
+                from_decode_valid_signal                    <= '0';
+                from_decode_instruction_signal(31 downto 0) <= to_decode_instruction;
+              else
+                from_decode_valid_signal <= '1';
+                waiting_for_secondhalf   <= '0';
+                if waiting_for_secondhalf = '1' then
+                  from_decode_instruction_signal(from_decode_instruction_signal'left downto from_decode_instruction_signal'left-31) <= to_decode_instruction;
+                else
+                  from_decode_instruction_signal(31 downto 0) <= to_decode_instruction;
+                end if;
+              end if;
+            else
+              from_decode_valid_signal <= '0';
+            end if;
+          else
+            from_decode_instruction_signal(31 downto 0) <= to_decode_instruction;
+            from_decode_valid_signal                    <= to_decode_valid;
+
+          end if;
+
         end if;
 
 

@@ -8,17 +8,16 @@ use work.constants_pkg.all;
 
 entity system_calls is
   generic (
-    REGISTER_SIZE   : natural;
-    COUNTER_LENGTH  : natural;
-    POWER_OPTIMIZED : boolean;
-
+    REGISTER_SIZE    : natural;
+    COUNTER_LENGTH   : natural;
+    POWER_OPTIMIZED  : boolean;
     INTERRUPT_VECTOR : std_logic_vector(31 downto 0);
 
     ENABLE_EXCEPTIONS     : boolean;
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
-    VCP_ENABLE : boolean;
+    VCP_ENABLE : natural;
 
     AUX_MEMORY_REGIONS : natural range 0 to 4;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
@@ -42,7 +41,7 @@ entity system_calls is
 
     to_syscall_valid   : in  std_logic;
     current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
-    instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    instruction        : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_syscall_ready : out std_logic;
 
@@ -65,8 +64,10 @@ entity system_calls is
     amr_last_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+    pause_ifetch   : out std_logic;
 
-    pause_ifetch : out std_logic
+    vcp_writeback_en   : in std_logic;
+    vcp_writeback_data : in std_logic_vector(REGISTER_SIZE -1 downto 0)
     );
 end entity system_calls;
 
@@ -74,26 +75,26 @@ architecture rtl of system_calls is
   component instruction_legal is
     generic (
       CHECK_LEGAL_INSTRUCTIONS : boolean;
-      VCP_ENABLE               : boolean
+      VCP_ENABLE               : natural
       );
     port (
-      instruction : in  std_logic_vector(instruction_size-1 downto 0);
+      instruction : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       legal       : out std_logic
       );
   end component;
 
   -- CSR signals. These are initialized to zero so that if any bits are never
   -- assigned, they act like constants.
-  signal mstatus  : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mepc     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mcause   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mbadaddr : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mtime    : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mtimeh   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal meimask  : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal meipend  : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mcache   : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-
+  signal mstatus    : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mepc       : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mcause     : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mbadaddr   : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mtime      : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mtimeh     : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal meimask    : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal meipend    : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mcache     : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal misa       : std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
   --Assign csr_select instead of alias to get csr_select'right = 0 for indexing
   signal csr_select : std_logic_vector(CSR_ADDRESS'length-1 downto 0);
   alias func3 is instruction(INSTR_FUNC3'range);
@@ -156,10 +157,12 @@ begin
   mtime  <= std_logic_vector(time_counter(REGISTER_SIZE - 1 downto 0)) when COUNTER_LENGTH /= 0 else (others => '0');
   mtimeh <= std_logic_vector(time_counter(time_counter'left downto time_counter'left-REGISTER_SIZE+1))
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
-
-  csr_select <= instruction(CSR_ADDRESS'range);
+  misa(misa'left downto misa'left-1) <= "01";
+  misa(23)                           <= '0' when VCP_ENABLE = 0 else '1';
+csr_select <= instruction(CSR_ADDRESS'range);
   with csr_select select
     csr_readdata <=
+    misa            when CSR_MISA,
     mstatus         when CSR_MSTATUS,
     mepc            when CSR_MEPC,
     mcause          when CSR_MCAUSE,
@@ -498,6 +501,16 @@ begin
         end if;
       end if;
 
+      if VCP_ENABLE /= 0 and vcp_writeback_en = '1' then
+        -- To avoid having a 4 5o one mux in execute, We add
+        -- the writebacks from the vcp here. Since the writebacks
+        -- are from vbx_get, which are sort of control/status
+        -- registers it could be construed that this is an
+        -- appropriate place for this logic
+        from_syscall_data  <= vcp_writeback_data;
+        from_syscall_valid <= '1';
+      end if;
+
       if reset = '1' then
         was_fence_i             <= '0';
         fence_pending           <= '0';
@@ -560,14 +573,15 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.constants_pkg.all;
+use work.utils.all;
 
 entity instruction_legal is
   generic (
     CHECK_LEGAL_INSTRUCTIONS : boolean;
-    VCP_ENABLE               : boolean
+    VCP_ENABLE               : natural
     );
   port (
-    instruction : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    instruction : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     legal       : out std_logic
     );
 end entity;
@@ -592,5 +606,6 @@ begin
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
               (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
               (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /= SYSTEM_EBREAK) or
-              (opcode7 = LVE_OP and VCP_ENABLE)) else '0';
+              (opcode7 = LVE32_OP and VCP_ENABLE /= 0)or
+              (opcode7 = LVE64_OP and VCP_ENABLE = 2)) else '0';
 end architecture;

@@ -17,7 +17,7 @@ foreach f $files {
     file copy -force $f test.hex
     restart -f
     onbreak {resume}
-    when {system/vectorblox_orca_0/core/X/to_execute_instruction == x"00000073" && system/vectorblox_orca_0/core/X/to_execute_valid == "1" } {stop}
+    when {system/vectorblox_orca_0/core/X/to_execute_instruction(31:0) == x"00000073" && system/vectorblox_orca_0/core/X/to_execute_valid == "1" } {stop}
 
     if { [string match "*dhrystone*" $f ] } {
         #Dhrystone does multiple runs to at least 100us
@@ -28,13 +28,13 @@ foreach f $files {
     } else {
         run 30 us
     }
-    set instruction [examine -radix hex system/vectorblox_orca_0/core/X/to_execute_instruction]
+    set instruction [examine -radix hex system/vectorblox_orca_0/core/X/to_execute_instruction(31:0)]
     set valid       [examine system/vectorblox_orca_0/core/X/to_execute_valid]
     if { ($instruction != "00000073") || ($valid != "1") } {
         set validString "valid"
         if { $valid != "1" } {
             set validString "invalid"
-        } 
+        }
         puts [format "%-${max_length}s = Error  FAIL  Instruction $instruction %s" $f $validString ]
     } else {
         set returnValue [examine -radix decimal /system/vectorblox_orca_0/core/D/the_register_file/t3]

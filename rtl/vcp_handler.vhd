@@ -12,15 +12,15 @@ use work.constants_pkg.all;
 entity vcp_handler is
   generic (
     REGISTER_SIZE : integer;
-    VCP_ENABLE    : boolean
+    VCP_ENABLE    : natural
     );
   port (
     clk   : in std_logic;
     reset : in std_logic;
 
-    instruction   : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    valid_instr   : in std_logic;
-    vcp_executing : in std_logic;
+    instruction : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+    valid_instr : in std_logic;
+    vcp_ready   : in std_logic;
 
     rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -37,33 +37,38 @@ entity vcp_handler is
 end entity vcp_handler;
 
 architecture rtl of vcp_handler is
-
+  signal dsz         : std_logic_vector(1 downto 0);
+  signal instr_64bit : boolean;
 begin  -- architecture rtl
 
+
   --extended bits
-  vcp_instruction(40)           <= '0';   --extra instruction
-  vcp_instruction(39)           <= '0';   --masked
-  vcp_instruction(38)           <= '1';   --bsign
-  vcp_instruction(37)           <= '1';   --asign
-  vcp_instruction(36)           <= '1';   --opsign
-  vcp_instruction(35 downto 34) <= "10";  --b size
-  vcp_instruction(33 downto 32) <= "10";  --b size
+  dsz         <= instruction(31) & instruction(29);
+  instr_64bit <= instruction(MAJOR_OP'range) = LVE64_OP and VCP_ENABLE = 2;
+
+  vcp_instruction(40)           <= instruction(40)           when instr_64bit else '0';  --extra instruction
+  vcp_instruction(39)           <= instruction(39)           when instr_64bit else '0';  --masked
+  vcp_instruction(38)           <= instruction(38)           when instr_64bit else '1';  --bsign
+  vcp_instruction(37)           <= instruction(37)           when instr_64bit else '1';  --asign
+  vcp_instruction(36)           <= instruction(36)           when instr_64bit else '1';  --opsign
+  vcp_instruction(35 downto 34) <= instruction(35 downto 34) when instr_64bit else dsz;  --b size
+  vcp_instruction(33 downto 32) <= instruction(33 downto 32) when instr_64bit else dsz;  --b size
   vcp_instruction(31 downto 0)  <= instruction(31 downto 0);
 
   vcp_data0 <= rs1_data;
   vcp_data1 <= rs2_data;
   vcp_data2 <= rs3_data;
 
-  vcp_enabled_gen : if VCP_ENABLE generate
-    vcp_valid_instr <= valid_instr when instruction(6 downto 0) = LVE_OP else '0';
+  vcp_enabled_gen : if VCP_ENABLE /= 0 generate
+    vcp_valid_instr <= valid_instr when instruction(MAJOR_OP'range) = LVE32_OP or instr_64bit else '0';
     process (clk) is
     begin
       if rising_edge(clk) then
-        vcp_was_executing <= vcp_executing;
+        vcp_was_executing <= not vcp_ready;
       end if;
     end process;
   end generate vcp_enabled_gen;
-  vcp_disabled_gen : if not VCP_ENABLE generate
+  vcp_disabled_gen : if VCP_ENABLE = 0 generate
     vcp_valid_instr   <= '0';
     vcp_was_executing <= '0';
   end generate vcp_disabled_gen;

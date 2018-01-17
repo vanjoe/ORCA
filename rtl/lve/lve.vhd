@@ -10,8 +10,8 @@ use work.lve_components.all;
 
 entity lve_top is
   generic (
-    POWER_OPTIMIZED      : integer := 0;
-    SCRATCHPAD_ADDR_BITS : integer := 16;
+    POWER_OPTIMIZED      : integer              := 0;
+    SCRATCHPAD_ADDR_BITS : integer              := 16;
     AXI_ENABLE           : integer range 0 to 1 := 0;
     WISHBONE_ENABLE      : integer range 0 to 1 := 0);
   port (
@@ -85,8 +85,9 @@ entity lve_top is
 
     vcp_instruction      : in  std_logic_vector(40 downto 0);
     vcp_valid_instr      : in  std_logic;
+    vcp_writeback_data   : out std_logic_vector(31 downto 0);
+    vcp_writeback_en     : out std_logic;
     vcp_ready            : out std_logic;
-    vcp_executing        : out std_logic;
     vcp_alu_data1        : out std_logic_vector(LVE_WIDTH-1 downto 0);
     vcp_alu_data2        : out std_logic_vector(LVE_WIDTH-1 downto 0);
     vcp_alu_op_size      : out std_logic_vector(1 downto 0);
@@ -142,7 +143,7 @@ begin  -- architecture rtl
         slave_byte_en  <= slave_wstrb;
         slave_read_en  <= slave_arvalid and not busy;
         slave_write_en <= slave_awvalid and slave_wvalid and not busy;
-        if (slave_arvalid and not busy) = '1'  then
+        if (slave_arvalid and not busy) = '1' then
           reading     <= '1';
           ID_register <= slave_arid;
         end if;
@@ -202,7 +203,8 @@ begin  -- architecture rtl
       instruction          => vcp_instruction(31 downto 0),
       valid_instr          => vcp_valid_instr,
       lve_ready            => vcp_ready,
-      lve_executing        => vcp_executing,
+      lve_writeback_data   => vcp_writeback_data,
+      lve_writeback_en      => vcp_writeback_en,
       lve_alu_data1        => vcp_alu_data1,
       lve_alu_data2        => vcp_alu_data2,
       lve_alu_op_size      => vcp_alu_op_size,

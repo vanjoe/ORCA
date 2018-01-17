@@ -21,7 +21,7 @@ package rv_components is
       COUNTER_LENGTH         : natural                       := 0;
       ENABLE_EXCEPTIONS      : natural                       := 1;
       PIPELINE_STAGES        : natural range 4 to 5          := 5;
-      VCP_ENABLE             : natural range 0 to 1          := 0;
+      VCP_ENABLE             : natural range 0 to 2          := 0;
       ENABLE_EXT_INTERRUPTS  : natural range 0 to 1          := 0;
       NUM_EXT_INTERRUPTS     : positive range 1 to 32        := 1;
       POWER_OPTIMIZED        : natural range 0 to 1          := 0;
@@ -348,7 +348,8 @@ package rv_components is
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
       vcp_ready            : in  std_logic                                  := '1';
-      vcp_executing        : in  std_logic                                  := '0';
+      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+      vcp_writeback_en     : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
       vcp_alu_op_size      : in  std_logic_vector(1 downto 0)               := (others => '0');
@@ -382,9 +383,9 @@ package rv_components is
       UMR0_ADDR_BASE    : std_logic_vector(31 downto 0);
       UMR0_ADDR_LAST    : std_logic_vector(31 downto 0);
 
-      ICACHE_SIZE             : natural;
-      ICACHE_LINE_SIZE        : integer range 16 to 256;
-      ICACHE_EXTERNAL_WIDTH   : integer;
+      ICACHE_SIZE           : natural;
+      ICACHE_LINE_SIZE      : integer range 16 to 256;
+      ICACHE_EXTERNAL_WIDTH : integer;
 
       INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2;
       INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1;
@@ -395,9 +396,9 @@ package rv_components is
       IC_REQUEST_REGISTER          : natural range 0 to 2;
       IC_RETURN_REGISTER           : natural range 0 to 1;
 
-      DCACHE_SIZE             : natural;
-      DCACHE_LINE_SIZE        : integer range 16 to 256;
-      DCACHE_EXTERNAL_WIDTH   : integer;
+      DCACHE_SIZE           : natural;
+      DCACHE_LINE_SIZE      : integer range 16 to 256;
+      DCACHE_EXTERNAL_WIDTH : integer;
 
       DATA_REQUEST_REGISTER : natural range 0 to 2;
       DATA_RETURN_REGISTER  : natural range 0 to 1;
@@ -716,7 +717,7 @@ package rv_components is
       PIPELINE_STAGES        : natural range 4 to 5;
       ENABLE_EXT_INTERRUPTS  : natural range 0 to 1;
       NUM_EXT_INTERRUPTS     : positive range 1 to 32;
-      VCP_ENABLE             : boolean;
+      VCP_ENABLE             : natural range 0 to 2 := 0;
       WRITE_FIRST_SMALL_RAMS : boolean;
       FAMILY                 : string;
 
@@ -779,7 +780,8 @@ package rv_components is
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
       vcp_ready            : in  std_logic;
-      vcp_executing        : in  std_logic;
+      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+      vcp_writeback_en     : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
@@ -793,7 +795,7 @@ package rv_components is
     generic (
       REGISTER_SIZE          : positive;
       SIGN_EXTENSION_SIZE    : positive;
-      VCP_ENABLE             : boolean;
+      VCP_ENABLE             : natural range 0 to 2 := 0;
       PIPELINE_STAGES        : natural range 1 to 2;
       WRITE_FIRST_SMALL_RAMS : boolean;
       FAMILY                 : string
@@ -807,7 +809,7 @@ package rv_components is
       to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       to_rf_valid  : in std_logic;
 
-      to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
       to_decode_predicted_pc    : in  unsigned(REGISTER_SIZE-1 downto 0);
       to_decode_valid           : in  std_logic;
@@ -822,10 +824,11 @@ package rv_components is
       from_decode_sign_extension   : out std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       from_decode_program_counter  : out unsigned(REGISTER_SIZE-1 downto 0);
       from_decode_predicted_pc     : out unsigned(REGISTER_SIZE-1 downto 0);
-      from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+      from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       from_decode_next_valid       : out std_logic;
       from_decode_valid            : out std_logic;
+      from_decode_wait_for_instr   : out std_logic;
       to_decode_ready              : in  std_logic
       );
   end component decode;
@@ -844,7 +847,7 @@ package rv_components is
       ENABLE_EXCEPTIONS     : boolean;
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
       NUM_EXT_INTERRUPTS    : positive range 1 to 32;
-      VCP_ENABLE            : boolean;
+      VCP_ENABLE            : natural range 0 to 2 := 0;
       FAMILY                : string;
 
       AUX_MEMORY_REGIONS : natural range 0 to 4;
@@ -870,8 +873,8 @@ package rv_components is
       to_execute_valid            : in     std_logic;
       to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
       to_execute_predicted_pc     : in     unsigned(REGISTER_SIZE-1 downto 0);
-      to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+      to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       to_execute_next_valid       : in     std_logic;
       to_execute_rs1_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       to_execute_rs2_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -929,7 +932,8 @@ package rv_components is
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
       vcp_ready            : in  std_logic;
-      vcp_executing        : in  std_logic;
+      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+      vcp_writeback_en     : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
@@ -961,7 +965,7 @@ package rv_components is
       --quash_ifetch is handled by to_pc_correction_valid
       ifetch_idle : out std_logic;
 
-      from_ifetch_instruction     : out std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      from_ifetch_instruction     : out std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       from_ifetch_program_counter : out unsigned(REGISTER_SIZE-1 downto 0);
       from_ifetch_predicted_pc    : out unsigned(REGISTER_SIZE-1 downto 0);
       from_ifetch_valid           : out std_logic;
@@ -972,7 +976,7 @@ package rv_components is
       --ORCA-internal memory-mapped master
       oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
       oimm_requestvalid  : buffer std_logic;
-      oimm_readdata      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      oimm_readdata      : in     std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       oimm_readdatavalid : in     std_logic;
       oimm_waitrequest   : in     std_logic
       );
@@ -996,7 +1000,7 @@ package rv_components is
       from_execute_ready : in  std_logic;
       rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      instruction        : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       sign_extension     : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
       data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -1025,7 +1029,7 @@ package rv_components is
       rs2_data        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       current_pc      : in unsigned(REGISTER_SIZE-1 downto 0);
       predicted_pc    : in unsigned(REGISTER_SIZE-1 downto 0);
-      instruction     : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      instruction     : in std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       sign_extension  : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
 
       from_branch_valid : out std_logic;
@@ -1053,7 +1057,7 @@ package rv_components is
       valid                    : in     std_logic;
       rs1_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-      instruction              : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      instruction              : in     std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       sign_extension           : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       writeback_stall_from_lsu : buffer std_logic;
       lsu_ready                : out    std_logic;
@@ -1107,7 +1111,7 @@ package rv_components is
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
       NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
-      VCP_ENABLE : boolean;
+      VCP_ENABLE : natural range 0 to 2 := 0;
 
       AUX_MEMORY_REGIONS : natural range 0 to 4;
       AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
@@ -1131,7 +1135,7 @@ package rv_components is
 
       to_syscall_valid   : in  std_logic;
       current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
-      instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      instruction        : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
       rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       from_syscall_ready : out std_logic;
 
@@ -1155,7 +1159,10 @@ package rv_components is
       umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
       umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
-      pause_ifetch : out std_logic
+      pause_ifetch : out std_logic;
+
+      vcp_writeback_en   : in std_logic;
+      vcp_writeback_data : in std_logic_vector(REGISTER_SIZE -1 downto 0)
       );
   end component system_calls;
 
@@ -1599,15 +1606,15 @@ package rv_components is
   component vcp_handler is
     generic (
       REGISTER_SIZE : integer;
-      VCP_ENABLE    : boolean
+      VCP_ENABLE    : natural range 0 to 2 := 0
       );
     port (
       clk   : in std_logic;
       reset : in std_logic;
 
-      instruction   : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-      valid_instr   : in std_logic;
-      vcp_executing : in std_logic;
+      instruction : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+      valid_instr : in std_logic;
+      vcp_ready   : in std_logic;
 
       rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);

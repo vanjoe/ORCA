@@ -22,7 +22,7 @@ entity orca_core is
     PIPELINE_STAGES        : natural range 4 to 5;
     ENABLE_EXT_INTERRUPTS  : natural range 0 to 1;
     NUM_EXT_INTERRUPTS     : positive range 1 to 32;
-    VCP_ENABLE             : boolean;
+    VCP_ENABLE             : natural;
     WRITE_FIRST_SMALL_RAMS : boolean;
     FAMILY                 : string;
 
@@ -85,7 +85,8 @@ entity orca_core is
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
     vcp_ready            : in  std_logic;
-    vcp_executing        : in  std_logic;
+    vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_writeback_en     : in  std_logic;
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
@@ -111,7 +112,7 @@ architecture rtl of orca_core is
   signal to_pc_correction_predictable : std_logic;
   signal from_pc_correction_ready     : std_logic;
 
-  signal ifetch_to_decode_instruction     : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal ifetch_to_decode_instruction     : std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
   signal ifetch_to_decode_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
   signal ifetch_to_decode_predicted_pc    : unsigned(REGISTER_SIZE-1 downto 0);
   signal from_ifetch_valid                : std_logic;
@@ -124,16 +125,21 @@ architecture rtl of orca_core is
   signal decode_to_execute_sign_extension   : std_logic_vector(REGISTER_SIZE-12-1 downto 0);
   signal decode_to_execute_program_counter  : unsigned(REGISTER_SIZE-1 downto 0);
   signal decode_to_execute_predicted_pc     : unsigned(REGISTER_SIZE-1 downto 0);
-  signal decode_to_execute_instruction      : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-  signal decode_to_execute_next_instruction : std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+  signal decode_to_execute_instruction      : std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+  signal decode_to_execute_next_instruction : std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
   signal decode_to_execute_next_valid       : std_logic;
   signal from_decode_valid                  : std_logic;
+  signal decode_waiting_for_instr           : std_logic;
   signal execute_to_decode_ready            : std_logic;
 
   signal to_execute_valid     : std_logic;
   signal execute_to_rf_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
   signal execute_to_rf_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal execute_to_rf_valid  : std_logic;
+
+  signal from_execute_pause_ifetch : std_logic;
+  signal to_ifetch_pause_ifetch    : std_logic;
+
 begin
   I : instruction_fetch
     generic map (
@@ -152,7 +158,7 @@ begin
       to_pc_correction_predictable => to_pc_correction_predictable,
       from_pc_correction_ready     => from_pc_correction_ready,
 
-      pause_ifetch => pause_ifetch,
+      pause_ifetch => to_ifetch_pause_ifetch,
 
       ifetch_idle => ifetch_idle,
 
@@ -208,6 +214,7 @@ begin
       from_decode_next_instruction => decode_to_execute_next_instruction,
       from_decode_next_valid       => decode_to_execute_next_valid,
       from_decode_valid            => from_decode_valid,
+      from_decode_wait_for_instr   => decode_waiting_for_instr,
       to_decode_ready              => execute_to_decode_ready
       );
 
@@ -296,7 +303,7 @@ begin
       umr_base_addrs => umr_base_addrs,
       umr_last_addrs => umr_last_addrs,
 
-      pause_ifetch => pause_ifetch,
+      pause_ifetch => from_execute_pause_ifetch,
 
       vcp_data0            => vcp_data0,
       vcp_data1            => vcp_data1,
@@ -304,7 +311,8 @@ begin
       vcp_instruction      => vcp_instruction,
       vcp_valid_instr      => vcp_valid_instr,
       vcp_ready            => vcp_ready,
-      vcp_executing        => vcp_executing,
+      vcp_writeback_data   => vcp_writeback_data,
+      vcp_writeback_en     => vcp_writeback_en,
       vcp_alu_data1        => vcp_alu_data1,
       vcp_alu_data2        => vcp_alu_data2,
       vcp_alu_op_size      => vcp_alu_op_size,
@@ -313,5 +321,7 @@ begin
       vcp_alu_result_valid => vcp_alu_result_valid
       );
 
-  core_idle <= ifetch_idle and decode_idle and execute_idle;
+  core_idle              <= ifetch_idle and decode_idle and execute_idle;
+  to_ifetch_pause_ifetch <= '0' when (decode_waiting_for_instr and ifetch_idle) = '1' else from_execute_pause_ifetch;
+
 end architecture rtl;

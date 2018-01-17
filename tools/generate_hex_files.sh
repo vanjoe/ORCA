@@ -5,7 +5,8 @@ RISCV_TEST_DIR=$SCRIPTDIR/../software/riscv-tests
 set -e
 set -o pipefail
 (
-	 git submodule update --init --recursive ${RISCV_TEST_DIR}
+	 cd $(dirname $RISCV_TEST_DIR)
+	 git submodule update --init --recursive $(basename ${RISCV_TEST_DIR})
 	 cd ${RISCV_TEST_DIR}
 	 sed -i 's/. = 0x80000000/. = 0x00000000/' env/p/link.ld
 	 sed -i 's/.tohost.*$//' env/p/link.ld

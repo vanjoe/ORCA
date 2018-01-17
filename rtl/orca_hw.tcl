@@ -198,7 +198,7 @@ set_parameter_property VCP_ENABLE DISPLAY_NAME "Vector Extensions"
 set_parameter_property VCP_ENABLE DESCRIPTION "Enable Vector Extensions"
 set_parameter_property VCP_ENABLE TYPE NATURAL
 set_parameter_property VCP_ENABLE UNITS None
-set_parameter_property VCP_ENABLE ALLOWED_RANGES 0:1
+set_parameter_property VCP_ENABLE ALLOWED_RANGES 0:2
 set_parameter_property VCP_ENABLE HDL_PARAMETER true
 set_display_item_property VCP_ENABLE DISPLAY_HINT boolean
 
@@ -777,7 +777,8 @@ add_interface_port vcp vcp_data2            data2             Output register_si
 add_interface_port vcp vcp_instruction      instruction       Output 41
 add_interface_port vcp vcp_valid_instr      valid_instr       Output 1
 add_interface_port vcp vcp_ready            ready             Input 1
-add_interface_port vcp vcp_executing        executing         Input 1
+add_interface_port vcp vcp_writeback_data   writeback_data    Input register_size
+add_interface_port vcp vcp_writeback_en     writeback_en      Input 1
 add_interface_port vcp vcp_alu_data1        alu_data1         Input register_size
 add_interface_port vcp vcp_alu_data2        alu_data2         Input register_size
 add_interface_port vcp vcp_alu_op_size      alu_op_size       Input 2

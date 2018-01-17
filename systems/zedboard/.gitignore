@@ -4,5 +4,5 @@ jtag_init.tcl
 *.bit
 
 software/hex_to_coe
-
+project/
 /tmp.*

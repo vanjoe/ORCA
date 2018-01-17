@@ -2,6 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.NUMERIC_STD.all;
 use work.constants_pkg.all;
+use work.utils.all;
 --use IEEE.std_logic_arith.all;
 
 entity branch_unit is
@@ -19,7 +20,7 @@ entity branch_unit is
     rs2_data          : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     current_pc        : in  unsigned(REGISTER_SIZE-1 downto 0);
     predicted_pc      : in  unsigned(REGISTER_SIZE-1 downto 0);
-    instruction       : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    instruction       : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     sign_extension    : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
 
     from_branch_valid : out std_logic;

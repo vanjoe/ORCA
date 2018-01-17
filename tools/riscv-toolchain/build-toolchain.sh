@@ -6,7 +6,7 @@ then
 fi
 if [ -z "$BUILD_DIR" ]
 then
-	 BUILD_DIR=./build
+	 BUILD_DIR=$RISCV_INSTALL/build
 fi
 export SCRIPT_FILE=$(readlink -f $0)
 export SCRIPT_DIR=$(readlink -f $(dirname $0))

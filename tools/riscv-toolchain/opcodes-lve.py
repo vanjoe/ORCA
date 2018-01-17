@@ -7,15 +7,18 @@ instruction = namedtuple('instruction',['name','bit40','bit30','bit25','bit14_12
 arith_instr=[instruction("vadd"     ,0,0,0,0),
              instruction("vsub"     ,0,1,0,0),
              instruction("vsll"     ,0,0,0,1),
+             instruction("vshl"     ,0,0,0,1), #alias
              instruction("vslt"     ,0,0,0,2),
              instruction("vsltu"    ,0,0,0,3),
              instruction("vxor"     ,0,0,0,4),
              instruction("vsrl"     ,0,0,0,5),
              instruction("vsra"     ,0,1,0,5),
+             instruction("vshr"     ,0,0,0,5), #alias
              instruction("vor"      ,0,0,0,6),
              instruction("vand"     ,0,0,0,7),
              instruction("vmul"     ,0,0,1,0),
              instruction("vmulh"    ,0,0,1,1),
+             instruction("vmulhi"   ,0,0,1,1), #alias
              instruction("vmulhus"  ,0,0,1,2), #oposite order of riscv
              instruction("vmulhu"   ,0,0,1,3),
              instruction("vdiv"     ,0,0,1,4),
@@ -38,31 +41,31 @@ arith_instr=[instruction("vadd"     ,0,0,0,0),
              instruction('vcustom7' ,0,1,0,7),
 
 
-             #mxp instructions (Not used for now)
-             #instruction('vcmv_lez' ,1,0,0,0),
-             #instruction('vcmv_gtz' ,1,0,0,1),
-             #instruction('vcmv_ltz' ,1,0,0,2),
-             #instruction('vcmv_gez' ,1,0,0,3),
-             #instruction('vsubb'    ,1,0,0,4),
-             #instruction('vaddc'    ,1,0,0,5),
-             #instruction('vabsdiff' ,1,0,0,6),
-             #instruction('vmulfxp'  ,1,0,0,7),
-             #
-             #instruction('vsetup_msk_lez' ,1,0,1,0),
-             #instruction('vsetup_msk_gtz' ,1,0,1,1),
-             #instruction('vsetup_msk_ltz' ,1,0,1,2),
-             #instruction('vsetup_msk_gez' ,1,0,1,3),
-             #instruction('vsetup_msk_nz'  ,1,0,1,4),
-             #instruction('vsetup_msk_z'   ,1,0,1,5),
-             #
-             #instruction('vcustom8'  ,1,1,0,0),
-             #instruction('vcustom9'  ,1,1,0,1),
-             #instruction('vcustom10' ,1,1,0,2),
-             #instruction('vcustom11' ,1,1,0,3),
-             #instruction('vcustom12' ,1,1,0,4),
-             #instruction('vcustom13' ,1,1,0,5),
-             #instruction('vcustom14' ,1,1,0,6),
-             #instruction('vcustom15' ,1,1,0,7),
+             #mxp instructions
+             instruction('vcmv_lez' ,1,0,0,0),
+             instruction('vcmv_gtz' ,1,0,0,1),
+             instruction('vcmv_ltz' ,1,0,0,2),
+             instruction('vcmv_gez' ,1,0,0,3),
+             instruction('vsubb'    ,1,0,0,4),
+             instruction('vaddc'    ,1,0,0,5),
+             instruction('vabsdiff' ,1,0,0,6),
+             instruction('vmulfxp'  ,1,0,0,7),
+
+             instruction('vsetup_msk_lez' ,1,0,1,0),
+             instruction('vsetup_msk_gtz' ,1,0,1,1),
+             instruction('vsetup_msk_ltz' ,1,0,1,2),
+             instruction('vsetup_msk_gez' ,1,0,1,3),
+             instruction('vsetup_msk_nz'  ,1,0,1,4),
+             instruction('vsetup_msk_z'   ,1,0,1,5),
+
+             instruction('vcustom8'  ,1,1,0,0),
+             instruction('vcustom9'  ,1,1,0,1),
+             instruction('vcustom10' ,1,1,0,2),
+             instruction('vcustom11' ,1,1,0,3),
+             instruction('vcustom12' ,1,1,0,4),
+             instruction('vcustom13' ,1,1,0,5),
+             instruction('vcustom14' ,1,1,0,6),
+             instruction('vcustom15' ,1,1,0,7),
 
 ]
 type_bits={'vv':0,
@@ -176,7 +179,7 @@ def generate_special_instr( define_file,lve_extension_file):
     special_inst = [instruction('vbx_set_vl',0,'"s,t,d"'),
                     instruction('vbx_set_2d',1,'"d,s,t"'),
                     instruction('vbx_set_3d',2,'"d,s,t"'),
-                    instruction('vbx_get',3,'"d,s,t"'),
+                    instruction('vbx_get',3,'"d,s"'),
                     instruction('vbx_dma_tohost',4,'"d,s,t"'),
                     instruction('vbx_dma_tovec',5,'"d,s,t"'),
                     instruction('vbx_dma_2dstart',6,'"d,s,t"')]
@@ -184,6 +187,8 @@ def generate_special_instr( define_file,lve_extension_file):
 
     for si in special_inst:
         mask=0xFE00707F
+        if "t" not in si.registers:
+            mask |= (0x1F << 20)
         match=0x4200702B | (si.bit28_26 <<26)
         name = si.name
         uname = name.upper()

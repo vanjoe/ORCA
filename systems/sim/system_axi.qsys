@@ -368,8 +368,11 @@
    kind="vectorblox_orca"
    version="1.0"
    enabled="1">
+  <parameter name="AMR0_ADDR_BASE" value="0" />
+  <parameter name="AMR0_ADDR_LAST" value="0" />
   <parameter name="AUTO_GLOBAL_INTERRUPTS_INTERRUPTS_USED" value="1" />
   <parameter name="AUX_MEMORY_REGIONS" value="0" />
+  <parameter name="AXI_ID_WIDTH" value="2" />
   <parameter name="BTB_ENTRIES" value="16" />
   <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DATA_REQUEST_REGISTER" value="0" />
@@ -379,6 +382,8 @@
   <parameter name="DCACHE_EXTERNAL_WIDTH" value="32" />
   <parameter name="DCACHE_LINE_SIZE" value="32" />
   <parameter name="DCACHE_SIZE" value="0" />
+  <parameter name="DC_REQUEST_REGISTER" value="1" />
+  <parameter name="DC_RETURN_REGISTER" value="0" />
   <parameter name="DIVIDE_ENABLE" value="1" />
   <parameter name="DUC_REQUEST_REGISTER" value="2" />
   <parameter name="DUC_RETURN_REGISTER" value="1" />
@@ -390,11 +395,14 @@
   <parameter name="ICACHE_EXTERNAL_WIDTH" value="32" />
   <parameter name="ICACHE_LINE_SIZE" value="32" />
   <parameter name="ICACHE_SIZE" value="0" />
+  <parameter name="IC_REQUEST_REGISTER" value="1" />
+  <parameter name="IC_RETURN_REGISTER" value="0" />
   <parameter name="INSTRUCTION_REQUEST_REGISTER" value="0" />
   <parameter name="INSTRUCTION_RETURN_REGISTER" value="0" />
   <parameter name="INTERRUPT_VECTOR" value="512" />
   <parameter name="IUC_REQUEST_REGISTER" value="0" />
   <parameter name="IUC_RETURN_REGISTER" value="0" />
+  <parameter name="LOG2_BURSTLENGTH" value="4" />
   <parameter name="MAX_IFETCHES_IN_FLIGHT" value="3" />
   <parameter name="MULTIPLY_ENABLE" value="1" />
   <parameter name="NUM_EXT_INTERRUPTS" value="1" />
@@ -423,7 +431,7 @@
    start="vectorblox_orca_0.axi_duc"
    end="interrupt_generator_0.s0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00110000" />
+  <parameter name="baseAddress" value="0x01000000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection

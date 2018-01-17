@@ -21,7 +21,7 @@ entity orca is
     COUNTER_LENGTH         : natural                       := 0;
     ENABLE_EXCEPTIONS      : natural                       := 1;
     PIPELINE_STAGES        : natural range 4 to 5          := 5;
-    VCP_ENABLE             : natural range 0 to 1          := 0;
+    VCP_ENABLE             : natural range 0 to 2          := 0;
     ENABLE_EXT_INTERRUPTS  : natural range 0 to 1          := 0;
     NUM_EXT_INTERRUPTS     : positive range 1 to 32        := 1;
     POWER_OPTIMIZED        : natural range 0 to 1          := 0;
@@ -348,7 +348,8 @@ entity orca is
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
     vcp_ready            : in  std_logic                                  := '1';
-    vcp_executing        : in  std_logic                                  := '0';
+    vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_writeback_en     : in  std_logic;
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
     vcp_alu_op_size      : in  std_logic_vector(1 downto 0)               := (others => '0');
@@ -407,7 +408,7 @@ begin
       COUNTER_LENGTH         => COUNTER_LENGTH,
       ENABLE_EXCEPTIONS      => ENABLE_EXCEPTIONS,
       PIPELINE_STAGES        => PIPELINE_STAGES,
-      VCP_ENABLE             => VCP_ENABLE /= 0,
+      VCP_ENABLE             => VCP_ENABLE,
       ENABLE_EXT_INTERRUPTS  => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS     => NUM_EXT_INTERRUPTS,
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS,
@@ -466,7 +467,8 @@ begin
       vcp_instruction      => vcp_instruction,
       vcp_valid_instr      => vcp_valid_instr,
       vcp_ready            => vcp_ready,
-      vcp_executing        => vcp_executing,
+      vcp_writeback_data   => vcp_writeback_data,
+      vcp_writeback_en     => vcp_writeback_en,
       vcp_alu_data1        => vcp_alu_data1,
       vcp_alu_data2        => vcp_alu_data2,
       vcp_alu_op_size      => vcp_alu_op_size,

@@ -24,7 +24,7 @@ entity arithmetic_unit is
     from_execute_ready : in  std_logic;
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instruction        : in  std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    instruction        : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     sign_extension     : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
     data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -151,10 +151,10 @@ architecture rtl of arithmetic_unit is
 
   signal add : signed(REGISTER_SIZE downto 0);
 
-
+  signal lve_instr : std_logic;
   signal arith_msb_mask : std_logic_vector(3 downto 0);
 begin
-
+  lve_instr <= '1' when opcode = LVE32_OP or opcode = LVE64_OP else '0';
 
   immediate_value <= unsigned(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0) &
                               instruction(31 downto 20));
@@ -290,7 +290,7 @@ begin
   mul_src_valid     <= source_valid;
 
 
-  source_valid <= lve_source_valid when opcode = LVE_OP else
+  source_valid <= lve_source_valid when lve_instr = '1' else
                   valid_instr;
 
   func7_shift <= func7 = "0000000" or func7 = "0100000";
@@ -298,7 +298,7 @@ begin
   sh_select   <= '1' when
                (((opcode = ALU_OP and func7_shift) or
                  (opcode = ALUI_OP) or
-                 (opcode = LVE_OP and lve_source_valid = '1')) and
+                 (lve_instr = '1' and lve_source_valid = '1')) and
                 (func3 = "001" or func3 = "101")) else
                '0';
   sh_ready <= shifted_result_valid or (not sh_select);
@@ -420,8 +420,8 @@ begin
 
       data_out_valid <= '0';
       case OPCODE is
-        when ALU_OP | LVE_OP =>
-          if (func7 = mul_f7 or (instruction(25) = '1' and opcode = LVE_OP))and MULTIPLY_ENABLE then
+        when ALU_OP | LVE32_OP |LVE64_OP =>
+          if (func7 = mul_f7 or (instruction(25) = '1' and lve_instr = '1'))and MULTIPLY_ENABLE then
             data_out       <= std_logic_vector(mul_result);
             data_out_valid <= mul_result_valid;
           else
@@ -453,7 +453,7 @@ begin
     signal mul_ab_valid     : std_logic;
   begin
     mul_select <= '1' when ((func7 = mul_f7 and opcode = ALU_OP) or
-                            (instruction(25) = '1' and opcode = LVE_OP)) and instruction(14) = '0' else
+                            (instruction(25) = '1' and lve_instr = '1')) and instruction(14) = '0' else
                   '0';
     mul_enable <= source_valid and mul_select;
     mul_ready  <= mul_dest_valid or (not mul_select);

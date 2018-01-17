@@ -52,12 +52,18 @@ typedef enum{
 }state_e;
 static inline vbx_uword_t vbx_get_state(state_e reg){
 	vbx_uword_t ret;
-	asm volatile("vbx_get %0, %1, zero"::"r"(ret),"r"(reg));
+	asm volatile("vbx_get %0, %1":"=r"(ret):"r"(reg));
 	return ret;
 }
 
-static inline int vbx_get_vl(){
-	return vbx_get_state(VBX_STATE_VECTOR_LENGTH);
+static inline void vbx_get_vl(unsigned* vl,unsigned *nrows){
+	*vl=vbx_get_state(VBX_STATE_VECTOR_LENGTH);
+	*nrows=vbx_get_state(VBX_STATE_NROWS);
+}
+static inline void vbx_get_2D(int *incrd,int* incra,int* incrb){
+	*incra=vbx_get_state(VBX_STATE_INCRA_2D);
+	*incrb=vbx_get_state(VBX_STATE_INCRB_2D);
+	*incrd=vbx_get_state(VBX_STATE_INCRD_2D);
 }
 
 static inline void* vbx_sp_alloc(unsigned sz){

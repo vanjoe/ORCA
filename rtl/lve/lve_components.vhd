@@ -85,14 +85,15 @@ package lve_components is
 
       vcp_instruction      : in  std_logic_vector(40 downto 0)          := (others => '0');
       vcp_valid_instr      : in  std_logic                              := '0';
+      vcp_writeback_data   : out std_logic_vector(31 downto 0);
+      vcp_writeback_en     : out std_logic;
       vcp_ready            : out std_logic;
-      vcp_executing        : out std_logic;
       vcp_alu_data1        : out std_logic_vector(LVE_WIDTH-1 downto 0);
       vcp_alu_data2        : out std_logic_vector(LVE_WIDTH-1 downto 0);
       vcp_alu_op_size      : out std_logic_vector(1 downto 0);
       vcp_alu_source_valid : out std_logic;
       vcp_alu_result       : in  std_logic_vector(LVE_WIDTH-1 downto 0) := (others => '0');
-      vcp_alu_result_valid : in  std_logic :=  '0'
+      vcp_alu_result_valid : in  std_logic                              := '0'
       );
   end component;
 
@@ -104,7 +105,7 @@ package lve_components is
       clk            : in std_logic;
       scratchpad_clk : in std_logic;
       reset          : in std_logic;
-      instruction    : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+      instruction    : in std_logic_vector(31 downto 0);
       valid_instr    : in std_logic;
 
 
@@ -122,7 +123,8 @@ package lve_components is
       rs3_data : in std_logic_vector(LVE_WIDTH-1 downto 0);
 
       lve_ready            : out    std_logic;
-      lve_executing        : out    std_logic;
+      lve_writeback_data   : out    std_logic_vector(31 downto 0);
+      lve_writeback_en     : out    std_logic;
       lve_alu_data1        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
       lve_alu_data2        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
       lve_alu_op_size      : out    std_logic_vector(1 downto 0);

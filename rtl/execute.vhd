@@ -25,7 +25,7 @@ entity execute is
     ENABLE_EXCEPTIONS     : boolean;
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
-    VCP_ENABLE            : boolean;
+    VCP_ENABLE            : natural;
     FAMILY                : string;
 
     AUX_MEMORY_REGIONS : natural range 0 to 4;
@@ -51,8 +51,8 @@ entity execute is
     to_execute_valid            : in     std_logic;
     to_execute_program_counter  : in     unsigned(REGISTER_SIZE-1 downto 0);
     to_execute_predicted_pc     : in     unsigned(REGISTER_SIZE-1 downto 0);
-    to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
-    to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    to_execute_instruction      : in     std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+    to_execute_next_instruction : in     std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     to_execute_next_valid       : in     std_logic;
     to_execute_rs1_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     to_execute_rs2_data         : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -110,7 +110,8 @@ entity execute is
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
     vcp_ready            : in  std_logic;
-    vcp_executing        : in  std_logic;
+    vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+    vcp_writeback_en     : in  std_logic;
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
@@ -177,6 +178,7 @@ architecture behavioural of execute is
   signal to_rf_mux            : std_logic_vector(1 downto 0);
 
   signal vcp_was_executing : std_logic;
+  constant instruction32 : std_logic_vector(31 downto 0) := (others => '0');
 begin
   valid_instr <= to_execute_valid and from_writeback_ready;
 
@@ -190,10 +192,10 @@ begin
   -- propogate if the next instruction uses them.
   --
   -----------------------------------------------------------------------------
-  rs1_data <= vcp_alu_data1 when vcp_alu_source_valid = '1' else
+  rs1_data <= vcp_alu_data1 when VCP_ENABLE /=0 and vcp_alu_source_valid = '1' else
               alu_data_out when rs1_mux = ALU_FWD else
               to_execute_rs1_data;
-  rs2_data <= vcp_alu_data2 when vcp_alu_source_valid = '1' else
+  rs2_data <= vcp_alu_data2 when VCP_ENABLE /=0 and vcp_alu_source_valid = '1' else
               alu_data_out when rs2_mux = ALU_FWD else
               to_execute_rs2_data;
   rs3_data <= alu_data_out when rs3_mux = ALU_FWD else
@@ -202,13 +204,13 @@ begin
   from_execute_ready <= (not to_execute_valid) or (from_writeback_ready and
                                                    lsu_ready and
                                                    (alu_ready or vcp_was_executing) and
-                                                   (vcp_ready or bool_to_sl(not VCP_ENABLE)) and
+                                                   (vcp_ready or bool_to_sl(VCP_ENABLE = 0)) and
                                                    from_syscall_ready);
 
   --No forward stall; system calls, loads, and branches aren't forwarded.
   use_after_produce_stall <=
     to_rf_select_writeable and (from_syscall_valid or load_in_progress or from_branch_valid) when
-    to_rf_select = rs1 or to_rf_select = rs2 or ((to_rf_select = rs3) and VCP_ENABLE) else
+    to_rf_select = rs1 or to_rf_select = rs2 or ((to_rf_select = rs3) and VCP_ENABLE /= 0) else
     '0';
 
   --Calculate forwarding muxes for next instruction in advance in order to
@@ -258,7 +260,7 @@ begin
       from_execute_ready => from_execute_ready,
       rs1_data           => rs1_data,
       rs2_data           => rs2_data,
-      instruction        => to_execute_instruction,
+      instruction        => to_execute_instruction(instruction32'range),
       sign_extension     => to_execute_sign_extension,
       current_pc         => to_execute_program_counter,
       data_out           => alu_data_out,
@@ -285,7 +287,7 @@ begin
       rs2_data        => rs2_data,
       current_pc      => to_execute_program_counter,
       predicted_pc    => to_execute_predicted_pc,
-      instruction     => to_execute_instruction,
+      instruction     => to_execute_instruction(instruction32'range),
       sign_extension  => to_execute_sign_extension,
 
       from_branch_valid => from_branch_valid,
@@ -312,7 +314,7 @@ begin
       valid                    => valid_instr,
       rs1_data                 => rs1_data,
       rs2_data                 => rs2_data,
-      instruction              => to_execute_instruction,
+      instruction              => to_execute_instruction(instruction32'range),
       sign_extension           => to_execute_sign_extension,
       writeback_stall_from_lsu => writeback_stall_from_lsu,
       lsu_ready                => lsu_ready,
@@ -367,7 +369,7 @@ begin
 
       to_syscall_valid   => valid_instr,
       rs1_data           => rs1_data,
-      instruction        => to_execute_instruction,
+      instruction        => to_execute_instruction(instruction32'range),
       current_pc         => to_execute_program_counter,
       from_syscall_ready => from_syscall_ready,
 
@@ -391,7 +393,10 @@ begin
       umr_base_addrs => umr_base_addrs,
       umr_last_addrs => umr_last_addrs,
 
-      pause_ifetch => pause_ifetch
+      pause_ifetch => pause_ifetch,
+
+      vcp_writeback_data   => vcp_writeback_data,
+      vcp_writeback_en     => vcp_writeback_en
       );
 
   vcp_port : vcp_handler
@@ -405,7 +410,7 @@ begin
 
       instruction   => to_execute_instruction,
       valid_instr   => valid_instr,
-      vcp_executing => vcp_executing,
+      vcp_ready => vcp_ready,
 
       rs1_data => rs1_data,
       rs2_data => rs2_data,
@@ -532,7 +537,12 @@ begin
         write(my_line, string'("executing pc = "));  -- formatting
         hwrite(my_line, (std_logic_vector(to_execute_program_counter)));  -- format type std_logic_vector as hex
         write(my_line, string'(" instr =  "));      -- formatting
-        hwrite(my_line, (to_execute_instruction));  -- format type std_logic_vector as hex
+        if to_execute_instruction(MAJOR_OP'range) = LVE64_OP then
+          hwrite(my_line, (to_execute_instruction));  -- format type std_logic_vector as hex
+        else
+          hwrite(my_line, (to_execute_instruction(31 downto 0)));  -- format type std_logic_vector as hex
+        end if;
+
         if from_execute_ready = '0' then
           write(my_line, string'(" stalling"));     -- formatting
         else

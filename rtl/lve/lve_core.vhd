@@ -16,7 +16,7 @@ entity lve_core is
     clk            : in std_logic;
     scratchpad_clk : in std_logic;
     reset          : in std_logic;
-    instruction    : in std_logic_vector(INSTRUCTION_SIZE-1 downto 0);
+    instruction    : in std_logic_vector(31 downto 0);
     valid_instr    : in std_logic;
 
 
@@ -34,7 +34,8 @@ entity lve_core is
     rs3_data : in std_logic_vector(LVE_WIDTH-1 downto 0);
 
     lve_ready            : out    std_logic;
-    lve_executing        : out    std_logic;
+    lve_writeback_data   : out    std_logic_vector(31 downto 0);
+    lve_writeback_en     : out    std_logic;
     lve_alu_data1        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
     lve_alu_data2        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
     lve_alu_op_size      : out    std_logic_vector(1 downto 0);
@@ -45,7 +46,7 @@ entity lve_core is
 end entity;
 
 architecture rtl of lve_core is
-  signal lve_instr       : std_logic;
+
   signal valid_lve_instr : std_logic;
   --parts of the instruction
   alias instr_major_op   : std_logic_vector is instruction(MAJOR_OP'range);
@@ -66,11 +67,11 @@ architecture rtl of lve_core is
   signal zero_length_vector : std_logic;  --don't do anything for zero length vector
 
   --counters
-  signal elems_left_read  : unsigned(ptr'range) :=(others => '0');
-  signal elems_left_write : unsigned(ptr'range) :=(others => '0');
-  signal rows_left_read   : unsigned(ptr'range) :=(others => '0');
-  signal rows_left_write  : unsigned(ptr'range) :=(others => '0');
-  signal enum_value       : unsigned(LVE_WIDTH-1 downto 0) :=(others => '0');
+  signal elems_left_read  : unsigned(ptr'range)            := (others => '0');
+  signal elems_left_write : unsigned(ptr'range)            := (others => '0');
+  signal rows_left_read   : unsigned(ptr'range)            := (others => '0');
+  signal rows_left_write  : unsigned(ptr'range)            := (others => '0');
+  signal enum_value       : unsigned(LVE_WIDTH-1 downto 0) := (others => '0');
 
   --pointers
   signal srca_ptr      : unsigned(ptr'range) := (others => '0');
@@ -127,20 +128,32 @@ architecture rtl of lve_core is
   signal ci_data_out  : std_logic_vector(LVE_WIDTH-1 downto 0);
   signal ci_we        : std_logic;
 
+  signal get_state      : std_logic;
+  signal get_state_last : std_logic;
+  signal executing      : std_logic;
+
+  constant GET_STATE_VLEN  : integer := 0;
+  constant GET_STATE_NROWS : integer := 1;
+  constant GET_STATE_DINCR : integer := 3;
+  constant GET_STATE_AINCR : integer := 4;
+  constant GET_STATE_BINCR : integer := 5;
 
 begin
-  lve_instr           <= '1' when instr_major_op = LVE_OP else '0';
-  valid_lve_instr     <= valid_instr and lve_instr;
+  valid_lve_instr     <= valid_instr;
   opcode5(4)          <= instruction(30);
   opcode5(3)          <= instruction(25);
   opcode5(2 downto 0) <= instruction(14 downto 12);
 
+  get_state      <= valid_lve_instr and not get_state_last when opcode5 = "11111" and instruction(28 downto 26) = "011" else '0';
+  get_state_last <= get_state                              when rising_edge(clk);
   -----------------------------------------------------------------------------
   -- Handle set and get instructions here
   -----------------------------------------------------------------------------
   set_vl_proc : process (clk)
   begin
     if rising_edge(clk) then
+      lve_writeback_en   <= '0';
+      lve_writeback_data <= (others => '-');
       if valid_lve_instr = '1' and opcode5 = "11111" then
         --secial instruction
         case instruction(28 downto 26) is
@@ -152,6 +165,21 @@ begin
             srca_incr <= unsigned(rs1_data(ptr'range));
             srcb_incr <= unsigned(rs2_data(ptr'range));
             dest_incr <= unsigned(rs3_data(ptr'range));
+          when "011" =>
+            lve_writeback_en <= get_state;
+            case to_integer(unsigned(rs1_data(3 downto 0))) is
+              when GET_STATE_VLEN =>
+                lve_writeback_data <= std_logic_vector(resize(vector_length, 32));
+              when GET_STATE_NROWS =>
+                lve_writeback_data <= std_logic_vector(resize(num_rows, 32));
+              when GET_STATE_DINCR =>
+                lve_writeback_data <= std_logic_vector(resize(dest_incr, 32));
+              when GET_STATE_AINCR =>
+                lve_writeback_data <= std_logic_vector(resize(srca_incr, 32));
+              when GET_STATE_BINCR =>
+                lve_writeback_data <= std_logic_vector(resize(srcb_incr, 32));
+              when others => null;
+            end case;
           when others =>
             null;
         end case;
@@ -249,8 +277,8 @@ begin
   dest_ptr_next <= dest_ptr+CONDITIONAL(acc_enable = '1', 0, 4) when elems_left_write /= 0 else
                    dest_row_ptr+dest_incr;
 
-  lve_executing <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector;
-  lve_ready     <= not (bool_to_sl(lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector);
+  executing     <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector;
+  lve_ready     <= not executing and not get_state;
 
 
   wr_data_ready <= (mov_result_valid or lve_alu_result_valid or ci_valid_out) and not done_write;
