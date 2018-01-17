@@ -163,7 +163,8 @@ begin
   -----------------------------------------------------------------------------
   request_throttler : oimm_throttler
     generic map (
-      MAX_OUTSTANDING_REQUESTS => MAX_OUTSTANDING_REQUESTS
+      MAX_OUTSTANDING_REQUESTS => MAX_OUTSTANDING_REQUESTS,
+      READ_WRITE_FENCE         => true --AXI lacks intra-channel ordering
       )
     port map (
       clk   => clk,

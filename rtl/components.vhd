@@ -1557,7 +1557,8 @@ package rv_components is
 
   component oimm_throttler is
     generic (
-      MAX_OUTSTANDING_REQUESTS : natural
+      MAX_OUTSTANDING_REQUESTS : natural;
+      READ_WRITE_FENCE         : boolean
       );
     port (
       clk   : in std_logic;
