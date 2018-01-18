@@ -41,19 +41,29 @@ architecture rtl of vcp_handler is
   signal instr_64bit : boolean;
 begin  -- architecture rtl
 
-
   --extended bits
   dsz         <= instruction(31) & instruction(29);
-  instr_64bit <= instruction(MAJOR_OP'range) = LVE64_OP and VCP_ENABLE = 2;
+  instr_64bit <= instruction(MAJOR_OP'range) = LVE64_OP;
 
-  vcp_instruction(40)           <= instruction(40)           when instr_64bit else '0';  --extra instruction
-  vcp_instruction(39)           <= instruction(39)           when instr_64bit else '0';  --masked
-  vcp_instruction(38)           <= instruction(38)           when instr_64bit else '1';  --bsign
-  vcp_instruction(37)           <= instruction(37)           when instr_64bit else '1';  --asign
-  vcp_instruction(36)           <= instruction(36)           when instr_64bit else '1';  --opsign
-  vcp_instruction(35 downto 34) <= instruction(35 downto 34) when instr_64bit else dsz;  --b size
-  vcp_instruction(33 downto 32) <= instruction(33 downto 32) when instr_64bit else dsz;  --b size
-  vcp_instruction(31 downto 0)  <= instruction(31 downto 0);
+  full_vcp_gen : if VCP_ENABLE = 2 generate
+    vcp_instruction(40)           <= instruction(40)           when instr_64bit else '0';  --extra instruction
+    vcp_instruction(39)           <= instruction(39)           when instr_64bit else '0';  --masked
+    vcp_instruction(38)           <= instruction(38)           when instr_64bit else '1';  --bsign
+    vcp_instruction(37)           <= instruction(37)           when instr_64bit else '1';  --asign
+    vcp_instruction(36)           <= instruction(36)           when instr_64bit else '1';  --opsign
+    vcp_instruction(35 downto 34) <= instruction(35 downto 34) when instr_64bit else dsz;  --b size
+    vcp_instruction(33 downto 32) <= instruction(33 downto 32) when instr_64bit else dsz;  --b size
+  end generate full_vcp_gen;
+  light_vcp_gen : if VCP_ENABLE /= 2 generate
+    vcp_instruction(40)           <= '0';  --extra instruction
+    vcp_instruction(39)           <= '0';  --masked
+    vcp_instruction(38)           <= '1';  --bsign
+    vcp_instruction(37)           <= '1';  --asign
+    vcp_instruction(36)           <= '1';  --opsign
+    vcp_instruction(35 downto 34) <= dsz;  --b size
+    vcp_instruction(33 downto 32) <= dsz;  --b size
+  end generate light_vcp_gen;
+  vcp_instruction(31 downto 0) <= instruction(31 downto 0);
 
   vcp_data0 <= rs1_data;
   vcp_data1 <= rs2_data;

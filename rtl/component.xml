@@ -5375,7 +5375,7 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>VCP_ENABLE</spirit:name>
         <spirit:displayName>Vector Coprocessor Port Enable</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.VCP_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.VCP_ENABLE" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>ENABLE_EXT_INTERRUPTS</spirit:name>
@@ -5829,7 +5829,7 @@
     <spirit:parameter>
       <spirit:name>VCP_ENABLE</spirit:name>
       <spirit:displayName>Vector Coprocessor Port Enable</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.VCP_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.VCP_ENABLE" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>ENABLE_EXT_INTERRUPTS</spirit:name>

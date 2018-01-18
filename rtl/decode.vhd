@@ -74,9 +74,9 @@ architecture rtl of decode is
   signal waiting_for_secondhalf : std_logic := '0';
 
 begin
-  from_decode_instruction <= from_decode_instruction_signal;
-  from_decode_valid       <= from_decode_valid_signal;
-  from_decode_ready       <= from_decode_ready_signal;
+  from_decode_instruction    <= from_decode_instruction_signal;
+  from_decode_valid          <= from_decode_valid_signal;
+  from_decode_ready          <= from_decode_ready_signal;
   from_decode_wait_for_instr <= waiting_for_secondhalf;
   the_register_file : register_file
     generic map (
@@ -250,11 +250,8 @@ begin
           else
             from_decode_instruction_signal(31 downto 0) <= to_decode_instruction;
             from_decode_valid_signal                    <= to_decode_valid;
-
           end if;
-
         end if;
-
 
         if reset = '1' or quash_decode = '1' then
           from_decode_valid_signal <= '0';

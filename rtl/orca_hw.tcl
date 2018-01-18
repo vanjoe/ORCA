@@ -200,7 +200,6 @@ set_parameter_property VCP_ENABLE TYPE NATURAL
 set_parameter_property VCP_ENABLE UNITS None
 set_parameter_property VCP_ENABLE ALLOWED_RANGES 0:2
 set_parameter_property VCP_ENABLE HDL_PARAMETER true
-set_display_item_property VCP_ENABLE DISPLAY_HINT boolean
 
 add_parameter ENABLE_EXT_INTERRUPTS natural 0
 set_parameter_property ENABLE_EXT_INTERRUPTS DISPLAY_NAME "Enable Interrupts"

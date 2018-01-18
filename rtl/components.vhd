@@ -717,7 +717,7 @@ package rv_components is
       PIPELINE_STAGES        : natural range 4 to 5;
       ENABLE_EXT_INTERRUPTS  : natural range 0 to 1;
       NUM_EXT_INTERRUPTS     : positive range 1 to 32;
-      VCP_ENABLE             : natural range 0 to 2 := 0;
+      VCP_ENABLE             : natural range 0 to 2;
       WRITE_FIRST_SMALL_RAMS : boolean;
       FAMILY                 : string;
 
@@ -795,7 +795,7 @@ package rv_components is
     generic (
       REGISTER_SIZE          : positive;
       SIGN_EXTENSION_SIZE    : positive;
-      VCP_ENABLE             : natural range 0 to 2 := 0;
+      VCP_ENABLE             : natural range 0 to 2;
       PIPELINE_STAGES        : natural range 1 to 2;
       WRITE_FIRST_SMALL_RAMS : boolean;
       FAMILY                 : string
@@ -847,7 +847,7 @@ package rv_components is
       ENABLE_EXCEPTIONS     : boolean;
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
       NUM_EXT_INTERRUPTS    : positive range 1 to 32;
-      VCP_ENABLE            : natural range 0 to 2 := 0;
+      VCP_ENABLE            : natural range 0 to 2;
       FAMILY                : string;
 
       AUX_MEMORY_REGIONS : natural range 0 to 4;
@@ -1111,7 +1111,7 @@ package rv_components is
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
       NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
-      VCP_ENABLE : natural range 0 to 2 := 0;
+      VCP_ENABLE : natural range 0 to 2;
 
       AUX_MEMORY_REGIONS : natural range 0 to 4;
       AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
@@ -1606,7 +1606,7 @@ package rv_components is
   component vcp_handler is
     generic (
       REGISTER_SIZE : integer;
-      VCP_ENABLE    : natural range 0 to 2 := 0
+      VCP_ENABLE    : natural range 0 to 2
       );
     port (
       clk   : in std_logic;
