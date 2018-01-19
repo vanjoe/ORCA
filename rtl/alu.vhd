@@ -344,20 +344,32 @@ begin
         when REMU_OP =>
           mul_result       := unsigned(rem_result);
           mul_result_valid := div_result_valid;
-
         when others =>
           null;
       end case;
 
       data_out_valid <= '0';
       case OPCODE is
-        when ALU_OP | LVE32_OP |LVE64_OP =>
-          if (func7 = mul_f7 or (instruction(25) = '1' and lve_instr = '1' and vcp_alu_used= '1'))and MULTIPLY_ENABLE then
+        when ALU_OP =>
+          if func7 = mul_f7 and MULTIPLY_ENABLE then
             data_out       <= std_logic_vector(mul_result);
             data_out_valid <= mul_result_valid;
           else
             data_out       <= std_logic_vector(base_result);
             data_out_valid <= base_result_valid;
+          end if;
+        when LVE32_OP |LVE64_OP =>
+          if vcp_alu_used = '1' then
+            if instruction(25) = '1' and lve_instr = '1' and MULTIPLY_ENABLE then
+              data_out       <= std_logic_vector(mul_result);
+              data_out_valid <= mul_result_valid;
+            else
+              data_out       <= std_logic_vector(base_result);
+              data_out_valid <= base_result_valid;
+            end if;
+          else
+            data_out       <= (others => '-');
+            data_out_valid <= '0';
           end if;
         when ALUI_OP =>
           data_out       <= std_logic_vector(base_result);
