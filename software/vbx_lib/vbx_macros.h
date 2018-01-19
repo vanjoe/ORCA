@@ -10,8 +10,15 @@ extern vbx_lve_t the_lve;
 #define max(a,b) ((a)<(b) ?(b):(a))
 #define min(a,b) ((a)>(b) ?(b):(a))
 
+//A Note about constraints:
+//using rJ in riscv means that we can have the input be a register or 0.
+//when the print is of the format %z0 instead of %0 it prints 0 as zero,
+//which aliases to x0. using this we can be more efficient if one of
+//the operands is zero. See mailing list thread:
+//https://groups.google.com/a/groups.riscv.org/forum/#!topic/sw-dev/Nm_xfJiO4gY
+
 #define vbxasm_(acc,vmode, vinstr,dest,srca,srcb)	  \
-	asm volatile(#vinstr "." #vmode acc " %0, %1, %2\n":: "r"(dest),"r"(srca),"r"(srcb))
+	asm volatile(#vinstr "." #vmode acc " %z0, %z1, %z2\n":: "rJ"(dest),"rJ"(srca),"rJ"(srcb))
 
 
 
@@ -23,10 +30,10 @@ extern vbx_lve_t the_lve;
 		}}while(0)
 
 static inline void vbx_set_vl(unsigned vl,unsigned nrows){
-	asm volatile("vbx_set_vl %0, %1, %2"::"r"(vl),"r"(nrows),"r"(1));
+	asm volatile("vbx_set_vl %z0, %z1, %z2"::"rJ"(vl),"rJ"(nrows),"rJ"(1));
 }
 static inline void vbx_set_2D(int incrd,int incra,int incrb){
-	asm volatile("vbx_set_2d %0, %1, %2"::"r"(incrd),"r"(incra),"r"(incrb));
+	asm volatile("vbx_set_2d %z0, %z1, %z2"::"rJ"(incrd),"rJ"(incra),"rJ"(incrb));
 }
 
 #define vbx_set_vl_1(vl) vbx_set_vl(vl,1)
@@ -51,12 +58,12 @@ typedef enum{
 }state_e;
 static inline vbx_uword_t vbx_get_state(state_e reg){
 	vbx_uword_t ret;
-	asm volatile("vbx_get %0, %1":"=r"(ret):"r"(reg));
+	asm volatile("vbx_get %z0, %z1":"=rJ"(ret):"rJ"(reg));
 	return ret;
 }
 
 static inline void vbx_sync(){
-	asm volatile("vbx_get x0, x0");
+	asm volatile("vbx_get zero, zero");
 }
 
 static inline void vbx_get_vl(unsigned* vl,unsigned *nrows){
