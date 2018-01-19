@@ -780,7 +780,7 @@ add_interface_port vcp vcp_writeback_data   writeback_data    Input register_siz
 add_interface_port vcp vcp_writeback_en     writeback_en      Input 1
 add_interface_port vcp vcp_alu_data1        alu_data1         Input register_size
 add_interface_port vcp vcp_alu_data2        alu_data2         Input register_size
-add_interface_port vcp vcp_alu_op_size      alu_op_size       Input 2
+add_interface_port vcp vcp_alu_used         alu_used          Input 1
 add_interface_port vcp vcp_alu_source_valid alu_source_valid  Input  1
 add_interface_port vcp vcp_alu_result       alu_result        Output register_size
 add_interface_port vcp vcp_alu_result_valid alu_result_valid  Output 1

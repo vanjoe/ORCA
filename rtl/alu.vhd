@@ -20,7 +20,7 @@ entity arithmetic_unit is
   port (
     clk                : in  std_logic;
     valid_instr        : in  std_logic;
-    simd_op_size       : in  std_logic_vector(1 downto 0);
+    vcp_alu_used       : in  std_logic;
     from_execute_ready : in  std_logic;
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -151,10 +151,16 @@ architecture rtl of arithmetic_unit is
 
   signal add : signed(REGISTER_SIZE downto 0);
 
-  signal lve_instr : std_logic;
+  signal lve_instr      : std_logic;
   signal arith_msb_mask : std_logic_vector(3 downto 0);
+
+  signal op1 : signed(REGISTER_SIZE downto 0);
+  signal op2 : signed(REGISTER_SIZE downto 0);
+
+  signal op1_msb, op2_msb : std_logic;
+
 begin
-  lve_instr <= '1' when opcode = LVE32_OP or opcode = LVE64_OP else '0';
+  lve_instr <= vcp_alu_used when opcode = LVE32_OP or opcode = LVE64_OP else '0';
 
   immediate_value <= unsigned(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0) &
                               instruction(31 downto 20));
@@ -180,101 +186,26 @@ begin
     false                                                       when others;
 
   is_sub <= '0' when is_add else '1';
-  gen_simd_en : if SIMD_ENABLE generate
-    signal cin0, cin1, cin2, cin3                     : signed(8 downto 0);
-    signal cout0, cout1, cout2, cout3                 : std_logic;
-    signal op1_byte3, op1_byte2, op1_byte1, op1_byte0 : signed(8 downto 0);
-    signal op2_byte3, op2_byte2, op2_byte1, op2_byte0 : signed(8 downto 0);
-    signal add3, add2, add1, add0                     : signed(8 downto 0);
 
-    signal op1_msb : std_logic_vector(3 downto 0);
-    signal op2_msb : std_logic_vector(3 downto 0);
+  with instruction(14 downto 12) select
+    op1_msb <=
+    '0'               when "110",
+    '0'               when "111",
+    '0'               when "011",
+    data1(data1'left) when others;
+  with instruction(14 downto 12) select
+    op2_msb <=
+    '0'               when "110",
+    '0'               when "111",
+    '0'               when "011",
+    data2(data1'left) when others;
 
-    signal byte_size : std_logic;
-    signal half_size : std_logic;
-    signal word_size : std_logic;
+  op1 <= signed(op1_msb & data1);
+  op2 <= signed(op2_msb & data2);
 
-  begin
-    byte_size <= '1' when simd_op_size = LVE_BYTE_SIZE else '0';
-    half_size <= '1' when simd_op_size = LVE_HALF_SIZE else '0';
-    word_size <= '1' when simd_op_size = LVE_WORD_SIZE else '0';
-
-    with instruction(14 downto 12) select
-      op1_msb <=
-      "0000"                                                                                      when "110",
-      "0000"                                                                                      when "111",
-      "0000"                                                                                      when "011",
-      data1(31)&(data1(23)and byte_size) &(data1(15)and not word_size) & (data1(7) and byte_size) when others;
-    with instruction(14 downto 12) select
-      op2_msb <=
-      "0000"                                                                             when "110",
-      "0000"                                                                             when "111",
-      not ("0"& not byte_size & word_size & not byte_size)                               when "011",
-      (data2(31) xor is_sub) & ((data2(23) xor is_sub) and byte_size) &
-      ((data2(15) xor is_sub) and not word_size) & ((data2(7) xor is_sub) and byte_size) when others;
-
-
-    cin0 <= "000000001" when is_sub = '1' else
-            "000000000";
-    cin1 <= "00000000"&cout0 when byte_size = '0' else
-            "000000001" when byte_size = '1' and is_sub = '1' else
-            "000000000";
-    cin2 <= "00000000"&cout1 when word_size = '1' else
-            "000000001" when word_size = '0' and is_sub = '1' else
-            "000000000";
-    cin3 <= "00000000"&cout2 when byte_size = '0' else
-            "000000001" when byte_size = '1' and is_sub = '1' else
-            "000000000";
-    op1_byte3 <= signed(op1_msb(3) & data1(31 downto 24));
-    op1_byte2 <= signed(op1_msb(2) & data1(23 downto 16));
-    op1_byte1 <= signed(op1_msb(1) & data1(15 downto 8));
-    op1_byte0 <= signed(op1_msb(0) & data1(7 downto 0));
-
-    op2_byte3 <= signed(op2_msb(3) & data2(31 downto 24));
-    op2_byte2 <= signed(op2_msb(2) & data2(23 downto 16));
-    op2_byte1 <= signed(op2_msb(1) & data2(15 downto 8));
-    op2_byte0 <= signed(op2_msb(0) & data2(7 downto 0));
-
-    add0  <= cin0 +op1_byte0 + conditional(is_sub = '1', op2_byte0 xor to_signed(255, 9), op2_byte0);
-    add1  <= cin1 +op1_byte1 + conditional(is_sub = '1', op2_byte1 xor to_signed(255, 9), op2_byte1);
-    add2  <= cin2 +op1_byte2 + conditional(is_sub = '1', op2_byte2 xor to_signed(255, 9), op2_byte2);
-    add3  <= cin3 +op1_byte3 + conditional(is_sub = '1', op2_byte3 xor to_signed(255, 9), op2_byte3);
-    cout0 <= add0(8);
-    cout1 <= add1(8);
-    cout2 <= add2(8);
-    cout3 <= add3(8);
-
-    add       <= add3(8 downto 0) &add2(7 downto 0) &add1(7 downto 0) &add0(7 downto 0);
-    sub       <= add(sub'range);
-    sub_valid <= source_valid;
-  end generate;
-  gen_simd_nen : if not SIMD_ENABLE generate
-
-    signal op1 : signed(REGISTER_SIZE downto 0);
-    signal op2 : signed(REGISTER_SIZE downto 0);
-
-    signal op1_msb, op2_msb : std_logic;
-  begin
-    with instruction(14 downto 12) select
-      op1_msb <=
-      '0'               when "110",
-      '0'               when "111",
-      '0'               when "011",
-      data1(data1'left) when others;
-    with instruction(14 downto 12) select
-      op2_msb <=
-      '0'               when "110",
-      '0'               when "111",
-      '0'               when "011",
-      data2(data1'left) when others;
-
-    op1 <= signed(op1_msb & data1);
-    op2 <= signed(op2_msb & data2);
-
-    add       <= op2 + op1;
-    sub       <= add when is_add else op1 - op2;
-    sub_valid <= source_valid;
-  end generate;
+  add       <= op2 + op1;
+  sub       <= add when is_add else op1 - op2;
+  sub_valid <= source_valid;
 
 
 
@@ -421,7 +352,7 @@ begin
       data_out_valid <= '0';
       case OPCODE is
         when ALU_OP | LVE32_OP |LVE64_OP =>
-          if (func7 = mul_f7 or (instruction(25) = '1' and lve_instr = '1'))and MULTIPLY_ENABLE then
+          if (func7 = mul_f7 or (instruction(25) = '1' and lve_instr = '1' and vcp_alu_used= '1'))and MULTIPLY_ENABLE then
             data_out       <= std_logic_vector(mul_result);
             data_out_valid <= mul_result_valid;
           else
@@ -452,8 +383,9 @@ begin
     signal mul_ab_shift_amt : unsigned(log2(REGISTER_SIZE)-1 downto 0);
     signal mul_ab_valid     : std_logic;
   begin
-    mul_select <= '1' when ((func7 = mul_f7 and opcode = ALU_OP) or
-                            (instruction(25) = '1' and lve_instr = '1')) and instruction(14) = '0' else
+    mul_select <= '1' when (((func7 = mul_f7 and opcode = ALU_OP) or
+                             (instruction(30) = '0' and instruction(25) = '1' and lve_instr = '1'))
+                            and instruction(14) = '0') else
                   '0';
     mul_enable <= source_valid and mul_select;
     mul_ready  <= mul_dest_valid or (not mul_select);

@@ -114,7 +114,7 @@ entity execute is
     vcp_writeback_en     : in  std_logic;
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
+    vcp_alu_used         : in  std_logic;
     vcp_alu_source_valid : in  std_logic;
     vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_result_valid : out std_logic
@@ -172,13 +172,12 @@ architecture behavioural of execute is
   signal syscall_to_pc_correction_valid : std_logic;
   signal syscall_to_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
 
-  signal simd_op_size : std_logic_vector(1 downto 0);
 
   signal from_writeback_ready : std_logic;
   signal to_rf_mux            : std_logic_vector(1 downto 0);
 
   signal vcp_was_executing : std_logic;
-  constant instruction32 : std_logic_vector(31 downto 0) := (others => '0');
+  constant instruction32   : std_logic_vector(31 downto 0) := (others => '0');
 begin
   valid_instr <= to_execute_valid and from_writeback_ready;
 
@@ -192,10 +191,10 @@ begin
   -- propogate if the next instruction uses them.
   --
   -----------------------------------------------------------------------------
-  rs1_data <= vcp_alu_data1 when VCP_ENABLE /=0 and vcp_alu_source_valid = '1' else
+  rs1_data <= vcp_alu_data1 when VCP_ENABLE /= 0 and vcp_alu_source_valid = '1' else
               alu_data_out when rs1_mux = ALU_FWD else
               to_execute_rs1_data;
-  rs2_data <= vcp_alu_data2 when VCP_ENABLE /=0 and vcp_alu_source_valid = '1' else
+  rs2_data <= vcp_alu_data2 when VCP_ENABLE /= 0 and vcp_alu_source_valid = '1' else
               alu_data_out when rs2_mux = ALU_FWD else
               to_execute_rs2_data;
   rs3_data <= alu_data_out when rs3_mux = ALU_FWD else
@@ -256,7 +255,7 @@ begin
     port map (
       clk                => clk,
       valid_instr        => valid_instr,
-      simd_op_size       => simd_op_size,
+      vcp_alu_used       => vcp_alu_used,
       from_execute_ready => from_execute_ready,
       rs1_data           => rs1_data,
       rs2_data           => rs2_data,
@@ -395,8 +394,8 @@ begin
 
       pause_ifetch => pause_ifetch,
 
-      vcp_writeback_data   => vcp_writeback_data,
-      vcp_writeback_en     => vcp_writeback_en
+      vcp_writeback_data => vcp_writeback_data,
+      vcp_writeback_en   => vcp_writeback_en
       );
 
   vcp_port : vcp_handler
@@ -408,9 +407,9 @@ begin
       clk   => clk,
       reset => reset,
 
-      instruction   => to_execute_instruction,
-      valid_instr   => valid_instr,
-      vcp_ready => vcp_ready,
+      instruction => to_execute_instruction,
+      valid_instr => valid_instr,
+      vcp_ready   => vcp_ready,
 
       rs1_data => rs1_data,
       rs2_data => rs2_data,
@@ -534,9 +533,9 @@ begin
 
 
       if valid_instr = '1' then
-        write(my_line, string'("executing pc = "));  -- formatting
+        write(my_line, string'("executing pc = "));   -- formatting
         hwrite(my_line, (std_logic_vector(to_execute_program_counter)));  -- format type std_logic_vector as hex
-        write(my_line, string'(" instr =  "));      -- formatting
+        write(my_line, string'(" instr =  "));        -- formatting
         if to_execute_instruction(MAJOR_OP'range) = LVE64_OP then
           hwrite(my_line, (to_execute_instruction));  -- format type std_logic_vector as hex
         else
@@ -544,11 +543,11 @@ begin
         end if;
 
         if from_execute_ready = '0' then
-          write(my_line, string'(" stalling"));     -- formatting
+          write(my_line, string'(" stalling"));  -- formatting
         else
           last_valid_pc := to_execute_program_counter;
         end if;
-        writeline(output, my_line);     -- write to "output"
+        writeline(output, my_line);              -- write to "output"
       else
       --write(my_line, string'("bubble"));  -- formatting
       --writeline(output, my_line);     -- write to "output"

@@ -159,7 +159,7 @@ add_interface_port vcp vcp_writeback_data   writeback_data    Output 32
 add_interface_port vcp vcp_writeback_en     writeback_en      Output 1
 add_interface_port vcp vcp_alu_data1        alu_data1         Output $width
 add_interface_port vcp vcp_alu_data2        alu_data2         Output $width
-add_interface_port vcp vcp_alu_op_size      alu_op_size       Output 2
+add_interface_port vcp vcp_alu_used         alu_used          Output 1
 add_interface_port vcp vcp_alu_source_valid alu_source_valid  Output 1
 add_interface_port vcp vcp_alu_result       alu_result        Input  $width
 add_interface_port vcp vcp_alu_result_valid alu_result_valid  Input  1

@@ -352,7 +352,7 @@ package rv_components is
       vcp_writeback_en     : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-      vcp_alu_op_size      : in  std_logic_vector(1 downto 0)               := (others => '0');
+      vcp_alu_used         : in  std_logic                                  := '0';
       vcp_alu_source_valid : in  std_logic                                  := '0';
       vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_result_valid : out std_logic
@@ -784,7 +784,7 @@ package rv_components is
       vcp_writeback_en     : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
+      vcp_alu_used         : in  std_logic ;
       vcp_alu_source_valid : in  std_logic;
       vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_result_valid : out std_logic
@@ -936,7 +936,7 @@ package rv_components is
       vcp_writeback_en     : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      vcp_alu_op_size      : in  std_logic_vector(1 downto 0);
+      vcp_alu_used         : in  std_logic;
       vcp_alu_source_valid : in  std_logic;
       vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_result_valid : out std_logic
@@ -996,7 +996,7 @@ package rv_components is
     port (
       clk                : in  std_logic;
       valid_instr        : in  std_logic;
-      simd_op_size       : in  std_logic_vector(1 downto 0);
+      vcp_alu_used       : in  std_logic;
       from_execute_ready : in  std_logic;
       rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);

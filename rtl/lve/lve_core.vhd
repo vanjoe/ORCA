@@ -38,7 +38,6 @@ entity lve_core is
     lve_writeback_en     : out    std_logic;
     lve_alu_data1        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
     lve_alu_data2        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
-    lve_alu_op_size      : out    std_logic_vector(1 downto 0);
     lve_alu_source_valid : out    std_logic;
     lve_alu_result       : in     std_logic_vector(LVE_WIDTH-1 downto 0);
     lve_alu_result_valid : in     std_logic
@@ -439,7 +438,6 @@ begin
 
   lve_alu_data1        <= srca_data_read;
   lve_alu_data2        <= srcb_data_read;
-  lve_alu_op_size      <= "10";
   lve_alu_source_valid <= lve_source_valid and op5_alu;
   writeback_data       <= std_logic_vector(accumulator) when acc_enable = '1' else
                     std_logic_vector(result_muxed);

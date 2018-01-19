@@ -352,7 +352,7 @@ entity orca is
     vcp_writeback_en     : in  std_logic;
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-    vcp_alu_op_size      : in  std_logic_vector(1 downto 0)               := (others => '0');
+    vcp_alu_used         : in  std_logic                                  := '0';
     vcp_alu_source_valid : in  std_logic                                  := '0';
     vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_result_valid : out std_logic
@@ -471,7 +471,7 @@ begin
       vcp_writeback_en     => vcp_writeback_en,
       vcp_alu_data1        => vcp_alu_data1,
       vcp_alu_data2        => vcp_alu_data2,
-      vcp_alu_op_size      => vcp_alu_op_size,
+      vcp_alu_used         => vcp_alu_used,
       vcp_alu_source_valid => vcp_alu_source_valid,
       vcp_alu_result       => vcp_alu_result,
       vcp_alu_result_valid => vcp_alu_result_valid,
