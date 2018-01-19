@@ -23,7 +23,7 @@ extern vbx_lve_t the_lve;
 		}}while(0)
 
 static inline void vbx_set_vl(unsigned vl,unsigned nrows){
-	asm volatile("vbx_set_vl %0, %1, zero"::"r"(vl),"r"(nrows));
+	asm volatile("vbx_set_vl %0, %1, %2"::"r"(vl),"r"(nrows),"r"(1));
 }
 static inline void vbx_set_2D(int incrd,int incra,int incrb){
 	asm volatile("vbx_set_2d %0, %1, %2"::"r"(incrd),"r"(incra),"r"(incrb));
@@ -41,19 +41,22 @@ static inline void vbx_set_2D(int incrd,int incra,int incrb){
 typedef enum{
 	VBX_STATE_VECTOR_LENGTH=0,
 	VBX_STATE_NROWS=1,
-	VBX_STATE_NMATS=2,
+	VBX_STATE_INCRD_2D=2,
 	VBX_STATE_INCRA_2D=3,
 	VBX_STATE_INCRB_2D=4,
-	VBX_STATE_INCRD_2D=5,
-	VBX_STATE_INCRA_3D=6,
-	VBX_STATE_INCRB_3D=7,
-	VBX_STATE_INCRD_3D=8
-
+	VBX_STATE_NMATS=5,
+	VBX_STATE_INCRD_3D=6,
+	VBX_STATE_INCRA_3D=7,
+	VBX_STATE_INCRB_3D=8
 }state_e;
 static inline vbx_uword_t vbx_get_state(state_e reg){
 	vbx_uword_t ret;
 	asm volatile("vbx_get %0, %1":"=r"(ret):"r"(reg));
 	return ret;
+}
+
+static inline void vbx_sync(){
+	asm volatile("vbx_get x0, x0");
 }
 
 static inline void vbx_get_vl(unsigned* vl,unsigned *nrows){

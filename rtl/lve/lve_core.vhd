@@ -133,9 +133,9 @@ architecture rtl of lve_core is
 
   constant GET_STATE_VLEN  : integer := 0;
   constant GET_STATE_NROWS : integer := 1;
-  constant GET_STATE_DINCR : integer := 3;
-  constant GET_STATE_AINCR : integer := 4;
-  constant GET_STATE_BINCR : integer := 5;
+  constant GET_STATE_DINCR : integer := 2;
+  constant GET_STATE_AINCR : integer := 3;
+  constant GET_STATE_BINCR : integer := 4;
 
 begin
   valid_lve_instr     <= valid_instr;
