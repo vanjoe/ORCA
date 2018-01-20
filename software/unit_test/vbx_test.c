@@ -11,6 +11,7 @@ TEST_ATTR int test_2()
 	vbx_set_vl(vlen);
 	vbx_set_2D(0,0,0);
 	vbx(SEW,VADD,(vbx_word_t*)SCRATCHPAD_BASE,1,vbx_ENUM);
+	vbx_sync();
 	for( int i=0;i<vlen;i++){
 		if (((vbx_word_t*)SCRATCHPAD_BASE)[i] != (i+1)){
 			return 1; //TEST FAIL
@@ -37,6 +38,7 @@ TEST_ATTR int test_3()
 	}
 
 	vbx(VVW,VADD,c,b,a);
+	vbx_sync();
 	for( int i=0;i<vlen;i++){
 		if (c[i] != (9 + 2*i) ){
 			return 1; //TEST FAIL
@@ -61,6 +63,7 @@ TEST_ATTR int test_4()
    vadd.sewwwsss %0, a0,zero \n	  \
 ": : "r"(dest) : "a0","memory");
 
+	vbx_sync();
 	for( int i=0;i<vlen;i++){
 		if ( dest[i] != (i+1) ){
 			return 1; //TEST FAIL
@@ -85,6 +88,7 @@ TEST_ATTR int test_5()
 	}
 
 	vbx_acc(VVW,VADD,c,b,a);
+	vbx_sync();
 	if (c[0] != 180){
 		return 1; //TEST FAIL
 	}
@@ -117,9 +121,10 @@ TEST_ATTR int test_7()
 	vbx_word_t b[] ={1,2,3};
 	for(int vlen=3;vlen>=0;vlen--){
 		vbx_set_vl(vlen);
-		vbx(SEW,VAND,a,0,vbx_ENUM);
-		vbx(SVW,VADD,a,vlen,a);
+		//		vbx(SEW,VAND,a,0,vbx_ENUM);
+		vbx(SEW,VMOV,a,vlen,vbx_ENUM);
 	}
+	vbx_sync();
 	for(int i=0;i<3;i++){
 		if(b[i] != a[i]){
 			return 1;
@@ -136,8 +141,9 @@ TEST_ATTR int test_8()
 {
 	//2d instruction test
 	int test_length=10;
-	vbx_half_t* v_input=SCRATCHPAD_BASE;
-	vbx_word_t* v_output=(vbx_word_t*)(v_input+test_length);
+	vbx_word_t* v_output=SCRATCHPAD_BASE;
+	vbx_half_t* v_input=(vbx_half_t*)(v_output+test_length);
+
 	int i,errors=0;
 	for(i=0;i<test_length;i++){
 		v_input[i]=i;
@@ -146,8 +152,9 @@ TEST_ATTR int test_8()
 	vbx_set_vl(1,test_length/2);
 	vbx_set_2D(8,0,4);
 	vbx(SVW,VAND, v_output,0xFFFF,   (vbx_word_t*)v_input);
+	vbx_sync();
 	vbx(SVW,VMULH,v_output+1,(1<<16),(vbx_word_t*)v_input);
-
+	vbx_sync();
 	for(i=0;i<test_length;i++){
 		if(v_output[i]!=i){
 			return 1;
@@ -171,8 +178,8 @@ TEST_ATTR int test_9()
 		b[i] = 6+i;
 		acc_check+=b[i]*a[i];
 	}
-
 	vbx_acc(VVW,VMUL,c,b,a);
+	vbx_sync();
 	if (c[0] != acc_check){
 		return 1; //TEST FAIL
 	}
@@ -193,6 +200,7 @@ TEST_ATTR int test_10()
 	}
 	vbx_set_vl(vlen);
 	vbx(VVW,VMOV,d,a,0);
+	vbx_sync();
 	for( int i=0;i<vlen;i++){
 		if (d[i] != a[i]){
 			return 1; //TEST FAIL
@@ -204,9 +212,9 @@ TEST_ATTR int test_10()
 }
 TEST_ATTR int test_11()
 {
-	int vlen=10,nrows=9,incra=8,incrb=7,incrd=6;
+	int vlen=10,nrows=9,incrd=8,incra=7,incrb=6;
 	vbx_set_vl(vlen,nrows);
-	vbx_set_2D(incra,incrb,incrd);
+	vbx_set_2D(incrd,incra,incrb);
 
 	if(vlen!=vbx_get_state(VBX_STATE_VECTOR_LENGTH))return 1;
 	if(nrows!=vbx_get_state(VBX_STATE_NROWS))return 2;
@@ -221,11 +229,10 @@ TEST_ATTR int test_11()
 //this macro runs the test, and returns the test number on failure
 #define do_test(TEST_NUMBER) do{	  \
 		if(test_##TEST_NUMBER()){ \
-			asm volatile ("slli x28, %0,  1\n" \
-			              "ori  x28, x28, 1\n" \
+			asm volatile ("li x28, %0\n" \
 			              "fence.i\n" \
 			              "ecall\n" \
-			              : : "r"(TEST_NUMBER)); \
+			              : : "i"(TEST_NUMBER)); \
 			return TEST_NUMBER; \
 		} \
 	} while(0)

@@ -38,7 +38,6 @@ entity lve_core is
     lve_writeback_en     : out    std_logic;
     lve_alu_data1        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
     lve_alu_data2        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
-    lve_alu_op_size      : out    std_logic_vector(1 downto 0);
     lve_alu_source_valid : out    std_logic;
     lve_alu_result       : in     std_logic_vector(LVE_WIDTH-1 downto 0);
     lve_alu_result_valid : in     std_logic
@@ -134,9 +133,9 @@ architecture rtl of lve_core is
 
   constant GET_STATE_VLEN  : integer := 0;
   constant GET_STATE_NROWS : integer := 1;
-  constant GET_STATE_DINCR : integer := 3;
-  constant GET_STATE_AINCR : integer := 4;
-  constant GET_STATE_BINCR : integer := 5;
+  constant GET_STATE_DINCR : integer := 2;
+  constant GET_STATE_AINCR : integer := 3;
+  constant GET_STATE_BINCR : integer := 4;
 
 begin
   valid_lve_instr     <= valid_instr;
@@ -439,7 +438,6 @@ begin
 
   lve_alu_data1        <= srca_data_read;
   lve_alu_data2        <= srcb_data_read;
-  lve_alu_op_size      <= "10";
   lve_alu_source_valid <= lve_source_valid and op5_alu;
   writeback_data       <= std_logic_vector(accumulator) when acc_enable = '1' else
                     std_logic_vector(result_muxed);

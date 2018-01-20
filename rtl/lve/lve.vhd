@@ -90,7 +90,7 @@ entity lve_top is
     vcp_ready            : out std_logic;
     vcp_alu_data1        : out std_logic_vector(LVE_WIDTH-1 downto 0);
     vcp_alu_data2        : out std_logic_vector(LVE_WIDTH-1 downto 0);
-    vcp_alu_op_size      : out std_logic_vector(1 downto 0);
+    vcp_alu_used         : out std_logic;
     vcp_alu_source_valid : out std_logic;
     vcp_alu_result       : in  std_logic_vector(LVE_WIDTH-1 downto 0);
     vcp_alu_result_valid : in  std_logic
@@ -204,14 +204,14 @@ begin  -- architecture rtl
       valid_instr          => vcp_valid_instr,
       lve_ready            => vcp_ready,
       lve_writeback_data   => vcp_writeback_data,
-      lve_writeback_en      => vcp_writeback_en,
+      lve_writeback_en     => vcp_writeback_en,
       lve_alu_data1        => vcp_alu_data1,
       lve_alu_data2        => vcp_alu_data2,
-      lve_alu_op_size      => vcp_alu_op_size,
       lve_alu_source_valid => vcp_alu_source_valid,
       lve_alu_result       => vcp_alu_result,
       lve_alu_result_valid => vcp_alu_result_valid);
 
+  vcp_alu_used <= '1';
 
 
 end architecture rtl;
