@@ -116,7 +116,9 @@ package constants_pkg is
   constant CSR_MCACHE_AMRS    : std_logic_vector(19 downto 16) := (others => '0');
   constant CSR_MCACHE_UMRS    : std_logic_vector(23 downto 20) := (others => '0');
 
---constant CSR_MCAUSE_MEXT    : integer := 16#8000000B#;
+  constant CSR_MCAUSE_CODE : std_logic_vector(3 downto 0) := (others => '0');
+
+  constant CSR_MCAUSE_MEXT    : integer := 11;
   constant CSR_MCAUSE_ILLEGAL : integer := 2;
   constant CSR_MCAUSE_EBREAK  : integer := 3;
   constant CSR_MCAUSE_MECALL  : integer := 11;

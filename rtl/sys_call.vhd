@@ -85,18 +85,19 @@ architecture rtl of system_calls is
 
   -- CSR signals. These are initialized to zero so that if any bits are never
   -- assigned, they act like constants.
-  signal mstatus    : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mepc       : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mcause     : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mbadaddr   : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mtime      : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mtimeh     : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal meimask    : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal meipend    : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mcache     : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal misa       : std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
+  signal mstatus      : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mepc         : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mcause       : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mbadaddr     : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mtime        : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mtimeh       : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal meimask      : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal meimask_full : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal meipend      : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal mcache       : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+  signal misa         : std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
   --Assign csr_select instead of alias to get csr_select'right = 0 for indexing
-  signal csr_select : std_logic_vector(CSR_ADDRESS'length-1 downto 0);
+  signal csr_select   : std_logic_vector(CSR_ADDRESS'length-1 downto 0);
   alias func3 is instruction(INSTR_FUNC3'range);
   alias imm is instruction(CSR_ZIMM'range);
 
@@ -159,7 +160,7 @@ begin
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
   misa(misa'left downto misa'left-1) <= "01";
   misa(23)                           <= '0' when VCP_ENABLE = 0 else '1';
-csr_select <= instruction(CSR_ADDRESS'range);
+  csr_select                         <= instruction(CSR_ADDRESS'range);
   with csr_select select
     csr_readdata <=
     misa            when CSR_MISA,
@@ -225,11 +226,12 @@ csr_select <= instruction(CSR_ADDRESS'range);
             -----------------------------------------------------------------------------
             -- Handle Illegal Instructions
             -----------------------------------------------------------------------------
-            mstatus(CSR_MSTATUS_MIE)  <= '0';
-            mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
-            mcause                    <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, mcause'length));
-            mepc                      <= std_logic_vector(current_pc);
-            was_illegal               <= '1';
+            mstatus(CSR_MSTATUS_MIE)      <= '0';
+            mstatus(CSR_MSTATUS_MPIE)     <= mstatus(CSR_MSTATUS_MIE);
+            mcause(mcause'left)           <= '0';
+            mcause(CSR_MCAUSE_CODE'range) <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, CSR_MCAUSE_CODE'length));
+            mepc                          <= std_logic_vector(current_pc);
+            was_illegal                   <= '1';
           elsif instruction(MAJOR_OP'range) = SYSTEM_OP then
             if func3 /= "000" then
               -----------------------------------------------------------------------------
@@ -243,25 +245,55 @@ csr_select <= instruction(CSR_ADDRESS'range);
                 when CSR_MEPC =>
                   mepc <= csr_writedata;
                 when CSR_MCAUSE =>
-                  mcause <= csr_writedata;
+                  --MCAUSE is WLRL so only legal values need to be supported
+                  mcause(mcause'left)           <= csr_writedata(mcause'left);
+                  mcause(CSR_MCAUSE_CODE'range) <= csr_writedata(CSR_MCAUSE_CODE'range);
                 when CSR_MBADADDR =>
                   mbadaddr <= csr_writedata;
                 when CSR_MEIMASK =>
-                  meimask <= csr_writedata;
+                  meimask_full <= csr_writedata;
                 --Note that meipend is read-only
                 when others => null;
               end case;
             elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
               -----------------------------------------------------------------------------
-              -- Other System Instructions (mret)
+              -- Other System Instructions
               -----------------------------------------------------------------------------
               if instruction(31 downto 30) = "00" and instruction(27 downto 20) = "00000010" then
+                -- MRET
                 -- We only have one privilege level (M), so treat all [USHM]RET instructions
                 -- as the same.
                 mstatus(CSR_MSTATUS_MIE)  <= mstatus(CSR_MSTATUS_MPIE);
                 mstatus(CSR_MSTATUS_MPIE) <= '0';
                 was_mret                  <= '1';
+              else
+                -- Illegal or ECALL/EBREAK
+                mstatus(CSR_MSTATUS_MIE)  <= '0';
+                mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
+                mcause(mcause'left)       <= '0';
+                case csr_select is
+                  when SYSTEM_ECALL =>
+                    mcause(CSR_MCAUSE_CODE'range) <=
+                      std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, CSR_MCAUSE_CODE'length));
+                  when SYSTEM_EBREAK =>
+                    mcause(CSR_MCAUSE_CODE'range) <=
+                      std_logic_vector(to_unsigned(CSR_MCAUSE_EBREAK, CSR_MCAUSE_CODE'length));
+                  when others =>
+                    mcause(CSR_MCAUSE_CODE'range) <=
+                      std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, CSR_MCAUSE_CODE'length));
+                end case;
+                mepc        <= std_logic_vector(current_pc);
+                was_illegal <= '1';
               end if;
+            else
+              -- Illegal
+              mstatus(CSR_MSTATUS_MIE)  <= '0';
+              mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
+              mcause(mcause'left)       <= '0';
+              mcause(CSR_MCAUSE_CODE'range) <=
+                std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, CSR_MCAUSE_CODE'length));
+              mepc        <= std_logic_vector(current_pc);
+              was_illegal <= '1';
             end if;
           end if;
         end if;
@@ -276,11 +308,12 @@ csr_select <= instruction(CSR_ADDRESS'range);
           -- Latch in mepc the cycle before interrupt_pc_correction_valid goes high.
           -- When interrupt_pc_correction_valid goes high, the next_pc of the instruction fetch will
           -- be corrected to the interrupt reset vector.
-          mepc                      <= std_logic_vector(program_counter);
-          mstatus(CSR_MSTATUS_MIE)  <= '0';
-          mstatus(CSR_MSTATUS_MPIE) <= '1';
-          mcause(mcause'left)       <= '1';
-          mcause(3 downto 0)        <= std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, 4));
+          mepc                          <= std_logic_vector(program_counter);
+          mstatus(CSR_MSTATUS_MIE)      <= '0';
+          mstatus(CSR_MSTATUS_MPIE)     <= '1';
+          mcause(mcause'left)           <= '1';
+          mcause(CSR_MCAUSE_CODE'range) <= std_logic_vector(to_unsigned(CSR_MCAUSE_MEXT, CSR_MCAUSE_CODE'length));
+          mcause(mcause'left)           <= '1';
         end if;
 
         if reset = '1' then
@@ -291,14 +324,16 @@ csr_select <= instruction(CSR_ADDRESS'range);
           mstatus(CSR_MSTATUS_MIE)      <= '0';
           mstatus(CSR_MSTATUS_MPIE)     <= '0';
           mepc                          <= (others => '0');
-          mcause                        <= (others => '0');
-          meimask                       <= (others => '0');
+          mcause(mcause'left)           <= '0';
+          mcause(CSR_MCAUSE_CODE'range) <= (others => '0');
+          meimask_full                  <= (others => '0');
         end if;
       end if;
     end process;
     mstatus(REGISTER_SIZE-1 downto CSR_MSTATUS_MPIE+1)   <= (others => '0');
     mstatus(CSR_MSTATUS_MPIE-1 downto CSR_MSTATUS_MIE+1) <= (others => '0');
     mstatus(CSR_MSTATUS_MIE-1 downto 0)                  <= (others => '0');
+    mcause(mcause'left-1 downto CSR_MCAUSE_CODE'left+1)  <= (others => '0');
   end generate exceptions_gen;
   no_exceptions_gen : if not ENABLE_EXCEPTIONS generate
     was_mret                      <= '0';
@@ -307,7 +342,6 @@ csr_select <= instruction(CSR_ADDRESS'range);
     mstatus                       <= (others => '0');
     mepc                          <= (others => '0');
     mcause                        <= (others => '0');
-    meimask                       <= (others => '0');
   end generate no_exceptions_gen;
 
   memory_region_registers_gen : for gregister in 3 downto 0 generate
@@ -480,11 +514,6 @@ csr_select <= instruction(CSR_ADDRESS'range);
               amr_last_write <= amr_last_select;
               umr_base_write <= umr_base_select;
               umr_last_write <= umr_last_select;
-            elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
-              -----------------------------------------------------------------------------
-              -- Other System Instructions
-              -----------------------------------------------------------------------------
-              null;
             end if;
           elsif instruction(MAJOR_OP'range) = FENCE_OP then
             to_icache_control_command <= INVALIDATE;
@@ -539,12 +568,15 @@ csr_select <= instruction(CSR_ADDRESS'range);
         meipend(NUM_EXT_INTERRUPTS-1 downto 0) <= global_interrupts;
       end if;
     end process;
+    meimask(NUM_EXT_INTERRUPTS-1 downto 0) <= meimask_full(NUM_EXT_INTERRUPTS-1 downto 0);
     not_all_interrupts_gen : if NUM_EXT_INTERRUPTS < REGISTER_SIZE generate
       meipend(REGISTER_SIZE-1 downto NUM_EXT_INTERRUPTS) <= (others => '0');
+      meimask(REGISTER_SIZE-1 downto NUM_EXT_INTERRUPTS) <= (others => '0');
     end generate not_all_interrupts_gen;
   end generate interrupts_gen;
   no_interrupts_gen : if ENABLE_EXT_INTERRUPTS = 0 generate
     meipend <= (others => '0');
+    meimask <= (others => '0');
   end generate no_interrupts_gen;
   interrupt_pending <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 else '0';
 
@@ -604,8 +636,8 @@ begin
               opcode7 = ALUI_OP or      -- Does not catch illegal
                                         -- shift amounts
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
+              (opcode7 = SYSTEM_OP) or  --Illegal sysops checked in exception handling
               (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
-              (opcode7 = SYSTEM_OP and csr_num /= SYSTEM_ECALL and csr_num /= SYSTEM_EBREAK) or
               (opcode7 = LVE32_OP and VCP_ENABLE /= 0)or
               (opcode7 = LVE64_OP and VCP_ENABLE = 2)) else '0';
 end architecture;
