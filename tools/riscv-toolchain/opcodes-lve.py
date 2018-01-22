@@ -57,6 +57,8 @@ arith_instr=[instruction("vadd"     ,0,0,0,0),
              instruction('vsetup_msk_gez' ,1,0,1,3),
              instruction('vsetup_msk_nz'  ,1,0,1,4),
              instruction('vsetup_msk_z'   ,1,0,1,5),
+             instruction('vaddfxp'        ,1,0,1,6),
+             instruction('vsubfxp'        ,1,0,1,7),
 
              instruction('vcustom8'  ,1,1,0,0),
              instruction('vcustom9'  ,1,1,0,1),
