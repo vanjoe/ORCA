@@ -1,7 +1,6 @@
-#include "uart.h"
+#include "orca_printf.h"
 #include "orca_csrs.h"
 #include "orca_memory.h"
-#define ORCA_CLK 100000000
 #include "orca_time.h"
 #include "cache_test.h"
 
@@ -22,7 +21,7 @@
 #define RUN_CACHE_MISSES         1
 #define RUN_CACHE_AND_BTB_MISSES 1
 
-#define LOOP_RUNS 256
+#define LOOP_RUNS 1000
 
 #define CACHE_SIZE      8192
 #define CACHE_LINE_SIZE 32
@@ -51,13 +50,7 @@ uint32_t timing_test(uint32_t *first_loop_ptr,
       }
       for(word = 0; word < timing_loop_size; word++){
         if(first_loop_ptr[word] != function_copy_ptr[word]){
-          ChangedPrint("Error copying function at word ");
-          print_hex(word);
-          ChangedPrint(" expected ");
-          print_hex(function_copy_ptr[word]);
-          ChangedPrint(" got ");
-          print_hex(first_loop_ptr[word]);
-          ChangedPrint("\r\n");
+          printf("Error copying function at word 0x%08X expected 0x%08X got 0x%08X", word, (unsigned)(function_copy_ptr[word]), (unsigned)(first_loop_ptr[word]));
         }
       }
       //Overwrite the jump back to the beginning of the loop to a jump
@@ -85,16 +78,15 @@ uint32_t timing_test(uint32_t *first_loop_ptr,
       return end_cycle-start_cycle;
 }
 
-int main(void) {
+int main(void){
   if(WAIT_SECONDS_BEFORE_START){
     for(int i = 0; i < WAIT_SECONDS_BEFORE_START; i++){
-      print_hex(i);
-      ChangedPrint(" ...");
+      printf("%d... ", i);
       delayms(1000);
     }
   }
 
-  ChangedPrint("\r\n\r\n\r\n");
+  printf("\r\n\r\n\r\n");
 
   uint8_t test_space[3*CACHE_SIZE];  //After alignment will have > 2*CACHE_SIZE to work in
   uint8_t *test_space_aligned = (uint8_t *)((((uintptr_t)test_space) + (CACHE_SIZE-1)) & (~(CACHE_SIZE-1)));
@@ -109,7 +101,7 @@ int main(void) {
     switch(type){
     case 0:
       if(TEST_C){
-        ChangedPrint("\r\n----------------------------------------\r\n-- CACHED\r\n----------------------------------------\r\n");
+        printf("\r\n----------------------------------------\r\n-- CACHED\r\n----------------------------------------\r\n");
         //Disable the AUX interface
         disable_xmr(false, 0);
         //Change the UC interface to be only the peripherals
@@ -120,7 +112,7 @@ int main(void) {
       break;
     case 1:
       if(TEST_AUX){
-        ChangedPrint("\r\n----------------------------------------\r\n-- AUX\r\n----------------------------------------\r\n");
+        printf("\r\n----------------------------------------\r\n-- AUX\r\n----------------------------------------\r\n");
         //Set the AUX memory interface to the non-UC addresses
         set_xmr(false, 0, 0x00000000, UC_MIN_MEMORY_BASE-1, &previous_amr0_addr_base, &previous_amr0_addr_last);
         //Change the UC interface to be only the peripherals
@@ -131,7 +123,7 @@ int main(void) {
       break;
     case 2:
       if(TEST_UC){
-        ChangedPrint("\r\n----------------------------------------\r\n-- UNCACHED\r\n----------------------------------------\r\n");
+        printf("\r\n----------------------------------------\r\n-- UNCACHED\r\n----------------------------------------\r\n");
         //Change the UC interface to be everything (besides the AMRs which take priority)
         set_xmr(true, 0, 0x00000000, 0xFFFFFFFF, &previous_umr0_addr_base, &previous_umr0_addr_last);
         //Disable the AUX interface
@@ -141,96 +133,81 @@ int main(void) {
       }
       break;
     default:
-      ChangedPrint("\r\nError in type\r\n");
+      printf("\r\nError in type\r\n");
       continue;
       break;
     }
   
 #if RUN_ASM_TEST
     {
-      ChangedPrint("ASM test: ");
+      printf("ASM test: ");
 
       int result = cache_test((void *)test_space_aligned, 2*CACHE_SIZE, CACHE_SIZE, CACHE_LINE_SIZE);
       if(result){
-        ChangedPrint("ASM test failed with error code ");
-        print_hex(result);
-        ChangedPrint("\r\n");
+        printf("ASM test failed with error code 0x%08X\r\n", result);
       } else {
-        ChangedPrint("ASM test passed\r\n");
+        printf("ASM test passed\r\n");
       }
     }
 #endif //#if RUN_ASM_TEST
   
 #if RUN_3_INSTRUCTION_LOOP
     {
-      ChangedPrint("3 instruction loop:\r\n");
+      printf("3 instruction loop:\r\n");
       timing_loop the_timing_loop = &idram_timing_loop;
   
       uint32_t start_cycle = get_time();
       (*the_timing_loop)(LOOP_RUNS);
       uint32_t end_cycle = get_time();
+
+      uint32_t run_cycles = end_cycle - start_cycle;
   
-      print_hex(end_cycle-start_cycle);
-      ChangedPrint(" cycles for ");
-      print_hex(LOOP_RUNS);
-      ChangedPrint(" runs of 3 instruction loop.\r\n");
+      printf("%9d cycles for %d runs of 3 instruction loop.\r\n", (int)run_cycles, LOOP_RUNS);
     }
 #endif //#if RUN_3_INSTRUCTION_LOOP
 
 #if RUN_6_INSTRUCTION_LOOP
     {
-      ChangedPrint("3 instruction loop (jumping between two copies):\r\n");
+      printf("3 instruction loop (jumping between two copies):\r\n");
 
       uint32_t timing_loop_size = (uint32_t)(((uintptr_t)(&idram_timing_loop_end))-((uintptr_t)(&idram_timing_loop)));
 
       uint32_t run_cycles = timing_test((uint32_t *)test_space_aligned, timing_loop_size);
       
-      print_hex(run_cycles);
-      ChangedPrint(" cycles for ");
-      print_hex(LOOP_RUNS);
-      ChangedPrint(" runs of 3 instruction (2 copy) loop.\r\n");
+      printf("%9d cycles for %d runs of 3 instruction (2 copy) loop.\r\n", (int)run_cycles, LOOP_RUNS);
     }
 #endif //#if RUN_6_INSTRUCTION_LOOP
 
 #if RUN_BTB_MISSES
     {
-      ChangedPrint("BTB misses:\r\n");
+      printf("BTB misses:\r\n");
 
       uint32_t run_cycles = timing_test((uint32_t *)test_space_aligned, (BTB_SIZE*sizeof(uint32_t)));
   
-      print_hex(run_cycles);
-      ChangedPrint(" cycles for ");
-      print_hex(LOOP_RUNS);
-      ChangedPrint(" runs of 3 instruction (2 copy) BTB miss timing loop.\r\n");
+      printf("%9d cycles for %d runs of 3 instruction (2 copy) loop.\r\n", (int)run_cycles, LOOP_RUNS);
     }
 #endif //#if RUN_BTB_MISSES
 
 #if RUN_CACHE_MISSES
     {
-      ChangedPrint("Cache misses:\r\n");
+      printf("Cache misses:\r\n");
 
       //Increment by CACHE_SIZE + one word; this gives the same cache
       //line for both timing loops but a different BTB entry (assuming
       //more than one BTB entry)
       uint32_t run_cycles = timing_test((uint32_t *)test_space_aligned, (CACHE_SIZE+sizeof(uint32_t)));
   
-      print_hex(run_cycles);
-      ChangedPrint(" cycles for ");
-      print_hex(LOOP_RUNS);
-      ChangedPrint(" runs of 3 instruction (2 copy) cache miss timing loop.\r\n");
+      printf("%9d cycles for %d runs of 3 instruction (2 copy) loop.\r\n", (int)run_cycles, LOOP_RUNS);
     }
 #endif //#if RUN_CACHE_MISSES
 
 #if RUN_CACHE_AND_BTB_MISSES
     {
-      ChangedPrint("Cache and BTB misses:\r\n");
+      printf("Cache and BTB misses:\r\n");
 
       uint32_t run_cycles = timing_test((uint32_t *)test_space_aligned, CACHE_SIZE);
   
-      print_hex(run_cycles);
-      ChangedPrint(" cycles for ");
-      print_hex(LOOP_RUNS);
-      ChangedPrint(" runs of 3 instruction (2 copy) cache and BTB miss timing loop.\r\n");
+      printf("%9d cycles for %d runs of 3 instruction (2 copy) loop.\r\n", (int)run_cycles, LOOP_RUNS);
     }
 #endif //#if RUN_CACHE_AND_BTB_MISSES
 
@@ -244,18 +221,17 @@ int handle_interrupt(int cause, int epc, int regs[32])
 {
 	if (!((cause >> 31) & 0x1)) {
 		// Handle illegal instruction
+    //
     // Nothing implemented yet; just print a debug message and hang.
-		ChangedPrint("Unhandled illegal instruction @");
-    print_hex(epc);
-    ChangedPrint(" cause ");
-    print_hex(cause);
-    ChangedPrint(" instruction ");
-    print_hex(*((uint32_t *)epc));
-    ChangedPrint("r\n\r\n");
+		printf("Unhandled illegal instruction @0x%08X.  Cause: 0x%08X, Instruction: 0x%08X\r\n", epc, cause, (unsigned)(*((uint32_t *)epc)));
 		for (;;);
 	}
 
 	// Handle interrupt
-  // Ignore and return for this test
+  //
+  //Ignore and return; sporadic interrupts are used for some tests
+  // just to make sure interrupts are handled correctly.  Real
+  // unhandled interrupts will just loop back to the interrupt handler
+  // forever.
 	return epc;
 }

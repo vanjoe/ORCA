@@ -330,7 +330,7 @@ class Mcsm_ORCA_BuildCfg(ORCA_BuildCfgBase):
         # Note: ignore the software directory, as that will be different
         # in this test suite than it is in the systems project.
         shutil.copytree('../systems'+'/'+self.system, self.dstdir,
-            ignore=shutil.ignore_patterns('software', 'Makefile'))
+            ignore=shutil.ignore_patterns('software', 'Makefile', '*~', '#*', '.#*'))
 
         # Symlink to the main Makefile and scripts dir for all test builds.
         rel_symlink('Makefile', self.dstdir)
@@ -434,77 +434,6 @@ class Mcsm_ORCA_BuildCfg(ORCA_BuildCfgBase):
 
         self.create_compile_script(make_hw=make_hw)
 
-
-    ###########################################################################
-    # Create a script to compile the hw and sw.
-    def create_compile_script(self,
-                              make_hw=True,
-                              make_sw=True):
-
-        saved_cwd = os.getcwd()
-        os.chdir(self.dstdir)
-
-        try:
-            os.mkdir('log')
-        except OSError:
-            # directory already exists
-            pass
-
-        for swbd in self.sw_build_dirs:
-            try:
-                os.mkdir('software/%s/log' % swbd.name)
-            except OSError:
-                pass
-            for test in swbd.test_list:
-                try:
-                    os.mkdir('software/%s/%s/log' % (swbd.name, test.test_dir))
-                except OSError:
-                    pass
-
-        script_name = 'compile_all.sh'
-
-        f = open(script_name, 'w')
-
-        f.write('#!/bin/bash\n')
-        f.write('hostname > log/hostname_log\n')
-
-        if make_hw:
-            f.write('date +"%s" > log/hw_compile_time\n' % DATE_FMT)
-            f.write('xvfb-run -a make microsemi | tee log/hw_compile_log\n')
-            f.write('xvfb-run -a make microsemi_timing | tee log/hw_compile_log\n')
-            f.write('date +"%s" >> log/hw_compile_time\n' % DATE_FMT)
-        if make_sw:
-            f.write('date +"%s" | tee log/sw_compile_time\n' % DATE_FMT)
-            f.write('export XLEN=32\n')
-            for swbd in self.sw_build_dirs:
-                for test in swbd.test_list:
-                    # The if statement is to cover the case when the software
-                    # test has already been compiled, and should not be copied
-                    # over again. If it were to be copied over again, it would 
-                    # force the script to re-run the test no matter what, as 
-                    # the .elf file would be newer than the log file. This 
-                    # comparison between the file ages is done in 
-                    # Mcsm_ORCA_SWTest.run(), which is called later when the 
-                    # software tests are run.
-                    f.write('make %s -C software/%s &> ' \
-                        'software/%s/log/compile_log\n' \
-                        % (test.name, swbd.name, swbd.name+'/'+test.test_dir))
-                    f.write('if [ ! -f software/%s/%s/%s ]; then\n' \
-                        % (swbd.name, test.test_dir, test.name))
-                    f.write('\tcp software/%s/%s software/%s/%s;\n' \
-                        % (swbd.name, test.name, swbd.name, test.test_dir))
-                    f.write('fi;\n')
-            f.write('date +"%s" >> log/sw_compile_time\n' % DATE_FMT)
-        f.close()
-
-
-        # 0755
-        mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | \
-            stat.S_IRGRP | stat.S_IXGRP | \
-            stat.S_IROTH | stat.S_IXOTH
-        os.chmod(script_name, mode)
-
-        os.chdir(saved_cwd)
 
     ###########################################################################
     # Submit a job to GridEngine to run hardware and software compilation.

@@ -19,16 +19,6 @@ set -o pipefail
 
 TEST_DIR=${RISCV_TEST_DIR}/isa
 FILES=$(ls ${TEST_DIR}/rv32u[ima]-p-* | grep -v dump | grep -v hex)
-#build vectorblox unit tests
-if [ -d $SCRIPTDIR/../software/unit_test ]
-then
-	 make -C $SCRIPTDIR/../software/unit_test
-
-	 SOFTWARE_DIR=${SCRIPTDIR}/../software
-	 #all files that aren't dump or hex (the hex files are not correctly formatted)
-
-	 FILES="$FILES $(find  ${SOFTWARE_DIR}/unit_test -iname "*.elf" )"
-fi
 
 PREFIX=riscv32-unknown-elf
 OBJDUMP=$PREFIX-objdump

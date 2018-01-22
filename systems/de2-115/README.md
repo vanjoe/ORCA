@@ -1,4 +1,4 @@
-These instructions assume that you are using a linux machine, all other
+These instructions assume that you are using Linux and GNU make, all other
 platforms are untested.  This system targets a DE2-115 development board, and
 can be run on the Tpad or Veek development boards which use a DE2-115 as their
 base.
@@ -42,6 +42,8 @@ initializing the project or simulation.
 To run and debug new programs use the `make run` command which will download the
 program over JTAG.  This runs a script which holds the processor in reset,
 downloads the new program, then releases the reset to allow the program to run.
+
+See README.md in the software directory for instructions on building software.
 
 
 ## Simulation

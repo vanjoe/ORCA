@@ -347,13 +347,13 @@ package rv_components is
       vcp_data2            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
-      vcp_ready            : in  std_logic                                  := '1';
-      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
-      vcp_writeback_en     : in  std_logic;
-      vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-      vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-      vcp_alu_used         : in  std_logic                                  := '0';
-      vcp_alu_source_valid : in  std_logic                                  := '0';
+      vcp_ready            : in  std_logic                                   := '1';
+      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+      vcp_writeback_en     : in  std_logic                                   := '1';
+      vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+      vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
+      vcp_alu_used         : in  std_logic                                   := '0';
+      vcp_alu_source_valid : in  std_logic                                   := '0';
       vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_result_valid : out std_logic
       );

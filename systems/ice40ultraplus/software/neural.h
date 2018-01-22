@@ -2,7 +2,7 @@
 #define __NEURAL_H__
 
 #include "vbx.h"
-#include "printf.h"
+#include "orca_printf.h"
 #include "flash_dma.h"
 
 

@@ -268,7 +268,7 @@
 
 /* General definitions: */
 
-#include "printf.h"
+#include "orca_printf.h"
 #include <string.h>
 
                 /* for strcpy, strcmp */

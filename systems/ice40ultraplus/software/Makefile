@@ -2,32 +2,29 @@
 #define C_LINK as env or in config.mk to add additional sources to
 #link against
 -include config.mk
-C_MAIN?=main.c
-OBJDUMP_STYLE?=--disassemble-all
-ARCH?=rv32imxlve
-RISCV_OLEVEL?=-O2
-RISCV_CFLAGS?=
 
-all:
-AS_SRCS=crt.S
+ifndef ORCA_TEST
+C_MAIN ?= main.c
+C_SRCS += $(C_MAIN)
+C_SRCS += $(C_LINK)
+C_SRCS += vbx_api.c orca_printf.c
+AS_SRCS += min-crt.S
+else #ifndef ORCA_TEST
+C_SRCS += orca_printf.c orca_exceptions.c
+AS_SRCS += full-crt.S
+endif #else #ifndef ORCA_TEST
 
-C_SRCS=
-C_SRCS+=$(C_MAIN)
-C_SRCS+=$(C_LINK)
-C_SRCS+= vbx_api.c printf.c time.c uart.c
+C_SRCS += uart.c
+
+## Common ORCA software build script and parameters to pass to it
+USE_LVE       := TRUE
+EXTRA_C_FLAGS += -mno-div
+ORCA_ROOT     ?= ../../..
+C_DEPS        += sys_clk.h
+TARGET        ?= test
+include $(ORCA_ROOT)/software/software.mk
 
 
-C_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(C_SRCS)))
-S_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(AS_SRCS)))
-
-CROSS_COMPILE=riscv32-unknown-elf-
-CC=$(CROSS_COMPILE)gcc
-OBJCOPY=$(CROSS_COMPILE)objcopy
-OBJDUMP=$(CROSS_COMPILE)objdump
-CFLAGS=-march=$(ARCH)$  $(RISCV_OLEVEL) -MD -Wall -std=gnu99 $(RISCV_CFLAGS) -Wmisleading-indentation -mno-div
-LD_FLAGS= -static -nostartfiles -march=$(ARCH)
-
-TARGET=test
 
 #For including the system clock time
 SYS_CLK_FREQ :=(($(shell sed -n 's/.*USE_PLL *\([0-9]\)/\1/p' ../ice40ultraplus_syn.prj)+1)*8000000)
@@ -49,28 +46,6 @@ golden.c: ../golden.bin
 	rm -f golden.bin.*
 	echo "};" >> $@
 
-$(C_OBJ_FILES) $(S_OBJ_FILES) : | obj/
-obj/:
-	mkdir -p obj/
-
-$(C_OBJ_FILES): obj/%.c.o : %.c sys_clk.h
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(S_OBJ_FILES): obj/%.S.o : %.S
-	$(CC) $(CFLAGS) -c $< -o $@
-
-LD_SCRIPT=link.ld
-LIBC=
-
-$(TARGET).elf: $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
-	$(CC) -T $(LD_SCRIPT) $(S_OBJ_FILES)  $(C_OBJ_FILES)  -o $@ $(LD_FLAGS)
-	$(OBJDUMP) $(OBJDUMP_STYLE) test.elf > test.dump
-$(TARGET).bin: $(TARGET).elf
-	$(OBJCOPY) -O binary $< $@
-
-$(TARGET).mem: $(TARGET).bin
-	 head -c $$((0x000)) /dev/zero | cat - $< | xxd -g1 -c4 | awk '{print $$5$$4$$3$$2}' > $@
-
 .phony:all clean
 ifndef FORMAT
 FORMAT=elf
@@ -78,6 +53,6 @@ endif
 all: $(TARGET).$(FORMAT)
 
 clean:
-	rm -rf obj test.elf test.dump test.bin test.hex test.mif test.mem sys_clk.h golden.bin.*
+	rm -rf sys_clk.h golden.bin.*
 
 -include $(wildcard obj/*.d)

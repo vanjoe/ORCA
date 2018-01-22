@@ -55,7 +55,7 @@ DEFAULT_ENABLE_EXCEPTIONS=1
 DEFAULT_PIPELINE_STAGES=5
 DEFAULT_VCP_ENABLE=0
 DEFAULT_ENABLE_EXT_INTERRUPTS=1
-DEFAULT_NUM_EXT_INTERRUPTS=1
+DEFAULT_NUM_EXT_INTERRUPTS=2
 DEFAULT_POWER_OPTIMIZED=0
 
 DEFAULT_LOG2_BURSTLENGTH=4
@@ -320,14 +320,6 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
                     recopy_software_dir=False, test_ignore_list=[],
                     sw_build_dirs=[], make_hw=True):
 
-        # Symlink the rtl directory two levels down as the IP expects
-        try:
-            os.makedirs('%s/..' % (build_root))
-        except OSError:
-            # directory already exists
-            pass
-        rel_symlink('../rtl', '%s/..' % (build_root))
-        
         self.dstdir = '%s/%s' % (build_root, self.build_id)
 
         self.setup_sw_build_dirs(sw_build_dirs, test_ignore_list)
@@ -353,7 +345,7 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
         # Note: ignore the software directory, as that will be different
         # in this test suite than it is in the systems project.
         shutil.copytree('../systems'+'/'+self.system, self.dstdir,
-            ignore=shutil.ignore_patterns('software', 'output_files', 'system', 'db', 'incremental_db', '*~', '#*', '.#*'))
+            ignore=shutil.ignore_patterns('software', 'output_files', '*_system', 'db', 'incremental_db', '*~', '#*', '.#*'))
 
         # Symlink to the and scripts dir for all test builds.
         rel_symlink('../scripts', self.dstdir)
@@ -488,88 +480,6 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
             f.close()
 
     ###########################################################################
-    # Create a script to compile the hw and sw.
-    def create_compile_script(self,
-                              make_hw=True,
-                              make_sw=True):
-
-        saved_cwd = os.getcwd()
-        os.chdir(self.dstdir)
-
-        try:
-            os.makedirs('log')
-        except OSError:
-            # directory already exists
-            pass
-
-        for swbd in self.sw_build_dirs:
-            try:
-                os.makedirs('software/%s/log' % swbd.name)
-            except OSError:
-                pass
-            for test in swbd.test_list:
-                try:
-                    os.makedirs('software/%s/%s/log' % (swbd.name, test.test_dir))
-                except OSError:
-                    pass
-
-        # ip-generate and possibly other Quartus command-line tools require java,
-        # whose AWT requires an X11 server. (It is allegedly possible to run
-        # java AWT in "headless" mode, but this would require changing the
-        # scripts provided with Quartus.)
-        #
-        # xvfb-run is used to provide a dummy X server for the command-line
-        # Quartus tools.
-        # xvfb -a option means "try to find a free X server number
-        # (99 downto 0)".
-        #
-        # nios2-bsp-generate-files requires an X server as well.
-
-        script_name = 'compile_all.sh'
-
-        f = open(script_name, 'w')
-
-        f.write('#!/bin/bash\n')
-
-        f.write('hostname | tee log/hostname_log\n')
-        if make_hw:
-            f.write('date +"%s" > log/hw_compile_time\n' % DATE_FMT)
-            f.write('xvfb-run -a make clean | tee log/hw_clean_log\n')
-            f.write('xvfb-run -a make | tee log/hw_compile_log\n')
-            f.write('date +"%s" > log/hw_compile_time\n' % DATE_FMT)
-        if make_sw:
-            f.write('date +"%s" | tee log/sw_compile_time\n' % DATE_FMT)
-            f.write('export XLEN=32\n')
-            for swbd in self.sw_build_dirs:
-                for test in swbd.test_list:
-                    # The if statement is to cover the case when the software
-                    # test has already been compiled, and should not be copied
-                    # over again. If it were to be copied over again, it would 
-                    # force the script to re-run the test no matter what, as 
-                    # the .elf file would be newer than the log file. This 
-                    # comparison between the file ages is done in 
-                    # Alt_ORCA_SWTest.run(), which is called later when the 
-                    # software tests are run.
-                    f.write('make %s -C software/%s &> ' \
-                        'software/%s/log/compile_log\n' \
-                        % (test.name, swbd.name, swbd.name+'/'+test.test_dir))
-                    f.write('if [ ! -f software/%s/%s/%s ]; then\n' \
-                        % (swbd.name, test.test_dir, test.name))
-                    f.write('\tcp software/%s/%s software/%s/%s;\n' \
-                        % (swbd.name, test.name, swbd.name, test.test_dir))
-                    f.write('fi;\n')
-            f.write('date +"%s" >> log/sw_compile_time\n' % DATE_FMT)
-        f.close()
-
-        # 0755
-        mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | \
-            stat.S_IRGRP | stat.S_IXGRP | \
-            stat.S_IROTH | stat.S_IXOTH
-        os.chmod(script_name, mode)
-
-        os.chdir(saved_cwd)
-
-    ###########################################################################
     # Submit a job to GridEngine to run hardware and software compilation.
     def compile_all(self, use_qsub=True, qsub_qlist='main.q'):
 
@@ -665,14 +575,14 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
     def parse_map_rpt(self):
 
         (self.map_errors, self.map_crit_warnings, self.map_warnings) = \
-            self.common_parse_rpt('output_files/system.map.rpt',
+            self.common_parse_rpt('output_files/orca_project.map.rpt',
                                   QuartusLog.re_map_summary)
 
     ######################################################################
     def parse_fit_rpt(self):
 
         (self.fit_errors, self.fit_crit_warnings, self.fit_warnings) = \
-            self.common_parse_rpt('output_files/system.fit.rpt',
+            self.common_parse_rpt('output_files/orca_project.fit.rpt',
                                   QuartusLog.re_fit_summary)
 
         # XXX TODO: get resource utilization from fit.rpt, e.g.
@@ -697,21 +607,21 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
     def parse_asm_rpt(self):
 
         (self.asm_errors, self.asm_crit_warnings, self.asm_warnings) = \
-            self.common_parse_rpt('output_files/system.asm.rpt',
+            self.common_parse_rpt('output_files/orca_project.asm.rpt',
                                   QuartusLog.re_asm_summary)
 
     ######################################################################
     def parse_sta_rpt(self):
 
         (self.sta_errors, self.sta_crit_warnings, self.sta_warnings) = \
-            self.common_parse_rpt('output_files/system.sta.rpt',
+            self.common_parse_rpt('output_files/orca_project.sta.rpt',
                                   QuartusLog.re_sta_summary)
         self.sta_crit_warnings += self.sta_errors
         self.sta_errors = 0
 
     ######################################################################
     def parse_sta_summary(self):
-        rptfile = self.dstdir+'/output_files/system.sta.summary'
+        rptfile = self.dstdir+'/output_files/orca_project.sta.summary'
         try:
             f = open(rptfile, 'r')
         except IOError:
@@ -777,7 +687,7 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
         #Default if something fails
         self.fmax = 'ERROR'
 
-        rptfile = self.dstdir+'/output_files/system.sta.rpt'
+        rptfile = self.dstdir+'/output_files/orca_project.sta.rpt'
         try:
             f = open(rptfile, 'r')
         except IOError:
@@ -892,7 +802,7 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
 
         self.hw_compile_time = '?'
 
-        rptfile = self.dstdir+'/output_files/system.flow.rpt'
+        rptfile = self.dstdir+'/output_files/orca_project.flow.rpt'
 
         try:
             f = open(rptfile, 'r')
@@ -912,7 +822,7 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
     ######################################################################
     def parse_resource_rpt(self):
     # Check "Fitter Resource Utilization by Entity"
-        resource_rpt = self.dstdir + '/output_files/system.fit.rpt'
+        resource_rpt = self.dstdir + '/output_files/orca_project.fit.rpt'
         self.logic_cells = '?'
         self.logic_registers = '?'
         self.m9ks = '?'
@@ -923,7 +833,7 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
         try:
             resource_file = open(resource_rpt, 'r')
         except IOError:
-            logging.error("No system.fit.rpt found for build %s", self.build_id)
+            logging.error("No orca_project.fit.rpt found for build %s", self.build_id)
             return
         resource_text = resource_file.read()
         resource_file.close()
@@ -997,8 +907,8 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
         if pgm_cable:
             cable_opt = '--cable "%s"' % (pgm_cable,)
         # If a non-time-limited SOF is available, use it instead.
-        if os.path.exists(self.dstdir+'/system.sof'):
-            sof_file = 'system.sof'
+        if os.path.exists(self.dstdir+'/orca_project.sof'):
+            sof_file = 'orca_project.sof'
         else:
             print 'Error: .sof file missing.'
 

@@ -7,7 +7,7 @@
 
 #include "sccb.h"
 #include "time.h"
-#include "printf.h"
+#include "orca_printf.h"
 #define SPI_MOSI (1<<7 )
 #define SPI_MISO (1<<8 )
 #define SPI_SCLK (1<<9 )

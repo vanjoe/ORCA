@@ -193,7 +193,7 @@ gui-qsys: $(QSYS_FILE)
 archiveBD: $(QIP_FILE)
 
 $(QIP_FILE): $(QSYS_FILE) ../../rtl/orca_hw.tcl
-	if [ -e $(SW_DIR)/Makefile ]; then make -C $(SW_DIR) $(HEX_FILE); fi
+	if [ -e $(SW_DIR)/Makefile ]; then ORCA_TEST=$(ORCA_TEST) $(MAKE) -C $(SW_DIR) $(HEX_FILE); fi
 	rm -f $(QSYS_HW_TCL)
 	rm -f $@
 	qsys-generate $(QSYS_FILE) --search-path="./,../../rtl/,$$" --synthesis=VHDL 2>&1 | tee ./synth.$(QSYS_FILE).log
@@ -251,7 +251,7 @@ $(BD_NAME)/simulation/mentor/msim_setup.tcl: $(QSYS_FILE) $(SUBMODULE_FILES)
 	[ -e $@ ]
 
 $(SW_DIR)/$(HEX_FILE):
-	$(MAKE) -C $(SW_DIR) $(HEX_FILE)
+	ORCA_TEST=$(ORCA_TEST) $(MAKE) -C $(SW_DIR) $(HEX_FILE)
 
 $(BD_NAME)/simulation/mentor/software/$(HEX_FILE): $(BD_NAME)/simulation/mentor/msim_setup.tcl $(SW_DIR)/$(HEX_FILE)
 	mkdir -p $(BD_NAME)/simulation/mentor/software
@@ -266,7 +266,7 @@ clean:
 	rm -rf *.log *.sopcinfo
 	rm -rf *.sof .qsys_edit/
 	rm -f *~ \#* PLL*_INFO.txt transcript jtag_init.tcl
-	$(MAKE) -C $(SW_DIR)/ clean || true
+	ORCA_TEST=$(ORCA_TEST) $(MAKE) -C $(SW_DIR)/ clean || true
 
 
 ifneq ($(BIN_FILE), NONE)
@@ -279,7 +279,7 @@ run:
 ifeq ($(BIN_FILE), NONE)
 	python orca_pgm.py test.bin --family=altera --reset_address=0x10000000 --end_address=0x00010000
 else #ifeq ($(BIN_FILE), NONE)
-	make -C $(SW_DIR) $(BIN_FILE)
+	ORCA_TEST=$(ORCA_TEST) $(MAKE) -C $(SW_DIR) $(BIN_FILE)
 	python orca_pgm.py $(SW_DIR)/$(BIN_FILE) --family=altera --reset_address=0x10000000 --end_address=0x00010000
 endif #else #ifeq ($(BIN_FILE), NONE)
 

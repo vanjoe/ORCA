@@ -254,7 +254,7 @@ class ORCA_BuildCfgBase(object):
         # Ignore any bsp subdirectory since it will be recreated.
         ignore_func = shutil.ignore_patterns('obj', '*.o', '*.elf', 'lib*.a',
                                              '*.map', '*.objdump',
-                                             'bsp')
+                                             'bsp', '*~')
         shutil.copytree('software', self.dstdir+'/'+'software', ignore=ignore_func)
 
     ###########################################################################
@@ -263,8 +263,8 @@ class ORCA_BuildCfgBase(object):
         # automated software testing.
         cwd = os.getcwd()
         os.chdir(self.dstdir)
-        makefiles = ['software/riscv-tests/isa/Makefile', 'software/unit_test/Makefile']
-        riscv_headers = ['software/riscv-tests/env/p/riscv_test.h', 'software/common/env/p/riscv_test.h']
+        makefiles = ['software/riscv-tests/isa/Makefile']
+        riscv_headers = ['software/riscv-tests/env/p/riscv_test.h']
         test_passfail = 'software/common/test_passfail.c'
 
         for makefile in makefiles:
@@ -353,6 +353,76 @@ class ORCA_BuildCfgBase(object):
         file_to_edit.close()
 
         os.chdir(cwd)
+
+    ###########################################################################
+    # Create a script to compile the hw and sw.
+    def create_compile_script(self,
+                              make_hw=True,
+                              make_sw=True):
+
+        saved_cwd = os.getcwd()
+        os.chdir(self.dstdir)
+
+        try:
+            os.makedirs('log')
+        except OSError:
+            # directory already exists
+            pass
+
+        for swbd in self.sw_build_dirs:
+            try:
+                os.makedirs('software/%s/log' % swbd.name)
+            except OSError:
+                pass
+            for test in swbd.test_list:
+                try:
+                    os.makedirs('software/%s/%s/log' % (swbd.name, test.test_dir))
+                except OSError:
+                    pass
+
+        script_name = 'compile_all.sh'
+
+        f = open(script_name, 'w')
+
+        f.write('#!/bin/bash\n')
+
+        f.write('hostname | tee log/hostname_log\n')
+        if make_hw:
+            f.write('date +"%s" > log/hw_compile_time\n' % DATE_FMT)
+            f.write('xvfb-run -a make clean | tee log/hw_clean_log\n')
+            f.write('ELF_FILE=NONE xvfb-run -a make | tee log/hw_compile_log\n')
+            f.write('date +"%s" >> log/hw_compile_time\n' % DATE_FMT)
+        if make_sw:
+            f.write('date +"%s" | tee log/sw_compile_time\n' % DATE_FMT)
+            f.write('export XLEN=32\n')
+            for swbd in self.sw_build_dirs:
+                for test in swbd.test_list:
+                    # The if statement is to cover the case when the software
+                    # test has already been compiled, and should not be copied
+                    # over again. If it were to be copied over again, it would 
+                    # force the script to re-run the test no matter what, as 
+                    # the .elf file would be newer than the log file. This 
+                    # comparison between the file ages is done in 
+                    # Alt_ORCA_SWTest.run(), which is called later when the 
+                    # software tests are run.
+                    f.write('make %s -C software/%s &> ' \
+                        'software/%s/log/compile_log\n' \
+                        % (test.name, swbd.name, swbd.name+'/'+test.test_dir))
+                    f.write('if [ ! -f software/%s/%s/%s ]; then\n' \
+                        % (swbd.name, test.test_dir, test.name))
+                    f.write('\tcp software/%s/%s software/%s/%s;\n' \
+                        % (swbd.name, test.name, swbd.name, test.test_dir))
+                    f.write('fi;\n')
+            f.write('date +"%s" >> log/sw_compile_time\n' % DATE_FMT)
+        f.close()
+
+        # 0755
+        mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | \
+            stat.S_IRGRP | stat.S_IXGRP | \
+            stat.S_IROTH | stat.S_IXOTH
+        os.chmod(script_name, mode)
+
+        os.chdir(saved_cwd)
 
     ######################################################################
     # virtual method

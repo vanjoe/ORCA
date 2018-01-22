@@ -1,12 +1,15 @@
-#ifndef ORCA_CSRS_H
-#define ORCA_CSRS_H
+#ifndef __ORCA_CSRS_H
+#define __ORCA_CSRS_H
 
 #include "encoding.h"
 
 #define STRINGIFY_CSR(CSR_NUMBER) #CSR_NUMBER
 #define CSR_STRING(CSR_NUMBER)    STRINGIFY_CSR(CSR_NUMBER)
 
-#define CSR_MCACHE     0xBC0
+#define CSR_MEIMASK 0x7C0
+#define CSR_MEIPEND 0xFC0
+
+#define CSR_MCACHE 0xBC0
 
 #define CSR_MAMR0_BASE 0xBD0
 #define CSR_MAMR1_BASE 0xBD1
@@ -29,4 +32,4 @@
 #define MCACHE_IEXISTS 0x00000001
 #define MCACHE_DEXISTS 0x00000002
 
-#endif //#ifndef ORCA_CSRS_H
+#endif //#ifndef __ORCA_CSRS_H

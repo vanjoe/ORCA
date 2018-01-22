@@ -210,7 +210,7 @@ set_parameter_property ENABLE_EXT_INTERRUPTS ALLOWED_RANGES 0:1
 set_parameter_property ENABLE_EXT_INTERRUPTS HDL_PARAMETER true
 set_display_item_property ENABLE_EXT_INTERRUPTS DISPLAY_HINT boolean
 
-add_parameter          NUM_EXT_INTERRUPTS POSITIVE 1
+add_parameter          NUM_EXT_INTERRUPTS POSITIVE 2
 set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
 set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES 1:32
 set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "       External Interrupts"

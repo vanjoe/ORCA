@@ -182,13 +182,14 @@ void cifar_lve() {
 	int face_score = 0;
 	int frames_since_last_run = MAX_FRAMES_BETWEEN_NN;
 	int frame_num=0;
+#if USE_CAM_IMG
 	int is_face=0;
+#endif //#if USE_CAM_IMG
 	int max_cat;
 	int c, m = 32, n = 32, verbose = 0;
 	vbx_ubyte_t* v_padb = (vbx_ubyte_t*)SP_NN_INPUTS; // IMPORTANT: padded input placed here
 	vbx_word_t* v_out = (vbx_word_t*)  SP_NN_OUTPUT; // IMPORTANT: 10 outputs produced here
 	vbx_ubyte_t* v_inb = (vbx_ubyte_t*)SP_CAM_IMG;
-	vbx_word_t* v_in_gs = (vbx_word_t*)SP_TMP;
 	vbx_ubyte_t* v_prev_img = (vbx_ubyte_t*)SP_PREV_IMG_BUF1;
 	vbx_ubyte_t* v_prev_buf = (vbx_ubyte_t*)SP_PREV_IMG_BUF2;
 	int img_diff_score = 0;
@@ -216,7 +217,7 @@ void cifar_lve() {
 	}
 
 	layer_t* network=CES_GOLDEN? cifar_golden:cifar_reduced;
-	transfer_network(network, SP_NN_WEIGHTS, REDUCED_FLASH_DATA_OFFSET, verbose);
+	transfer_network(network, (int)SP_NN_WEIGHTS, REDUCED_FLASH_DATA_OFFSET, verbose);
 
 #if USE_CAM_IMG
 	/* ovm_get_frame_async(); */
@@ -258,6 +259,7 @@ void cifar_lve() {
 #if GS_CAM
 		img_diff_score = abs_image_diff(v_inb + THUMBNAIL_X_OFFSET*CAM_IMG_WIDTH+THUMBNAIL_Y_OFFSET,v_prev_img,v_prev_buf);
 #else
+    vbx_word_t* v_in_gs = (vbx_word_t*)SP_TMP;
 		convert_rgb2grayscale((vbx_word_t*)(v_inb)+THUMBNAIL_X_OFFSET*CAM_IMG_WIDTH+THUMBNAIL_Y_OFFSET,v_in_gs);
 		img_diff_score = abs_image_diff(v_in_gs,v_prev_img,v_prev_buf);
 #endif
@@ -302,7 +304,9 @@ void cifar_lve() {
 					max_cat = c;
 				}
 			}
+#if USE_CAM_IMG
 			is_face = (max_cat == 1);
+#endif //#if USE_CAM_IMG
 			face_score = (int)v_out[1];
 		}else{
 			delayms(NN_RUN_TIME);

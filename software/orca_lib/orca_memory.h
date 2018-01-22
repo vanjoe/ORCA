@@ -1,5 +1,5 @@
-#ifndef ORCA_MEMORY_H
-#define ORCA_MEMORY_H
+#ifndef __ORCA_MEMORY_H
+#define __ORCA_MEMORY_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -48,4 +48,4 @@ void set_xmr(bool umr_not_amr,
              uint32_t *previous_base_ptr,
              uint32_t *previous_last_ptr);
 
-#endif //#ifndef ORCA_MEMORY_H
+#endif //#ifndef __ORCA_MEMORY_H

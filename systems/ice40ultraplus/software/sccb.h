@@ -1,6 +1,7 @@
 #ifndef __SCCB_H_
 #define __SCCB_H_
 
+#include "bsp.h"
 #include "stdint.h"
 
 #define OVM7692_ADDRESS 0x78
@@ -24,7 +25,7 @@
 #define PIO_DATA_REGISTER   0
 #define PIO_ENABLE_REGISTER 1
 
-#define SCCB_PIO_BASE   ((volatile uint32_t *)0x06000000)
+#define SCCB_PIO_BASE   ((volatile uint32_t *)GPIO_BASE_ADDRESS)
 
 void sccb_init(volatile void *pioBase);
 void sccb_write(volatile void *pioBase, uint8_t slaveAddress, uint8_t subAddress, uint8_t data);

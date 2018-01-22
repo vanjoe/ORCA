@@ -6,12 +6,6 @@ proc reset_waves { } {
     add_wave_divider "Top level"
     add_wave /orca_system_wrapper/orca_system_i/processing_system7_0_FCLK_CLK0 /orca_system_wrapper/orca_system_i/processing_system7_0_FCLK_RESET0_N /orca_system_wrapper/orca_system_i/clk_wiz_clk_out1 /orca_system_wrapper/orca_system_i/clock_clk_2x_out /orca_system_wrapper/orca_system_i/clock_peripheral_reset /orca_system_wrapper/orca_system_i/rst_clk_wiz_100M_interconnect_aresetn /orca_system_wrapper/orca_system_i/rst_clk_wiz_100M_peripheral_aresetn /orca_system_wrapper/orca_system_i/leds_8bits_tri_o
 
-    add_wave_divider "Interrupts"
-    add_wave /orca_system_wrapper/orca_system_i/fit_timer/U0/Interrupt 
-    add_wave /orca_system_wrapper/orca_system_i/edge_extender/U0/interrupt_in /orca_system_wrapper/orca_system_i/edge_extender/U0/interrupt_out 
-    add_wave /orca_system_wrapper/orca_system_i/edge_extender/U0/register_bank 
-    add_wave /orca_system_wrapper/orca_system_i/edge_extender/U0/reset
-    
     orca_reset_waves add_wave add_wave_divider /orca_system_wrapper/orca_system_i/orca/U0
 }
     

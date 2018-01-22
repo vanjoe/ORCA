@@ -321,6 +321,17 @@ proc compose { } {
     set_instance_parameter_value the_onchip_memory2 {ecc_enabled} {0}
     set_instance_parameter_value the_onchip_memory2 {resetrequest_enabled} {1}
 
+    add_instance the_timer altera_avalon_timer 15.1
+    set_instance_parameter_value the_timer {alwaysRun} {0}
+    set_instance_parameter_value the_timer {counterSize} {32}
+    set_instance_parameter_value the_timer {fixedPeriod} {0}
+    set_instance_parameter_value the_timer {period} {1}
+    set_instance_parameter_value the_timer {periodUnits} {MSEC}
+    set_instance_parameter_value the_timer {resetOutput} {0}
+    set_instance_parameter_value the_timer {snapshot} {1}
+    set_instance_parameter_value the_timer {timeoutPulseOutput} {0}
+    set_instance_parameter_value the_timer {watchdogPulse} {2}
+
     add_instance the_vectorblox_orca vectorblox_orca 1.0
     set_instance_parameter_value the_vectorblox_orca {REGISTER_SIZE} {32}
     set_instance_parameter_value the_vectorblox_orca {RESET_VECTOR} {0}
@@ -335,7 +346,7 @@ proc compose { } {
     set_instance_parameter_value the_vectorblox_orca {PIPELINE_STAGES} {5}
     set_instance_parameter_value the_vectorblox_orca {VCP_ENABLE} {0}
     set_instance_parameter_value the_vectorblox_orca {ENABLE_EXT_INTERRUPTS} {1}
-    set_instance_parameter_value the_vectorblox_orca {NUM_EXT_INTERRUPTS} {1}
+    set_instance_parameter_value the_vectorblox_orca {NUM_EXT_INTERRUPTS} {2}
     set_instance_parameter_value the_vectorblox_orca {POWER_OPTIMIZED} {0}
     set_instance_parameter_value the_vectorblox_orca {FAMILY} {ALTERA}
     set_instance_parameter_value the_vectorblox_orca {LOG2_BURSTLENGTH} {4}
@@ -425,6 +436,11 @@ proc compose { } {
     set_connection_parameter_value the_mm_clock_crossing_bridge.m0/hex_0.s1 baseAddress {0x0030}
     set_connection_parameter_value the_mm_clock_crossing_bridge.m0/hex_0.s1 defaultConnection {0}
 
+    add_connection the_mm_clock_crossing_bridge.m0 the_timer.s1 avalon
+    set_connection_parameter_value the_mm_clock_crossing_bridge.m0/the_timer.s1 arbitrationPriority {1}
+    set_connection_parameter_value the_mm_clock_crossing_bridge.m0/the_timer.s1 baseAddress {0x0080}
+    set_connection_parameter_value the_mm_clock_crossing_bridge.m0/the_timer.s1 defaultConnection {0}
+
     add_connection the_master.master the_memory_mapped_reset.avalon_slave avalon
     set_connection_parameter_value the_master.master/the_memory_mapped_reset.avalon_slave arbitrationPriority {1}
     set_connection_parameter_value the_master.master/the_memory_mapped_reset.avalon_slave baseAddress {0x10000000}
@@ -459,6 +475,8 @@ proc compose { } {
 
     add_connection the_clk.clk the_master.clk clock
 
+    add_connection the_clk.clk the_timer.clk clock
+
     add_connection the_clk.clk the_memory_mapped_reset.clock clock
 
     add_connection the_clk.clk the_altpll.inclk_interface clock
@@ -466,7 +484,10 @@ proc compose { } {
     add_connection the_clk.clk the_mm_clock_crossing_bridge.m0_clk clock
 
     add_connection the_vectorblox_orca.global_interrupts the_jtag_uart.irq interrupt
-    set_connection_parameter_value the_vectorblox_orca.global_interrupts/the_jtag_uart.irq irqNumber {0}
+    set_connection_parameter_value the_vectorblox_orca.global_interrupts/the_jtag_uart.irq irqNumber {1}
+
+    add_connection the_vectorblox_orca.global_interrupts the_timer.irq interrupt
+    set_connection_parameter_value the_vectorblox_orca.global_interrupts/the_timer.irq irqNumber {0}
 
     add_connection the_clk.clk_reset the_master.clk_reset reset
 
@@ -492,6 +513,8 @@ proc compose { } {
 
     add_connection the_clk.clk_reset the_jtag_uart.reset reset
 
+    add_connection the_clk.clk_reset the_timer.reset reset
+
     add_connection the_clk.clk_reset the_onchip_memory2.reset1 reset
 
     add_connection the_clk.clk_reset the_onchip_memory2.reset2 reset
@@ -513,6 +536,8 @@ proc compose { } {
     add_connection the_memory_mapped_reset.reset_source hex_0.reset reset
 
     add_connection the_memory_mapped_reset.reset_source the_jtag_uart.reset reset
+
+    add_connection the_memory_mapped_reset.reset_source the_timer.reset reset
 
     # exported interfaces
     add_interface clk clock sink

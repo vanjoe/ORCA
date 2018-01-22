@@ -27,6 +27,7 @@ proc create_bd {proj_dir proj_name bd_file bd_changes} {
 	puts "Changing ORCA parameter: set_property -dict [list CONFIG.$property $value] [get_bd_cells orca]"
         set_property -dict [list CONFIG.$property $value] [get_bd_cells orca]
     }
+    set_msg_config -id {BD 41-237} -new_severity {WARNING}
     validate_bd_design -force
     save_bd_design
     close_project

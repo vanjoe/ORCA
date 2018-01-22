@@ -310,14 +310,6 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
                     recopy_software_dir=False, test_ignore_list=[],
                     sw_build_dirs=[], make_hw=True):
 
-        # Symlink the rtl directory two levels down as the IP expects
-        try:
-            os.makedirs('%s/..' % (build_root))
-        except OSError:
-            # directory already exists
-            pass
-        rel_symlink('../rtl', '%s/..' % (build_root))
-        
         self.dstdir = '%s/%s' % (build_root, self.build_id)
 
         self.setup_sw_build_dirs(sw_build_dirs, test_ignore_list)
@@ -343,7 +335,7 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
         # Note: ignore the software directory, as that will be different
         # in this test suite than it is in the systems project.
         shutil.copytree('../systems'+'/'+self.system, self.dstdir,
-            ignore=shutil.ignore_patterns('software', 'project', '*~', '#*', '.#*', '.Xil'))
+            ignore=shutil.ignore_patterns('software', '*_project', '*~', '#*', '.#*', '.Xil', '*.rpt'))
 
         # Symlink to the and scripts dir for all test builds.
         rel_symlink('../scripts', self.dstdir)
@@ -410,76 +402,6 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
 
         self.create_compile_script(make_hw=make_hw)
 
-
-    ###########################################################################
-    # Create a script to compile the hw and sw.
-    def create_compile_script(self,
-                              make_hw=True,
-                              make_sw=True):
-
-        saved_cwd = os.getcwd()
-        os.chdir(self.dstdir)
-
-        try:
-            os.makedirs('log')
-        except OSError:
-            # directory already exists
-            pass
-
-        for swbd in self.sw_build_dirs:
-            try:
-                os.makedirs('software/%s/log' % swbd.name)
-            except OSError:
-                pass
-            for test in swbd.test_list:
-                try:
-                    os.makedirs('software/%s/%s/log' % (swbd.name, test.test_dir))
-                except OSError:
-                    pass
-
-        script_name = 'compile_all.sh'
-
-        f = open(script_name, 'w')
-
-        f.write('#!/bin/bash\n')
-
-        f.write('hostname | tee log/hostname_log\n')
-        if make_hw:
-            f.write('date +"%s" > log/hw_compile_time\n' % DATE_FMT)
-            f.write('xvfb-run -a make clean | tee log/hw_clean_log\n')
-            f.write('ELF_FILE=NONE xvfb-run -a make | tee log/hw_compile_log\n')
-            f.write('date +"%s" >> log/hw_compile_time\n' % DATE_FMT)
-        if make_sw:
-            f.write('date +"%s" | tee log/sw_compile_time\n' % DATE_FMT)
-            f.write('export XLEN=32\n')
-            for swbd in self.sw_build_dirs:
-                for test in swbd.test_list:
-                    # The if statement is to cover the case when the software
-                    # test has already been compiled, and should not be copied
-                    # over again. If it were to be copied over again, it would 
-                    # force the script to re-run the test no matter what, as 
-                    # the .elf file would be newer than the log file. This 
-                    # comparison between the file ages is done in 
-                    # Alt_ORCA_SWTest.run(), which is called later when the 
-                    # software tests are run.
-                    f.write('make %s -C software/%s &> ' \
-                        'software/%s/log/compile_log\n' \
-                        % (test.name, swbd.name, swbd.name+'/'+test.test_dir))
-                    f.write('if [ ! -f software/%s/%s/%s ]; then\n' \
-                        % (swbd.name, test.test_dir, test.name))
-                    f.write('\tcp software/%s/%s software/%s/%s;\n' \
-                        % (swbd.name, test.name, swbd.name, test.test_dir))
-                    f.write('fi;\n')
-            f.write('date +"%s" >> log/sw_compile_time\n' % DATE_FMT)
-        f.close()
-
-        # 0755
-        mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | \
-            stat.S_IRGRP | stat.S_IXGRP | \
-            stat.S_IROTH | stat.S_IXOTH
-        os.chmod(script_name, mode)
-
-        os.chdir(saved_cwd)
 
     ###########################################################################
     # Submit a job to GridEngine to run hardware and software compilation.
@@ -604,7 +526,7 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
     # - runs/synth_1/system_wrapper.rds (same as runme.log except for header)
     def parse_map_rpt(self):
 
-        rptfiles = [self.dstdir+'/project/project.runs/synth_1/runme.log',
+        rptfiles = [self.dstdir+'/orca_project/orca_project.runs/synth_1/runme.log',
                     ]
 
         self.map_errors, self.map_crit_warnings, self.map_warnings = \
@@ -631,7 +553,7 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
     #    -pb system_wrapper_timing_summary_routed.pb
     def parse_fit_rpt(self):
 
-        rptfiles = [self.dstdir+'/project/project.runs/impl_1/runme.log'
+        rptfiles = [self.dstdir+'/orca_project/orca_project.runs/impl_1/runme.log'
                     ]
 
         self.fit_errors, self.fit_crit_warnings, self.fit_warnings = \
@@ -658,7 +580,7 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
     # - runs/impl_1/system_wrapper_timing_summary_routed.rpt
     def parse_sta_rpt(self):
 
-        sta_rpt = self.dstdir+'/project/project.runs/impl_1/design_1_wrapper_timing_summary_routed.rpt'
+        sta_rpt = self.dstdir+'/orca_project/orca_project.runs/impl_1/orca_system_wrapper_timing_summary_routed.rpt'
 
         # Vivado timing report doesn't seem to have INFO/WARNING/ERROR
         # messages, but check anyway.
@@ -733,7 +655,7 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
     def parse_sta_slack(self, filename=''):
 
         if not filename:
-            sta_rpt = self.dstdir+'/project/project.runs/impl_1/design_1_wrapper_timing_summary_routed.rpt'
+            sta_rpt = self.dstdir+'/orca_project/orca_project.runs/impl_1/orca_system_wrapper_timing_summary_routed.rpt'
         else:
             sta_rpt = filename
         try:
@@ -809,7 +731,7 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
         self.fmax = 'ERROR'
 
         if not filename:
-            sta_rpt = self.dstdir+'/project/project.runs/impl_1/design_1_wrapper_timing_summary_routed.rpt'
+            sta_rpt = self.dstdir+'/orca_project/orca_project.runs/impl_1/orca_system_wrapper_timing_summary_routed.rpt'
         else:
             sta_rpt = filename
         try:
@@ -827,8 +749,8 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
         state = STATE_LOOKING_FOR_INTRA_CLK_TABLE
 
         re_intra_clock_table = re.compile(r'Intra Clock Table')
-        re_wns = re.compile(r'clk_out1_design_1_clk_wiz_0\s+(\d+\.\d+)')
-        re_clk_pw_check = re.compile(r'Clock Name:\s+clk_out1_design_1_clk_wiz_0')
+        re_wns = re.compile(r'clk_out1_orca_system_clk_wiz_0\s+(\d+\.\d+)')
+        re_clk_pw_check = re.compile(r'Clock Name:\s+clk_out1_orca_system_clk_wiz_0')
         re_clk_period = re.compile(r'Period\(ns\):\s+(\d+\.\d+)')
 
         actual_period = '?'

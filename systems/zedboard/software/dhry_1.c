@@ -15,9 +15,15 @@
 *************************************************************************
 */
 
-#define ORCA_CLK 100000000
 #include "orca_time.h"
-#include "malloc.h"
+#include "orca_malloc.h"
+
+//These will be used for the embedded malloc() call
+#define HEAP_SIZE      8192
+#define HEAP_ALIGNMENT 8
+uint8_t heap[HEAP_SIZE];
+
+
 #include "dhry.h"
 /*COMPILER COMPILER COMPILER COMPILER COMPILER COMPILER COMPILER*/
                
@@ -112,8 +118,7 @@ double          Microseconds,
   Vax_Mips;
  
 /* end of variables for time measurement */
- 
- 
+
 int main (int argc, char *argv[])
 /*****/
  
@@ -123,6 +128,8 @@ int main (int argc, char *argv[])
   printf ("\r\n");
   printf ("Dhrystone Benchmark, Version 2.1 (Language: C or C++)\r\n");
   printf ("\r\n");
+
+  init_malloc((void *)heap, HEAP_SIZE, HEAP_ALIGNMENT);
 
   double dtime();
  
@@ -284,7 +291,7 @@ int main (int argc, char *argv[])
 
       End_Cycle = get_time();
       User_Time = ((double)(End_Cycle - Begin_Cycle))/ORCA_CLK;
-             
+
       printf("%d runs %d.%d seconds %d runs/second\r\n", (int)Number_Of_Runs, (int)User_Time, ((int)(User_Time*10.0))%10, (int)(Number_Of_Runs/User_Time));
       if (User_Time > Too_Small_Time)
         {

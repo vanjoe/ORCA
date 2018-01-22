@@ -80,11 +80,11 @@ clean: clean-log
 	rm -rf $(OUTPUT_DIR) *.mem *.imem *.dmem *_Implmnt  *~ $(FINAL_BITFILE)
 
 clean-all: clean
-	make -C software clean
+	ORCA_TEST=$(ORCA_TEST) $(MAKE) -C software clean
 
 build-software: $(MEM_FILE)
 $(MEM_FILE)::
-	make -C software FORMAT=mem
+	ORCA_TEST=$(ORCA_TEST) $(MAKE) -C software FORMAT=mem
 
 PGM_CMD=$(ICECUBE2)/../../programmer/3.8_x64/bin/lin64/pgrcmd -infile
 

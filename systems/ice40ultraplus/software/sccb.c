@@ -6,7 +6,7 @@
 //with pull-ups.  This code does not drive 1's, and there is no difference
 //between 1 and a high-Z.
 
-const unsigned int DELAY_CYCLES = (SYS_CLK/8000000)*20;//Too high and writes fail...
+const unsigned int DELAY_CYCLES = (ORCA_CLK/8000000)*20;//Too high and writes fail...
 
 #define BIT_MASK (PIO_SDA_MASK | PIO_SCL_MASK)
 static inline void delay_cycles(unsigned int cycles)

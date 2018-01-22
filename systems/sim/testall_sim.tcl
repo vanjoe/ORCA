@@ -22,11 +22,11 @@ foreach f $files {
     if { [string match "*dhrystone*" $f ] } {
         #Dhrystone does multiple runs to at least 100us
         run 500 us
-    } elseif { [string match "*.elf*" $f ] } {
+    } elseif { [string match "rv32*.elf*" $f ] } {
+        run 30 us
+    } else {
         #some of the unit tests may have to run for a much longer time
         run 60 us
-    } else {
-        run 30 us
     }
     set instruction [examine -radix hex system/vectorblox_orca_0/core/X/to_execute_instruction(31:0)]
     set valid       [examine system/vectorblox_orca_0/core/X/to_execute_valid]

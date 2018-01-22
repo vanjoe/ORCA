@@ -30,19 +30,19 @@ static int ovm_read_reg(int reg_addr)
 
 static void ovm_set_bit( int bitpos )
 {
-	volatile unsigned *p = &( SCCB_PIO_BASE[PIO_DATA_REGISTER] );
+	volatile unsigned *p = (volatile unsigned *)(&( SCCB_PIO_BASE[PIO_DATA_REGISTER] ));
 	*p |= (1<<bitpos);
 }
 
 static void ovm_clear_bit( int bitpos )
 {
-	volatile unsigned *p = &( SCCB_PIO_BASE[PIO_DATA_REGISTER] );
+	volatile unsigned *p = (volatile unsigned *)(&( SCCB_PIO_BASE[PIO_DATA_REGISTER] ));
 	*p &= (~(1<<bitpos));
 }
 
 static int ovm_get_bit( int bitpos )
 {
-	volatile unsigned *p = &( SCCB_PIO_BASE[PIO_DATA_REGISTER] );
+	volatile unsigned *p = (volatile unsigned *)(&( SCCB_PIO_BASE[PIO_DATA_REGISTER] ));
 	return (*p & (1<<bitpos)) ? 1 : 0 ;
 }
 
