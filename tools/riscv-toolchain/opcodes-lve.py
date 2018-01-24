@@ -177,21 +177,24 @@ def generate_arithmetic_instr( define_file,lve_extension_file):
 
 
 def generate_special_instr( define_file,lve_extension_file):
-    instruction = namedtuple('instruction',['name','bit28_26','registers'])
+    instruction = namedtuple('instruction',['name','bit29_26','registers'])
     special_inst = [instruction('vbx_set_vl',0,'"s,t,d"'),
                     instruction('vbx_set_2d',1,'"d,s,t"'),
                     instruction('vbx_set_3d',2,'"d,s,t"'),
                     instruction('vbx_get',3,'"d,s"'),
-                    instruction('vbx_dma_tohost',4,'"d,s,t"'),
-                    instruction('vbx_dma_tovec',5,'"d,s,t"'),
-                    instruction('vbx_dma_2dstart',6,'"d,s,t"')]
+                    instruction('vbx_dma_tohost',4,'"s,t,d"'),
+                    instruction('vbx_dma_tovec',5,'"t,s,d"'),
+                    instruction('vbx_dma_tohost2d',0xC,'"s,t,d"'),
+                    instruction('vbx_dma_tovec2d',0xD,'"t,s,d"'),
+                    instruction('vbx_dma_2dstart',6,'"s,t,d"')]
     special_inst_template='{{"{name}", "X{ext}", {regs}, MATCH_{uname}, MASK_{uname}, match_opcode, 0 }},\n'
 
     for si in special_inst:
         mask=0xFE00707F
         if "t" not in si.registers:
             mask |= (0x1F << 20)
-        match=0x4200702B | (si.bit28_26 <<26)
+
+        match=0x4200702B | (si.bit29_26 <<26)
         name = si.name
         uname = name.upper()
         ext = "lve"
