@@ -11,7 +11,7 @@ use work.constants_pkg.all;
 
 entity vcp_handler is
   generic (
-    REGISTER_SIZE : integer;
+    REGISTER_SIZE : positive range 32 to 32;
     VCP_ENABLE    : natural
     );
   port (

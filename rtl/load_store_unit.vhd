@@ -7,7 +7,7 @@ use work.utils.all;
 
 entity load_store_unit is
   generic (
-    REGISTER_SIZE       : integer;
+    REGISTER_SIZE       : positive range 32 to 32;
     SIGN_EXTENSION_SIZE : integer
     );
   port (

@@ -9,7 +9,7 @@ use work.constants_pkg.all;
 
 entity instruction_fetch is
   generic (
-    REGISTER_SIZE          : positive;
+    REGISTER_SIZE          : positive range 32 to 32;
     RESET_VECTOR           : std_logic_vector(31 downto 0);
     MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
     BTB_ENTRIES            : natural

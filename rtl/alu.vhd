@@ -8,13 +8,13 @@ use work.constants_pkg.all;
 
 entity arithmetic_unit is
   generic (
-    REGISTER_SIZE       : integer;
+    REGISTER_SIZE       : positive range 32 to 32;
     SIMD_ENABLE         : boolean;
     SIGN_EXTENSION_SIZE : integer;
     MULTIPLY_ENABLE     : boolean;
     POWER_OPTIMIZED     : boolean;
     DIVIDE_ENABLE       : boolean;
-    SHIFTER_MAX_CYCLES  : natural;
+    SHIFTER_MAX_CYCLES  : positive range 1 to 32;
     FAMILY              : string
     );
   port (
@@ -40,7 +40,6 @@ end entity arithmetic_unit;
 
 architecture rtl of arithmetic_unit is
   constant SHIFTER_USE_MULTIPLIER : boolean := MULTIPLY_ENABLE;
-  constant SHIFT_SC               : natural := conditional(SHIFTER_USE_MULTIPLIER, 0, SHIFTER_MAX_CYCLES);
 
   alias func3  : std_logic_vector(2 downto 0) is instruction(INSTR_FUNC3'range);
   alias func7  : std_logic_vector(6 downto 0) is instruction(31 downto 25);
@@ -102,8 +101,8 @@ architecture rtl of arithmetic_unit is
 
   component shifter is
     generic (
-      REGISTER_SIZE : natural;
-      SINGLE_CYCLE  : natural
+      REGISTER_SIZE      : positive range 32 to 32;
+      SHIFTER_MAX_CYCLES : positive range 1 to 32
       );
     port (
       clk                  : in  std_logic;
@@ -112,12 +111,13 @@ architecture rtl of arithmetic_unit is
       lshifted_result      : out unsigned(REGISTER_SIZE-1 downto 0);
       rshifted_result      : out unsigned(REGISTER_SIZE-1 downto 0);
       shifted_result_valid : out std_logic;
-      sh_enable            : in  std_logic);
+      sh_enable            : in  std_logic
+      );
   end component shifter;
 
   component divider is
     generic (
-      REGISTER_SIZE : natural
+      REGISTER_SIZE : positive range 32 to 32
       );
     port (
       clk          : in std_logic;
@@ -257,8 +257,9 @@ begin
   SH_GEN1 : if not SHIFTER_USE_MULTIPLIER generate
     sh : shifter
       generic map (
-        REGiSTER_SIZE => REGISTER_SIZE,
-        SINGLE_CYCLE  => SHIFT_SC)
+        REGiSTER_SIZE      => REGISTER_SIZE,
+        SHIFTER_MAX_CYCLES => SHIFTER_MAX_CYCLES
+        )
       port map (
         clk                  => clk,
         shift_amt            => shift_amt,
@@ -484,7 +485,8 @@ begin
     div_select <= '1' when (func7 = mul_f7 and opcode = ALU_OP and instruction(14) = '1') else '0';
     div : divider
       generic map (
-        REGISTER_SIZE => REGISTER_SIZE)
+        REGISTER_SIZE => REGISTER_SIZE
+        )
       port map (
         clk              => clk,
         div_enable       => div_enable,
@@ -493,7 +495,8 @@ begin
         rs2_data         => unsigned(rs2_data),
         quotient         => quotient,
         remainder        => remainder,
-        div_result_valid => div_result_valid);
+        div_result_valid => div_result_valid
+        );
 
     div_result <= signed(quotient);
     rem_result <= signed(remainder);
@@ -523,8 +526,8 @@ use work.utils.all;
 
 entity shifter is
   generic (
-    REGISTER_SIZE : natural;
-    SINGLE_CYCLE  : natural
+    REGISTER_SIZE      : positive range 32 to 32;
+    SHIFTER_MAX_CYCLES : positive range 1 to 32
     );
   port (
     clk                  : in  std_logic;
@@ -543,15 +546,15 @@ architecture rtl of shifter is
   signal left_tmp         : signed(REGISTER_SIZE downto 0);
   signal right_tmp        : signed(REGISTER_SIZE downto 0);
 begin
-  assert SINGLE_CYCLE = 1 or SINGLE_CYCLE = 8 or SINGLE_CYCLE = 32 report "Bad SHIFTER_MAX_CYCLES Value" severity failure;
+  assert SHIFTER_MAX_CYCLES = 1 or SHIFTER_MAX_CYCLES = 8 or SHIFTER_MAX_CYCLES = 32 report "Bad SHIFTER_MAX_CYCLES Value" severity failure;
 
-  cycle1 : if SINGLE_CYCLE = 1 generate
+  cycle1 : if SHIFTER_MAX_CYCLES = 1 generate
     left_tmp             <= SHIFT_LEFT(shift_value, to_integer(shift_amt));
     right_tmp            <= SHIFT_RIGHT(shift_value, to_integer(shift_amt));
     shifted_result_valid <= sh_enable;
   end generate cycle1;
 
-  cycle4N : if SINGLE_CYCLE = 8 generate
+  cycle4N : if SHIFTER_MAX_CYCLES = 8 generate
     signal left_nxt   : signed(REGISTER_SIZE downto 0);
     signal right_nxt  : signed(REGISTER_SIZE downto 0);
     signal count      : unsigned(SHIFT_AMT_SIZE downto 0);
@@ -603,7 +606,7 @@ begin
     end process;
   end generate cycle4N;
 
-  cycle1N : if SINGLE_CYCLE = 32 generate
+  cycle1N : if SHIFTER_MAX_CYCLES = 32 generate
     signal left_nxt  : signed(REGISTER_SIZE downto 0);
     signal right_nxt : signed(REGISTER_SIZE downto 0);
     signal count     : signed(SHIFT_AMT_SIZE-1 downto 0);
@@ -667,7 +670,7 @@ use work.utils.all;
 
 entity divider is
   generic (
-    REGISTER_SIZE : natural
+    REGISTER_SIZE : positive range 32 to 32
     );
   port (
     clk              : in  std_logic;

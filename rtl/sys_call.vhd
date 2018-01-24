@@ -8,7 +8,7 @@ use work.constants_pkg.all;
 
 entity system_calls is
   generic (
-    REGISTER_SIZE    : natural;
+    REGISTER_SIZE    : positive range 32 to 32;
     COUNTER_LENGTH   : natural;
     POWER_OPTIMIZED  : boolean;
     INTERRUPT_VECTOR : std_logic_vector(31 downto 0);
@@ -67,7 +67,7 @@ entity system_calls is
     pause_ifetch   : out std_logic;
 
     vcp_writeback_en   : in std_logic;
-    vcp_writeback_data : in std_logic_vector(REGISTER_SIZE -1 downto 0)
+    vcp_writeback_data : in std_logic_vector(REGISTER_SIZE-1 downto 0)
     );
 end entity system_calls;
 
@@ -85,17 +85,17 @@ architecture rtl of system_calls is
 
   -- CSR signals. These are initialized to zero so that if any bits are never
   -- assigned, they act like constants.
-  signal mstatus      : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mepc         : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mcause       : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mbadaddr     : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mtime        : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mtimeh       : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal meimask      : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal meimask_full : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal meipend      : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal mcache       : std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-  signal misa         : std_logic_vector(REGISTER_SIZE -1 downto 0) := (others => '0');
+  signal mstatus      : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mepc         : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mcause       : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mbadaddr     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mtime        : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mtimeh       : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal meimask      : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal meimask_full : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal meipend      : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mcache       : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal misa         : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   --Assign csr_select instead of alias to get csr_select'right = 0 for indexing
   signal csr_select   : std_logic_vector(CSR_ADDRESS'length-1 downto 0);
   alias func3 is instruction(INSTR_FUNC3'range);
@@ -155,7 +155,7 @@ begin
     end if;
   end process;
 
-  mtime  <= std_logic_vector(time_counter(REGISTER_SIZE - 1 downto 0)) when COUNTER_LENGTH /= 0 else (others => '0');
+  mtime  <= std_logic_vector(time_counter(REGISTER_SIZE-1 downto 0)) when COUNTER_LENGTH /= 0 else (others => '0');
   mtimeh <= std_logic_vector(time_counter(time_counter'left downto time_counter'left-REGISTER_SIZE+1))
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
   misa(misa'left downto misa'left-1) <= "01";

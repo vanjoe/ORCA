@@ -17,7 +17,7 @@ package rv_components is
       BTB_ENTRIES            : natural                       := 0;
       MULTIPLY_ENABLE        : natural range 0 to 1          := 0;
       DIVIDE_ENABLE          : natural range 0 to 1          := 0;
-      SHIFTER_MAX_CYCLES     : natural                       := 1;
+      SHIFTER_MAX_CYCLES     : positive range 1 to 32        := 1;
       COUNTER_LENGTH         : natural                       := 0;
       ENABLE_EXCEPTIONS      : natural                       := 1;
       PIPELINE_STAGES        : natural range 4 to 5          := 5;
@@ -703,14 +703,14 @@ package rv_components is
 
   component orca_core is
     generic (
-      REGISTER_SIZE          : integer;
+      REGISTER_SIZE          : positive range 32 to 32;
       RESET_VECTOR           : std_logic_vector(31 downto 0);
       INTERRUPT_VECTOR       : std_logic_vector(31 downto 0);
       MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
       BTB_ENTRIES            : natural;
       MULTIPLY_ENABLE        : natural range 0 to 1;
       DIVIDE_ENABLE          : natural range 0 to 1;
-      SHIFTER_MAX_CYCLES     : natural;
+      SHIFTER_MAX_CYCLES     : positive range 1 to 32;
       POWER_OPTIMIZED        : natural range 0 to 1;
       COUNTER_LENGTH         : natural;
       ENABLE_EXCEPTIONS      : natural;
@@ -780,7 +780,7 @@ package rv_components is
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
       vcp_ready            : in  std_logic;
-      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_writeback_en     : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -793,7 +793,7 @@ package rv_components is
 
   component decode is
     generic (
-      REGISTER_SIZE          : positive;
+      REGISTER_SIZE          : positive range 32 to 32;
       SIGN_EXTENSION_SIZE    : positive;
       VCP_ENABLE             : natural range 0 to 2;
       PIPELINE_STAGES        : natural range 1 to 2;
@@ -835,14 +835,14 @@ package rv_components is
 
   component execute is
     generic (
-      REGISTER_SIZE         : positive;
+      REGISTER_SIZE         : positive range 32 to 32;
       SIGN_EXTENSION_SIZE   : positive;
       INTERRUPT_VECTOR      : std_logic_vector(31 downto 0);
       BTB_ENTRIES           : natural;
       POWER_OPTIMIZED       : boolean;
       MULTIPLY_ENABLE       : boolean;
       DIVIDE_ENABLE         : boolean;
-      SHIFTER_MAX_CYCLES    : natural;
+      SHIFTER_MAX_CYCLES    : positive range 1 to 32;
       COUNTER_LENGTH        : natural;
       ENABLE_EXCEPTIONS     : boolean;
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
@@ -932,7 +932,7 @@ package rv_components is
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
       vcp_ready            : in  std_logic;
-      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_writeback_en     : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -945,7 +945,7 @@ package rv_components is
 
   component instruction_fetch is
     generic (
-      REGISTER_SIZE          : positive;
+      REGISTER_SIZE          : positive range 32 to 32;
       RESET_VECTOR           : std_logic_vector(31 downto 0);
       MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
       BTB_ENTRIES            : natural
@@ -984,13 +984,13 @@ package rv_components is
 
   component arithmetic_unit is
     generic (
-      REGISTER_SIZE       : integer;
+      REGISTER_SIZE       : positive range 32 to 32;
       SIMD_ENABLE         : boolean;
       SIGN_EXTENSION_SIZE : integer;
       MULTIPLY_ENABLE     : boolean;
       POWER_OPTIMIZED     : boolean;
       DIVIDE_ENABLE       : boolean;
-      SHIFTER_MAX_CYCLES  : natural;
+      SHIFTER_MAX_CYCLES  : positive range 1 to 32;
       FAMILY              : string
       );
     port (
@@ -1016,7 +1016,7 @@ package rv_components is
 
   component branch_unit is
     generic (
-      REGISTER_SIZE       : integer;
+      REGISTER_SIZE       : positive range 32 to 32;
       SIGN_EXTENSION_SIZE : integer;
       BTB_ENTRIES         : natural
       );
@@ -1045,7 +1045,7 @@ package rv_components is
 
   component load_store_unit is
     generic (
-      REGISTER_SIZE       : integer;
+      REGISTER_SIZE       : positive range 32 to 32;
       SIGN_EXTENSION_SIZE : integer
       );
     port (
@@ -1079,7 +1079,7 @@ package rv_components is
 
   component register_file
     generic (
-      REGISTER_SIZE          : positive;
+      REGISTER_SIZE          : positive range 32 to 32;
       REGISTER_NAME_SIZE     : positive;
       READ_PORTS             : positive range 1 to 3;
       WRITE_FIRST_SMALL_RAMS : boolean
@@ -1101,7 +1101,7 @@ package rv_components is
 
   component system_calls is
     generic (
-      REGISTER_SIZE   : natural;
+      REGISTER_SIZE   : positive range 32 to 32;
       COUNTER_LENGTH  : natural;
       POWER_OPTIMIZED : boolean;
 
@@ -1162,7 +1162,7 @@ package rv_components is
       pause_ifetch : out std_logic;
 
       vcp_writeback_en   : in std_logic;
-      vcp_writeback_data : in std_logic_vector(REGISTER_SIZE -1 downto 0)
+      vcp_writeback_data : in std_logic_vector(REGISTER_SIZE-1 downto 0)
       );
   end component system_calls;
 
@@ -1605,7 +1605,7 @@ package rv_components is
 
   component vcp_handler is
     generic (
-      REGISTER_SIZE : integer;
+      REGISTER_SIZE : positive range 32 to 32;
       VCP_ENABLE    : natural range 0 to 2
       );
     port (

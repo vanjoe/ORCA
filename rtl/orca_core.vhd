@@ -8,14 +8,14 @@ use work.constants_pkg.all;
 
 entity orca_core is
   generic (
-    REGISTER_SIZE          : integer;
+    REGISTER_SIZE          : positive range 32 to 32;
     RESET_VECTOR           : std_logic_vector(31 downto 0);
     INTERRUPT_VECTOR       : std_logic_vector(31 downto 0);
     MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
     BTB_ENTRIES            : natural;
     MULTIPLY_ENABLE        : natural range 0 to 1;
     DIVIDE_ENABLE          : natural range 0 to 1;
-    SHIFTER_MAX_CYCLES     : natural;
+    SHIFTER_MAX_CYCLES     : positive range 1 to 32;
     POWER_OPTIMIZED        : natural range 0 to 1;
     COUNTER_LENGTH         : natural;
     ENABLE_EXCEPTIONS      : natural;

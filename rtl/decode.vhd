@@ -8,7 +8,7 @@ use work.constants_pkg.all;
 use work.utils.all;
 entity decode is
   generic (
-    REGISTER_SIZE          : positive;
+    REGISTER_SIZE          : positive range 32 to 32;
     SIGN_EXTENSION_SIZE    : positive;
     VCP_ENABLE             : natural;
     PIPELINE_STAGES        : natural range 1 to 2;

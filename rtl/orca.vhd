@@ -17,7 +17,7 @@ entity orca is
     BTB_ENTRIES            : natural                       := 0;
     MULTIPLY_ENABLE        : natural range 0 to 1          := 0;
     DIVIDE_ENABLE          : natural range 0 to 1          := 0;
-    SHIFTER_MAX_CYCLES     : natural                       := 1;
+    SHIFTER_MAX_CYCLES     : positive range 1 to 32        := 1;
     COUNTER_LENGTH         : natural                       := 0;
     ENABLE_EXCEPTIONS      : natural                       := 1;
     PIPELINE_STAGES        : natural range 4 to 5          := 5;

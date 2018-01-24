@@ -6,7 +6,7 @@ use work.constants_pkg.all;
 
 entity register_file is
   generic (
-    REGISTER_SIZE          : positive;
+    REGISTER_SIZE          : positive range 32 to 32;
     REGISTER_NAME_SIZE     : positive;
     READ_PORTS             : positive range 1 to 3;
     WRITE_FIRST_SMALL_RAMS : boolean

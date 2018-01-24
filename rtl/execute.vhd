@@ -13,14 +13,14 @@ use STD.textio.all;                     -- basic I/O
 
 entity execute is
   generic (
-    REGISTER_SIZE         : positive;
+    REGISTER_SIZE         : positive range 32 to 32;
     SIGN_EXTENSION_SIZE   : positive;
     INTERRUPT_VECTOR      : std_logic_vector(31 downto 0);
     BTB_ENTRIES           : natural;
     POWER_OPTIMIZED       : boolean;
     MULTIPLY_ENABLE       : boolean;
     DIVIDE_ENABLE         : boolean;
-    SHIFTER_MAX_CYCLES    : natural;
+    SHIFTER_MAX_CYCLES    : positive range 1 to 32;
     COUNTER_LENGTH        : natural;
     ENABLE_EXCEPTIONS     : boolean;
     ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
@@ -110,7 +110,7 @@ entity execute is
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
     vcp_ready            : in  std_logic;
-    vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE -1 downto 0);
+    vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_writeback_en     : in  std_logic;
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
