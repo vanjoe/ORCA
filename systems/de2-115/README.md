@@ -50,7 +50,7 @@ See README.md in the software directory for instructions on building software.
 
 To simulate, start by running `make sim`.  This builds a QSYS testbench and
 launches Modelsim.  A set of `add_wave_*` commands are provided to add all the
-signals in certain ORCA units (e.g. `add_wave_instruction_fetch`.  The command
+signals in certain ORCA units (e.g. `add_wave_instruction_fetch`).  The command
 `add_wave_all` will add all ORCA signals to the waveform.
 
 

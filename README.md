@@ -42,9 +42,6 @@ DE2-115 (found in the TPad or Veek development systems).
 The ice40ultra directory contains a Lattice iCEcube2 project that targets the
 iCE5LP4K chip.
 
-The sf2plus directory contains a Microsemi Libero project that targets the
-SmartFusion2 M2S150-FC1152 chip.
-
 In addition to these example system we provide a system (in the sim directory)
 for use in debug and automated tests using Modelsim.  We use Intel QSYS to help
 maintain these systems and generate interconnect.  The example systems can be
@@ -55,7 +52,10 @@ details.
 ORCA Core Generics
 ----------------
 
-Below is an overview of the various generics exposed from the top level to configure ORCA.
+Below is an overview of the various generics exposed from the top level to
+configure the ORCA core (ORCA external memory interface generics are in a
+separate section below).  If using Intel Quartus/QSYS or Xilinx Vivado a
+graphical interface which simplifies setting the generics is provided.
 
 ### `REGISTER_SIZE` (default = 32)
 
@@ -151,7 +151,7 @@ Memory Interfaces
 
 ORCA supports multiple memory interfaces to interoperate with different FPGA IP.
 Accesses may be cached (if caches are enabled) or uncached.  Cached instruction
-or data accesses go out over the IC or ID AXI interface respectively.  Uncached
+or data accesses go out over the IC or DC AXI interface respectively.  Uncached
 accesses go over either the uncached AXI4-Lite (IUC/DUC) or auxiliary interfaces
 (WISHBONE, Avalon, or LMB).
 
@@ -161,12 +161,13 @@ highest priority; if one or more AMRs are instantiated (by setting the
 `AUX_MEMORY_REGIONS` generic to 1 or more) and the address being accessed is
 greater than or equal to `AMRx_ADDR_BASE` and less than or equal to
 `AMRx_ADDR_LAST` for any AMR x then the access will use the auxiliary memory
-interface.  Note that since these are inclusive to disable an AMR you must set
+interface.  Note that since these are inclusive, to disable an AMR you must set
 the base address to greater than the last address.  UMRs have next highest
 priority and function the same way as AMRs.  Finally, if the access matches
 neither an AMR nor a UMR then the access will try to hit in the cache (if
 instantiated by setting the `ICACHE_SIZE`/`DCACHE_SIZE` generics to be
-non-zero).
+non-zero).  The caches currently only have write-through support with no
+allocation on write misses, though other modes will be supported in the future.
 
 |**CSR Name**     | **CSR Number** | **Access**|
 |:----------------|:--------------:|:---------:|
@@ -245,7 +246,7 @@ set at run-time.
 Size in bytes of the instruction cache and data cache.  Setting to
 0 disables the cache; each cache can be sized differently and it is possible to
 use only instruction or only data caches if desired.  There is a CSR for
-determining if caches are enabled.
+determining if caches are enabled: `CSR_MCACHE`.
 
 |**CSR Name** | **CSR Number** | **Access**|
 |:------------|:--------------:|:---------:|
@@ -324,8 +325,13 @@ external interrupt lines, and a such is read-only.
 
 The Processor is interrupted by an external interrupt on line *n* if and only if
 the `MIE` bit of the `MSTATUS` CSR is 1 and bit *n* of the `MEIMASK` CSR is set
-to 1.
+to 1.  Interrupts are level sensitive and active high; as such it is the
+responsibility of the interrupt handler to clear the interrupt (generally by
+communicating with the responsible peripherial over memory-mapped I/O) before
+re-enabling the `MIE` bit.  If the interrupt line is still high when the `MIE`
+bit is reset (typically via a mret instruction) then the interrupt will be
+immediately taken again.
 
 If interrupts are not enabled (`ENABLE_EXT_INTERRUPTS` is set to 0 or
 `ENABLE_EXCEPTIONS` is set to 0) then `MEIMASK` and `MEIPEND` will both be read
-only and return 0. 
+only and return 0.

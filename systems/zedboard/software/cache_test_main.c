@@ -213,25 +213,5 @@ int main(void){
 
   }
 
-  return 0;
-}
-
-
-int handle_interrupt(int cause, int epc, int regs[32])
-{
-	if (!((cause >> 31) & 0x1)) {
-		// Handle illegal instruction
-    //
-    // Nothing implemented yet; just print a debug message and hang.
-		printf("Unhandled illegal instruction @0x%08X.  Cause: 0x%08X, Instruction: 0x%08X\r\n", epc, cause, (unsigned)(*((uint32_t *)epc)));
-		for (;;);
-	}
-
-	// Handle interrupt
-  //
-  //Ignore and return; sporadic interrupts are used for some tests
-  // just to make sure interrupts are handled correctly.  Real
-  // unhandled interrupts will just loop back to the interrupt handler
-  // forever.
-	return epc;
+  return 1;
 }

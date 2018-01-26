@@ -120,13 +120,13 @@ set_parameter_property INTERRUPT_VECTOR UNITS None
 set_parameter_property INTERRUPT_VECTOR WIDTH 32
 set_parameter_property INTERRUPT_VECTOR HDL_PARAMETER true
 
-add_parameter MAX_IFETCHES_IN_FLIGHT positive 3
-set_parameter_property MAX_IFETCHES_IN_FLIGHT DEFAULT_VALUE 3
+add_parameter MAX_IFETCHES_IN_FLIGHT positive 4
+set_parameter_property MAX_IFETCHES_IN_FLIGHT DEFAULT_VALUE 4
 set_parameter_property MAX_IFETCHES_IN_FLIGHT DISPLAY_NAME "Max IFetches in Flight"
 set_parameter_property MAX_IFETCHES_IN_FLIGHT DESCRIPTION "Maximum instructions in flight at one time."
 set_parameter_property MAX_IFETCHES_IN_FLIGHT TYPE NATURAL
 set_parameter_property MAX_IFETCHES_IN_FLIGHT UNITS None
-set_parameter_property MAX_IFETCHES_IN_FLIGHT ALLOWED_RANGES 1:4
+set_parameter_property MAX_IFETCHES_IN_FLIGHT ALLOWED_RANGES {1 2 4 8}
 set_parameter_property MAX_IFETCHES_IN_FLIGHT HDL_PARAMETER true
 
 add_parameter BTB_ENTRIES natural 16
@@ -491,6 +491,9 @@ add_interface data avalon start
 set_interface_property data addressUnits SYMBOLS
 set_interface_property data associatedClock clock
 set_interface_property data associatedReset reset
+set_interface_property data readIssuingCapability 1
+set_interface_property data writeIssuingCapability 4
+set_interface_property data combinedIssuingCapability 4
 set_interface_property data bitsPerSymbol 8
 set_interface_property data burstOnBurstBoundariesOnly false
 set_interface_property data burstcountUnits WORDS
@@ -578,9 +581,9 @@ add_interface_port axi_duc DUC_WVALID wvalid Output 1
 add_interface axi_iuc axi start
 set_interface_property axi_iuc associatedClock clock
 set_interface_property axi_iuc associatedReset reset
-set_interface_property axi_iuc readIssuingCapability 3
+set_interface_property axi_iuc readIssuingCapability 4
 set_interface_property axi_iuc writeIssuingCapability 1
-set_interface_property axi_iuc combinedIssuingCapability 3
+set_interface_property axi_iuc combinedIssuingCapability 4
 set_interface_property axi_iuc ENABLED true
 set_interface_property axi_iuc EXPORT_OF ""
 set_interface_property axi_iuc PORT_NAME_MAP ""
@@ -630,9 +633,9 @@ add_interface_port axi_iuc IUC_WVALID wvalid Output 1
 add_interface axi_ic_master axi start
 set_interface_property axi_ic_master associatedClock clock
 set_interface_property axi_ic_master associatedReset reset
-set_interface_property axi_ic_master readIssuingCapability 4
+set_interface_property axi_ic_master readIssuingCapability 1
 set_interface_property axi_ic_master writeIssuingCapability 1
-set_interface_property axi_ic_master combinedIssuingCapability 4
+set_interface_property axi_ic_master combinedIssuingCapability 1
 set_interface_property axi_ic_master ENABLED true
 set_interface_property axi_ic_master EXPORT_OF ""
 set_interface_property axi_ic_master PORT_NAME_MAP ""
@@ -735,6 +738,9 @@ add_interface instruction avalon start
 set_interface_property instruction addressUnits SYMBOLS
 set_interface_property instruction associatedClock clock
 set_interface_property instruction associatedReset reset
+set_interface_property instruction readIssuingCapability 4
+set_interface_property instruction writeIssuingCapability 1
+set_interface_property instruction combinedIssuingCapability 4
 set_interface_property instruction bitsPerSymbol 8
 set_interface_property instruction burstOnBurstBoundariesOnly false
 set_interface_property instruction burstcountUnits WORDS
@@ -909,10 +915,10 @@ proc elaboration_callback {} {
         set_display_item_property SHIFTER_MAX_CYCLES ENABLED true
     }
 
-    set_interface_property axi_ic_master readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
-    set_interface_property axi_ic_master combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
-    set_interface_property axi_iuc       readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
-    set_interface_property axi_iuc       combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
+    set_interface_property instruction readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
+    set_interface_property instruction combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
+    set_interface_property axi_iuc     readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
+    set_interface_property axi_iuc     combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
 
     if { [get_parameter_value VCP_ENABLE] } {
         set_interface_property vcp ENABLED true

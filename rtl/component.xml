@@ -312,7 +312,7 @@
         </spirit:parameter>
         <spirit:parameter>
           <spirit:name>NUM_READ_OUTSTANDING</spirit:name>
-          <spirit:value spirit:format="long" spirit:resolve="dependent" spirit:dependency="spirit:decode(id(&apos;MODELPARAM_VALUE.MAX_IFETCHES_IN_FLIGHT&apos;))" spirit:id="BUSIFPARAM_VALUE.IUC.NUM_READ_OUTSTANDING">3</spirit:value>
+          <spirit:value spirit:format="long" spirit:resolve="dependent" spirit:dependency="spirit:decode(id(&apos;MODELPARAM_VALUE.MAX_IFETCHES_IN_FLIGHT&apos;))" spirit:id="BUSIFPARAM_VALUE.IUC.NUM_READ_OUTSTANDING">4</spirit:value>
         </spirit:parameter>
       </spirit:parameters>
       <spirit:vendorExtensions>
@@ -5359,7 +5359,7 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>MAX_IFETCHES_IN_FLIGHT</spirit:name>
         <spirit:displayName>Maximum Instruction Fetches in Flight</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.MAX_IFETCHES_IN_FLIGHT" spirit:minimum="1" spirit:maximum="4" spirit:rangeType="long">3</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.MAX_IFETCHES_IN_FLIGHT" spirit:minimum="1" spirit:rangeType="long">4</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>BTB_ENTRIES</spirit:name>
@@ -5606,6 +5606,13 @@
       <spirit:enumeration spirit:text="8kB">8192</spirit:enumeration>
       <spirit:enumeration spirit:text="16kB">16384</spirit:enumeration>
       <spirit:enumeration spirit:text="32kB">32768</spirit:enumeration>
+    </spirit:choice>
+    <spirit:choice>
+      <spirit:name>choice_list_max_ifetches_in_flight</spirit:name>
+      <spirit:enumeration>1</spirit:enumeration>
+      <spirit:enumeration>2</spirit:enumeration>
+      <spirit:enumeration>4</spirit:enumeration>
+      <spirit:enumeration>8</spirit:enumeration>
     </spirit:choice>
     <spirit:choice>
       <spirit:name>choice_list_pipeline_stages</spirit:name>
@@ -5872,7 +5879,7 @@
     <spirit:parameter>
       <spirit:name>MAX_IFETCHES_IN_FLIGHT</spirit:name>
       <spirit:displayName>Maximum Instruction Fetches in Flight</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.MAX_IFETCHES_IN_FLIGHT" spirit:minimum="1" spirit:maximum="4" spirit:rangeType="long">3</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.MAX_IFETCHES_IN_FLIGHT" spirit:minimum="1" spirit:rangeType="long" spirit:choiceRef="choice_list_max_ifetches_in_flight">4</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>BTB_ENTRIES</spirit:name>

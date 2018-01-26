@@ -9,6 +9,7 @@ db/
 quartus_db/
 incremental_db/
 *.hex
+*.ihex
 output_files/
 *.sof
 *.qsys

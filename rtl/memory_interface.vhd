@@ -13,7 +13,7 @@ entity memory_interface is
     WRITE_FIRST_SUPPORTED : boolean;
 
     WISHBONE_SINGLE_CYCLE_READS : natural range 0 to 1;
-    MAX_IFETCHES_IN_FLIGHT      : positive range 1 to 4;
+    MAX_IFETCHES_IN_FLIGHT      : positive;
     MAX_OUTSTANDING_REQUESTS    : positive;
 
     LOG2_BURSTLENGTH : positive;

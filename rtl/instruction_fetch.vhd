@@ -11,7 +11,7 @@ entity instruction_fetch is
   generic (
     REGISTER_SIZE          : positive range 32 to 32;
     RESET_VECTOR           : std_logic_vector(31 downto 0);
-    MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
+    MAX_IFETCHES_IN_FLIGHT : positive;
     BTB_ENTRIES            : natural
     );
   port (
@@ -27,7 +27,7 @@ entity instruction_fetch is
     from_pc_correction_ready     : buffer std_logic;
 
     --quash_ifetch is handled by to_pc_correction_valid
-    ifetch_idle                 : out std_logic;
+    ifetch_idle : out std_logic;
 
     from_ifetch_instruction     : out std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     from_ifetch_program_counter : out unsigned(REGISTER_SIZE-1 downto 0);
@@ -365,8 +365,6 @@ begin
     type instruction_fifo_data_vector is array (natural range <>) of std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
     signal instruction_fifo_internaldata : instruction_fifo_data_vector(MAX_IFETCHES_IN_FLIGHT-1 downto 0);
   begin
-    pc_fifo_readdata          <= pc_fifo_internaldata(0);
-    instruction_fifo_readdata <= instruction_fifo_internaldata(0);
     next_pc_fifo_usedw <=
       pc_fifo_usedw + to_unsigned(1, pc_fifo_usedw'length) when pc_fifo_write = '1' and pc_fifo_read = '0' else
       pc_fifo_usedw - to_unsigned(1, pc_fifo_usedw'length) when pc_fifo_write = '0' and pc_fifo_read = '1' else
@@ -377,61 +375,130 @@ begin
       instruction_fifo_usedw - to_unsigned(1, instruction_fifo_usedw'length) when
       instruction_fifo_write = '0' and instruction_fifo_read = '1' else
       instruction_fifo_usedw;
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        if pc_fifo_read = '1' then
-          pc_fifo_internaldata(MAX_IFETCHES_IN_FLIGHT-2 downto 0) <=
-            pc_fifo_internaldata(MAX_IFETCHES_IN_FLIGHT-1 downto 1);
-        end if;
-        if pc_fifo_write = '1' then
-          pc_fifo_empty <= '0';
+    lut_gen : if MAX_IFETCHES_IN_FLIGHT < 4 generate
+      pc_fifo_readdata          <= pc_fifo_internaldata(0);
+      instruction_fifo_readdata <= instruction_fifo_internaldata(0);
+
+      process(clk)
+      begin
+        if rising_edge(clk) then
           if pc_fifo_read = '1' then
-            pc_fifo_internaldata(to_integer(pc_fifo_usedw - to_unsigned(1, pc_fifo_usedw'length))) <= pc_fifo_writedata;
-          else
-            pc_fifo_internaldata(to_integer(pc_fifo_usedw)) <= pc_fifo_writedata;
-            if pc_fifo_usedw = to_unsigned(MAX_IFETCHES_IN_FLIGHT-1, pc_fifo_usedw'length) then
+            pc_fifo_internaldata(MAX_IFETCHES_IN_FLIGHT-2 downto 0) <=
+              pc_fifo_internaldata(MAX_IFETCHES_IN_FLIGHT-1 downto 1);
+          end if;
+          if pc_fifo_write = '1' then
+            pc_fifo_empty <= '0';
+            if pc_fifo_read = '1' then
+              pc_fifo_internaldata(to_integer(pc_fifo_usedw - to_unsigned(1, pc_fifo_usedw'length))) <= pc_fifo_writedata;
+            else
+              pc_fifo_internaldata(to_integer(pc_fifo_usedw)) <= pc_fifo_writedata;
+              if pc_fifo_usedw = to_unsigned(MAX_IFETCHES_IN_FLIGHT-1, pc_fifo_usedw'length) then
+                pc_fifo_full <= '1';
+              end if;
+            end if;
+          elsif pc_fifo_read = '1' then
+            pc_fifo_full <= '0';
+            if pc_fifo_usedw = to_unsigned(1, pc_fifo_usedw'length) then
+              pc_fifo_empty <= '1';
+            end if;
+          end if;
+
+          if instruction_fifo_read = '1' then
+            instruction_fifo_internaldata(MAX_IFETCHES_IN_FLIGHT-2 downto 0) <=
+              instruction_fifo_internaldata(MAX_IFETCHES_IN_FLIGHT-1 downto 1);
+          end if;
+          if instruction_fifo_write = '1' then
+            instruction_fifo_empty <= '0';
+            if instruction_fifo_read = '1' then
+              instruction_fifo_internaldata(to_integer(instruction_fifo_usedw - to_unsigned(1, instruction_fifo_usedw'length))) <= instruction_fifo_writedata;
+            else
+              instruction_fifo_internaldata(to_integer(instruction_fifo_usedw)) <= instruction_fifo_writedata;
+              if instruction_fifo_usedw = to_unsigned(MAX_IFETCHES_IN_FLIGHT-1, instruction_fifo_usedw'length) then
+                instruction_fifo_full <= '1';
+              end if;
+            end if;
+          elsif instruction_fifo_read = '1' then
+            instruction_fifo_full <= '0';
+            if instruction_fifo_usedw = to_unsigned(1, instruction_fifo_usedw'length) then
+              instruction_fifo_empty <= '1';
+            end if;
+          end if;
+
+          if reset = '1' or pc_instruction_fifo_reset = '1' then
+            pc_fifo_empty          <= '1';
+            pc_fifo_full           <= '0';
+            instruction_fifo_empty <= '1';
+            instruction_fifo_full  <= '0';
+          end if;
+        end if;
+      end process;
+    end generate lut_gen;
+    ram_gen : if MAX_IFETCHES_IN_FLIGHT >= 4 generate
+      signal pc_fifo_read_address           : unsigned(log2(MAX_IFETCHES_IN_FLIGHT)-1 downto 0);
+      signal pc_fifo_write_address          : unsigned(log2(MAX_IFETCHES_IN_FLIGHT)-1 downto 0);
+      signal instruction_fifo_read_address  : unsigned(log2(MAX_IFETCHES_IN_FLIGHT)-1 downto 0);
+      signal instruction_fifo_write_address : unsigned(log2(MAX_IFETCHES_IN_FLIGHT)-1 downto 0);
+    begin
+      pc_fifo_readdata          <= pc_fifo_internaldata(to_integer(pc_fifo_read_address));
+      instruction_fifo_readdata <= instruction_fifo_internaldata(to_integer(instruction_fifo_read_address));
+
+      process(clk)
+      begin
+        if rising_edge(clk) then
+          if pc_fifo_write = '1' then
+            pc_fifo_empty                                           <= '0';
+            pc_fifo_internaldata(to_integer(pc_fifo_write_address)) <= pc_fifo_writedata;
+            pc_fifo_write_address <=
+              pc_fifo_write_address + to_unsigned(1, pc_fifo_write_address'length);
+            if (pc_fifo_read = '0' and
+                pc_fifo_usedw = to_unsigned(MAX_IFETCHES_IN_FLIGHT-1, pc_fifo_usedw'length)) then
               pc_fifo_full <= '1';
             end if;
           end if;
-        elsif pc_fifo_read = '1' then
-          pc_fifo_full <= '0';
-          if pc_fifo_usedw = to_unsigned(1, pc_fifo_usedw'length) then
-            pc_fifo_empty <= '1';
+          if pc_fifo_read = '1' then
+            pc_fifo_full <= '0';
+            pc_fifo_read_address <=
+              pc_fifo_read_address + to_unsigned(1, pc_fifo_read_address'length);
+            if (pc_fifo_write = '0' and
+                pc_fifo_usedw = to_unsigned(1, pc_fifo_usedw'length)) then
+              pc_fifo_empty <= '1';
+            end if;
           end if;
-        end if;
 
-        if instruction_fifo_read = '1' then
-          instruction_fifo_internaldata(MAX_IFETCHES_IN_FLIGHT-2 downto 0) <=
-            instruction_fifo_internaldata(MAX_IFETCHES_IN_FLIGHT-1 downto 1);
-        end if;
-        if instruction_fifo_write = '1' then
-          instruction_fifo_empty <= '0';
-          if instruction_fifo_read = '1' then
-            instruction_fifo_internaldata(to_integer(instruction_fifo_usedw - to_unsigned(1, instruction_fifo_usedw'length))) <= instruction_fifo_writedata;
-          else
-            instruction_fifo_internaldata(to_integer(instruction_fifo_usedw)) <= instruction_fifo_writedata;
-            if instruction_fifo_usedw = to_unsigned(MAX_IFETCHES_IN_FLIGHT-1, instruction_fifo_usedw'length) then
+          if instruction_fifo_write = '1' then
+            instruction_fifo_empty                                                    <= '0';
+            instruction_fifo_internaldata(to_integer(instruction_fifo_write_address)) <= instruction_fifo_writedata;
+            instruction_fifo_write_address <=
+              instruction_fifo_write_address + to_unsigned(1, instruction_fifo_write_address'length);
+            if (instruction_fifo_read = '0' and
+                instruction_fifo_usedw = to_unsigned(MAX_IFETCHES_IN_FLIGHT-1, instruction_fifo_usedw'length)) then
               instruction_fifo_full <= '1';
             end if;
           end if;
-        elsif instruction_fifo_read = '1' then
-          instruction_fifo_full <= '0';
-          if instruction_fifo_usedw = to_unsigned(1, instruction_fifo_usedw'length) then
-            instruction_fifo_empty <= '1';
+          if instruction_fifo_read = '1' then
+            instruction_fifo_full <= '0';
+            instruction_fifo_read_address <=
+              instruction_fifo_read_address + to_unsigned(1, instruction_fifo_read_address'length);
+            if (instruction_fifo_write = '0' and
+                instruction_fifo_usedw = to_unsigned(1, instruction_fifo_usedw'length)) then
+              instruction_fifo_empty <= '1';
+            end if;
+          end if;
+
+          if reset = '1' or pc_instruction_fifo_reset = '1' then
+            pc_fifo_empty                  <= '1';
+            pc_fifo_full                   <= '0';
+            instruction_fifo_empty         <= '1';
+            instruction_fifo_full          <= '0';
+            pc_fifo_read_address           <= to_unsigned(0, pc_fifo_read_address'length);
+            pc_fifo_write_address          <= to_unsigned(0, pc_fifo_write_address'length);
+            instruction_fifo_read_address  <= to_unsigned(0, instruction_fifo_read_address'length);
+            instruction_fifo_write_address <= to_unsigned(0, instruction_fifo_write_address'length);
           end if;
         end if;
-
-        if reset = '1' or pc_instruction_fifo_reset = '1' then
-          pc_fifo_empty          <= '1';
-          pc_fifo_full           <= '0';
-          instruction_fifo_empty <= '1';
-          instruction_fifo_full  <= '0';
-        end if;
-      end if;
-    end process;
+      end process;
+    end generate ram_gen;
   end generate a_few_fetches_in_flight;
-  --Todo: For > 3 or 4 probably want a real FIFO
 
   --Feed readdata directly to decode stage
   bypass_gen : if FIFO_BYPASS generate
@@ -457,6 +524,12 @@ begin
     "BTB_ENTRIES (" &
     natural'image(BTB_ENTRIES) &
     ") must be a power of 2."
+    severity failure;
+
+  assert (MAX_IFETCHES_IN_FLIGHT < 4) or (2**log2(MAX_IFETCHES_IN_FLIGHT) = MAX_IFETCHES_IN_FLIGHT) report
+    "MAX_IFETCHES_IN_FLIGHT (" &
+    natural'image(MAX_IFETCHES_IN_FLIGHT) &
+    ") must be less than 4 or a power of 2."
     severity failure;
 
   assert FIFO_BYPASS or (MAX_IFETCHES_IN_FLIGHT > 1) report

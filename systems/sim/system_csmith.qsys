@@ -257,7 +257,7 @@
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <module name="clock_gen_0" kind="clock_gen" version="1.0" enabled="1">
-  <parameter name="CLK_MHZ" value="1000" />
+  <parameter name="CLK_MHZ" value="100" />
  </module>
  <module
    name="onchip_memory2_0"

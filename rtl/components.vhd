@@ -13,7 +13,7 @@ package rv_components is
 
       RESET_VECTOR           : std_logic_vector(31 downto 0) := X"00000000";
       INTERRUPT_VECTOR       : std_logic_vector(31 downto 0) := X"00000200";
-      MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4         := 1;
+      MAX_IFETCHES_IN_FLIGHT : positive                      := 1;
       BTB_ENTRIES            : natural                       := 0;
       MULTIPLY_ENABLE        : natural range 0 to 1          := 0;
       DIVIDE_ENABLE          : natural range 0 to 1          := 0;
@@ -347,13 +347,13 @@ package rv_components is
       vcp_data2            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
-      vcp_ready            : in  std_logic                                   := '1';
-      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-      vcp_writeback_en     : in  std_logic                                   := '1';
-      vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-      vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-      vcp_alu_used         : in  std_logic                                   := '0';
-      vcp_alu_source_valid : in  std_logic                                   := '0';
+      vcp_ready            : in  std_logic                                  := '1';
+      vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+      vcp_writeback_en     : in  std_logic                                  := '1';
+      vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+      vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+      vcp_alu_used         : in  std_logic                                  := '0';
+      vcp_alu_source_valid : in  std_logic                                  := '0';
       vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_result_valid : out std_logic
       );
@@ -365,7 +365,7 @@ package rv_components is
       WRITE_FIRST_SUPPORTED : boolean;
 
       WISHBONE_SINGLE_CYCLE_READS : natural range 0 to 1;
-      MAX_IFETCHES_IN_FLIGHT      : positive range 1 to 4;
+      MAX_IFETCHES_IN_FLIGHT      : positive;
       MAX_OUTSTANDING_REQUESTS    : positive;
 
       LOG2_BURSTLENGTH : positive;
@@ -706,7 +706,7 @@ package rv_components is
       REGISTER_SIZE          : positive range 32 to 32;
       RESET_VECTOR           : std_logic_vector(31 downto 0);
       INTERRUPT_VECTOR       : std_logic_vector(31 downto 0);
-      MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
+      MAX_IFETCHES_IN_FLIGHT : positive;
       BTB_ENTRIES            : natural;
       MULTIPLY_ENABLE        : natural range 0 to 1;
       DIVIDE_ENABLE          : natural range 0 to 1;
@@ -784,7 +784,7 @@ package rv_components is
       vcp_writeback_en     : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      vcp_alu_used         : in  std_logic ;
+      vcp_alu_used         : in  std_logic;
       vcp_alu_source_valid : in  std_logic;
       vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_result_valid : out std_logic
@@ -947,7 +947,7 @@ package rv_components is
     generic (
       REGISTER_SIZE          : positive range 32 to 32;
       RESET_VECTOR           : std_logic_vector(31 downto 0);
-      MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4;
+      MAX_IFETCHES_IN_FLIGHT : positive;
       BTB_ENTRIES            : natural
       );
     port (

@@ -336,7 +336,7 @@ proc compose { } {
     set_instance_parameter_value the_vectorblox_orca {REGISTER_SIZE} {32}
     set_instance_parameter_value the_vectorblox_orca {RESET_VECTOR} {0}
     set_instance_parameter_value the_vectorblox_orca {INTERRUPT_VECTOR} {512}
-    set_instance_parameter_value the_vectorblox_orca {MAX_IFETCHES_IN_FLIGHT} {3}
+    set_instance_parameter_value the_vectorblox_orca {MAX_IFETCHES_IN_FLIGHT} {4}
     set_instance_parameter_value the_vectorblox_orca {BTB_ENTRIES} {16}
     set_instance_parameter_value the_vectorblox_orca {MULTIPLY_ENABLE} {1}
     set_instance_parameter_value the_vectorblox_orca {DIVIDE_ENABLE} {1}

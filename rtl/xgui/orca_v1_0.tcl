@@ -64,7 +64,7 @@ proc init_gui { IPINST } {
 
     set performanceOptionsGroup [ipgui::add_group $IPINST -name "Performance/Area Options" -parent $generalParametersPage]
     
-    set MAX_IFETCHES_IN_FLIGHT [ ipgui::add_param $IPINST -name "MAX_IFETCHES_IN_FLIGHT" -parent $performanceOptionsGroup ]
+    set MAX_IFETCHES_IN_FLIGHT [ ipgui::add_param $IPINST -name "MAX_IFETCHES_IN_FLIGHT" -parent $performanceOptionsGroup -widget comboBox ]
     set_property tooltip \
         [concat \
              "Maximum number of instruction fetches in flight.  " \

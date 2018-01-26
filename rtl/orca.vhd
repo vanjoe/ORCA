@@ -13,7 +13,7 @@ entity orca is
 
     RESET_VECTOR           : std_logic_vector(31 downto 0) := X"00000000";
     INTERRUPT_VECTOR       : std_logic_vector(31 downto 0) := X"00000200";
-    MAX_IFETCHES_IN_FLIGHT : positive range 1 to 4         := 1;
+    MAX_IFETCHES_IN_FLIGHT : positive                      := 1;
     BTB_ENTRIES            : natural                       := 0;
     MULTIPLY_ENABLE        : natural range 0 to 1          := 0;
     DIVIDE_ENABLE          : natural range 0 to 1          := 0;

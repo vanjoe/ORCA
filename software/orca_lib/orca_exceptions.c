@@ -60,9 +60,9 @@ int register_orca_interrupt_handler(uint32_t interrupt_mask, orca_interrupt_hand
 //support package.
 int orca_test_passfail(int t3, int epc){
   if(t3 == 1){
-    printf("\r\nTest passed!\r\n%c", 0x4);
+    printf("\r\nTest passed!\r\n--\r\n%c", 0x4);
   } else {
-    printf("\r\nTest failed with %d error%s.\r\n%c", t3 ? t3 : 1, t3 ? "s" : "", 0x4);
+    printf("\r\nTest failed with %d error%s.\r\n--\r\n%c", t3 ? t3 : 1, t3 ? "s" : "", 0x4);
   }
 
   //Hang here; never return
@@ -84,10 +84,10 @@ int handle_exception(int cause, int epc, int regs[32]){
     // By default just print a debug message and hang.
     if(!registered_illegal_instruction_handler){
       if(cause == CAUSE_MACHINE_ECALL){
-        printf("Unhandled ECALL; assuming orca-test\r\n");
+        printf("\r\n--\r\nUnhandled ECALL; assuming orca-test\r\n");
         return orca_test_passfail(regs[28], epc);
       }
-      printf("Unhandled illegal instruction @0x%08X.  Cause: 0x%08X, Instruction: 0x%08X\r\n", epc, cause, (unsigned)(*((uint32_t *)epc)));
+      printf("\r\n--\r\nUnhandled illegal instruction @0x%08X.  Cause: 0x%08X, Instruction: 0x%08X\r\n--\r\n", epc, cause, (unsigned)(*((uint32_t *)epc)));
       for (;;);
     } else {
       return (*illegal_instruction_handler)(cause, epc, regs, illegal_instruction_context);

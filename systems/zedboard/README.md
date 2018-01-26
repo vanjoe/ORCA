@@ -1,4 +1,4 @@
-These instructions assume that you are using a linux machine, all other
+These instructions assume that you are using Linux and GNU make, all other
 platforms are untested.  This project targets the Zynq-7000 XC7Z020-CLG484-1
 SoC, found on the Zedboard development kit.
 

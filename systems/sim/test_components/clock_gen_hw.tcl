@@ -47,10 +47,10 @@ add_fileset_file test_components/clock_gen.vhd VHDL PATH clock_gen.vhd
 #
 # parameters
 #
-add_parameter CLK_MHZ INTEGER 1000
-set_parameter_property CLK_MHZ DEFAULT_VALUE 1000
+add_parameter CLK_MHZ POSITIVE 100
+set_parameter_property CLK_MHZ DEFAULT_VALUE 100
 set_parameter_property CLK_MHZ DISPLAY_NAME CLK_MHZ
-set_parameter_property CLK_MHZ TYPE INTEGER
+set_parameter_property CLK_MHZ TYPE POSITIVE
 set_parameter_property CLK_MHZ UNITS None
 set_parameter_property CLK_MHZ ALLOWED_RANGES -2147483648:2147483647
 set_parameter_property CLK_MHZ HDL_PARAMETER true

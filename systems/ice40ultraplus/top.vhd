@@ -573,7 +573,6 @@ begin
         vcp_writeback_en     => vcp_writeback_en,
         vcp_alu_data1        => vcp_alu_data1,
         vcp_alu_data2        => vcp_alu_data2,
-        vcp_alu_op_size      => vcp_alu_op_size,
         vcp_alu_source_valid => vcp_alu_source_valid,
         vcp_alu_result       => vcp_alu_result,
         vcp_alu_result_valid => vcp_alu_result_valid,
@@ -612,7 +611,6 @@ begin
         vcp_writeback_en     => vcp_writeback_en,
         vcp_alu_data1        => vcp_alu_data1,
         vcp_alu_data2        => vcp_alu_data2,
---        vcp_alu_op_size      => vcp_alu_op_size,
         vcp_alu_source_valid => vcp_alu_source_valid,
         vcp_alu_result       => vcp_alu_result,
         vcp_alu_result_valid => vcp_alu_result_valid

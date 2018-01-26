@@ -5,9 +5,7 @@
 TARGET ?= test
 
 ifndef ORCA_TEST
-ifeq ($(SW_PROJ), dhrystone)
-  C_SRCS  += dhry_1.c dhry_2.c orca_malloc.c
-else ifeq ($(SW_PROJ), cache_test)
+ifeq ($(SW_PROJ), cache_test)
   AS_SRCS += cache_test.S
   C_SRCS  += cache_test_main.c orca_interrupts.c orca_memory.c
 else
