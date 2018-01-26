@@ -177,6 +177,7 @@ set_parameter_property COUNTER_LENGTH HDL_PARAMETER true
 set_display_item_property COUNTER_LENGTH DISPLAY_HINT boolean
 
 add_parameter ENABLE_EXCEPTIONS natural 1
+set_parameter_property ENABLE_EXCEPTIONS DEFAULT_VALUE 1
 set_parameter_property ENABLE_EXCEPTIONS DISPLAY_NAME "Enable Exceptions"
 set_parameter_property ENABLE_EXCEPTIONS DESCRIPTION "Enable handling of illegal instructions, external interrupts, and timer interrupts (Recommended)"
 set_parameter_property ENABLE_EXCEPTIONS TYPE NATURAL
@@ -201,7 +202,8 @@ set_parameter_property VCP_ENABLE UNITS None
 set_parameter_property VCP_ENABLE ALLOWED_RANGES 0:2
 set_parameter_property VCP_ENABLE HDL_PARAMETER true
 
-add_parameter ENABLE_EXT_INTERRUPTS natural 0
+add_parameter ENABLE_EXT_INTERRUPTS natural 1
+set_parameter_property ENABLE_EXT_INTERRUPTS DEFAULT_VALUE 1
 set_parameter_property ENABLE_EXT_INTERRUPTS DISPLAY_NAME "Enable Interrupts"
 set_parameter_property ENABLE_EXT_INTERRUPTS DESCRIPTION "Enable handling of external interrupts"
 set_parameter_property ENABLE_EXT_INTERRUPTS TYPE NATURAL
@@ -211,6 +213,7 @@ set_parameter_property ENABLE_EXT_INTERRUPTS HDL_PARAMETER true
 set_display_item_property ENABLE_EXT_INTERRUPTS DISPLAY_HINT boolean
 
 add_parameter          NUM_EXT_INTERRUPTS POSITIVE 2
+set_parameter_property NUM_EXT_INTERRUPTS DEFAULT_VALUE 2
 set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
 set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES 1:32
 set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "       External Interrupts"
@@ -491,9 +494,6 @@ add_interface data avalon start
 set_interface_property data addressUnits SYMBOLS
 set_interface_property data associatedClock clock
 set_interface_property data associatedReset reset
-set_interface_property data readIssuingCapability 1
-set_interface_property data writeIssuingCapability 4
-set_interface_property data combinedIssuingCapability 4
 set_interface_property data bitsPerSymbol 8
 set_interface_property data burstOnBurstBoundariesOnly false
 set_interface_property data burstcountUnits WORDS
@@ -738,9 +738,6 @@ add_interface instruction avalon start
 set_interface_property instruction addressUnits SYMBOLS
 set_interface_property instruction associatedClock clock
 set_interface_property instruction associatedReset reset
-set_interface_property instruction readIssuingCapability 4
-set_interface_property instruction writeIssuingCapability 1
-set_interface_property instruction combinedIssuingCapability 4
 set_interface_property instruction bitsPerSymbol 8
 set_interface_property instruction burstOnBurstBoundariesOnly false
 set_interface_property instruction burstcountUnits WORDS
@@ -915,8 +912,6 @@ proc elaboration_callback {} {
         set_display_item_property SHIFTER_MAX_CYCLES ENABLED true
     }
 
-    set_interface_property instruction readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
-    set_interface_property instruction combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
     set_interface_property axi_iuc     readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
     set_interface_property axi_iuc     combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
 
