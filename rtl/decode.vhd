@@ -137,6 +137,7 @@ begin
     waiting_for_secondhalf <= from_stage1_valid and not to_decode_valid when from_stage1_instruction(MAJOR_OP'range) = LVE64_OP else '0';
 
     decode_stage : process (clk) is
+      variable instr_high : std_logic_vector(from_decode_instruction_signal'left downto from_decode_instruction_signal'left-31);
     begin
       if rising_edge(clk) then
         -- if to_stage1_ready = '1' then
@@ -158,10 +159,10 @@ begin
           from_decode_sign_extension <=
             std_logic_vector(resize(signed(from_stage1_instruction(from_stage1_instruction'left downto from_stage1_instruction'left)),
                                     SIGN_EXTENSION_SIZE));
-          from_decode_program_counter                                                                                       <= from_stage1_program_counter;
-          from_decode_predicted_pc                                                                                          <= from_stage1_predicted_pc;
-          from_decode_instruction_signal(from_decode_instruction_signal'left downto from_decode_instruction_signal'left-31) <= to_decode_instruction;
-          from_decode_instruction_signal(31 downto 0)                                                                       <= from_stage1_instruction;
+          from_decode_program_counter                      <= from_stage1_program_counter;
+          from_decode_predicted_pc                         <= from_stage1_predicted_pc;
+          from_decode_instruction_signal(instr_high'range) <= to_decode_instruction;
+          from_decode_instruction_signal(31 downto 0)      <= from_stage1_instruction;
 
           from_decode_valid_signal <= from_stage1_valid;
           from_decode_rs1_data     <= rs1_data;
@@ -169,7 +170,7 @@ begin
           from_decode_rs3_data     <= rs3_data;
         end if;
 
-        if (from_stage1_valid and to_decode_valid) = '1' and from_stage1_instruction(MAJOR_OP'range) = LVE64_OP then
+        if (from_stage1_valid and to_decode_valid and to_decode_ready) = '1' and from_stage1_instruction(MAJOR_OP'range) = LVE64_OP  then
           from_stage1_valid <= '0';
         end if;
         --Bypass registers already read out of register file

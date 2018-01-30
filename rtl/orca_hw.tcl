@@ -199,7 +199,7 @@ set_parameter_property VCP_ENABLE DISPLAY_NAME "Vector Extensions"
 set_parameter_property VCP_ENABLE DESCRIPTION "Enable Vector Extensions"
 set_parameter_property VCP_ENABLE TYPE NATURAL
 set_parameter_property VCP_ENABLE UNITS None
-set_parameter_property VCP_ENABLE ALLOWED_RANGES 0:2
+set_parameter_property VCP_ENABLE ALLOWED_RANGES {0:Disable,1:32\ Bit,2:32/64\ Bit}
 set_parameter_property VCP_ENABLE HDL_PARAMETER true
 
 add_parameter ENABLE_EXT_INTERRUPTS natural 1
@@ -322,7 +322,7 @@ set_parameter_property INSTRUCTION_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property INSTRUCTION_REQUEST_REGISTER DISPLAY_NAME "Instruction Request Register"
 set_parameter_property INSTRUCTION_REQUEST_REGISTER DESCRIPTION "Register instruction master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property INSTRUCTION_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+set_parameter_property INSTRUCTION_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
 
 add_parameter          INSTRUCTION_RETURN_REGISTER natural 0
 set_parameter_property INSTRUCTION_RETURN_REGISTER DEFAULT_VALUE 0
@@ -338,7 +338,7 @@ set_parameter_property IUC_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property IUC_REQUEST_REGISTER DISPLAY_NAME "IUC Request Register"
 set_parameter_property IUC_REQUEST_REGISTER DESCRIPTION "Register IUC master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property IUC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+set_parameter_property IUC_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
 
 add_parameter          IUC_RETURN_REGISTER natural 0
 set_parameter_property IUC_RETURN_REGISTER DEFAULT_VALUE 0
@@ -354,7 +354,7 @@ set_parameter_property IAUX_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property IAUX_REQUEST_REGISTER DISPLAY_NAME "Instruction Avalon Request Register"
 set_parameter_property IAUX_REQUEST_REGISTER DESCRIPTION "Register instruction avalon master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property IAUX_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+set_parameter_property IAUX_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
 
 add_parameter          IAUX_RETURN_REGISTER natural 0
 set_parameter_property IAUX_RETURN_REGISTER DEFAULT_VALUE 0
@@ -370,7 +370,7 @@ set_parameter_property IC_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property IC_REQUEST_REGISTER DISPLAY_NAME "IC Request Register"
 set_parameter_property IC_REQUEST_REGISTER DESCRIPTION "Register IC master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property IC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+set_parameter_property IC_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
 
 add_parameter          IC_RETURN_REGISTER natural 0
 set_parameter_property IC_RETURN_REGISTER DEFAULT_VALUE 0
@@ -398,7 +398,7 @@ set_parameter_property DATA_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property DATA_REQUEST_REGISTER DISPLAY_NAME "Data Request Register"
 set_parameter_property DATA_REQUEST_REGISTER DESCRIPTION "Register data master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property DATA_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+set_parameter_property DATA_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
 
 add_parameter          DATA_RETURN_REGISTER natural 0
 set_parameter_property DATA_RETURN_REGISTER DEFAULT_VALUE 0
@@ -414,7 +414,7 @@ set_parameter_property DUC_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property DUC_REQUEST_REGISTER DISPLAY_NAME "DUC Request Register"
 set_parameter_property DUC_REQUEST_REGISTER DESCRIPTION "Register DUC master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property DUC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+set_parameter_property DUC_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
 
 add_parameter          DUC_RETURN_REGISTER natural 1
 set_parameter_property DUC_RETURN_REGISTER DEFAULT_VALUE 1
@@ -430,7 +430,7 @@ set_parameter_property DAUX_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property DAUX_REQUEST_REGISTER DISPLAY_NAME "Data avalon Request Register"
 set_parameter_property DAUX_REQUEST_REGISTER DESCRIPTION "Register data avalon master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property DAUX_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+set_parameter_property DAUX_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
 
 add_parameter          DAUX_RETURN_REGISTER natural 1
 set_parameter_property DAUX_RETURN_REGISTER DEFAULT_VALUE 1
@@ -446,7 +446,7 @@ set_parameter_property DC_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property DC_REQUEST_REGISTER DISPLAY_NAME "DC Request Register"
 set_parameter_property DC_REQUEST_REGISTER DESCRIPTION "Register DC master request for higher fmax.  \
 0/Off, 1/Light, 2/Full."
-set_parameter_property DC_REQUEST_REGISTER ALLOWED_RANGES {0,1,2}
+set_parameter_property DC_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
 
 add_parameter          DC_RETURN_REGISTER natural 0
 set_parameter_property DC_RETURN_REGISTER DEFAULT_VALUE 0
