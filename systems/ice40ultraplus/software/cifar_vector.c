@@ -194,15 +194,8 @@ void convolution_ci_lve(vbx_ubyte_t *v_outb, vbx_ubyte_t *v_inb, convolution_lay
 		if (layer->zeropad_output) {
 			vbx_zeropad_ci(v_outb+(k*(n0+4)*(m0+2)), v_tmp, v_map, m0, n0);
 		} else {
-			#if 1
-			//FIXME: For some reason the VMOV doesn't work, manually copying.
-			for(int i=0;i<m0*n0;i++){
-				((vbx_word_t*)v_outb+(k*n0*m0))[i]=v_map[i];
-			}
-			#else
 			vbx_set_vl(m0*n0);
 			vbx(VVW, VMOV, (vbx_word_t*)v_outb+(k*n0*m0),v_map,0);
-			#endif
 		}
 	}
 }

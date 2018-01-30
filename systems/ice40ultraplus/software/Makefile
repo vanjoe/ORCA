@@ -18,10 +18,11 @@ C_SRCS += uart.c
 
 ## Common ORCA software build script and parameters to pass to it
 USE_LVE       := TRUE
-EXTRA_C_FLAGS += -mno-div
+EXTRA_CFLAGS += -mno-div
 ORCA_ROOT     ?= ../../..
 C_DEPS        += sys_clk.h
 TARGET        ?= test
+START_ADDRESS=0
 include $(ORCA_ROOT)/software/software.mk
 
 

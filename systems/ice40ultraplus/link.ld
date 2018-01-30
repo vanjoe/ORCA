@@ -30,6 +30,7 @@ SECTIONS
   .init . :
   {
 	  *(.init)
+     *(.text.init)
   }>IMEM
   .text :
   {
