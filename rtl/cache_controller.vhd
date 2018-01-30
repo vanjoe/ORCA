@@ -281,9 +281,13 @@ begin
     std_logic_vector(write_offset) when read_miss = '1' else
     read_lastaddress(log2(LINE_SIZE)-1 downto 0);
 
-  write_oimm_writedata    <= c_oimm_readdata when read_miss = '1' else c_write_data;
-  write_oimm_byteenable   <= (others => '1') when read_miss = '1' else c_write_byteenable;
-  write_oimm_requestvalid <= c_oimm_readdatavalid or (write_on_hit and (not read_miss));
+  write_oimm_writedata  <= c_oimm_readdata when read_miss = '1' else c_write_data;
+  write_oimm_byteenable <= (others => '1') when read_miss = '1' else c_write_byteenable;
+
+  --Write if filling a cacheline (c_oimm_readdatavalid) or a write has caused a
+  --tag check (write_on_hit) and that write has hit an existing cacheline
+  --(read_oimm_readdatavalid)
+  write_oimm_requestvalid <= c_oimm_readdatavalid or (write_on_hit and read_oimm_readdatavalid);
 
   read_oimm_requestvalid <= cacheint_oimm_requestvalid and
                             ((not c_write) or (not c_oimm_waitrequest)) and

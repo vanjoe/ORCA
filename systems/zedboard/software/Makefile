@@ -7,7 +7,7 @@ TARGET ?= test
 ifndef ORCA_TEST
 ifeq ($(SW_PROJ), cache_test)
   AS_SRCS += cache_test.S
-  C_SRCS  += cache_test_main.c orca_interrupts.c orca_memory.c
+  C_SRCS  += cache_test_main.c orca_interrupts.c orca_memory.c orca_malloc.c
 else
   C_SRCS  ?= hello_world.c
 endif

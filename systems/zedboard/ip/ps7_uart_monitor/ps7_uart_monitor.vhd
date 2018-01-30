@@ -134,7 +134,7 @@ begin  -- architecture rtl
       bypass_bvalid <= s_axi_wvalid and s_axi_awvalid;
 
       if axi_aresetn = '0' then
-        full_lfsr     <= (0 => '1', others => '0');
+        full_lfsr     <= (0      => '1', others => '0');
         empty_lfsr    <= (others => '1');
         bypass_rvalid <= '0';
         bypass_bvalid <= '0';
@@ -150,11 +150,15 @@ begin  -- architecture rtl
   process(axi_aclk)
     file uart_file            : text open write_mode is "ps7_uart.log";
     variable line_to_output   : line;
-    variable string_to_output : string(1 to 1);
+    variable string_to_output : string(1 to 40);
+    variable time_length      : positive;
   begin
     if rising_edge(axi_aclk) then
       if s_axi_awvalid = '1' and s_axi_wvalid = '1' then
-        string_to_output(1) := character'val(to_integer(unsigned(s_axi_wdata(7 downto 0))));
+        time_length                        := time'image(now)'length;
+        string_to_output                   := (others => ' ');
+        string_to_output(1 to time_length) := time'image(now);
+        string_to_output(40)               := character'val(to_integer(unsigned(s_axi_wdata(7 downto 0))));
         write(line_to_output, string_to_output);
         writeline(uart_file, line_to_output);
       end if;

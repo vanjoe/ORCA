@@ -47,7 +47,6 @@ architecture rtl of cache is
   constant TAG_LEFT        : natural  := ADDRESS_WIDTH;
   constant TAG_RIGHT       : natural  := log2(NUM_LINES)+log2(LINE_SIZE);
   constant CACHELINE_BITS  : positive := log2(NUM_LINES);
-  constant CACHELINE_LEFT  : natural  := log2(NUM_LINES)+log2(LINE_SIZE);
   constant CACHELINE_RIGHT : natural  := log2(LINE_SIZE);
   constant CACHEWORD_BITS  : positive := log2(NUM_LINES)+log2(WORDS_PER_LINE);
   constant CACHEWORD_LEFT  : natural  := log2(NUM_LINES)+log2(LINE_SIZE);
@@ -69,9 +68,9 @@ architecture rtl of cache is
   signal write_dirty_valid_tag_in : std_logic_vector(TAG_BITS+DIRTY_BITS downto 0);
 
   alias read_cacheline : std_logic_vector(CACHELINE_BITS-1 downto 0)
-    is read_address(CACHELINE_LEFT-1 downto CACHELINE_RIGHT);
+    is read_address(TAG_RIGHT-1 downto CACHELINE_RIGHT);
   alias write_cacheline : std_logic_vector(CACHELINE_BITS-1 downto 0)
-    is write_address(CACHELINE_LEFT-1 downto CACHELINE_RIGHT);
+    is write_address(TAG_RIGHT-1 downto CACHELINE_RIGHT);
   alias read_cacheword : std_logic_vector(CACHEWORD_BITS-1 downto 0)
     is read_address(CACHEWORD_LEFT-1 downto CACHEWORD_RIGHT);
   alias write_cacheword : std_logic_vector(CACHEWORD_BITS-1 downto 0)
