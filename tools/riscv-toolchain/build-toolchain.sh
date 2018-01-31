@@ -15,8 +15,8 @@ mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 
 export BINUTILS_VERSION=2.28
-export GCC_VERSION=7.2.0
-export NEWLIB_VERSION=2.5.0.20170922
+export GCC_VERSION=7.3.0
+export NEWLIB_VERSION=3.0.0
 
 [ ! -f binutils-$BINUTILS_VERSION.tar.gz ] && wget http://ftpmirror.gnu.org/binutils/binutils-$BINUTILS_VERSION.tar.gz
 [ ! -f gcc-$GCC_VERSION.tar.gz ] && wget http://ftpmirror.gnu.org/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.gz

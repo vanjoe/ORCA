@@ -177,22 +177,27 @@ def generate_arithmetic_instr( define_file,lve_extension_file):
 
 
 def generate_special_instr( define_file,lve_extension_file):
-    instruction = namedtuple('instruction',['name','bit29_26','registers'])
-    special_inst = [instruction('vbx_set_vl',0,'"s,t,d"'),
-                    instruction('vbx_set_2d',1,'"d,s,t"'),
-                    instruction('vbx_set_3d',2,'"d,s,t"'),
-                    instruction('vbx_get',3,'"d,s"'),
-                    instruction('vbx_dma_tohost',4,'"s,t,d"'),
-                    instruction('vbx_dma_tovec',5,'"t,s,d"'),
-                    instruction('vbx_dma_tohost2d',0xC,'"s,t,d"'),
-                    instruction('vbx_dma_tovec2d',0xD,'"t,s,d"'),
-                    instruction('vbx_dma_2dstart',6,'"s,t,d"')]
-    special_inst_template='{{"{name}", "X{ext}", {regs}, MATCH_{uname}, MASK_{uname}, match_opcode, 0 }},\n'
+    instruction = namedtuple('instruction',['name','bit29_26','registers','alias'])
+    special_inst = [instruction('vbx_set_vl',0,'"s,t,d"',0),
+                    instruction('vbx_set_2d',1,'"s,t,d"',0),
+                    instruction('vbx_set_3d',2,'"s,t,d"',0),
+                    instruction('vbx_sync',3,'""',"INSN_ALIAS"),
+                    instruction('vbx_get',3,'"d,s"',0),
+                    instruction('vbx_dma_tohost',4,'"s,t,d"',0),
+                    instruction('vbx_dma_tovec',5,'"s,t,d"',0),
+                    instruction('vbx_dma_tohost2d',0xC,'"s,t,d"',0),
+                    instruction('vbx_dma_tovec2d',0xD,'"s,t,d"',0),
+                    instruction('vbx_dma_2dsetup',6,'"s,t,d"',0)]
+    special_inst_template='{{"{name}", "X{ext}", {regs}, MATCH_{uname}, MASK_{uname}, match_opcode, {alias} }},\n'
 
     for si in special_inst:
         mask=0xFE00707F
         if "t" not in si.registers:
             mask |= (0x1F << 20)
+        if "s" not in si.registers:
+            mask |= (0x1F << 15)
+        if "d" not in si.registers:
+            mask |= (0x1F << 7)
 
         match=0x4200702B | (si.bit29_26 <<26)
         name = si.name
@@ -203,7 +208,8 @@ def generate_special_instr( define_file,lve_extension_file):
         lve_extension_file.write(special_inst_template.format(name=name,
                                                               regs=si.registers,
                                                               ext=ext,
-                                                              uname=uname))
+                                                              uname=uname,
+                                                              alias=si.alias))
 
 if __name__ == '__main__':
     with open("riscv-lve.h","w") as define_file, open("lve-extensions.h","w") as lve_extension_file:
