@@ -2,37 +2,37 @@
 proc init_gui { IPINST } {
     ipgui::add_param $IPINST -parent $IPINST -name Component_Name
 
-    
+
 
     set generalParametersPage [ ipgui::add_page $IPINST -name "General Parameters" ]
-    
+
     #    ipgui::add_param $IPINST -name "REGISTER_SIZE" -parent $generalParametersPage
     #    set_property tooltip \
         #        [concat \
         #             "" ] \
         #        $REGISTER_SIZE
-    
+
     set RESET_VECTOR [ ipgui::add_param $IPINST -name "RESET_VECTOR" -parent $generalParametersPage ]
     set_property tooltip \
         [concat \
              "Address to start fetching instructions at after reset." ] \
         $RESET_VECTOR
 
-    #    set VCP_ENABLE [ ipgui::add_param $IPINST -name "VCP_ENABLE" -parent $generalParametersPage ]
+	 set VCP_ENABLE [ ipgui::add_param $IPINST -name "VCP_ENABLE" -parent $generalParametersPage -widget comboBox]
     #    set_property tooltip \
         #        [concat \
         #             "" ] \
         #        $VCP_ENABLE
-    
+
     #    set FAMILY [ ipgui::add_param $IPINST -name "FAMILY" -parent $generalParametersPage ]
     #    set_property tooltip \
         #        [concat \
         #             "" ] \
         #        $FAMILY
-    
+
 
     set exceptionsGroup [ipgui::add_group $IPINST -name "Exceptions" -parent $generalParametersPage]
-    
+
     set ENABLE_EXCEPTIONS [ ipgui::add_param $IPINST -name "ENABLE_EXCEPTIONS" -parent $exceptionsGroup -widget checkBox ]
     set_property tooltip \
         [concat \
@@ -41,29 +41,29 @@ proc init_gui { IPINST } {
              "If disabled then interrupts are ignored and illegal instructions and traps (ECALL/EBREAK) " \
              "produce undefined behaviour." ] \
         $ENABLE_EXCEPTIONS
-    
+
     set INTERRUPT_VECTOR [ ipgui::add_param $IPINST -name "INTERRUPT_VECTOR" -parent $exceptionsGroup ]
     set_property tooltip \
         [concat \
              "Address to jump to on exceptions (traps/interrupts)." ] \
         $INTERRUPT_VECTOR
-    
+
     set ENABLE_EXT_INTERRUPTS [ ipgui::add_param $IPINST -name "ENABLE_EXT_INTERRUPTS" -parent $exceptionsGroup -widget checkBox ]
     set_property tooltip \
         [concat \
              "Enable external interrupts (exceptions must be enabled).  " \
              "Disable if unused to save area." ] \
         $ENABLE_EXT_INTERRUPTS
-    
+
     set NUM_EXT_INTERRUPTS [ ipgui::add_param $IPINST -name "NUM_EXT_INTERRUPTS" -parent $exceptionsGroup ]
     set_property tooltip \
         [concat \
              "Size of the global_interrupts[] input and number of bits in the MEIMASK/MEIPEND CSRs." ] \
         $NUM_EXT_INTERRUPTS
-    
+
 
     set performanceOptionsGroup [ipgui::add_group $IPINST -name "Performance/Area Options" -parent $generalParametersPage]
-    
+
     set MAX_IFETCHES_IN_FLIGHT [ ipgui::add_param $IPINST -name "MAX_IFETCHES_IN_FLIGHT" -parent $performanceOptionsGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -71,21 +71,21 @@ proc init_gui { IPINST } {
              "Must be greater than or equal to the instruction fetch latency for full throughput.  " \
              "Can be left at 1 if running out of the instruction cache." ] \
         $MAX_IFETCHES_IN_FLIGHT
-    
+
     set BTB_ENTRIES [ ipgui::add_param $IPINST -name "BTB_ENTRIES" -parent $performanceOptionsGroup ]
     set_property tooltip \
         [concat \
              "Number of branch target buffer (BTB) entries.  " \
              "Set to disabled to disable branch predcition." ] \
         $BTB_ENTRIES
-    
+
     set MULTIPLY_ENABLE [ ipgui::add_param $IPINST -name "MULTIPLY_ENABLE" -parent $performanceOptionsGroup -widget checkBox ]
     set_property tooltip \
         [concat \
              "Enables hardware multiplier.  " \
              "When enabled shifts also use the multiplier." ] \
         $MULTIPLY_ENABLE
-    
+
     set SHIFTER_MAX_CYCLES [ ipgui::add_param $IPINST -name "SHIFTER_MAX_CYCLES" -parent $performanceOptionsGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -93,14 +93,14 @@ proc init_gui { IPINST } {
              "Higher numbers use less are.  " \
              "Not applicable when multiplier is enabled, as shifts are done using the multiplier when enabled." ] \
         $SHIFTER_MAX_CYCLES
-    
+
     set DIVIDE_ENABLE [ ipgui::add_param $IPINST -name "DIVIDE_ENABLE" -parent $performanceOptionsGroup -widget checkBox ]
     set_property tooltip \
         [concat \
              "Enable hardware divider.  " \
              "Divide and remainder ops take one cycle per bit when enabled." ] \
         $DIVIDE_ENABLE
-    
+
     set COUNTER_LENGTH [ ipgui::add_param $IPINST -name "COUNTER_LENGTH" -parent $performanceOptionsGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -108,20 +108,20 @@ proc init_gui { IPINST } {
              "When disabled MTIME and MTIMEH read back as 0." \
              "When set to 32, MTIMEH reads back as 0." ] \
         $COUNTER_LENGTH
-    
+
     set PIPELINE_STAGES [ ipgui::add_param $IPINST -name "PIPELINE_STAGES" -parent $performanceOptionsGroup -widget comboBox ]
     set_property tooltip \
         [concat \
              "Number of pipeline stages.  " \
              "Reducing this lowers area and branch misprediction penalty but potentially lowers fmax as well." ] \
         $PIPELINE_STAGES
-    
+
     set POWER_OPTIMIZED [ ipgui::add_param $IPINST -name "POWER_OPTIMIZED" -parent $performanceOptionsGroup -widget checkBox ]
     set_property tooltip \
         [concat \
              "Enable optimizations for power at the cost of higher area and potentially lower fmax." ] \
         $POWER_OPTIMIZED
-    
+
 
 
     set memoryAndCachePage [ ipgui::add_page $IPINST -name "Memory and Cache" ]
@@ -135,13 +135,13 @@ proc init_gui { IPINST } {
              "Full disconnects the combinational path through all signals (address/data/etc.), " \
              "but adds one cycle of latency." ] \
         $INSTRUCTION_REQUEST_REGISTER
-    
+
     set INSTRUCTION_RETURN_REGISTER [ ipgui::add_param $IPINST -name "INSTRUCTION_RETURN_REGISTER" -parent $memoryAndCachePage -widget comboBox ]
     set_property tooltip \
         [concat \
              "Return data register for ALL instruction reads (including cache hits)." ] \
         $INSTRUCTION_RETURN_REGISTER
-    
+
     set DATA_REQUEST_REGISTER [ ipgui::add_param $IPINST -name "DATA_REQUEST_REGISTER" -parent $memoryAndCachePage -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -151,43 +151,42 @@ proc init_gui { IPINST } {
              "Full disconnects the combinational path through all signals (address/data/etc.), " \
              "but adds one cycle of latency." ] \
         $DATA_REQUEST_REGISTER
-    
+
     set DATA_RETURN_REGISTER [ ipgui::add_param $IPINST -name "DATA_RETURN_REGISTER" -parent $memoryAndCachePage -widget comboBox ]
     set_property tooltip \
         [concat \
              "Return data register for ALL data reads (including cache hits)." ] \
         $DATA_RETURN_REGISTER
-    
+
     #    set LOG2_BURSTLENGTH [ ipgui::add_param $IPINST -name "LOG2_BURSTLENGTH" -parent $memoryAndCachePage ]
     #    set_property tooltip \
         #        [concat \
         #             "" ] \
         #        $LOG2_BURSTLENGTH
-    
+
     #    set AXI_ID_WIDTH [ ipgui::add_param $IPINST -name "AXI_ID_WIDTH" -parent $memoryAndCachePage ]
     #    set_property tooltip \
         #        [concat \
         #             "" ] \
         #        $AXI_ID_WIDTH
-    
+
     #    set AVALON_AUX [ ipgui::add_param $IPINST -name "AVALON_AUX" -parent $memoryAndCachePage ]
     #    set_property tooltip \
         #        [concat \
         #             "" ] \
         #        $AVALON_AUX
-    
+
     #    set LMB_AUX [ ipgui::add_param $IPINST -name "LMB_AUX" -parent $memoryAndCachePage ]
     #    set_property tooltip \
         #        [concat \
         #             "" ] \
         #        $LMB_AUX
-    
+
     #    set WISHBONE_AUX [ ipgui::add_param $IPINST -name "WISHBONE_AUX" -parent $memoryAndCachePage ]
     #    set_property tooltip \
         #        [concat \
         #             "" ] \
         #        $WISHBONE_AUX
-    
 
     set icGroup [ipgui::add_group $IPINST -name "Instruction Cache and IC AXI4 Master" -parent $memoryAndCachePage]
 
@@ -197,20 +196,20 @@ proc init_gui { IPINST } {
              "Instruction cache size in bytes.  " \
              "When enabled the IC AXI4 master is enabled." ] \
         $ICACHE_SIZE
-    
+
     set ICACHE_LINE_SIZE [ ipgui::add_param $IPINST -name "ICACHE_LINE_SIZE" -parent $icGroup -widget comboBox ]
     set_property tooltip \
         [concat \
              "Instruction line cache size in bytes.  " ] \
         $ICACHE_LINE_SIZE
-    
+
     #    set ICACHE_EXTERNAL_WIDTH [ ipgui::add_param $IPINST -name "ICACHE_EXTERNAL_WIDTH" -parent $icGroup ]
     #    set_property tooltip \
         #        [concat \
         #             "Instruction cache external width in bits.  " \
         #             "Determines the data width of the IC AXI4 master." ] \
         #        $ICACHE_EXTERNAL_WIDTH
-    
+
     set IC_REQUEST_REGISTER [ ipgui::add_param $IPINST -name "IC_REQUEST_REGISTER" -parent $icGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -220,13 +219,13 @@ proc init_gui { IPINST } {
              "Full disconnects the combinational path through all signals (address/data/etc.), " \
              "but adds one cycle of latency." ] \
         $IC_REQUEST_REGISTER
-    
+
     set IC_RETURN_REGISTER [ ipgui::add_param $IPINST -name "IC_RETURN_REGISTER" -parent $icGroup -widget comboBox ]
     set_property tooltip \
         [concat \
              "Return data register for instruction cache AXI4 master reads." ] \
         $IC_RETURN_REGISTER
-    
+
 
     set dcGroup [ipgui::add_group $IPINST -name "Data Cache and DC AXI4 Master" -parent $memoryAndCachePage]
 
@@ -236,20 +235,20 @@ proc init_gui { IPINST } {
              "Data cache size in bytes.  " \
              "When enabled the DC AXI4 master is enabled." ] \
         $DCACHE_SIZE
-    
+
     set DCACHE_LINE_SIZE [ ipgui::add_param $IPINST -name "DCACHE_LINE_SIZE" -parent $dcGroup -widget comboBox ]
     set_property tooltip \
         [concat \
              "Data line cache size in bytes.  " ] \
         $DCACHE_LINE_SIZE
-    
+
     #    set DCACHE_EXTERNAL_WIDTH [ ipgui::add_param $IPINST -name "DCACHE_EXTERNAL_WIDTH" -parent $dcGroup ]
     #    set_property tooltip \
         #        [concat \
         #             "Data cache external width in bits.  " \
         #             "Determines the data width of the DC AXI4 master." ] \
         #        $DCACHE_EXTERNAL_WIDTH
-    
+
     set DC_REQUEST_REGISTER [ ipgui::add_param $IPINST -name "DC_REQUEST_REGISTER" -parent $dcGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -259,7 +258,7 @@ proc init_gui { IPINST } {
              "Full disconnects the combinational path through all signals (address/data/etc.), " \
              "but adds one cycle of latency." ] \
         $DC_REQUEST_REGISTER
-    
+
     set DC_RETURN_REGISTER [ ipgui::add_param $IPINST -name "DC_RETURN_REGISTER" -parent $dcGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -275,14 +274,14 @@ proc init_gui { IPINST } {
              "Number of uncached AXI4-Lite regions.  " \
              "If set to one or more then the IUC and DUC masters are enabled." ] \
         $UC_MEMORY_REGIONS
-    
+
     set UMR0_ADDR_BASE [ ipgui::add_param $IPINST -name "UMR0_ADDR_BASE" -parent $ucGroup ]
     set_property tooltip \
         [concat \
              "Initial base address for uncached memory region 0.  " \
              "Should be set to the base address of the default IUC/DUC address range." ] \
         $UMR0_ADDR_BASE
-    
+
     set UMR0_ADDR_LAST [ ipgui::add_param $IPINST -name "UMR0_ADDR_LAST" -parent $ucGroup ]
     set_property tooltip \
         [concat \
@@ -291,7 +290,7 @@ proc init_gui { IPINST } {
              "Note that last address is the highest addressable address not the start of the next address range.  " \
              "e.g. if UMR0 starts at 0x00000000 and has a span of 0x80000000 URM0_ADDR_LAST is 0x7FFFFFFF." ] \
         $UMR0_ADDR_LAST
-    
+
     set IUC_REQUEST_REGISTER [ ipgui::add_param $IPINST -name "IUC_REQUEST_REGISTER" -parent $ucGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -301,13 +300,13 @@ proc init_gui { IPINST } {
              "Full disconnects the combinational path through all signals (address/data/etc.), " \
              "but adds one cycle of latency." ] \
         $IUC_REQUEST_REGISTER
-    
+
     set IUC_RETURN_REGISTER [ ipgui::add_param $IPINST -name "IUC_RETURN_REGISTER" -parent $ucGroup -widget comboBox ]
     set_property tooltip \
         [concat \
              "Return data register for instruction uncached AXI4-Lite master reads." ] \
         $IUC_RETURN_REGISTER
-    
+
     set DUC_REQUEST_REGISTER [ ipgui::add_param $IPINST -name "DUC_REQUEST_REGISTER" -parent $ucGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -317,7 +316,7 @@ proc init_gui { IPINST } {
              "Full disconnects the combinational path through all signals (address/data/etc.), " \
              "but adds one cycle of latency." ] \
         $DUC_REQUEST_REGISTER
-    
+
     set DUC_RETURN_REGISTER [ ipgui::add_param $IPINST -name "DUC_RETURN_REGISTER" -parent $ucGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -333,14 +332,14 @@ proc init_gui { IPINST } {
              "Number of LMB regions.  " \
              "If set to one or more then the ILMB and DLMB masters are enabled." ] \
         $AUX_MEMORY_REGIONS
-    
+
     set AMR0_ADDR_BASE [ ipgui::add_param $IPINST -name "AMR0_ADDR_BASE" -parent $lmbGroup ]
     set_property tooltip \
         [concat \
              "Initial base address for auxiliary memory region 0.  " \
              "Should be set to the base address of the default ILMB/DLMB address range." ] \
         $AMR0_ADDR_BASE
-    
+
     set AMR0_ADDR_LAST [ ipgui::add_param $IPINST -name "AMR0_ADDR_LAST" -parent $lmbGroup ]
     set_property tooltip \
         [concat \
@@ -349,7 +348,7 @@ proc init_gui { IPINST } {
              "Note that last address is the highest addressable address not the start of the next address range.  " \
              "e.g. if AMR0 starts at 0x00000000 and has a span of 0x80000000 ARM0_ADDR_LAST is 0x7FFFFFFF." ] \
         $AMR0_ADDR_LAST
-    
+
     set IAUX_REQUEST_REGISTER [ ipgui::add_param $IPINST -name "IAUX_REQUEST_REGISTER" -parent $lmbGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -359,13 +358,13 @@ proc init_gui { IPINST } {
              "Full disconnects the combinational path through all signals (address/data/etc.), " \
              "but adds one cycle of latency." ] \
         $IAUX_REQUEST_REGISTER
-    
+
     set IAUX_RETURN_REGISTER [ ipgui::add_param $IPINST -name "IAUX_RETURN_REGISTER" -parent $lmbGroup -widget comboBox ]
     set_property tooltip \
         [concat \
              "Return data register for instruction LMB master reads." ] \
         $IAUX_RETURN_REGISTER
-    
+
     set DAUX_REQUEST_REGISTER [ ipgui::add_param $IPINST -name "DAUX_REQUEST_REGISTER" -parent $lmbGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -375,7 +374,7 @@ proc init_gui { IPINST } {
              "Full disconnects the combinational path through all signals (address/data/etc.), " \
              "but adds one cycle of latency." ] \
         $DAUX_REQUEST_REGISTER
-    
+
     set DAUX_RETURN_REGISTER [ ipgui::add_param $IPINST -name "DAUX_RETURN_REGISTER" -parent $lmbGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -1196,4 +1195,3 @@ proc update_MODELPARAM_VALUE.DC_RETURN_REGISTER { MODELPARAM_VALUE.DC_RETURN_REG
     # Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
     set_property value [get_property value ${PARAM_VALUE.DC_RETURN_REGISTER}] ${MODELPARAM_VALUE.DC_RETURN_REGISTER}
 }
-
