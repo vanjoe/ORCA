@@ -22,7 +22,7 @@ IMEM_LIST=imem.list
 DMEM_LIST=dmem.list
 MEM_FILE?=software/test.mem
 
-HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../../rtl/*.vhd) ./top.vhd ./top_top.v
+HDL_FILES=$(wildcard hdl/*.vhd) $(wildcard hdl/*.v) $(wildcard ../../ip/orca/hdl/*.vhd) $(wildcard ../../ip/lve/hdl/*.vhd) ./top.vhd ./top_top.v
 
 all:  bits
 

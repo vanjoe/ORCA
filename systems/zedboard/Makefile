@@ -17,7 +17,7 @@ BD_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/$(BD_NAME).bd
 HWH_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/hw_handoff/$(BD_NAME).hwh
 SYNTH_DCP=$(PROJ_DIR)/$(PROJ_NAME).runs/synth_1/$(BD_NAME)_wrapper.dcp
 IMPL_BIT=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.bit
-ORCA_SRCS=$(wildcard ../../rtl/*.vhd) ../../rtl/component.xml
+ORCA_SRCS=$(wildcard ../../ip/orca/hdl/*.vhd) ../../ip/orca/component.xml
 
 RESOURCE_TCL=report_resource_usage.tcl
 OUT_BIT=out.bit
@@ -275,7 +275,7 @@ endif #else #ifeq ($(ELF_FILE), NONE)
 
 .PHONY: clean
 clean:
-	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) *.jou *.log tmp.* vivado_pid* export_sim/ test.bin jtag_init.tcl resource_utilization.rpt nohup.out *~  \#*
+	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) *.jou *.log tmp.* vivado_pid* export_sim/ test.bin jtag_init.tcl resource_utilization.rpt nohup.out *~  \#* .Xil
 	ORCA_TEST=$(ORCA_TEST) $(MAKE) clean -C $(SW_DIR)
 
 .DELETE_ON_ERROR:

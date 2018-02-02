@@ -5658,190 +5658,190 @@
     <spirit:fileSet>
       <spirit:name>xilinx_anylanguagesynthesis_view_fileset</spirit:name>
       <spirit:file>
-        <spirit:name>utils.vhd</spirit:name>
+        <spirit:name>hdl/utils.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>constants_pkg.vhd</spirit:name>
+        <spirit:name>hdl/constants_pkg.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>alu.vhd</spirit:name>
+        <spirit:name>hdl/alu.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>components.vhd</spirit:name>
+        <spirit:name>hdl/components.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>a4l_master.vhd</spirit:name>
+        <spirit:name>hdl/a4l_master.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>axi_master.vhd</spirit:name>
+        <spirit:name>hdl/axi_master.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>oimm_throttler.vhd</spirit:name>
+        <spirit:name>hdl/oimm_throttler.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>bram_sdp_write_first.vhd</spirit:name>
+        <spirit:name>hdl/bram_sdp_write_first.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>branch_unit.vhd</spirit:name>
+        <spirit:name>hdl/branch_unit.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>cache_mux.vhd</spirit:name>
+        <spirit:name>hdl/cache_mux.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>cache.vhd</spirit:name>
+        <spirit:name>hdl/cache.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>decode.vhd</spirit:name>
+        <spirit:name>hdl/decode.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>execute.vhd</spirit:name>
+        <spirit:name>hdl/execute.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>cache_controller.vhd</spirit:name>
+        <spirit:name>hdl/cache_controller.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>instruction_fetch.vhd</spirit:name>
+        <spirit:name>hdl/instruction_fetch.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>load_store_unit.vhd</spirit:name>
+        <spirit:name>hdl/load_store_unit.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>orca_core.vhd</spirit:name>
+        <spirit:name>hdl/orca_core.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>register_file.vhd</spirit:name>
+        <spirit:name>hdl/register_file.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>sys_call.vhd</spirit:name>
+        <spirit:name>hdl/sys_call.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>vcp_handler.vhd</spirit:name>
+        <spirit:name>hdl/vcp_handler.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>memory_interface.vhd</spirit:name>
+        <spirit:name>hdl/memory_interface.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>oimm_register.vhd</spirit:name>
+        <spirit:name>hdl/oimm_register.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>orca.vhd</spirit:name>
+        <spirit:name>hdl/orca.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
       <spirit:name>xilinx_anylanguagebehavioralsimulation_view_fileset</spirit:name>
       <spirit:file>
-        <spirit:name>utils.vhd</spirit:name>
+        <spirit:name>hdl/utils.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>constants_pkg.vhd</spirit:name>
+        <spirit:name>hdl/constants_pkg.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>alu.vhd</spirit:name>
+        <spirit:name>hdl/alu.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>components.vhd</spirit:name>
+        <spirit:name>hdl/components.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>a4l_master.vhd</spirit:name>
+        <spirit:name>hdl/a4l_master.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>axi_master.vhd</spirit:name>
+        <spirit:name>hdl/axi_master.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>oimm_throttler.vhd</spirit:name>
+        <spirit:name>hdl/oimm_throttler.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>bram_sdp_write_first.vhd</spirit:name>
+        <spirit:name>hdl/bram_sdp_write_first.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>branch_unit.vhd</spirit:name>
+        <spirit:name>hdl/branch_unit.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>cache_mux.vhd</spirit:name>
+        <spirit:name>hdl/cache_mux.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>cache.vhd</spirit:name>
+        <spirit:name>hdl/cache.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>decode.vhd</spirit:name>
+        <spirit:name>hdl/decode.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>execute.vhd</spirit:name>
+        <spirit:name>hdl/execute.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>cache_controller.vhd</spirit:name>
+        <spirit:name>hdl/cache_controller.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>instruction_fetch.vhd</spirit:name>
+        <spirit:name>hdl/instruction_fetch.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>load_store_unit.vhd</spirit:name>
+        <spirit:name>hdl/load_store_unit.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>orca_core.vhd</spirit:name>
+        <spirit:name>hdl/orca_core.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>register_file.vhd</spirit:name>
+        <spirit:name>hdl/register_file.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>sys_call.vhd</spirit:name>
+        <spirit:name>hdl/sys_call.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>vcp_handler.vhd</spirit:name>
+        <spirit:name>hdl/vcp_handler.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>memory_interface.vhd</spirit:name>
+        <spirit:name>hdl/memory_interface.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>oimm_register.vhd</spirit:name>
+        <spirit:name>hdl/oimm_register.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
-        <spirit:name>orca.vhd</spirit:name>
+        <spirit:name>hdl/orca.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
       </spirit:file>
     </spirit:fileSet>

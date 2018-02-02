@@ -30,17 +30,14 @@ the toolchain, then run `GIT_TOP/tools/riscv-toolchain/build-toolchain.sh`.
 Sample Systems
 --------------
 
-We have provided multiple sample projects across different vendor platforms in
-the systems/ subdirectory.
+We have sample projects for different vendor platforms in the systems/
+subdirectory.
 
 The zedboard directory contains a Xilinx Vivado sample project that targets the
 Zeboard development board using the Zynq-7000 XC7Z020-CLG484-1 SoC.
 
 The de2-115 directory contains a Intel QSYS/Quartus project that targets the
 DE2-115 (found in the TPad or Veek development systems).
-
-The ice40ultra directory contains a Lattice iCEcube2 project that targets the
-iCE5LP4K chip.
 
 In addition to these example system we provide a system (in the sim directory)
 for use in debug and automated tests using Modelsim.  We use Intel QSYS to help
@@ -127,7 +124,10 @@ register file are eliminated to save area at the expense of maxiumum frequency.
 ### `VCP_ENABLE` (default = 0)
 
 Enable the Vector Coprocessor Port (VCP); this connects to VectorBlox's
-proprietary Lightweight Vector Extensions (LVE)
+proprietary Lightweight Vector Extensions (LVE).  A value of 1 enables the
+32-bit variant of the VCP instructions, while a value of 2 enables both 32-bit
+and 64-bit VCP instructions (no other 64-bit instructions are supported even
+when `VCP_ENABLE` is set to 2).
 
 ### `ENABLE_EXT_INTERRUPTS` (default = 0)
 

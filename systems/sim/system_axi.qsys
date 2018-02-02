@@ -33,14 +33,6 @@
          type = "String";
       }
    }
-   element lve_0
-   {
-      datum _sortIndex
-      {
-         value = "5";
-         type = "int";
-      }
-   }
    element onchip_memory2_0
    {
       datum _sortIndex
@@ -320,12 +312,6 @@
    kind="interrupt_generator"
    version="1.0"
    enabled="1" />
- <module name="lve_0" kind="lve" version="1.0" enabled="1">
-  <parameter name="AXI_ENABLE" value="1" />
-  <parameter name="POWER_OPTIMIZED" value="0" />
-  <parameter name="SCRATCHPAD_ADDR_BITS" value="16" />
-  <parameter name="WISHBONE_ENABLE" value="0" />
- </module>
  <module
    name="onchip_memory2_0"
    kind="altera_avalon_onchip_memory2"
@@ -414,17 +400,8 @@
   <parameter name="UC_MEMORY_REGIONS" value="1" />
   <parameter name="UMR0_ADDR_BASE" value="0" />
   <parameter name="UMR0_ADDR_LAST" value="4294967295" />
-  <parameter name="VCP_ENABLE" value="1" />
+  <parameter name="VCP_ENABLE" value="0" />
  </module>
- <connection
-   kind="avalon"
-   version="15.1"
-   start="vectorblox_orca_0.axi_duc"
-   end="lve_0.axi_slave">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x04000000" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
  <connection
    kind="avalon"
    version="15.1"
@@ -455,11 +432,6 @@
  <connection
    kind="clock"
    version="15.1"
-   start="clock_gen_0.clk_2x"
-   end="lve_0.clk_2x" />
- <connection
-   kind="clock"
-   version="15.1"
    start="clock_gen_0.clock"
    end="reset_source_0.clk" />
  <connection
@@ -478,22 +450,6 @@
    start="clock_gen_0.clock"
    end="interrupt_generator_0.clock" />
  <connection
-   kind="clock"
-   version="15.1"
-   start="clock_gen_0.clock"
-   end="lve_0.clock" />
- <connection
-   kind="conduit"
-   version="15.1"
-   start="lve_0.vcp"
-   end="vectorblox_orca_0.vcp">
-  <parameter name="endPort" value="" />
-  <parameter name="endPortLSB" value="0" />
-  <parameter name="startPort" value="" />
-  <parameter name="startPortLSB" value="0" />
-  <parameter name="width" value="0" />
- </connection>
- <connection
    kind="interrupt"
    version="15.1"
    start="vectorblox_orca_0.global_interrupts"
@@ -510,11 +466,6 @@
    version="15.1"
    start="reset_source_0.reset"
    end="interrupt_generator_0.reset" />
- <connection
-   kind="reset"
-   version="15.1"
-   start="reset_source_0.reset"
-   end="lve_0.reset" />
  <connection
    kind="reset"
    version="15.1"

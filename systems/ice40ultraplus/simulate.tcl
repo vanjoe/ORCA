@@ -1,28 +1,28 @@
 
 proc com { args } {
     set fileset [list \
-                     ../../rtl/utils.vhd                \
-                     ../../rtl/constants_pkg.vhd        \
-                     ../../rtl/components.vhd           \
-                     ../../rtl/alu.vhd                  \
-                     ../../rtl/branch_unit.vhd          \
-                     ../../rtl/decode.vhd               \
-                     ../../rtl/execute.vhd              \
-                     ../../rtl/instruction_fetch.vhd    \
-                     ../../rtl/load_store_unit.vhd      \
-                     ../../rtl/register_file.vhd        \
-                     ../../rtl/orca.vhd                 \
-                     ../../rtl/orca_core.vhd            \
-                     ../../rtl/sys_call.vhd             \
-                     ../../rtl/memory_interface.vhd     \
-                     ../../rtl/cache_mux.vhd            \
-							../../rtl/vcp_handler.vhd          \
-							../../rtl/oimm_register.vhd        \
-							../../rtl/lve/lve_components.vhd   \
-                     ../../rtl/lve/lve_ci.vhd           \
-							../../rtl/lve/lve_core.vhd         \
-							../../rtl/lve/lve.vhd              \
-                     ../../rtl/lve/4port_mem_ultraplus.vhd  \
+                     ../../ip/orca/hdl/utils.vhd                \
+                     ../../ip/orca/hdl/constants_pkg.vhd        \
+                     ../../ip/orca/hdl/components.vhd           \
+                     ../../ip/orca/hdl/alu.vhd                  \
+                     ../../ip/orca/hdl/branch_unit.vhd          \
+                     ../../ip/orca/hdl/decode.vhd               \
+                     ../../ip/orca/hdl/execute.vhd              \
+                     ../../ip/orca/hdl/instruction_fetch.vhd    \
+                     ../../ip/orca/hdl/load_store_unit.vhd      \
+                     ../../ip/orca/hdl/register_file.vhd        \
+                     ../../ip/orca/hdl/orca.vhd                 \
+                     ../../ip/orca/hdl/orca_core.vhd            \
+                     ../../ip/orca/hdl/sys_call.vhd             \
+                     ../../ip/orca/hdl/memory_interface.vhd     \
+                     ../../ip/orca/hdl/cache_mux.vhd            \
+							../../ip/orca/hdl/vcp_handler.vhd          \
+							../../ip/orca/hdl/oimm_register.vhd        \
+							../../ip/lve/hdl/lve_components.vhd   \
+                     ../../ip/lve/hdl/lve_ci.vhd           \
+							../../ip/lve/hdl/lve_core.vhd         \
+							../../ip/lve/hdl/lve.vhd              \
+                     ../../ip/lve/hdl/4port_mem_ultraplus.vhd  \
                      hdl/top_util_pkg.vhd               \
                      hdl/top_component_pkg.vhd          \
                      hdl/wb_ram.vhd                     \

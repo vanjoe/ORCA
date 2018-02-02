@@ -42,57 +42,57 @@ add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
 set_fileset_property QUARTUS_SYNTH TOP_LEVEL ORCA
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file vblox_orca/utils.vhd VHDL PATH utils.vhd
-add_fileset_file vblox_orca/constants_pkg.vhd VHDL PATH constants_pkg.vhd
-add_fileset_file vblox_orca/components.vhd VHDL PATH components.vhd
-add_fileset_file vblox_orca/alu.vhd VHDL PATH alu.vhd
-add_fileset_file vblox_orca/branch_unit.vhd VHDL PATH branch_unit.vhd
-add_fileset_file vblox_orca/decode.vhd VHDL PATH decode.vhd
-add_fileset_file vblox_orca/execute.vhd VHDL PATH execute.vhd
-add_fileset_file vblox_orca/instruction_fetch.vhd VHDL PATH instruction_fetch.vhd
-add_fileset_file vblox_orca/load_store_unit.vhd VHDL PATH load_store_unit.vhd
-add_fileset_file vblox_orca/register_file.vhd VHDL PATH register_file.vhd
-add_fileset_file vblox_orca/orca.vhd VHDL PATH orca.vhd TOP_LEVEL_FILE
-add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd TOP_LEVEL_FILE
-add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file vblox_orca/vcp_handler.vhd VHDL PATH vcp_handler.vhd
-add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
-add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
-add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH cache_mux.vhd
-add_fileset_file vblox_orca/oimm_register.vhd VHDL PATH oimm_register.vhd
-add_fileset_file vblox_orca/oimm_throttler.vhd VHDL PATH oimm_throttler.vhd
-add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
-add_fileset_file vblox_orca/cache_controller.vhd VHDL PATH cache_controller.vhd
-add_fileset_file vblox_orca/cache.vhd VHDL PATH cache.vhd
-add_fileset_file vblox_orca/bram_sdp_write_first.vhd VHDL PATH bram_sdp_write_first.vhd
+add_fileset_file vblox_orca/utils.vhd VHDL PATH hdl/utils.vhd
+add_fileset_file vblox_orca/constants_pkg.vhd VHDL PATH hdl/constants_pkg.vhd
+add_fileset_file vblox_orca/components.vhd VHDL PATH hdl/components.vhd
+add_fileset_file vblox_orca/alu.vhd VHDL PATH hdl/alu.vhd
+add_fileset_file vblox_orca/branch_unit.vhd VHDL PATH hdl/branch_unit.vhd
+add_fileset_file vblox_orca/decode.vhd VHDL PATH hdl/decode.vhd
+add_fileset_file vblox_orca/execute.vhd VHDL PATH hdl/execute.vhd
+add_fileset_file vblox_orca/instruction_fetch.vhd VHDL PATH hdl/instruction_fetch.vhd
+add_fileset_file vblox_orca/load_store_unit.vhd VHDL PATH hdl/load_store_unit.vhd
+add_fileset_file vblox_orca/register_file.vhd VHDL PATH hdl/register_file.vhd
+add_fileset_file vblox_orca/orca.vhd VHDL PATH hdl/orca.vhd TOP_LEVEL_FILE
+add_fileset_file vblox_orca/orca_core.vhd VHDL PATH hdl/orca_core.vhd TOP_LEVEL_FILE
+add_fileset_file vblox_orca/sys_call.vhd VHDL PATH hdl/sys_call.vhd
+add_fileset_file vblox_orca/vcp_handler.vhd VHDL PATH hdl/vcp_handler.vhd
+add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH hdl/a4l_master.vhd
+add_fileset_file vblox_orca/axi_master.vhd VHDL PATH hdl/axi_master.vhd
+add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH hdl/cache_mux.vhd
+add_fileset_file vblox_orca/oimm_register.vhd VHDL PATH hdl/oimm_register.vhd
+add_fileset_file vblox_orca/oimm_throttler.vhd VHDL PATH hdl/oimm_throttler.vhd
+add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH hdl/memory_interface.vhd
+add_fileset_file vblox_orca/cache_controller.vhd VHDL PATH hdl/cache_controller.vhd
+add_fileset_file vblox_orca/cache.vhd VHDL PATH hdl/cache.vhd
+add_fileset_file vblox_orca/bram_sdp_write_first.vhd VHDL PATH hdl/bram_sdp_write_first.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL ORCA
 set_fileset_property SIM_VHDL ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property SIM_VHDL ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file vblox_orca/utils.vhd VHDL PATH utils.vhd
-add_fileset_file vblox_orca/constants_pkg.vhd VHDL PATH constants_pkg.vhd
-add_fileset_file vblox_orca/components.vhd VHDL PATH components.vhd
-add_fileset_file vblox_orca/alu.vhd VHDL PATH alu.vhd
-add_fileset_file vblox_orca/branch_unit.vhd VHDL PATH branch_unit.vhd
-add_fileset_file vblox_orca/decode.vhd VHDL PATH decode.vhd
-add_fileset_file vblox_orca/execute.vhd VHDL PATH execute.vhd
-add_fileset_file vblox_orca/instruction_fetch.vhd VHDL PATH instruction_fetch.vhd
-add_fileset_file vblox_orca/load_store_unit.vhd VHDL PATH load_store_unit.vhd
-add_fileset_file vblox_orca/register_file.vhd VHDL PATH register_file.vhd
-add_fileset_file vblox_orca/orca.vhd VHDL PATH orca.vhd
-add_fileset_file vblox_orca/orca_core.vhd VHDL PATH orca_core.vhd
-add_fileset_file vblox_orca/sys_call.vhd VHDL PATH sys_call.vhd
-add_fileset_file vblox_orca/vcp_handler.vhd VHDL PATH vcp_handler.vhd
-add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH a4l_master.vhd
-add_fileset_file vblox_orca/axi_master.vhd VHDL PATH axi_master.vhd
-add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH cache_mux.vhd
-add_fileset_file vblox_orca/oimm_register.vhd VHDL PATH oimm_register.vhd
-add_fileset_file vblox_orca/oimm_throttler.vhd VHDL PATH oimm_throttler.vhd
-add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH memory_interface.vhd
-add_fileset_file vblox_orca/cache_controller.vhd VHDL PATH cache_controller.vhd
-add_fileset_file vblox_orca/cache.vhd VHDL PATH cache.vhd
-add_fileset_file vblox_orca/bram_sdp_write_first.vhd VHDL PATH bram_sdp_write_first.vhd
+add_fileset_file vblox_orca/utils.vhd VHDL PATH hdl/utils.vhd
+add_fileset_file vblox_orca/constants_pkg.vhd VHDL PATH hdl/constants_pkg.vhd
+add_fileset_file vblox_orca/components.vhd VHDL PATH hdl/components.vhd
+add_fileset_file vblox_orca/alu.vhd VHDL PATH hdl/alu.vhd
+add_fileset_file vblox_orca/branch_unit.vhd VHDL PATH hdl/branch_unit.vhd
+add_fileset_file vblox_orca/decode.vhd VHDL PATH hdl/decode.vhd
+add_fileset_file vblox_orca/execute.vhd VHDL PATH hdl/execute.vhd
+add_fileset_file vblox_orca/instruction_fetch.vhd VHDL PATH hdl/instruction_fetch.vhd
+add_fileset_file vblox_orca/load_store_unit.vhd VHDL PATH hdl/load_store_unit.vhd
+add_fileset_file vblox_orca/register_file.vhd VHDL PATH hdl/register_file.vhd
+add_fileset_file vblox_orca/orca.vhd VHDL PATH hdl/orca.vhd
+add_fileset_file vblox_orca/orca_core.vhd VHDL PATH hdl/orca_core.vhd
+add_fileset_file vblox_orca/sys_call.vhd VHDL PATH hdl/sys_call.vhd
+add_fileset_file vblox_orca/vcp_handler.vhd VHDL PATH hdl/vcp_handler.vhd
+add_fileset_file vblox_orca/a4l_master.vhd VHDL PATH hdl/a4l_master.vhd
+add_fileset_file vblox_orca/axi_master.vhd VHDL PATH hdl/axi_master.vhd
+add_fileset_file vblox_orca/cache_mux.vhd VHDL PATH hdl/cache_mux.vhd
+add_fileset_file vblox_orca/oimm_register.vhd VHDL PATH hdl/oimm_register.vhd
+add_fileset_file vblox_orca/oimm_throttler.vhd VHDL PATH hdl/oimm_throttler.vhd
+add_fileset_file vblox_orca/memory_interface.vhd VHDL PATH hdl/memory_interface.vhd
+add_fileset_file vblox_orca/cache_controller.vhd VHDL PATH hdl/cache_controller.vhd
+add_fileset_file vblox_orca/cache.vhd VHDL PATH hdl/cache.vhd
+add_fileset_file vblox_orca/bram_sdp_write_first.vhd VHDL PATH hdl/bram_sdp_write_first.vhd
 
 #
 # parameters

@@ -50,25 +50,25 @@ set_fileset_property QUARTUS_SYNTH TOP_LEVEL lve_top
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
 
-add_fileset_file vblox_lve/utils.vhd VHDL PATH utils.vhd
-add_fileset_file vblox_lve/constants_pkg.vhd VHDL PATH constants_pkg.vhd
-add_fileset_file vblox_lve/lve_components.vhd VHDL PATH lve/lve_components.vhd
-add_fileset_file vblox_lve/lve_core.vhd VHDL PATH lve/lve_core.vhd
-add_fileset_file vblox_lve/lve.vhd VHDL PATH lve/lve.vhd
-add_fileset_file vblox_lve/4port_mem.vhd VHDL PATH lve/4port_mem.vhd
-add_fileset_file vblox_lve/lve_ci.vhd VHDL PATH lve/lve_ci.vhd
+add_fileset_file vblox_lve/utils.vhd VHDL PATH ../orca/hdl/utils.vhd
+add_fileset_file vblox_lve/constants_pkg.vhd VHDL PATH ../orca/hdl/constants_pkg.vhd
+add_fileset_file vblox_lve/lve_components.vhd VHDL PATH hdl/lve_components.vhd
+add_fileset_file vblox_lve/lve_core.vhd VHDL PATH hdl/lve_core.vhd
+add_fileset_file vblox_lve/lve.vhd VHDL PATH hdl/lve.vhd
+add_fileset_file vblox_lve/4port_mem.vhd VHDL PATH hdl/4port_mem.vhd
+add_fileset_file vblox_lve/lve_ci.vhd VHDL PATH hdl/lve_ci.vhd
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
 set_fileset_property SIM_VHDL TOP_LEVEL lve_top
 set_fileset_property SIM_VHDL ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property SIM_VHDL ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file vblox_lve/utils.vhd VHDL PATH utils.vhd
-add_fileset_file vblox_lve/constants_pkg.vhd VHDL PATH constants_pkg.vhd
-add_fileset_file vblox_lve/lve_components.vhd VHDL PATH lve/lve_components.vhd
-add_fileset_file vblox_lve/lve_core.vhd VHDL PATH lve/lve_core.vhd
-add_fileset_file vblox_lve/lve.vhd VHDL PATH lve/lve.vhd
-add_fileset_file vblox_lve/4port_mem.vhd VHDL PATH lve/4port_mem.vhd
-add_fileset_file vblox_lve/lve_ci.vhd VHDL PATH lve/lve_ci.vhd
+add_fileset_file vblox_lve/utils.vhd VHDL PATH ../orca/hdl/utils.vhd
+add_fileset_file vblox_lve/constants_pkg.vhd VHDL PATH ../orca/hdl/constants_pkg.vhd
+add_fileset_file vblox_lve/lve_components.vhd VHDL PATH hdl/lve_components.vhd
+add_fileset_file vblox_lve/lve_core.vhd VHDL PATH hdl/lve_core.vhd
+add_fileset_file vblox_lve/lve.vhd VHDL PATH hdl/lve.vhd
+add_fileset_file vblox_lve/4port_mem.vhd VHDL PATH hdl/4port_mem.vhd
+add_fileset_file vblox_lve/lve_ci.vhd VHDL PATH hdl/lve_ci.vhd
 
 set width 32
 
