@@ -161,9 +161,9 @@ begin
             num_rows           <= unsigned(rs2_data(ptr'range));
             zero_length_vector <= bool_to_sl(unsigned(rs2_data(ptr'range)) = 0 or unsigned(rs1_data(ptr'range)) = 0);
           when "001" =>
-            srca_incr <= unsigned(rs1_data(ptr'range));
-            srcb_incr <= unsigned(rs2_data(ptr'range));
-            dest_incr <= unsigned(rs3_data(ptr'range));
+            dest_incr <= unsigned(rs1_data(ptr'range));
+            srca_incr <= unsigned(rs2_data(ptr'range));
+            srcb_incr <= unsigned(rs3_data(ptr'range));
           when "011" =>
             lve_writeback_en <= get_state;
             case to_integer(unsigned(rs1_data(3 downto 0))) is
