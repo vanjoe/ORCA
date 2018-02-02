@@ -6,7 +6,7 @@
 	url = https://github.com/riscv/riscv-opcodes.git
 [submodule "scripts"]
 	path = scripts
-	url = /nfs/data/git/scripts.git/
+	url = vax:/nfs/data/git/scripts.git/
 [submodule "software/riscv-tests"]
 	path = software/riscv-tests
 	url = https://github.com/riscv/riscv-tests

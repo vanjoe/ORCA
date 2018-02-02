@@ -56,6 +56,7 @@ LD_FLAGS ?= -march=$(ARCH) -static -nostartfiles
 C_OBJ_FILES := $(addprefix $(OBJDIR)/,$(addsuffix .o, $(notdir $(C_SRCS))))
 S_OBJ_FILES := $(addprefix $(OBJDIR)/,$(addsuffix .o, $(notdir $(AS_SRCS))))
 
+START_ADDRESS ?= 0x100
 
 $(RISCV_ENV_DIR) $(ENCODING_H):
 	git submodule update --init --recursive $(RISCV_TESTS_DIR)
@@ -90,7 +91,7 @@ $(OUTPUT_PREFIX)$(TARGET).hex: $(OUTPUT_PREFIX)$(TARGET).bin
 $(OUTPUT_PREFIX)$(TARGET).qex: $(OUTPUT_PREFIX)$(TARGET).bin
 	python ../../../tools/bin2hex.py -o $@ $<
 $(OUTPUT_PREFIX)$(TARGET).mem: $(OUTPUT_PREFIX)$(TARGET).bin
-	 head -c $$((0x100)) /dev/zero | cat - $< | xxd -g1 -c4 | awk '{print $$5$$4$$3$$2}' > $@
+	 head -c $$(( $(START_ADDRESS))) /dev/zero | cat - $< | xxd -g1 -c4 | awk '{print $$5$$4$$3$$2}' > $@
 $(ORCA_ROOT)/tools/hex_to_coe: $(ORCA_ROOT)/tools/hex_to_coe.cpp
 	g++ $< -o $@
 $(OUTPUT_PREFIX)$(TARGET).coe: $(OUTPUT_PREFIX)$(TARGET).ihex $(ORCA_ROOT)/tools/hex_to_coe

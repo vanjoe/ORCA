@@ -518,6 +518,7 @@ begin
     signal vcp_writeback_data   : std_logic_vector(LVE_WIDTH-1 downto 0);
     signal vcp_writeback_en     : std_logic;
     signal vcp_alu_data1        : std_logic_vector(LVE_WIDTH-1 downto 0);
+    signal vcp_alu_used         : std_logic;
     signal vcp_alu_data2        : std_logic_vector(LVE_WIDTH-1 downto 0);
     signal vcp_alu_op_size      : std_logic_vector(1 downto 0);
     signal vcp_alu_source_valid : std_logic;
@@ -526,18 +527,18 @@ begin
   begin
     rv : component orca
       generic map (
-        REGISTER_SIZE          => REGISTER_SIZE,
-        RESET_VECTOR           => x"00000000",
-        WISHBONE_AUX           => 1,
-        MULTIPLY_ENABLE        => 1,
-        DIVIDE_ENABLE          => 0,
-        POWER_OPTIMIZED        => 0,
-        SHIFTER_MAX_CYCLES     => 32,
-        COUNTER_LENGTH         => 32,
-        PIPELINE_STAGES        => 4,
-        VCP_ENABLE             => 1,
-        ENABLE_EXCEPTIONS      => 0,
-        FAMILY                 => "LATTICE")
+        REGISTER_SIZE      => REGISTER_SIZE,
+        RESET_VECTOR       => x"00000000",
+        WISHBONE_AUX       => 1,
+        MULTIPLY_ENABLE    => 1,
+        DIVIDE_ENABLE      => 0,
+        POWER_OPTIMIZED    => 0,
+        SHIFTER_MAX_CYCLES => 32,
+        COUNTER_LENGTH     => 32,
+        PIPELINE_STAGES    => 4,
+        VCP_ENABLE         => 1,
+        ENABLE_EXCEPTIONS  => 0,
+        FAMILY             => "LATTICE")
       port map(
 
         clk   => clk,
@@ -571,6 +572,7 @@ begin
         vcp_ready            => vcp_ready,
         vcp_writeback_data   => vcp_writeback_data,
         vcp_writeback_en     => vcp_writeback_en,
+        vcp_alu_used         => vcp_alu_used,
         vcp_alu_data1        => vcp_alu_data1,
         vcp_alu_data2        => vcp_alu_data2,
         vcp_alu_source_valid => vcp_alu_source_valid,
@@ -609,6 +611,7 @@ begin
         vcp_ready            => vcp_ready,
         vcp_writeback_data   => vcp_writeback_data,
         vcp_writeback_en     => vcp_writeback_en,
+        vcp_alu_used         => vcp_alu_used,
         vcp_alu_data1        => vcp_alu_data1,
         vcp_alu_data2        => vcp_alu_data2,
         vcp_alu_source_valid => vcp_alu_source_valid,

@@ -15,8 +15,8 @@ mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 
 export BINUTILS_VERSION=2.28
-export GCC_VERSION=7.2.0
-export NEWLIB_VERSION=2.5.0.20170922
+export GCC_VERSION=7.3.0
+export NEWLIB_VERSION=3.0.0
 
 [ ! -f binutils-$BINUTILS_VERSION.tar.gz ] && wget http://ftpmirror.gnu.org/binutils/binutils-$BINUTILS_VERSION.tar.gz
 [ ! -f gcc-$GCC_VERSION.tar.gz ] && wget http://ftpmirror.gnu.org/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.gz
@@ -65,14 +65,13 @@ fi
 	 make -j$(( `nproc` * 2)) && make install
 )
 
-#gcc
+#gcc stage1
 (
-	 rm -rf build-gcc
-	 mkdir -p build-gcc
-	 cd build-gcc
-	 ../gcc-$GCC_VERSION/configure --prefix=$RISCV_INSTALL --target=riscv32-unknown-elf --with-abi=ilp32 --with-arch=rv32im --enable-languages=c,c++ --disable-multilib
+	 rm -rf build-gcc-stage1
+	 mkdir -p build-gcc-stage1
+	 cd build-gcc-stage1
+	 ../gcc-$GCC_VERSION/configure --prefix=$RISCV_INSTALL --with-newlib --target=riscv32-unknown-elf --with-abi=ilp32 --with-arch=rv32im --enable-languages=c,c++ --disable-multilib
 	 make -j$(( `nproc` * 2))  all-gcc && make install-gcc
-	 make -j$(( `nproc` * 2))  all-target-libgcc && make install-target-libgcc
 )
 
 #newlib
@@ -83,5 +82,15 @@ fi
 	 ../newlib-$NEWLIB_VERSION/configure --target=riscv32-unknown-elf --prefix=$RISCV_INSTALL
 	 make -j$(( `nproc` * 2)) && make install
 )
+
+#gcc stage2
+(
+	 rm -rf build-gcc-stage2
+	 mkdir -p build-gcc-stage2
+	 cd build-gcc-stage2
+	 ../gcc-$GCC_VERSION/configure --prefix=$RISCV_INSTALL --with-newlib --target=riscv32-unknown-elf --with-abi=ilp32 --with-arch=rv32im --enable-languages=c,c++ --disable-multilib
+	 make -j$(( `nproc` * 2))  && make install
+)
+
 #copy this script to the installation directory
 cp $SCRIPT_FILE $RISCV_INSTALL/build-script.sh
