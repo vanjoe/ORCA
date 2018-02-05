@@ -188,6 +188,7 @@ proc init_gui { IPINST } {
         #             "" ] \
         #        $WISHBONE_AUX
     
+
     set icGroup [ipgui::add_group $IPINST -name "Instruction Cache and IC AXI4 Master" -parent $memoryAndCachePage]
 
     set ICACHE_SIZE [ ipgui::add_param $IPINST -name "ICACHE_SIZE" -parent $icGroup -widget comboBox ]
@@ -266,7 +267,7 @@ proc init_gui { IPINST } {
         $DC_RETURN_REGISTER
 
 
-    set ucGroup [ipgui::add_group $IPINST -name "Unached AXI4-Lite Masters" -parent $memoryAndCachePage]
+    set ucGroup [ipgui::add_group $IPINST -name "Uncached AXI4-Lite Masters" -parent $memoryAndCachePage]
 
     set UC_MEMORY_REGIONS [ ipgui::add_param $IPINST -name "UC_MEMORY_REGIONS" -parent $ucGroup -widget comboBox ]
     set_property tooltip \

@@ -5368,18 +5368,18 @@
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>MULTIPLY_ENABLE</spirit:name>
-        <spirit:displayName>Multiply Enable</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.MULTIPLY_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
+        <spirit:displayName>Hardware Multiply</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.MULTIPLY_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>DIVIDE_ENABLE</spirit:name>
-        <spirit:displayName>Divide Enable</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DIVIDE_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
+        <spirit:displayName>Hardware Divide</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DIVIDE_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>SHIFTER_MAX_CYCLES</spirit:name>
         <spirit:displayName>Shifter Max Cycles</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.SHIFTER_MAX_CYCLES" spirit:minimum="1" spirit:maximum="32">1</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.SHIFTER_MAX_CYCLES" spirit:minimum="1" spirit:maximum="32">32</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>COUNTER_LENGTH</spirit:name>
@@ -5398,7 +5398,7 @@
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>VCP_ENABLE</spirit:name>
-        <spirit:displayName>Vector Coprocessor Port Enable</spirit:displayName>
+        <spirit:displayName>Vector Coprocessor Port</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.VCP_ENABLE" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
@@ -5413,7 +5413,7 @@
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>POWER_OPTIMIZED</spirit:name>
-        <spirit:displayName>Power Optimized</spirit:displayName>
+        <spirit:displayName>Optimize for Power</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.POWER_OPTIMIZED" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="string">
@@ -5888,18 +5888,18 @@
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>MULTIPLY_ENABLE</spirit:name>
-      <spirit:displayName>Multiply Enable</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.MULTIPLY_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
+      <spirit:displayName>Hardware Multiply</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.MULTIPLY_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>DIVIDE_ENABLE</spirit:name>
-      <spirit:displayName>Divide Enable</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DIVIDE_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
+      <spirit:displayName>Hardware Divide</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DIVIDE_ENABLE" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>SHIFTER_MAX_CYCLES</spirit:name>
       <spirit:displayName>Shifter Max Cycles</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.SHIFTER_MAX_CYCLES" spirit:minimum="1" spirit:maximum="32" spirit:rangeType="long" spirit:choiceRef="choice_list_shifter_max_cycles">1</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.SHIFTER_MAX_CYCLES" spirit:minimum="1" spirit:maximum="32" spirit:rangeType="long" spirit:choiceRef="choice_list_shifter_max_cycles">32</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>COUNTER_LENGTH</spirit:name>
@@ -5918,7 +5918,7 @@
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>VCP_ENABLE</spirit:name>
-      <spirit:displayName>Vector Coprocessor Port Enable</spirit:displayName>
+      <spirit:displayName>Vector Coprocessor Port</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.VCP_ENABLE" spirit:minimum="0" spirit:maximum="2" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
@@ -5933,7 +5933,7 @@
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>POWER_OPTIMIZED</spirit:name>
-      <spirit:displayName>Power Optimized</spirit:displayName>
+      <spirit:displayName>Optimize for Power</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.POWER_OPTIMIZED" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
@@ -5968,7 +5968,7 @@
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>AUX_MEMORY_REGIONS</spirit:name>
-      <spirit:displayName>Auxiliary (LMB) Memory Regions</spirit:displayName>
+      <spirit:displayName>Auxiliary (LMB uncached) Memory Regions</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.AUX_MEMORY_REGIONS" spirit:minimum="0" spirit:maximum="4" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>

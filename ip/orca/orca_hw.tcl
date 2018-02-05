@@ -97,6 +97,10 @@ add_fileset_file vblox_orca/bram_sdp_write_first.vhd VHDL PATH hdl/bram_sdp_writ
 #
 # parameters
 #
+add_display_item "" "General Parameters" GROUP tab
+add_display_item "" "Memory and Cache" GROUP tab
+
+
 add_parameter REGISTER_SIZE INTEGER 32
 set_parameter_property REGISTER_SIZE DEFAULT_VALUE 32
 set_parameter_property REGISTER_SIZE DISPLAY_NAME REGISTER_SIZE
@@ -112,51 +116,109 @@ set_parameter_property RESET_VECTOR DISPLAY_NAME "Reset Vector"
 set_parameter_property RESET_VECTOR UNITS None
 set_parameter_property RESET_VECTOR WIDTH 32
 set_parameter_property RESET_VECTOR HDL_PARAMETER true
+set_parameter_property RESET_VECTOR DESCRIPTION \
+    [concat \
+         "Address to start fetching instructions at after reset." ]
+add_display_item "General Parameters" RESET_VECTOR PARAMETER
+
+
+add_display_item "General Parameters" "Exceptions" GROUP
+
+add_parameter ENABLE_EXCEPTIONS natural 1
+set_parameter_property ENABLE_EXCEPTIONS DEFAULT_VALUE 1
+set_parameter_property ENABLE_EXCEPTIONS DISPLAY_NAME "Enable Exceptions"
+set_parameter_property ENABLE_EXCEPTIONS TYPE NATURAL
+set_parameter_property ENABLE_EXCEPTIONS UNITS None
+set_parameter_property ENABLE_EXCEPTIONS ALLOWED_RANGES 0:1
+set_parameter_property ENABLE_EXCEPTIONS HDL_PARAMETER true
+set_display_item_property ENABLE_EXCEPTIONS DISPLAY_HINT boolean
+set_parameter_property ENABLE_EXCEPTIONS DESCRIPTION \
+    [concat \
+         "Enable exceptions (traps/interrupts).  " \
+         "Disable if unused to save area.  " \
+         "If disabled then interrupts are ignored and illegal instructions and traps (ECALL/EBREAK) " \
+         "produce undefined behaviour." ]
+add_display_item "Exceptions" ENABLE_EXCEPTIONS PARAMETER
 
 add_parameter INTERRUPT_VECTOR Std_Logic_Vector 32'h00000200
 set_parameter_property INTERRUPT_VECTOR DEFAULT_VALUE 32'h00000200
-set_parameter_property INTERRUPT_VECTOR DISPLAY_NAME "Interrupt Vector"
+set_parameter_property INTERRUPT_VECTOR DISPLAY_NAME "Exception Vector"
 set_parameter_property INTERRUPT_VECTOR UNITS None
 set_parameter_property INTERRUPT_VECTOR WIDTH 32
 set_parameter_property INTERRUPT_VECTOR HDL_PARAMETER true
+set_parameter_property INTERRUPT_VECTOR DESCRIPTION \
+    [concat \
+         "Address to jump to on exceptions (traps/interrupts)." ]
+add_display_item "Exceptions" INTERRUPT_VECTOR PARAMETER
+
+add_parameter ENABLE_EXT_INTERRUPTS natural 1
+set_parameter_property ENABLE_EXT_INTERRUPTS DEFAULT_VALUE 1
+set_parameter_property ENABLE_EXT_INTERRUPTS DISPLAY_NAME "Enable Interrupts"
+set_parameter_property ENABLE_EXT_INTERRUPTS TYPE NATURAL
+set_parameter_property ENABLE_EXT_INTERRUPTS UNITS None
+set_parameter_property ENABLE_EXT_INTERRUPTS ALLOWED_RANGES 0:1
+set_parameter_property ENABLE_EXT_INTERRUPTS HDL_PARAMETER true
+set_display_item_property ENABLE_EXT_INTERRUPTS DISPLAY_HINT boolean
+set_parameter_property ENABLE_EXT_INTERRUPTS DESCRIPTION \
+        [concat \
+             "Enable external interrupts (exceptions must be enabled).  " \
+             "Disable if unused to save area." ]
+add_display_item "Exceptions" ENABLE_EXT_INTERRUPTS PARAMETER
+
+add_parameter          NUM_EXT_INTERRUPTS POSITIVE 1
+set_parameter_property NUM_EXT_INTERRUPTS DEFAULT_VALUE 1
+set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
+set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES 1:32
+set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "Number of External Interrupts"
+set_parameter_property NUM_EXT_INTERRUPTS visible true
+set_parameter_property NUM_EXT_INTERRUPTS DESCRIPTION \
+    [concat \
+         "Size of the global_interrupts[] input and number of bits in the MEIMASK/MEIPEND CSRs." ]
+add_display_item "Exceptions" NUM_EXT_INTERRUPTS PARAMETER
+
+
+add_display_item "General Parameters" "Performance/Area Optimizations" GROUP
 
 add_parameter MAX_IFETCHES_IN_FLIGHT positive 4
 set_parameter_property MAX_IFETCHES_IN_FLIGHT DEFAULT_VALUE 4
-set_parameter_property MAX_IFETCHES_IN_FLIGHT DISPLAY_NAME "Max IFetches in Flight"
-set_parameter_property MAX_IFETCHES_IN_FLIGHT DESCRIPTION "Maximum instructions in flight at one time."
+set_parameter_property MAX_IFETCHES_IN_FLIGHT DISPLAY_NAME "Maximum Instruction Fetches in Flight"
 set_parameter_property MAX_IFETCHES_IN_FLIGHT TYPE NATURAL
 set_parameter_property MAX_IFETCHES_IN_FLIGHT UNITS None
 set_parameter_property MAX_IFETCHES_IN_FLIGHT ALLOWED_RANGES {1 2 4 8}
 set_parameter_property MAX_IFETCHES_IN_FLIGHT HDL_PARAMETER true
+set_parameter_property MAX_IFETCHES_IN_FLIGHT DESCRIPTION \
+    [concat \
+         "Maximum number of instruction fetches in flight.  " \
+         "Must be greater than or equal to the instruction fetch latency for full throughput.  " \
+         "Can be left at 1 if running out of the instruction cache." ]
+add_display_item "Performance/Area Optimizations" MAX_IFETCHES_IN_FLIGHT PARAMETER
 
 add_parameter BTB_ENTRIES natural 16
 set_parameter_property BTB_ENTRIES DEFAULT_VALUE 16
-set_parameter_property BTB_ENTRIES DISPLAY_NAME "BTB Entries"
-set_parameter_property BTB_ENTRIES DESCRIPTION "Branch target buffer entries (0 for no branch prediction)."
+set_parameter_property BTB_ENTRIES DISPLAY_NAME "Branch target buffer entries"
 set_parameter_property BTB_ENTRIES TYPE NATURAL
 set_parameter_property BTB_ENTRIES UNITS None
-set_parameter_property BTB_ENTRIES ALLOWED_RANGES 0:64
 set_parameter_property BTB_ENTRIES HDL_PARAMETER true
+set_parameter_property BTB_ENTRIES ALLOWED_RANGES {0:Disabled 1 2 4 8 16 32 64}
+set_parameter_property BTB_ENTRIES DESCRIPTION \
+    [concat \
+         "Number of branch target buffer (BTB) entries.  " \
+         "Set to disabled to disable branch predcition." ]
+add_display_item "Performance/Area Optimizations" BTB_ENTRIES PARAMETER
 
 add_parameter MULTIPLY_ENABLE natural 1
 set_parameter_property MULTIPLY_ENABLE DEFAULT_VALUE 1
 set_parameter_property MULTIPLY_ENABLE DISPLAY_NAME "Hardware Multiply"
-set_parameter_property MULTIPLY_ENABLE DESCRIPTION "Enable Multiplier, uses around 100 LUT4s, Shift instruction use the multiplier, 2 cycle operation"
 set_parameter_property MULTIPLY_ENABLE TYPE NATURAL
 set_parameter_property MULTIPLY_ENABLE UNITS None
 set_parameter_property MULTIPLY_ENABLE ALLOWED_RANGES 0:1
 set_parameter_property MULTIPLY_ENABLE HDL_PARAMETER true
 set_display_item_property MULTIPLY_ENABLE DISPLAY_HINT boolean
-
-add_parameter DIVIDE_ENABLE natural 1
-set_parameter_property DIVIDE_ENABLE DEFAULT_VALUE 1
-set_parameter_property DIVIDE_ENABLE DISPLAY_NAME "Hardware Divide"
-set_parameter_property DIVIDE_ENABLE DESCRIPTION "Enable Divider, uses around 400 LUT4s, 35 cycle operation"
-set_parameter_property DIVIDE_ENABLE TYPE NATURAL
-set_parameter_property DIVIDE_ENABLE UNITS None
-set_parameter_property DIVIDE_ENABLE ALLOWED_RANGES 0:1
-set_parameter_property DIVIDE_ENABLE HDL_PARAMETER true
-set_display_item_property DIVIDE_ENABLE DISPLAY_HINT boolean
+set_parameter_property MULTIPLY_ENABLE DESCRIPTION \
+    [concat \
+         "Enables hardware multiplier.  " \
+         "When enabled shifts also use the multiplier." ]
+add_display_item "Performance/Area Optimizations" MULTIPLY_ENABLE PARAMETER
 
 add_parameter SHIFTER_MAX_CYCLES natural 32
 set_parameter_property SHIFTER_MAX_CYCLES DISPLAY_NAME "Shifter Max Cycles"
@@ -164,301 +226,460 @@ set_parameter_property SHIFTER_MAX_CYCLES TYPE NATURAL
 set_parameter_property SHIFTER_MAX_CYCLES UNITS Cycles
 set_parameter_property SHIFTER_MAX_CYCLES ALLOWED_RANGES {1 8 32}
 set_parameter_property SHIFTER_MAX_CYCLES HDL_PARAMETER true
+set_parameter_property SHIFTER_MAX_CYCLES DESCRIPTION \
+    [concat \
+         "Number of cycles for shift instructions.  " \
+         "Higher numbers use less are.  " \
+         "Not applicable when multiplier is enabled, as shifts are done using the multiplier when enabled." ]
+add_display_item "Performance/Area Optimizations" SHIFTER_MAX_CYCLES PARAMETER
 
-add_parameter COUNTER_LENGTH natural 64
-set_parameter_property COUNTER_LENGTH DISPLAY_NAME "Counters Register Size"
-set_parameter_property COUNTER_LENGTH DESCRIPTION "\
-rdcycle and rdinstret size. If this is set to zero those \
-instructions throw unimplemented exception"
+add_parameter DIVIDE_ENABLE natural 1
+set_parameter_property DIVIDE_ENABLE DEFAULT_VALUE 1
+set_parameter_property DIVIDE_ENABLE DISPLAY_NAME "Hardware Divide"
+set_parameter_property DIVIDE_ENABLE TYPE NATURAL
+set_parameter_property DIVIDE_ENABLE UNITS None
+set_parameter_property DIVIDE_ENABLE ALLOWED_RANGES 0:1
+set_parameter_property DIVIDE_ENABLE HDL_PARAMETER true
+set_display_item_property DIVIDE_ENABLE DISPLAY_HINT boolean
+set_parameter_property DIVIDE_ENABLE DESCRIPTION \
+    [concat \
+         "Enable hardware divider.  " \
+         "Divide and remainder ops take one cycle per bit when enabled." ]
+add_display_item "Performance/Area Optimizations" DIVIDE_ENABLE PARAMETER
+
+add_parameter COUNTER_LENGTH natural 32
+set_parameter_property COUNTER_LENGTH DISPLAY_NAME "Counter Length"
 set_parameter_property COUNTER_LENGTH TYPE NATURAL
 set_parameter_property COUNTER_LENGTH UNITS None
-set_parameter_property COUNTER_LENGTH ALLOWED_RANGES {0 32 64}
+set_parameter_property COUNTER_LENGTH ALLOWED_RANGES {0:Disabled 32 64}
 set_parameter_property COUNTER_LENGTH HDL_PARAMETER true
 set_display_item_property COUNTER_LENGTH DISPLAY_HINT boolean
-
-add_parameter ENABLE_EXCEPTIONS natural 1
-set_parameter_property ENABLE_EXCEPTIONS DEFAULT_VALUE 1
-set_parameter_property ENABLE_EXCEPTIONS DISPLAY_NAME "Enable Exceptions"
-set_parameter_property ENABLE_EXCEPTIONS DESCRIPTION "Enable handling of illegal instructions, external interrupts, and timer interrupts (Recommended)"
-set_parameter_property ENABLE_EXCEPTIONS TYPE NATURAL
-set_parameter_property ENABLE_EXCEPTIONS UNITS None
-set_parameter_property ENABLE_EXCEPTIONS ALLOWED_RANGES 0:1
-set_parameter_property ENABLE_EXCEPTIONS HDL_PARAMETER true
-set_display_item_property ENABLE_EXCEPTIONS DISPLAY_HINT boolean
+set_parameter_property COUNTER_LENGTH DESCRIPTION \
+    [concat \
+         "Number of bits in the MTIME/MTIMEH CSR counter.  " \
+         "When disabled MTIME and MTIMEH read back as 0." \
+         "When set to 32, MTIMEH reads back as 0." ]
+add_display_item "Performance/Area Optimizations" COUNTER_LENGTH PARAMETER
 
 add_parameter          PIPELINE_STAGES natural 5
 set_parameter_property PIPELINE_STAGES HDL_PARAMETER true
 set_parameter_property PIPELINE_STAGES DISPLAY_NAME "Pipeline Stages"
-set_parameter_property PIPELINE_STAGES DESCRIPTION "Choose the number of pipeline stages, 4 stages is smaller\
-but 5 stages has a higher fmax"
-set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4,5}
+set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4 5}
+set_parameter_property PIPELINE_STAGES DESCRIPTION \
+    [concat \
+         "Number of pipeline stages.  " \
+         "Reducing this lowers area and branch misprediction penalty but potentially lowers fmax as well." ]
+add_display_item "Performance/Area Optimizations" PIPELINE_STAGES PARAMETER
 
 add_parameter VCP_ENABLE natural 0
 set_parameter_property VCP_ENABLE DEFAULT_VALUE 0
-set_parameter_property VCP_ENABLE DISPLAY_NAME "Vector Extensions"
-set_parameter_property VCP_ENABLE DESCRIPTION "Enable Vector Extensions"
+set_parameter_property VCP_ENABLE DISPLAY_NAME "Vector Coprocessor Port"
 set_parameter_property VCP_ENABLE TYPE NATURAL
 set_parameter_property VCP_ENABLE UNITS None
-set_parameter_property VCP_ENABLE ALLOWED_RANGES {0:Disable,1:32\ Bit,2:32/64\ Bit}
+set_parameter_property VCP_ENABLE ALLOWED_RANGES {0:Disable 1:32-Bit 2:32/64-Bit}
 set_parameter_property VCP_ENABLE HDL_PARAMETER true
-
-add_parameter ENABLE_EXT_INTERRUPTS natural 1
-set_parameter_property ENABLE_EXT_INTERRUPTS DEFAULT_VALUE 1
-set_parameter_property ENABLE_EXT_INTERRUPTS DISPLAY_NAME "Enable Interrupts"
-set_parameter_property ENABLE_EXT_INTERRUPTS DESCRIPTION "Enable handling of external interrupts"
-set_parameter_property ENABLE_EXT_INTERRUPTS TYPE NATURAL
-set_parameter_property ENABLE_EXT_INTERRUPTS UNITS None
-set_parameter_property ENABLE_EXT_INTERRUPTS ALLOWED_RANGES 0:1
-set_parameter_property ENABLE_EXT_INTERRUPTS HDL_PARAMETER true
-set_display_item_property ENABLE_EXT_INTERRUPTS DISPLAY_HINT boolean
-
-add_parameter          NUM_EXT_INTERRUPTS POSITIVE 2
-set_parameter_property NUM_EXT_INTERRUPTS DEFAULT_VALUE 2
-set_parameter_property NUM_EXT_INTERRUPTS HDL_PARAMETER true
-set_parameter_property NUM_EXT_INTERRUPTS ALLOWED_RANGES 1:32
-set_parameter_property NUM_EXT_INTERRUPTS DISPLAY_NAME "       External Interrupts"
-set_parameter_property NUM_EXT_INTERRUPTS DESCRIPTION "The number of connected external interrupts (maximum 32)."
-set_parameter_property NUM_EXT_INTERRUPTS visible false
+set_parameter_property VCP_ENABLE DESCRIPTION \
+    [concat \
+         "Enable the Vector Coprocessor Port (VCP); this connects to VectorBlox's " \
+         "proprietary Lightweight Vector Extensions (LVE) or Matrix Processor (MXP). " \
+         "The 32-bit variant supports only basic instructions, while the 64-bit variant " \
+         "supports all VCP instructions.  Note that no other 64-bit instructions are supported even " \
+         "when this is set to 32/64-bit." ]
+add_display_item "Performance/Area Optimizations" VCP_ENABLE PARAMETER
 
 add_parameter POWER_OPTIMIZED natural
 set_parameter_property POWER_OPTIMIZED DEFAULT_VALUE 0
 set_parameter_property POWER_OPTIMIZED DISPLAY_NAME "Optimize for Power"
-set_parameter_property POWER_OPTIMIZED DESCRIPTION "Improve power usage at the expense of area"
 set_parameter_property POWER_OPTIMIZED HDL_PARAMETER true
 set_parameter_property POWER_OPTIMIZED ALLOWED_RANGES 0:1
 set_display_item_property POWER_OPTIMIZED DISPLAY_HINT boolean
+set_parameter_property POWER_OPTIMIZED DESCRIPTION \
+    [concat \
+         "Enable optimizations for power at the cost of higher area and potentially lower fmax." ]
+add_display_item "Performance/Area Optimizations" POWER_OPTIMIZED PARAMETER
 
 add_parameter FAMILY string INTEL
 set_parameter_property FAMILY HDL_PARAMETER true
 set_parameter_property FAMILY visible false
+add_display_item "Performance/Area Optimizations" FAMILY PARAMETER
+
+
+
+add_parameter          INSTRUCTION_REQUEST_REGISTER natural 1
+set_parameter_property INSTRUCTION_REQUEST_REGISTER DEFAULT_VALUE 1
+set_parameter_property INSTRUCTION_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property INSTRUCTION_REQUEST_REGISTER DISPLAY_NAME "Internal Instruction Request Register"
+set_parameter_property INSTRUCTION_REQUEST_REGISTER ALLOWED_RANGES {0:Off 1:Light 2:Full}
+set_parameter_property INSTRUCTION_REQUEST_REGISTER DESCRIPTION \
+    [concat \
+         "Register for ALL instruction requests (including cache hits).  " \
+         "Light disconnects only the combinational path through the waitrequest/ready signal, " \
+         "but adds no latency.  " \
+         "Full disconnects the combinational path through all signals (address/data/etc.), " \
+         "but adds one cycle of latency." ]
+add_display_item "Memory and Cache" INSTRUCTION_REQUEST_REGISTER PARAMETER
+
+add_parameter          INSTRUCTION_RETURN_REGISTER natural 0
+set_parameter_property INSTRUCTION_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property INSTRUCTION_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property INSTRUCTION_RETURN_REGISTER DISPLAY_NAME "Internal Instruction Return Register"
+set_parameter_property INSTRUCTION_RETURN_REGISTER ALLOWED_RANGES {0:Off 1:On}
+set_parameter_property INSTRUCTION_RETURN_REGISTER DESCRIPTION \
+    [concat \
+         "Return data register for ALL instruction reads (including cache hits)." ]
+add_display_item "Memory and Cache" INSTRUCTION_RETURN_REGISTER PARAMETER
+
+add_parameter          DATA_REQUEST_REGISTER natural 1
+set_parameter_property DATA_REQUEST_REGISTER DEFAULT_VALUE 1
+set_parameter_property DATA_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DATA_REQUEST_REGISTER DISPLAY_NAME "Internal Data Request Register"
+set_parameter_property DATA_REQUEST_REGISTER ALLOWED_RANGES {0:Off 1:Light 2:Full}
+set_parameter_property DATA_REQUEST_REGISTER DESCRIPTION \
+    [concat \
+         "Register for ALL data requests (including cache hits).  " \
+         "Light disconnects only the combinational path through the waitrequest/ready signal, " \
+         "but adds no latency.  " \
+         "Full disconnects the combinational path through all signals (address/data/etc.), " \
+         "but adds one cycle of latency." ]
+add_display_item "Memory and Cache" DATA_REQUEST_REGISTER PARAMETER
+
+add_parameter          DATA_RETURN_REGISTER natural 0
+set_parameter_property DATA_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property DATA_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DATA_RETURN_REGISTER DISPLAY_NAME "Internal Data Return Register"
+set_parameter_property DATA_RETURN_REGISTER ALLOWED_RANGES {0:Off 1:On}
+set_parameter_property DATA_RETURN_REGISTER DESCRIPTION \
+    [concat \
+         "Return data register for ALL data reads (including cache hits)." ]
+add_display_item "Memory and Cache" DATA_RETURN_REGISTER PARAMETER
 
 add_parameter LOG2_BURSTLENGTH positive 4
 set_parameter_property LOG2_BURSTLENGTH HDL_PARAMETER true
 set_parameter_property LOG2_BURSTLENGTH ALLOWED_RANGES 1:8
 set_parameter_property LOG2_BURSTLENGTH visible false
+add_display_item "Memory and Cache" LOG2_BURSTLENGTH PARAMETER
 
 add_parameter AXI_ID_WIDTH positive 2
 set_parameter_property AXI_ID_WIDTH HDL_PARAMETER true
 set_parameter_property AXI_ID_WIDTH ALLOWED_RANGES 2:8
 set_parameter_property AXI_ID_WIDTH visible false
+add_display_item "Memory and Cache" AXI_ID_WIDTH PARAMETER
 
 add_parameter          AVALON_AUX natural 1
 set_parameter_property AVALON_AUX ALLOWED_RANGES 0:1
 set_parameter_property AVALON_AUX HDL_PARAMETER true
 set_parameter_property AVALON_AUX visible false
 set_parameter_property AVALON_AUX derived true
+add_display_item "Memory and Cache" AVALON_AUX PARAMETER
 
 add_parameter          LMB_AUX natural 0
 set_parameter_property LMB_AUX ALLOWED_RANGES 0:1
 set_parameter_property LMB_AUX HDL_PARAMETER true
 set_parameter_property LMB_AUX visible false
 set_parameter_property LMB_AUX derived true
+add_display_item "Memory and Cache" LMB_AUX PARAMETER
 
 add_parameter          WISHBONE_AUX natural 0
 set_parameter_property WISHBONE_AUX ALLOWED_RANGES 0:1
 set_parameter_property WISHBONE_AUX HDL_PARAMETER true
 set_parameter_property WISHBONE_AUX visible false
 set_parameter_property WISHBONE_AUX derived true
+add_display_item "Memory and Cache" WISHBONE_AUX PARAMETER
 
-add_parameter          AUX_MEMORY_REGIONS natural 1
-set_parameter_property AUX_MEMORY_REGIONS DEFAULT_VALUE 1
-set_parameter_property AUX_MEMORY_REGIONS HDL_PARAMETER true
-set_parameter_property AUX_MEMORY_REGIONS DISPLAY_NAME "Auxiliary Memory Regions (Avalon uncached) "
-set_parameter_property AUX_MEMORY_REGIONS ALLOWED_RANGES 0:4
 
-add_parameter AMR0_ADDR_BASE Std_Logic_Vector 32'h00000000
-set_parameter_property AMR0_ADDR_BASE DEFAULT_VALUE 32'h00000000
-set_parameter_property AMR0_ADDR_BASE DISPLAY_NAME "Auxiliary Memory Region 0 Start Address"
-set_parameter_property AMR0_ADDR_BASE UNITS None
-set_parameter_property AMR0_ADDR_BASE WIDTH 32
-set_parameter_property AMR0_ADDR_BASE HDL_PARAMETER true
-set_parameter_property AMR0_ADDR_BASE visible true
-
-add_parameter AMR0_ADDR_LAST Std_Logic_Vector 32'h00000000
-set_parameter_property AMR0_ADDR_LAST DEFAULT_VALUE 32'h00000000
-set_parameter_property AMR0_ADDR_LAST DISPLAY_NAME "Auxiliary Memory Region 0 Last Address"
-set_parameter_property AMR0_ADDR_LAST UNITS None
-set_parameter_property AMR0_ADDR_LAST WIDTH 32
-set_parameter_property AMR0_ADDR_LAST HDL_PARAMETER true
-set_parameter_property AMR0_ADDR_LAST visible true
-
-add_parameter          UC_MEMORY_REGIONS natural 0
-set_parameter_property UC_MEMORY_REGIONS DEFAULT_VALUE 0
-set_parameter_property UC_MEMORY_REGIONS HDL_PARAMETER true
-set_parameter_property UC_MEMORY_REGIONS DISPLAY_NAME "Uncached Memory Regions (AXI4-Lite)"
-set_parameter_property UC_MEMORY_REGIONS ALLOWED_RANGES 0:4
-
-add_parameter UMR0_ADDR_BASE Std_Logic_Vector 32'h00000000
-set_parameter_property UMR0_ADDR_BASE DEFAULT_VALUE 32'h00000000
-set_parameter_property UMR0_ADDR_BASE DISPLAY_NAME "Uncached Memory Region 0 Start Address"
-set_parameter_property UMR0_ADDR_BASE UNITS None
-set_parameter_property UMR0_ADDR_BASE WIDTH 32
-set_parameter_property UMR0_ADDR_BASE HDL_PARAMETER true
-set_parameter_property UMR0_ADDR_BASE visible true
-
-add_parameter UMR0_ADDR_LAST Std_Logic_Vector 32'h00000000
-set_parameter_property UMR0_ADDR_LAST DEFAULT_VALUE 32'h00000000
-set_parameter_property UMR0_ADDR_LAST DISPLAY_NAME "Uncached Memory Region 0 Last Address"
-set_parameter_property UMR0_ADDR_LAST UNITS None
-set_parameter_property UMR0_ADDR_LAST WIDTH 32
-set_parameter_property UMR0_ADDR_LAST HDL_PARAMETER true
-set_parameter_property UMR0_ADDR_LAST visible true
+add_display_item "Memory and Cache" "Instruction Cache and IC AXI4 Master" GROUP
 
 add_parameter ICACHE_SIZE NATURAL 0
+set_parameter_property ICACHE_SIZE ALLOWED_RANGES {0:Disabled 1024:1k 2048:2kB 4096:4kB 8192:8kB 16384:16kB 32768:32kB}
 set_parameter_property ICACHE_SIZE HDL_PARAMETER true
+set_parameter_property ICACHE_SIZE DISPLAY_NAME "Instruction Cache Size"
 set_parameter_property ICACHE_SIZE visible true
+set_parameter_property ICACHE_SIZE DESCRIPTION \
+    [concat \
+         "Instruction cache size in bytes.  " \
+         "When enabled the IC AXI4 master is enabled." ]
+add_display_item "Instruction Cache and IC AXI4 Master" ICACHE_SIZE PARAMETER
 
 add_parameter ICACHE_LINE_SIZE NATURAL 32
+set_parameter_property ICACHE_LINE_SIZE ALLOWED_RANGES {16 32 64 128 256}
 set_parameter_property ICACHE_LINE_SIZE HDL_PARAMETER true
+set_parameter_property ICACHE_LINE_SIZE DISPLAY_NAME "Instruction Cache Line Size"
 set_parameter_property ICACHE_LINE_SIZE visible true
+set_parameter_property ICACHE_LINE_SIZE DESCRIPTION \
+    [concat \
+         "Instruction line cache size in bytes.  " ]
+add_display_item "Instruction Cache and IC AXI4 Master" ICACHE_LINE_SIZE PARAMETER
 
 add_parameter ICACHE_EXTERNAL_WIDTH integer 32
 set_parameter_property ICACHE_EXTERNAL_WIDTH HDL_PARAMETER true
-set_parameter_property ICACHE_EXTERNAL_WIDTH visible true
-
-add_parameter          INSTRUCTION_REQUEST_REGISTER natural 0
-set_parameter_property INSTRUCTION_REQUEST_REGISTER DEFAULT_VALUE 0
-set_parameter_property INSTRUCTION_REQUEST_REGISTER HDL_PARAMETER true
-set_parameter_property INSTRUCTION_REQUEST_REGISTER DISPLAY_NAME "Instruction Request Register"
-set_parameter_property INSTRUCTION_REQUEST_REGISTER DESCRIPTION "Register instruction master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property INSTRUCTION_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
-
-add_parameter          INSTRUCTION_RETURN_REGISTER natural 0
-set_parameter_property INSTRUCTION_RETURN_REGISTER DEFAULT_VALUE 0
-set_parameter_property INSTRUCTION_RETURN_REGISTER HDL_PARAMETER true
-set_parameter_property INSTRUCTION_RETURN_REGISTER DISPLAY_NAME "Instruction Return Register"
-set_parameter_property INSTRUCTION_RETURN_REGISTER DESCRIPTION "Register instruction master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property INSTRUCTION_RETURN_REGISTER ALLOWED_RANGES {0,1}
-
-add_parameter          IUC_REQUEST_REGISTER natural 1
-set_parameter_property IUC_REQUEST_REGISTER DEFAULT_VALUE 1
-set_parameter_property IUC_REQUEST_REGISTER HDL_PARAMETER true
-set_parameter_property IUC_REQUEST_REGISTER DISPLAY_NAME "IUC Request Register"
-set_parameter_property IUC_REQUEST_REGISTER DESCRIPTION "Register IUC master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property IUC_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
-
-add_parameter          IUC_RETURN_REGISTER natural 0
-set_parameter_property IUC_RETURN_REGISTER DEFAULT_VALUE 0
-set_parameter_property IUC_RETURN_REGISTER HDL_PARAMETER true
-set_parameter_property IUC_RETURN_REGISTER DISPLAY_NAME "IUC Return Register"
-set_parameter_property IUC_RETURN_REGISTER DESCRIPTION "Register IUC master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property IUC_RETURN_REGISTER ALLOWED_RANGES {0,1}
-
-add_parameter          IAUX_REQUEST_REGISTER natural 1
-set_parameter_property IAUX_REQUEST_REGISTER DEFAULT_VALUE 1
-set_parameter_property IAUX_REQUEST_REGISTER HDL_PARAMETER true
-set_parameter_property IAUX_REQUEST_REGISTER DISPLAY_NAME "Instruction Avalon Request Register"
-set_parameter_property IAUX_REQUEST_REGISTER DESCRIPTION "Register instruction avalon master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property IAUX_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
-
-add_parameter          IAUX_RETURN_REGISTER natural 0
-set_parameter_property IAUX_RETURN_REGISTER DEFAULT_VALUE 0
-set_parameter_property IAUX_RETURN_REGISTER HDL_PARAMETER true
-set_parameter_property IAUX_RETURN_REGISTER DISPLAY_NAME "Instruction Avalon Return Register"
-set_parameter_property IAUX_RETURN_REGISTER DESCRIPTION "Register instruction avalon master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property IAUX_RETURN_REGISTER ALLOWED_RANGES {0,1}
+set_parameter_property ICACHE_EXTERNAL_WIDTH DISPLAY_NAME "Instruction Cache External Interface Width"
+set_parameter_property ICACHE_EXTERNAL_WIDTH visible false
+set_parameter_property ICACHE_EXTERNAL_WIDTH DESCRIPTION \
+    [concat \
+         "Instruction cache external width in bits.  " \
+         "Determines the data width of the IC AXI4 master." ]
+add_display_item "Instruction Cache and IC AXI4 Master" ICACHE_EXTERNAL_WIDTH PARAMETER
 
 add_parameter          IC_REQUEST_REGISTER natural 1
 set_parameter_property IC_REQUEST_REGISTER DEFAULT_VALUE 1
 set_parameter_property IC_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property IC_REQUEST_REGISTER DISPLAY_NAME "IC Request Register"
-set_parameter_property IC_REQUEST_REGISTER DESCRIPTION "Register IC master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property IC_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
+set_parameter_property IC_REQUEST_REGISTER ALLOWED_RANGES {0:Off 1:Light 2:Full}
+set_parameter_property IC_REQUEST_REGISTER DESCRIPTION \
+    [concat \
+         "Register for instruction cache AXI4 master requests.  " \
+         "Light disconnects only the combinational path through the waitrequest/ready signal, " \
+         "but adds no latency.  " \
+         "Full disconnects the combinational path through all signals (address/data/etc.), " \
+         "but adds one cycle of latency." ]
+add_display_item "Instruction Cache and IC AXI4 Master" IC_REQUEST_REGISTER PARAMETER
 
 add_parameter          IC_RETURN_REGISTER natural 0
 set_parameter_property IC_RETURN_REGISTER DEFAULT_VALUE 0
 set_parameter_property IC_RETURN_REGISTER HDL_PARAMETER true
 set_parameter_property IC_RETURN_REGISTER DISPLAY_NAME "IC Return Register"
-set_parameter_property IC_RETURN_REGISTER DESCRIPTION "Register IC master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property IC_RETURN_REGISTER ALLOWED_RANGES {0,1}
+set_parameter_property IC_RETURN_REGISTER ALLOWED_RANGES {0:Off 1:On}
+set_parameter_property IC_RETURN_REGISTER DESCRIPTION \
+    [concat \
+         "Return data register for instruction cache AXI4 master reads." ]
+add_display_item "Instruction Cache and IC AXI4 Master" IC_RETURN_REGISTER PARAMETER
+
+
+add_display_item "Memory and Cache" "Data Cache and DC AXI4 Master" GROUP
 
 add_parameter DCACHE_SIZE NATURAL 0
+set_parameter_property DCACHE_SIZE ALLOWED_RANGES {0:Disabled 1024:1k 2048:2kB 4096:4kB 8192:8kB 16384:16kB 32768:32kB}
 set_parameter_property DCACHE_SIZE HDL_PARAMETER true
+set_parameter_property DCACHE_SIZE DISPLAY_NAME "Data Cache Size"
 set_parameter_property DCACHE_SIZE visible true
+set_parameter_property DCACHE_SIZE DESCRIPTION \
+    [concat \
+         "Data cache size in bytes.  " \
+         "When enabled the DC AXI4 master is enabled." ]
+add_display_item "Data Cache and DC AXI4 Master" DCACHE_SIZE PARAMETER
 
 add_parameter DCACHE_LINE_SIZE NATURAL 32
+set_parameter_property DCACHE_LINE_SIZE ALLOWED_RANGES {16 32 64 128 256}
 set_parameter_property DCACHE_LINE_SIZE HDL_PARAMETER true
+set_parameter_property DCACHE_LINE_SIZE DISPLAY_NAME "Data Cache Line Size"
 set_parameter_property DCACHE_LINE_SIZE visible true
+set_parameter_property DCACHE_LINE_SIZE DESCRIPTION \
+    [concat \
+         "Data line cache size in bytes.  " ]
+add_display_item "Data Cache and DC AXI4 Master" DCACHE_LINE_SIZE PARAMETER
 
 add_parameter DCACHE_EXTERNAL_WIDTH integer 32
 set_parameter_property DCACHE_EXTERNAL_WIDTH HDL_PARAMETER true
-set_parameter_property DCACHE_EXTERNAL_WIDTH visible true
-
-add_parameter          DATA_REQUEST_REGISTER natural 0
-set_parameter_property DATA_REQUEST_REGISTER DEFAULT_VALUE 0
-set_parameter_property DATA_REQUEST_REGISTER HDL_PARAMETER true
-set_parameter_property DATA_REQUEST_REGISTER DISPLAY_NAME "Data Request Register"
-set_parameter_property DATA_REQUEST_REGISTER DESCRIPTION "Register data master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property DATA_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
-
-add_parameter          DATA_RETURN_REGISTER natural 0
-set_parameter_property DATA_RETURN_REGISTER DEFAULT_VALUE 0
-set_parameter_property DATA_RETURN_REGISTER HDL_PARAMETER true
-set_parameter_property DATA_RETURN_REGISTER DISPLAY_NAME "Data Return Register"
-set_parameter_property DATA_RETURN_REGISTER DESCRIPTION "Register data master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property DATA_RETURN_REGISTER ALLOWED_RANGES {0,1}
-
-add_parameter          DUC_REQUEST_REGISTER natural 2
-set_parameter_property DUC_REQUEST_REGISTER DEFAULT_VALUE 2
-set_parameter_property DUC_REQUEST_REGISTER HDL_PARAMETER true
-set_parameter_property DUC_REQUEST_REGISTER DISPLAY_NAME "DUC Request Register"
-set_parameter_property DUC_REQUEST_REGISTER DESCRIPTION "Register DUC master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property DUC_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
-
-add_parameter          DUC_RETURN_REGISTER natural 1
-set_parameter_property DUC_RETURN_REGISTER DEFAULT_VALUE 1
-set_parameter_property DUC_RETURN_REGISTER HDL_PARAMETER true
-set_parameter_property DUC_RETURN_REGISTER DISPLAY_NAME "DUC Return Register"
-set_parameter_property DUC_RETURN_REGISTER DESCRIPTION "Register DUC master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property DUC_RETURN_REGISTER ALLOWED_RANGES {0,1}
-
-add_parameter          DAUX_REQUEST_REGISTER natural 2
-set_parameter_property DAUX_REQUEST_REGISTER DEFAULT_VALUE 2
-set_parameter_property DAUX_REQUEST_REGISTER HDL_PARAMETER true
-set_parameter_property DAUX_REQUEST_REGISTER DISPLAY_NAME "Data avalon Request Register"
-set_parameter_property DAUX_REQUEST_REGISTER DESCRIPTION "Register data avalon master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property DAUX_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
-
-add_parameter          DAUX_RETURN_REGISTER natural 1
-set_parameter_property DAUX_RETURN_REGISTER DEFAULT_VALUE 1
-set_parameter_property DAUX_RETURN_REGISTER HDL_PARAMETER true
-set_parameter_property DAUX_RETURN_REGISTER DISPLAY_NAME "Data avalon Return Register"
-set_parameter_property DAUX_RETURN_REGISTER DESCRIPTION "Register data avalon master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property DAUX_RETURN_REGISTER ALLOWED_RANGES {0,1}
+set_parameter_property DCACHE_EXTERNAL_WIDTH visible false
+set_parameter_property DCACHE_EXTERNAL_WIDTH DESCRIPTION \
+    [concat \
+         "Data cache external width in bits.  " \
+         "Determines the data width of the DC AXI4 master." ]
+add_display_item "Data Cache and DC AXI4 Master" DCACHE_EXTERNAL_WIDTH PARAMETER
 
 add_parameter          DC_REQUEST_REGISTER natural 1
 set_parameter_property DC_REQUEST_REGISTER DEFAULT_VALUE 1
 set_parameter_property DC_REQUEST_REGISTER HDL_PARAMETER true
 set_parameter_property DC_REQUEST_REGISTER DISPLAY_NAME "DC Request Register"
-set_parameter_property DC_REQUEST_REGISTER DESCRIPTION "Register DC master request for higher fmax.  \
-0/Off, 1/Light, 2/Full."
-set_parameter_property DC_REQUEST_REGISTER ALLOWED_RANGES {0:Off,1:Light,2:Full}
+set_parameter_property DC_REQUEST_REGISTER ALLOWED_RANGES {0:Off 1:Light 2:Full}
+set_parameter_property DC_REQUEST_REGISTER DESCRIPTION \
+    [concat \
+         "Register for data cache AXI4 master requests.  " \
+         "Light disconnects only the combinational path through the waitrequest/ready signal, " \
+         "but adds no latency.  " \
+         "Full disconnects the combinational path through all signals (address/data/etc.), " \
+         "but adds one cycle of latency." ]
+add_display_item "Data Cache and DC AXI4 Master" DC_REQUEST_REGISTER PARAMETER
 
 add_parameter          DC_RETURN_REGISTER natural 0
 set_parameter_property DC_RETURN_REGISTER DEFAULT_VALUE 0
 set_parameter_property DC_RETURN_REGISTER HDL_PARAMETER true
 set_parameter_property DC_RETURN_REGISTER DISPLAY_NAME "DC Return Register"
-set_parameter_property DC_RETURN_REGISTER DESCRIPTION "Register DC master readdata for higher fmax \
-at the cost of higher load latency."
-set_parameter_property DC_RETURN_REGISTER ALLOWED_RANGES {0,1}
+set_parameter_property DC_RETURN_REGISTER ALLOWED_RANGES {0:Off 1:On}
+set_parameter_property DC_RETURN_REGISTER DESCRIPTION \
+    [concat \
+         "Return data register for data cache AXI4 master reads." ]
+add_display_item "Data Cache and DC AXI4 Master" DC_RETURN_REGISTER PARAMETER
 
-#
-# display items
-#
+
+add_display_item "Memory and Cache" "Uncached AXI4-Lite Masters" GROUP
+
+add_parameter          UC_MEMORY_REGIONS natural 0
+set_parameter_property UC_MEMORY_REGIONS DEFAULT_VALUE 0
+set_parameter_property UC_MEMORY_REGIONS HDL_PARAMETER true
+set_parameter_property UC_MEMORY_REGIONS DISPLAY_NAME "Uncached (AXI4-Lite) Memory Regions"
+set_parameter_property UC_MEMORY_REGIONS ALLOWED_RANGES {0 1 2 3 4}
+set_parameter_property UC_MEMORY_REGIONS DESCRIPTION \
+    [concat \
+         "Number of uncached AXI4-Lite regions.  " \
+         "If set to one or more then the IUC and DUC masters are enabled." ]
+add_display_item "Uncached AXI4-Lite Masters" UC_MEMORY_REGIONS PARAMETER
+
+add_parameter UMR0_ADDR_BASE Std_Logic_Vector 32'h00000000
+set_parameter_property UMR0_ADDR_BASE DEFAULT_VALUE 32'h00000000
+set_parameter_property UMR0_ADDR_BASE DISPLAY_NAME "First Uncached AXI4-Lite Address (UMR0) Reset Value"
+set_parameter_property UMR0_ADDR_BASE UNITS None
+set_parameter_property UMR0_ADDR_BASE WIDTH 32
+set_parameter_property UMR0_ADDR_BASE HDL_PARAMETER true
+set_parameter_property UMR0_ADDR_BASE visible true
+set_parameter_property UMR0_ADDR_BASE DESCRIPTION \
+    [concat \
+         "Initial base address for uncached memory region 0.  " \
+         "Should be set to the base address of the default IUC/DUC address range." ]
+add_display_item "Uncached AXI4-Lite Masters" UMR0_ADDR_BASE PARAMETER
+
+add_parameter UMR0_ADDR_LAST Std_Logic_Vector 32'hFFFFFFFF
+set_parameter_property UMR0_ADDR_LAST DEFAULT_VALUE 32'hFFFFFFFF
+set_parameter_property UMR0_ADDR_LAST DISPLAY_NAME "Last Uncached AXI4-Lite Address (UMR0) Reset Value"
+set_parameter_property UMR0_ADDR_LAST UNITS None
+set_parameter_property UMR0_ADDR_LAST WIDTH 32
+set_parameter_property UMR0_ADDR_LAST HDL_PARAMETER true
+set_parameter_property UMR0_ADDR_LAST visible true
+set_parameter_property UMR0_ADDR_LAST DESCRIPTION \
+    [concat \
+         "Initial last address for uncached memory region 0.  " \
+         "Should be set to the last address of the default IUC/DUC address range.  " \
+         "Note that last address is the highest addressable address not the start of the next address range.  " \
+         "e.g. if UMR0 starts at 0x00000000 and has a span of 0x80000000 URM0_ADDR_LAST is 0x7FFFFFFF." ]
+add_display_item "Uncached AXI4-Lite Masters" UMR0_ADDR_LAST PARAMETER
+
+add_parameter          IUC_REQUEST_REGISTER natural 0
+set_parameter_property IUC_REQUEST_REGISTER DEFAULT_VALUE 0
+set_parameter_property IUC_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property IUC_REQUEST_REGISTER DISPLAY_NAME "IUC Request Register"
+set_parameter_property IUC_REQUEST_REGISTER ALLOWED_RANGES {0:Off 1:Light 2:Full}
+set_parameter_property IUC_REQUEST_REGISTER DESCRIPTION \
+    [concat \
+         "Register for instruction uncached AXI4-Lite master requests.  " \
+         "Light disconnects only the combinational path through the waitrequest/ready signal, " \
+         "but adds no latency.  " \
+         "Full disconnects the combinational path through all signals (address/data/etc.), " \
+         "but adds one cycle of latency." ]
+add_display_item "Uncached AXI4-Lite Masters" IUC_REQUEST_REGISTER PARAMETER
+
+add_parameter          IUC_RETURN_REGISTER natural 0
+set_parameter_property IUC_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property IUC_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property IUC_RETURN_REGISTER DISPLAY_NAME "IUC Return Register"
+set_parameter_property IUC_RETURN_REGISTER ALLOWED_RANGES {0:Off 1:On}
+set_parameter_property IUC_RETURN_REGISTER DESCRIPTION \
+    [concat \
+         "Return data register for instruction uncached AXI4-Lite master reads." ]
+add_display_item "Uncached AXI4-Lite Masters" IUC_RETURN_REGISTER PARAMETER
+
+add_parameter          DUC_REQUEST_REGISTER natural 0
+set_parameter_property DUC_REQUEST_REGISTER DEFAULT_VALUE 0
+set_parameter_property DUC_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DUC_REQUEST_REGISTER DISPLAY_NAME "DUC Request Register"
+set_parameter_property DUC_REQUEST_REGISTER ALLOWED_RANGES {0:Off 1:Light 2:Full}
+set_parameter_property DUC_REQUEST_REGISTER DESCRIPTION \
+    [concat \
+         "Register for data uncached AXI4-Lite master requests.  " \
+         "Light disconnects only the combinational path through the waitrequest/ready signal, " \
+         "but adds no latency.  " \
+         "Full disconnects the combinational path through all signals (address/data/etc.), " \
+         "but adds one cycle of latency." ]
+add_display_item "Uncached AXI4-Lite Masters" DUC_REQUEST_REGISTER PARAMETER
+
+add_parameter          DUC_RETURN_REGISTER natural 0
+set_parameter_property DUC_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property DUC_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DUC_RETURN_REGISTER DISPLAY_NAME "DUC Return Register"
+set_parameter_property DUC_RETURN_REGISTER ALLOWED_RANGES {0:Off 1:On}
+set_parameter_property DUC_RETURN_REGISTER DESCRIPTION \
+    [concat \
+         "Return data register for data uncached AXI4-Lite master reads." ]
+add_display_item "Uncached AXI4-Lite Masters" DUC_RETURN_REGISTER PARAMETER
+
+
+add_display_item "Memory and Cache" "Avalon Masters" GROUP
+
+add_parameter          AUX_MEMORY_REGIONS natural 1
+set_parameter_property AUX_MEMORY_REGIONS DEFAULT_VALUE 1
+set_parameter_property AUX_MEMORY_REGIONS HDL_PARAMETER true
+set_parameter_property AUX_MEMORY_REGIONS DISPLAY_NAME "Auxiliary (Avalon uncached) Memory Regions"
+set_parameter_property AUX_MEMORY_REGIONS ALLOWED_RANGES {0 1 2 3 4}
+set_parameter_property AUX_MEMORY_REGIONS DESCRIPTION \
+    [concat \
+         "Number of LMB regions.  " \
+         "If set to one or more then the ILMB and DLMB masters are enabled." ]
+add_display_item "Avalon Masters" AUX_MEMORY_REGIONS PARAMETER
+
+add_parameter AMR0_ADDR_BASE Std_Logic_Vector 32'h00000000
+set_parameter_property AMR0_ADDR_BASE DEFAULT_VALUE 32'h00000000
+set_parameter_property AMR0_ADDR_BASE DISPLAY_NAME "First Uncached Avalon Address (AMR0) Reset Value<"
+set_parameter_property AMR0_ADDR_BASE UNITS None
+set_parameter_property AMR0_ADDR_BASE WIDTH 32
+set_parameter_property AMR0_ADDR_BASE HDL_PARAMETER true
+set_parameter_property AMR0_ADDR_BASE visible true
+set_parameter_property AMR0_ADDR_BASE DESCRIPTION \
+    [concat \
+         "Initial base address for auxiliary memory region 0.  " \
+         "Should be set to the base address of the default ILMB/DLMB address range." ]
+add_display_item "Avalon Masters" AMR0_ADDR_BASE PARAMETER
+
+add_parameter AMR0_ADDR_LAST Std_Logic_Vector 32'hFFFFFFFF
+set_parameter_property AMR0_ADDR_LAST DEFAULT_VALUE 32'hFFFFFFFF
+set_parameter_property AMR0_ADDR_LAST DISPLAY_NAME "Last Uncached Avalon Address (AMR0) Reset Value"
+set_parameter_property AMR0_ADDR_LAST UNITS None
+set_parameter_property AMR0_ADDR_LAST WIDTH 32
+set_parameter_property AMR0_ADDR_LAST HDL_PARAMETER true
+set_parameter_property AMR0_ADDR_LAST visible true
+set_parameter_property AMR0_ADDR_LAST DESCRIPTION \
+    [concat \
+         "Initial last address for auxiliary memory region 0.  " \
+         "Should be set to the last address of the default ILMB/DLMB address range.  " \
+         "Note that last address is the highest addressable address not the start of the next address range.  " \
+         "e.g. if AMR0 starts at 0x00000000 and has a span of 0x80000000 ARM0_ADDR_LAST is 0x7FFFFFFF." ]
+add_display_item "Avalon Masters" AMR0_ADDR_LAST PARAMETER
+
+add_parameter          IAUX_REQUEST_REGISTER natural 2
+set_parameter_property IAUX_REQUEST_REGISTER DEFAULT_VALUE 2
+set_parameter_property IAUX_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property IAUX_REQUEST_REGISTER DISPLAY_NAME "Instruction Avalon Request Register"
+set_parameter_property IAUX_REQUEST_REGISTER ALLOWED_RANGES {0:Off 1:Light 2:Full}
+set_parameter_property IAUX_REQUEST_REGISTER DESCRIPTION \
+    [concat \
+         "Register for instruction LMB master requests.  " \
+         "Light disconnects only the combinational path through the waitrequest/ready signal, " \
+         "but adds no latency.  " \
+         "Full disconnects the combinational path through all signals (address/data/etc.), " \
+         "but adds one cycle of latency." ]
+add_display_item "Avalon Masters" IAUX_REQUEST_REGISTER PARAMETER
+
+add_parameter          IAUX_RETURN_REGISTER natural 0
+set_parameter_property IAUX_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property IAUX_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property IAUX_RETURN_REGISTER DISPLAY_NAME "Instruction Avalon Return Register"
+set_parameter_property IAUX_RETURN_REGISTER ALLOWED_RANGES {0:Off 1:On}
+set_parameter_property IAUX_RETURN_REGISTER DESCRIPTION \
+    [concat \
+         "Return data register for instruction LMB master reads." ]
+add_display_item "Avalon Masters" IAUX_RETURN_REGISTER PARAMETER
+
+add_parameter          DAUX_REQUEST_REGISTER natural 2
+set_parameter_property DAUX_REQUEST_REGISTER DEFAULT_VALUE 2
+set_parameter_property DAUX_REQUEST_REGISTER HDL_PARAMETER true
+set_parameter_property DAUX_REQUEST_REGISTER DISPLAY_NAME "Data Avalon Request Register"
+set_parameter_property DAUX_REQUEST_REGISTER ALLOWED_RANGES {0:Off 1:Light 2:Full}
+set_parameter_property DAUX_REQUEST_REGISTER DESCRIPTION \
+    [concat \
+         "Register for data LMB master requests.  " \
+         "Light disconnects only the combinational path through the waitrequest/ready signal, " \
+         "but adds no latency.  " \
+         "Full disconnects the combinational path through all signals (address/data/etc.), " \
+         "but adds one cycle of latency." ]
+add_display_item "Avalon Masters" DAUX_REQUEST_REGISTER PARAMETER
+
+add_parameter          DAUX_RETURN_REGISTER natural 0
+set_parameter_property DAUX_RETURN_REGISTER DEFAULT_VALUE 0
+set_parameter_property DAUX_RETURN_REGISTER HDL_PARAMETER true
+set_parameter_property DAUX_RETURN_REGISTER DISPLAY_NAME "Data Avalon Return Register"
+set_parameter_property DAUX_RETURN_REGISTER ALLOWED_RANGES {0:Off 1:On}
+set_parameter_property DAUX_RETURN_REGISTER DESCRIPTION \
+    [concat \
+         "Return data register for data LMB master reads." ]
+add_display_item "Avalon Masters" DAUX_RETURN_REGISTER PARAMETER
 
 #
 # connection point clock
@@ -906,10 +1127,90 @@ proc log_out {out_str} {
 }
 
 proc elaboration_callback {} {
-    if { [get_parameter_value MULTIPLY_ENABLE] } {
-        set_display_item_property SHIFTER_MAX_CYCLES ENABLED false
+    if { [expr [get_parameter_value RESET_VECTOR] % 4] != 0 } {
+        send_message Error "Reset vector must be aligned to 4 bytes."
+    }
+    
+    if { [get_parameter_value ENABLE_EXCEPTIONS] } {
+        set_parameter_property INTERRUPT_VECTOR enabled true
+        if { [expr [get_parameter_value INTERRUPT_VECTOR] % 4] != 0 } {
+            send_message Error "Exception vector must be aligned to 4 bytes."
+        }
+        set_parameter_property ENABLE_EXT_INTERRUPTS enabled true
+        if { [get_parameter_value ENABLE_EXT_INTERRUPTS] } {
+            set_parameter_property NUM_EXT_INTERRUPTS enabled true
+            set_interface_property global_interrupts enabled true
+        } else {
+            set_parameter_property NUM_EXT_INTERRUPTS enabled false
+            set_interface_property global_interrupts enabled false
+        }
     } else {
-        set_display_item_property SHIFTER_MAX_CYCLES ENABLED true
+        set_parameter_property INTERRUPT_VECTOR enabled false
+        set_parameter_property ENABLE_EXT_INTERRUPTS enabled false
+        set_parameter_property NUM_EXT_INTERRUPTS enabled false
+        set_interface_property global_interrupts enabled false
+    }
+
+    if { [get_parameter_value MULTIPLY_ENABLE] } {
+        set_display_item_property SHIFTER_MAX_CYCLES enabled false
+    } else {
+        set_display_item_property SHIFTER_MAX_CYCLES enabled true
+    }
+
+    if { [get_parameter_value AUX_MEMORY_REGIONS] } {
+        set_display_item_property AMR0_ADDR_BASE enabled true
+        set_display_item_property AMR0_ADDR_LAST enabled true
+        set_display_item_property IAUX_REQUEST_REGISTER enabled true
+        set_display_item_property IAUX_RETURN_REGISTER enabled true
+        set_display_item_property DAUX_REQUEST_REGISTER enabled true
+        set_display_item_property DAUX_RETURN_REGISTER enabled true
+    } else {
+        set_display_item_property AMR0_ADDR_BASE enabled false
+        set_display_item_property AMR0_ADDR_LAST enabled false
+        set_display_item_property IAUX_REQUEST_REGISTER enabled false
+        set_display_item_property IAUX_RETURN_REGISTER enabled false
+        set_display_item_property DAUX_REQUEST_REGISTER enabled false
+        set_display_item_property DAUX_RETURN_REGISTER enabled false
+    }
+    
+    if { [get_parameter_value UC_MEMORY_REGIONS] } {
+        set_display_item_property UMR0_ADDR_BASE enabled true
+        set_display_item_property UMR0_ADDR_LAST enabled true
+        set_display_item_property IUC_REQUEST_REGISTER enabled true
+        set_display_item_property IUC_RETURN_REGISTER enabled true
+        set_display_item_property DUC_REQUEST_REGISTER enabled true
+        set_display_item_property DUC_RETURN_REGISTER enabled true
+    } else {
+        set_display_item_property UMR0_ADDR_BASE enabled false
+        set_display_item_property UMR0_ADDR_LAST enabled false
+        set_display_item_property IUC_REQUEST_REGISTER enabled false
+        set_display_item_property IUC_RETURN_REGISTER enabled false
+        set_display_item_property DUC_REQUEST_REGISTER enabled false
+        set_display_item_property DUC_RETURN_REGISTER enabled false
+    }
+    
+    if { [get_parameter_value ICACHE_SIZE] } {
+        set_display_item_property ICACHE_LINE_SIZE enabled true
+        set_display_item_property ICACHE_EXTERNAL_WIDTH enabled true
+        set_display_item_property IC_REQUEST_REGISTER enabled true
+        set_display_item_property IC_RETURN_REGISTER enabled true
+    } else {
+        set_display_item_property ICACHE_LINE_SIZE enabled false
+        set_display_item_property ICACHE_EXTERNAL_WIDTH enabled false
+        set_display_item_property IC_REQUEST_REGISTER enabled false
+        set_display_item_property IC_RETURN_REGISTER enabled false
+    }
+
+    if { [get_parameter_value DCACHE_SIZE] } {
+        set_display_item_property DCACHE_LINE_SIZE enabled true
+        set_display_item_property DCACHE_EXTERNAL_WIDTH enabled true
+        set_display_item_property DC_REQUEST_REGISTER enabled true
+        set_display_item_property DC_RETURN_REGISTER enabled true
+    } else {
+        set_display_item_property DCACHE_LINE_SIZE enabled false
+        set_display_item_property DCACHE_EXTERNAL_WIDTH enabled false
+        set_display_item_property DC_REQUEST_REGISTER enabled false
+        set_display_item_property DC_RETURN_REGISTER enabled false
     }
 
     set_interface_property axi_iuc     readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
@@ -919,21 +1220,6 @@ proc elaboration_callback {} {
         set_interface_property vcp ENABLED true
     } else {
         set_interface_property vcp ENABLED false
-    }
-
-    if { [get_parameter_value ENABLE_EXCEPTIONS] } {
-        set_parameter_property ENABLE_EXT_INTERRUPTS visible true
-        if { [get_parameter_value ENABLE_EXT_INTERRUPTS] } {
-            set_parameter_property NUM_EXT_INTERRUPTS visible true
-            set_interface_property global_interrupts enabled true
-        } else {
-            set_parameter_property NUM_EXT_INTERRUPTS visible false
-            set_interface_property global_interrupts enabled false
-        }
-    } else {
-        set_parameter_property ENABLE_EXT_INTERRUPTS visible false
-        set_parameter_property NUM_EXT_INTERRUPTS visible false
-        set_interface_property global_interrupts enabled false
     }
 
     if { [get_parameter_value ICACHE_SIZE] != 0 } {
