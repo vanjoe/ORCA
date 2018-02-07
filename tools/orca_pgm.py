@@ -10,7 +10,7 @@ def script_usage(script_name):
     print '[--device=] [--project_file=] [--output_file=]'
     print
     print 'program_file the bin file you wish to program.'
-    print '[--family=<family_name>] the name of the target fpga family.' 
+    print '[--family=<family_name>] the name of the target fpga family.'
     print 'Currently altera and xilinx are the only families supported.'
     print '[--base_address=<base_address>] the starting address of the code in ORCA\'s memory.'
     print '[--reset_address=<reset_address>] the address of the memory-mapped reset signal.'
@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     if len(sys.argv) < 2:
        script_usage(sys.argv[0])
-       sys.exit(2) 
+       sys.exit(2)
 
     program_file = sys.argv[1]
 
@@ -33,9 +33,9 @@ if __name__ == '__main__':
     except getopt.GetoptError:
         script_usage(sys.argv[0])
         sys.exit(2)
-	
+
     base_address = 0x00000000
-    reset_address = 0x10000000	
+    reset_address = 0x10000000
     end_address = 0x00010000
     family = 'altera'
     device = 'xc7z*'
@@ -79,7 +79,7 @@ if __name__ == '__main__':
         tcl_script.write('set jtag_master [lindex [get_service_paths master] 0]\n')
         tcl_script.write('open_service master $jtag_master\n')
         tcl_script.write('master_write_32 $jtag_master %#010x %#010x\n' % (reset_address, 1))
-        bin_file = open(program_file, 'rb') 
+        bin_file = open(program_file, 'rb')
 
         current_address = base_address
         while 1:
@@ -93,7 +93,7 @@ if __name__ == '__main__':
                 little_endian_word |= ((word & 0x00ff0000) >> 8)
                 little_endian_word |= ((word & 0x0000ff00) << 8)
                 little_endian_word |= ((word & 0x000000ff) << 24)
-                tcl_script.write('lappend values %#010x\n' % little_endian_word) 
+                tcl_script.write('lappend values %#010x\n' % little_endian_word)
                 current_address += 4
 
         # Write over the rest of remaining memory with zeroes.
@@ -119,7 +119,7 @@ if __name__ == '__main__':
         file_write_count    = 0
         padding_write_count = 0
         ending_write_count  = 0
-        
+
         tcl_script.write('proc orca_pgm {} {\n')
         tcl_script.write('\tset_msg_config -id "Labtoolstcl 44-481" -suppress\n')
         tcl_script.write('\topen_hw\n')
@@ -131,13 +131,13 @@ if __name__ == '__main__':
         tcl_script.write('\treset_hw_axi [get_hw_axis]\n')
         tcl_script.write('\tcreate_hw_axi_txn init_{} [get_hw_axis hw_axi_1] -type write '.format(init_write_count))
         tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(reset_address+8))
-        init_write_count += 1  
+        init_write_count += 1
         tcl_script.write('\tcreate_hw_axi_txn init_{} [get_hw_axis hw_axi_1] -type write '.format(init_write_count))
         tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(reset_address))
-        init_write_count += 1  
+        init_write_count += 1
         tcl_script.write('\tcreate_hw_axi_txn init_{} [get_hw_axis hw_axi_1] -type write '.format(init_write_count))
         tcl_script.write('-address {:08x} -len 1 -data 0x00000001\n'.format(reset_address+8))
-        init_write_count += 1  
+        init_write_count += 1
 
         bin_file = open(program_file, 'rb')
 
@@ -162,7 +162,7 @@ if __name__ == '__main__':
                 if word != 0:
                     data_string = '_' + data_string
                 data_string = '{:08x}'.format(little_endian_data) + data_string
-            if data_string != '':    
+            if data_string != '':
                 tcl_script.write('\tcreate_hw_axi_txn file_{} [get_hw_axis hw_axi_1] -type write '.format(file_write_count))
                 tcl_script.write('-address {:08x} -len {:d} -data {{'.format(current_address, BURST_LENGTH) + data_string + '}\n')
                 file_write_count += 1
@@ -204,11 +204,10 @@ if __name__ == '__main__':
         bin_file.close()
         tcl_script.close()
 
-        vivado_cmd = 'vivado -mode batch -nolog -nojournal'
+        vivado_cmd = 'vivado -mode batch -nolog -nojournal -notrace'
         tcl_src = tcl_script.name
         cmd = '{} -source {}'.format(vivado_cmd, tcl_src)
         subprocess.Popen(cmd, shell=True).wait()
 
     else:
         print 'Error: {} is not a supported family.'.format(family)
-

@@ -14,7 +14,9 @@ MEM_FILE ?= $(SW_DIR)/test.mem
 
 PROJ_FILE=$(PROJ_DIR)/$(PROJ_NAME).xpr
 BD_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/$(BD_NAME).bd
-HWH_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/hw_handoff/$(BD_NAME).hwh
+HWH_FILE_SRC=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/hw_handoff/$(BD_NAME).hwh
+HWH_FILE=$(BD_NAME).hwh
+HWDEF_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/synth/$(BD_NAME).hwdef
 SYNTH_DCP=$(PROJ_DIR)/$(PROJ_NAME).runs/synth_1/$(BD_NAME)_wrapper.dcp
 IMPL_BIT=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.bit
 ORCA_SRCS=$(wildcard ../../ip/orca/hdl/*.vhd) ../../ip/orca/component.xml
@@ -27,7 +29,7 @@ PGM_TCL=pgm.tcl
 .PHONY: all
 all: $(OUT_BIT) resource_utilization.rpt link.ld
 
-VIVADO_SOURCE=vivado -nojournal -nolog -mode batch -source
+VIVADO_SOURCE=vivado -notrace -nojournal -nolog -mode batch -source
 
 BD_CHANGES = {
 
@@ -181,10 +183,8 @@ endif #ifdef DC_RETURN_REGISTER
 
 BD_CHANGES += }
 
-$(PROJ_FILE) $(BD_FILE): $(PROJECT_TCL) $(BD_TCL) $(wildcard config.mk)
 
-$(PROJ_FILE) $(BD_FILE): $(PROJECT_TCL) $(BD_TCL) $(wildcard config.mk)
-	if [ -e $(SW_DIR)/Makefile ]; then ORCA_TEST=$(ORCA_TEST) $(MAKE) -C $(SW_DIR); fi
+$(BD_FILE): $(PROJECT_TCL) $(BD_TCL) $(wildcard config.mk)
 	if [ ! -e $(COE_FILE) ]; then echo "memory_initialization_radix=16;" > $(COE_FILE); echo "memory_initialization_vector=0;" >> $(COE_FILE); fi
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs init_project $(PROJ_DIR) $(PROJ_NAME)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs create_bd $(PROJ_DIR) $(PROJ_NAME) $(BD_TCL) $(BD_CHANGES)
@@ -192,17 +192,25 @@ $(PROJ_FILE) $(BD_FILE): $(PROJECT_TCL) $(BD_TCL) $(wildcard config.mk)
 .PHONY: archiveBD
 archiveBD: $(HWH_FILE)
 
+#we generate the bd design twice, because the hwh is needed to compile the software,
+#and the compiled software is needed to generate the sources.
 $(HWH_FILE): $(BD_FILE) $(ORCA_SRCS)
 	rm -f tmp.$(BD_TCL)
-	rm -f $@
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs generate_bd_design $(PROJ_DIR) $(PROJ_NAME) tmp.$(BD_TCL)
 	[ -e tmp.$(BD_TCL) ]
-	[ -e $@ ]
+	[ -e $(HWH_FILE_SRC) ]
 	mv tmp.$(BD_TCL) $(BD_TCL)
 	touch $<
-	touch $@
+	cp $(HWH_FILE_SRC) $@
 
-$(SYNTH_DCP): $(HWH_FILE)
+$(HWDEF_FILE): $(COE_FILE)
+	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs generate_bd_design $(PROJ_DIR) $(PROJ_NAME)
+	rm tmp.$(BD_TCL)
+
+
+orca_defines.h: $(HWH_FILE)
+	hsi -notrace -mode batch -source ../../tools/hsi_orca_addressmap.tcl -tclargs $(HWH_FILE) orca $@
+$(SYNTH_DCP): $(HWDEF_FILE)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs project_synth $(PROJ_DIR) $(PROJ_NAME)
 
 $(IMPL_BIT): $(SYNTH_DCP)
@@ -226,10 +234,10 @@ link.ld::
 	diff -q $@ tmp.$@; if [ $$? != 0 ]; then mv tmp.$@ $@; fi
 	rm -f tmp.$@
 
-$(ELF_FILE)::
+$(ELF_FILE): orca_defines.h
 	ORCA_TEST=$(ORCA_TEST) $(MAKE) -C $(SW_DIR)
 
-$(COE_FILE)::
+$(COE_FILE): orca_defines.h
 	ORCA_TEST=$(ORCA_TEST) $(MAKE) -C $(SW_DIR)
 
 .PHONY: sim
