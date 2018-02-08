@@ -12,16 +12,16 @@ entity memory_interface is
     REGISTER_SIZE         : positive range 32 to 32;
     WRITE_FIRST_SUPPORTED : boolean;
 
-    WISHBONE_SINGLE_CYCLE_READS : natural range 0 to 1;
+    WISHBONE_SINGLE_CYCLE_READS : boolean;
     MAX_IFETCHES_IN_FLIGHT      : positive;
     MAX_OUTSTANDING_REQUESTS    : positive;
 
     LOG2_BURSTLENGTH : positive;
     AXI_ID_WIDTH     : positive;
 
-    AVALON_AUX   : natural range 0 to 1;
-    WISHBONE_AUX : natural range 0 to 1;
-    LMB_AUX      : natural range 0 to 1;
+    AVALON_AUX   : boolean;
+    WISHBONE_AUX : boolean;
+    LMB_AUX      : boolean;
 
     AUX_MEMORY_REGIONS : natural range 0 to 4;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
@@ -32,30 +32,31 @@ entity memory_interface is
     UMR0_ADDR_LAST    : std_logic_vector(31 downto 0);
 
     ICACHE_SIZE           : natural;
-    ICACHE_LINE_SIZE      : integer range 16 to 256;
-    ICACHE_EXTERNAL_WIDTH : integer;
+    ICACHE_LINE_SIZE      : positive range 16 to 256;
+    ICACHE_EXTERNAL_WIDTH : positive;
 
-    INSTRUCTION_REQUEST_REGISTER : natural range 0 to 2;
-    INSTRUCTION_RETURN_REGISTER  : natural range 0 to 1;
-    IUC_REQUEST_REGISTER         : natural range 0 to 2;
-    IUC_RETURN_REGISTER          : natural range 0 to 1;
-    IAUX_REQUEST_REGISTER        : natural range 0 to 2;
-    IAUX_RETURN_REGISTER         : natural range 0 to 1;
-    IC_REQUEST_REGISTER          : natural range 0 to 2;
-    IC_RETURN_REGISTER           : natural range 0 to 1;
+    INSTRUCTION_REQUEST_REGISTER : request_register_type;
+    INSTRUCTION_RETURN_REGISTER  : boolean;
+    IUC_REQUEST_REGISTER         : request_register_type;
+    IUC_RETURN_REGISTER          : boolean;
+    IAUX_REQUEST_REGISTER        : request_register_type;
+    IAUX_RETURN_REGISTER         : boolean;
+    IC_REQUEST_REGISTER          : request_register_type;
+    IC_RETURN_REGISTER           : boolean;
 
     DCACHE_SIZE           : natural;
-    DCACHE_LINE_SIZE      : integer range 16 to 256;
-    DCACHE_EXTERNAL_WIDTH : integer;
+    DCACHE_LINE_SIZE      : positive range 16 to 256;
+    DCACHE_EXTERNAL_WIDTH : positive;
+    DCACHE_WRITEBACK      : boolean;
 
-    DATA_REQUEST_REGISTER : natural range 0 to 2;
-    DATA_RETURN_REGISTER  : natural range 0 to 1;
-    DUC_REQUEST_REGISTER  : natural range 0 to 2;
-    DUC_RETURN_REGISTER   : natural range 0 to 1;
-    DAUX_REQUEST_REGISTER : natural range 0 to 2;
-    DAUX_RETURN_REGISTER  : natural range 0 to 1;
-    DC_REQUEST_REGISTER   : natural range 0 to 2;
-    DC_RETURN_REGISTER    : natural range 0 to 1
+    DATA_REQUEST_REGISTER : request_register_type;
+    DATA_RETURN_REGISTER  : boolean;
+    DUC_REQUEST_REGISTER  : request_register_type;
+    DUC_RETURN_REGISTER   : boolean;
+    DAUX_REQUEST_REGISTER : request_register_type;
+    DAUX_RETURN_REGISTER  : boolean;
+    DC_REQUEST_REGISTER   : request_register_type;
+    DC_RETURN_REGISTER    : boolean
     );
   port (
     clk   : in std_logic;
@@ -422,10 +423,10 @@ architecture rtl of memory_interface is
 
   signal aresetn : std_logic;
 begin
-  assert (AVALON_AUX + WISHBONE_AUX + LMB_AUX) < 2 report
+  assert (bool_to_int(AVALON_AUX) + bool_to_int(WISHBONE_AUX) + bool_to_int(LMB_AUX)) < 2 report
     "At most one auxiliary interface type (AVALON_AUX, WISHBONE_AUX, LMB_AUX) must be enabled"
     severity failure;
-  assert AUX_MEMORY_REGIONS = 0 or (AVALON_AUX + WISHBONE_AUX + LMB_AUX) = 1 report
+  assert AUX_MEMORY_REGIONS = 0 or (AVALON_AUX or WISHBONE_AUX or LMB_AUX) report
     "if AUX_MEMORY_REGIONS > 0 then one auxiliary interface (AVALON_AUX, WISHBONE_AUX, or LMB_AUX) must be enabled"
     severity failure;
 
@@ -532,6 +533,8 @@ begin
         INTERNAL_WIDTH        => REGISTER_SIZE,
         EXTERNAL_WIDTH        => ICACHE_EXTERNAL_WIDTH,
         LOG2_BURSTLENGTH      => LOG2_BURSTLENGTH,
+        READ_ONLY             => true,
+        WRITEBACK             => false,
         WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED
         )
       port map (
@@ -767,6 +770,8 @@ begin
         INTERNAL_WIDTH        => REGISTER_SIZE,
         EXTERNAL_WIDTH        => DCACHE_EXTERNAL_WIDTH,
         LOG2_BURSTLENGTH      => LOG2_BURSTLENGTH,
+        READ_ONLY             => false,
+        WRITEBACK             => DCACHE_WRITEBACK,
         WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED
         )
       port map (
@@ -907,7 +912,7 @@ begin
   -----------------------------------------------------------------------------
   -- LMB auxiliary interface
   -----------------------------------------------------------------------------
-  ilmb_aux_enabled : if LMB_AUX /= 0 generate
+  ilmb_aux_enabled : if LMB_AUX generate
     signal iread_in_flight  : std_logic;
     signal iwrite_in_flight : std_logic;
     signal dread_in_flight  : std_logic;
@@ -984,7 +989,7 @@ begin
     daux_oimm_readdatavalid <= DLMB_Ready and dread_in_flight;
     daux_oimm_waitrequest   <= (dread_in_flight or dwrite_in_flight) and (not DLMB_Ready);
   end generate ilmb_aux_enabled;
-  ilmb_aux_disabled : if LMB_AUX = 0 generate
+  ilmb_aux_disabled : if not LMB_AUX generate
     ILMB_Addr         <= (others => '0');
     ILMB_Byte_Enable  <= (others => '0');
     ILMB_Data_Write   <= (others => '0');
@@ -1002,7 +1007,7 @@ begin
   -----------------------------------------------------------------------------
   -- AVALON auxiliary interface
   -----------------------------------------------------------------------------
-  avalon_enabled : if AVALON_AUX /= 0 generate
+  avalon_enabled : if AVALON_AUX generate
     avm_instruction_address <= iaux_oimm_address;
     avm_instruction_read    <= iaux_oimm_readnotwrite and iaux_oimm_requestvalid;
     iaux_oimm_readdata      <= avm_instruction_readdata;
@@ -1018,7 +1023,7 @@ begin
     daux_oimm_waitrequest   <= avm_data_waitrequest;
     daux_oimm_readdatavalid <= avm_data_readdatavalid;
   end generate avalon_enabled;
-  avalon_disabled : if AVALON_AUX = 0 generate
+  avalon_disabled : if not AVALON_AUX generate
     avm_data_address        <= (others => '0');
     avm_data_byteenable     <= (others => '0');
     avm_data_read           <= '0';
@@ -1031,7 +1036,7 @@ begin
   -----------------------------------------------------------------------------
   -- WISHBONE auxiliary interface
   -----------------------------------------------------------------------------
-  wishbone_enabled : if WISHBONE_AUX /= 0 generate
+  wishbone_enabled : if WISHBONE_AUX generate
     signal reading               : std_logic;
     signal writing               : std_logic;
     signal awaiting_ack          : std_logic;
@@ -1040,11 +1045,11 @@ begin
   begin
     awaiting_ack <= reading or writing;
 
-    no_single_cycle_gen : if WISHBONE_SINGLE_CYCLE_READS = 0 generate
+    no_single_cycle_gen : if WISHBONE_SINGLE_CYCLE_READS generate
       daux_oimm_readdata      <= data_DAT_I;
       daux_oimm_readdatavalid <= data_ACK_I and reading;
     end generate no_single_cycle_gen;
-    single_cycle_gen : if WISHBONE_SINGLE_CYCLE_READS /= 0 generate
+    single_cycle_gen : if WISHBONE_SINGLE_CYCLE_READS generate
       daux_oimm_readdata      <= data_DAT_I when delayed_readdatavalid = '0' else delayed_readdata;
       daux_oimm_readdatavalid <= (data_ACK_I and reading) or delayed_readdatavalid;
     end generate single_cycle_gen;
@@ -1095,7 +1100,7 @@ begin
     iaux_oimm_waitrequest   <= instr_STALL_I;
     iaux_oimm_readdatavalid <= instr_ACK_I;
   end generate wishbone_enabled;
-  wishbone_disabled : if WISHBONE_AUX = 0 generate
+  wishbone_disabled : if not WISHBONE_AUX generate
     data_ADR_O  <= (others => '0');
     data_STB_O  <= '0';
     data_CYC_O  <= '0';

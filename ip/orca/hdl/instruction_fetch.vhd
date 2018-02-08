@@ -29,7 +29,7 @@ entity instruction_fetch is
     --quash_ifetch is handled by to_pc_correction_valid
     ifetch_idle : out std_logic;
 
-    from_ifetch_instruction     : out std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+    from_ifetch_instruction     : out std_logic_vector(31 downto 0);
     from_ifetch_program_counter : out unsigned(REGISTER_SIZE-1 downto 0);
     from_ifetch_predicted_pc    : out unsigned(REGISTER_SIZE-1 downto 0);
     from_ifetch_valid           : out std_logic;
@@ -40,7 +40,7 @@ entity instruction_fetch is
     --ORCA-internal memory-mapped master
     oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     oimm_requestvalid  : buffer std_logic;
-    oimm_readdata      : in     std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+    oimm_readdata      : in     std_logic_vector(31 downto 0);
     oimm_readdatavalid : in     std_logic;
     oimm_waitrequest   : in     std_logic
     );
@@ -79,8 +79,8 @@ architecture rtl of instruction_fetch is
   signal instruction_fifo_read      : std_logic;
   signal instruction_fifo_empty     : std_logic;
   signal instruction_fifo_full      : std_logic;
-  signal instruction_fifo_writedata : std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
-  signal instruction_fifo_readdata  : std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+  signal instruction_fifo_writedata : std_logic_vector(31 downto 0);
+  signal instruction_fifo_readdata  : std_logic_vector(31 downto 0);
   signal instruction_fifo_usedw     : unsigned(log2(MAX_IFETCHES_IN_FLIGHT+1)-1 downto 0);
 
   signal ifetch_valid : std_logic;
@@ -290,7 +290,7 @@ begin
   --Dual request in flight/dual entry instruction FIFO
   dual_fetches_in_flight : if MAX_IFETCHES_IN_FLIGHT = 2 generate
     signal pc_fifo_internaldata          : std_logic_vector((2*REGISTER_SIZE)-1 downto 0);
-    signal instruction_fifo_internaldata : std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+    signal instruction_fifo_internaldata : std_logic_vector(31 downto 0);
   begin
     next_pc_fifo_usedw <=
       pc_fifo_usedw + to_unsigned(1, pc_fifo_usedw'length) when pc_fifo_write = '1' and pc_fifo_read = '0' else
@@ -362,7 +362,7 @@ begin
   a_few_fetches_in_flight : if MAX_IFETCHES_IN_FLIGHT > 2 generate
     type pc_fifo_data_vector is array (natural range <>) of std_logic_vector((2*REGISTER_SIZE)-1 downto 0);
     signal pc_fifo_internaldata          : pc_fifo_data_vector(MAX_IFETCHES_IN_FLIGHT-1 downto 0);
-    type instruction_fifo_data_vector is array (natural range <>) of std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+    type instruction_fifo_data_vector is array (natural range <>) of std_logic_vector(31 downto 0);
     signal instruction_fifo_internaldata : instruction_fifo_data_vector(MAX_IFETCHES_IN_FLIGHT-1 downto 0);
   begin
     next_pc_fifo_usedw <=

@@ -12,7 +12,7 @@ use work.constants_pkg.all;
 entity vcp_handler is
   generic (
     REGISTER_SIZE : positive range 32 to 32;
-    VCP_ENABLE    : natural
+    VCP_ENABLE    : vcp_type
     );
   port (
     clk   : in std_logic;
@@ -45,7 +45,7 @@ begin  -- architecture rtl
   dsz         <= instruction(31) & instruction(29);
   instr_64bit <= instruction(MAJOR_OP'range) = LVE64_OP;
 
-  full_vcp_gen : if VCP_ENABLE = 2 generate
+  full_vcp_gen : if VCP_ENABLE = SIXTY_FOUR_BIT generate
     vcp_instruction(40)           <= instruction(40)           when instr_64bit else '0';  --extra instruction
     vcp_instruction(39)           <= instruction(39)           when instr_64bit else '0';  --masked
     vcp_instruction(38)           <= instruction(38)           when instr_64bit else '1';  --bsign
@@ -54,7 +54,7 @@ begin  -- architecture rtl
     vcp_instruction(35 downto 34) <= instruction(35 downto 34) when instr_64bit else dsz;  --b size
     vcp_instruction(33 downto 32) <= instruction(33 downto 32) when instr_64bit else dsz;  --b size
   end generate full_vcp_gen;
-  light_vcp_gen : if VCP_ENABLE /= 2 generate
+  light_vcp_gen : if VCP_ENABLE /= SIXTY_FOUR_BIT generate
     vcp_instruction(40)           <= '0';  --extra instruction
     vcp_instruction(39)           <= '0';  --masked
     vcp_instruction(38)           <= '1';  --bsign
@@ -69,7 +69,7 @@ begin  -- architecture rtl
   vcp_data1 <= rs2_data;
   vcp_data2 <= rs3_data;
 
-  vcp_enabled_gen : if VCP_ENABLE /= 0 generate
+  vcp_enabled_gen : if VCP_ENABLE /= DISABLED generate
     vcp_valid_instr <= valid_instr when instruction(MAJOR_OP'range) = LVE32_OP or instr_64bit else '0';
     process (clk) is
     begin
@@ -78,7 +78,7 @@ begin  -- architecture rtl
       end if;
     end process;
   end generate vcp_enabled_gen;
-  vcp_disabled_gen : if VCP_ENABLE = 0 generate
+  vcp_disabled_gen : if VCP_ENABLE = DISABLED generate
     vcp_valid_instr   <= '0';
     vcp_was_executing <= '0';
   end generate vcp_disabled_gen;

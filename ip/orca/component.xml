@@ -5537,6 +5537,11 @@
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DCACHE_SIZE" spirit:minimum="0" spirit:rangeType="long">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>DCACHE_WRITEBACK</spirit:name>
+        <spirit:displayName>Data Cache Write Policy</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DCACHE_WRITEBACK" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>DCACHE_LINE_SIZE</spirit:name>
         <spirit:displayName>Dnstruction Cache Line Size</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DCACHE_LINE_SIZE" spirit:minimum="16" spirit:maximum="256" spirit:rangeType="long">32</spirit:value>
@@ -5606,6 +5611,11 @@
       <spirit:enumeration spirit:text="8kB">8192</spirit:enumeration>
       <spirit:enumeration spirit:text="16kB">16384</spirit:enumeration>
       <spirit:enumeration spirit:text="32kB">32768</spirit:enumeration>
+    </spirit:choice>
+    <spirit:choice>
+      <spirit:name>choice_list_cache_policy</spirit:name>
+      <spirit:enumeration spirit:text="Write-through">0</spirit:enumeration>
+      <spirit:enumeration spirit:text="Write-back">1</spirit:enumeration>
     </spirit:choice>
     <spirit:choice>
       <spirit:name>choice_list_max_ifetches_in_flight</spirit:name>
@@ -6055,6 +6065,11 @@
       <spirit:name>DCACHE_SIZE</spirit:name>
       <spirit:displayName>Data Cache Size</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DCACHE_SIZE" spirit:minimum="0" spirit:rangeType="long" spirit:choiceRef="choice_list_cache_size">0</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>DCACHE_WRITEBACK</spirit:name>
+      <spirit:displayName>Data Cache Write Policy</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DCACHE_WRITEBACK" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long" spirit:choiceRef="choice_list_cache_policy">1</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>DCACHE_LINE_SIZE</spirit:name>

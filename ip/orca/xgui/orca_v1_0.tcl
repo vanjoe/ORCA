@@ -237,6 +237,14 @@ proc init_gui { IPINST } {
              "When enabled the DC AXI4 master is enabled." ] \
         $DCACHE_SIZE
     
+    set DCACHE_WRITEBACK [ ipgui::add_param $IPINST -name "DCACHE_WRITEBACK" -parent $dcGroup -widget comboBox ]
+    set_property tooltip \
+        [concat \
+             "Write-through immediately puts all writes onto the DC bus and does not allocate on write misses.  " \
+             "Write-back writes dirty cache lines back on eviction (conflict, IFENCE, or FLUSH/INVALIDATE) and " \
+             "allocates on write misses." ] \
+        $DCACHE_WRITEBACK
+    
     set DCACHE_LINE_SIZE [ ipgui::add_param $IPINST -name "DCACHE_LINE_SIZE" -parent $dcGroup -widget comboBox ]
     set_property tooltip \
         [concat \
@@ -822,6 +830,20 @@ proc validate_PARAM_VALUE.DCACHE_SIZE { PARAM_VALUE.DCACHE_SIZE } {
     return true
 }
 
+proc update_PARAM_VALUE.DCACHE_WRITEBACK { PARAM_VALUE.DCACHE_WRITEBACK PARAM_VALUE.DCACHE_SIZE } {
+    # Procedure called to update DCACHE_WRITEBACK when any of the dependent parameters in the arguments change
+    if { [get_property value ${PARAM_VALUE.DCACHE_SIZE} ] } {
+        set_property enabled true ${PARAM_VALUE.DCACHE_WRITEBACK}
+    } else {
+        set_property enabled false ${PARAM_VALUE.DCACHE_WRITEBACK}
+    }
+}
+
+proc validate_PARAM_VALUE.DCACHE_WRITEBACK { PARAM_VALUE.DCACHE_WRITEBACK } {
+    # Procedure called to validate DCACHE_WRITEBACK
+    return true
+}
+
 proc update_PARAM_VALUE.DCACHE_LINE_SIZE { PARAM_VALUE.DCACHE_LINE_SIZE PARAM_VALUE.DCACHE_SIZE } {
     # Procedure called to update DCACHE_LINE_SIZE when any of the dependent parameters in the arguments change
     if { [get_property value ${PARAM_VALUE.DCACHE_SIZE} ] } {
@@ -1145,6 +1167,11 @@ proc update_MODELPARAM_VALUE.IC_RETURN_REGISTER { MODELPARAM_VALUE.IC_RETURN_REG
 proc update_MODELPARAM_VALUE.DCACHE_SIZE { MODELPARAM_VALUE.DCACHE_SIZE PARAM_VALUE.DCACHE_SIZE } {
     # Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
     set_property value [get_property value ${PARAM_VALUE.DCACHE_SIZE}] ${MODELPARAM_VALUE.DCACHE_SIZE}
+}
+
+proc update_MODELPARAM_VALUE.DCACHE_WRITEBACK { MODELPARAM_VALUE.DCACHE_WRITEBACK PARAM_VALUE.DCACHE_WRITEBACK } {
+    # Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+    set_property value [get_property value ${PARAM_VALUE.DCACHE_WRITEBACK}] ${MODELPARAM_VALUE.DCACHE_WRITEBACK}
 }
 
 proc update_MODELPARAM_VALUE.DCACHE_LINE_SIZE { MODELPARAM_VALUE.DCACHE_LINE_SIZE PARAM_VALUE.DCACHE_LINE_SIZE } {

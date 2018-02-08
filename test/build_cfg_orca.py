@@ -94,6 +94,9 @@ ORCA_BUILDS = \
                   #No D$ system
                   Xil_ORCA_BuildCfg(system='zedboard',
                                     dcache_size=0),
+                  #Writethrough D$ system
+                  Xil_ORCA_BuildCfg(system='zedboard',
+                                    dcache_writeback=0),
                   #LMB, no $
                   Xil_ORCA_BuildCfg(system='zedboard',
                                     amr0_addr_base=0xA0000000,

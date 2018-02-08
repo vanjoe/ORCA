@@ -83,6 +83,7 @@ DEFAULT_IC_REQUEST_REGISTER=1
 DEFAULT_IC_RETURN_REGISTER=0
 
 DEFAULT_DCACHE_SIZE=0
+DEFAULT_DCACHE_WRITEBACK=1
 DEFAULT_DCACHE_LINE_SIZE=32
 DEFAULT_DCACHE_EXTERNAL_WIDTH=32
 
@@ -135,6 +136,7 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
                  ic_request_register=DEFAULT_IC_REQUEST_REGISTER,
                  ic_return_register=DEFAULT_IC_RETURN_REGISTER,
                  dcache_size=DEFAULT_DCACHE_SIZE,
+                 dcache_writeback=DEFAULT_DCACHE_WRITEBACK,
                  dcache_line_size=DEFAULT_DCACHE_LINE_SIZE,
                  dcache_external_width=DEFAULT_DCACHE_EXTERNAL_WIDTH,
                  data_request_register=DEFAULT_DATA_REQUEST_REGISTER,
@@ -224,6 +226,8 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
             build_id += '_icrtr%d' % ic_return_register
         if dcache_size != DEFAULT_DCACHE_SIZE:
             build_id += '_dcs%d' % dcache_size
+        if dcache_writeback != DEFAULT_DCACHE_WRITEBACK:
+            build_id += '_dcw%d' % dcache_writeback
         if dcache_line_size != DEFAULT_DCACHE_LINE_SIZE:
             build_id += '_dcl%d' % dcache_line_size
         if dcache_external_width != DEFAULT_DCACHE_EXTERNAL_WIDTH:
@@ -282,6 +286,7 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
               ic_request_register=ic_request_register,
               ic_return_register=ic_return_register,
               dcache_size=dcache_size,
+              dcache_writeback=dcache_writeback,
               dcache_line_size=dcache_line_size,
               dcache_external_width=dcache_external_width,
               data_request_register=data_request_register,
@@ -391,6 +396,7 @@ class Alt_ORCA_BuildCfg(ORCA_BuildCfgBase):
         f.write('IC_REQUEST_REGISTER=%s\n' % self.ic_request_register)
         f.write('IC_RETURN_REGISTER=%s\n' % self.ic_return_register)
         f.write('DCACHE_SIZE=%s\n' % self.dcache_size)
+        f.write('DCACHE_WRITEBACK=%s\n' % self.dcache_writeback)
         f.write('DCACHE_LINE_SIZE=%s\n' % self.dcache_line_size)
         f.write('DCACHE_EXTERNAL_WIDTH=%s\n' % self.dcache_external_width)
         f.write('DATA_REQUEST_REGISTER=%s\n' % self.data_request_register)

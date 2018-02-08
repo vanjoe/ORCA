@@ -14,10 +14,10 @@ entity system_calls is
     INTERRUPT_VECTOR : std_logic_vector(31 downto 0);
 
     ENABLE_EXCEPTIONS     : boolean;
-    ENABLE_EXT_INTERRUPTS : natural range 0 to 1;
+    ENABLE_EXT_INTERRUPTS : boolean;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
-    VCP_ENABLE : natural;
+    VCP_ENABLE : vcp_type;
 
     AUX_MEMORY_REGIONS : natural range 0 to 4;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
@@ -41,7 +41,7 @@ entity system_calls is
 
     to_syscall_valid   : in  std_logic;
     current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
-    instruction        : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+    instruction        : in  std_logic_vector(31 downto 0);
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_syscall_ready : out std_logic;
 
@@ -75,10 +75,10 @@ architecture rtl of system_calls is
   component instruction_legal is
     generic (
       CHECK_LEGAL_INSTRUCTIONS : boolean;
-      VCP_ENABLE               : natural
+      VCP_ENABLE               : vcp_type
       );
     port (
-      instruction : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+      instruction : in  std_logic_vector(31 downto 0);
       legal       : out std_logic
       );
   end component;
@@ -159,7 +159,7 @@ begin
   mtimeh <= std_logic_vector(time_counter(time_counter'left downto time_counter'left-REGISTER_SIZE+1))
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
   misa(misa'left downto misa'left-1) <= "01";
-  misa(23)                           <= '0' when VCP_ENABLE = 0 else '1';
+  misa(23)                           <= '0' when VCP_ENABLE = DISABLED else '1';
   csr_select                         <= instruction(CSR_ADDRESS'range);
   with csr_select select
     csr_readdata <=
@@ -530,7 +530,7 @@ begin
         end if;
       end if;
 
-      if VCP_ENABLE /= 0 and vcp_writeback_en = '1' then
+      if VCP_ENABLE /= DISABLED and vcp_writeback_en = '1' then
         -- To avoid having a 4 5o one mux in execute, We add
         -- the writebacks from the vcp here. Since the writebacks
         -- are from vbx_get, which are sort of control/status
@@ -561,7 +561,7 @@ begin
 --
 -- Once the pipeline is empty, then correct the PC.
 --------------------------------------------------------------------------------
-  interrupts_gen : if ENABLE_EXT_INTERRUPTS /= 0 generate
+  interrupts_gen : if ENABLE_EXT_INTERRUPTS generate
     process(clk)
     begin
       if rising_edge(clk) then
@@ -574,7 +574,7 @@ begin
       meimask(REGISTER_SIZE-1 downto NUM_EXT_INTERRUPTS) <= (others => '0');
     end generate not_all_interrupts_gen;
   end generate interrupts_gen;
-  no_interrupts_gen : if ENABLE_EXT_INTERRUPTS = 0 generate
+  no_interrupts_gen : if not ENABLE_EXT_INTERRUPTS generate
     meipend <= (others => '0');
     meimask <= (others => '0');
   end generate no_interrupts_gen;
@@ -610,10 +610,10 @@ use work.utils.all;
 entity instruction_legal is
   generic (
     CHECK_LEGAL_INSTRUCTIONS : boolean;
-    VCP_ENABLE               : natural
+    VCP_ENABLE               : vcp_type
     );
   port (
-    instruction : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+    instruction : in  std_logic_vector(31 downto 0);
     legal       : out std_logic
     );
 end entity;
@@ -638,6 +638,6 @@ begin
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
               (opcode7 = SYSTEM_OP) or  --Illegal sysops checked in exception handling
               (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
-              (opcode7 = LVE32_OP and VCP_ENABLE /= 0)or
-              (opcode7 = LVE64_OP and VCP_ENABLE = 2)) else '0';
+              (opcode7 = LVE32_OP and VCP_ENABLE /= DISABLED)or
+              (opcode7 = LVE64_OP and VCP_ENABLE = SIXTY_FOUR_BIT)) else '0';
 end architecture;

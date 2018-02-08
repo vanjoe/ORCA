@@ -190,5 +190,27 @@ package constants_pkg is
 -- Types
 ------------------------------------------------------------------------------
   type cache_control_command is (INVALIDATE, FLUSH, WRITEBACK);
+  type request_register_type is (OFF, LIGHT, FULL);
+  type vcp_type is (DISABLED, THIRTY_TWO_BIT, SIXTY_FOUR_BIT);
+
+  function INSTRUCTION_SIZE (
+    VCP_ENABLE : vcp_type
+    )
+    return positive;
 
 end package constants_pkg;
+
+package body constants_pkg is
+
+  function INSTRUCTION_SIZE (
+    VCP_ENABLE : vcp_type
+    )
+    return positive is
+  begin
+    if VCP_ENABLE /= DISABLED then
+      return 64;
+    end if;
+    return 32;
+  end function INSTRUCTION_SIZE;
+
+end package body constants_pkg;  

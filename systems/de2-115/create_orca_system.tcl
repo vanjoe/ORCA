@@ -335,50 +335,51 @@ proc compose { } {
     add_instance the_vectorblox_orca vectorblox_orca 1.0
     set_instance_parameter_value the_vectorblox_orca {REGISTER_SIZE} {32}
     set_instance_parameter_value the_vectorblox_orca {RESET_VECTOR} {0}
+    set_instance_parameter_value the_vectorblox_orca {ENABLE_EXCEPTIONS} {1}
     set_instance_parameter_value the_vectorblox_orca {INTERRUPT_VECTOR} {512}
+    set_instance_parameter_value the_vectorblox_orca {ENABLE_EXT_INTERRUPTS} {1}
+    set_instance_parameter_value the_vectorblox_orca {NUM_EXT_INTERRUPTS} {2}
     set_instance_parameter_value the_vectorblox_orca {MAX_IFETCHES_IN_FLIGHT} {4}
     set_instance_parameter_value the_vectorblox_orca {BTB_ENTRIES} {16}
     set_instance_parameter_value the_vectorblox_orca {MULTIPLY_ENABLE} {1}
-    set_instance_parameter_value the_vectorblox_orca {DIVIDE_ENABLE} {1}
     set_instance_parameter_value the_vectorblox_orca {SHIFTER_MAX_CYCLES} {1}
+    set_instance_parameter_value the_vectorblox_orca {DIVIDE_ENABLE} {1}
     set_instance_parameter_value the_vectorblox_orca {COUNTER_LENGTH} {64}
-    set_instance_parameter_value the_vectorblox_orca {ENABLE_EXCEPTIONS} {1}
     set_instance_parameter_value the_vectorblox_orca {PIPELINE_STAGES} {5}
     set_instance_parameter_value the_vectorblox_orca {VCP_ENABLE} {0}
-    set_instance_parameter_value the_vectorblox_orca {ENABLE_EXT_INTERRUPTS} {1}
-    set_instance_parameter_value the_vectorblox_orca {NUM_EXT_INTERRUPTS} {2}
     set_instance_parameter_value the_vectorblox_orca {POWER_OPTIMIZED} {0}
     set_instance_parameter_value the_vectorblox_orca {FAMILY} {ALTERA}
+    set_instance_parameter_value the_vectorblox_orca {INSTRUCTION_REQUEST_REGISTER} {0}
+    set_instance_parameter_value the_vectorblox_orca {INSTRUCTION_RETURN_REGISTER} {0}
+    set_instance_parameter_value the_vectorblox_orca {DATA_REQUEST_REGISTER} {0}
+    set_instance_parameter_value the_vectorblox_orca {DATA_RETURN_REGISTER} {0}
     set_instance_parameter_value the_vectorblox_orca {LOG2_BURSTLENGTH} {4}
     set_instance_parameter_value the_vectorblox_orca {AXI_ID_WIDTH} {2}
-    set_instance_parameter_value the_vectorblox_orca {AUX_MEMORY_REGIONS} {1}
-    set_instance_parameter_value the_vectorblox_orca {AMR0_ADDR_BASE} {0}
-    set_instance_parameter_value the_vectorblox_orca {AMR0_ADDR_LAST} {0}
-    set_instance_parameter_value the_vectorblox_orca {UC_MEMORY_REGIONS} {0}
-    set_instance_parameter_value the_vectorblox_orca {UMR0_ADDR_BASE} {0}
-    set_instance_parameter_value the_vectorblox_orca {UMR0_ADDR_LAST} {0}
     set_instance_parameter_value the_vectorblox_orca {ICACHE_SIZE} {0}
     set_instance_parameter_value the_vectorblox_orca {ICACHE_LINE_SIZE} {32}
     set_instance_parameter_value the_vectorblox_orca {ICACHE_EXTERNAL_WIDTH} {32}
-    set_instance_parameter_value the_vectorblox_orca {INSTRUCTION_REQUEST_REGISTER} {0}
-    set_instance_parameter_value the_vectorblox_orca {INSTRUCTION_RETURN_REGISTER} {0}
-    set_instance_parameter_value the_vectorblox_orca {IUC_REQUEST_REGISTER} {1}
-    set_instance_parameter_value the_vectorblox_orca {IUC_RETURN_REGISTER} {0}
-    set_instance_parameter_value the_vectorblox_orca {IAUX_REQUEST_REGISTER} {1}
-    set_instance_parameter_value the_vectorblox_orca {IAUX_RETURN_REGISTER} {0}
     set_instance_parameter_value the_vectorblox_orca {IC_REQUEST_REGISTER} {1}
     set_instance_parameter_value the_vectorblox_orca {IC_RETURN_REGISTER} {0}
     set_instance_parameter_value the_vectorblox_orca {DCACHE_SIZE} {0}
+    set_instance_parameter_value the_vectorblox_orca {DCACHE_WRITEBACK} {0}
     set_instance_parameter_value the_vectorblox_orca {DCACHE_LINE_SIZE} {32}
     set_instance_parameter_value the_vectorblox_orca {DCACHE_EXTERNAL_WIDTH} {32}
-    set_instance_parameter_value the_vectorblox_orca {DATA_REQUEST_REGISTER} {0}
-    set_instance_parameter_value the_vectorblox_orca {DATA_RETURN_REGISTER} {0}
-    set_instance_parameter_value the_vectorblox_orca {DUC_REQUEST_REGISTER} {2}
-    set_instance_parameter_value the_vectorblox_orca {DUC_RETURN_REGISTER} {1}
-    set_instance_parameter_value the_vectorblox_orca {DAUX_REQUEST_REGISTER} {2}
-    set_instance_parameter_value the_vectorblox_orca {DAUX_RETURN_REGISTER} {1}
     set_instance_parameter_value the_vectorblox_orca {DC_REQUEST_REGISTER} {1}
     set_instance_parameter_value the_vectorblox_orca {DC_RETURN_REGISTER} {0}
+    set_instance_parameter_value the_vectorblox_orca {UC_MEMORY_REGIONS} {0}
+    set_instance_parameter_value the_vectorblox_orca {UMR0_ADDR_BASE} {0}
+    set_instance_parameter_value the_vectorblox_orca {UMR0_ADDR_LAST} {0}
+    set_instance_parameter_value the_vectorblox_orca {IUC_REQUEST_REGISTER} {1}
+    set_instance_parameter_value the_vectorblox_orca {IUC_RETURN_REGISTER} {0}
+    set_instance_parameter_value the_vectorblox_orca {DUC_REQUEST_REGISTER} {2}
+    set_instance_parameter_value the_vectorblox_orca {DUC_RETURN_REGISTER} {1}
+    set_instance_parameter_value the_vectorblox_orca {AUX_MEMORY_REGIONS} {1}
+    set_instance_parameter_value the_vectorblox_orca {AMR0_ADDR_BASE} {0}
+    set_instance_parameter_value the_vectorblox_orca {AMR0_ADDR_LAST} {0}
+    set_instance_parameter_value the_vectorblox_orca {IAUX_REQUEST_REGISTER} {1}
+    set_instance_parameter_value the_vectorblox_orca {IAUX_RETURN_REGISTER} {0}
+    set_instance_parameter_value the_vectorblox_orca {DAUX_REQUEST_REGISTER} {2}
+    set_instance_parameter_value the_vectorblox_orca {DAUX_RETURN_REGISTER} {1}
 
     # connections and connection parameters
     add_connection the_vectorblox_orca.data the_mm_clock_crossing_bridge.s0 avalon

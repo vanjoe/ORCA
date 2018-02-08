@@ -148,6 +148,9 @@ endif #ifdef IC_RETURN_REGISTER
 ifdef DCACHE_SIZE
 BD_CHANGES += DCACHE_SIZE $(DCACHE_SIZE)
 endif #ifdef DCACHE_SIZE
+ifdef DCACHE_WRITEBACK
+BD_CHANGES += DCACHE_WRITEBACK $(DCACHE_WRITEBACK)
+endif #ifdef DCACHE_WRITEBACK
 ifdef DCACHE_LINE_SIZE
 BD_CHANGES += DCACHE_LINE_SIZE $(DCACHE_LINE_SIZE)
 endif #ifdef DCACHE_LINE_SIZE
@@ -254,7 +257,7 @@ ifneq ($(ELF_FILE), NONE)
 pgm: $(OUT_BIT)
 endif #ifneq ($(ELF_FILE), NONE)
 pgm:
-	xsdb $(PGM_TCL) $(OUT_BIT) ps7_init.tcl arm.elf
+	xsdb $(PGM_TCL) $(OUT_BIT) ps7_init.tcl
 
 no_elf:
 	echo "no elf"

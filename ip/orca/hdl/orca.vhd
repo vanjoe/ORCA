@@ -68,6 +68,7 @@ entity orca is
     DCACHE_SIZE           : natural                  := 0;
     DCACHE_LINE_SIZE      : positive range 16 to 256 := 32;
     DCACHE_EXTERNAL_WIDTH : positive                 := 32;
+    DCACHE_WRITEBACK      : natural range 0 to 1     := 1;
 
     --Data interface registers for timing/fmax
     --Request registers are 0/off, 1/light (waitrequest/ready only), 2/full
@@ -347,13 +348,13 @@ entity orca is
     vcp_data2            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
-    vcp_ready            : in  std_logic                                   := '1';
-    vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-    vcp_writeback_en     : in  std_logic                                   := '1';
-    vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-    vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0)  := (others => '0');
-    vcp_alu_used         : in  std_logic                                   := '0';
-    vcp_alu_source_valid : in  std_logic                                   := '0';
+    vcp_ready            : in  std_logic                                  := '1';
+    vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    vcp_writeback_en     : in  std_logic                                  := '0';
+    vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+    vcp_alu_used         : in  std_logic                                  := '0';
+    vcp_alu_source_valid : in  std_logic                                  := '0';
     vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_result_valid : out std_logic
     );
@@ -363,6 +364,40 @@ architecture rtl of orca is
   --Might want to bring these out to the top level.
   constant WRITE_FIRST_SMALL_RAMS   : boolean  := FAMILY = "XILINX" or FAMILY = "INTEL";
   constant MAX_OUTSTANDING_REQUESTS : positive := 4;
+
+  function natural_to_request_register (
+    constant NATURAL_REQUEST_REGISTER : natural range 0 to 2
+    )
+    return request_register_type is
+    variable request_register : request_register_type := OFF;
+  begin
+    case NATURAL_REQUEST_REGISTER is
+      when 2 =>
+        request_register := FULL;
+      when 1 =>
+        request_register := LIGHT;
+      when others =>
+        request_register := OFF;
+    end case;
+    return request_register;
+  end function natural_to_request_register;
+
+  function natural_to_vcp (
+    constant NATURAL_VCP : natural range 0 to 2
+    )
+    return vcp_type is
+    variable vcp : vcp_type := DISABLED;
+  begin
+    case NATURAL_VCP is
+      when 2 =>
+        vcp := SIXTY_FOUR_BIT;
+      when 1 =>
+        vcp := THIRTY_TWO_BIT;
+      when others =>
+        vcp := DISABLED;
+    end case;
+    return vcp;
+  end function natural_to_vcp;
 
   signal amr_base_addrs : std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
   signal amr_last_addrs : std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
@@ -392,8 +427,8 @@ architecture rtl of orca is
   signal ifetch_oimm_readdata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal ifetch_oimm_waitrequest   : std_logic;
   signal ifetch_oimm_readdatavalid : std_logic;
-
 begin
+
   core : orca_core
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
@@ -401,15 +436,15 @@ begin
       INTERRUPT_VECTOR       => INTERRUPT_VECTOR,
       MAX_IFETCHES_IN_FLIGHT => MAX_IFETCHES_IN_FLIGHT,
       BTB_ENTRIES            => BTB_ENTRIES,
-      MULTIPLY_ENABLE        => MULTIPLY_ENABLE,
-      DIVIDE_ENABLE          => DIVIDE_ENABLE,
+      MULTIPLY_ENABLE        => MULTIPLY_ENABLE /= 0,
+      DIVIDE_ENABLE          => DIVIDE_ENABLE /= 0,
       SHIFTER_MAX_CYCLES     => SHIFTER_MAX_CYCLES,
-      POWER_OPTIMIZED        => POWER_OPTIMIZED,
+      POWER_OPTIMIZED        => POWER_OPTIMIZED /= 0,
       COUNTER_LENGTH         => COUNTER_LENGTH,
-      ENABLE_EXCEPTIONS      => ENABLE_EXCEPTIONS,
+      ENABLE_EXCEPTIONS      => ENABLE_EXCEPTIONS /= 0,
       PIPELINE_STAGES        => PIPELINE_STAGES,
-      VCP_ENABLE             => VCP_ENABLE,
-      ENABLE_EXT_INTERRUPTS  => ENABLE_EXT_INTERRUPTS,
+      VCP_ENABLE             => natural_to_vcp(VCP_ENABLE),
+      ENABLE_EXT_INTERRUPTS  => ENABLE_EXT_INTERRUPTS /= 0,
       NUM_EXT_INTERRUPTS     => NUM_EXT_INTERRUPTS,
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS,
       FAMILY                 => FAMILY,
@@ -489,17 +524,17 @@ begin
       WRITE_FIRST_SUPPORTED => false,  --May be able to enable on some families
       --to save bypass logic
 
-      WISHBONE_SINGLE_CYCLE_READS => 0,  --For now assumed not supported; can be
-                                         --brought to top level if needed
+      WISHBONE_SINGLE_CYCLE_READS => false,  --For now assumed not supported; can
+                                        --be brought to top level if needed
       MAX_IFETCHES_IN_FLIGHT      => MAX_IFETCHES_IN_FLIGHT,
       MAX_OUTSTANDING_REQUESTS    => MAX_OUTSTANDING_REQUESTS,
 
       LOG2_BURSTLENGTH => LOG2_BURSTLENGTH,
       AXI_ID_WIDTH     => AXI_ID_WIDTH,
 
-      AVALON_AUX   => AVALON_AUX,
-      WISHBONE_AUX => WISHBONE_AUX,
-      LMB_AUX      => LMB_AUX,
+      AVALON_AUX   => AVALON_AUX /= 0,
+      WISHBONE_AUX => WISHBONE_AUX /= 0,
+      LMB_AUX      => LMB_AUX /= 0,
 
       AUX_MEMORY_REGIONS => AUX_MEMORY_REGIONS,
       AMR0_ADDR_BASE     => AMR0_ADDR_BASE,
@@ -513,27 +548,28 @@ begin
       ICACHE_LINE_SIZE      => ICACHE_LINE_SIZE,
       ICACHE_EXTERNAL_WIDTH => ICACHE_EXTERNAL_WIDTH,
 
-      INSTRUCTION_REQUEST_REGISTER => INSTRUCTION_REQUEST_REGISTER,
-      INSTRUCTION_RETURN_REGISTER  => INSTRUCTION_RETURN_REGISTER,
-      IUC_REQUEST_REGISTER         => IUC_REQUEST_REGISTER,
-      IUC_RETURN_REGISTER          => IUC_RETURN_REGISTER,
-      IAUX_REQUEST_REGISTER        => IAUX_REQUEST_REGISTER,
-      IAUX_RETURN_REGISTER         => IAUX_RETURN_REGISTER,
-      IC_REQUEST_REGISTER          => IC_REQUEST_REGISTER,
-      IC_RETURN_REGISTER           => IC_RETURN_REGISTER,
+      INSTRUCTION_REQUEST_REGISTER => natural_to_request_register(INSTRUCTION_REQUEST_REGISTER),
+      INSTRUCTION_RETURN_REGISTER  => INSTRUCTION_RETURN_REGISTER /= 0,
+      IUC_REQUEST_REGISTER         => natural_to_request_register(IUC_REQUEST_REGISTER),
+      IUC_RETURN_REGISTER          => IUC_RETURN_REGISTER /= 0,
+      IAUX_REQUEST_REGISTER        => natural_to_request_register(IAUX_REQUEST_REGISTER),
+      IAUX_RETURN_REGISTER         => IAUX_RETURN_REGISTER /= 0,
+      IC_REQUEST_REGISTER          => natural_to_request_register(IC_REQUEST_REGISTER),
+      IC_RETURN_REGISTER           => IC_RETURN_REGISTER /= 0,
 
       DCACHE_SIZE           => DCACHE_SIZE,
       DCACHE_LINE_SIZE      => DCACHE_LINE_SIZE,
       DCACHE_EXTERNAL_WIDTH => DCACHE_EXTERNAL_WIDTH,
+      DCACHE_WRITEBACK      => DCACHE_WRITEBACK /= 0,
 
-      DATA_REQUEST_REGISTER => DATA_REQUEST_REGISTER,
-      DATA_RETURN_REGISTER  => DATA_RETURN_REGISTER,
-      DUC_REQUEST_REGISTER  => DUC_REQUEST_REGISTER,
-      DUC_RETURN_REGISTER   => DUC_RETURN_REGISTER,
-      DAUX_REQUEST_REGISTER => DAUX_REQUEST_REGISTER,
-      DAUX_RETURN_REGISTER  => DAUX_RETURN_REGISTER,
-      DC_REQUEST_REGISTER   => DC_REQUEST_REGISTER,
-      DC_RETURN_REGISTER    => DC_RETURN_REGISTER
+      DATA_REQUEST_REGISTER => natural_to_request_register(DATA_REQUEST_REGISTER),
+      DATA_RETURN_REGISTER  => DATA_RETURN_REGISTER /= 0,
+      DUC_REQUEST_REGISTER  => natural_to_request_register(DUC_REQUEST_REGISTER),
+      DUC_RETURN_REGISTER   => DUC_RETURN_REGISTER /= 0,
+      DAUX_REQUEST_REGISTER => natural_to_request_register(DAUX_REQUEST_REGISTER),
+      DAUX_RETURN_REGISTER  => DAUX_RETURN_REGISTER /= 0,
+      DC_REQUEST_REGISTER   => natural_to_request_register(DC_REQUEST_REGISTER),
+      DC_RETURN_REGISTER    => DC_RETURN_REGISTER /= 0
       )
     port map (
       clk   => clk,

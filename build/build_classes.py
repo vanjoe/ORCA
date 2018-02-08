@@ -74,6 +74,7 @@ DEFAULT_IC_REQUEST_REGISTER=1
 DEFAULT_IC_RETURN_REGISTER=0
 
 DEFAULT_DCACHE_SIZE=0
+DEFAULT_DCACHE_WRITEBACK=1
 DEFAULT_DCACHE_LINE_SIZE=16
 DEFAULT_DCACHE_EXTERNAL_WIDTH=32
 
@@ -127,6 +128,7 @@ class ORCA_BuildCfgBase(object):
                  ic_request_register=DEFAULT_IC_REQUEST_REGISTER,
                  ic_return_register=DEFAULT_IC_RETURN_REGISTER,
                  dcache_size=DEFAULT_DCACHE_SIZE,
+                 dcache_writeback=DEFAULT_DCACHE_WRITEBACK,
                  dcache_line_size=DEFAULT_DCACHE_LINE_SIZE,
                  dcache_external_width=DEFAULT_DCACHE_EXTERNAL_WIDTH,
                  data_request_register=DEFAULT_DATA_REQUEST_REGISTER,
@@ -179,6 +181,7 @@ class ORCA_BuildCfgBase(object):
         self.ic_request_register = ic_request_register
         self.ic_return_register = ic_return_register
         self.dcache_size = dcache_size
+        self.dcache_writeback = dcache_writeback
         self.dcache_line_size = dcache_line_size
         self.dcache_external_width = dcache_external_width
         self.data_request_register = data_request_register

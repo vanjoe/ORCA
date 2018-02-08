@@ -8,7 +8,7 @@ use work.utils.all;
 entity load_store_unit is
   generic (
     REGISTER_SIZE       : positive range 32 to 32;
-    SIGN_EXTENSION_SIZE : integer
+    SIGN_EXTENSION_SIZE : positive
     );
   port (
     clk   : in std_logic;
@@ -19,7 +19,7 @@ entity load_store_unit is
     valid                    : in     std_logic;
     rs1_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instruction              : in     std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+    instruction              : in     std_logic_vector(31 downto 0);
     sign_extension           : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     writeback_stall_from_lsu : buffer std_logic;
     lsu_ready                : out    std_logic;

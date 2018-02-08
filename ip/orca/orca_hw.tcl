@@ -458,6 +458,18 @@ set_parameter_property DCACHE_SIZE DESCRIPTION \
          "When enabled the DC AXI4 master is enabled." ]
 add_display_item "Data Cache and DC AXI4 Master" DCACHE_SIZE PARAMETER
 
+add_parameter DCACHE_WRITEBACK NATURAL 1
+set_parameter_property DCACHE_WRITEBACK ALLOWED_RANGES {0:Write-through 1:Write-back}
+set_parameter_property DCACHE_WRITEBACK HDL_PARAMETER true
+set_parameter_property DCACHE_WRITEBACK DISPLAY_NAME "Data Cache Write Policy"
+set_parameter_property DCACHE_WRITEBACK visible true
+set_parameter_property DCACHE_WRITEBACK DESCRIPTION \
+    [concat \
+         "Write-through immediately puts all writes onto the DC bus and does not allocate on write misses.  " \
+         "Write-back writes dirty cache lines back on eviction (conflict, IFENCE, or FLUSH/INVALIDATE) and " \
+         "allocates on write misses." ]
+add_display_item "Data Cache and DC AXI4 Master" DCACHE_WRITEBACK PARAMETER
+
 add_parameter DCACHE_LINE_SIZE NATURAL 32
 set_parameter_property DCACHE_LINE_SIZE ALLOWED_RANGES {16 32 64 128 256}
 set_parameter_property DCACHE_LINE_SIZE HDL_PARAMETER true
@@ -1202,11 +1214,13 @@ proc elaboration_callback {} {
     }
 
     if { [get_parameter_value DCACHE_SIZE] } {
+        set_display_item_property DCACHE_WRITEBACK enabled true
         set_display_item_property DCACHE_LINE_SIZE enabled true
         set_display_item_property DCACHE_EXTERNAL_WIDTH enabled true
         set_display_item_property DC_REQUEST_REGISTER enabled true
         set_display_item_property DC_RETURN_REGISTER enabled true
     } else {
+        set_display_item_property DCACHE_WRITEBACK enabled false
         set_display_item_property DCACHE_LINE_SIZE enabled false
         set_display_item_property DCACHE_EXTERNAL_WIDTH enabled false
         set_display_item_property DC_REQUEST_REGISTER enabled false

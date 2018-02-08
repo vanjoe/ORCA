@@ -255,6 +255,12 @@ determining if caches are enabled: `CSR_MCACHE`.
 Bit 0 is set to 1 if the instruction cache is enabled, bit 1 if the data cache
 is enabled.
 
+### `DCACHE_WRITEBACK`
+
+Data cache write policy.  Set to 0 for write-through and 1 for write-back.
+Write-through immediately puts all writes onto the DC bus and does not allocate
+on write misses.  Write-back writes dirty cache lines back on eviction
+(conflict, IFENCE, or FLUSH/INVALIDATE) and allocates on write misses.
 
 ### `(ICACHE/DCACHE)_LINE_SIZE`
 

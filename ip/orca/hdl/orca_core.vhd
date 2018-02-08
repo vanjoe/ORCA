@@ -13,16 +13,16 @@ entity orca_core is
     INTERRUPT_VECTOR       : std_logic_vector(31 downto 0);
     MAX_IFETCHES_IN_FLIGHT : positive;
     BTB_ENTRIES            : natural;
-    MULTIPLY_ENABLE        : natural range 0 to 1;
-    DIVIDE_ENABLE          : natural range 0 to 1;
+    MULTIPLY_ENABLE        : boolean;
+    DIVIDE_ENABLE          : boolean;
     SHIFTER_MAX_CYCLES     : positive range 1 to 32;
-    POWER_OPTIMIZED        : natural range 0 to 1;
+    POWER_OPTIMIZED        : boolean;
     COUNTER_LENGTH         : natural;
-    ENABLE_EXCEPTIONS      : natural;
+    ENABLE_EXCEPTIONS      : boolean;
     PIPELINE_STAGES        : natural range 4 to 5;
-    ENABLE_EXT_INTERRUPTS  : natural range 0 to 1;
+    ENABLE_EXT_INTERRUPTS  : boolean;
     NUM_EXT_INTERRUPTS     : positive range 1 to 32;
-    VCP_ENABLE             : natural;
+    VCP_ENABLE             : vcp_type;
     WRITE_FIRST_SMALL_RAMS : boolean;
     FAMILY                 : string;
 
@@ -112,7 +112,7 @@ architecture rtl of orca_core is
   signal to_pc_correction_predictable : std_logic;
   signal from_pc_correction_ready     : std_logic;
 
-  signal ifetch_to_decode_instruction     : std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+  signal ifetch_to_decode_instruction     : std_logic_vector(31 downto 0);
   signal ifetch_to_decode_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
   signal ifetch_to_decode_predicted_pc    : unsigned(REGISTER_SIZE-1 downto 0);
   signal from_ifetch_valid                : std_logic;
@@ -126,7 +126,7 @@ architecture rtl of orca_core is
   signal decode_to_execute_program_counter  : unsigned(REGISTER_SIZE-1 downto 0);
   signal decode_to_execute_predicted_pc     : unsigned(REGISTER_SIZE-1 downto 0);
   signal decode_to_execute_instruction      : std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
-  signal decode_to_execute_next_instruction : std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+  signal decode_to_execute_next_instruction : std_logic_vector(31 downto 0);
   signal decode_to_execute_next_valid       : std_logic;
   signal from_decode_valid                  : std_logic;
   signal decode_waiting_for_instr           : std_logic;
@@ -225,12 +225,12 @@ begin
       SIGN_EXTENSION_SIZE   => SIGN_EXTENSION_SIZE,
       INTERRUPT_VECTOR      => INTERRUPT_VECTOR,
       BTB_ENTRIES           => BTB_ENTRIES,
-      MULTIPLY_ENABLE       => MULTIPLY_ENABLE = 1,
-      DIVIDE_ENABLE         => DIVIDE_ENABLE = 1,
-      POWER_OPTIMIZED       => POWER_OPTIMIZED = 1,
+      MULTIPLY_ENABLE       => MULTIPLY_ENABLE,
+      DIVIDE_ENABLE         => DIVIDE_ENABLE,
+      POWER_OPTIMIZED       => POWER_OPTIMIZED,
       SHIFTER_MAX_CYCLES    => SHIFTER_MAX_CYCLES,
       COUNTER_LENGTH        => COUNTER_LENGTH,
-      ENABLE_EXCEPTIONS     => ENABLE_EXCEPTIONS = 1,
+      ENABLE_EXCEPTIONS     => ENABLE_EXCEPTIONS,
       ENABLE_EXT_INTERRUPTS => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
       VCP_ENABLE            => VCP_ENABLE,

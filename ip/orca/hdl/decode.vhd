@@ -10,7 +10,7 @@ entity decode is
   generic (
     REGISTER_SIZE          : positive range 32 to 32;
     SIGN_EXTENSION_SIZE    : positive;
-    VCP_ENABLE             : natural;
+    VCP_ENABLE             : vcp_type;
     PIPELINE_STAGES        : natural range 1 to 2;
     WRITE_FIRST_SMALL_RAMS : boolean;
     FAMILY                 : string
@@ -24,7 +24,7 @@ entity decode is
     to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     to_rf_valid  : in std_logic;
 
-    to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+    to_decode_instruction     : in  std_logic_vector(INSTRUCTION_SIZE(vcp_type'(DISABLED))-1 downto 0);
     to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
     to_decode_predicted_pc    : in  unsigned(REGISTER_SIZE-1 downto 0);
     to_decode_valid           : in  std_logic;
@@ -40,7 +40,7 @@ entity decode is
     from_decode_program_counter  : out unsigned(REGISTER_SIZE-1 downto 0);
     from_decode_predicted_pc     : out unsigned(REGISTER_SIZE-1 downto 0);
     from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
-    from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+    from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(vcp_type'(DISABLED))-1 downto 0);
     from_decode_next_valid       : out std_logic;
     from_decode_valid            : out std_logic;
     from_decode_wait_for_instr   : out std_logic;
@@ -82,7 +82,7 @@ begin
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
       REGISTER_NAME_SIZE     => REGISTER_NAME_SIZE,
-      READ_PORTS             => CONDITIONAL(VCP_ENABLE /= 0, 3, 2),
+      READ_PORTS             => CONDITIONAL(VCP_ENABLE /= DISABLED, 3, 2),
       WRITE_FIRST_SMALL_RAMS => WRITE_FIRST_SMALL_RAMS
       )
     port map(
@@ -230,7 +230,7 @@ begin
           from_decode_program_counter <= to_decode_program_counter;
           from_decode_predicted_pc    <= to_decode_predicted_pc;
 
-          if VCP_ENABLE = 2 then
+          if VCP_ENABLE = SIXTY_FOUR_BIT then
             if to_decode_valid = '1' then
               if to_decode_instruction(6 downto 0) = LVE64_OP then
                 waiting_for_secondhalf                      <= '1';

@@ -5,6 +5,7 @@ use IEEE.numeric_std.all;
 library work;
 use work.rv_components.all;
 use work.utils.all;
+use work.constants_pkg.all;
 
 --This OIMM Mux can be configured with or without multiple read support.  If
 --MAX_OUTSTANDING_READS is 1, then it is the responsibility of the requester to
@@ -34,12 +35,12 @@ entity cache_mux is
     CACHE_SIZE      : natural;
     CACHE_LINE_SIZE : positive range 16 to 256;
 
-    INTERNAL_REQUEST_REGISTER : natural range 0 to 2;
-    INTERNAL_RETURN_REGISTER  : natural range 0 to 1;
-    UC_REQUEST_REGISTER       : natural range 0 to 2;
-    UC_RETURN_REGISTER        : natural range 0 to 1;
-    AUX_REQUEST_REGISTER      : natural range 0 to 2;
-    AUX_RETURN_REGISTER       : natural range 0 to 1
+    INTERNAL_REQUEST_REGISTER : request_register_type;
+    INTERNAL_RETURN_REGISTER  : boolean;
+    UC_REQUEST_REGISTER       : request_register_type;
+    UC_RETURN_REGISTER        : boolean;
+    AUX_REQUEST_REGISTER      : request_register_type;
+    AUX_RETURN_REGISTER       : boolean
     );
   port (
     clk   : in std_logic;

@@ -17,12 +17,12 @@ package utils is
     return integer;
 
   function log2(
-    N : integer
+    constant N : integer
     )
     return integer;
 
   function log2_f(
-    N : integer
+    constant N : integer
     )
     return integer;
 
@@ -48,7 +48,12 @@ package utils is
     return signed;
 
   function bool_to_int (
-    signal a : std_logic
+    a : std_logic
+    )
+    return integer;
+
+  function bool_to_int (
+    a : boolean
     )
     return integer;
 
@@ -66,37 +71,17 @@ package utils is
     data_in : std_logic_vector
     )
     return std_logic;
-  function INSTRUCTION_SIZE (
-    LVE_ENABLE : boolean)
-    return integer ;
-  function INSTRUCTION_SIZE (
-    LVE_ENABLE : integer)
-    return integer ;
+
+  function replicate_slv (
+    data_in         : std_logic_vector;
+    constant COPIES : positive
+    )
+    return std_logic_vector;
 
 end utils;
 
 
 package body utils is
-
-  function INSTRUCTION_SIZE (
-    LVE_ENABLE : boolean)
-    return integer is
-  begin  -- function INSTRUCTION_SIZE
-    if LVE_ENABLE then
-      return 64;
-    end if;
-    return 32;
-  end function INSTRUCTION_SIZE;
-
-  function INSTRUCTION_SIZE (
-    LVE_ENABLE : integer)
-    return integer is
-  begin  -- function INSTRUCTION_SIZE
-    if LVE_ENABLE /= 0 then
-      return 64;
-    end if;
-    return 32;
-  end function INSTRUCTION_SIZE;
 
   function imax(
     constant M : integer;
@@ -125,7 +110,7 @@ package body utils is
   end imin;
 
   function log2(
-    N : integer
+    constant N : integer
     )
     return integer is
     variable i : integer := 0;
@@ -137,7 +122,7 @@ package body utils is
   end log2;
 
   function log2_f(
-    N : integer
+    constant N : integer
     )
     return integer is
     variable i : integer := 0;
@@ -150,10 +135,10 @@ package body utils is
 
   function conditional (
     a        :    boolean;
-    if_true  : in std_logic_vector;
-    if_false : in std_logic_vector
+    if_true  : in integer;
+    if_false : in integer
     )
-    return std_logic_vector is
+    return integer is
   begin
     if a then
       return if_true;
@@ -164,10 +149,10 @@ package body utils is
 
   function conditional (
     a        :    boolean;
-    if_true  : in integer;
-    if_false : in integer
+    if_true  : in std_logic_vector;
+    if_false : in std_logic_vector
     )
-    return integer is
+    return std_logic_vector is
   begin
     if a then
       return if_true;
@@ -191,11 +176,22 @@ package body utils is
   end conditional;
 
   function bool_to_int (
-    signal a : std_logic
+    a : std_logic
     )
     return integer is
   begin
     if a = '1' then
+      return 1;
+    end if;
+    return 0;
+  end function bool_to_int;
+
+  function bool_to_int (
+    a : boolean
+    )
+    return integer is
+  begin
+    if a then
       return 1;
     end if;
     return 0;
@@ -243,5 +239,19 @@ package body utils is
 
     return reduced_and;
   end and_slv;
+
+  function replicate_slv (
+    data_in : std_logic_vector;
+    constant COPIES  : positive
+    )
+    return std_logic_vector is
+    variable data_out : std_logic_vector((data_in'length*COPIES)-1 downto 0);
+  begin
+    for copy in COPIES-1 downto 0 loop
+      data_out((data_in'length*(copy+1))-1 downto data_in'length*copy) := data_in;
+    end loop;
+
+    return data_out;
+  end function replicate_slv;
 
 end utils;

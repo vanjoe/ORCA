@@ -1,9 +1,11 @@
 library ieee;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
+
 library work;
 use work.utils.all;
 use work.rv_components.all;
+use work.constants_pkg.all;
 
 -------------------------------------------------------------------------------
 -- AXI master from OIMM master.
@@ -11,13 +13,13 @@ use work.rv_components.all;
 
 entity axi_master is
   generic (
-    ADDRESS_WIDTH            : integer;
-    DATA_WIDTH               : integer;
+    ADDRESS_WIDTH            : positive;
+    DATA_WIDTH               : positive;
     ID_WIDTH                 : positive;
     LOG2_BURSTLENGTH         : positive;
     MAX_OUTSTANDING_REQUESTS : natural;
-    REQUEST_REGISTER         : natural range 0 to 2;
-    RETURN_REGISTER          : natural range 0 to 1
+    REQUEST_REGISTER         : request_register_type;
+    RETURN_REGISTER          : boolean
     );
   port (
     clk     : in std_logic;

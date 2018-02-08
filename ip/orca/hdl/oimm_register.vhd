@@ -5,14 +5,15 @@ use IEEE.NUMERIC_STD.all;
 library work;
 use work.rv_components.all;
 use work.utils.all;
+use work.constants_pkg.all;
 
 entity oimm_register is
   generic (
     ADDRESS_WIDTH    : positive;
     DATA_WIDTH       : positive;
     LOG2_BURSTLENGTH : positive := 2;
-    REQUEST_REGISTER : natural range 0 to 2;
-    RETURN_REGISTER  : natural range 0 to 1
+    REQUEST_REGISTER : request_register_type;
+    RETURN_REGISTER  : boolean
     );
   port (
     clk   : in std_logic;
@@ -59,7 +60,7 @@ begin
   -----------------------------------------------------------------------------
 
   --Passthrough, lowest fmax but no extra resources or added latency.
-  no_request_register_gen : if REQUEST_REGISTER = 0 generate
+  no_request_register_gen : if REQUEST_REGISTER = OFF generate
     master_oimm_address             <= slave_oimm_address;
     master_oimm_burstlength         <= slave_oimm_burstlength;
     master_oimm_burstlength_minus1  <= slave_oimm_burstlength_minus1;
@@ -77,7 +78,7 @@ begin
   --Light register; breaks waitrequest/stall combinational path but does not break
   --address/etc. path.  Does not add latency if slave is not asserting
   --waitrequest, but will reduce throughput if the slave does.
-  light_request_register_gen : if REQUEST_REGISTER = 1 generate
+  light_request_register_gen : if REQUEST_REGISTER = LIGHT generate
     signal slave_oimm_address_held            : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     signal slave_oimm_burstlength_held        : std_logic_vector(LOG2_BURSTLENGTH downto 0);
     signal slave_oimm_burstlength_minus1_held : std_logic_vector(LOG2_BURSTLENGTH-1 downto 0);
@@ -132,7 +133,7 @@ begin
 
   --Full register; breaks waitrequest/stall combinational path and address/etc.
   --path. Always adds one cycle of latency but does not reduce throughput.
-  full_request_register_gen : if REQUEST_REGISTER /= 0 and REQUEST_REGISTER /= 1 generate
+  full_request_register_gen : if REQUEST_REGISTER = FULL generate
     signal registered_oimm_address            : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
     signal registered_oimm_burstlength        : std_logic_vector(LOG2_BURSTLENGTH downto 0);
     signal registered_oimm_burstlength_minus1 : std_logic_vector(LOG2_BURSTLENGTH-1 downto 0);
@@ -212,11 +213,11 @@ begin
   -----------------------------------------------------------------------------
   -- Optional Data Memory Return Register
   -----------------------------------------------------------------------------
-  no_return_register_gen : if RETURN_REGISTER = 0 generate
+  no_return_register_gen : if not RETURN_REGISTER generate
     slave_oimm_readdata      <= master_oimm_readdata;
     slave_oimm_readdatavalid <= master_oimm_readdatavalid;
   end generate no_return_register_gen;
-  return_register_gen : if RETURN_REGISTER /= 0 generate
+  return_register_gen : if RETURN_REGISTER generate
     process(clk)
     begin
       if rising_edge(clk) then

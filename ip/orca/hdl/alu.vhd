@@ -10,7 +10,7 @@ entity arithmetic_unit is
   generic (
     REGISTER_SIZE       : positive range 32 to 32;
     SIMD_ENABLE         : boolean;
-    SIGN_EXTENSION_SIZE : integer;
+    SIGN_EXTENSION_SIZE : positive;
     MULTIPLY_ENABLE     : boolean;
     POWER_OPTIMIZED     : boolean;
     DIVIDE_ENABLE       : boolean;
@@ -24,7 +24,7 @@ entity arithmetic_unit is
     from_execute_ready : in  std_logic;
     rs1_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data           : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instruction        : in  std_logic_vector(INSTRUCTION_SIZE(0)-1 downto 0);
+    instruction        : in  std_logic_vector(31 downto 0);
     sign_extension     : in  std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     current_pc         : in  unsigned(REGISTER_SIZE-1 downto 0);
     data_out           : out std_logic_vector(REGISTER_SIZE-1 downto 0);

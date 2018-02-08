@@ -54,6 +54,8 @@ proc orca_add_wave_instruction_cache { add_wave_cmd add_divider_cmd prefix } {
 
     eval "[string trim $add_divider_cmd \"] \"ORCA ICache\""
     catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_gen/instruction_cache/*" } error
+    eval "[string trim $add_divider_cmd \"] \"ORCA ICache (Read-only)\""
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_gen/instruction_cache/read_only_gen/*" } error
     catch { eval "[string trim $add_divider_cmd \"] \"ORCA ICache/Cache\"" } error
     catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/instruction_cache_gen/instruction_cache/the_cache/*" } error
 }
@@ -64,7 +66,13 @@ proc orca_add_wave_data_cache { add_wave_cmd add_divider_cmd prefix } {
 
     eval "[string trim $add_divider_cmd \"] \"ORCA DCache\""
     catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_gen/data_cache/*" } error
-    catch { eval "[string trim $add_divider_cmd \"] \"ORCA DCache/Cache\"" } error
+    eval "[string trim $add_divider_cmd \"] \"ORCA DCache (Not Read-only)\""
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_gen/data_cache/not_read_only_gen/*" } error
+    eval "[string trim $add_divider_cmd \"] \"ORCA DCache (Write-through)\""
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_gen/data_cache/not_read_only_gen/writethrough_gen/*" } error
+    eval "[string trim $add_divider_cmd \"] \"ORCA DCache (Write-back)\""
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_gen/data_cache/not_read_only_gen/writeback_gen/*" } error
+    eval "[string trim $add_divider_cmd \"] \"ORCA DCache/Cache\""
     catch { eval "[string trim $add_wave_cmd \"] $prefix/the_memory_interface/data_cache_gen/data_cache/the_cache/*" } error
 }
 

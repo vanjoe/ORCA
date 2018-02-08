@@ -6,8 +6,8 @@ use work.rv_components.all;
 
 entity a4l_master is
   generic (
-    ADDRESS_WIDTH            : integer;
-    DATA_WIDTH               : integer;
+    ADDRESS_WIDTH            : positive;
+    DATA_WIDTH               : positive;
     MAX_OUTSTANDING_REQUESTS : natural
     );
   port (
