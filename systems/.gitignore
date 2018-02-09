@@ -21,3 +21,5 @@ init_*.imem
 *.smsg
 *.rpt*
 *.summary
+orca_defines.h
+orca_system.hwh

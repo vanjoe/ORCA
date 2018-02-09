@@ -1,4 +1,5 @@
 -include config.mk
+export ORCA_TEST
 
 BD_NAME         ?= orca_system
 PROJECT_NAME    ?= orca_project
@@ -14,7 +15,6 @@ OUTPUT_DIR   := output_files
 MAP_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).map.rpt
 FIT_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).fit.rpt
 ASM_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).asm.rpt
-MIF_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).mif_update.rpt
 STA_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).sta.rpt
 
 SW_DIR   ?= software
@@ -24,6 +24,7 @@ HEX_FILE ?= test.hex
 #Define DEVICE_FAMILY and DEVICE here
 include board_cfg.mk
 
+.PHONY: all
 all: $(PROJECT_NAME).sof  $(STA_RPT_FILE)
 
 TEST_FILES+=$(wildcard test_components/*.vhd)
@@ -198,7 +199,7 @@ gui-qsys: $(QSYS_FILE)
 archiveBD: $(QIP_FILE)
 
 $(QIP_FILE): $(QSYS_FILE) $(IP_DIR)/orca/orca_hw.tcl
-	if [ -e $(SW_DIR)/Makefile ]; then ORCA_TEST=$(ORCA_TEST) $(MAKE) -C $(SW_DIR) $(HEX_FILE); fi
+	if [ -e $(SW_DIR)/Makefile ]; then $(MAKE) -C $(SW_DIR) $(HEX_FILE); fi
 	rm -f $(QSYS_HW_TCL)
 	rm -f $@
 	qsys-generate $(QSYS_FILE) --search-path="./,$(IP_DIR)/,$$" --synthesis=VHDL 2>&1 | tee ./synth.$(QSYS_FILE).log
@@ -213,8 +214,7 @@ $(QIP_FILE): $(QSYS_FILE) $(IP_DIR)/orca/orca_hw.tcl
 $(ORCA_SUBMODULE_FILES): $(BD_NAME)/synthesis/submodules/vblox_orca/% : $(IP_DIR)/orca/hdl/% | $(QIP_FILE)
 	 cp $^ $@
 
-.phony: copy-files
-
+.PHONY: copy-files
 copy-files: $(ORCA_SUBMODULE_FILES)
 
 $(TEST_SUBMODULE_FILES): $(BD_NAME)/synthesis/submodules/% : test_components/%
@@ -231,67 +231,75 @@ $(FIT_RPT_FILE) : $(MAP_RPT_FILE)
 	quartus_fit $(QPF_FILE)
 $(STA_RPT_FILE) : $(FIT_RPT_FILE)
 	quartus_sta $(QPF_FILE)
-#$(MIF_RPT_FILE) : $(FIT_RPT_FILE)
-#	quartus_cdb --update_mif $(QPF_FILE)
-#$(ASM_RPT_FILE) : $(MIF_RPT_FILE)
 $(OUTPUT_DIR)/$(PROJECT_NAME).sof $(ASM_RPT_FILE) : $(FIT_RPT_FILE)
 	quartus_asm $(QPF_FILE)
 
 $(PROJECT_NAME).sof: $(OUTPUT_DIR)/$(PROJECT_NAME).sof
 	cp $(OUTPUT_DIR)/$@ $@
 
+.PHONY: qip
 qip: $(QIP_FILE)
+.PHONY: map
 map: $(MAP_RPT_FILE)
+.PHONY: fit
 fit: $(FIT_RPT_FILE)
-mif: $(MIF_RPT_FILE)
+.PHONY: asm
 asm: $(ASM_RPT_FILE)
+.PHONY: sta
 sta: $(STA_RPT_FILE)
 
-.phony: all clean qip map fit mif asm sta pgm run testbench sim help
-
+.PHONY: testbench
 testbench: $(BD_NAME)/simulation/mentor/software/$(HEX_FILE)
 
 $(BD_NAME)/simulation/mentor/msim_setup.tcl: $(QSYS_FILE) $(SUBMODULE_FILES)
 	qsys-generate $(QSYS_FILE) --search-path="./,$(IP_DIR)/,$$" --simulation=VHDL 2>&1 | tee ./sim.$(QSYS_FILE).log
 	[ -e $@ ]
 
-$(SW_DIR)/$(HEX_FILE):
-	ORCA_TEST=$(ORCA_TEST) $(MAKE) -C $(SW_DIR) $(HEX_FILE)
+.PHONY: FORCE
+
+$(SW_DIR)/$(HEX_FILE): FORCE
+	$(MAKE) -C $(SW_DIR) $(HEX_FILE)
+	[ -e $@ ]
 
 $(BD_NAME)/simulation/mentor/software/$(HEX_FILE): $(BD_NAME)/simulation/mentor/msim_setup.tcl $(SW_DIR)/$(HEX_FILE)
 	mkdir -p $(BD_NAME)/simulation/mentor/software
 	cd $(BD_NAME)/simulation/mentor/software &&	ln -sf ../../../../software/$(HEX_FILE)
 
+.PHONY: sim
 sim: $(BD_NAME)/simulation/mentor/software/$(HEX_FILE)
 	vsim -do simulate.tcl
 
+.PHONY: clean
 clean:
 	rm -rf $(BD_NAME)/ $(OUTPUT_DIR) $(QSYS_HW_TCL) $(QSYS_FILE)
 	rm -rf db/ incremental_db/ *.rpt* *.summary *.smsg
 	rm -rf *.log *.sopcinfo
 	rm -rf *.sof .qsys_edit/
 	rm -f *~ \#* PLL*_INFO.txt transcript jtag_init.tcl
-	ORCA_TEST=$(ORCA_TEST) $(MAKE) -C $(SW_DIR)/ clean || true
+	$(MAKE) -C $(SW_DIR)/ clean || true
 
-
+.PHONY: pgm
 ifneq ($(BIN_FILE), NONE)
 pgm: $(PROJECT_NAME).sof
-endif #ifneq ($(ELF_FILE), NONE)
+endif #ifneq ($(BIN_FILE), NONE)
 pgm:
 	quartus_pgm -m JTAG -o P\;$^
 
+.PHONY: run
 run:
 ifeq ($(BIN_FILE), NONE)
 	python orca_pgm.py test.bin --family=altera --reset_address=0x10000000 --end_address=0x00010000
 else #ifeq ($(BIN_FILE), NONE)
-	ORCA_TEST=$(ORCA_TEST) $(MAKE) -C $(SW_DIR) $(BIN_FILE)
+	$(MAKE) -C $(SW_DIR) $(BIN_FILE)
 	python orca_pgm.py $(SW_DIR)/$(BIN_FILE) --family=altera --reset_address=0x10000000 --end_address=0x00010000
 endif #else #ifeq ($(BIN_FILE), NONE)
 
+.PHONY: terminal-run
 terminal-run:
 	$(MAKE) run
 	nios2-terminal | tee run.log
 
+.PHONY: help
 help:
 	@echo "Makefile Help:"
 	@echo "Targets:"

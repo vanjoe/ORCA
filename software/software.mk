@@ -96,7 +96,7 @@ $(ORCA_ROOT)/tools/hex_to_coe: $(ORCA_ROOT)/tools/hex_to_coe.cpp
 	g++ $< -o $@
 $(OUTPUT_PREFIX)$(TARGET).coe: $(OUTPUT_PREFIX)$(TARGET).ihex $(ORCA_ROOT)/tools/hex_to_coe
 	@if [[ -z "$(IDRAM_BASE_ADDRESS)" || -z "$(IDRAM_LENGTH)" ]]; then echo "ERROR: Please define IDRAM_BASE_ADDRESS $(IDRAM_BASE_ADDRESS) and IDRAM_LENGTH $(IDRAM_LENGTH) to make $(OUTPUT_PREFIX)$(TARGET).coe"; exit 1; fi
-	$(ORCA_ROOT)/tools/hex_to_coe $< $@ $(IDRAM_BASE_ADDRESS) `printf "0x%08X" $$(($(IDRAM_BASE_ADDRESS) + $(IDRAM_LENGTH) - 1))`
+	$(ORCA_ROOT)/tools/hex_to_coe $< $@ $(IDRAM_BASE_ADDRESS) $(shell printf "0x%08X" $$(($(IDRAM_BASE_ADDRESS) + $(IDRAM_LENGTH) - 1)))
 
 
 -include $(wildcard $(OBJDIR)/*.d)
