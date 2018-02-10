@@ -17,6 +17,7 @@ proc generate_bsp { hwh_file orca_name} {
 		  puts "No cell named $orca_name"
 		  return ""
 	 }
+
 	 set mem_ranges [get_mem_ranges -of_objects $orca ]
 	 set def_guard [string toupper "${orca_name}_BSP_H__"]
 	 set bsp "#ifndef $def_guard\n"
@@ -29,6 +30,8 @@ proc generate_bsp { hwh_file orca_name} {
 				lappend masters $master
 		  }
 	 }
+	 set clk_freq [get_property CLK_FREQ [get_pins -of_objects $orca clk]]
+	 set bsp "$bsp\n#define ${orca_name}_CLK_FREQ ${clk_freq}"
 	 foreach master $masters {
 		  set mem_ranges [get_mem_ranges -of_objects $orca -filter "MASTER_INTERFACE==$master"]
 		  foreach mr $mem_ranges {
