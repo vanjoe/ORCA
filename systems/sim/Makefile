@@ -37,7 +37,7 @@ ORCA_HDL        := $(wildcard $(ORCA_ROOT)/ip/orca/hdl/*.vhd)
 gui-qsys: $(QSYS_FILE)
 	qsys-edit $(QSYS_FILE) --search-path="./,$(ORCA_ROOT)/ip/,$$" &
 
-%/simulation/mentor/msim_setup.tcl: system_%.qsys $(ORCA_HW_TCL)
+%/simulation/mentor/msim_setup.tcl: %.qsys $(ORCA_HW_TCL)
 	qsys-generate --simulation=vhdl $<
 	(cd $(*)/simulation/submodules/vblox_orca; for i in *.vhd; do if [ -f ../../../../ip/orca/hdl/$$i ] ; then ln -sf ../../../../ip/orca/hdl/$$i $$i; fi; done; )
 	if [ -e $(*)/simulation/submodules/vblox_lve ]; then (cd $(*)/simulation/submodules/vblox_lve; for i in *.vhd; do if [ -f ../../../../ip/orca/lve/hdl/$$i ] ; then ln -sf ../../../../ip/lve/hdl/$$i $$i; fi; done; ); fi
@@ -68,7 +68,7 @@ testall_%.tcl: testall.tcl
 	sed 's/system/system_$(*)/g' $< > $@
 
 
-test_%.log: %/simulation/mentor/msim_setup.tcl testall_%.tcl $(ORCA_HDL) $(RISCV_TEST_QEXES) $(ORCA_TEST_QEXES)
+test_%.log: system_%/simulation/mentor/msim_setup.tcl testall_%.tcl $(ORCA_HDL) $(RISCV_TEST_QEXES) $(ORCA_TEST_QEXES)
 	vsim -c -do testall_$*.tcl | egrep '(^[^#]|Error:|Error \(suppressible\):)' | tee test_$*.log
 
 .PHONY: testone
