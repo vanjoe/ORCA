@@ -112,11 +112,12 @@ architecture rtl of orca_core is
   signal to_pc_correction_predictable : std_logic;
   signal from_pc_correction_ready     : std_logic;
 
-  signal ifetch_to_decode_instruction     : std_logic_vector(31 downto 0);
-  signal ifetch_to_decode_program_counter : unsigned(REGISTER_SIZE-1 downto 0);
-  signal ifetch_to_decode_predicted_pc    : unsigned(REGISTER_SIZE-1 downto 0);
-  signal from_ifetch_valid                : std_logic;
-  signal decode_to_ifetch_ready           : std_logic;
+  signal ifetch_to_decode_instruction       : std_logic_vector(31 downto 0);
+  signal ifetch_to_decode_program_counter   : unsigned(REGISTER_SIZE-1 downto 0);
+  signal ifetch_to_decode_predicted_pc      : unsigned(REGISTER_SIZE-1 downto 0);
+  signal from_ifetch_valid                  : std_logic;
+  signal decode_to_ifetch_ready             : std_logic;
+  signal from_decode_incomplete_instruction : std_logic;
 
   signal to_decode_valid                    : std_logic;
   signal decode_to_execute_rs1_data         : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -129,7 +130,6 @@ architecture rtl of orca_core is
   signal decode_to_execute_next_instruction : std_logic_vector(31 downto 0);
   signal decode_to_execute_next_valid       : std_logic;
   signal from_decode_valid                  : std_logic;
-  signal decode_waiting_for_instr           : std_logic;
   signal execute_to_decode_ready            : std_logic;
 
   signal to_execute_valid     : std_logic;
@@ -141,6 +141,8 @@ architecture rtl of orca_core is
   signal to_ifetch_pause_ifetch    : std_logic;
 
 begin
+
+  to_ifetch_pause_ifetch <= (not (from_decode_incomplete_instruction and ifetch_idle)) and from_execute_pause_ifetch;
   I : instruction_fetch
     generic map (
       REGISTER_SIZE          => REGISTER_SIZE,
@@ -195,11 +197,12 @@ begin
       to_rf_data   => execute_to_rf_data,
       to_rf_valid  => execute_to_rf_valid,
 
-      to_decode_program_counter => ifetch_to_decode_program_counter,
-      to_decode_predicted_pc    => ifetch_to_decode_predicted_pc,
-      to_decode_instruction     => ifetch_to_decode_instruction,
-      to_decode_valid           => to_decode_valid,
-      from_decode_ready         => decode_to_ifetch_ready,
+      to_decode_program_counter          => ifetch_to_decode_program_counter,
+      to_decode_predicted_pc             => ifetch_to_decode_predicted_pc,
+      to_decode_instruction              => ifetch_to_decode_instruction,
+      to_decode_valid                    => to_decode_valid,
+      from_decode_ready                  => decode_to_ifetch_ready,
+      from_decode_incomplete_instruction => from_decode_incomplete_instruction,
 
       quash_decode => to_pc_correction_valid,
       decode_idle  => decode_idle,
@@ -214,7 +217,6 @@ begin
       from_decode_next_instruction => decode_to_execute_next_instruction,
       from_decode_next_valid       => decode_to_execute_next_valid,
       from_decode_valid            => from_decode_valid,
-      from_decode_wait_for_instr   => decode_waiting_for_instr,
       to_decode_ready              => execute_to_decode_ready
       );
 
@@ -322,6 +324,5 @@ begin
       );
 
   core_idle              <= ifetch_idle and decode_idle and execute_idle;
-  to_ifetch_pause_ifetch <= '0' when (decode_waiting_for_instr and ifetch_idle) = '1' else from_execute_pause_ifetch;
 
 end architecture rtl;

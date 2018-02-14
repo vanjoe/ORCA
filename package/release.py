@@ -55,7 +55,7 @@ hdl_to_stub = []
 hdl_to_remove = []
 
 if not include_lve:
-    directories_to_remove += ['ip/lve', 'software/vbx_lib', 'software/orca-tests/cmov', 'software/orca-tests/vbx', 'software/orca-tests/interrupt', 'software/orca-tests/back2back_load_store']
+    directories_to_remove += ['ip/lve', 'software/vbx_lib', 'software/orca-tests/cmov', 'software/orca-tests/*vbx*', 'software/orca-tests/interrupt', 'software/orca-tests/back2back_load_store']
     files_to_remove += ['systems/sim/*lve*', 'tools/riscv-toolchain/opcodes-lve.py']
 
 if not include_caches:

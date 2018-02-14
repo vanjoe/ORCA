@@ -806,16 +806,16 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
-      --writeback signals
       to_rf_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
       to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       to_rf_valid  : in std_logic;
 
-      to_decode_instruction     : in  std_logic_vector(31 downto 0);
-      to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
-      to_decode_predicted_pc    : in  unsigned(REGISTER_SIZE-1 downto 0);
-      to_decode_valid           : in  std_logic;
-      from_decode_ready         : out std_logic;
+      to_decode_instruction              : in     std_logic_vector(INSTRUCTION_SIZE(vcp_type'(DISABLED))-1 downto 0);
+      to_decode_program_counter          : in     unsigned(REGISTER_SIZE-1 downto 0);
+      to_decode_predicted_pc             : in     unsigned(REGISTER_SIZE-1 downto 0);
+      to_decode_valid                    : in     std_logic;
+      from_decode_ready                  : buffer std_logic;
+      from_decode_incomplete_instruction : out    std_logic;
 
       quash_decode : in  std_logic;
       decode_idle  : out std_logic;
@@ -827,10 +827,9 @@ package rv_components is
       from_decode_program_counter  : out unsigned(REGISTER_SIZE-1 downto 0);
       from_decode_predicted_pc     : out unsigned(REGISTER_SIZE-1 downto 0);
       from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
-      from_decode_next_instruction : out std_logic_vector(31 downto 0);
+      from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(vcp_type'(DISABLED))-1 downto 0);
       from_decode_next_valid       : out std_logic;
       from_decode_valid            : out std_logic;
-      from_decode_wait_for_instr   : out std_logic;
       to_decode_ready              : in  std_logic
       );
   end component decode;
