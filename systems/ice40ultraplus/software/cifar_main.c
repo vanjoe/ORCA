@@ -303,7 +303,7 @@ void cifar_lve() {
 		}
 #if USE_CAM_IMG
 		//if not face, turn off led
-		if(!is_face) {
+		if((int)v_out[0] < 0) {
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
 		}else{
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
