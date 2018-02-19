@@ -8,7 +8,7 @@
 
 #define USE_CAM_IMG 1
 #define PRINT_B64_IMG 0
-#define LOW_POW 1
+#define LOW_POW 0
 
 #define SP_CAM_IMG (SCRATCHPAD_BASE+0*1024)
 #define SP_NN_OUTPUT (SCRATCHPAD_BASE+4*1024) // outputs
@@ -298,6 +298,7 @@ void cifar_lve() {
 #else
 		run_network(network, verbose);
 #endif
+		face_score = (int)v_out[0];
 		for (c = 0; c < CATEGORIES; c++) {
 			printf("%s\t%d\r\n", categories[c], (int)v_out[c]);
 		}
