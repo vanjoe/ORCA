@@ -1045,7 +1045,7 @@ begin
   begin
     awaiting_ack <= reading or writing;
 
-    no_single_cycle_gen : if WISHBONE_SINGLE_CYCLE_READS generate
+    no_single_cycle_gen : if not WISHBONE_SINGLE_CYCLE_READS generate
       daux_oimm_readdata      <= data_DAT_I;
       daux_oimm_readdatavalid <= data_ACK_I and reading;
     end generate no_single_cycle_gen;
