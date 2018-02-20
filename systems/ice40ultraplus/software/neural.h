@@ -12,9 +12,9 @@
 #define CATEGORIES 2
 
 #define GOLDEN_FLASH_DATA_OFFSET 0x20000
-
 #define REDUCED_FLASH_DATA_OFFSET 0xB0000
-
+#define CIFAR_FLASH_DATA_OFFSET 0xC0000
+extern const char* categories[];
 enum LAYER {
     DENSE,
     CONV

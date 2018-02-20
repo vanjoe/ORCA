@@ -6,21 +6,18 @@
 #include "image_diff.h"
 #include "rgb2grayscale.h"
 
-#define USE_CAM_IMG 0
+#define USE_CAM_IMG 1
 #define PRINT_B64_IMG 0
-#define STRETCH_TO_1S 0
+#define LOW_POW 0
 
 #define SP_CAM_IMG (SCRATCHPAD_BASE+0*1024)
 #define SP_NN_OUTPUT (SCRATCHPAD_BASE+4*1024) // outputs
-#define SP_TMP (SCRATCHPAD_BASE+8*1024) // grayscale image
 #define SP_NN_WEIGHTS (SCRATCHPAD_BASE+44*1024) // weights for NN
-#define SP_NN_INPUTS (SCRATCHPAD_BASE+84*1024) // padded inputs placed here also temp SP for NN
+#define SP_NN_INPUTS (SCRATCHPAD_BASE+88*1024) // padded inputs placed here also temp SP for NN
 #define SP_PREV_IMG_BUF1 (SCRATCHPAD_BASE+126*1024) // previous grayscale image
 #define SP_PREV_IMG_BUF2 (SCRATCHPAD_BASE+127*1024)
 
 #define MAX_FRAMES_BETWEEN_NN 3
-
-#define NN_RUN_TIME 623 //ms
 
 void transfer_network(layer_t *cifar, const int dst, const int src, const int verbose)
 {
@@ -185,19 +182,19 @@ void cifar_lve() {
 #if USE_CAM_IMG
 	int is_face=0;
 #endif //#if USE_CAM_IMG
-	int max_cat;
 	int c, m = 32, n = 32, verbose = 0;
 	vbx_ubyte_t* v_padb = (vbx_ubyte_t*)SP_NN_INPUTS; // IMPORTANT: padded input placed here
 	vbx_word_t* v_out = (vbx_word_t*)  SP_NN_OUTPUT; // IMPORTANT: 10 outputs produced here
 	vbx_ubyte_t* v_inb = (vbx_ubyte_t*)SP_CAM_IMG;
+#if LOW_POW
 	vbx_ubyte_t* v_prev_img = (vbx_ubyte_t*)SP_PREV_IMG_BUF1;
 	vbx_ubyte_t* v_prev_buf = (vbx_ubyte_t*)SP_PREV_IMG_BUF2;
-	int img_diff_score = 0;
+#endif
 
 #if CATEGORIES == 10
 	char *categories[] = {"air", "auto", "bird", "cat", "person", "dog", "frog", "horse", "ship", "truck"};
 #else
-	char *categories[] = {"noface","face"};
+	char *categories[] = {"face","noface"};
 #endif
 
 	for (c = 0; c < CATEGORIES; c++) {
@@ -255,15 +252,16 @@ void cifar_lve() {
 		//adjust start_time to elimate time spent printing base64 image
 		start_time+=b64_time;
 #endif
-
+#if LOW_POW
+		int img_diff_score = 0;
 #if GS_CAM
 		img_diff_score = abs_image_diff(v_inb + THUMBNAIL_X_OFFSET*CAM_IMG_WIDTH+THUMBNAIL_Y_OFFSET,v_prev_img,v_prev_buf);
 #else
-    vbx_word_t* v_in_gs = (vbx_word_t*)SP_TMP;
+		vbx_word_t* v_in_gs = (vbx_word_t*)SP_NN_INPUTS;
 		convert_rgb2grayscale((vbx_word_t*)(v_inb)+THUMBNAIL_X_OFFSET*CAM_IMG_WIDTH+THUMBNAIL_Y_OFFSET,v_in_gs);
 		img_diff_score = abs_image_diff(v_in_gs,v_prev_img,v_prev_buf);
 #endif
-
+#endif
 		for (c = 0; c < 3; c++) {
 			cam_extract_and_pad(v_padb + c*(m+2)*(n+4), (vbx_word_t*)v_inb,c, m, n, 64);
 		}
@@ -281,11 +279,7 @@ void cifar_lve() {
 		}
 #endif
 
-#if USE_CAM_IMG
-		//turn on led during camera capture
-		SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
-#endif
-
+		#if LOW_POW
 		// check if we want to run the NN
 		if(img_diff_score > DIFF_THRESH || frames_since_last_run >= MAX_FRAMES_BETWEEN_NN){
 			vbx_ubyte_t* tmp = v_prev_img;
@@ -293,34 +287,27 @@ void cifar_lve() {
 			v_prev_buf = tmp;
 
 			// run the network
-			run_network(network, verbose);
 			// reset the counter
 			frames_since_last_run = 0;
-
-			// print results (or toggle LED if person is max, and > 0)
-			max_cat = 0;
-			for (c = 0; c < CATEGORIES; c++) {
-				if(v_out[c] > v_out[max_cat] ){
-					max_cat = c;
-				}
-			}
-#if USE_CAM_IMG
-			is_face = (max_cat == 1);
-#endif //#if USE_CAM_IMG
-			face_score = (int)v_out[1];
+			face_score = (int)v_out[0];
 		}else{
-			delayms(NN_RUN_TIME);
+			sleepms(300);
+			continue;
 		}
 
-		if (verbose) {
-			for (c = 0; c < CATEGORIES; c++) {
-				printf("%s\t%d\r\n", categories[c], (int)v_out[c]);
-			}
+#else
+		run_network(network, verbose);
+#endif
+		face_score = (int)v_out[0];
+		for (c = 0; c < CATEGORIES; c++) {
+			printf("%s\t%d\r\n", categories[c], (int)v_out[c]);
 		}
 #if USE_CAM_IMG
 		//if not face, turn off led
-		if(!is_face) {
+		if((int)v_out[0] < 0) {
 			SCCB_PIO_BASE[PIO_DATA_REGISTER] &= ~(1<<PIO_LED_BIT);
+		}else{
+			SCCB_PIO_BASE[PIO_DATA_REGISTER] |= (1<<PIO_LED_BIT);
 		}
 #endif
 
@@ -328,14 +315,17 @@ void cifar_lve() {
 		unsigned net_cycles=get_time()-start_time;
 		unsigned net_ms=cycle2ms(net_cycles);
 
-		if(STRETCH_TO_1S && net_ms <999){
+		if(LOW_POW && net_ms <999){
 			sleepuntil(start_time+ms2cycle(1000));
 		}
 
 		net_cycles=get_time()-start_time;
 		net_ms=cycle2ms(net_cycles);
 
-		printf("Frame %d: %4d ms, Image Diff Score = 0x%08x, Face Score = %d \r\n",frame_num,net_ms,img_diff_score,face_score);
+		printf("Frame %d: %4d ms, Face Score = %d\r\n",frame_num,net_ms,face_score);
+#if LOW_POW
+		printf("Image Diff Score = 0x%08x\r\n",img_diff_score);
+#endif
 		start_time = get_time();
 		frame_num++;
 		frames_since_last_run++;
