@@ -273,4 +273,5 @@ begin
     from_decode_next_instruction <= from_stage1_instruction(from_decode_next_instruction'range);
     from_decode_next_valid       <= from_stage1_valid;
   end generate two_cycle;
+
 end architecture;

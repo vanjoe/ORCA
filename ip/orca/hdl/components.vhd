@@ -1431,6 +1431,7 @@ package rv_components is
       read_readabort     : out    std_logic;
       read_miss          : buffer std_logic;
       read_lastaddress   : buffer std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+      read_tag           : buffer std_logic_vector((ADDRESS_WIDTH-log2(NUM_LINES*LINE_SIZE))-1 downto 0);
       read_dirty_valid   : out    std_logic_vector(DIRTY_BITS downto 0);
 
       --Write-only data ORCA-internal memory-mapped slave
@@ -1597,9 +1598,10 @@ package rv_components is
       );
     port (
       clk           : in  std_logic;
-      read_address  : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+      clk_enable    : in  std_logic := '1';
+      read_address  : in  unsigned(log2(DEPTH)-1 downto 0);
       read_data     : out std_logic_vector(WIDTH-1 downto 0);
-      write_address : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+      write_address : in  unsigned(log2(DEPTH)-1 downto 0);
       write_enable  : in  std_logic;
       write_data    : in  std_logic_vector(WIDTH-1 downto 0)
       );

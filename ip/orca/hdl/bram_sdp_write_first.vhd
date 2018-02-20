@@ -13,9 +13,10 @@ entity bram_sdp_write_first is
     );
   port (
     clk           : in  std_logic;
-    read_address  : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+    clk_enable    : in  std_logic := '1';
+    read_address  : in  unsigned(log2(DEPTH)-1 downto 0);
     read_data     : out std_logic_vector(WIDTH-1 downto 0);
-    write_address : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+    write_address : in  unsigned(log2(DEPTH)-1 downto 0);
     write_enable  : in  std_logic;
     write_data    : in  std_logic_vector(WIDTH-1 downto 0)
     );
@@ -34,9 +35,11 @@ begin
     process (clk) is
     begin
       if rising_edge(clk) then
-        ram_out <= ram(to_integer(unsigned(read_address)));
-        if write_enable = '1' then
-          ram(to_integer(unsigned(write_address))) <= write_data;
+        if clk_enable = '1' then
+          ram_out <= ram(to_integer(unsigned(read_address)));
+          if write_enable = '1' then
+            ram(to_integer(unsigned(write_address))) <= write_data;
+          end if;
         end if;
       end if;
     end process;
@@ -46,11 +49,13 @@ begin
     process(clk) is
     begin
       if rising_edge(clk) then
-        read_write_collision <= '0';
-        if read_address = write_address and write_enable = '1' then
-          read_write_collision <= '1';
+        if clk_enable = '1' then
+          read_write_collision <= '0';
+          if read_address = write_address and write_enable = '1' then
+            read_write_collision <= '1';
+          end if;
+          write_data_d1 <= write_data;
         end if;
-        write_data_d1 <= write_data;
       end if;
     end process;
   end generate bypass_gen;
@@ -60,10 +65,12 @@ begin
       variable ram : word_vector;
     begin
       if rising_edge(clk) then
-        if write_enable = '1' then
-          ram(to_integer(unsigned(write_address))) := write_data;
+        if clk_enable = '1' then
+          if write_enable = '1' then
+            ram(to_integer(unsigned(write_address))) := write_data;
+          end if;
+          read_data <= ram(to_integer(unsigned(read_address)));
         end if;
-        read_data <= ram(to_integer(unsigned(read_address)));
       end if;
     end process;
   end generate write_first_gen;
