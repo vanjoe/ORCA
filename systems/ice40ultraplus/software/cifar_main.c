@@ -8,12 +8,20 @@
 
 #define USE_CAM_IMG 1
 #define PRINT_B64_IMG 0
-#define LOW_POW 1
+#define LOW_POW 0
 
 #define SP_CAM_IMG (SCRATCHPAD_BASE+0*1024)
 #define SP_NN_OUTPUT (SCRATCHPAD_BASE+4*1024) // outputs
 #define SP_NN_WEIGHTS (SCRATCHPAD_BASE+44*1024) // weights for NN
+#if CATEGORIES == 2
 #define SP_NN_INPUTS (SCRATCHPAD_BASE+84*1024) // padded inputs placed here also temp SP for NN
+#else
+#define SP_NN_INPUTS (SCRATCHPAD_BASE+88*1024) // padded inputs placed here also temp SP for NN
+# if LOW_POW == 1
+#  error Can not enable Low Power and run cifar network
+# endif
+#endif
+
 #define SP_PREV_IMG_BUF1 (SCRATCHPAD_BASE+126*1024) // previous grayscale image
 #define SP_PREV_IMG_BUF2 (SCRATCHPAD_BASE+127*1024)
 
