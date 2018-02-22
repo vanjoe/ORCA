@@ -83,10 +83,12 @@ begin
         read_requestinflight <= '0';
       end if;
 
-      if read_requestvalid = '1' and read_miss = '0' then
-        read_lastaddress         <= read_address;
-        read_requestinflight     <= not read_speculative;
-        read_speculationinflight <= read_speculative;
+      if read_miss = '0' then
+        read_lastaddress <= read_address;
+        if read_requestvalid = '1' then
+          read_requestinflight     <= not read_speculative;
+          read_speculationinflight <= read_speculative;
+        end if;
       end if;
 
       if reset = '1' then

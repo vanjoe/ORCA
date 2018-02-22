@@ -20,8 +20,6 @@ SIM_WAVES_FILE  := sim_waves_system_$(BUS_TYPE).tcl
 SIM_WAVES_FILES := $(BUS_TYPES:%=sim_waves_system_%.tcl)
 SIM_FILE        := simulate_$(BUS_TYPE).tcl
 SIM_FILES       := $(BUS_TYPES:%=simulate_%.tcl)
-TESTALL_FILE    := testall_$(BUS_TYPE).tcl
-TESTALL_FILES   := $(BUS_TYPES:%=testall_%.tcl)
 MSIM_FILE       := $(SYSTEM)/simulation/mentor/msim_setup.tcl
 MSIM_FILES      := $(SYSTEMS:%=%/simulation/mentor/msim_setup.tcl)
 TEST_HEX        := $(SYSTEM)/simulation/mentor/test.hex
@@ -45,10 +43,11 @@ gui-qsys: $(QSYS_FILE)
 test:
 	mkdir -p $@
 
-ORCA_TEST_DIRS  ?= $(shell find $(ORCA_ROOT)/software/orca-tests -mindepth 2 -name 'Makefile' | xargs -n 1 dirname)
-ORCA_TEST_ELFS  := $(patsubst %,test/%.elf,$(notdir $(ORCA_TEST_DIRS)))
-ORCA_TEST_DUMPS := $(patsubst %,test/%.dump,$(notdir $(ORCA_TEST_DIRS)))
-ORCA_TEST_QEXES := $(patsubst %,test/%.qex,$(notdir $(ORCA_TEST_DIRS)))
+ORCA_TEST_DIRS  := $(shell find $(ORCA_ROOT)/software/orca-tests -mindepth 2 -name 'Makefile' | xargs -n 1 dirname)
+ORCA_TESTS      ?= $(notdir $(ORCA_TEST_DIRS))
+ORCA_TEST_ELFS  := $(patsubst %,test/%.elf,$(ORCA_TESTS))
+ORCA_TEST_DUMPS := $(patsubst %,test/%.dump,$(ORCA_TESTS))
+ORCA_TEST_QEXES := $(patsubst %,test/%.qex,$(ORCA_TESTS))
 PWD_ABSPATH     := $(abspath $(shell pwd))
 LD_SCRIPT       := $(PWD_ABSPATH)/link.ld
 
@@ -70,12 +69,10 @@ simulate_%.tcl: simulate.tcl
 	sed 's/system/system_$(*)/g' $< > $@
 sim_waves_system_%.tcl: sim_waves_system.tcl
 	sed 's/system/system_$(*)/g' $< > $@
-testall_%.tcl: testall.tcl
-	sed 's/system/system_$(*)/g' $< > $@
 
 
-test_%.log: system_%/simulation/mentor/msim_setup.tcl testall_%.tcl $(ORCA_HDL) $(RISCV_TEST_QEXES) $(ORCA_TEST_QEXES)
-	vsim -c -do testall_$*.tcl | egrep '(^[^#]|Error:|Error \(suppressible\):)' | tee test_$*.log
+test_%.log: system_%/simulation/mentor/msim_setup.tcl testall.tcl $(ORCA_HDL) $(RISCV_TEST_QEXES) $(ORCA_TEST_QEXES)
+	cd system_$*/simulation/mentor && vsim -c -do "source ../../../testall.tcl; run_tests $* {$(RISCV_TESTS) $(ORCA_TESTS)}" | egrep '(^[^#]|Error:|Error \(suppressible\):)' | tee ../../../test_$*.log
 
 .PHONY: testone
 testone: $(TEST_LOG)
@@ -84,7 +81,7 @@ testone: $(TEST_LOG)
 testall: $(TEST_LOGS)
 
 .PHONY: all
-all: $(RISCV_TEST_QEXES) $(ORCA_TEST_QEXES) $(MSIM_FILES) $(TESTALL_FILES)
+all: $(RISCV_TEST_QEXES) $(ORCA_TEST_QEXES) $(MSIM_FILES)
 
 .PHONY: sim
 ifndef TEST
@@ -101,7 +98,7 @@ endif #else #ifndef TEST
 
 .PHONY: clean
 clean:
-	rm -rf $(SYSTEMS) test test.hex $(SIM_WAVE_FILES) $(SIM_FILES) $(TESTALL_FILES) *.log
+	rm -rf $(SYSTEMS) test test.hex $(SIM_WAVE_FILES) $(SIM_FILES) *.log
 	rm -rf transcript *.sopcinfo platform.info csmith-compile *~ \#*
 	rm -rf .qsys_edit
 

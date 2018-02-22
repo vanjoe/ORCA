@@ -189,6 +189,7 @@ package constants_pkg is
 ------------------------------------------------------------------------------
 -- Types
 ------------------------------------------------------------------------------
+  type cache_policy is (READ_ONLY, WRITE_THROUGH, WRITE_BACK);
   type cache_control_command is (INVALIDATE, FLUSH, WRITEBACK);
   type request_register_type is (OFF, LIGHT, FULL);
   type vcp_type is (DISABLED, THIRTY_TWO_BIT, SIXTY_FOUR_BIT);

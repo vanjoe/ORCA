@@ -1368,8 +1368,7 @@ package rv_components is
       INTERNAL_WIDTH        : positive;
       EXTERNAL_WIDTH        : positive;
       LOG2_BURSTLENGTH      : positive;
-      READ_ONLY             : boolean;
-      WRITEBACK             : boolean;
+      POLICY                : cache_policy;
       WRITE_FIRST_SUPPORTED : boolean
       );
     port (

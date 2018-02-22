@@ -490,6 +490,9 @@ begin
       if from_icache_control_ready = '1' then
         to_icache_control_valid <= '0';
       end if;
+      if from_dcache_control_ready = '1' then
+        to_dcache_control_valid <= '0';
+      end if;
 
       if to_syscall_valid = '1' then
         next_fence_pc <= unsigned(current_pc) + to_unsigned(4, next_fence_pc'length);
