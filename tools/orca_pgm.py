@@ -153,15 +153,17 @@ if __name__ == '__main__':
                         end_of_file = True
                         if word == 0:
                             break
-                        hex_data = int(binascii.hexlify(file_data), 16)
-                        little_endian_data = 0
-                        little_endian_data |= ((hex_data & 0xff000000) >> 24)
-                        little_endian_data |= ((hex_data & 0x00ff0000) >> 8)
-                        little_endian_data |= ((hex_data & 0x0000ff00) << 8)
-                        little_endian_data |= ((hex_data & 0x000000ff) << 24)
+
+                hex_data = int(binascii.hexlify(file_data), 16)
+                little_endian_data = 0
+                little_endian_data |= ((hex_data & 0xff000000) >> 24)
+                little_endian_data |= ((hex_data & 0x00ff0000) >> 8)
+                little_endian_data |= ((hex_data & 0x0000ff00) << 8)
+                little_endian_data |= ((hex_data & 0x000000ff) << 24)
                 if word != 0:
                     data_string = '_' + data_string
-                    data_string = '{:08x}'.format(little_endian_data) + data_string
+                data_string = '{:08x}'.format(little_endian_data) + data_string
+
             if data_string != '':
                 tcl_script.write('\tcreate_hw_axi_txn file_{} [get_hw_axis hw_axi_1] -type write '.format(file_write_count))
                 tcl_script.write('-address {:08x} -len {:d} -data {{'.format(current_address, BURST_LENGTH) + data_string + '}\n')
@@ -171,7 +173,8 @@ if __name__ == '__main__':
         if current_address > end_address:
             print 'Error: file length of {:d} bytes is greater than the size of instruction memory ({:d} bytes).'.format(current_address-base_address, end_address-base_address)
             sys.exit(2)
-            file_end_address = current_address
+
+        file_end_address = current_address
         while current_address < end_address:
             tcl_script.write('\tcreate_hw_axi_txn padding_{} [get_hw_axis hw_axi_1] -type write '.format(padding_write_count))
             tcl_script.write('-address {:08x} -len {:d}\n'.format(current_address, BURST_LENGTH))
@@ -185,17 +188,20 @@ if __name__ == '__main__':
         tcl_script.write('\tputs "Resetting system..."\n')
         for i in range(0, init_write_count):
             tcl_script.write('\trun_hw_axi init_{}\n'.format(i))
-            tcl_script.write('\tputs "Writing {:d} bytes from input file to {:08X}..."\n'.format(file_end_address-base_address, base_address))
+
+        tcl_script.write('\tputs "Writing {:d} bytes from input file to {:08X}..."\n'.format(file_end_address-base_address, base_address))
         for i in range(0, file_write_count):
             tcl_script.write('\trun_hw_axi file_{}\n'.format(i))
         if file_end_address < end_address:
             tcl_script.write('\tputs "Writing {:d} bytes of 0 to the rest of instruction memory ({:08X} to {:08X})..."\n'.format(end_address-file_end_address, file_end_address, end_address))
         for i in range(0, padding_write_count):
             tcl_script.write('\trun_hw_axi padding_{}\n'.format(i))
-            tcl_script.write('\tputs "Clearing resets..."\n')
+
+        tcl_script.write('\tputs "Clearing resets..."\n')
         for i in range(0, ending_write_count):
             tcl_script.write('\trun_hw_axi ending_{}\n'.format(i))
-            tcl_script.write('\tputs "Done."\n')
+
+        tcl_script.write('\tputs "Done."\n')
 
         tcl_script.write('\tclose_hw\n')
         tcl_script.write('}\n')
