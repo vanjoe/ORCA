@@ -82,10 +82,8 @@ architecture rtl of cache_controller is
   signal read_lastline    : unsigned(log2(NUM_LINES)-1 downto 0);
 
   type control_state_type is (WALK_CACHE, IDLE, CACHE_MISSED, WAIT_FOR_HIT);
-  signal control_state           : control_state_type;
-  signal next_control_state      : control_state_type;
-  signal cache_walk_command      : cache_control_command;
-  signal next_cache_walk_command : cache_control_command;
+  signal control_state      : control_state_type;
+  signal next_control_state : control_state_type;
 
   signal write_address      : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
   signal write_byteenable   : std_logic_vector((EXTERNAL_WIDTH/8)-1 downto 0);
@@ -95,13 +93,22 @@ architecture rtl of cache_controller is
   signal write_dirty_valid  : std_logic_vector(DIRTY_BITS downto 0);
   alias write_tag_valid     : std_logic is write_dirty_valid(0);
 
+  signal cache_mgt_ready       : std_logic;
   signal cache_mgt_tag_update  : std_logic;
   signal cache_mgt_dirty_valid : std_logic_vector(DIRTY_BITS downto 0);
   alias cache_mgt_tag_valid    : std_logic is cache_mgt_dirty_valid(0);
 
-  signal cache_mgt_start_to_spiller : std_logic;
-  signal ready_from_spiller         : std_logic;
-  signal spill_dirty_valid          : std_logic_vector(DIRTY_BITS downto 0);
+  signal cache_walker_tag_update     : std_logic;
+  signal cache_walker_dirty_valid    : std_logic_vector(DIRTY_BITS downto 0);
+  alias cache_walker_tag_valid       : std_logic is cache_walker_dirty_valid(0);
+  signal start_to_cache_walker       : std_logic;
+  signal ready_from_cache_walker     : std_logic;
+  signal done_from_cache_walker      : std_logic;
+  signal cache_walking               : std_logic;
+  signal cache_walker_command        : cache_control_command;
+  signal cache_walker_line           : unsigned(log2(NUM_LINES)-1 downto 0);
+  signal cache_walker_line_increment : std_logic;
+  signal cache_walker_line_last      : std_logic;
 
   signal write_hit             : std_logic;
   signal write_hit_dirty_valid : std_logic_vector(DIRTY_BITS downto 0);
@@ -123,18 +130,14 @@ architecture rtl of cache_controller is
   signal write_ready  : std_logic;
   signal write_on_hit : std_logic;
 
-  signal cache_mgt_ready          : std_logic;
-  signal cache_mgt_line           : unsigned(log2(NUM_LINES)-1 downto 0);
-  signal cache_mgt_line_increment : std_logic;
-  signal cache_mgt_line_last      : std_logic;
-  signal read_address             : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-  signal read_requestvalid        : std_logic;
-  signal read_speculative         : std_logic;
-  signal read_readdata            : std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
-  signal read_readdatavalid       : std_logic;
-  signal read_readabort           : std_logic;
-  signal read_tag                 : std_logic_vector(TAG_BITS-1 downto 0);
-  signal read_dirty_valid         : std_logic_vector(DIRTY_BITS downto 0);
+  signal read_address       : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+  signal read_requestvalid  : std_logic;
+  signal read_speculative   : std_logic;
+  signal read_readdata      : std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
+  signal read_readdatavalid : std_logic;
+  signal read_readabort     : std_logic;
+  signal read_tag           : std_logic_vector(TAG_BITS-1 downto 0);
+  signal read_dirty_valid   : std_logic_vector(DIRTY_BITS downto 0);
 begin
   --Idle when no reads in flight (either hit or miss), not waiting on a
   --writeback/writethrough, and not clearing/invalidating the cache.
@@ -168,58 +171,23 @@ begin
   ------------------------------------------------------------------------------
   -- Cache Contol FSM
   ------------------------------------------------------------------------------
-  process(control_state, cache_walk_command, cache_mgt_line_last, read_lastline, cache_mgt_line, ready_from_spiller, spill_dirty_valid, read_miss, ready_from_filler, precache_idle, cacheint_oimm_requestvalid, write_idle, to_cache_control_valid, to_cache_control_command, done_from_filler)
+  process(control_state, cache_walker_tag_update, cache_walker_dirty_valid, done_from_cache_walker, read_miss, ready_from_filler, precache_idle, cacheint_oimm_requestvalid, write_idle, to_cache_control_valid, ready_from_cache_walker, to_cache_control_command, done_from_filler)
   begin
-    next_control_state         <= control_state;
-    next_cache_walk_command    <= cache_walk_command;
-    start_to_filler            <= '0';
-    cache_mgt_start_to_spiller <= '0';
-    from_cache_control_ready   <= '0';
-    cache_mgt_line_increment   <= '0';
-    cache_mgt_ready            <= '1';
-    cache_mgt_tag_update       <= '0';
-    cache_mgt_tag_valid        <= '0';
+    next_control_state       <= control_state;
+    cache_mgt_ready          <= '1';
+    cache_mgt_tag_update     <= '0';
+    cache_mgt_dirty_valid    <= (others => '0');
+    start_to_filler          <= '0';
+    from_cache_control_ready <= '0';
+    start_to_cache_walker    <= '0';
 
     case control_state is
       when WALK_CACHE =>
-        cache_mgt_ready <= '0';
-        if POLICY /= WRITE_BACK then
-          --Only walk cache on invalidate if this is not a writeback cache
-          cache_mgt_tag_update     <= '1';
-          cache_mgt_tag_valid      <= '0';
-          cache_mgt_line_increment <= '1';
-          if cache_mgt_line_last = '1' then
-            next_control_state <= IDLE;
-          end if;
-        else
-          case cache_walk_command is
-            when INVALIDATE =>
-              cache_mgt_tag_update     <= '1';
-              cache_mgt_tag_valid      <= '0';
-              cache_mgt_line_increment <= '1';
-              if cache_mgt_line_last = '1' then
-                next_control_state <= IDLE;
-              end if;
-            when others =>              --WRITEBACK/FLUSH
-              if read_lastline = cache_mgt_line then
-                cache_mgt_start_to_spiller <= '1';
-                if ready_from_spiller = '1' then
-                  cache_mgt_tag_update <= '1';
-                  if cache_walk_command = WRITEBACK then
-                    --Set to clean, valid if previously valid
-                    cache_mgt_tag_valid <= spill_dirty_valid(0);
-                  else
-                    --FLUSH, set to invalid
-                    cache_mgt_tag_valid <= '0';
-                  end if;
-                  cache_mgt_line_increment <= '1';
-                  if cache_mgt_line_last = '1' then
-                    next_control_state <= IDLE;
-                  end if;
-                end if;
-              end if;
-          end case;
-
+        cache_mgt_ready       <= '0';
+        cache_mgt_tag_update  <= cache_walker_tag_update;
+        cache_mgt_dirty_valid <= cache_walker_dirty_valid;
+        if done_from_cache_walker = '1' then
+          next_control_state <= IDLE;
         end if;
 
       when IDLE =>
@@ -234,17 +202,21 @@ begin
           end if;
         else
           if precache_idle = '1' and cacheint_oimm_requestvalid = '0' and write_idle = '1' then
-            from_cache_control_ready <= '1';
             if to_cache_control_valid = '1' then
-              next_cache_walk_command <= to_cache_control_command;
-              case to_cache_control_command is
-                when INVALIDATE =>
-                  next_control_state <= WALK_CACHE;
-                when others =>
-                  if POLICY = WRITE_BACK then
-                    next_control_state <= WALK_CACHE;
-                  end if;
-              end case;
+              cache_mgt_ready <= '0';
+              if ready_from_cache_walker = '1' then
+                from_cache_control_ready <= '1';
+                case to_cache_control_command is
+                  when INVALIDATE =>
+                    start_to_cache_walker <= '1';
+                    next_control_state    <= WALK_CACHE;
+                  when others =>
+                    if POLICY = WRITE_BACK then
+                      start_to_cache_walker <= '1';
+                      next_control_state    <= WALK_CACHE;
+                    end if;
+                end case;
+              end if;
             end if;
           end if;
         end if;
@@ -266,21 +238,31 @@ begin
     end case;
   end process;
 
-  cache_mgt_line_last <= '1' when cache_mgt_line = to_unsigned(NUM_LINES-1, log2(NUM_LINES)) else '0';
+  ready_from_cache_walker <= '1';
+  cache_walker_line_last  <= '1' when cache_walker_line = to_unsigned(NUM_LINES-1, log2(NUM_LINES)) else '0';
   process(clk)
   begin
     if rising_edge(clk) then
-      control_state      <= next_control_state;
-      cache_walk_command <= next_cache_walk_command;
+      control_state <= next_control_state;
 
-      if cache_mgt_line_increment = '1' then
-        cache_mgt_line <= cache_mgt_line + to_unsigned(1, cache_mgt_line'length);
+      if done_from_cache_walker = '1' then
+        cache_walking <= '0';
+      end if;
+
+      if start_to_cache_walker = '1' and ready_from_cache_walker = '1' then
+        cache_walking        <= '1';
+        cache_walker_command <= to_cache_control_command;
+      end if;
+
+      if cache_walker_line_increment = '1' then
+        cache_walker_line <= cache_walker_line + to_unsigned(1, cache_walker_line'length);
       end if;
 
       if reset = '1' then
-        control_state      <= WALK_CACHE;
-        cache_walk_command <= INVALIDATE;
-        cache_mgt_line     <= to_unsigned(0, cache_mgt_line'length);
+        control_state        <= WALK_CACHE;
+        cache_walker_command <= INVALIDATE;
+        cache_walking        <= '1';
+        cache_walker_line    <= to_unsigned(0, cache_walker_line'length);
       end if;
     end if;
   end process;
@@ -407,6 +389,12 @@ begin
   -- Read-only
   ------------------------------------------------------------------------------
   read_only_gen : if POLICY = READ_ONLY generate
+    --Cache walking 'FSM'; just invalidate every line (not entered on Writeback/Flush)
+    cache_walker_tag_update     <= cache_walking;
+    cache_walker_tag_valid      <= '0';
+    cache_walker_line_increment <= cache_walking;
+    done_from_cache_walker      <= cache_walker_line_last and cache_walking;
+
     write_idle         <= '1';
     write_ready        <= '1';
     write_on_hit       <= '0';
@@ -429,15 +417,13 @@ begin
     end generate multiple_beats_per_line_gen;
     read_address <= cacheint_oimm_address when read_miss = '0' else
                     read_lastaddress;
-    read_speculative   <= '0';
-    ready_from_spiller <= '0';
-    spill_dirty_valid  <= (others => '-');
+    read_speculative <= '0';
 
     --On a cacheline fill use the last address (which caused the miss).
     write_address(ADDRESS_WIDTH-1 downto log2(CACHE_SIZE)) <=
       read_lastaddress(ADDRESS_WIDTH-1 downto log2(CACHE_SIZE));
     write_address(log2(CACHE_SIZE)-1 downto log2(LINE_SIZE)) <=
-      std_logic_vector(cache_mgt_line) when cache_mgt_ready = '0' else
+      std_logic_vector(cache_walker_line) when cache_walking = '1' else
       std_logic_vector(read_lastline);
     write_address(log2(LINE_SIZE)-1 downto 0) <=
       std_logic_vector(fill_internal_offset) when read_miss = '1' else
@@ -517,6 +503,12 @@ begin
       signal ready_from_write_through : std_logic;
       signal done_from_write_through  : std_logic;
     begin
+      --Cache walking 'FSM'; just invalidate every line (not entered on Writeback/Flush)
+      cache_walker_tag_update     <= cache_walking;
+      cache_walker_tag_valid      <= '0';
+      cache_walker_line_increment <= cache_walking;
+      done_from_cache_walker      <= cache_walker_line_last and cache_walking;
+
       write_idle  <= not writing_through;
       write_ready <= ready_from_write_through;
 
@@ -546,15 +538,13 @@ begin
                       read_lastaddress;
       read_speculative     <= not cacheint_oimm_readnotwrite;
       done_to_write_on_hit <= read_readdatavalid or read_readabort;
-      ready_from_spiller   <= '0';
-      spill_dirty_valid    <= (others => '-');
 
       --On a cacheline fill use the last address (which caused the miss).  On a
       --write hit, use the last address (which caused the hit).
       write_address(ADDRESS_WIDTH-1 downto log2(CACHE_SIZE)) <=
         read_lastaddress(ADDRESS_WIDTH-1 downto log2(CACHE_SIZE));
       write_address(log2(CACHE_SIZE)-1 downto log2(LINE_SIZE)) <=
-        std_logic_vector(cache_mgt_line) when cache_mgt_ready = '0' else
+        std_logic_vector(cache_walker_line) when cache_walking = '1' else
         std_logic_vector(read_lastline);
       write_address(log2(LINE_SIZE)-1 downto 0) <=
         std_logic_vector(fill_internal_offset) when read_miss = '1' else
@@ -593,6 +583,7 @@ begin
       signal spill_reading_from_buffer : std_logic;
       signal spill_writing_to_memory   : std_logic;
       signal spill_skipping            : std_logic;
+      signal ready_from_spiller        : std_logic;
       signal done_from_spiller         : std_logic;
 
       signal spill_offset           : unsigned(log2(LINE_SIZE)-1 downto 0);
@@ -605,8 +596,87 @@ begin
       signal spill_buffer_write_enable : std_logic;
       signal spill_buffer_write_data   : std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
       signal spill_tag                 : std_logic_vector(TAG_BITS-1 downto 0);
+      signal spill_dirty_valid         : std_logic_vector(DIRTY_BITS downto 0);
       signal spill_line                : unsigned(log2(NUM_LINES)-1 downto 0);
+
+      type cache_walker_state_type is (IDLE, START_SPILLER, WAIT_ON_SPILLER);
+      signal cache_walker_state            : cache_walker_state_type;
+      signal next_cache_walker_state       : cache_walker_state_type;
+      signal cache_walker_start_to_spiller : std_logic;
     begin
+
+      --Cache walking FSM.  Note that this may add an extra cycle per line for
+      --spilling vs. integrating with the spiller FSM; done this way for
+      --simplicity and can be optimized later.
+      process (cache_walker_state, cache_walking, cache_walker_command, cache_walker_line_last, ready_from_spiller, done_from_spiller, spill_dirty_valid) is
+      begin
+        next_cache_walker_state       <= cache_walker_state;
+        cache_walker_tag_update       <= '0';
+        cache_walker_dirty_valid      <= (others => '0');
+        done_from_cache_walker        <= '0';
+        cache_walker_line_increment   <= '0';
+        cache_walker_start_to_spiller <= '0';
+
+        case cache_walker_state is
+          when IDLE =>
+            if cache_walking = '1' then
+              case cache_walker_command is
+                when INVALIDATE =>
+                  --Write every line until done
+                  cache_walker_tag_update     <= '1';
+                  cache_walker_tag_valid      <= '0';
+                  cache_walker_line_increment <= '1';
+                  if cache_walker_line_last = '1' then
+                    done_from_cache_walker <= '1';
+                  end if;
+                when others =>          --WRITEBACK/FLUSH
+                  --Loading in line address to spill
+                  next_cache_walker_state <= START_SPILLER;
+              end case;
+            end if;
+
+          when START_SPILLER =>
+            --Address loaded; wait for spiller to ack
+            cache_walker_start_to_spiller <= '1';
+            if ready_from_spiller = '1' then
+              next_cache_walker_state <= WAIT_ON_SPILLER;
+            end if;
+
+          when WAIT_ON_SPILLER =>
+            --Spiller FSM in progress
+            if done_from_spiller = '1' then
+              cache_walker_tag_update <= '1';
+              if cache_walker_command = WRITEBACK then
+                --Set to clean, valid if previously valid
+                cache_walker_tag_valid <= spill_dirty_valid(0);
+              else
+                --FLUSH, set to invalid
+                cache_walker_tag_valid <= '0';
+              end if;
+              cache_walker_line_increment <= '1';
+              next_cache_walker_state     <= IDLE;
+              if cache_walker_line_last = '1' then
+                done_from_cache_walker <= '1';
+              end if;
+            end if;
+          when others =>
+            null;
+        end case;
+      end process;
+
+      process (clk) is
+      begin
+        if rising_edge(clk) then
+          cache_walker_state <= next_cache_walker_state;
+
+          if reset = '1' then
+            cache_walker_state <= IDLE;
+          end if;
+        end if;
+      end process;
+
+
+
       write_idle  <= not spilling;
       write_ready <= ready_from_spiller;
 
@@ -614,13 +684,13 @@ begin
       c_oimm_burstlength <= std_logic_vector(to_unsigned(BEATS_PER_BURST, c_oimm_burstlength'length));
       c_oimm_burstlength_minus1 <=
         std_logic_vector(to_unsigned(BEATS_PER_BURST-1, c_oimm_burstlength_minus1'length));
-      c_oimm_writedata    <= spill_buffer_read_data;
-      c_oimm_byteenable   <= (others => '1');
+      c_oimm_writedata  <= spill_buffer_read_data;
+      c_oimm_byteenable <= (others => '1');
       process (clk) is
       begin
         if rising_edge(clk) then
           if spill_buffer_clk_enable = '1' then
-            c_oimm_writelast    <= spill_burst_last;
+            c_oimm_writelast <= spill_burst_last;
           end if;
         end if;
       end process;
@@ -648,7 +718,7 @@ begin
         read_lastaddress(ADDRESS_WIDTH-1 downto log2(CACHE_SIZE));
       read_address(log2(CACHE_SIZE)-1 downto log2(LINE_SIZE)) <=
         std_logic_vector(spill_line)                                     when spill_reading_into_buffer = '1' else
-        std_logic_vector(cache_mgt_line)                                 when cache_mgt_ready = '0' else
+        std_logic_vector(cache_walker_line)                              when cache_walking = '1' else
         cacheint_oimm_address(log2(CACHE_SIZE)-1 downto log2(LINE_SIZE)) when read_miss = '0' else
         std_logic_vector(read_lastline);
       read_address(log2(LINE_SIZE)-1 downto 0) <=
@@ -658,7 +728,6 @@ begin
 
       read_speculative                                  <= '0';
       done_to_write_on_hit                              <= read_readdatavalid;
-      cache_mgt_dirty_valid(cache_mgt_dirty_valid'left) <= '0';
       write_hit_dirty_valid(write_hit_dirty_valid'left) <= '1';
 
       --On a cacheline fill use the last address (which caused the miss).  On a
@@ -666,10 +735,10 @@ begin
       --a line use the same tag so that the WRITEBACK command correctly sets
       --the line to clean after writing it out to memory.
       write_address(ADDRESS_WIDTH-1 downto log2(CACHE_SIZE)) <=
-        spill_tag when cache_mgt_ready = '0' else
+        spill_tag when cache_walking = '1' else
         read_lastaddress(ADDRESS_WIDTH-1 downto log2(CACHE_SIZE));
       write_address(log2(CACHE_SIZE)-1 downto log2(LINE_SIZE)) <=
-        std_logic_vector(cache_mgt_line) when cache_mgt_ready = '0' else
+        std_logic_vector(cache_walker_line) when cache_walking = '1' else
         std_logic_vector(read_lastline);
       write_address(log2(LINE_SIZE)-1 downto 0) <=
         std_logic_vector(fill_internal_offset) when read_miss = '1' else
@@ -679,7 +748,7 @@ begin
       --------------------------------------------------------------------------
       -- Cache Spiller FSM
       --------------------------------------------------------------------------
-      start_to_spiller   <= (start_to_filler and ready_from_filler) or cache_mgt_start_to_spiller;
+      start_to_spiller   <= (start_to_filler and ready_from_filler) or cache_walker_start_to_spiller;
       ready_from_spiller <= ((not spilling) or done_from_spiller);
       done_from_spiller  <= spill_skipping or
                            (spill_writing_to_memory and
@@ -707,9 +776,9 @@ begin
           --Set spilling to indicate the line needs to be spilled
           if start_to_spiller = '1' and ready_from_spiller = '1' then
             spilling          <= '1';
-            spill_dirty_valid <= read_dirty_valid;
             spill_tag         <= read_tag;
-            spill_line        <= read_lastline;
+            spill_line        <= unsigned(read_address(log2(CACHE_SIZE)-1 downto log2(LINE_SIZE)));
+            spill_dirty_valid <= read_dirty_valid;
             if read_dirty_valid(0) = '1' and read_dirty_valid(read_dirty_valid'left) = '1' then
               spill_reading_into_buffer <= '1';
             else
