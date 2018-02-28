@@ -13,11 +13,19 @@
 #define SP_CAM_IMG (SCRATCHPAD_BASE+0*1024)
 #define SP_NN_OUTPUT (SCRATCHPAD_BASE+4*1024) // outputs
 #define SP_NN_WEIGHTS (SCRATCHPAD_BASE+44*1024) // weights for NN
+#if CATEGORIES == 2
+#define SP_NN_INPUTS (SCRATCHPAD_BASE+84*1024) // padded inputs placed here also temp SP for NN
+#else
 #define SP_NN_INPUTS (SCRATCHPAD_BASE+88*1024) // padded inputs placed here also temp SP for NN
+# if LOW_POW == 1
+#  error Can not enable Low Power and run cifar network
+# endif
+#endif
+
 #define SP_PREV_IMG_BUF1 (SCRATCHPAD_BASE+126*1024) // previous grayscale image
 #define SP_PREV_IMG_BUF2 (SCRATCHPAD_BASE+127*1024)
 
-#define MAX_FRAMES_BETWEEN_NN 3
+#define MAX_FRAMES_BETWEEN_NN 2
 
 void transfer_network(layer_t *cifar, const int dst, const int src, const int verbose)
 {
@@ -279,7 +287,8 @@ void cifar_lve() {
 		}
 #endif
 
-		#if LOW_POW
+#if LOW_POW
+		printf("Image Diff Score = 0x%08x\r\n",img_diff_score);
 		// check if we want to run the NN
 		if(img_diff_score > DIFF_THRESH || frames_since_last_run >= MAX_FRAMES_BETWEEN_NN){
 			vbx_ubyte_t* tmp = v_prev_img;
@@ -287,11 +296,13 @@ void cifar_lve() {
 			v_prev_buf = tmp;
 
 			// run the network
+			run_network(network,verbose);
 			// reset the counter
 			frames_since_last_run = 0;
 			face_score = (int)v_out[0];
 		}else{
-			sleepms(300);
+			delayms(300);
+			frames_since_last_run++;
 			continue;
 		}
 
@@ -316,19 +327,16 @@ void cifar_lve() {
 		unsigned net_ms=cycle2ms(net_cycles);
 
 		if(LOW_POW && net_ms <999){
-			sleepuntil(start_time+ms2cycle(1000));
+			delayms(999-net_ms);
 		}
 
 		net_cycles=get_time()-start_time;
 		net_ms=cycle2ms(net_cycles);
 
 		printf("Frame %d: %4d ms, Face Score = %d\r\n",frame_num,net_ms,face_score);
-#if LOW_POW
-		printf("Image Diff Score = 0x%08x\r\n",img_diff_score);
-#endif
+
 		start_time = get_time();
 		frame_num++;
-		frames_since_last_run++;
 
 	} while(USE_CAM_IMG);
 }
