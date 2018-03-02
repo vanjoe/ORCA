@@ -1597,7 +1597,6 @@ package rv_components is
       );
     port (
       clk           : in  std_logic;
-      clk_enable    : in  std_logic := '1';
       read_address  : in  unsigned(log2(DEPTH)-1 downto 0);
       read_data     : out std_logic_vector(WIDTH-1 downto 0);
       write_address : in  unsigned(log2(DEPTH)-1 downto 0);

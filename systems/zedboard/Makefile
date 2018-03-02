@@ -199,6 +199,7 @@ archiveBD: $(HWH_FILE)
 #we generate the bd design twice, because the hwh is needed to compile the software,
 #and the compiled software is needed to generate the sources.
 $(HWH_FILE): $(BD_FILE) $(ORCA_SRCS)
+	if [ ! -e $(COE_FILE) ]; then echo "memory_initialization_radix=16;" > $(COE_FILE); echo "memory_initialization_vector=0;" >> $(COE_FILE); fi
 	rm -f tmp.$(BD_TCL)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs generate_bd_design $(PROJ_DIR) $(PROJ_NAME) tmp.$(BD_TCL)
 	[ -e tmp.$(BD_TCL) ]
@@ -289,7 +290,7 @@ endif #else #ifeq ($(ELF_FILE), NONE)
 
 .PHONY: clean
 clean:
-	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) *.jou *.log tmp.* vivado_pid* export_sim/ test.bin jtag_init.tcl resource_utilization.rpt nohup.out *~  \#* .Xil
+	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) *.jou *.log tmp.* vivado_pid* export_sim/ test.bin jtag_init.tcl resource_utilization.rpt nohup.out *~  \#* .Xil $(HWH_FILE) orca_defines.h
 	$(MAKE) clean -C $(SW_DIR)
 
 .DELETE_ON_ERROR:

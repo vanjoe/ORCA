@@ -4,6 +4,7 @@
 #include "orca_malloc.h"
 #include "orca_time.h"
 #include "cache_test.h"
+#include "bsp.h"
 
 //Assembler macro to create a jump instruction
 #define J_FORWARD_BY(BYTES)                     \
@@ -14,6 +15,17 @@
    0x6F);
 
 #define WAIT_SECONDS_BEFORE_START 0
+
+#ifdef ORCA_DUC_READY_DELAYER_DC_BASE_ADDR
+#define USE_DELAYER_DC      0
+#define DELAYER_DC_RANDOM   1
+#define DELAYER_DC_MASK     0x0113
+#define DELAYER_DC_CHANNELS 0x1F
+#else //#ifdef ORCA_DUC_READY_DELAYER_DC_BASE_ADDR
+#define USE_DELAYER_DC 0
+#endif //#else //#ifdef ORCA_DUC_READY_DELAYER_DC_BASE_ADDR
+
+#define HEAP_ADDRESS 0x00100000
 
 #define RUN_ASM_TEST             1
 #define RUN_RW_TEST              1
@@ -305,6 +317,19 @@ int main(void){
   }
 
   printf("\r\n\r\n\r\n");
+
+#if USE_DELAYER_DC
+  {
+    printf("Setting up DC delayer to %s delay mask 0x%04X channels 0x%02X\r\n\r\n", DELAYER_DC_RANDOM ? "random" : "fixed", DELAYER_DC_MASK, DELAYER_DC_CHANNELS);
+    volatile uint32_t *delayer_dc = (volatile uint32_t *)ORCA_DUC_READY_DELAYER_DC_BASE_ADDR;
+    for(int channel = 0; channel < 8; channel++){
+      if((1 << channel) & DELAYER_DC_CHANNELS){
+        delayer_dc[channel] = (DELAYER_DC_RANDOM ? 0x80000000 : 0x00000000) | DELAYER_DC_MASK;
+      }
+    }
+  }
+#endif
+  
 
   uint8_t test_space_stack[3*CACHE_SIZE];  //After alignment will have > 2*CACHE_SIZE to work in
   init_malloc((void *)HEAP_ADDRESS, HEAP_SIZE, CACHE_SIZE);

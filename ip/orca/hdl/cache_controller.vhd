@@ -587,11 +587,12 @@ begin
       signal done_from_spiller         : std_logic;
 
       signal spill_offset           : unsigned(log2(LINE_SIZE)-1 downto 0);
+      signal next_spill_offset      : unsigned(log2(LINE_SIZE)-1 downto 0);
       signal spill_offset_increment : std_logic;
       signal spill_offset_last      : std_logic;
+      signal next_spill_offset_last : std_logic;
       signal spill_burst_last       : std_logic;
 
-      signal spill_buffer_clk_enable   : std_logic;
       signal spill_buffer_read_data    : std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
       signal spill_buffer_write_enable : std_logic;
       signal spill_buffer_write_data   : std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
@@ -684,16 +685,9 @@ begin
       c_oimm_burstlength <= std_logic_vector(to_unsigned(BEATS_PER_BURST, c_oimm_burstlength'length));
       c_oimm_burstlength_minus1 <=
         std_logic_vector(to_unsigned(BEATS_PER_BURST-1, c_oimm_burstlength_minus1'length));
-      c_oimm_writedata  <= spill_buffer_read_data;
-      c_oimm_byteenable <= (others => '1');
-      process (clk) is
-      begin
-        if rising_edge(clk) then
-          if spill_buffer_clk_enable = '1' then
-            c_oimm_writelast <= spill_burst_last;
-          end if;
-        end if;
-      end process;
+      c_oimm_writedata    <= spill_buffer_read_data;
+      c_oimm_byteenable   <= (others => '1');
+      c_oimm_writelast    <= spill_burst_last;
       ready_from_filler   <= ((not filling) or done_from_filler) and ready_from_spiller;
       c_oimm_requestvalid <= fill_reading or spill_writing_to_memory;
       c_oimm_readnotwrite <= fill_reading;
@@ -750,11 +744,11 @@ begin
       --------------------------------------------------------------------------
       start_to_spiller   <= (start_to_filler and ready_from_filler) or cache_walker_start_to_spiller;
       ready_from_spiller <= ((not spilling) or done_from_spiller);
-      done_from_spiller  <= spill_skipping or
-                           (spill_writing_to_memory and
+      done_from_spiller <= (spill_writing_to_memory and
                             (not c_oimm_waitrequest) and
                             (not fill_reading) and
-                            (not spill_reading_from_buffer));
+                            spill_offset_last) or
+                           spill_skipping;
       process(clk)
       begin
         if rising_edge(clk) then
@@ -764,9 +758,16 @@ begin
             spill_skipping          <= '0';
           end if;
 
-          if spill_offset_increment = '1' and spill_offset_last = '1' then
-            spill_reading_from_buffer <= spill_reading_into_buffer;
-            spill_reading_into_buffer <= '0';
+          if spill_offset_increment = '1' then
+            if spill_offset_last = '1' then
+              spill_reading_from_buffer <= spill_reading_into_buffer;
+              spill_reading_into_buffer <= '0';
+            end if;
+            if next_spill_offset_last = '1' then
+              if spill_reading_into_buffer = '0' then
+                spill_reading_from_buffer <= '0';
+              end if;
+            end if;
           end if;
 
           if spill_reading_from_buffer = '1' then
@@ -797,21 +798,25 @@ begin
       end process;
 
       spill_offset_increment <= spill_reading_into_buffer or
-                                (spill_reading_from_buffer and ((not c_oimm_waitrequest) and (not fill_reading)));
+                                (spill_writing_to_memory and ((not c_oimm_waitrequest) and (not fill_reading)));
       one_beat_per_line_offset_gen : if BEATS_PER_LINE = 1 generate
-        spill_offset_last <= '1';
-        spill_offset      <= to_unsigned(0, spill_offset'length);
+        next_spill_offset      <= to_unsigned(0, next_spill_offset'length);
+        spill_offset           <= to_unsigned(0, spill_offset'length);
+        next_spill_offset_last <= '1';
+        spill_offset_last      <= '1';
       end generate one_beat_per_line_offset_gen;
       multiple_beats_per_line_offset_gen : if BEATS_PER_LINE > 1 generate
-        spill_offset_last <= '1' when (spill_offset(log2(LINE_SIZE)-1 downto log2(BYTES_PER_BEAT)) =
-                                       to_unsigned(BEATS_PER_LINE-1, log2(BEATS_PER_LINE))) else
-                             '0';
+        next_spill_offset <=
+          spill_offset + to_unsigned(BYTES_PER_BEAT, spill_offset'length) when spill_offset_increment = '1' else
+          spill_offset;
+        next_spill_offset_last <= '1' when (next_spill_offset(log2(LINE_SIZE)-1 downto log2(BYTES_PER_BEAT)) =
+                                            to_unsigned(BEATS_PER_LINE-1, log2(BEATS_PER_LINE))) else
+                                  '0';
         process(clk)
         begin
           if rising_edge(clk) then
-            if spill_offset_increment = '1' then
-              spill_offset <= spill_offset + to_unsigned(BYTES_PER_BEAT, spill_offset'length);
-            end if;
+            spill_offset      <= next_spill_offset;
+            spill_offset_last <= next_spill_offset_last;
 
             if reset = '1' then
               spill_offset <= to_unsigned(0, spill_offset'length);
@@ -832,7 +837,6 @@ begin
       --------------------------------------------------------------------------
       -- Spill Buffer
       --------------------------------------------------------------------------
-      spill_buffer_clk_enable <= (not spill_writing_to_memory) or (not c_oimm_waitrequest);
       process (clk) is
       begin
         if rising_edge(clk) then
@@ -862,7 +866,7 @@ begin
             spill_buffer_write_address <= spill_offset(log2(LINE_SIZE)-1 downto log2(BYTES_PER_BEAT));
           end if;
         end process;
-        spill_buffer_read_address <= spill_offset(log2(LINE_SIZE)-1 downto log2(BYTES_PER_BEAT));
+        spill_buffer_read_address <= next_spill_offset(log2(LINE_SIZE)-1 downto log2(BYTES_PER_BEAT));
 
         spill_buffer : bram_sdp_write_first
           generic map (
@@ -872,7 +876,6 @@ begin
             )
           port map (
             clk           => clk,
-            clk_enable    => spill_buffer_clk_enable,
             read_address  => spill_buffer_read_address,
             read_data     => spill_buffer_read_data,
             write_address => spill_buffer_write_address,

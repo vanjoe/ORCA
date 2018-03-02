@@ -14,7 +14,7 @@ endif
 endif #ifndef ORCA_TEST
 
 .PHONY: all
-all:
+all: ../orca_defines.h
 
 C_SRCS  += orca_printf.c orca_exceptions.c
 AS_SRCS += full-crt.S
@@ -32,6 +32,9 @@ IDRAM_LENGTH            ?= 0x00020000
 RISCV_OLEVEL ?= -O3
 ORCA_ROOT ?= ../../..
 include $(ORCA_ROOT)/software/software.mk
+
+../orca_defines.h:
+	$(MAKE) -C .. orca_defines.h
 
 .PHONY: all
 all: $(TARGET).elf $(TARGET).coe $(TARGET).dump

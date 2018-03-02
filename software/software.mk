@@ -47,8 +47,8 @@ RISCV_TESTS_DIR ?= $(ORCA_ROOT)/software/riscv-tests
 RISCV_ENV_DIR   ?= $(RISCV_TESTS_DIR)/env/p
 ENCODING_H      ?= $(RISCV_TESTS_DIR)/env/encoding.h
 
-INCLUDE_DIRS += $(RISCV_ENV_DIR) $(RISCV_ENV_DIR)/.. $(RISCV_TESTS_DIR)/isa/macros/scalar $(abspath $(shell pwd)) $(OUTPUT_PREFIX).. $(ORCA_ROOT)/software $(ORCA_ROOT)/software/orca_lib
-INCLUDE_STRING := $(addprefix -I,$(abspath $(INCLUDE_DIRS)))
+INCLUDE_DIRS += $(RISCV_ENV_DIR) $(RISCV_ENV_DIR)/.. $(RISCV_TESTS_DIR)/isa/macros/scalar . $(OUTPUT_PREFIX).. $(ORCA_ROOT)/software $(ORCA_ROOT)/software/orca_lib
+INCLUDE_STRING := $(addprefix -I,$(INCLUDE_DIRS))
 
 CFLAGS   ?= -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 -Wmisleading-indentation $(EXTRA_CFLAGS) $(INCLUDE_STRING)
 LD_FLAGS ?= -march=$(ARCH) -static -nostartfiles
