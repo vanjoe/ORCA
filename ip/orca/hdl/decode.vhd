@@ -155,7 +155,7 @@ begin
           from_stage1_valid           <= to_decode_valid;
         end if;
 
-        if to_decode_ready = '1' and waiting_for_secondhalf = '0' then
+        if to_decode_ready = '1'  then
           from_decode_sign_extension <=
             std_logic_vector(resize(signed(from_stage1_instruction(from_stage1_instruction'left downto from_stage1_instruction'left)),
                                     SIGN_EXTENSION_SIZE));
@@ -164,10 +164,11 @@ begin
           from_decode_instruction_signal(instr_high'range) <= to_decode_instruction;
           from_decode_instruction_signal(31 downto 0)      <= from_stage1_instruction;
 
-          from_decode_valid_signal <= from_stage1_valid;
+          --from_decode_valid_signal <= from_stage1_valid;
           from_decode_rs1_data     <= rs1_data;
           from_decode_rs2_data     <= rs2_data;
           from_decode_rs3_data     <= rs3_data;
+          from_decode_valid_signal <= from_stage1_valid and not waiting_for_secondhalf;
         end if;
 
         if (from_stage1_valid and to_decode_valid and to_decode_ready) = '1' and from_stage1_instruction(MAJOR_OP'range) = LVE64_OP  then
