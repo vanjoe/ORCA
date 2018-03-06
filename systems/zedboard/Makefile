@@ -1,7 +1,14 @@
 -include config.mk
 export ORCA_TEST
 
-BD_NAME     ?= orca_system
+#Select cached system by default if it exists
+ifeq ($(wildcard orca_system_cached.tcl), )
+BD_NAME ?= orca_system
+else #ifeq ($(wildcard orca_system_cached.tcl), )
+BD_NAME ?= orca_system_cached
+endif #else #ifeq ($(wildcard orca_system_cached.tcl), )
+
+
 PROJECT_TCL ?= project.tcl
 BD_TCL      ?= $(BD_NAME).tcl
 
