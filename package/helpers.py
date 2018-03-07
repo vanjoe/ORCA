@@ -25,20 +25,22 @@ def init_destination_repo(destination_repo, upstream_repo):
 
     for root, dirs, files in os.walk(destination_repo, True):
         if not re.search('.*\.git', root):
-            for dir in dirs:
-                if dir != '.git':
-                    try:
-                        os.removedirs(root+'/'+dir)
-                        print 'Removed {}'.format(root+'/'+dir)
-                    except OSError:
-                        pass
-                
             for f in files:
                 try:
                     os.remove(root+'/'+f)
                     print 'Removed {}'.format(root+'/'+f)
                 except OSError:
+                    print 'Error removing {}'.format(root+'/'+f)
                     pass
+
+            for dir in dirs:
+                if dir != '.git':
+                    try:
+                        shutil.rmtree(root+'/'+dir)
+                        print 'Removed {}'.format(root+'/'+dir)
+                    except OSError:
+                        print 'Error removing {}'.format(root+'/'+dir)
+                        pass
 
 def copy_to_dir(destination_repo, source_repo, directories_to_copy, systems_to_copy, files_to_copy, stuff_to_remove, submodules):
     subprocess.Popen('mkdir -p {}/{}'.format(destination_repo, 'systems'), shell=True).wait()
@@ -155,9 +157,9 @@ def fix_zedboard(zedboard_dir, include_caches):
         file_to_read = open(file_to_edit, 'r')
         file_to_read_text = file_to_read.read()
         file_to_read.close()
-        file_to_read_text = re.sub(r'CONFIG.ICACHE_SIZE {.}', 'CONFIG.ICACHE_SIZE {0}', \
+        file_to_read_text = re.sub(r'CONFIG.ICACHE_SIZE {.*}', 'CONFIG.ICACHE_SIZE {0}', \
                                    file_to_read_text)
-        file_to_read_text = re.sub(r'CONFIG.DCACHE_SIZE {.}', 'CONFIG.DCACHE_SIZE {0}', \
+        file_to_read_text = re.sub(r'CONFIG.DCACHE_SIZE {.*}', 'CONFIG.DCACHE_SIZE {0}', \
                                    file_to_read_text)
         file_to_write = open(file_to_edit, 'w')
         file_to_write.write(file_to_read_text)
@@ -176,7 +178,7 @@ def setup_git_repo(destination_repo, upstream_repo, submodules):
         os.chdir(saved_destination_repo)
     
     subprocess.Popen('git add .', shell=True).wait()
-    subprocess.Popen('git commit -a -m \'ORCA exported {} {} \''.format(git_commit, datetime.datetime.now()), \
+    subprocess.Popen('git commit -a -m \'VBX internal ORCA exported {} {} \''.format(git_commit, datetime.datetime.now()), \
                         shell=True).wait()
 
     os.chdir(saved_working_dir)

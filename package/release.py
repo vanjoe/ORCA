@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import helpers
 import os.path
 import sys
@@ -49,19 +51,18 @@ files_to_copy = ['LICENSE.txt', 'README.md', '.gitignore', 'systems/.gitignore']
         
 directories_to_copy = ['ip',  'tools', 'software']
 directories_to_remove = ['software/csmith', 'software/apps/beamforming']
-files_to_remove = ['system/sim/*csmith*', 'tools/compare_systems.py']
+files_to_remove = ['systems/sim/*csmith*', 'tools/compare_systems.py']
 
 hdl_to_stub = []
 hdl_to_remove = []
 
 if not include_lve:
-    directories_to_remove += ['ip/lve', 'software/vbx_lib', 'software/orca-tests/cmov', 'software/orca-tests/*vbx*', 'software/orca-tests/interrupt', 'software/orca-tests/back2back_load_store']
+    directories_to_remove += ['ip/lve', 'ip/vcp*', 'software/vbx_lib', 'software/orca-tests/cmov', 'software/orca-tests/*vbx*', 'software/orca-tests/interrupt', 'software/orca-tests/back2back_load_store']
     files_to_remove += ['systems/sim/*lve*', 'tools/riscv-toolchain/opcodes-lve.py']
 
 if not include_caches:
-    hdl_to_stub += ['ip/orca/hdl/cache_controller.vhd']
-    hdl_to_remove += ['ip/orca/hdl/cache.vhd']
-    files_to_remove += ['systems/sim/*cache*']
+    hdl_to_stub += ['ip/orca/hdl/cache_controller.vhd', 'ip/orca/hdl/cache.vhd']
+    files_to_remove += ['systems/*/*cached*', 'systems/*/software/*cache*']
 
 #Only include Lattice files if we have a Lattice system
 if not set.intersection(set(systems_to_copy), set(lattice_systems)):
