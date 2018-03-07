@@ -1,4 +1,5 @@
 #Optionally add sources here/set ORCA_TEST/SW_PROJ variables
+
 -include config.mk
 -include ../config.mk
 
@@ -34,4 +35,4 @@ ORCA_ROOT ?= ../../..
 include $(ORCA_ROOT)/software/software.mk
 
 .PHONY: all
-all: $(TARGET).elf $(TARGET).coe $(TARGET).dump
+all: $(TARGET).elf $(TARGET).coe $(TARGET).dump $(TARGET).ihex
