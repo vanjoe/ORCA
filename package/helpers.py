@@ -26,18 +26,21 @@ def init_destination_repo(destination_repo, upstream_repo):
     for root, dirs, files in os.walk(destination_repo, True):
         if not re.search('.*\.git', root):
             for f in files:
-                try:
-                    os.remove(root+'/'+f)
-                    print 'Removed {}'.format(root+'/'+f)
-                except OSError:
-                    print 'Error removing {}'.format(root+'/'+f)
-                    pass
+                if f != '.gitmodules':
+                    try:
+                        os.remove(root+'/'+f)
+                        print 'Removed {}'.format(root+'/'+f)
+
+                    except OSError:
+                        print 'Error removing {}'.format(root+'/'+f)
+                        pass
 
             for dir in dirs:
                 if dir != '.git':
                     try:
                         shutil.rmtree(root+'/'+dir)
                         print 'Removed {}'.format(root+'/'+dir)
+
                     except OSError:
                         print 'Error removing {}'.format(root+'/'+dir)
                         pass
@@ -61,7 +64,7 @@ def copy_to_dir(destination_repo, source_repo, directories_to_copy, systems_to_c
         print 'Adding submodule {} from {}'.format(directory, url)
         saved_working_dir = os.getcwd()
         os.chdir(os.path.expanduser(destination_repo))
-        subprocess.Popen('git submodule add --force {} {}'.format(url, directory), shell=True).wait()
+        subprocess.Popen('git submodule update --init {}'.format(directory), shell=True).wait()
         os.chdir(directory)
         subprocess.Popen('git checkout {}'.format(commit), shell=True).wait()
         os.chdir(saved_working_dir)
