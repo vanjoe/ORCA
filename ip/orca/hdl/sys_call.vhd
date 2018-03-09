@@ -96,10 +96,12 @@ architecture rtl of system_calls is
   signal meipend      : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mcache       : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal misa         : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  --Assign csr_select instead of alias to get csr_select'right = 0 for indexing
-  signal csr_select   : std_logic_vector(CSR_ADDRESS'length-1 downto 0);
-  alias func3 is instruction(INSTR_FUNC3'range);
-  alias imm is instruction(CSR_ZIMM'range);
+
+  alias csr_select : std_logic_vector(CSR_ADDRESS'length-1 downto 0) is instruction(CSR_ADDRESS'range);
+  alias opcode     : std_logic_vector(INSTR_OPCODE'length-1 downto 0) is instruction(INSTR_OPCODE'range);
+  alias func7      : std_logic_vector(INSTR_FUNC7'length-1 downto 0) is instruction(INSTR_FUNC7'range);
+  alias func3      : std_logic_vector(INSTR_FUNC3'length-1 downto 0) is instruction(INSTR_FUNC3'range);
+  alias imm        : std_logic_vector(CSR_ZIMM'length-1 downto 0) is instruction(CSR_ZIMM'range);
 
   alias bit_sel             : std_logic_vector(REGISTER_SIZE-1 downto 0) is rs1_data;
   signal csr_readdata       : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -160,7 +162,6 @@ begin
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
   misa(misa'left downto misa'left-1) <= "01";
   misa(23)                           <= '0' when VCP_ENABLE = DISABLED else '1';
-  csr_select                         <= instruction(CSR_ADDRESS'range);
   with csr_select select
     csr_readdata <=
     misa            when CSR_MISA,
@@ -232,7 +233,7 @@ begin
             mcause(CSR_MCAUSE_CODE'range) <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, CSR_MCAUSE_CODE'length));
             mepc                          <= std_logic_vector(current_pc);
             was_illegal                   <= '1';
-          elsif instruction(MAJOR_OP'range) = SYSTEM_OP then
+          elsif opcode = SYSTEM_OP then
             if func3 /= "000" then
               -----------------------------------------------------------------------------
               -- CSR Read/Write
@@ -498,7 +499,7 @@ begin
         next_fence_pc <= unsigned(current_pc) + to_unsigned(4, next_fence_pc'length);
 
         if legal_instr = '1' then
-          if instruction(MAJOR_OP'range) = SYSTEM_OP then
+          if opcode = SYSTEM_OP then
             if func3 /= "000" then
               -----------------------------------------------------------------------------
               -- CSR Read/Write
@@ -518,10 +519,10 @@ begin
               umr_base_write <= umr_base_select;
               umr_last_write <= umr_last_select;
             end if;
-          elsif instruction(MAJOR_OP'range) = FENCE_OP then
+          elsif opcode = MISC_MEM_OP then
             to_icache_control_command <= INVALIDATE;
             to_dcache_control_command <= WRITEBACK;
-            -- A FENCE instruction is a NOP.
+
             -- A FENCE.I instruction is a pipeline flush.
             if instruction(12) = '1' then
               was_fence_i             <= '1';
@@ -534,7 +535,7 @@ begin
       end if;
 
       if VCP_ENABLE /= DISABLED and vcp_writeback_en = '1' then
-        -- To avoid having a 4 5o one mux in execute, We add
+        -- To avoid having a 5 to one mux in execute, we add
         -- the writebacks from the vcp here. Since the writebacks
         -- are from vbx_get, which are sort of control/status
         -- registers it could be construed that this is an
@@ -622,25 +623,27 @@ entity instruction_legal is
 end entity;
 
 architecture rtl of instruction_legal is
-  alias opcode7 is instruction(6 downto 0);
+  alias opcode is instruction(INSTR_OPCODE'range);
   alias func3 is instruction(INSTR_FUNC3'range);
-  alias func7 is instruction(31 downto 25);
-  alias csr_num is instruction(SYSTEM_MINOR_OP'range);
+  alias func7 is instruction(INSTR_FUNC7'range);
 begin
   legal <=
     '1' when (CHECK_LEGAL_INSTRUCTIONS = false or
-              opcode7 = LUI_OP or
-              opcode7 = AUIPC_OP or
-              opcode7 = JAL_OP or
-              (opcode7 = JALR_OP and func3 = "000") or
-              (opcode7 = BRANCH_OP and func3 /= "010" and func3 /= "011") or
-              (opcode7 = LOAD_OP and func3 /= "011" and func3 /= "110" and func3 /= "111") or
-              (opcode7 = STORE_OP and (func3 = "000" or func3 = "001" or func3 = "010")) or
-              opcode7 = ALUI_OP or      -- Does not catch illegal
+              opcode = LUI_OP or
+              opcode = AUIPC_OP or
+              opcode = JAL_OP or
+              (opcode = JALR_OP and func3 = "000") or
+              (opcode = BRANCH_OP and func3 /= "010" and func3 /= "011") or
+              (opcode = LOAD_OP and func3 /= "011" and func3 /= "110" and func3 /= "111") or
+              (opcode = STORE_OP and (func3 = "000" or func3 = "001" or func3 = "010")) or
+              opcode = ALUI_OP or       -- Does not catch illegal
                                         -- shift amounts
-              (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
-              (opcode7 = SYSTEM_OP) or  --Illegal sysops checked in exception handling
-              (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
-              (opcode7 = LVE32_OP and VCP_ENABLE /= DISABLED)or
-              (opcode7 = LVE64_OP and VCP_ENABLE = SIXTY_FOUR_BIT)) else '0';
+              (opcode = ALU_OP and (func7 = ALU_FUNC7 or
+                                    func7 = MUL_FUNC7 or
+                                    func7 = ADDSUB_SUB_FUNC7)) or
+              (opcode = SYSTEM_OP) or  --Illegal sysops checked in exception handling
+              ((opcode = MISC_MEM_OP) and ((func3 = MISC_MEM_FENCE_FUNC3) or
+                                           (func3 = MISC_MEM_FENCEI_REGION_FUNC3))) or
+              (opcode = VCP32_OP and VCP_ENABLE /= DISABLED) or
+              (opcode = VCP64_OP and VCP_ENABLE = SIXTY_FOUR_BIT)) else '0';
 end architecture;

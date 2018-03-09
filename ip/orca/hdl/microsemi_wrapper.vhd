@@ -17,7 +17,7 @@ entity microsemi_wrapper is
       ENABLE_EXCEPTIONS     : natural                     := 1;
       BRANCH_PREDICTORS     : natural                     := 0;
       PIPELINE_STAGES       : natural range 4 to 5        := 5;
-      LVE_ENABLE            : natural range 0 to 1        := 0;
+      VCP_ENABLE            : natural range 0 to 1        := 0;
       ENABLE_EXT_INTERRUPTS : natural range 0 to 1        := 0;
       NUM_EXT_INTERRUPTS    : natural range 1 to 32       := 1;
       SCRATCHPAD_ADDR_BITS  : integer                     := 10;
@@ -233,7 +233,7 @@ begin
       ENABLE_EXCEPTIONS     => ENABLE_EXCEPTIONS,
       BRANCH_PREDICTORS     => BRANCH_PREDICTORS,
       PIPELINE_STAGES       => PIPELINE_STAGES,
-      LVE_ENABLE            => LVE_ENABLE,
+      VCP_ENABLE            => VCP_ENABLE,
       ENABLE_EXT_INTERRUPTS => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
       SCRATCHPAD_ADDR_BITS  => SCRATCHPAD_ADDR_BITS,

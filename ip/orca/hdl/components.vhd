@@ -1009,9 +1009,9 @@ package rv_components is
       data_out_valid : out std_logic;
       alu_ready      : out std_logic;
 
-      lve_data1        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      lve_data2        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      lve_source_valid : in std_logic
+      vcp_data1        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_data2        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      vcp_source_valid : in std_logic
       );
   end component arithmetic_unit;
 

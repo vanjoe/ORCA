@@ -40,25 +40,16 @@ entity load_store_unit is
 end entity load_store_unit;
 
 architecture rtl of load_store_unit is
-  constant BYTE_SIZE  : std_logic_vector(2 downto 0) := "000";
-  constant HALF_SIZE  : std_logic_vector(2 downto 0) := "001";
-  constant WORD_SIZE  : std_logic_vector(2 downto 0) := "010";
-  constant UBYTE_SIZE : std_logic_vector(2 downto 0) := "100";
-  constant UHALF_SIZE : std_logic_vector(2 downto 0) := "101";
-
-  constant STORE_INSTR : std_logic_vector(6 downto 0) := "0100011";
-  constant LOAD_INSTR  : std_logic_vector(6 downto 0) := "0000011";
-
   alias base_address : std_logic_vector(REGISTER_SIZE-1 downto 0) is rs1_data;
   alias source_data  : std_logic_vector(REGISTER_SIZE-1 downto 0) is rs2_data;
 
-  alias fun3   : std_logic_vector(2 downto 0) is instruction(14 downto 12);
-  alias opcode : std_logic_vector(6 downto 0) is instruction(6 downto 0);
+  alias func3  : std_logic_vector(2 downto 0) is instruction(INSTR_FUNC3'range);
+  alias opcode : std_logic_vector(6 downto 0) is instruction(INSTR_OPCODE'range);
   signal imm   : std_logic_vector(11 downto 0);
 
   signal address_unaligned : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  signal load_fun3      : std_logic_vector(2 downto 0);
+  signal load_func3     : std_logic_vector(2 downto 0);
   signal load_alignment : std_logic_vector(1 downto 0);
 
   signal store_byte0 : std_logic_vector(7 downto 0);
@@ -74,8 +65,8 @@ architecture rtl of load_store_unit is
   signal write_instr : std_logic;
   signal read_instr  : std_logic;
 begin
-  write_instr <= '1' when opcode = STORE_INSTR else '0';
-  read_instr  <= '1' when opcode = LOAD_INSTR  else '0';
+  write_instr <= '1' when opcode = STORE_OP else '0';
+  read_instr  <= '1' when opcode = LOAD_OP  else '0';
 
   oimm_requestvalid <= (read_instr or write_instr) and valid;
   oimm_readnotwrite <= read_instr;
@@ -87,12 +78,12 @@ begin
                                                  imm)+unsigned(base_address));
 
   --Little endian byte-enables
-  oimm_byteenable <= "0001" when fun3 = BYTE_SIZE and address_unaligned(1 downto 0) = "00" else
-                     "0010" when fun3 = BYTE_SIZE and address_unaligned(1 downto 0) = "01" else
-                     "0100" when fun3 = BYTE_SIZE and address_unaligned(1 downto 0) = "10" else
-                     "1000" when fun3 = BYTE_SIZE and address_unaligned(1 downto 0) = "11" else
-                     "0011" when fun3 = HALF_SIZE and address_unaligned(1 downto 0) = "00" else
-                     "1100" when fun3 = HALF_SIZE and address_unaligned(1 downto 0) = "10" else
+  oimm_byteenable <= "0001" when func3 = LS_BYTE_FUNC3 and address_unaligned(1 downto 0) = "00" else
+                     "0010" when func3 = LS_BYTE_FUNC3 and address_unaligned(1 downto 0) = "01" else
+                     "0100" when func3 = LS_BYTE_FUNC3 and address_unaligned(1 downto 0) = "10" else
+                     "1000" when func3 = LS_BYTE_FUNC3 and address_unaligned(1 downto 0) = "11" else
+                     "0011" when func3 = LS_HALF_FUNC3 and address_unaligned(1 downto 0) = "00" else
+                     "1100" when func3 = LS_HALF_FUNC3 and address_unaligned(1 downto 0) = "10" else
                      "1111";
 
   --Align bytes for stores
@@ -125,7 +116,7 @@ begin
       end if;
       if (oimm_requestvalid = '1' and oimm_readnotwrite = '1') and oimm_waitrequest = '0' then
         load_alignment   <= address_unaligned(1 downto 0);
-        load_fun3        <= fun3;
+        load_func3       <= func3;
         load_in_progress <= '1';
       end if;
 
@@ -146,12 +137,12 @@ begin
                 oimm_readdata(31 downto 24);
 
   --Zero/sign extend the read data
-  with load_fun3 select
+  with load_func3 select
     data_out <=
-    std_logic_vector(resize(signed(load_byte0), REGISTER_SIZE))                when BYTE_SIZE,
-    std_logic_vector(resize(signed(load_byte1 & load_byte0), REGISTER_SIZE))   when HALF_SIZE,
-    std_logic_vector(resize(unsigned(load_byte0), REGISTER_SIZE))              when UBYTE_SIZE,
-    std_logic_vector(resize(unsigned(load_byte1 & load_byte0), REGISTER_SIZE)) when UHALF_SIZE,
+    std_logic_vector(resize(signed(load_byte0), REGISTER_SIZE))                when LS_BYTE_FUNC3,
+    std_logic_vector(resize(signed(load_byte1 & load_byte0), REGISTER_SIZE))   when LS_HALF_FUNC3,
+    std_logic_vector(resize(unsigned(load_byte0), REGISTER_SIZE))              when LS_UBYTE_FUNC3,
+    std_logic_vector(resize(unsigned(load_byte1 & load_byte0), REGISTER_SIZE)) when LS_UHALF_FUNC3,
     load_byte3 & load_byte2 & load_byte1 & load_byte0                          when others;
 
   data_enable <= oimm_readdatavalid;

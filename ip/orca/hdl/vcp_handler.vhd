@@ -37,31 +37,35 @@ entity vcp_handler is
 end entity vcp_handler;
 
 architecture rtl of vcp_handler is
-  signal dsz         : std_logic_vector(1 downto 0);
-  signal instr_64bit : boolean;
+  alias opcode : std_logic_vector(INSTR_OPCODE'length-1 downto 0) is instruction(INSTR_OPCODE'range);
+
+  signal dest_size         : std_logic_vector(1 downto 0);
+  signal vcp32_instruction : boolean;
+  signal vcp64_instruction : boolean;
 begin  -- architecture rtl
 
   --extended bits
-  dsz         <= instruction(31) & instruction(29);
-  instr_64bit <= instruction(MAJOR_OP'range) = LVE64_OP;
+  dest_size         <= instruction(31) & instruction(29);
+  vcp32_instruction <= opcode = VCP32_OP;
+  vcp64_instruction <= opcode = VCP64_OP;
 
   full_vcp_gen : if VCP_ENABLE = SIXTY_FOUR_BIT generate
-    vcp_instruction(40)           <= instruction(40)           when instr_64bit else '0';  --extra instruction
-    vcp_instruction(39)           <= instruction(39)           when instr_64bit else '0';  --masked
-    vcp_instruction(38)           <= instruction(38)           when instr_64bit else '1';  --bsign
-    vcp_instruction(37)           <= instruction(37)           when instr_64bit else '1';  --asign
-    vcp_instruction(36)           <= instruction(36)           when instr_64bit else '1';  --opsign
-    vcp_instruction(35 downto 34) <= instruction(35 downto 34) when instr_64bit else dsz;  --b size
-    vcp_instruction(33 downto 32) <= instruction(33 downto 32) when instr_64bit else dsz;  --b size
+    vcp_instruction(40)           <= instruction(40)           when vcp64_instruction else '0';  --extra instruction
+    vcp_instruction(39)           <= instruction(39)           when vcp64_instruction else '0';  --masked
+    vcp_instruction(38)           <= instruction(38)           when vcp64_instruction else '1';  --bsign
+    vcp_instruction(37)           <= instruction(37)           when vcp64_instruction else '1';  --asign
+    vcp_instruction(36)           <= instruction(36)           when vcp64_instruction else '1';  --opsign
+    vcp_instruction(35 downto 34) <= instruction(35 downto 34) when vcp64_instruction else dest_size;  --b size
+    vcp_instruction(33 downto 32) <= instruction(33 downto 32) when vcp64_instruction else dest_size;  --a size
   end generate full_vcp_gen;
   light_vcp_gen : if VCP_ENABLE /= SIXTY_FOUR_BIT generate
-    vcp_instruction(40)           <= '0';  --extra instruction
-    vcp_instruction(39)           <= '0';  --masked
-    vcp_instruction(38)           <= '1';  --bsign
-    vcp_instruction(37)           <= '1';  --asign
-    vcp_instruction(36)           <= '1';  --opsign
-    vcp_instruction(35 downto 34) <= dsz;  --b size
-    vcp_instruction(33 downto 32) <= dsz;  --b size
+    vcp_instruction(40)           <= '0';        --extra instruction
+    vcp_instruction(39)           <= '0';        --masked
+    vcp_instruction(38)           <= '1';        --bsign
+    vcp_instruction(37)           <= '1';        --asign
+    vcp_instruction(36)           <= '1';        --opsign
+    vcp_instruction(35 downto 34) <= dest_size;  --b size
+    vcp_instruction(33 downto 32) <= dest_size;  --a size
   end generate light_vcp_gen;
   vcp_instruction(31 downto 0) <= instruction(31 downto 0);
 
@@ -70,7 +74,7 @@ begin  -- architecture rtl
   vcp_data2 <= rs3_data;
 
   vcp_enabled_gen : if VCP_ENABLE /= DISABLED generate
-    vcp_valid_instr <= valid_instr when instruction(MAJOR_OP'range) = LVE32_OP or instr_64bit else '0';
+    vcp_valid_instr <= valid_instr when vcp32_instruction or vcp64_instruction else '0';
     process (clk) is
     begin
       if rising_edge(clk) then

@@ -32,9 +32,9 @@ entity arithmetic_unit is
     data_out_valid : out std_logic;
     alu_ready      : out std_logic;
 
-    lve_data1        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    lve_data2        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    lve_source_valid : in std_logic
+    vcp_data1        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_data2        : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    vcp_source_valid : in std_logic
     );
 end entity arithmetic_unit;
 
@@ -42,8 +42,8 @@ architecture rtl of arithmetic_unit is
   constant SHIFTER_USE_MULTIPLIER : boolean := MULTIPLY_ENABLE;
 
   alias func3  : std_logic_vector(2 downto 0) is instruction(INSTR_FUNC3'range);
-  alias func7  : std_logic_vector(6 downto 0) is instruction(31 downto 25);
-  alias opcode : std_logic_vector(6 downto 0) is instruction(6 downto 0);
+  alias func7  : std_logic_vector(6 downto 0) is instruction(INSTR_FUNC7'range);
+  alias opcode : std_logic_vector(6 downto 0) is instruction(INSTR_OPCODE'range);
 
   signal data1 : unsigned(REGISTER_SIZE-1 downto 0);
   signal data2 : unsigned(REGISTER_SIZE-1 downto 0);
@@ -135,7 +135,7 @@ architecture rtl of arithmetic_unit is
   signal func7_shift : boolean;
 
   --operand creation signals
-  alias not_immediate is instruction(5);
+  alias not_immediate     : std_logic is instruction(5);
   signal immediate_value  : unsigned(REGISTER_SIZE-1 downto 0);
   signal shifter_multiply : signed(REGISTER_SIZE downto 0);
   signal m_op1_msk        : std_logic;
@@ -151,7 +151,8 @@ architecture rtl of arithmetic_unit is
 
   signal add : signed(REGISTER_SIZE downto 0);
 
-  signal lve_instr      : std_logic;
+  signal vcp_select     : std_logic;
+  signal vcp_instr      : std_logic;
   signal arith_msb_mask : std_logic_vector(3 downto 0);
 
   signal op1 : signed(REGISTER_SIZE downto 0);
@@ -160,7 +161,8 @@ architecture rtl of arithmetic_unit is
   signal op1_msb, op2_msb : std_logic;
 
 begin
-  lve_instr <= vcp_alu_used when opcode = LVE32_OP or opcode = LVE64_OP else '0';
+  vcp_select <= '1' when opcode = VCP32_OP or opcode = VCP64_OP else '0';
+  vcp_instr  <= vcp_alu_used and vcp_select;
 
   immediate_value <= unsigned(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0) &
                               instruction(31 downto 20));
@@ -221,16 +223,15 @@ begin
   mul_src_valid     <= source_valid;
 
 
-  source_valid <= lve_source_valid when lve_instr = '1' else
+  source_valid <= vcp_source_valid when vcp_instr = '1' else
                   valid_instr;
 
-  func7_shift <= func7 = "0000000" or func7 = "0100000";
+  func7_shift <= func7 = LOGIC_SHIFT_FUNC7 or func7 = ARITH_SHIFT_FUNC7;
   sh_enable   <= source_valid and sh_select;
-  sh_select   <= '1' when
-               (((opcode = ALU_OP and func7_shift) or
-                 (opcode = ALUI_OP) or
-                 (lve_instr = '1' and lve_source_valid = '1')) and
-                (func3 = "001" or func3 = "101")) else
+  sh_select <= '1' when ((func3 = SLL_FUNC3 or func3 = SR_FUNC3) and
+                         (((opcode = ALU_OP and func7_shift) or
+                           (opcode = ALUI_OP) or
+                           (vcp_instr = '1' and vcp_source_valid = '1')))) else
                '0';
   sh_ready <= shifted_result_valid or (not sh_select);
 
@@ -278,40 +279,38 @@ begin
   upper_immediate(11 downto 0)  <= (others => '0');
 
   alu_proc : process(clk) is
-    variable func              : std_logic_vector(2 downto 0);
     variable base_result       : unsigned(REGISTER_SIZE-1 downto 0);
     variable base_result_valid : std_logic;
     variable mul_result        : unsigned(REGISTER_SIZE-1 downto 0);
     variable mul_result_valid  : std_logic;
   begin
     if rising_edge(clk) then
-      func := instruction(14 downto 12);
 
       base_result       := (others => '-');
       base_result_valid := '0';
-      case func is
-        when ADD_OP =>
+      case func3 is
+        when ADDSUB_FUNC3 =>
           base_result       := unsigned(sub(REGISTER_SIZE-1 downto 0));
           base_result_valid := sub_valid;
-        when SLL_OP =>
+        when SLL_FUNC3 =>
           base_result       := lshifted_result;
           base_result_valid := shifted_result_valid;
-        when SLT_OP =>
+        when SLT_FUNC3 =>
           base_result       := slt_result;
           base_result_valid := slt_result_valid;
-        when SLTU_OP =>
+        when SLTU_FUNC3 =>
           base_result       := slt_result;
           base_result_valid := slt_result_valid;
-        when XOR_OP =>
+        when XOR_FUNC3 =>
           base_result       := data1 xor data2;
           base_result_valid := source_valid;
-        when SR_OP =>
+        when SR_FUNC3 =>
           base_result       := rshifted_result;
           base_result_valid := shifted_result_valid;
-        when OR_OP =>
+        when OR_FUNC3 =>
           base_result       := data1 or data2;
           base_result_valid := source_valid;
-        when AND_OP =>
+        when AND_FUNC3 =>
           base_result       := data1 and data2;
           base_result_valid := source_valid;
         when others =>
@@ -320,29 +319,29 @@ begin
 
       mul_result       := (others => '-');
       mul_result_valid := '0';
-      case func is
-        when MUL_OP =>
+      case func3 is
+        when MUL_FUNC3 =>
           mul_result       := unsigned(mul_dest(REGISTER_SIZE-1 downto 0));
           mul_result_valid := mul_dest_valid;
-        when MULH_OP =>
+        when MULH_FUNC3 =>
           mul_result       := unsigned(mul_dest(REGISTER_SIZE*2-1 downto REGISTER_SIZE));
           mul_result_valid := mul_dest_valid;
-        when MULHSU_OP =>
+        when MULHSU_FUNC3 =>
           mul_result       := unsigned(mul_dest(REGISTER_SIZE*2-1 downto REGISTER_SIZE));
           mul_result_valid := mul_dest_valid;
-        when MULHU_OP =>
+        when MULHU_FUNC3 =>
           mul_result       := unsigned(mul_dest(REGISTER_SIZE*2-1 downto REGISTER_SIZE));
           mul_result_valid := mul_dest_valid;
-        when DIV_OP =>
+        when DIV_FUNC3 =>
           mul_result       := unsigned(div_result);
           mul_result_valid := div_result_valid;
-        when DIVU_OP =>
+        when DIVU_FUNC3 =>
           mul_result       := unsigned(div_result);
           mul_result_valid := div_result_valid;
-        when REM_OP =>
+        when REM_FUNC3 =>
           mul_result       := unsigned(rem_result);
           mul_result_valid := div_result_valid;
-        when REMU_OP =>
+        when REMU_FUNC3 =>
           mul_result       := unsigned(rem_result);
           mul_result_valid := div_result_valid;
         when others =>
@@ -352,16 +351,16 @@ begin
       data_out_valid <= '0';
       case OPCODE is
         when ALU_OP =>
-          if func7 = mul_f7 and MULTIPLY_ENABLE then
+          if func7 = MUL_FUNC7 and MULTIPLY_ENABLE then
             data_out       <= std_logic_vector(mul_result);
             data_out_valid <= mul_result_valid;
           else
             data_out       <= std_logic_vector(base_result);
             data_out_valid <= base_result_valid;
           end if;
-        when LVE32_OP |LVE64_OP =>
+        when VCP32_OP | VCP64_OP =>
           if vcp_alu_used = '1' then
-            if instruction(25) = '1' and lve_instr = '1' and MULTIPLY_ENABLE then
+            if instruction(25) = '1' and vcp_instr = '1' and MULTIPLY_ENABLE then
               data_out       <= std_logic_vector(mul_result);
               data_out_valid <= mul_result_valid;
             else
@@ -396,8 +395,8 @@ begin
     signal mul_ab_shift_amt : unsigned(log2(REGISTER_SIZE)-1 downto 0);
     signal mul_ab_valid     : std_logic;
   begin
-    mul_select <= '1' when (((func7 = mul_f7 and opcode = ALU_OP) or
-                             (instruction(30) = '0' and instruction(25) = '1' and lve_instr = '1'))
+    mul_select <= '1' when (((func7 = MUL_FUNC7 and opcode = ALU_OP) or
+                             (instruction(30) = '0' and instruction(25) = '1' and vcp_instr = '1'))
                             and instruction(14) = '0') else
                   '0';
     mul_enable <= source_valid and mul_select;
@@ -462,7 +461,7 @@ begin
         mul_dest_shift_amt <= mul_ab_shift_amt;
         mul_dest_valid     <= mul_ab_valid;
 
-        --If we don't want to pipeline multiple multiplies (as is the case when we are not using LVE)
+        --If we don't want to pipeline multiple multiplies (as is the case when we are not using VCP)
         --we only want mul_dest_valid to be high for one cycle
         if from_execute_ready = '1' then
           mul_ab_valid   <= '0';
@@ -482,7 +481,7 @@ begin
   divide_gen : if DIVIDE_ENABLE generate
   begin
     div_enable <= source_valid and div_select;
-    div_select <= '1' when (func7 = mul_f7 and opcode = ALU_OP and instruction(14) = '1') else '0';
+    div_select <= '1' when (func7 = MUL_FUNC7 and opcode = ALU_OP and instruction(14) = '1') else '0';
     div : divider
       generic map (
         REGISTER_SIZE => REGISTER_SIZE

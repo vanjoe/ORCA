@@ -57,7 +57,7 @@ architecture rtl of branch_unit is
   signal take_if_branch : std_logic;
 
   alias func3  : std_logic_vector(2 downto 0) is instruction(INSTR_FUNC3'range);
-  alias opcode : std_logic_vector(6 downto 0) is instruction(6 downto 0);
+  alias opcode : std_logic_vector(6 downto 0) is instruction(INSTR_OPCODE'range);
 
   signal is_jal_op  : std_logic;
   signal is_jalr_op : std_logic;
@@ -65,8 +65,8 @@ architecture rtl of branch_unit is
 begin
   with func3 select
     msb_mask <=
-    '0' when BLTU_OP,
-    '0' when BGEU_OP,
+    '0' when BLTU_FUNC3,
+    '0' when BGEU_FUNC3,
     '1' when others;
 
   op1 <= signed((msb_mask and rs1_data(rs1_data'left)) & rs1_data);
@@ -78,12 +78,12 @@ begin
 
   with func3 select
     take_if_branch <=
-    eq_flag                  when beq_OP,
-    not eq_flag              when bne_OP,
-    lt_flag                  when blt_OP,
-    (not lt_flag) or eq_flag when bge_OP,
-    lt_flag                  when bltu_OP,
-    (not lt_flag) or eq_flag when bgeu_OP,
+    eq_flag                  when BEQ_FUNC3,
+    not eq_flag              when BNE_FUNC3,
+    lt_flag                  when BLT_FUNC3,
+    (not lt_flag) or eq_flag when BGE_FUNC3,
+    lt_flag                  when BLTU_FUNC3,
+    (not lt_flag) or eq_flag when BGEU_FUNC3,
     '0'                      when others;
 
   b_imm <= unsigned(sign_extension(REGISTER_SIZE-13 downto 0) &

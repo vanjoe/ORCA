@@ -122,11 +122,11 @@ entity execute is
 end entity execute;
 
 architecture behavioural of execute is
-  alias rd is to_execute_instruction (REGISTER_RD'range);
-  alias rs1 is to_execute_instruction(REGISTER_RS1'range);
-  alias rs2 is to_execute_instruction(REGISTER_RS2'range);
-  alias rs3 is to_execute_instruction(REGISTER_RD'range);
-  alias opcode is to_execute_instruction(MAJOR_OP'range);
+  alias rd     : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_instruction (REGISTER_RD'range);
+  alias rs1    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_instruction(REGISTER_RS1'range);
+  alias rs2    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_instruction(REGISTER_RS2'range);
+  alias rs3    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_instruction(REGISTER_RD'range);
+  alias opcode : std_logic_vector(6 downto 0) is to_execute_instruction(INSTR_OPCODE'range);
 
   signal valid_instr             : std_logic;
   signal use_after_produce_stall : std_logic;
@@ -145,7 +145,7 @@ architecture behavioural of execute is
   signal rs2_mux : fwd_mux_t;
   signal rs3_mux : fwd_mux_t;
 
-  --Writeback data sources (LVE does not write back to regfile)
+  --Writeback data sources (VCP writes back through syscall)
   signal alu_data_out_valid : std_logic;
   signal alu_data_out       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal from_branch_valid  : std_logic;
@@ -266,9 +266,9 @@ begin
       data_out_valid     => alu_data_out_valid,
       alu_ready          => alu_ready,
 
-      lve_data1        => vcp_alu_data1,
-      lve_data2        => vcp_alu_data2,
-      lve_source_valid => vcp_alu_source_valid
+      vcp_data1        => vcp_alu_data1,
+      vcp_data2        => vcp_alu_data2,
+      vcp_source_valid => vcp_alu_source_valid
       );
 
   branch : branch_unit
@@ -536,7 +536,7 @@ begin
         write(my_line, string'("executing pc = "));   -- formatting
         hwrite(my_line, (std_logic_vector(to_execute_program_counter)));  -- format type std_logic_vector as hex
         write(my_line, string'(" instr =  "));        -- formatting
-        if to_execute_instruction(MAJOR_OP'range) = LVE64_OP then
+        if opcode = VCP64_OP then
           hwrite(my_line, (to_execute_instruction));  -- format type std_logic_vector as hex
         else
           hwrite(my_line, (to_execute_instruction(31 downto 0)));  -- format type std_logic_vector as hex

@@ -44,33 +44,38 @@ package constants_pkg is
   constant REGISTER_T5   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(30, REGISTER_NAME_SIZE);
   constant REGISTER_T6   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(31, REGISTER_NAME_SIZE);
 
-  constant REGISTER_RS1 : unsigned(19 downto 15) := (others => '0');
-  constant REGISTER_RS2 : unsigned(24 downto 20) := (others => '0');
-  constant REGISTER_RD  : unsigned(11 downto 7)  := (others => '0');
+  constant REGISTER_RS1 : unsigned(19 downto 15) := (others => '-');
+  constant REGISTER_RS2 : unsigned(24 downto 20) := (others => '-');
+  constant REGISTER_RD  : unsigned(11 downto 7)  := (others => '-');
 
+  constant INSTR_OPCODE : std_logic_vector(6 downto 0)   := (others => '-');
+  constant INSTR_FUNC3  : std_logic_vector(14 downto 12) := (others => '-');
+  constant INSTR_FUNC7  : std_logic_vector(31 downto 25) := (others => '-');
 
 --Major OP codes instr(6 downto 0)
-  constant MAJOR_OP   : std_logic_vector(6 downto 0) := (others => '-');
-  constant JAL_OP     : std_logic_vector(6 downto 0) := "1101111";
-  constant JALR_OP    : std_logic_vector(6 downto 0) := "1100111";
-  constant LUI_OP     : std_logic_vector(6 downto 0) := "0110111";
-  constant AUIPC_OP   : std_logic_vector(6 downto 0) := "0010111";
-  constant ALU_OP     : std_logic_vector(6 downto 0) := "0110011";
-  constant ALUI_OP    : std_logic_vector(6 downto 0) := "0010011";
-  constant LOAD_OP    : std_logic_vector(6 downto 0) := "0000011";
-  constant STORE_OP   : std_logic_vector(6 downto 0) := "0100011";
-  constant FENCE_OP   : std_logic_vector(6 downto 0) := "0001111";
-  constant SYSTEM_OP  : std_logic_vector(6 downto 0) := "1110011";
-  constant CUSTOM0_OP : std_logic_vector(6 downto 0) := "0101011";
-  constant CUSTOM1_OP : std_logic_vector(6 downto 0) := "0111111";
-  constant LVE32_OP   : std_logic_vector(6 downto 0) := CUSTOM0_OP;
-  constant LVE64_OP   : std_logic_vector(6 downto 0) := CUSTOM1_OP;
-  constant BRANCH_OP  : std_logic_vector(6 downto 0) := "1100011";
+  constant JAL_OP      : std_logic_vector(6 downto 0) := "1101111";
+  constant JALR_OP     : std_logic_vector(6 downto 0) := "1100111";
+  constant LUI_OP      : std_logic_vector(6 downto 0) := "0110111";
+  constant AUIPC_OP    : std_logic_vector(6 downto 0) := "0010111";
+  constant ALU_OP      : std_logic_vector(6 downto 0) := "0110011";
+  constant ALUI_OP     : std_logic_vector(6 downto 0) := "0010011";
+  constant LOAD_OP     : std_logic_vector(6 downto 0) := "0000011";
+  constant STORE_OP    : std_logic_vector(6 downto 0) := "0100011";
+  constant MISC_MEM_OP : std_logic_vector(6 downto 0) := "0001111";
+  constant SYSTEM_OP   : std_logic_vector(6 downto 0) := "1110011";
+  constant CUSTOM0_OP  : std_logic_vector(6 downto 0) := "0101011";
+  constant CUSTOM1_OP  : std_logic_vector(6 downto 0) := "0111111";
+  constant VCP32_OP    : std_logic_vector(6 downto 0) := CUSTOM0_OP;
+  constant VCP64_OP    : std_logic_vector(6 downto 0) := CUSTOM1_OP;
+  constant BRANCH_OP   : std_logic_vector(6 downto 0) := "1100011";
 
   constant OP_IMM_IMMEDIATE_SIZE : integer                        := 12;
-  constant CSR_ZIMM              : std_logic_vector(19 downto 15) := (others => '0');
-  constant JAL                   : std_logic_vector(6 downto 0)   := "1101111";
-  constant JALR                  : std_logic_vector(6 downto 0)   := "1100111";
+  constant CSR_ZIMM              : std_logic_vector(19 downto 15) := (others => '-');
+
+--MISC-MEM functions  
+  constant MISC_MEM_FENCE_FUNC3         : std_logic_vector(2 downto 0) := "000";
+  constant MISC_MEM_FENCEI_REGION_FUNC3 : std_logic_vector(2 downto 0) := "001";
+
 
   constant CSR_ADDRESS  : std_logic_vector(31 downto 20) := (others => '0');
   constant CSR_MSTATUS  : std_logic_vector(11 downto 0)  := x"300";
@@ -113,10 +118,10 @@ package constants_pkg is
 --CSR_MCACHE BITS
   constant CSR_MCACHE_IEXISTS : natural                        := 0;
   constant CSR_MCACHE_DEXISTS : natural                        := 1;
-  constant CSR_MCACHE_AMRS    : std_logic_vector(19 downto 16) := (others => '0');
-  constant CSR_MCACHE_UMRS    : std_logic_vector(23 downto 20) := (others => '0');
+  constant CSR_MCACHE_AMRS    : std_logic_vector(19 downto 16) := (others => '-');
+  constant CSR_MCACHE_UMRS    : std_logic_vector(23 downto 20) := (others => '-');
 
-  constant CSR_MCAUSE_CODE : std_logic_vector(3 downto 0) := (others => '0');
+  constant CSR_MCAUSE_CODE : std_logic_vector(3 downto 0) := (others => '-');
 
   constant CSR_MCAUSE_MEXT    : integer := 11;
   constant CSR_MCAUSE_ILLEGAL : integer := 2;
@@ -129,61 +134,53 @@ package constants_pkg is
   constant CSRRC_FUNC3  : std_logic_vector(2 downto 0) := "011";
   constant CSRRCI_FUNC3 : std_logic_vector(2 downto 0) := "111";
 
-  constant SYSTEM_MINOR_OP : std_logic_vector(31 downto 20) := (others => '0');
+  constant SYSTEM_MINOR_OP : std_logic_vector(31 downto 20) := (others => '-');
   constant SYSTEM_NOT_CSR  : std_logic_vector(19 downto 7)  := (others => '0');
   constant SYSTEM_ECALL    : std_logic_vector(11 downto 0)  := x"000";
   constant SYSTEM_EBREAK   : std_logic_vector(11 downto 0)  := x"001";
 
-  constant INSTR_FUNC3 : std_logic_vector(14 downto 12) := "000";
---branch FUNC3 instr(14 downto 12)
-  constant BEQ_OP      : std_logic_vector(2 downto 0)   := "000";
-  constant BNE_OP      : std_logic_vector(2 downto 0)   := "001";
-  constant BLT_OP      : std_logic_vector(2 downto 0)   := "100";
-  constant BGE_OP      : std_logic_vector(2 downto 0)   := "101";
-  constant BLTU_OP     : std_logic_vector(2 downto 0)   := "110";
-  constant BGEU_OP     : std_logic_vector(2 downto 0)   := "111";
+--Branch FUNC3
+  constant BEQ_FUNC3  : std_logic_vector(2 downto 0) := "000";
+  constant BNE_FUNC3  : std_logic_vector(2 downto 0) := "001";
+  constant BLT_FUNC3  : std_logic_vector(2 downto 0) := "100";
+  constant BGE_FUNC3  : std_logic_vector(2 downto 0) := "101";
+  constant BLTU_FUNC3 : std_logic_vector(2 downto 0) := "110";
+  constant BGEU_FUNC3 : std_logic_vector(2 downto 0) := "111";
 
---Load store  func3 instr(14 downto 12)
-  constant BYTE_SIZE   : std_logic_vector(2 downto 0) := "000";
-  constant HALF_SIZE   : std_logic_vector(2 downto 0) := "001";
-  constant WORD_SIZE   : std_logic_vector(2 downto 0) := "010";
-  constant UBYTE_SIZE  : std_logic_vector(2 downto 0) := "100";
-  constant UHALF_SIZE  : std_logic_vector(2 downto 0) := "101";
-  constant STORE_INSTR : std_logic_vector(6 downto 0) := "0100011";
-  constant LOAD_INSTR  : std_logic_vector(6 downto 0) := "0000011";
+--Load/store FUNC3
+  constant LS_BYTE_FUNC3  : std_logic_vector(2 downto 0) := "000";
+  constant LS_HALF_FUNC3  : std_logic_vector(2 downto 0) := "001";
+  constant LS_WORD_FUNC3  : std_logic_vector(2 downto 0) := "010";
+  constant LS_UBYTE_FUNC3 : std_logic_vector(2 downto 0) := "100";
+  constant LS_UHALF_FUNC3 : std_logic_vector(2 downto 0) := "101";
 
---alu func3
-  constant ADD_OP  : std_logic_vector(2 downto 0) := "000";
-  constant SLL_OP  : std_logic_vector(2 downto 0) := "001";
-  constant SLT_OP  : std_logic_vector(2 downto 0) := "010";
-  constant SLTU_OP : std_logic_vector(2 downto 0) := "011";
-  constant XOR_OP  : std_logic_vector(2 downto 0) := "100";
-  constant SR_OP   : std_logic_vector(2 downto 0) := "101";
-  constant OR_OP   : std_logic_vector(2 downto 0) := "110";
-  constant AND_OP  : std_logic_vector(2 downto 0) := "111";
+--ALU FUNC3
+  constant ADDSUB_FUNC3 : std_logic_vector(2 downto 0) := "000";
+  constant SLL_FUNC3    : std_logic_vector(2 downto 0) := "001";
+  constant SLT_FUNC3    : std_logic_vector(2 downto 0) := "010";
+  constant SLTU_FUNC3   : std_logic_vector(2 downto 0) := "011";
+  constant XOR_FUNC3    : std_logic_vector(2 downto 0) := "100";
+  constant SR_FUNC3     : std_logic_vector(2 downto 0) := "101";
+  constant OR_FUNC3     : std_logic_vector(2 downto 0) := "110";
+  constant AND_FUNC3    : std_logic_vector(2 downto 0) := "111";
 
---multipy func3
-  constant MUL_OP    : std_logic_vector(2 downto 0) := "000";
-  constant MULH_OP   : std_logic_vector(2 downto 0) := "001";
-  constant MULHSU_OP : std_logic_vector(2 downto 0) := "010";
-  constant MULHU_OP  : std_logic_vector(2 downto 0) := "011";
-  constant DIV_OP    : std_logic_vector(2 downto 0) := "100";
-  constant DIVU_OP   : std_logic_vector(2 downto 0) := "101";
-  constant REM_OP    : std_logic_vector(2 downto 0) := "110";
-  constant REMU_OP   : std_logic_vector(2 downto 0) := "111";
+--Multipy FUNC3
+  constant MUL_FUNC3    : std_logic_vector(2 downto 0) := "000";
+  constant MULH_FUNC3   : std_logic_vector(2 downto 0) := "001";
+  constant MULHSU_FUNC3 : std_logic_vector(2 downto 0) := "010";
+  constant MULHU_FUNC3  : std_logic_vector(2 downto 0) := "011";
+  constant DIV_FUNC3    : std_logic_vector(2 downto 0) := "100";
+  constant DIVU_FUNC3   : std_logic_vector(2 downto 0) := "101";
+  constant REM_FUNC3    : std_logic_vector(2 downto 0) := "110";
+  constant REMU_FUNC3   : std_logic_vector(2 downto 0) := "111";
 
-  constant MUL_F7 : std_logic_vector(6 downto 0) := "0000001";
-  constant SUB_f7 : std_logic_vector(6 downto 0) := "0100000";
-  constant ALU_f7 : std_logic_vector(6 downto 0) := "0000000";
-
-  constant FENCE_I_BITS : std_logic_vector(31 downto 7) := x"0000" & "00010" & x"0";
-
-  constant LVE_VCMV_Z_FUNC3  : std_logic_vector(2 downto 0) := "011";
-  constant LVE_VCMV_NZ_FUNC3 : std_logic_vector(2 downto 0) := "100";
-
-  constant LVE_BYTE_SIZE : std_logic_vector(1 downto 0) := "01";
-  constant LVE_HALF_SIZE : std_logic_vector(1 downto 0) := "10";
-  constant LVE_WORD_SIZE : std_logic_vector(1 downto 0) := "11";
+--ALU FUNC7
+  constant ALU_FUNC7         : std_logic_vector(6 downto 0) := "0000000";
+  constant ADDSUB_ADD_FUNC7  : std_logic_vector(6 downto 0) := "0000000";
+  constant ADDSUB_SUB_FUNC7  : std_logic_vector(6 downto 0) := "0100000";
+  constant LOGIC_SHIFT_FUNC7 : std_logic_vector(6 downto 0) := "0000000";
+  constant ARITH_SHIFT_FUNC7 : std_logic_vector(6 downto 0) := "0100000";
+  constant MUL_FUNC7         : std_logic_vector(6 downto 0) := "0000001";
 
 
 ------------------------------------------------------------------------------
@@ -214,4 +211,4 @@ package body constants_pkg is
     return 32;
   end function INSTRUCTION_SIZE;
 
-end package body constants_pkg;  
+end package body constants_pkg;
