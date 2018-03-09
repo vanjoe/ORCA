@@ -225,46 +225,17 @@ TEST_ATTR int test_11()
 	return 0;
 }
 
-
-//this macro runs the test, and returns the test number on failure
-#define do_test(TEST_NUMBER) do{	  \
-		if(test_##TEST_NUMBER()){ \
-			asm volatile ("li x28, %0\n" \
-			              "fence.i\n" \
-			              "ecall\n" \
-			              : : "i"(TEST_NUMBER)); \
-			return TEST_NUMBER; \
-		} \
-	} while(0)
-
-#define pass_test() do{	  \
-		asm volatile ("addi x28, x0, 1\n" \
-		              "fence.i\n" \
-		              "ecall\n"); \
-		return 0; \
-	} while(0)
-
-int main()
-{
-	do_test(2);
-	do_test(3);
-	do_test(4);
-	do_test(5);
-	do_test(6);
-	do_test(7);
-	do_test(8);
-	do_test(9);
-	do_test(10);
-	do_test(11);
-	pass_test();
-	return 0;
-
-}
-
-int handle_interrupt(int cause, int epc, int regs[32]) {
-	if (!((cause >> 31) & 0x1)) {
-		// Handle illegal instruction.
-		for (;;);
-	}
-	return epc;
-}
+typedef int (*test_func)(void) ;
+test_func test_functions[] = {
+	test_2,
+	test_3,
+	test_4,
+	test_5,
+	test_6,
+	test_7,
+	test_8,
+	test_9,
+	test_10,
+	test_11,
+	(void*)0
+};

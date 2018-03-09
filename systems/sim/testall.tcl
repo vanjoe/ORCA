@@ -29,7 +29,7 @@ proc run_tests { system_name tests } {
             run 30 us
         } else {
             #some of the unit tests may have to run for a much longer time
-            run 60 us
+            run 200 us
         }
         set instruction [examine -radix hex system_[set system_name]/vectorblox_orca_0/core/X/to_execute_instruction(31:0)]
         set valid       [examine system_[set system_name]/vectorblox_orca_0/core/X/to_execute_valid]

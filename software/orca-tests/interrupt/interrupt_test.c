@@ -8,6 +8,10 @@
 
 #define MSTATUS_MPIE (1<<7)
 #define MSTATUS_MIE (1<<3)
+#include "bsp.h"
+#include <stdlib.h>
+#include "orca_exceptions.h"
+
 volatile static int*  INT_GEN_REGISTER = (volatile int*)(0x01000000);
 
 static inline unsigned get_time() {
@@ -37,21 +41,17 @@ static inline void schedule_interrupt(int cycles)
 }
 
 volatile int interrupt_count=0;
-int handle_interrupt(int cause, int epc, int regs[32])
+void handle_interrupt(int intnum, void* cnxt)
 {
-	if (!((cause >> 31) & 0x1)) {
-		// Handle illegal instruction.
-		for (;;);
-	}
 
 	interrupt_count++;
 	schedule_interrupt(-1);//clear interrupt
-	return epc;
+	return ;
 }
-#define TEST_ATTR static __attribute__((noinline))
 
 
-TEST_ATTR int test_2()
+
+int test_2()
 {
 	int before=interrupt_count;
 
@@ -69,7 +69,7 @@ TEST_ATTR int test_2()
 
 }
 
-TEST_ATTR int test_3()
+int test_3()
 {
 	int before=interrupt_count;
 
@@ -88,7 +88,7 @@ TEST_ATTR int test_3()
 }
 
 
-TEST_ATTR int test_4()
+int test_4()
 {
 	int before=interrupt_count;
 
@@ -106,7 +106,7 @@ TEST_ATTR int test_4()
 
 }
 
-TEST_ATTR int test_5()
+int test_5()
 {
 	int isa_spec;
 	csrr(misa,isa_spec);
@@ -137,8 +137,7 @@ TEST_ATTR int test_5()
 	return 0;
 }
 
-
-TEST_ATTR int test_6()
+int test_6()
 {
 	//make sure interrupts don't take an
 	//excessive amount of time to be triggered
@@ -164,40 +163,18 @@ TEST_ATTR int test_6()
 
 }
 
-
-
-
-//this macro runs the test, and returns the test number on failure
-#define do_test(TEST_NUMBER) do{	  \
-		int result = test_##TEST_NUMBER(); \
-		if(result){ \
-			asm volatile ("li  x28, %0\n" \
-			              "fence.i\n" \
-			              "ecall\n" \
-			              : : "i"(TEST_NUMBER)); \
-			return result; \
-		} \
-	} while(0)
-
-#define pass_test() do{	  \
-		asm volatile ("addi x28, x0, 1\n" \
-		              "fence.i\n" \
-		              "ecall\n"); \
-		return 0; \
-	} while(0)
-
-int main()
+int test_init()
 {
-	//disable interrupts
-	csrw(mstatus,0);
+	return orca_register_interrupt_handler(1,handle_interrupt,NULL);
 
-	do_test(2);
-	do_test(3);
-	do_test(4);
-	do_test(5);
-	do_test(6);
-
-
-	pass_test();
-	return 0;
 }
+typedef int (*test_func)() ;
+test_func test_functions[] ={
+	test_init,
+	test_2,
+	test_3,
+	test_4,
+	test_5,
+	test_6,
+	(void*)0
+};

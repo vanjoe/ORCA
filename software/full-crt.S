@@ -10,15 +10,6 @@ _start:
 
   jal main
 
-  //Store result in t3 and hit an ecall for 'test_done'
-  mv t3, a0
-  fence.i
-  ecall
-
-  //In case the system doesn't support exceptions call the isr manually
-  //mcause and mepc aren't implemented in this case, so all's well      
-  call _isr        
-
 1:
   j 1b
 

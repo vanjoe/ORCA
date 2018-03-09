@@ -5,12 +5,8 @@
 all:
 
 ifdef ORCA_TEST
-vpath %.c $(ORCA_ROOT)/software/orca-tests/$(ORCA_TEST)
-vpath %.S $(ORCA_ROOT)/software/orca-tests/$(ORCA_TEST)
-RISCV_OLEVEL ?= -O3
-TARGET       ?= $(ORCA_TEST)
-C_SRCS       += $(wildcard $(ORCA_ROOT)/software/orca-tests/$(ORCA_TEST)/*.c)
-AS_SRCS      += $(wildcard $(ORCA_ROOT)/software/orca-tests/$(ORCA_TEST)/*.S)
+vpath %.c $(ORCA_ROOT)/software/orca-tests/
+C_SRCS += orca-test.c
 endif #ifdef ORCA_TEST
 
 TARGET     ?= $(shell pwd | xargs basename)
@@ -54,6 +50,7 @@ CFLAGS   ?= -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 -Wmisleading-ind
 LD_FLAGS ?= -march=$(ARCH) -static -nostartfiles
 
 C_OBJ_FILES := $(addprefix $(OBJDIR)/,$(addsuffix .o, $(notdir $(C_SRCS))))
+
 S_OBJ_FILES := $(addprefix $(OBJDIR)/,$(addsuffix .o, $(notdir $(AS_SRCS))))
 
 START_ADDRESS ?= 0x100
