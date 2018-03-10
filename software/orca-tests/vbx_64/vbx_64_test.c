@@ -1,12 +1,19 @@
 
 #include "vbx.h"
-
+#include "orca_csrs.h"
 vbx_lve_t the_lve;
 
 #define TEST_ATTR static __attribute__((noinline))
+#define VCP_SUPPORT() 	do{ \
+	int isa_spec; \
+	csrr(misa,isa_spec); \
+	if(!(isa_spec & (1<<23))){return 0;} \
+	}while(0)
+
 
 TEST_ATTR int test_2()
 {
+	VCP_SUPPORT();
 	int vlen=10;
 	vbx_set_vl(vlen);
 	vbx_set_2D(0,0,0);

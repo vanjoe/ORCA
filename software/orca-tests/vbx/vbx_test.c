@@ -1,12 +1,19 @@
 
 #include "vbx.h"
-
+#include "orca_csrs.h"
 vbx_lve_t the_lve;
 
 #define TEST_ATTR static __attribute__((noinline))
+#define VCP_SUPPORT() 	do{ \
+	int isa_spec; \
+	csrr(misa,isa_spec); \
+	if(!(isa_spec & (1<<23))){return 0;} \
+	}while(0)
+
 
 TEST_ATTR int test_2()
 {
+	VCP_SUPPORT();
 	int vlen=10;
 	vbx_set_vl(vlen);
 	vbx_set_2D(0,0,0);
@@ -24,6 +31,7 @@ TEST_ATTR int test_2()
 
 TEST_ATTR int test_3()
 {
+	VCP_SUPPORT();
 	int vlen=10;
 	vbx_set_vl(vlen);
 	vbx_set_2D(0,0,0);
@@ -51,6 +59,7 @@ TEST_ATTR int test_3()
 
 TEST_ATTR int test_4()
 {
+	VCP_SUPPORT();
 	int vlen=10;
 	vbx_set_vl(vlen);
 	vbx_word_t* dest=((vbx_word_t*)SCRATCHPAD_BASE);
@@ -75,6 +84,7 @@ TEST_ATTR int test_4()
 
 TEST_ATTR int test_5()
 {
+	VCP_SUPPORT();
 	int vlen=10;
 	vbx_set_vl(vlen);
 	vbx_word_t* a=((vbx_word_t*)SCRATCHPAD_BASE);
@@ -100,6 +110,7 @@ TEST_ATTR int test_5()
 
 TEST_ATTR int test_6()
 {
+	VCP_SUPPORT();
 	//test storeing word when bit 27 is set in instruction
 	vbx_word_t* a =(vbx_word_t*)SCRATCHPAD_BASE;
 	vbx_word_t b=15 ;
@@ -116,6 +127,7 @@ TEST_ATTR int test_6()
 
 TEST_ATTR int test_7()
 {
+	VCP_SUPPORT();
 	//test 0 and 1 length vector instructions
 	vbx_word_t* a =(vbx_word_t*)SCRATCHPAD_BASE;
 	vbx_word_t b[] ={1,2,3};
@@ -139,6 +151,7 @@ TEST_ATTR int test_7()
 
 TEST_ATTR int test_8()
 {
+	VCP_SUPPORT();
 	//2d instruction test
 	int test_length=10;
 	vbx_word_t* v_output=SCRATCHPAD_BASE;
@@ -165,6 +178,7 @@ TEST_ATTR int test_8()
 }
 TEST_ATTR int test_9()
 {
+	VCP_SUPPORT();
 	int vlen=10;
 	vbx_set_vl(vlen);
 	vbx_word_t* a=((vbx_word_t*)SCRATCHPAD_BASE);
@@ -191,6 +205,7 @@ TEST_ATTR int test_9()
 
 TEST_ATTR int test_10()
 {
+	VCP_SUPPORT();
 	int vlen=10;
 	vbx_word_t* a=((vbx_word_t*)SCRATCHPAD_BASE);
 	//force load word right before vbx instruction
@@ -212,6 +227,7 @@ TEST_ATTR int test_10()
 }
 TEST_ATTR int test_11()
 {
+	VCP_SUPPORT();
 	int vlen=10,nrows=9,incrd=8,incra=7,incrb=6;
 	vbx_set_vl(vlen,nrows);
 	vbx_set_2D(incrd,incra,incrb);

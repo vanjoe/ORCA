@@ -1,7 +1,3 @@
-#define _stringify(a) #a
-#define stringify(a) _stringify(a)
-#define csrr(name,dst) asm volatile ("csrr %0 ," stringify(name) :"=r"(dst) )
-#define csrw(name,src) asm volatile ("csrw " stringify(name) ",%0" ::"r"(src) )
 
 #define MEIMASK 0x7C0
 #define MEIPEND 0x7C0
@@ -11,12 +7,13 @@
 #include "bsp.h"
 #include <stdlib.h>
 #include "orca_exceptions.h"
+#include "orca_csrs.h"
 
 volatile static int*  INT_GEN_REGISTER = (volatile int*)(0x01000000);
 
 static inline unsigned get_time() {
 	int tmp;
-	asm volatile("csrr %0, time" : "=r"(tmp));
+	csrr(time,tmp);
 	return tmp;
 }
 static inline void delay_cycles(int cycles) {
