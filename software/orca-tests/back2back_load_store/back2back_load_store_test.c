@@ -1,6 +1,6 @@
 #include "vbx.h"
 
-#define TEST_ATTR static __attribute__((noinline))
+
 int test_2()
 {
 	vbx_ubyte_t* sp_data = (vbx_ubyte_t*)(SCRATCHPAD_BASE+8*1024);

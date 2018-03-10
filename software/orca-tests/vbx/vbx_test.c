@@ -3,7 +3,7 @@
 #include "orca_csrs.h"
 vbx_lve_t the_lve;
 
-#define TEST_ATTR static __attribute__((noinline))
+
 #define VCP_SUPPORT() 	do{ \
 	int isa_spec; \
 	csrr(misa,isa_spec); \
@@ -11,7 +11,7 @@ vbx_lve_t the_lve;
 	}while(0)
 
 
-TEST_ATTR int test_2()
+int test_2()
 {
 	VCP_SUPPORT();
 	int vlen=10;
@@ -29,7 +29,7 @@ TEST_ATTR int test_2()
 	return 0;
 }
 
-TEST_ATTR int test_3()
+int test_3()
 {
 	VCP_SUPPORT();
 	int vlen=10;
@@ -57,7 +57,7 @@ TEST_ATTR int test_3()
 	return 0;
 }
 
-TEST_ATTR int test_4()
+int test_4()
 {
 	VCP_SUPPORT();
 	int vlen=10;
@@ -82,7 +82,7 @@ TEST_ATTR int test_4()
 
 }
 
-TEST_ATTR int test_5()
+int test_5()
 {
 	VCP_SUPPORT();
 	int vlen=10;
@@ -108,7 +108,7 @@ TEST_ATTR int test_5()
 
 }
 
-TEST_ATTR int test_6()
+int test_6()
 {
 	VCP_SUPPORT();
 	//test storeing word when bit 27 is set in instruction
@@ -125,7 +125,7 @@ TEST_ATTR int test_6()
 
 
 
-TEST_ATTR int test_7()
+int test_7()
 {
 	VCP_SUPPORT();
 	//test 0 and 1 length vector instructions
@@ -149,7 +149,7 @@ TEST_ATTR int test_7()
 
 }
 
-TEST_ATTR int test_8()
+int test_8()
 {
 	VCP_SUPPORT();
 	//2d instruction test
@@ -176,7 +176,7 @@ TEST_ATTR int test_8()
 
 	return errors;
 }
-TEST_ATTR int test_9()
+int test_9()
 {
 	VCP_SUPPORT();
 	int vlen=10;
@@ -203,7 +203,7 @@ TEST_ATTR int test_9()
 
 }
 
-TEST_ATTR int test_10()
+int test_10()
 {
 	VCP_SUPPORT();
 	int vlen=10;
@@ -225,7 +225,7 @@ TEST_ATTR int test_10()
 	return 0;
 
 }
-TEST_ATTR int test_11()
+int test_11()
 {
 	VCP_SUPPORT();
 	int vlen=10,nrows=9,incrd=8,incra=7,incrb=6;

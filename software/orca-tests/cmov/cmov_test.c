@@ -3,7 +3,7 @@
 
 vbx_lve_t the_lve;
 
-#define TEST_ATTR static __attribute__((noinline))
+
 #include "orca_csrs.h"
 #define VCP_SUPPORT() 	do{ \
 	int isa_spec; \
@@ -12,7 +12,7 @@ vbx_lve_t the_lve;
 	}while(0)
 
 
-TEST_ATTR int test_2()
+int test_2()
 {
 	VCP_SUPPORT();
 	int vlen=10;

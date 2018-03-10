@@ -1,11 +1,11 @@
 #include <stdint.h>
 
-#define TEST_ATTR static __attribute__((noinline))
+
 
 #define TEST_SIZE_WORDS 7
 #define TEST_RUNS       3
 
-TEST_ATTR int test_2()
+int test_2()
 {
   //Test back-to-back word writes followed by reads
 
@@ -53,7 +53,7 @@ TEST_ATTR int test_2()
   return 0;
 }
 
-TEST_ATTR int test_3()
+int test_3()
 {
   //Test back-to-back halfword writes followed by reads
 
@@ -101,7 +101,7 @@ TEST_ATTR int test_3()
   return 0;
 }
 
-TEST_ATTR int test_4()
+int test_4()
 {
   //Test back-to-back byte writes followed by reads
 
