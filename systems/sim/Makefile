@@ -65,11 +65,6 @@ $(RISCV_TEST_QEXES): | test
 .PHONY: sw
 sw: $(ORCA_TEST_QEXES) $(RISCV_TEST_QEXES)
 
-simulate_%.tcl: simulate.tcl
-	sed 's/system/system_$(*)/g' $< > $@
-sim_waves_system_%.tcl: sim_waves_system.tcl
-	sed 's/system/system_$(*)/g' $< > $@
-
 
 test_%.log: system_%/simulation/mentor/msim_setup.tcl testall.tcl $(ORCA_HDL) $(RISCV_TEST_QEXES) $(ORCA_TEST_QEXES)
 	cd system_$*/simulation/mentor && vsim -c -do "source ../../../testall.tcl; run_tests $* {$(RISCV_TESTS) $(ORCA_TESTS)}" | egrep '(^[^#]|Error:|Error \(suppressible\):)' | tee ../../../test_$*.log
@@ -91,14 +86,14 @@ else #ifndef TEST
 test.hex::
 	ln -sf test/$(TEST).qex $@
 
-sim: $(SIM_FILE) $(SIM_WAVES_FILE) $(MSIM_FILE) test.hex test/$(TEST).qex
+sim: $(MSIM_FILE) test.hex test/$(TEST).qex
 	cd $(SYSTEM)/simulation/mentor/; ln -sf ../../../test.hex .
-	vsim -do $(SIM_FILE)
+	vsim -do "set system_name $(BUS_TYPE); source simulate.tcl;"
 endif #else #ifndef TEST
 
 .PHONY: clean
 clean:
-	rm -rf $(SYSTEMS) test test.hex $(SIM_WAVE_FILES) $(SIM_FILES) *.log
+	rm -rf $(SYSTEMS) test test.hex  *.log
 	rm -rf transcript *.sopcinfo platform.info csmith-compile *~ \#*
 	rm -rf .qsys_edit
 
