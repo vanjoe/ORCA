@@ -22,6 +22,15 @@ proc run_tests { system_name tests } {
         onbreak { resume }
         when " system_[set system_name]/vectorblox_orca_0/core/X/to_execute_instruction(31:0) == x\"00000073\" && system_[set system_name]/vectorblox_orca_0/core/X/to_execute_valid == \"1\" " { stop }
 
+		  if {[string match "*vbx_64*" $f ] || [string match "*interrupt*" $f ] } {
+				run 1ps
+				#these two tests rely on vcp_enable being 2, if vcp_enable is not 2,
+				#force misa(23) to 0 which will make the tests be skipped
+				set vcp_enable [examine -radix hex system_[set system_name]/vectorblox_orca_0/VCP_ENABLE]
+				if { $vcp_enable != 2 }  {
+					 force -freeze system_[set system_name]/vectorblox_orca_0/core/X/syscall/misa(23) 0 0
+				}
+		  }
         if { [string match "*dhrystone*" $f ] } {
             #Dhrystone does multiple runs to at least 100us
             run 500 us
