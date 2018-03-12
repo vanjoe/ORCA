@@ -18,7 +18,7 @@ entity system_calls is
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
     VCP_ENABLE : vcp_type;
-
+    MUL_ENABLE : boolean;
     AUX_MEMORY_REGIONS : natural range 0 to 4;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
     AMR0_ADDR_LAST     : std_logic_vector(31 downto 0);
@@ -160,6 +160,9 @@ begin
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
   misa(misa'left downto misa'left-1) <= "01";
   misa(23)                           <= '0' when VCP_ENABLE = DISABLED else '1';
+  misa(8)                            <= '1';  --I
+  misa(12)                           <= '1' when MUL_ENABLE            else '0';
+
   csr_select                         <= instruction(CSR_ADDRESS'range);
   with csr_select select
     csr_readdata <=

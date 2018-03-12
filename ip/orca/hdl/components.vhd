@@ -1113,6 +1113,7 @@ package rv_components is
       NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
       VCP_ENABLE : vcp_type;
+      MUL_ENABLE : boolean;
 
       AUX_MEMORY_REGIONS : natural range 0 to 4;
       AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
