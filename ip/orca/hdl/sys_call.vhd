@@ -70,6 +70,10 @@ entity sys_call is
     umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     pause_ifetch   : out std_logic;
 
+    --timer signals
+    timer_value     : in std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
+    timer_interrupt : in std_logic                                   := '0';
+
     vcp_writeback_en   : in std_logic;
     vcp_writeback_data : in std_logic_vector(REGISTER_SIZE-1 downto 0)
     );
@@ -105,6 +109,9 @@ architecture rtl of sys_call is
   alias rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is instruction(REGISTER_RS1'range);
   alias rd_select  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is instruction(REGISTER_RD'range);
 
+  alias mcause_exc_code     : std_logic_vector is mcause(CSR_MCAUSE_CODE'range);
+  alias bit_sel             : std_logic_vector(REGISTER_SIZE-1 downto 0) is rs1_data;
+
   signal csr_readdata       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal csr_writedata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal last_csr_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -118,7 +125,6 @@ architecture rtl of sys_call is
   signal interrupt_pending             : std_logic;
   signal interrupt_pc_correction_valid : std_logic;
 
-  signal time_counter : unsigned(63 downto 0);
 
   --Uncached/Auxiliary memory region CSR signals.  Will be assigned 0's if unused.
   type csr_vector is array (natural range <>) of std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -191,19 +197,9 @@ begin
   end process;
 
 
-  -- Process for the timer counter.
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      time_counter <= time_counter + 1;
-      if reset = '1' then
-        time_counter <= (others => '0');
-      end if;
-    end if;
-  end process;
 
-  mtime  <= std_logic_vector(time_counter(REGISTER_SIZE-1 downto 0)) when COUNTER_LENGTH /= 0 else (others => '0');
-  mtimeh <= std_logic_vector(time_counter(time_counter'left downto time_counter'left-REGISTER_SIZE+1))
+  mtime  <= std_logic_vector(timer_value(REGISTER_SIZE-1 downto 0)) when COUNTER_LENGTH /= 0 else (others => '0');
+  mtimeh <= std_logic_vector(timer_value(timer_value'left downto timer_value'left-REGISTER_SIZE+1))
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
   misa(misa'left downto misa'left-1) <= "01";
   misa(23)                           <= '0' when VCP_ENABLE = DISABLED else '1';
@@ -265,6 +261,7 @@ begin
           was_illegal <= '0';
         end if;
 
+<<<<<<< HEAD
         if illegal_instruction = '1' or (to_syscall_valid = '1' and (ebreak_select = '1' or ecall_select = '1')) then
           --Handle Illegal Instructions
           mstatus(CSR_MSTATUS_MIE)  <= '0';
@@ -279,6 +276,79 @@ begin
             else
               mcause(CSR_MCAUSE_CODE'range) <=
                 std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, CSR_MCAUSE_CODE'length));
+=======
+        if to_syscall_valid = '1' then
+          if legal_instr /= '1' then
+            -----------------------------------------------------------------------------
+            -- Handle Illegal Instructions
+            -----------------------------------------------------------------------------
+            mstatus(CSR_MSTATUS_MIE)  <= '0';
+            mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
+            mcause(mcause'left)       <= '0';
+            mcause_exc_code           <= CSR_MCAUSE_ILLEGAL;
+            mepc                      <= std_logic_vector(current_pc);
+            was_illegal               <= '1';
+          elsif instruction(MAJOR_OP'range) = SYSTEM_OP then
+            if func3 /= "000" then
+              -----------------------------------------------------------------------------
+              -- CSR Read/Write
+              -----------------------------------------------------------------------------
+              case csr_select is
+                when CSR_MSTATUS =>
+                  -- Only 2 bits are writeable.
+                  mstatus(CSR_MSTATUS_MIE)  <= csr_writedata(CSR_MSTATUS_MIE);
+                  mstatus(CSR_MSTATUS_MPIE) <= csr_writedata(CSR_MSTATUS_MPIE);
+                when CSR_MEPC =>
+                  mepc <= csr_writedata;
+                when CSR_MCAUSE =>
+                  --MCAUSE is WLRL so only legal values need to be supported
+                  mcause(mcause'left) <= csr_writedata(mcause'left);
+                  mcause_exc_code     <= csr_writedata(CSR_MCAUSE_CODE'range);
+                when CSR_MBADADDR =>
+                  mbadaddr <= csr_writedata;
+                when CSR_MEIMASK =>
+                  meimask_full <= csr_writedata;
+                --Note that meipend is read-only
+                when CSR_MSCRATCH =>
+                  mscratch <= csr_writedata;
+                when others => null;
+              end case;
+            elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
+              -----------------------------------------------------------------------------
+              -- Other System Instructions
+              -----------------------------------------------------------------------------
+              if instruction(31 downto 30) = "00" and instruction(27 downto 20) = "00000010" then
+                -- MRET
+                -- We only have one privilege level (M), so treat all [USHM]RET instructions
+                -- as the same.
+                mstatus(CSR_MSTATUS_MIE)  <= mstatus(CSR_MSTATUS_MPIE);
+                mstatus(CSR_MSTATUS_MPIE) <= '0';
+                was_mret                  <= '1';
+              else
+                -- Illegal or ECALL/EBREAK
+                mstatus(CSR_MSTATUS_MIE)  <= '0';
+                mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
+                mcause(mcause'left)       <= '0';
+                case csr_select is
+                  when SYSTEM_ECALL =>
+                    mcause_exc_code <= CSR_MCAUSE_MECALL;
+                  when SYSTEM_EBREAK =>
+                    mcause_exc_code <= CSR_MCAUSE_EBREAK;
+                  when others =>
+                    mcause_exc_code <= CSR_MCAUSE_ILLEGAL;
+                end case;
+                mepc        <= std_logic_vector(current_pc);
+                was_illegal <= '1';
+              end if;
+            else
+              -- Illegal
+              mstatus(CSR_MSTATUS_MIE)  <= '0';
+              mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
+              mcause(mcause'left)       <= '0';
+              mcause_exc_code           <= CSR_MCAUSE_ILLEGAL;
+              mepc                      <= std_logic_vector(current_pc);
+              was_illegal               <= '1';
+>>>>>>> add mtime component for altera
             end if;
           end if;
           mepc        <= std_logic_vector(current_pc);
@@ -326,6 +396,7 @@ begin
 
           -- Latch in mepc the cycle before interrupt_pc_correction_valid goes high.
           -- When interrupt_pc_correction_valid goes high, the next_pc of the instruction fetch will
+<<<<<<< HEAD
           -- be corrected to the exception vector.
           mepc                          <= std_logic_vector(program_counter);
           mstatus(CSR_MSTATUS_MIE)      <= '0';
@@ -333,6 +404,18 @@ begin
           mcause(mcause'left)           <= '1';
           mcause(CSR_MCAUSE_CODE'range) <= std_logic_vector(to_unsigned(CSR_MCAUSE_MEXT, CSR_MCAUSE_CODE'length));
           mcause(mcause'left)           <= '1';
+=======
+          -- be corrected to the interrupt reset vector.
+          mepc                      <= std_logic_vector(program_counter);
+          mstatus(CSR_MSTATUS_MIE)  <= '0';
+          mstatus(CSR_MSTATUS_MPIE) <= '1';
+          mcause(mcause'left)       <= '1';
+          mcause_exc_code           <= CSR_MCAUSE_MEXT;
+          if timer_interrupt = '1' then
+            mcause_exc_code <= CSR_MCAUSE_MTIMER;
+          end if;
+
+>>>>>>> add mtime component for altera
         end if;
 
         if reset = '1' then
@@ -343,7 +426,7 @@ begin
           mstatus(CSR_MSTATUS_MPIE)     <= '0';
           mepc                          <= (others => '0');
           mcause(mcause'left)           <= '0';
-          mcause(CSR_MCAUSE_CODE'range) <= (others => '0');
+          mcause_exc_code               <= (others => '0');
           meimask_full                  <= (others => '0');
         end if;
       end if;
@@ -607,7 +690,7 @@ begin
     meipend <= (others => '0');
     meimask <= (others => '0');
   end generate no_interrupts_gen;
-  interrupt_pending <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 else '0';
+  interrupt_pending <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 or timer_interrupt = '1' else '0';
 
   pause_ifetch <= fence_pending or interrupt_pending;
 

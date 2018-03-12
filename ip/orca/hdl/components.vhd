@@ -341,6 +341,12 @@ package rv_components is
       DLMB_UE           : in  std_logic                              := '0';
 
       ---------------------------------------------------------------------------
+      -- Timer signals
+      ---------------------------------------------------------------------------
+      timer_value     : in std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
+      timer_interrupt : in std_logic                                   := '0';
+
+      ---------------------------------------------------------------------------
       -- Vector Coprocessor Port
       ---------------------------------------------------------------------------
       vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -775,6 +781,11 @@ package rv_components is
       umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
       umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
+
+      -- Timer signals
+      timer_value     : in std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
+      timer_interrupt : in std_logic                                   := '0';
+
       --Vector coprocessor port
       vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_data1            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -925,6 +936,10 @@ package rv_components is
       umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
       pause_ifetch : out std_logic;
+
+      -- Timer signals
+      timer_value     : in std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
+      timer_interrupt : in std_logic                                   := '0';
 
       --Vector coprocessor port
       vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -1171,7 +1186,12 @@ package rv_components is
       amr_last_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
       umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
       umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
+
       pause_ifetch   : out std_logic;
+
+      --timer signals
+      timer_value     : in std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
+      timer_interrupt : in std_logic                                   := '0';
 
       vcp_writeback_en   : in std_logic;
       vcp_writeback_data : in std_logic_vector(REGISTER_SIZE-1 downto 0)

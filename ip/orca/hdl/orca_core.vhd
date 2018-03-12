@@ -78,6 +78,10 @@ entity orca_core is
     umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
+    --timer signals
+    timer_value     : in std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
+    timer_interrupt : in std_logic                                   := '0';
+
     --Vector coprocessor port
     vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_data1            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -306,6 +310,9 @@ begin
       umr_last_addrs => umr_last_addrs,
 
       pause_ifetch => from_execute_pause_ifetch,
+
+      timer_value     => timer_value,
+      timer_interrupt => timer_interrupt,
 
       vcp_data0            => vcp_data0,
       vcp_data1            => vcp_data1,
