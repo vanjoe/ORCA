@@ -15,7 +15,7 @@ proc run_tests { system_name tests } {
         }
     }
 
-    add wave /system_[set system_name]/vectorblox_orca_0/core/D/the_register_file/t3
+    add wave /system_[set system_name]/vectorblox_orca_0/core/D/the_register_file/registers(3)
     foreach f $files {
         file copy -force $f test.hex
         restart -f
@@ -49,7 +49,7 @@ proc run_tests { system_name tests } {
             }
             puts [format "%-${max_length}s = Error  FAIL  Instruction $instruction %s" $f $validString ]
         } else {
-            set returnValue [examine -radix decimal /system_[set system_name]/vectorblox_orca_0/core/D/the_register_file/t3]
+            set returnValue [examine -radix decimal /system_[set system_name]/vectorblox_orca_0/core/D/the_register_file/registers(3)]
             set passfail  ""
             if { $returnValue != 1 } {
                 if { [string match "*dhrystone*" $f ] } {

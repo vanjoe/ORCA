@@ -17,16 +17,17 @@ int orca_test_passfail(int t3){
   }
 }
 void empty_ecall(void* context){}
+#define TEST_RESULT_REGISTER "x3"
 static void test_fail(int testnum){
-	asm volatile ("mv t3, %0\n"
+	asm volatile ("mv " TEST_RESULT_REGISTER ", %0\n"
 	              "fence.i\n"
 	              "ecall\n"
-	              : : "r"(testnum));
+	              : : "r"(testnum):TEST_RESULT_REGISTER);
 }
 static void testpass(){
-asm volatile ("li t3, 1\n"
+asm volatile ("li "TEST_RESULT_REGISTER " , 1\n"
               "fence.i\n"
-              "ecall\n");
+              "ecall\n" :::TEST_RESULT_REGISTER);
 }
 typedef int (*test_func)(void) ;
 extern test_func test_functions[] ;
