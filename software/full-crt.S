@@ -2,6 +2,12 @@
 #define REGBYTES 4
 
 .section .text.init
+//Currently we rely on
+//reset vector being .text.init
+//and interrupt vector being .text.init+4
+	j _start
+	j _isr
+
 
 .globl _start
 _start:
@@ -13,9 +19,6 @@ _start:
 1:
   j 1b
 
-//Currently we rely on having our interrupt_vector set to .text.init +
-//512 (next aligned to 9 bits after the initial startup instructions)
-.align 9
 _isr:
   addi sp, sp, -272
 
