@@ -18,7 +18,7 @@ set -o pipefail
 )
 
 TEST_DIR=${RISCV_TEST_DIR}/isa
-FILES=$(ls ${TEST_DIR}/rv32u[ima]-p-* | grep -v dump | grep -v hex)
+FILES=$(ls ${TEST_DIR}/rv32[um][im]-p-* | grep -v dump | grep -v hex)
 
 PREFIX=riscv32-unknown-elf
 OBJDUMP=$PREFIX-objdump
