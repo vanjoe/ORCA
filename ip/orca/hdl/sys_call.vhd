@@ -17,8 +17,8 @@ entity system_calls is
     ENABLE_EXT_INTERRUPTS : boolean;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
-    VCP_ENABLE : vcp_type;
-    MUL_ENABLE : boolean;
+    VCP_ENABLE         : vcp_type;
+    MUL_ENABLE         : boolean;
     AUX_MEMORY_REGIONS : natural range 0 to 4;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
     AMR0_ADDR_LAST     : std_logic_vector(31 downto 0);
@@ -86,6 +86,7 @@ architecture rtl of system_calls is
   -- CSR signals. These are initialized to zero so that if any bits are never
   -- assigned, they act like constants.
   signal mstatus      : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mscratch     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mepc         : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mcause       : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mbadaddr     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
@@ -163,10 +164,11 @@ begin
   misa(8)                            <= '1';  --I
   misa(12)                           <= '1' when MUL_ENABLE            else '0';
 
-  csr_select                         <= instruction(CSR_ADDRESS'range);
+  csr_select <= instruction(CSR_ADDRESS'range);
   with csr_select select
     csr_readdata <=
     misa            when CSR_MISA,
+    mscratch        when CSR_MSCRATCH,
     mstatus         when CSR_MSTATUS,
     mepc            when CSR_MEPC,
     mcause          when CSR_MCAUSE,
@@ -200,6 +202,8 @@ begin
     csr_writedata <=
     rs1_data
     when CSRRW_FUNC3,
+    std_logic_vector(resize(unsigned(imm),csr_writedata'length))
+    when CSRRWI_FUNC3,
     csr_readdata or bit_sel
     when CSRRS_FUNC3,
     csr_readdata(31 downto 5) & (csr_readdata(CSR_ZIMM'length-1 downto 0) or imm)
@@ -256,6 +260,8 @@ begin
                 when CSR_MEIMASK =>
                   meimask_full <= csr_writedata;
                 --Note that meipend is read-only
+                when CSR_MSCRATCH =>
+                  mscratch <= csr_writedata;
                 when others => null;
               end case;
             elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then

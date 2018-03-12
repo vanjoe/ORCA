@@ -76,6 +76,7 @@ package constants_pkg is
   constant CSR_MSTATUS  : std_logic_vector(11 downto 0)  := x"300";
   constant CSR_MISA     : std_logic_vector(11 downto 0)  := x"301";
   constant CSR_MIE      : std_logic_vector(11 downto 0)  := x"304";
+  constant CSR_MSCRATCH : std_logic_vector(11 downto 0)  := x"340";
   constant CSR_MEPC     : std_logic_vector(11 downto 0)  := x"341";
   constant CSR_MCAUSE   : std_logic_vector(11 downto 0)  := x"342";
   constant CSR_MBADADDR : std_logic_vector(11 downto 0)  := x"304";
@@ -124,6 +125,7 @@ package constants_pkg is
   constant CSR_MCAUSE_MECALL  : integer := 11;
 
   constant CSRRW_FUNC3  : std_logic_vector(2 downto 0) := "001";
+  constant CSRRWI_FUNC3 : std_logic_vector(2 downto 0) := "101";
   constant CSRRS_FUNC3  : std_logic_vector(2 downto 0) := "010";
   constant CSRRSI_FUNC3 : std_logic_vector(2 downto 0) := "110";
   constant CSRRC_FUNC3  : std_logic_vector(2 downto 0) := "011";
@@ -214,4 +216,4 @@ package body constants_pkg is
     return 32;
   end function INSTRUCTION_SIZE;
 
-end package body constants_pkg;  
+end package body constants_pkg;
