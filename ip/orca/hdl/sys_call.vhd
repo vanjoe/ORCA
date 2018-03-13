@@ -645,8 +645,9 @@ begin
               (opcode7 = BRANCH_OP and func3 /= "010" and func3 /= "011") or
               (opcode7 = LOAD_OP and func3 /= "011" and func3 /= "110" and func3 /= "111") or
               (opcode7 = STORE_OP and (func3 = "000" or func3 = "001" or func3 = "010")) or
-              opcode7 = ALUI_OP or      -- Does not catch illegal
-                                        -- shift amounts
+              (opcode7 = ALUI_OP and not (  --catch illegal shift amounts
+                (func3 = "001" and func7 /= "0000000") or
+                (func3 = "101" and func7 /= "0000000" and func7 /= "0100000" ))) or
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
               (opcode7 = SYSTEM_OP) or  --Illegal sysops checked in exception handling
               (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal
