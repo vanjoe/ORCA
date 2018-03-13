@@ -2,8 +2,6 @@
 #define MEIMASK 0x7C0
 #define MEIPEND 0x7C0
 
-#define MSTATUS_MPIE (1<<7)
-#define MSTATUS_MIE (1<<3)
 #include "bsp.h"
 #include <stdlib.h>
 #include "orca_exceptions.h"
