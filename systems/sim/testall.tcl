@@ -20,7 +20,13 @@ proc run_tests { system_name tests } {
         file copy -force $f test.hex
         restart -f
         onbreak { resume }
-        when " system_[set system_name]/vectorblox_orca_0/core/X/to_execute_instruction(31:0) == x\"00000073\" && system_[set system_name]/vectorblox_orca_0/core/X/to_execute_valid == \"1\" " { stop }
+
+        when "system_[set system_name]/vectorblox_orca_0/core/X/to_execute_instruction(31:0) == x\"00000073\" && system_[set system_name]/vectorblox_orca_0/core/X/to_execute_valid == \"1\" " {
+				#wait until the first cycle after the ecall to stop the simulation
+				when   "[set entity]/vectorblox_orca_0/core/X/to_execute_valid = \"0\" " {
+					 when   "[set entity]/vectorblox_orca_0/core/X/to_execute_valid = \"1\" " {stop}
+				}
+		  }
 
 		  if {[string match "*vbx_64*" $f ] || [string match "*interrupt*" $f ] } {
 				run 1ps
@@ -40,26 +46,21 @@ proc run_tests { system_name tests } {
             #some of the unit tests may have to run for a much longer time
             run 200 us
         }
+		  nowhen *
         set instruction [examine -radix hex system_[set system_name]/vectorblox_orca_0/core/X/to_execute_instruction(31:0)]
         set valid       [examine system_[set system_name]/vectorblox_orca_0/core/X/to_execute_valid]
-        if { ($instruction != "00000073") || ($valid != "1") } {
-            set validString "valid"
-            if { $valid != "1" } {
-                set validString "invalid"
-            }
-            puts [format "%-${max_length}s = Error  FAIL  Instruction $instruction %s" $f $validString ]
-        } else {
-            set returnValue [examine -radix decimal /system_[set system_name]/vectorblox_orca_0/core/D/the_register_file/registers(3)]
-            set passfail  ""
-            if { $returnValue != 1 } {
-                if { [string match "*dhrystone*" $f ] } {
-                    set passfail "MIPS@100MHz"
-                } else {
-                    set passfail "FAIL"
-                }
-            }
-            puts [format "%-${max_length}s = %-6d %s" $f $returnValue $passfail ]
-        }
+
+		  set returnValue [examine -radix decimal /system_[set system_name]/vectorblox_orca_0/core/D/the_register_file/registers(3)]
+		  set passfail  ""
+		  if { $returnValue != 1 } {
+				if { [string match "*dhrystone*" $f ] } {
+					 set passfail "MIPS@100MHz"
+				} else {
+					 set passfail "FAIL"
+				}
+		  }
+		  puts [format "%-${max_length}s = %-6d %s" $f $returnValue $passfail ]
+
     }
 
     exit -f;
