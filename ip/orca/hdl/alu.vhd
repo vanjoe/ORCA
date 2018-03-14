@@ -178,13 +178,21 @@ begin
             addsub_logic_select <= '1';
         end case;
       when others =>                    --ALU_OP or from VCP
-        if MULTIPLY_ENABLE and func7 = MUL_FUNC7 and instruction(14) = '0' then
+        if (MULTIPLY_ENABLE and func3(2) = '0' and
+            func7(5) = MUL_FUNC7(5) and func7(0) = MUL_FUNC7(0) and
+            (vcp_select = '1' or (func7(6) = MUL_FUNC7(6) and func7(4 downto 1) = MUL_FUNC7(4 downto 1)))) then
           mul_select <= '1';
-        elsif ENABLE_EXCEPTIONS and func7 = MUL_FUNC7 and instruction(14) = '0' then
+        elsif (ENABLE_EXCEPTIONS and func3(2) = '0' and
+               func7(5) = MUL_FUNC7(5) and func7(0) = MUL_FUNC7(0) and
+               (vcp_select = '1' or (func7(6) = MUL_FUNC7(6) and func7(4 downto 1) = MUL_FUNC7(4 downto 1)))) then
           from_alu_illegal <= '1';
-        elsif DIVIDE_ENABLE and func7 = MUL_FUNC7 and instruction(14) = '1' then
+        elsif (DIVIDE_ENABLE and func3(2) = '1' and
+               func7(5) = MUL_FUNC7(5) and func7(0) = MUL_FUNC7(0) and
+               (vcp_select = '1' or (func7(6) = MUL_FUNC7(6) and func7(4 downto 1) = MUL_FUNC7(4 downto 1)))) then
           div_select <= '1';
-        elsif ENABLE_EXCEPTIONS and func7 = MUL_FUNC7 and instruction(14) = '1' then
+        elsif (ENABLE_EXCEPTIONS and func3(2) = '1' and
+               func7(5) = MUL_FUNC7(5) and func7(0) = MUL_FUNC7(0) and
+               (vcp_select = '1' or (func7(6) = MUL_FUNC7(6) and func7(4 downto 1) = MUL_FUNC7(4 downto 1)))) then
           from_alu_illegal <= '1';
         else
           case func3 is
@@ -261,7 +269,7 @@ begin
 
 
   shift_amt <= unsigned(data2(log2(REGISTER_SIZE)-1 downto 0)) when not SHIFTER_USE_MULTIPLIER else
-               unsigned(data2(log2(REGISTER_SIZE)-1 downto 0)) when instruction(14) = '0'else
+               unsigned(data2(log2(REGISTER_SIZE)-1 downto 0)) when func3(2) = '0'else
                unsigned(-signed(data2(log2(REGISTER_SIZE)-1 downto 0)));
   shift_value <= signed((instruction(30) and rs1_data(rs1_data'left)) & rs1_data);
 
