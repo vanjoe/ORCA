@@ -18,9 +18,9 @@ entity vcp_handler is
     clk   : in std_logic;
     reset : in std_logic;
 
-    instruction : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
-    valid_instr : in std_logic;
-    vcp_ready   : in std_logic;
+    instruction  : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+    to_vcp_valid : in std_logic;
+    vcp_select   : in std_logic;
 
     rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -30,9 +30,9 @@ entity vcp_handler is
     vcp_data1 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_data2 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-    vcp_instruction   : out std_logic_vector(40 downto 0);
-    vcp_valid_instr   : out std_logic;
-    vcp_was_executing : out std_logic
+    vcp_instruction      : out std_logic_vector(40 downto 0);
+    vcp_valid_instr      : out std_logic;
+    vcp_writeback_select : out std_logic
     );
 end entity vcp_handler;
 
@@ -72,17 +72,17 @@ begin  -- architecture rtl
   vcp_data2 <= rs3_data;
 
   vcp_enabled_gen : if VCP_ENABLE /= DISABLED generate
-    vcp_valid_instr <= valid_instr;
+    vcp_valid_instr <= to_vcp_valid;
     process (clk) is
     begin
       if rising_edge(clk) then
-        vcp_was_executing <= not vcp_ready;
+        vcp_writeback_select <= vcp_select;
       end if;
     end process;
   end generate vcp_enabled_gen;
   vcp_disabled_gen : if VCP_ENABLE = DISABLED generate
-    vcp_valid_instr   <= '0';
-    vcp_was_executing <= '0';
+    vcp_valid_instr      <= '0';
+    vcp_writeback_select <= '0';
   end generate vcp_disabled_gen;
 
 end architecture rtl;

@@ -21,16 +21,15 @@ entity arithmetic_unit is
     clk : in std_logic;
 
     to_alu_valid     : in  std_logic;
+    to_alu_rs1_data  : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_alu_rs2_data  : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_alu_ready   : out std_logic;
     from_alu_illegal : out std_logic;
 
     vcp_source_valid : in std_logic;
     vcp_select       : in std_logic;
-    vcp_alu_used     : in std_logic;
 
     from_execute_ready : in std_logic;
-    rs1_data           : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data           : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     instruction        : in std_logic_vector(31 downto 0);
     sign_extension     : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
     current_pc         : in unsigned(REGISTER_SIZE-1 downto 0);
@@ -262,16 +261,16 @@ begin
   immediate_value <= signed(sign_extension(REGISTER_SIZE-OP_IMM_IMMEDIATE_SIZE-1 downto 0) &
                             instruction(31 downto 20));
   data1 <= (others => '0') when source_valid = '0' and POWER_OPTIMIZED else
-           rs1_data;
+           to_alu_rs1_data;
   data2 <= (others => '0') when source_valid = '0' and POWER_OPTIMIZED else
-           rs2_data when not_immediate = '1' else std_logic_vector(immediate_value);
+           to_alu_rs2_data when not_immediate = '1' else std_logic_vector(immediate_value);
 
 
 
   shift_amt <= unsigned(data2(log2(REGISTER_SIZE)-1 downto 0)) when not SHIFTER_USE_MULTIPLIER else
                unsigned(data2(log2(REGISTER_SIZE)-1 downto 0)) when func3(2) = '0'else
                unsigned(-signed(data2(log2(REGISTER_SIZE)-1 downto 0)));
-  shift_value <= signed((instruction(30) and rs1_data(rs1_data'left)) & rs1_data);
+  shift_value <= signed((instruction(30) and to_alu_rs1_data(to_alu_rs1_data'left)) & to_alu_rs1_data);
 
 
 
@@ -293,10 +292,10 @@ begin
 
   m_op1_mask <= '0' when instruction(13 downto 12) = "11" else '1';
   m_op2_mask <= not instruction(13);
-  m_op1      <= signed((m_op1_mask and rs1_data(data1'left)) & data1);
-  m_op2      <= signed((m_op2_mask and rs2_data(data2'left)) & data2);
+  m_op1      <= signed((m_op1_mask and to_alu_rs1_data(data1'left)) & data1);
+  m_op2      <= signed((m_op2_mask and to_alu_rs2_data(data2'left)) & data2);
 
-  source_valid <= (vcp_source_valid and vcp_alu_used) when vcp_select = '1' else
+  source_valid <= vcp_source_valid when vcp_select = '1' else
                   to_alu_valid;
 
   from_shift_ready <= from_shift_valid or (not shift_select);
@@ -513,8 +512,8 @@ begin
         clk            => clk,
         div_enable     => div_enable,
         div_unsigned   => instruction(12),
-        rs1_data       => rs1_data,
-        rs2_data       => rs2_data,
+        rs1_data       => to_alu_rs1_data,
+        rs2_data       => to_alu_rs2_data,
         quotient       => quotient,
         remainder      => remainder,
         from_div_valid => from_div_valid

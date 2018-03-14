@@ -109,6 +109,23 @@
       </spirit:wire>
     </spirit:port>
     <spirit:port>
+      <spirit:logicalName>ILLEGAL</spirit:logicalName>
+      <spirit:wire>
+        <spirit:qualifier>
+          <spirit:isData>true</spirit:isData>
+        </spirit:qualifier>
+        <spirit:onMaster>
+          <spirit:presence>required</spirit:presence>
+          <spirit:width>1</spirit:width>
+          <spirit:direction>in</spirit:direction>
+        </spirit:onMaster>
+        <spirit:onSlave>
+          <spirit:presence>required</spirit:presence>
+          <spirit:width>1</spirit:width>
+        </spirit:onSlave>
+      </spirit:wire>
+    </spirit:port>
+    <spirit:port>
       <spirit:logicalName>WRITEBACK_DATA</spirit:logicalName>
       <spirit:wire>
         <spirit:qualifier>
@@ -177,23 +194,6 @@
       </spirit:wire>
     </spirit:port>
     <spirit:port>
-      <spirit:logicalName>ALU_USED</spirit:logicalName>
-      <spirit:wire>
-        <spirit:qualifier>
-          <spirit:isData>true</spirit:isData>
-        </spirit:qualifier>
-        <spirit:onMaster>
-          <spirit:presence>required</spirit:presence>
-          <spirit:width>1</spirit:width>
-          <spirit:direction>in</spirit:direction>
-        </spirit:onMaster>
-        <spirit:onSlave>
-          <spirit:presence>required</spirit:presence>
-          <spirit:width>1</spirit:width>
-        </spirit:onSlave>
-      </spirit:wire>
-    </spirit:port>
-    <spirit:port>
       <spirit:logicalName>ALU_SOUCE_VALID</spirit:logicalName>
       <spirit:wire>
         <spirit:qualifier>
@@ -224,7 +224,7 @@
         <spirit:onSlave>
           <spirit:presence>required</spirit:presence>
           <spirit:width>32</spirit:width>
-			 <spirit:direction>in</spirit:direction>
+          <spirit:direction>in</spirit:direction>
         </spirit:onSlave>
       </spirit:wire>
     </spirit:port>
@@ -242,7 +242,7 @@
         <spirit:onSlave>
           <spirit:presence>required</spirit:presence>
           <spirit:width>1</spirit:width>
-			 <spirit:direction>in</spirit:direction>
+          <spirit:direction>in</spirit:direction>
         </spirit:onSlave>
       </spirit:wire>
     </spirit:port>

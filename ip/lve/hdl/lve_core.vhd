@@ -34,6 +34,7 @@ entity lve_core is
     rs3_data : in std_logic_vector(LVE_WIDTH-1 downto 0);
 
     lve_ready            : out    std_logic;
+    lve_illegal          : out    std_logic;
     lve_writeback_data   : out    std_logic_vector(31 downto 0);
     lve_writeback_en     : out    std_logic;
     lve_alu_data1        : buffer std_logic_vector(LVE_WIDTH-1 downto 0);
@@ -277,6 +278,11 @@ begin
 
   executing     <= bool_to_sl(valid_lve_instr = '1' and opcode5 /= "11111") and (first_elem or not done_write) and not zero_length_vector;
   lve_ready     <= not executing and not get_state;
+
+  --TODO: decode unimplemented CI's, divide if no stall supported, etc. to
+  --illegal opcodes.  Note that whenever lve_illegal is asserted lve_ready must
+  --also be asserted.
+  lve_illegal   <= '0';
 
 
   wr_data_ready <= (mov_result_valid or lve_alu_result_valid or ci_valid_out) and not done_write;

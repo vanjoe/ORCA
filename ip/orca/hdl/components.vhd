@@ -349,11 +349,11 @@ package rv_components is
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
       vcp_ready            : in  std_logic                                  := '1';
+      vcp_illegal          : in  std_logic                                  := '0';
       vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
       vcp_writeback_en     : in  std_logic                                  := '0';
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-      vcp_alu_used         : in  std_logic                                  := '0';
       vcp_alu_source_valid : in  std_logic                                  := '0';
       vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_result_valid : out std_logic
@@ -782,11 +782,11 @@ package rv_components is
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
       vcp_ready            : in  std_logic;
+      vcp_illegal          : in  std_logic;
       vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_writeback_en     : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      vcp_alu_used         : in  std_logic;
       vcp_alu_source_valid : in  std_logic;
       vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_result_valid : out std_logic
@@ -933,11 +933,11 @@ package rv_components is
       vcp_instruction      : out std_logic_vector(40 downto 0);
       vcp_valid_instr      : out std_logic;
       vcp_ready            : in  std_logic;
+      vcp_illegal          : in  std_logic;
       vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_writeback_en     : in  std_logic;
       vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-      vcp_alu_used         : in  std_logic;
       vcp_alu_source_valid : in  std_logic;
       vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_alu_result_valid : out std_logic
@@ -998,16 +998,15 @@ package rv_components is
       clk : in std_logic;
 
       to_alu_valid     : in  std_logic;
+      to_alu_rs1_data  : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+      to_alu_rs2_data  : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       from_alu_ready   : out std_logic;
       from_alu_illegal : out std_logic;
 
       vcp_source_valid : in std_logic;
       vcp_select       : in std_logic;
-      vcp_alu_used     : in std_logic;
 
       from_execute_ready : in std_logic;
-      rs1_data           : in std_logic_vector(REGISTER_SIZE-1 downto 0);
-      rs2_data           : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       instruction        : in std_logic_vector(31 downto 0);
       sign_extension     : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
       current_pc         : in unsigned(REGISTER_SIZE-1 downto 0);
@@ -1626,9 +1625,9 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
-      instruction : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
-      valid_instr : in std_logic;
-      vcp_ready   : in std_logic;
+      instruction  : in std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
+      to_vcp_valid : in std_logic;
+      vcp_select   : in std_logic;
 
       rs1_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -1638,9 +1637,9 @@ package rv_components is
       vcp_data1 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       vcp_data2 : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-      vcp_instruction   : out std_logic_vector(40 downto 0);
-      vcp_valid_instr   : out std_logic;
-      vcp_was_executing : out std_logic
+      vcp_instruction      : out std_logic_vector(40 downto 0);
+      vcp_valid_instr      : out std_logic;
+      vcp_writeback_select : out std_logic
       );
   end component vcp_handler;
 

@@ -110,11 +110,11 @@ entity execute is
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
     vcp_ready            : in  std_logic;
+    vcp_illegal          : in  std_logic;
     vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_writeback_en     : in  std_logic;
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
-    vcp_alu_used         : in  std_logic;
     vcp_alu_source_valid : in  std_logic;
     vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_result_valid : out std_logic
@@ -122,6 +122,8 @@ entity execute is
 end entity execute;
 
 architecture behavioural of execute is
+  constant INSTRUCTION32 : std_logic_vector(31 downto 0) := (others => '-');
+
   alias opcode    : std_logic_vector(6 downto 0) is to_execute_instruction(INSTR_OPCODE'range);
   alias rd_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
     to_execute_instruction(REGISTER_RD'range);
@@ -178,10 +180,12 @@ architecture behavioural of execute is
   signal from_syscall_data    : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal vcp_select           : std_logic;
   signal to_vcp_valid         : std_logic;
-  signal from_vcp_illegal     : std_logic;
 
   signal from_opcode_illegal : std_logic;
   signal illegal_instruction : std_logic;
+
+  signal to_alu_rs1_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal to_alu_rs2_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
   signal branch_to_pc_correction_valid : std_logic;
   signal branch_to_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
@@ -195,12 +199,9 @@ architecture behavioural of execute is
   signal syscall_to_pc_correction_valid : std_logic;
   signal syscall_to_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
 
-
   signal from_writeback_ready : std_logic;
   signal to_rf_mux            : std_logic_vector(1 downto 0);
-
-  signal vcp_was_executing : std_logic;
-  constant instruction32   : std_logic_vector(31 downto 0) := (others => '0');
+  signal vcp_writeback_select : std_logic;
 begin
   --Decode instruction; could get pushed back to decode stage
   process (opcode) is
@@ -282,10 +283,7 @@ begin
                                                                         (branch_select and from_branch_illegal) or
                                                                         (lsu_select and from_lsu_illegal) or
                                                                         (syscall_select and from_syscall_illegal) or
-                                                                        (vcp_select and from_vcp_illegal));
-
-  --TODO:
-  from_vcp_illegal <= '0';
+                                                                        (vcp_select and vcp_illegal));
 
 
   -----------------------------------------------------------------------------
@@ -298,11 +296,9 @@ begin
   -- propogate if the next instruction uses them.
   --
   -----------------------------------------------------------------------------
-  rs1_data <= vcp_alu_data1 when VCP_ENABLE /= DISABLED and vcp_alu_source_valid = '1' else
-              from_alu_data when rs1_mux = ALU_FWD else
+  rs1_data <= from_alu_data when rs1_mux = ALU_FWD else
               to_execute_rs1_data;
-  rs2_data <= vcp_alu_data2 when VCP_ENABLE /= DISABLED and vcp_alu_source_valid = '1' else
-              from_alu_data when rs2_mux = ALU_FWD else
+  rs2_data <= from_alu_data when rs2_mux = ALU_FWD else
               to_execute_rs2_data;
   rs3_data <= from_alu_data when rs3_mux = ALU_FWD else
               to_execute_rs3_data;
@@ -339,7 +335,10 @@ begin
     end if;
   end process;
 
-
+  to_alu_rs1_data <= vcp_alu_data1 when vcp_select = '1' else
+                     rs1_data;
+  to_alu_rs2_data <= vcp_alu_data2 when vcp_select = '1' else
+                     rs2_data;
   alu : arithmetic_unit
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
@@ -355,17 +354,16 @@ begin
       clk => clk,
 
       to_alu_valid     => to_alu_valid,
+      to_alu_rs1_data  => to_alu_rs1_data,
+      to_alu_rs2_data  => to_alu_rs2_data,
       from_alu_ready   => from_alu_ready,
       from_alu_illegal => from_alu_illegal,
 
       vcp_source_valid => vcp_alu_source_valid,
       vcp_select       => vcp_select,
-      vcp_alu_used     => vcp_alu_used,
 
       from_execute_ready => from_execute_ready,
-      rs1_data           => rs1_data,
-      rs2_data           => rs2_data,
-      instruction        => to_execute_instruction(instruction32'range),
+      instruction        => to_execute_instruction(INSTRUCTION32'range),
       sign_extension     => to_execute_sign_extension,
       current_pc         => to_execute_program_counter,
 
@@ -391,7 +389,7 @@ begin
       rs2_data       => rs2_data,
       current_pc     => to_execute_program_counter,
       predicted_pc   => to_execute_predicted_pc,
-      instruction    => to_execute_instruction(instruction32'range),
+      instruction    => to_execute_instruction(INSTRUCTION32'range),
       sign_extension => to_execute_sign_extension,
 
       from_branch_valid => from_branch_valid,
@@ -421,7 +419,7 @@ begin
 
       rs1_data       => rs1_data,
       rs2_data       => rs2_data,
-      instruction    => to_execute_instruction(instruction32'range),
+      instruction    => to_execute_instruction(INSTRUCTION32'range),
       sign_extension => to_execute_sign_extension,
 
       load_in_progress         => load_in_progress,
@@ -479,7 +477,7 @@ begin
       to_syscall_valid     => to_syscall_valid,
       from_syscall_illegal => from_syscall_illegal,
       rs1_data             => rs1_data,
-      instruction          => to_execute_instruction(instruction32'range),
+      instruction          => to_execute_instruction(INSTRUCTION32'range),
       current_pc           => to_execute_program_counter,
       from_syscall_ready   => from_syscall_ready,
 
@@ -520,9 +518,9 @@ begin
       clk   => clk,
       reset => reset,
 
-      instruction => to_execute_instruction,
-      valid_instr => to_vcp_valid,
-      vcp_ready   => vcp_ready,
+      instruction  => to_execute_instruction,
+      to_vcp_valid => to_vcp_valid,
+      vcp_select   => vcp_select,
 
       rs1_data => rs1_data,
       rs2_data => rs2_data,
@@ -532,9 +530,9 @@ begin
       vcp_data1 => vcp_data1,
       vcp_data2 => vcp_data2,
 
-      vcp_instruction   => vcp_instruction,
-      vcp_valid_instr   => vcp_valid_instr,
-      vcp_was_executing => vcp_was_executing
+      vcp_instruction      => vcp_instruction,
+      vcp_valid_instr      => vcp_valid_instr,
+      vcp_writeback_select => vcp_writeback_select
       );
   vcp_alu_result_valid <= from_alu_valid;
   vcp_alu_result       <= from_alu_data;
@@ -598,7 +596,8 @@ begin
   to_rf_valid <= to_rf_select_writeable and (from_syscall_valid or
                                              from_lsu_valid or
                                              from_branch_valid or
-                                             (from_alu_valid and (not vcp_was_executing)));
+                                             (from_alu_valid and (not vcp_writeback_select)));
+
 
 
   -------------------------------------------------------------------------------
