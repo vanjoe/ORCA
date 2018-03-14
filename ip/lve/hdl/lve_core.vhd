@@ -48,7 +48,6 @@ architecture rtl of lve_core is
 
   signal valid_lve_instr : std_logic;
   --parts of the instruction
-  alias instr_major_op   : std_logic_vector is instruction(MAJOR_OP'range);
   alias scalar_enable    : std_logic is instruction(26);
   alias enum_enable      : std_logic is instruction(27);
   alias acc_enable       : std_logic is instruction(28);

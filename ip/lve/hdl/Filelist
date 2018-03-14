@@ -1,0 +1,8 @@
+# Files in dependency order for Modelsim
+../../orca/hdl/utils.vhd
+../../orca/hdl/constants_pkg.vhd
+lve_components.vhd
+lve_core.vhd
+lve.vhd
+4port_mem.vhd
+lve_ci.vhd

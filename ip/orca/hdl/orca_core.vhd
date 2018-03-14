@@ -323,6 +323,6 @@ begin
       vcp_alu_result_valid => vcp_alu_result_valid
       );
 
-  core_idle              <= ifetch_idle and decode_idle and execute_idle;
+  core_idle <= ifetch_idle and decode_idle and execute_idle;
 
 end architecture rtl;

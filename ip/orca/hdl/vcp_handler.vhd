@@ -40,14 +40,12 @@ architecture rtl of vcp_handler is
   alias opcode : std_logic_vector(INSTR_OPCODE'length-1 downto 0) is instruction(INSTR_OPCODE'range);
 
   signal dest_size         : std_logic_vector(1 downto 0);
-  signal vcp32_instruction : boolean;
   signal vcp64_instruction : boolean;
 begin  -- architecture rtl
 
   --extended bits
   dest_size         <= instruction(31) & instruction(29);
-  vcp32_instruction <= opcode = VCP32_OP;
-  vcp64_instruction <= opcode = VCP64_OP;
+  vcp64_instruction <= opcode(2) = '1';
 
   full_vcp_gen : if VCP_ENABLE = SIXTY_FOUR_BIT generate
     vcp_instruction(40)           <= instruction(40)           when vcp64_instruction else '0';  --extra instruction
@@ -74,7 +72,7 @@ begin  -- architecture rtl
   vcp_data2 <= rs3_data;
 
   vcp_enabled_gen : if VCP_ENABLE /= DISABLED generate
-    vcp_valid_instr <= valid_instr when vcp32_instruction or vcp64_instruction else '0';
+    vcp_valid_instr <= valid_instr;
     process (clk) is
     begin
       if rising_edge(clk) then

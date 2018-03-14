@@ -8,7 +8,8 @@ use work.utils.all;
 entity load_store_unit is
   generic (
     REGISTER_SIZE       : positive range 32 to 32;
-    SIGN_EXTENSION_SIZE : positive
+    SIGN_EXTENSION_SIZE : positive;
+    ENABLE_EXCEPTIONS   : boolean
     );
   port (
     clk   : in std_logic;
@@ -16,16 +17,20 @@ entity load_store_unit is
 
     lsu_idle : out std_logic;
 
-    valid                    : in     std_logic;
-    rs1_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    rs2_data                 : in     std_logic_vector(REGISTER_SIZE-1 downto 0);
-    instruction              : in     std_logic_vector(31 downto 0);
-    sign_extension           : in     std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
-    writeback_stall_from_lsu : buffer std_logic;
-    lsu_ready                : out    std_logic;
-    data_out                 : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
-    data_enable              : out    std_logic;
+    to_lsu_valid     : in  std_logic;
+    from_lsu_illegal : out std_logic;
+
+    rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    instruction    : in std_logic_vector(31 downto 0);
+    sign_extension : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
+
     load_in_progress         : buffer std_logic;
+    writeback_stall_from_lsu : buffer std_logic;
+
+    lsu_ready      : out std_logic;
+    from_lsu_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    from_lsu_valid : out std_logic;
 
     --ORCA-internal memory-mapped master
     oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -40,11 +45,14 @@ entity load_store_unit is
 end entity load_store_unit;
 
 architecture rtl of load_store_unit is
+  signal from_instruction_illegal : std_logic;
+  signal from_alignment_illegal   : std_logic;
+
   alias base_address : std_logic_vector(REGISTER_SIZE-1 downto 0) is rs1_data;
   alias source_data  : std_logic_vector(REGISTER_SIZE-1 downto 0) is rs2_data;
 
-  alias func3  : std_logic_vector(2 downto 0) is instruction(INSTR_FUNC3'range);
   alias opcode : std_logic_vector(6 downto 0) is instruction(INSTR_OPCODE'range);
+  alias func3  : std_logic_vector(2 downto 0) is instruction(INSTR_FUNC3'range);
   signal imm   : std_logic_vector(11 downto 0);
 
   signal address_unaligned : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -62,14 +70,58 @@ architecture rtl of load_store_unit is
   signal load_byte2 : std_logic_vector(7 downto 0);
   signal load_byte3 : std_logic_vector(7 downto 0);
 
-  signal write_instr : std_logic;
-  signal read_instr  : std_logic;
+  signal store_select : std_logic;
+  signal store_valid  : std_logic;
+  signal load_select  : std_logic;
+  signal load_valid   : std_logic;
 begin
-  write_instr <= '1' when opcode = STORE_OP else '0';
-  read_instr  <= '1' when opcode = LOAD_OP  else '0';
+  --Decode instruction to select submodule.  All paths must decode to exactly
+  --one submodule.
+  --ASSUMES only LOAD_OP | STORE_OP for opcode.
+  process (opcode, func3) is
+  begin
+    store_select             <= '0';
+    load_select              <= '0';
+    from_instruction_illegal <= '0';
 
-  oimm_requestvalid <= (read_instr or write_instr) and valid;
-  oimm_readnotwrite <= read_instr;
+    if opcode(5) = LOAD_OP(5) then
+      if ENABLE_EXCEPTIONS then
+        case func3 is
+          when LS_DUBL_FUNC3 | LS_UWORD_FUNC3 | LS_UDUBL_FUNC3 =>
+            from_instruction_illegal <= '1';
+          when others =>
+            load_select <= '1';
+        end case;
+      else
+        load_select <= '1';
+      end if;
+    else
+      if ENABLE_EXCEPTIONS then
+        case func3 is
+          when LS_BYTE_FUNC3 | LS_HALF_FUNC3 | LS_WORD_FUNC3 =>
+            store_select <= '1';
+          when others =>
+            from_instruction_illegal <= '1';
+        end case;
+      else
+        store_select <= '1';
+      end if;
+    end if;
+  end process;
+
+  --Check for unaligned accesses.  Disabled until properly merged exported to sys_call
+  from_alignment_illegal <= '0' when (ENABLE_EXCEPTIONS and
+                                      ((func3(1) = '1' and address_unaligned(1 downto 0) /= "00") or
+                                       (func3(0) = '1' and address_unaligned(0) /= '0')))
+                            else '0';
+  
+  from_lsu_illegal <= from_instruction_illegal;
+
+  store_valid <= store_select and (not from_alignment_illegal);
+  load_valid  <= load_select and (not from_alignment_illegal);
+
+  oimm_requestvalid <= (load_valid or store_valid) and to_lsu_valid;
+  oimm_readnotwrite <= '1' when opcode(5) = LOAD_OP(5) else '0';
 
   imm <= instruction(31 downto 25) & instruction(11 downto 7) when instruction(5) = '1'
          else instruction(31 downto 20);
@@ -105,7 +157,7 @@ begin
   --Stall if sending a request and slave is not ready or if awaiting readdata
   --and it hasn't arrived yet
   writeback_stall_from_lsu <= load_in_progress and (not oimm_readdatavalid);
-  lsu_ready                <= ((not read_instr) and (not write_instr)) or (not oimm_waitrequest);
+  lsu_ready                <= ((not load_valid) and (not store_valid)) or (not oimm_waitrequest);
   lsu_idle                 <= not load_in_progress;  --idle is state-only
 
   process(clk)
@@ -138,12 +190,12 @@ begin
 
   --Zero/sign extend the read data
   with load_func3 select
-    data_out <=
+    from_lsu_data <=
     std_logic_vector(resize(signed(load_byte0), REGISTER_SIZE))                when LS_BYTE_FUNC3,
     std_logic_vector(resize(signed(load_byte1 & load_byte0), REGISTER_SIZE))   when LS_HALF_FUNC3,
     std_logic_vector(resize(unsigned(load_byte0), REGISTER_SIZE))              when LS_UBYTE_FUNC3,
     std_logic_vector(resize(unsigned(load_byte1 & load_byte0), REGISTER_SIZE)) when LS_UHALF_FUNC3,
     load_byte3 & load_byte2 & load_byte1 & load_byte0                          when others;
 
-  data_enable <= oimm_readdatavalid;
+  from_lsu_valid <= oimm_readdatavalid;
 end architecture;

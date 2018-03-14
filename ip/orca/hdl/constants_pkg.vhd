@@ -11,42 +11,42 @@ package constants_pkg is
   --REGISTER NAMES
   constant REGISTER_NAME_SIZE : positive := 5;
 
-  constant REGISTER_ZERO : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(0, REGISTER_NAME_SIZE);
-  constant REGISTER_RA   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(1, REGISTER_NAME_SIZE);
-  constant REGISTER_SP   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(2, REGISTER_NAME_SIZE);
-  constant REGISTER_GP   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(3, REGISTER_NAME_SIZE);
-  constant REGISTER_TP   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(4, REGISTER_NAME_SIZE);
-  constant REGISTER_T0   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(5, REGISTER_NAME_SIZE);
-  constant REGISTER_T1   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(6, REGISTER_NAME_SIZE);
-  constant REGISTER_T2   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(7, REGISTER_NAME_SIZE);
-  constant REGISTER_S0   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(8, REGISTER_NAME_SIZE);
-  constant REGISTER_S1   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(9, REGISTER_NAME_SIZE);
-  constant REGISTER_A0   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(10, REGISTER_NAME_SIZE);
-  constant REGISTER_A1   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(11, REGISTER_NAME_SIZE);
-  constant REGISTER_A2   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(12, REGISTER_NAME_SIZE);
-  constant REGISTER_A3   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(13, REGISTER_NAME_SIZE);
-  constant REGISTER_A4   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(14, REGISTER_NAME_SIZE);
-  constant REGISTER_A5   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(15, REGISTER_NAME_SIZE);
-  constant REGISTER_A6   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(16, REGISTER_NAME_SIZE);
-  constant REGISTER_A7   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(17, REGISTER_NAME_SIZE);
-  constant REGISTER_S2   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(18, REGISTER_NAME_SIZE);
-  constant REGISTER_S3   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(19, REGISTER_NAME_SIZE);
-  constant REGISTER_S4   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(20, REGISTER_NAME_SIZE);
-  constant REGISTER_S5   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(21, REGISTER_NAME_SIZE);
-  constant REGISTER_S6   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(22, REGISTER_NAME_SIZE);
-  constant REGISTER_S7   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(23, REGISTER_NAME_SIZE);
-  constant REGISTER_S8   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(24, REGISTER_NAME_SIZE);
-  constant REGISTER_S9   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(25, REGISTER_NAME_SIZE);
-  constant REGISTER_S10  : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(26, REGISTER_NAME_SIZE);
-  constant REGISTER_S11  : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(27, REGISTER_NAME_SIZE);
-  constant REGISTER_T3   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(28, REGISTER_NAME_SIZE);
-  constant REGISTER_T4   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(29, REGISTER_NAME_SIZE);
-  constant REGISTER_T5   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(30, REGISTER_NAME_SIZE);
-  constant REGISTER_T6   : unsigned(REGISTER_NAME_SIZE-1 downto 0) := to_unsigned(31, REGISTER_NAME_SIZE);
+  constant REGISTER_ZERO : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "00000";
+  constant REGISTER_RA   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "00001";
+  constant REGISTER_SP   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "00010";
+  constant REGISTER_GP   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "00011";
+  constant REGISTER_TP   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "00100";
+  constant REGISTER_T0   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "00101";
+  constant REGISTER_T1   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "00110";
+  constant REGISTER_T2   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "00111";
+  constant REGISTER_S0   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "01000";
+  constant REGISTER_S1   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "01001";
+  constant REGISTER_A0   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "01010";
+  constant REGISTER_A1   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "01011";
+  constant REGISTER_A2   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "01100";
+  constant REGISTER_A3   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "01101";
+  constant REGISTER_A4   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "01110";
+  constant REGISTER_A5   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "01111";
+  constant REGISTER_A6   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "10000";
+  constant REGISTER_A7   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "10001";
+  constant REGISTER_S2   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "10010";
+  constant REGISTER_S3   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "10011";
+  constant REGISTER_S4   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "10100";
+  constant REGISTER_S5   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "10101";
+  constant REGISTER_S6   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "10110";
+  constant REGISTER_S7   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "10111";
+  constant REGISTER_S8   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "11000";
+  constant REGISTER_S9   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "11001";
+  constant REGISTER_S10  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "11010";
+  constant REGISTER_S11  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "11011";
+  constant REGISTER_T3   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "11100";
+  constant REGISTER_T4   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "11101";
+  constant REGISTER_T5   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "11110";
+  constant REGISTER_T6   : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) := "11111";
 
-  constant REGISTER_RS1 : unsigned(19 downto 15) := (others => '-');
-  constant REGISTER_RS2 : unsigned(24 downto 20) := (others => '-');
-  constant REGISTER_RD  : unsigned(11 downto 7)  := (others => '-');
+  constant REGISTER_RS1 : std_logic_vector(19 downto 15) := (others => '-');
+  constant REGISTER_RS2 : std_logic_vector(24 downto 20) := (others => '-');
+  constant REGISTER_RD  : std_logic_vector(11 downto 7)  := (others => '-');
 
   constant INSTR_OPCODE : std_logic_vector(6 downto 0)   := (others => '-');
   constant INSTR_FUNC3  : std_logic_vector(14 downto 12) := (others => '-');
@@ -73,11 +73,20 @@ package constants_pkg is
   constant CSR_ZIMM              : std_logic_vector(19 downto 15) := (others => '-');
 
 --MISC-MEM functions  
-  constant MISC_MEM_FENCE_FUNC3         : std_logic_vector(2 downto 0) := "000";
-  constant MISC_MEM_FENCEI_REGION_FUNC3 : std_logic_vector(2 downto 0) := "001";
+  constant FENCE_FUNC3  : std_logic_vector(2 downto 0) := "000";
+  constant FENCEI_FUNC3 : std_logic_vector(2 downto 0) := "001";
 
+  constant FENCE_SW_BIT : natural := 20;
+  constant FENCE_SR_BIT : natural := 21;
+  constant FENCE_SO_BIT : natural := 22;
+  constant FENCE_SI_BIT : natural := 23;
+  constant FENCE_PW_BIT : natural := 24;
+  constant FENCE_PR_BIT : natural := 25;
+  constant FENCE_PO_BIT : natural := 26;
+  constant FENCE_PI_BIT : natural := 27;
 
-  constant CSR_ADDRESS  : std_logic_vector(31 downto 20) := (others => '0');
+--CSR Addresses
+  constant CSR_ADDRESS  : std_logic_vector(31 downto 20) := (others => '-');
   constant CSR_MSTATUS  : std_logic_vector(11 downto 0)  := x"300";
   constant CSR_MISA     : std_logic_vector(11 downto 0)  := x"301";
   constant CSR_MIE      : std_logic_vector(11 downto 0)  := x"304";
@@ -128,16 +137,23 @@ package constants_pkg is
   constant CSR_MCAUSE_EBREAK  : integer := 3;
   constant CSR_MCAUSE_MECALL  : integer := 11;
 
+--Priveleged FUNC3
+  constant PRIV_FUNC3 : std_logic_vector(2 downto 0) := "000";
+
+  constant SYSTEM_ECALL  : std_logic_vector(11 downto 0) := x"000";
+  constant SYSTEM_EBREAK : std_logic_vector(11 downto 0) := x"001";
+  constant SYSTEM_MRET   : std_logic_vector(11 downto 0) := x"302";
+
+--CSR FUNC3
   constant CSRRW_FUNC3  : std_logic_vector(2 downto 0) := "001";
   constant CSRRS_FUNC3  : std_logic_vector(2 downto 0) := "010";
-  constant CSRRSI_FUNC3 : std_logic_vector(2 downto 0) := "110";
   constant CSRRC_FUNC3  : std_logic_vector(2 downto 0) := "011";
+  constant CSRRWI_FUNC3 : std_logic_vector(2 downto 0) := "101";
+  constant CSRRSI_FUNC3 : std_logic_vector(2 downto 0) := "110";
   constant CSRRCI_FUNC3 : std_logic_vector(2 downto 0) := "111";
 
-  constant SYSTEM_MINOR_OP : std_logic_vector(31 downto 20) := (others => '-');
-  constant SYSTEM_NOT_CSR  : std_logic_vector(19 downto 7)  := (others => '0');
-  constant SYSTEM_ECALL    : std_logic_vector(11 downto 0)  := x"000";
-  constant SYSTEM_EBREAK   : std_logic_vector(11 downto 0)  := x"001";
+--JALR FUNC3
+  constant JALR_FUNC3 : std_logic_vector(2 downto 0) := "000";
 
 --Branch FUNC3
   constant BEQ_FUNC3  : std_logic_vector(2 downto 0) := "000";
@@ -151,8 +167,11 @@ package constants_pkg is
   constant LS_BYTE_FUNC3  : std_logic_vector(2 downto 0) := "000";
   constant LS_HALF_FUNC3  : std_logic_vector(2 downto 0) := "001";
   constant LS_WORD_FUNC3  : std_logic_vector(2 downto 0) := "010";
+  constant LS_DUBL_FUNC3  : std_logic_vector(2 downto 0) := "011";
   constant LS_UBYTE_FUNC3 : std_logic_vector(2 downto 0) := "100";
   constant LS_UHALF_FUNC3 : std_logic_vector(2 downto 0) := "101";
+  constant LS_UWORD_FUNC3 : std_logic_vector(2 downto 0) := "110";
+  constant LS_UDUBL_FUNC3 : std_logic_vector(2 downto 0) := "111";
 
 --ALU FUNC3
   constant ADDSUB_FUNC3 : std_logic_vector(2 downto 0) := "000";
@@ -178,8 +197,8 @@ package constants_pkg is
   constant ALU_FUNC7         : std_logic_vector(6 downto 0) := "0000000";
   constant ADDSUB_ADD_FUNC7  : std_logic_vector(6 downto 0) := "0000000";
   constant ADDSUB_SUB_FUNC7  : std_logic_vector(6 downto 0) := "0100000";
-  constant LOGIC_SHIFT_FUNC7 : std_logic_vector(6 downto 0) := "0000000";
-  constant ARITH_SHIFT_FUNC7 : std_logic_vector(6 downto 0) := "0100000";
+  constant SHIFT_LOGIC_FUNC7 : std_logic_vector(6 downto 0) := "0000000";
+  constant SHIFT_ARITH_FUNC7 : std_logic_vector(6 downto 0) := "0100000";
   constant MUL_FUNC7         : std_logic_vector(6 downto 0) := "0000001";
 
 

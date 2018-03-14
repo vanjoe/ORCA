@@ -122,13 +122,16 @@ entity execute is
 end entity execute;
 
 architecture behavioural of execute is
-  alias rd     : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_instruction (REGISTER_RD'range);
-  alias rs1    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_instruction(REGISTER_RS1'range);
-  alias rs2    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_instruction(REGISTER_RS2'range);
-  alias rs3    : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_instruction(REGISTER_RD'range);
-  alias opcode : std_logic_vector(6 downto 0) is to_execute_instruction(INSTR_OPCODE'range);
+  alias opcode    : std_logic_vector(6 downto 0) is to_execute_instruction(INSTR_OPCODE'range);
+  alias rd_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    to_execute_instruction(REGISTER_RD'range);
+  alias rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    to_execute_instruction(REGISTER_RS1'range);
+  alias rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    to_execute_instruction(REGISTER_RS2'range);
+  alias rs3_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    to_execute_instruction(REGISTER_RD'range);
 
-  signal valid_instr             : std_logic;
   signal use_after_produce_stall : std_logic;
   signal to_rf_select_writeable  : std_logic;
 
@@ -136,9 +139,12 @@ architecture behavioural of execute is
   signal rs2_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal rs3_data : std_logic_vector(REGISTER_SIZE-1 downto 0);
 
-  alias next_rs1 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_next_instruction(REGISTER_RS1'range);
-  alias next_rs2 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_next_instruction(REGISTER_RS2'range);
-  alias next_rs3 : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is to_execute_next_instruction(REGISTER_RD'range);
+  alias next_rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    to_execute_next_instruction(REGISTER_RS1'range);
+  alias next_rs2_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    to_execute_next_instruction(REGISTER_RS2'range);
+  alias next_rs3_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is
+    to_execute_next_instruction(REGISTER_RD'range);
 
   type fwd_mux_t is (ALU_FWD, NO_FWD);
   signal rs1_mux : fwd_mux_t;
@@ -146,19 +152,36 @@ architecture behavioural of execute is
   signal rs3_mux : fwd_mux_t;
 
   --Writeback data sources (VCP writes back through syscall)
-  signal alu_data_out_valid : std_logic;
-  signal alu_data_out       : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal from_branch_valid  : std_logic;
-  signal from_branch_data   : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal ld_data_enable     : std_logic;
-  signal ld_data_out        : std_logic_vector(REGISTER_SIZE-1 downto 0);
-  signal from_syscall_valid : std_logic;
-  signal from_syscall_data  : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal alu_select           : std_logic;
+  signal to_alu_valid         : std_logic;
+  signal from_alu_ready       : std_logic;
+  signal from_alu_illegal     : std_logic;
+  signal from_alu_valid       : std_logic;
+  signal from_alu_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal branch_select        : std_logic;
+  signal to_branch_valid      : std_logic;
+  --signal from_branch_ready  : std_logic; --Branch unit always ready
+  signal from_branch_illegal  : std_logic;
+  signal from_branch_valid    : std_logic;
+  signal from_branch_data     : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal lsu_select           : std_logic;
+  signal to_lsu_valid         : std_logic;
+  signal from_lsu_ready       : std_logic;
+  signal from_lsu_illegal     : std_logic;
+  signal from_lsu_valid       : std_logic;
+  signal from_lsu_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal syscall_select       : std_logic;
+  signal to_syscall_valid     : std_logic;
+  signal from_syscall_ready   : std_logic;
+  signal from_syscall_illegal : std_logic;
+  signal from_syscall_valid   : std_logic;
+  signal from_syscall_data    : std_logic_vector(REGISTER_SIZE-1 downto 0);
+  signal vcp_select           : std_logic;
+  signal to_vcp_valid         : std_logic;
+  signal from_vcp_illegal     : std_logic;
 
-  --Ready signals (branch unit always ready)
-  signal alu_ready          : std_logic;
-  signal lsu_ready          : std_logic;
-  signal from_syscall_ready : std_logic;
+  signal from_opcode_illegal : std_logic;
+  signal illegal_instruction : std_logic;
 
   signal branch_to_pc_correction_valid : std_logic;
   signal branch_to_pc_correction_data  : unsigned(REGISTER_SIZE-1 downto 0);
@@ -179,7 +202,91 @@ architecture behavioural of execute is
   signal vcp_was_executing : std_logic;
   constant instruction32   : std_logic_vector(31 downto 0) := (others => '0');
 begin
-  valid_instr <= to_execute_valid and from_writeback_ready;
+  --Decode instruction; could get pushed back to decode stage
+  process (opcode) is
+  begin
+    alu_select     <= '0';
+    branch_select  <= '0';
+    lsu_select     <= '0';
+    syscall_select <= '0';
+    vcp_select     <= '0';
+
+    from_opcode_illegal <= '0';
+
+    --Decode OPCODE to select submodule.  All paths must decode to exactly one
+    --submodule.
+    --If ENABLE_EXCEPTIONS is false decode illegal instructions to ALU ops as
+    --the default way to handle.
+    case opcode is
+      when ALU_OP | ALUI_OP | LUI_OP | AUIPC_OP =>
+        alu_select <= '1';
+      when JAL_OP | JALR_OP | BRANCH_OP =>
+        branch_select <= '1';
+      when LOAD_OP | STORE_OP =>
+        lsu_select <= '1';
+      when SYSTEM_OP | MISC_MEM_OP =>
+        syscall_select <= '1';
+      when VCP32_OP =>
+        if VCP_ENABLE /= DISABLED then
+          vcp_select <= '1';
+        else
+          if ENABLE_EXCEPTIONS then
+            from_opcode_illegal <= '1';
+          else
+            alu_select <= '1';
+          end if;
+        end if;
+      when VCP64_OP =>
+        if VCP_ENABLE = SIXTY_FOUR_BIT then
+          vcp_select <= '1';
+        else
+          if ENABLE_EXCEPTIONS then
+            from_opcode_illegal <= '1';
+          else
+            alu_select <= '1';
+          end if;
+        end if;
+      when others =>
+        if ENABLE_EXCEPTIONS then
+          from_opcode_illegal <= '1';
+        else
+          alu_select <= '1';
+        end if;
+    end case;
+  end process;
+
+  --Currently only set valid/ready for execute when writeback is ready.  This
+  --means that any instruction that completes in the execute cycle will be able to
+  --writeback without a stall; i.e. alu/branch/syscall instructions merely
+  --assert valid for once cycle and are done.
+  --Could be changed to have components hold their output if to_execute_ready
+  --was not true, which might slightly complicate logic but would allow some
+  --optimizations such as allowing a multicycle ALU op
+  --(multiply/shift/div/etc.) to start while waiting for a load to return.
+  to_alu_valid     <= alu_select and to_execute_valid and from_writeback_ready;
+  to_branch_valid  <= branch_select and to_execute_valid and from_writeback_ready;
+  to_lsu_valid     <= lsu_select and to_execute_valid and from_writeback_ready;
+  to_syscall_valid <= syscall_select and to_execute_valid and from_writeback_ready;
+  to_vcp_valid     <= vcp_select and to_execute_valid and from_writeback_ready;
+
+  from_execute_ready <= (not to_execute_valid) or (from_writeback_ready and
+                                                   (((not lsu_select) or from_lsu_ready) and
+                                                    ((not alu_select) or from_alu_ready) and
+                                                    ((not syscall_select) or from_syscall_ready) and
+                                                    ((not vcp_select) or vcp_ready)));
+
+
+
+  illegal_instruction <= to_execute_valid and from_writeback_ready and (from_opcode_illegal or
+                                                                        (alu_select and from_alu_illegal) or
+                                                                        (branch_select and from_branch_illegal) or
+                                                                        (lsu_select and from_lsu_illegal) or
+                                                                        (syscall_select and from_syscall_illegal) or
+                                                                        (vcp_select and from_vcp_illegal));
+
+  --TODO:
+  from_vcp_illegal <= '0';
+
 
   -----------------------------------------------------------------------------
   -- REGISTER FORWADING
@@ -192,25 +299,19 @@ begin
   --
   -----------------------------------------------------------------------------
   rs1_data <= vcp_alu_data1 when VCP_ENABLE /= DISABLED and vcp_alu_source_valid = '1' else
-              alu_data_out when rs1_mux = ALU_FWD else
+              from_alu_data when rs1_mux = ALU_FWD else
               to_execute_rs1_data;
   rs2_data <= vcp_alu_data2 when VCP_ENABLE /= DISABLED and vcp_alu_source_valid = '1' else
-              alu_data_out when rs2_mux = ALU_FWD else
+              from_alu_data when rs2_mux = ALU_FWD else
               to_execute_rs2_data;
-  rs3_data <= alu_data_out when rs3_mux = ALU_FWD else
+  rs3_data <= from_alu_data when rs3_mux = ALU_FWD else
               to_execute_rs3_data;
-
-  from_execute_ready <= (not to_execute_valid) or (from_writeback_ready and
-                                                   lsu_ready and
-                                                   (alu_ready or vcp_was_executing) and
-                                                   (vcp_ready or bool_to_sl(VCP_ENABLE = DISABLED)) and
-                                                   from_syscall_ready);
 
   --No forward stall; system calls, loads, and branches aren't forwarded.
   use_after_produce_stall <=
     to_rf_select_writeable and (from_syscall_valid or load_in_progress or from_branch_valid) when
-    to_rf_select = rs1 or to_rf_select = rs2 or ((to_rf_select = rs3) and VCP_ENABLE /= DISABLED) else
-    '0';
+    to_rf_select = rs1_select or to_rf_select = rs2_select or ((to_rf_select = rs3_select) and VCP_ENABLE /= DISABLED)
+    else '0';
 
   --Calculate forwarding muxes for next instruction in advance in order to
   --minimize execute cycle time.
@@ -222,18 +323,16 @@ begin
         rs2_mux <= NO_FWD;
         rs3_mux <= NO_FWD;
       end if;
-      if valid_instr = '1' and to_execute_next_valid = '1' then
-        if opcode = LUI_OP or opcode = AUIPC_OP or opcode = ALU_OP or opcode = ALUI_OP then
-          if rd /= std_logic_vector(REGISTER_ZERO) then
-            if rd = next_rs1 then
-              rs1_mux <= ALU_FWD;
-            end if;
-            if rd = next_rs2 then
-              rs2_mux <= ALU_FWD;
-            end if;
-            if rd = next_rs3 then
-              rs3_mux <= ALU_FWD;
-            end if;
+      if to_alu_valid = '1' and from_alu_ready = '1' then
+        if rd_select /= REGISTER_ZERO then
+          if rd_select = next_rs1_select then
+            rs1_mux <= ALU_FWD;
+          end if;
+          if rd_select = next_rs2_select then
+            rs2_mux <= ALU_FWD;
+          end if;
+          if rd_select = next_rs3_select then
+            rs3_mux <= ALU_FWD;
           end if;
         end if;
       end if;
@@ -244,50 +343,56 @@ begin
   alu : arithmetic_unit
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
-      SIMD_ENABLE         => false,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
       POWER_OPTIMIZED     => POWER_OPTIMIZED,
       MULTIPLY_ENABLE     => MULTIPLY_ENABLE,
       DIVIDE_ENABLE       => DIVIDE_ENABLE,
       SHIFTER_MAX_CYCLES  => SHIFTER_MAX_CYCLES,
+      ENABLE_EXCEPTIONS   => ENABLE_EXCEPTIONS,
       FAMILY              => FAMILY
       )
     port map (
-      clk                => clk,
-      valid_instr        => valid_instr,
-      vcp_alu_used       => vcp_alu_used,
+      clk => clk,
+
+      to_alu_valid     => to_alu_valid,
+      from_alu_ready   => from_alu_ready,
+      from_alu_illegal => from_alu_illegal,
+
+      vcp_source_valid => vcp_alu_source_valid,
+      vcp_select       => vcp_select,
+      vcp_alu_used     => vcp_alu_used,
+
       from_execute_ready => from_execute_ready,
       rs1_data           => rs1_data,
       rs2_data           => rs2_data,
       instruction        => to_execute_instruction(instruction32'range),
       sign_extension     => to_execute_sign_extension,
       current_pc         => to_execute_program_counter,
-      data_out           => alu_data_out,
-      data_out_valid     => alu_data_out_valid,
-      alu_ready          => alu_ready,
 
-      vcp_data1        => vcp_alu_data1,
-      vcp_data2        => vcp_alu_data2,
-      vcp_source_valid => vcp_alu_source_valid
+      from_alu_data  => from_alu_data,
+      from_alu_valid => from_alu_valid
       );
 
   branch : branch_unit
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
       SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
-      BTB_ENTRIES         => BTB_ENTRIES
+      BTB_ENTRIES         => BTB_ENTRIES,
+      ENABLE_EXCEPTIONS   => ENABLE_EXCEPTIONS
       )
     port map (
       clk   => clk,
       reset => reset,
 
-      to_branch_valid => valid_instr,
-      rs1_data        => rs1_data,
-      rs2_data        => rs2_data,
-      current_pc      => to_execute_program_counter,
-      predicted_pc    => to_execute_predicted_pc,
-      instruction     => to_execute_instruction(instruction32'range),
-      sign_extension  => to_execute_sign_extension,
+      to_branch_valid     => to_branch_valid,
+      from_branch_illegal => from_branch_illegal,
+
+      rs1_data       => rs1_data,
+      rs2_data       => rs2_data,
+      current_pc     => to_execute_program_counter,
+      predicted_pc   => to_execute_predicted_pc,
+      instruction    => to_execute_instruction(instruction32'range),
+      sign_extension => to_execute_sign_extension,
 
       from_branch_valid => from_branch_valid,
       from_branch_data  => from_branch_data,
@@ -302,7 +407,8 @@ begin
   ls_unit : load_store_unit
     generic map (
       REGISTER_SIZE       => REGISTER_SIZE,
-      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE
+      SIGN_EXTENSION_SIZE => SIGN_EXTENSION_SIZE,
+      ENABLE_EXCEPTIONS   => ENABLE_EXCEPTIONS
       )
     port map (
       clk   => clk,
@@ -310,16 +416,20 @@ begin
 
       lsu_idle => lsu_idle,
 
-      valid                    => valid_instr,
-      rs1_data                 => rs1_data,
-      rs2_data                 => rs2_data,
-      instruction              => to_execute_instruction(instruction32'range),
-      sign_extension           => to_execute_sign_extension,
-      writeback_stall_from_lsu => writeback_stall_from_lsu,
-      lsu_ready                => lsu_ready,
-      data_out                 => ld_data_out,
-      data_enable              => ld_data_enable,
+      to_lsu_valid     => to_lsu_valid,
+      from_lsu_illegal => from_lsu_illegal,
+
+      rs1_data       => rs1_data,
+      rs2_data       => rs2_data,
+      instruction    => to_execute_instruction(instruction32'range),
+      sign_extension => to_execute_sign_extension,
+
       load_in_progress         => load_in_progress,
+      writeback_stall_from_lsu => writeback_stall_from_lsu,
+
+      lsu_ready      => from_lsu_ready,
+      from_lsu_data  => from_lsu_data,
+      from_lsu_valid => from_lsu_valid,
 
       oimm_address       => lsu_oimm_address,
       oimm_byteenable    => lsu_oimm_byteenable,
@@ -332,7 +442,7 @@ begin
       );
 
   memory_idle <= memory_interface_idle and lsu_idle;
-  syscall : system_calls
+  syscall : sys_call
     generic map (
       REGISTER_SIZE   => REGISTER_SIZE,
       COUNTER_LENGTH  => COUNTER_LENGTH,
@@ -366,11 +476,14 @@ begin
       memory_idle       => memory_idle,
       program_counter   => program_counter,
 
-      to_syscall_valid   => valid_instr,
-      rs1_data           => rs1_data,
-      instruction        => to_execute_instruction(instruction32'range),
-      current_pc         => to_execute_program_counter,
-      from_syscall_ready => from_syscall_ready,
+      to_syscall_valid     => to_syscall_valid,
+      from_syscall_illegal => from_syscall_illegal,
+      rs1_data             => rs1_data,
+      instruction          => to_execute_instruction(instruction32'range),
+      current_pc           => to_execute_program_counter,
+      from_syscall_ready   => from_syscall_ready,
+
+      illegal_instruction => illegal_instruction,
 
       from_syscall_valid => from_syscall_valid,
       from_syscall_data  => from_syscall_data,
@@ -408,7 +521,7 @@ begin
       reset => reset,
 
       instruction => to_execute_instruction,
-      valid_instr => valid_instr,
+      valid_instr => to_vcp_valid,
       vcp_ready   => vcp_ready,
 
       rs1_data => rs1_data,
@@ -423,8 +536,8 @@ begin
       vcp_valid_instr   => vcp_valid_instr,
       vcp_was_executing => vcp_was_executing
       );
-  vcp_alu_result_valid <= alu_data_out_valid;
-  vcp_alu_result       <= alu_data_out;
+  vcp_alu_result_valid <= from_alu_valid;
+  vcp_alu_result       <= from_alu_data;
 
   ------------------------------------------------------------------------------
   -- PC correction (branch mispredict, interrupt, etc.)
@@ -460,8 +573,8 @@ begin
   begin
     if rising_edge(clk) then
       if from_writeback_ready = '1' then
-        to_rf_select <= rd;
-        if rd = std_logic_vector(REGISTER_ZERO) then
+        to_rf_select <= rd_select;
+        if rd_select = REGISTER_ZERO then
           to_rf_select_writeable <= '0';
         else
           to_rf_select_writeable <= '1';
@@ -478,14 +591,14 @@ begin
   with to_rf_mux select
     to_rf_data <=
     from_syscall_data when "00",
-    ld_data_out       when "01",
+    from_lsu_data     when "01",
     from_branch_data  when "10",
-    alu_data_out      when others;
+    from_alu_data     when others;
 
   to_rf_valid <= to_rf_select_writeable and (from_syscall_valid or
-                                             ld_data_enable or
+                                             from_lsu_valid or
                                              from_branch_valid or
-                                             (alu_data_out_valid and (not vcp_was_executing)));
+                                             (from_alu_valid and (not vcp_was_executing)));
 
 
   -------------------------------------------------------------------------------
@@ -497,9 +610,9 @@ begin
     if rising_edge(clk) then
       if reset = '0' then
         assert (bool_to_int(from_syscall_valid) +
-                bool_to_int(ld_data_enable) +
+                bool_to_int(from_lsu_valid) +
                 bool_to_int(from_branch_valid) +
-                bool_to_int(alu_data_out_valid)) <= 1 report "Multiple Data Enables Asserted" severity failure;
+                bool_to_int(from_alu_valid)) <= 1 report "Multiple Data Enables Asserted" severity failure;
       end if;
     end if;
   end process;
@@ -532,7 +645,7 @@ begin
       end if;
 
 
-      if valid_instr = '1' then
+      if to_execute_valid = '1' then
         write(my_line, string'("executing pc = "));   -- formatting
         hwrite(my_line, (std_logic_vector(to_execute_program_counter)));  -- format type std_logic_vector as hex
         write(my_line, string'(" instr =  "));        -- formatting
