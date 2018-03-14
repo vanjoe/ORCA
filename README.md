@@ -129,10 +129,9 @@ register file are eliminated to save area at the expense of maxiumum frequency.
 ### `VCP_ENABLE` (default = 0)
 
 Enable the Vector Coprocessor Port (VCP); this connects to VectorBlox's
-proprietary Lightweight Vector Extensions (LVE).  A value of 1 enables the
-32-bit variant of the VCP instructions, while a value of 2 enables both 32-bit
-and 64-bit VCP instructions (no other 64-bit instructions are supported even
-when `VCP_ENABLE` is set to 2).
+proprietary Lightweight Vector Extensions (LVE) or Matrix Processor (MXP).  A
+value of 1 enables the 32-bit variant of the VCP instructions, while a value of
+2 enables both 32-bit and 64-bit VCP instructions.
 
 ### `ENABLE_EXT_INTERRUPTS` (default = 0)
 
