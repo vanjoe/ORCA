@@ -21,4 +21,4 @@ init_*.imem
 *.rpt*
 *.summary
 orca_defines.h
-orca_system.hwh
+*.hwh
