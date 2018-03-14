@@ -533,8 +533,7 @@ begin
         INTERNAL_WIDTH        => REGISTER_SIZE,
         EXTERNAL_WIDTH        => ICACHE_EXTERNAL_WIDTH,
         LOG2_BURSTLENGTH      => LOG2_BURSTLENGTH,
-        READ_ONLY             => true,
-        WRITEBACK             => false,
+        POLICY                => READ_ONLY,
         WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED
         )
       port map (
@@ -761,6 +760,20 @@ begin
     signal dc_oimm_readdata           : std_logic_vector(REGISTER_SIZE-1 downto 0);
     signal dc_oimm_readdatavalid      : std_logic;
     signal dc_oimm_waitrequest        : std_logic;
+
+    function boolean_to_cache_policy (
+      constant WRITEBACK : boolean
+      )
+      return cache_policy is
+      variable policy : cache_policy;
+    begin
+      if WRITEBACK then
+        policy := WRITE_BACK;
+      else
+        policy := WRITE_THROUGH;
+      end if;
+      return policy;
+    end function boolean_to_cache_policy;
   begin
     data_cache : cache_controller
       generic map (
@@ -770,8 +783,7 @@ begin
         INTERNAL_WIDTH        => REGISTER_SIZE,
         EXTERNAL_WIDTH        => DCACHE_EXTERNAL_WIDTH,
         LOG2_BURSTLENGTH      => LOG2_BURSTLENGTH,
-        READ_ONLY             => false,
-        WRITEBACK             => DCACHE_WRITEBACK,
+        POLICY                => boolean_to_cache_policy(DCACHE_WRITEBACK),
         WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED
         )
       port map (

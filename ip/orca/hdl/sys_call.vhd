@@ -17,8 +17,8 @@ entity system_calls is
     ENABLE_EXT_INTERRUPTS : boolean;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
-    VCP_ENABLE : vcp_type;
-
+    VCP_ENABLE         : vcp_type;
+    MUL_ENABLE         : boolean;
     AUX_MEMORY_REGIONS : natural range 0 to 4;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
     AMR0_ADDR_LAST     : std_logic_vector(31 downto 0);
@@ -86,6 +86,7 @@ architecture rtl of system_calls is
   -- CSR signals. These are initialized to zero so that if any bits are never
   -- assigned, they act like constants.
   signal mstatus      : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mscratch     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mepc         : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mcause       : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mbadaddr     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
@@ -160,10 +161,14 @@ begin
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
   misa(misa'left downto misa'left-1) <= "01";
   misa(23)                           <= '0' when VCP_ENABLE = DISABLED else '1';
-  csr_select                         <= instruction(CSR_ADDRESS'range);
+  misa(8)                            <= '1';  --I
+  misa(12)                           <= '1' when MUL_ENABLE            else '0';
+
+  csr_select <= instruction(CSR_ADDRESS'range);
   with csr_select select
     csr_readdata <=
     misa            when CSR_MISA,
+    mscratch        when CSR_MSCRATCH,
     mstatus         when CSR_MSTATUS,
     mepc            when CSR_MEPC,
     mcause          when CSR_MCAUSE,
@@ -197,6 +202,8 @@ begin
     csr_writedata <=
     rs1_data
     when CSRRW_FUNC3,
+    std_logic_vector(resize(unsigned(imm),csr_writedata'length))
+    when CSRRWI_FUNC3,
     csr_readdata or bit_sel
     when CSRRS_FUNC3,
     csr_readdata(31 downto 5) & (csr_readdata(CSR_ZIMM'length-1 downto 0) or imm)
@@ -253,6 +260,8 @@ begin
                 when CSR_MEIMASK =>
                   meimask_full <= csr_writedata;
                 --Note that meipend is read-only
+                when CSR_MSCRATCH =>
+                  mscratch <= csr_writedata;
                 when others => null;
               end case;
             elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
@@ -490,6 +499,9 @@ begin
       if from_icache_control_ready = '1' then
         to_icache_control_valid <= '0';
       end if;
+      if from_dcache_control_ready = '1' then
+        to_dcache_control_valid <= '0';
+      end if;
 
       if to_syscall_valid = '1' then
         next_fence_pc <= unsigned(current_pc) + to_unsigned(4, next_fence_pc'length);
@@ -633,8 +645,9 @@ begin
               (opcode7 = BRANCH_OP and func3 /= "010" and func3 /= "011") or
               (opcode7 = LOAD_OP and func3 /= "011" and func3 /= "110" and func3 /= "111") or
               (opcode7 = STORE_OP and (func3 = "000" or func3 = "001" or func3 = "010")) or
-              opcode7 = ALUI_OP or      -- Does not catch illegal
-                                        -- shift amounts
+              (opcode7 = ALUI_OP and not (  --catch illegal shift amounts
+                (func3 = "001" and func7 /= "0000000") or
+                (func3 = "101" and func7 /= "0000000" and func7 /= "0100000" ))) or
               (opcode7 = ALU_OP and (func7 = ALU_F7 or func7 = MUL_F7 or func7 = SUB_F7))or
               (opcode7 = SYSTEM_OP) or  --Illegal sysops checked in exception handling
               (opcode7 = FENCE_OP) or   -- All fence ops are treated as legal

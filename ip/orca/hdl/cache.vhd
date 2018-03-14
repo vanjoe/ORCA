@@ -28,6 +28,7 @@ entity cache is
     read_readabort     : out    std_logic;
     read_miss          : buffer std_logic;
     read_lastaddress   : buffer std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+    read_tag           : buffer std_logic_vector((ADDRESS_WIDTH-log2(NUM_LINES*LINE_SIZE))-1 downto 0);
     read_dirty_valid   : out    std_logic_vector(DIRTY_BITS downto 0);
 
     --Write-only data ORCA-internal memory-mapped slave
@@ -42,7 +43,7 @@ end entity;
 
 architecture rtl of cache is
   constant WORDS_PER_LINE  : positive := LINE_SIZE/(WIDTH/8);
-  constant TAG_BITS        : positive := ADDRESS_WIDTH-log2(NUM_LINES)-log2(LINE_SIZE);
+  constant TAG_BITS        : positive := ADDRESS_WIDTH-log2(NUM_LINES*LINE_SIZE);
   constant TAG_LEFT        : natural  := ADDRESS_WIDTH;
   constant TAG_RIGHT       : natural  := log2(NUM_LINES)+log2(LINE_SIZE);
   constant CACHELINE_BITS  : positive := log2(NUM_LINES);
@@ -58,20 +59,14 @@ architecture rtl of cache is
   signal read_dirty_valid_tag : std_logic_vector(TAG_BITS+DIRTY_BITS downto 0);
   alias read_valid            : std_logic is
     read_dirty_valid_tag(TAG_BITS);
-  alias read_tag : std_logic_vector(TAG_BITS-1 downto 0) is
-    read_dirty_valid_tag(TAG_BITS-1 downto 0);
   signal read_tag_equal : std_logic;
 
   signal write_dirty_valid_tag_in : std_logic_vector(TAG_BITS+DIRTY_BITS downto 0);
 
-  alias read_cacheline : std_logic_vector(CACHELINE_BITS-1 downto 0)
-    is read_address(TAG_RIGHT-1 downto CACHELINE_RIGHT);
-  alias write_cacheline : std_logic_vector(CACHELINE_BITS-1 downto 0)
-    is write_address(TAG_RIGHT-1 downto CACHELINE_RIGHT);
-  alias read_cacheword : std_logic_vector(CACHEWORD_BITS-1 downto 0)
-    is read_address(CACHEWORD_LEFT-1 downto CACHEWORD_RIGHT);
-  alias write_cacheword : std_logic_vector(CACHEWORD_BITS-1 downto 0)
-    is write_address(CACHEWORD_LEFT-1 downto CACHEWORD_RIGHT);
+  signal read_cacheline  : unsigned(CACHELINE_BITS-1 downto 0);
+  signal write_cacheline : unsigned(CACHELINE_BITS-1 downto 0);
+  signal read_cacheword  : unsigned(CACHEWORD_BITS-1 downto 0);
+  signal write_cacheword : unsigned(CACHEWORD_BITS-1 downto 0);
 
   alias write_tag : std_logic_vector(TAG_BITS-1 downto 0)
     is write_address(TAG_LEFT-1 downto TAG_RIGHT);
@@ -103,6 +98,7 @@ begin
   read_tag_equal <= '1' when read_tag = read_request_tag else '0';
 
   read_dirty_valid(0) <= read_valid;
+  read_tag            <= read_dirty_valid_tag(TAG_BITS-1 downto 0);
   dirty_gen : if DIRTY_BITS > 0 generate
     alias read_dirty : std_logic_vector(DIRTY_BITS-1 downto 0) is
       read_dirty_valid_tag(TAG_BITS+DIRTY_BITS downto TAG_BITS+1);
@@ -116,6 +112,8 @@ begin
   write_dirty_valid_tag_in <= write_dirty_valid & write_tag;
 
   --This block contains the tag, with a valid bit.
+  read_cacheline  <= unsigned(read_address(TAG_RIGHT-1 downto CACHELINE_RIGHT));
+  write_cacheline <= unsigned(write_address(TAG_RIGHT-1 downto CACHELINE_RIGHT));
   cache_tags : bram_sdp_write_first
     generic map (
       DEPTH                 => NUM_LINES,
@@ -132,6 +130,8 @@ begin
       );
 
   --For each byte generate a separate data cache RAM
+  read_cacheword  <= unsigned(read_address(CACHEWORD_LEFT-1 downto CACHEWORD_RIGHT));
+  write_cacheword <= unsigned(write_address(CACHEWORD_LEFT-1 downto CACHEWORD_RIGHT));
   byte_gen : for gbyte in (WIDTH/8)-1 downto 0 generate
     signal write_enable : std_logic;
   begin

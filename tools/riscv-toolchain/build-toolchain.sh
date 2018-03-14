@@ -14,7 +14,7 @@ export SCRIPT_DIR=$(readlink -f $(dirname $0))
 mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 
-export BINUTILS_VERSION=2.28
+export BINUTILS_VERSION=2.30
 export GCC_VERSION=7.3.0
 export NEWLIB_VERSION=3.0.0
 

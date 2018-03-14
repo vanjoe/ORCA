@@ -4,6 +4,7 @@
 #include "orca_malloc.h"
 #include "orca_time.h"
 #include "cache_test.h"
+#include "bsp.h"
 
 //Assembler macro to create a jump instruction
 #define J_FORWARD_BY(BYTES)                     \
@@ -15,8 +16,22 @@
 
 #define WAIT_SECONDS_BEFORE_START 0
 
+#ifdef ORCA_DUC_READY_DELAYER_DC_BASE_ADDR
+#define USE_DELAYER_DC      0
+#define DELAYER_DC_RANDOM   1
+#define DELAYER_DC_MASK     0x0113
+#define DELAYER_DC_CHANNELS 0x1F
+#else //#ifdef ORCA_DUC_READY_DELAYER_DC_BASE_ADDR
+#define USE_DELAYER_DC 0
+#endif //#else //#ifdef ORCA_DUC_READY_DELAYER_DC_BASE_ADDR
+
+#define HEAP_ADDRESS 0x00100000
+
 #define RUN_ASM_TEST             1
 #define RUN_RW_TEST              1
+#define RUN_LINE_FLUSH_TEST      1
+#define RUN_RANDOM_TEST          1
+#define RUN_RANDOM_IFENCE_TEST   1
 #define RUN_3_INSTRUCTION_LOOP   1
 #define RUN_6_INSTRUCTION_LOOP   1
 #define RUN_BTB_MISSES           1
@@ -45,6 +60,73 @@
 #define UC_MIN_MEMORY_BASE 0xC0000000
 
 typedef void (*timing_loop)(uint32_t);
+
+#define RANDOM_TEST_RUNS CACHE_SIZE*16
+#define GOLDEN_RANDOM    0x1BFE065F //Only valid for specific zedboard parameters
+
+//BSD-ish checksum, should be good enough for random memory
+uint32_t checksum(void *mem_base, uint32_t mem_size){
+  uint32_t checksum = 0;
+  for(uint32_t word = 0; word < mem_size/sizeof(uint32_t); word++){
+    checksum = ((checksum >> 1) | checksum << 31) + ((uint32_t *)mem_base)[word];
+  }
+  return checksum;
+}
+
+uint32_t lfsr32(uint32_t input){
+  //taps = {31, 29, 25, 24};
+  uint32_t mask   = (input & 0x1) * 0xA3000000;
+  uint32_t output = (input >> 1) ^ mask;
+  return output;
+}
+
+uint32_t rand_seed = 0;
+void srand(uint32_t seed){
+  rand_seed = seed;
+}
+uint32_t rand(){
+  for(int time = 0; time < 32; time++){
+    rand_seed = lfsr32(rand_seed);
+  }
+  return rand_seed;
+}
+
+uint32_t line_flush_test(void *mem_base, uint32_t mem_size){
+  uint8_t *mem_base8 = (uint8_t *)mem_base;
+  mem_base8[0] = 0xAB;
+  mem_base8[CACHE_SIZE] = 0xCD;
+  asm volatile("fence.i" : : : "memory");
+  uint32_t errors = 0;
+  if(mem_base8[0] != 0xAB){
+    errors++;
+    printf("Error in line_flush_test; expected 0xAB got 0x%02X\r\n", mem_base8[0]);
+  }
+  if(mem_base8[CACHE_SIZE] != 0xCD){
+    errors++;
+    printf("Error in line_flush_test; expected 0xCD got 0x%02X\r\n", mem_base8[CACHE_SIZE]);
+  }
+  return errors;
+}
+
+uint32_t random_test(void *mem_base, uint32_t mem_size, bool ifence){
+  srand(1);
+  uint32_t *mem_base32 = (uint32_t *)mem_base;
+  uint8_t *mem_base8   = (uint8_t *)mem_base;
+  for(int word = 0; word < (mem_size/sizeof(uint32_t)); word++){
+    mem_base32[word] = rand();
+  }
+  printf("Random test inital checksum 0x%08X\r\n", (int)(checksum(mem_base, mem_size)));
+  uint32_t start_cycle = get_time();
+  for(int run = 0; run < RANDOM_TEST_RUNS; run++){
+    mem_base8[rand() % mem_size] += mem_base8[rand() % mem_size];
+  }
+  if(ifence){
+    asm volatile("fence.i" : : : "memory");
+  }
+  uint32_t end_cycle = get_time();
+  printf("Random test %sfinished after %d cycles\r\n", ifence ? "with ifence " : "", (int)(end_cycle-start_cycle));
+  return checksum(mem_base, mem_size);
+}
 
 uint32_t rw_test(void *mem_base, uint32_t mem_size, uint32_t cache_size, uint32_t cache_line_size){
   int *test_space32 = (int *)mem_base;
@@ -236,6 +318,19 @@ int main(void){
 
   printf("\r\n\r\n\r\n");
 
+#if USE_DELAYER_DC
+  {
+    printf("Setting up DC delayer to %s delay mask 0x%04X channels 0x%02X\r\n\r\n", DELAYER_DC_RANDOM ? "random" : "fixed", DELAYER_DC_MASK, DELAYER_DC_CHANNELS);
+    volatile uint32_t *delayer_dc = (volatile uint32_t *)ORCA_DUC_READY_DELAYER_DC_BASE_ADDR;
+    for(int channel = 0; channel < 8; channel++){
+      if((1 << channel) & DELAYER_DC_CHANNELS){
+        delayer_dc[channel] = (DELAYER_DC_RANDOM ? 0x80000000 : 0x00000000) | DELAYER_DC_MASK;
+      }
+    }
+  }
+#endif
+  
+
   uint8_t test_space_stack[3*CACHE_SIZE];  //After alignment will have > 2*CACHE_SIZE to work in
   init_malloc((void *)HEAP_ADDRESS, HEAP_SIZE, CACHE_SIZE);
   uint8_t *test_space_heap = (uint8_t *)malloc(2*CACHE_SIZE);
@@ -245,6 +340,8 @@ int main(void){
   uint32_t previous_amr0_addr_last = 0;
   uint32_t previous_umr0_addr_base = 0;
   uint32_t previous_umr0_addr_last = 0;
+
+  int errors = 0;
 
   int type = 0;
   for(type = 0; type < 6; type++){
@@ -316,6 +413,7 @@ int main(void){
       int result = cache_test((void *)test_space_aligned, 2*CACHE_SIZE, CACHE_SIZE, CACHE_LINE_SIZE);
       if(result){
         printf("ASM test failed with error code 0x%08X\r\n", result);
+        errors++;
       } else {
         printf("ASM test passed\r\n");
       }
@@ -329,11 +427,54 @@ int main(void){
       int result = rw_test((void *)test_space_aligned, 2*CACHE_SIZE, CACHE_SIZE, CACHE_LINE_SIZE);
       if(result){
         printf("RW test failed with error code 0x%08X\r\n", result);
+        errors++;
       } else {
         printf("RW test passed\r\n");
       }
     }
 #endif //#if RUN_ASM_TEST
+
+#if RUN_LINE_FLUSH_TEST
+    {
+      printf("Line flush test: \r\n");
+
+      uint32_t line_flush_errors = line_flush_test((void *)test_space_aligned, 2*CACHE_SIZE);
+      if(line_flush_errors){
+        printf("Line flush test failed with %d errors\r\n", (int)line_flush_errors);
+      } else {
+        printf("Line flush test passed\r\n");
+      }
+      errors += line_flush_errors;
+    }
+#endif //#if RUN_LINE_FLUSH_TEST
+  
+#if RUN_RANDOM_TEST
+    {
+      printf("RANDOM test: ");
+
+      int result = random_test((void *)test_space_aligned, 2*CACHE_SIZE, false);
+      if(result != GOLDEN_RANDOM){
+        printf("RANDOM test failed; returned checksum 0x%08X expected 0x%08X\r\n", result, GOLDEN_RANDOM);
+        errors++;
+      } else {
+        printf("RANDOM test passed\r\n");
+      }
+    }
+#endif //#if RUN_RANDOM_TEST
+  
+#if RUN_RANDOM_IFENCE_TEST
+    {
+      printf("RANDOM test with IFENCE: ");
+
+      int result = random_test((void *)test_space_aligned, 2*CACHE_SIZE, true);
+      if(result != GOLDEN_RANDOM){
+        printf("RANDOM test failed; returned checksum 0x%08X expected 0x%08X\r\n", result, GOLDEN_RANDOM);
+        errors++;
+      } else {
+        printf("RANDOM test passed\r\n");
+      }
+    }
+#endif //#if RUN_RANDOM_IFENCE_TEST
   
 #if RUN_3_INSTRUCTION_LOOP
     {
@@ -392,5 +533,5 @@ int main(void){
 
   }
 
-  return 1;
+  return errors+1;
 }

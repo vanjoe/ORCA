@@ -1,7 +1,7 @@
 proc orca_reset_waves { add_wave_cmd add_divider_cmd prefix } {
     eval "[string trim $add_divider_cmd \"] \"ORCA core status\""
     eval "[string trim $add_wave_cmd \"] $prefix/core/X/clk $prefix/core/X/reset"
-    eval "[string trim $add_wave_cmd \"] $prefix/core/X/to_execute_valid $prefix/core/X/to_execute_program_counter $prefix/core/X/to_execute_instruction(31:0) "
+    eval "[string trim $add_wave_cmd \"] $prefix/core/X/to_execute_valid $prefix/core/X/to_execute_program_counter $prefix/core/X/to_execute_instruction"
     eval "[string trim $add_wave_cmd \"] $prefix/core/D/the_register_file/registers"
 }
 
@@ -115,6 +115,9 @@ proc orca_add_wave_branch { add_wave_cmd add_divider_cmd prefix } {
 proc orca_add_wave_decode { add_wave_cmd add_divider_cmd prefix } {
     eval "[string trim $add_divider_cmd \"] \"ORCA Decode\""
     eval "[string trim $add_wave_cmd \"] $prefix/core/D/*"
+    eval "[string trim $add_divider_cmd \"] \"One-cycle\""
+    catch { eval "[string trim $add_wave_cmd \"] $prefix/core/D/one_cycle/*" } error
+    eval "[string trim $add_divider_cmd \"] \"Two-cycle\""
     catch { eval "[string trim $add_wave_cmd \"] $prefix/core/D/two_cycle/*" } error
 }
 

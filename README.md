@@ -16,16 +16,21 @@ A QSYS component is provided for easy integration into the Intel toolchain, as
 well as a Vivado IPI component for Xilinx integration.
 
 
+GitHub Release Note (No Cache Support)
+-----------------
+
+The GitHub release of ORCA currently does not have support for caches; when
+enabled the RTL will fail to build with an assertion error.  Cache support will
+be released later; for now it is recommended to use low-latency onchip RAM for
+instructions and often-used data memory (stack segments, etc.).
+
+
 Building Toolchain
 -----------------
 
-The official RISC-V toolchain is under active development, and is subject to
-breaking changes from time to time. Because of that we have included a linked a
-specific version of the toolchain to this repository. If you use a different
-version of the toolchain, you may have mixed results.
-
 To build the toolchain, set `RISCV_INSTALL` to be the destination directory for
-the toolchain, then run `GIT_TOP/tools/riscv-toolchain/build-toolchain.sh`.
+the toolchain, for instance `/opt/riscv/`, then run
+`GIT_TOP/tools/riscv-toolchain/build-toolchain.sh`.
 
 Sample Systems
 --------------
@@ -322,12 +327,12 @@ We define two more 32-bit CSRs, `MEIPEND` and `MEIMASK`. Because these registers
 are a maximum of 32-bits wide, ORCA only supports 32 interrupts natively.
 `MEIMASK` is a mask for the external interrupts.  If bit *n* of `MEIMASK` is
 set, then that the *nth* interrupt is enabled.  `MEIPEND` is connected to the
-external interrupt lines, and a such is read-only.
+external interrupt lines, and as such is read-only.
 
 |**CSR Name** | **CSR Number** | **Access**|
 |:------------|:--------------:|:---------:|
-|MEIMASK      | 0x7C0          | RW |
-|MEIPEND      | 0xFC0          | RO |
+|MEIMASK      | 0x7C0          |  RW       |
+|MEIPEND      | 0xFC0          |  RO       |
 
 The Processor is interrupted by an external interrupt on line *n* if and only if
 the `MIE` bit of the `MSTATUS` CSR is 1 and bit *n* of the `MEIMASK` CSR is set

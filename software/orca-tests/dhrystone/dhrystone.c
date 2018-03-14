@@ -45,11 +45,11 @@ void *malloc(unsigned bytes){
   void *return_ptr = &heap[heap_base];
   heap_base += bytes;
   return return_ptr;
-}  
+}
 
 #include "dhry.h"
 /*COMPILER COMPILER COMPILER COMPILER COMPILER COMPILER COMPILER*/
-               
+
 #ifdef COW
 #define compiler  "Watcom C/C++ 10.5 Win386"
 #define options   "  -otexan -zp8 -5r -ms"
@@ -82,10 +82,10 @@ void *malloc(unsigned bytes){
 #define compiler  "Watcom C/C++ 10.5 OS/2-32"
 #define options   "   No optimisation"
 #endif
- 
+
 
 /* Global Variables: */
- 
+
 Rec_Pointer     Ptr_Glob,
   Next_Ptr_Glob;
 int             Int_Glob;
@@ -96,15 +96,15 @@ int             Arr_1_Glob [50];
 int             Arr_2_Glob [50] [50];
 int             getinput = 0;
 
- 
+
 char Reg_Define[] = "Register option      Selected.";
- 
+
 Enumeration Func_1 (Capital_Letter Ch_1_Par_Val,
                     Capital_Letter Ch_2_Par_Val);
-/* 
+/*
    forward declaration necessary since Enumeration may not simply be int
 */
- 
+
 #ifndef ROPT
 #define REG
 /* REG becomes defined as empty */
@@ -116,36 +116,36 @@ Enumeration Func_1 (Capital_Letter Ch_1_Par_Val,
 void Proc_1 (REG Rec_Pointer Ptr_Val_Par);
 void Proc_2 (One_Fifty *Int_Par_Ref);
 void Proc_3 (Rec_Pointer *Ptr_Ref_Par);
-void Proc_4 (); 
+void Proc_4 ();
 void Proc_5 ();
 void Proc_6 (Enumeration Enum_Val_Par, Enumeration *Enum_Ref_Par);
 void Proc_7 (One_Fifty Int_1_Par_Val, One_Fifty Int_2_Par_Val,
              One_Fifty *Int_Par_Ref);
 void Proc_8 (Arr_1_Dim Arr_1_Par_Ref, Arr_2_Dim Arr_2_Par_Ref,
              int Int_1_Par_Val, int Int_2_Par_Val);
-                               
+
 Boolean Func_2 (Str_30 Str_1_Par_Ref, Str_30 Str_2_Par_Ref);
 
- 
+
 /* variables for time measurement: */
- 
+
 #define Too_Small_Time_uSecs 100
 /* Measurements should last at least 100 microseconds */
- 
+
 uint64_t          Begin_Cycle,
   End_Cycle;
 uint64_t User_Time_uSecs;
- 
+
 uint64_t          Microseconds,
   Dhrystones_Per_Second,
   Vax_Mips;
- 
+
 /* end of variables for time measurement */
 
 
 int test_2()
 /*****/
- 
+
 /* main program, corresponds to procedures        */
 /* Main and Proc_0 in the Ada version             */
 {
@@ -161,36 +161,36 @@ int test_2()
   Str_30      Str_1_Loc;
   Str_30      Str_2_Loc;
   REG   int         Run_Index;
-  REG   int         Number_Of_Runs; 
+  REG   int         Number_Of_Runs;
   int         count = 10;
   char        general[9][80] = {" "};
 
- 
+
   /***********************************************************************
    *         Change for compiler and optimisation used                   *
    ***********************************************************************/
- 
+
   Next_Ptr_Glob = (Rec_Pointer) malloc (sizeof (Rec_Type));
   Ptr_Glob = (Rec_Pointer) malloc (sizeof (Rec_Type));
   if((Next_Ptr_Glob == 0) || (Ptr_Glob == 0)){
     printf("Fail during malloc; dying\r\n");
     return 1;
   }
- 
+
   Ptr_Glob->Ptr_Comp                    = Next_Ptr_Glob;
   Ptr_Glob->Discr                       = Ident_1;
   Ptr_Glob->variant.var_1.Enum_Comp     = Ident_3;
   Ptr_Glob->variant.var_1.Int_Comp      = 40;
-  strcpy (Ptr_Glob->variant.var_1.Str_Comp, 
-          "DHRYSTONE PROGRAM, SOME STRING");       
+  strcpy (Ptr_Glob->variant.var_1.Str_Comp,
+          "DHRYSTONE PROGRAM, SOME STRING");
   strcpy (Str_1_Loc, "DHRYSTONE PROGRAM, 1'ST STRING");
- 
+
   Arr_2_Glob [8][7] = 10;
   /* Was missing in published program. Without this statement,   */
   /* Arr_2_Glob [8][7] would have an undefined value.            */
   /* Warning: With 16-Bit processors and Number_Of_Runs > 32000, */
   /* overflow may occur for this array element.                  */
- 
+
   if (getinput == 0)
     {
       printf ("No run time input data\r\n\r\n");
@@ -199,7 +199,7 @@ int test_2()
     {
       printf ("With run time input data\r\n\r\n");
     }
-   
+
 #ifdef ROPT
   printf ("Register option selected\r\n\r\n");
 #else
@@ -207,7 +207,7 @@ int test_2()
   strcpy(Reg_Define, "Register option  Not selected.");
 #endif
 
-  /*  
+  /*
       if (Reg)
       {
       printf ("Program compiled with 'register' attribute\r\n");
@@ -224,8 +224,8 @@ int test_2()
       int n;
       scanf ("%d", &n);
       Number_Of_Runs = n;
-      }   
-      printf ("\r\n"); 
+      }
+      printf ("\r\n");
       printf ("Execution starts, %d runs through Dhrystone\r\n",
       Number_Of_Runs);
   */
@@ -236,16 +236,16 @@ int test_2()
     {
       count = count - 1;
       Arr_2_Glob [8][7] = 10;
-        
+
       /***************/
       /* Start timer */
       /***************/
-  
+
       Begin_Cycle = get_time();
-   
+
       for (Run_Index = 1; Run_Index <= Number_Of_Runs; ++Run_Index)
         {
- 
+
           Proc_5();
           Proc_4();
           /* Ch_1_Glob == 'A', Ch_2_Glob == 'B', Bool_Glob == true */
@@ -286,16 +286,16 @@ int test_2()
           /* Int_1_Loc == 1, Int_2_Loc == 13, Int_3_Loc == 7 */
           Proc_2 (&Int_1_Loc);
           /* Int_1_Loc == 5 */
- 
+
         }   /* loop "for Run_Index" */
- 
+
       /**************/
       /* Stop timer */
       /**************/
 
       End_Cycle = get_time();
       User_Time_uSecs = ((End_Cycle - Begin_Cycle)*1000*1000)/SYS_CLK;
-             
+
       if (User_Time_uSecs > Too_Small_Time_uSecs)
         {
           count = 0;
@@ -307,7 +307,7 @@ int test_2()
         }
     }   /* calibrate/run do while */
   while (count >0);
- 
+
   printf ("\r\n");
   printf ("Final values (* implementation-dependent):\r\n");
   printf ("\r\n");
@@ -315,127 +315,127 @@ int test_2()
   if (Int_Glob == 5)  printf ("O.K.  ");
   else                printf ("WRONG ");
   printf ("%d  ", Int_Glob);
-      
+
   printf ("Bool_Glob:     ");
   if (Bool_Glob == 1) printf ("O.K.  ");
   else                printf ("WRONG ");
   printf ("%d\r\n", Bool_Glob);
-      
+
   printf ("Ch_1_Glob:     ");
-  if (Ch_1_Glob == 'A')  printf ("O.K.  ");               
+  if (Ch_1_Glob == 'A')  printf ("O.K.  ");
   else                   printf ("WRONG ");
   printf ("%c  ", Ch_1_Glob);
-         
+
   printf ("Ch_2_Glob:     ");
   if (Ch_2_Glob == 'B')  printf ("O.K.  ");
   else                   printf ("WRONG ");
   printf ("%c\r\n",  Ch_2_Glob);
-   
+
   printf ("Arr_1_Glob[8]: ");
   if (Arr_1_Glob[8] == 7)  printf ("O.K.  ");
   else                     printf ("WRONG ");
   printf ("%d  ", Arr_1_Glob[8]);
-            
+
   printf ("Arr_2_Glob8/7: ");
   if (Arr_2_Glob[8][7] == Number_Of_Runs + 10)
     printf ("O.K.  ");
   else                   printf ("WRONG ");
   printf ("%10d\r\n", Arr_2_Glob[8][7]);
-   
+
   printf ("Ptr_Glob->            ");
   printf ("  Ptr_Comp:       *    %d\r\n", (int) Ptr_Glob->Ptr_Comp);
-   
+
   printf ("  Discr:       ");
   if (Ptr_Glob->Discr == 0)  printf ("O.K.  ");
   else                       printf ("WRONG ");
   printf ("%d  ", Ptr_Glob->Discr);
-            
+
   printf ("Enum_Comp:     ");
   if (Ptr_Glob->variant.var_1.Enum_Comp == 2)
     printf ("O.K.  ");
   else                printf ("WRONG ");
   printf ("%d\r\n", Ptr_Glob->variant.var_1.Enum_Comp);
-      
+
   printf ("  Int_Comp:    ");
   if (Ptr_Glob->variant.var_1.Int_Comp == 17)  printf ("O.K.  ");
   else                                         printf ("WRONG ");
   printf ("%d ", Ptr_Glob->variant.var_1.Int_Comp);
-      
+
   printf ("Str_Comp:      ");
   if (strcmp(Ptr_Glob->variant.var_1.Str_Comp,
              "DHRYSTONE PROGRAM, SOME STRING") == 0)
     printf ("O.K.  ");
-  else                printf ("WRONG ");   
+  else                printf ("WRONG ");
   printf ("%s\r\n", Ptr_Glob->variant.var_1.Str_Comp);
-   
-  printf ("Next_Ptr_Glob->       "); 
+
+  printf ("Next_Ptr_Glob->       ");
   printf ("  Ptr_Comp:       *    %d", (int) Next_Ptr_Glob->Ptr_Comp);
   printf (" same as above\r\n");
-   
+
   printf ("  Discr:       ");
   if (Next_Ptr_Glob->Discr == 0)
     printf ("O.K.  ");
   else                printf ("WRONG ");
   printf ("%d  ", Next_Ptr_Glob->Discr);
-   
+
   printf ("Enum_Comp:     ");
   if (Next_Ptr_Glob->variant.var_1.Enum_Comp == 1)
     printf ("O.K.  ");
   else                printf ("WRONG ");
   printf ("%d\r\n", Next_Ptr_Glob->variant.var_1.Enum_Comp);
-   
+
   printf ("  Int_Comp:    ");
   if (Next_Ptr_Glob->variant.var_1.Int_Comp == 18)
     printf ("O.K.  ");
   else                printf ("WRONG ");
   printf ("%d ", Next_Ptr_Glob->variant.var_1.Int_Comp);
-   
+
   printf ("Str_Comp:      ");
   if (strcmp(Next_Ptr_Glob->variant.var_1.Str_Comp,
              "DHRYSTONE PROGRAM, SOME STRING") == 0)
     printf ("O.K.  ");
-  else                printf ("WRONG ");   
+  else                printf ("WRONG ");
   printf ("%s\r\n", Next_Ptr_Glob->variant.var_1.Str_Comp);
-   
+
   printf ("Int_1_Loc:     ");
   if (Int_1_Loc == 5)
     printf ("O.K.  ");
   else                printf ("WRONG ");
   printf ("%d  ", Int_1_Loc);
-      
+
   printf ("Int_2_Loc:     ");
   if (Int_2_Loc == 13)
     printf ("O.K.  ");
   else                printf ("WRONG ");
   printf ("%d\r\n", Int_2_Loc);
-   
+
   printf ("Int_3_Loc:     ");
   if (Int_3_Loc == 7)
     printf ("O.K.  ");
   else                printf ("WRONG ");
   printf ("%d  ", Int_3_Loc);
-   
+
   printf ("Enum_Loc:      ");
   if (Enum_Loc == 1)
     printf ("O.K.  ");
   else                printf ("WRONG ");
   printf ("%d\r\n", Enum_Loc);
-   
+
   printf ("Str_1_Loc:                             ");
   if (strcmp(Str_1_Loc, "DHRYSTONE PROGRAM, 1'ST STRING") == 0)
     printf ("O.K.  ");
-  else                printf ("WRONG ");   
+  else                printf ("WRONG ");
   printf ("%s\r\n", Str_1_Loc);
-   
+
   printf ("Str_2_Loc:                             ");
   if (strcmp(Str_2_Loc, "DHRYSTONE PROGRAM, 2'ND STRING") == 0)
     printf ("O.K.  ");
-  else                printf ("WRONG ");   
+  else                printf ("WRONG ");
   printf ("%s\r\n", Str_2_Loc);
-         
+
   printf ("\r\n");
-    
- 
+
+
   if (User_Time_uSecs < Too_Small_Time_uSecs)
     {
       printf ("Measured time too small to obtain meaningful results\r\n");
@@ -447,7 +447,7 @@ int test_2()
       Microseconds = User_Time_uSecs / Number_Of_Runs;
       Dhrystones_Per_Second = (Number_Of_Runs * 1000*1000) / User_Time_uSecs;
       Vax_Mips = (Number_Of_Runs * 1000*1000) / (User_Time_uSecs * 1757);
- 
+
       printf ("Microseconds for one run through Dhrystone: ");
       printf ("%12.2lf \r\n", Microseconds);
       printf ("Dhrystones per Second:                      ");
@@ -463,7 +463,7 @@ int test_2()
       /************************************************************************
        *                Add results to output file Dhry.txt                   *
        ************************************************************************/
-      printf("-------------------- -----------------------------------"        
+      printf("-------------------- -----------------------------------"
              "\r\n");
       printf("Dhrystone Benchmark  Version 2.1 (Language: C++)\r\n\r\n");
       printf("PC model             %s\r\n", general[1]);
@@ -482,125 +482,125 @@ int test_2()
       if (Int_Glob == 5)  printf("O.K.  ");
       else                printf("WRONG ");
       printf("%d\r\n", Int_Glob);
-      
+
       printf("Bool_Glob:     ");
       if (Bool_Glob == 1) printf("O.K.  ");
       else                printf("WRONG ");
       printf("%d\r\n", Bool_Glob);
-      
+
       printf("Ch_1_Glob:     ");
-      if (Ch_1_Glob == 'A')  printf("O.K.  ");               
+      if (Ch_1_Glob == 'A')  printf("O.K.  ");
       else                   printf("WRONG ");
       printf("%c\r\n", Ch_1_Glob);
-         
+
       printf("Ch_2_Glob:     ");
       if (Ch_2_Glob == 'B')  printf("O.K.  ");
       else                   printf("WRONG ");
       printf("%c\r\n",  Ch_2_Glob);
-   
+
       printf("Arr_1_Glob[8]: ");
       if (Arr_1_Glob[8] == 7)  printf("O.K.  ");
       else                     printf("WRONG ");
       printf("%d\r\n", Arr_1_Glob[8]);
-            
+
       printf("Arr_2_Glob8/7: ");
       if (Arr_2_Glob[8][7] == Number_Of_Runs + 10)
         printf("O.K.  ");
       else                   printf("WRONG ");
       printf("%10d\r\n", Arr_2_Glob[8][7]);
-   
+
       printf("Ptr_Glob->  \r\n");
       printf("  Ptr_Comp:       *  %d\r\n", (int) Ptr_Glob->Ptr_Comp);
-   
+
       printf("  Discr:       ");
       if (Ptr_Glob->Discr == 0)  printf("O.K.  ");
       else                       printf("WRONG ");
       printf("%d\r\n", Ptr_Glob->Discr);
-            
+
       printf("  Enum_Comp:   ");
       if (Ptr_Glob->variant.var_1.Enum_Comp == 2)
         printf("O.K.  ");
       else                printf("WRONG ");
       printf("%d\r\n", Ptr_Glob->variant.var_1.Enum_Comp);
-      
+
       printf("  Int_Comp:    ");
       if (Ptr_Glob->variant.var_1.Int_Comp == 17)  printf("O.K.  ");
       else                                         printf("WRONG ");
       printf("%d\r\n", Ptr_Glob->variant.var_1.Int_Comp);
-      
+
       printf("  Str_Comp:    ");
       if (strcmp(Ptr_Glob->variant.var_1.Str_Comp,
                  "DHRYSTONE PROGRAM, SOME STRING") == 0)
         printf("O.K.  ");
-      else                printf("WRONG ");   
+      else                printf("WRONG ");
       printf("%s\r\n", Ptr_Glob->variant.var_1.Str_Comp);
-   
-      printf("Next_Ptr_Glob-> \r\n"); 
+
+      printf("Next_Ptr_Glob-> \r\n");
       printf("  Ptr_Comp:       *  %d", (int) Next_Ptr_Glob->Ptr_Comp);
       printf(" same as above\r\n");
-   
+
       printf("  Discr:       ");
       if (Next_Ptr_Glob->Discr == 0)
         printf("O.K.  ");
       else                printf("WRONG ");
       printf("%d\r\n", Next_Ptr_Glob->Discr);
-   
+
       printf("  Enum_Comp:   ");
       if (Next_Ptr_Glob->variant.var_1.Enum_Comp == 1)
         printf("O.K.  ");
       else                printf("WRONG ");
       printf("%d\r\n", Next_Ptr_Glob->variant.var_1.Enum_Comp);
-   
+
       printf("  Int_Comp:    ");
       if (Next_Ptr_Glob->variant.var_1.Int_Comp == 18)
         printf("O.K.  ");
       else                printf("WRONG ");
       printf("%d\r\n", Next_Ptr_Glob->variant.var_1.Int_Comp);
-   
+
       printf("  Str_Comp:    ");
       if (strcmp(Next_Ptr_Glob->variant.var_1.Str_Comp,
                  "DHRYSTONE PROGRAM, SOME STRING") == 0)
         printf("O.K.  ");
-      else                printf("WRONG ");   
+      else                printf("WRONG ");
       printf("%s\r\n", Next_Ptr_Glob->variant.var_1.Str_Comp);
-   
+
       printf("Int_1_Loc:     ");
       if (Int_1_Loc == 5)
         printf("O.K.  ");
       else                printf("WRONG ");
       printf("%d\r\n", Int_1_Loc);
-      
+
       printf("Int_2_Loc:     ");
       if (Int_2_Loc == 13)
         printf("O.K.  ");
       else                printf("WRONG ");
       printf("%d\r\n", Int_2_Loc);
-   
+
       printf("Int_3_Loc:     ");
       if (Int_3_Loc == 7)
         printf("O.K.  ");
       else                printf("WRONG ");
       printf("%d\r\n", Int_3_Loc);
-   
+
       printf("Enum_Loc:      ");
       if (Enum_Loc == 1)
         printf("O.K.  ");
       else                printf("WRONG ");
       printf("%d\r\n", Enum_Loc);
-   
+
       printf("Str_1_Loc:     ");
       if (strcmp(Str_1_Loc, "DHRYSTONE PROGRAM, 1'ST STRING") == 0)
         printf("O.K.  ");
-      else                printf("WRONG ");   
+      else                printf("WRONG ");
       printf("%s\r\n", Str_1_Loc);
-   
+
       printf("Str_2_Loc:     ");
       if (strcmp(Str_2_Loc, "DHRYSTONE PROGRAM, 2'ND STRING") == 0)
         printf("O.K.  ");
-      else                printf("WRONG ");   
+      else                printf("WRONG ");
       printf("%s\r\n", Str_2_Loc);
-         
-   
+
+
       printf("\r\n");
       printf("%s\r\n",Reg_Define);
       printf("\r\n");
@@ -608,7 +608,7 @@ int test_2()
       printf("Dhrystones / second:  %d\r\n",(int)Dhrystones_Per_Second);
       printf("VAX MIPS rating:      %d\r\n\r\n",(int)Vax_Mips);
     }
-   
+
   printf ("\r\n");
   printf ("A new results file will have been created in the same directory as the\r\n");
   printf (".EXE files if one did not already exist. If you made a mistake on input, \r\n");
@@ -619,55 +619,55 @@ int test_2()
   printf ("or to Roy_Longbottom@compuserve.com\r\n\r\n");
 
   return (int)Vax_Mips;
-  
+
   while(1){
   }
   return 0;
 }
- 
- 
+
+
 void Proc_1 (REG Rec_Pointer Ptr_Val_Par)
 /******************/
- 
+
 /* executed once */
 {
-  REG Rec_Pointer Next_Record = Ptr_Val_Par->Ptr_Comp;  
+  REG Rec_Pointer Next_Record = Ptr_Val_Par->Ptr_Comp;
   /* == Ptr_Glob_Next */
   /* Local variable, initialized with Ptr_Val_Par->Ptr_Comp,    */
   /* corresponds to "rename" in Ada, "with" in Pascal           */
-   
+
   structassign (*Ptr_Val_Par->Ptr_Comp, *Ptr_Glob);
   Ptr_Val_Par->variant.var_1.Int_Comp = 5;
-  Next_Record->variant.var_1.Int_Comp 
+  Next_Record->variant.var_1.Int_Comp
     = Ptr_Val_Par->variant.var_1.Int_Comp;
   Next_Record->Ptr_Comp = Ptr_Val_Par->Ptr_Comp;
   Proc_3 (&Next_Record->Ptr_Comp);
-  /* Ptr_Val_Par->Ptr_Comp->Ptr_Comp 
+  /* Ptr_Val_Par->Ptr_Comp->Ptr_Comp
      == Ptr_Glob->Ptr_Comp */
   if (Next_Record->Discr == Ident_1)
     /* then, executed */
     {
       Next_Record->variant.var_1.Int_Comp = 6;
-      Proc_6 (Ptr_Val_Par->variant.var_1.Enum_Comp, 
+      Proc_6 (Ptr_Val_Par->variant.var_1.Enum_Comp,
               &Next_Record->variant.var_1.Enum_Comp);
       Next_Record->Ptr_Comp = Ptr_Glob->Ptr_Comp;
-      Proc_7 (Next_Record->variant.var_1.Int_Comp, 10, 
+      Proc_7 (Next_Record->variant.var_1.Int_Comp, 10,
               &Next_Record->variant.var_1.Int_Comp);
     }
   else /* not executed */
     structassign (*Ptr_Val_Par, *Ptr_Val_Par->Ptr_Comp);
 } /* Proc_1 */
- 
- 
+
+
 void Proc_2 (One_Fifty *Int_Par_Ref)
 /******************/
 /* executed once */
 /* *Int_Par_Ref == 1, becomes 4 */
- 
+
 {
   One_Fifty  Int_Loc;
   Enumeration   Enum_Loc;
- 
+
   Int_Loc = *Int_Par_Ref + 10;
   do /* executed once */
     if (Ch_1_Glob == 'A')
@@ -679,33 +679,33 @@ void Proc_2 (One_Fifty *Int_Par_Ref)
       } /* if */
   while (Enum_Loc != Ident_1); /* true */
 } /* Proc_2 */
- 
- 
+
+
 void Proc_3 (Rec_Pointer *Ptr_Ref_Par)
 /******************/
 /* executed once */
 /* Ptr_Ref_Par becomes Ptr_Glob */
- 
+
 {
   if (Ptr_Glob != 0)
     /* then, executed */
     *Ptr_Ref_Par = Ptr_Glob->Ptr_Comp;
   Proc_7 (10, Int_Glob, &Ptr_Glob->variant.var_1.Int_Comp);
 } /* Proc_3 */
- 
- 
+
+
 void Proc_4 () /* without parameters */
 /*******/
 /* executed once */
 {
   Boolean Bool_Loc;
- 
+
   Bool_Loc = Ch_1_Glob == 'A';
   Bool_Glob = Bool_Loc | Bool_Glob;
   Ch_2_Glob = 'B';
 } /* Proc_4 */
- 
- 
+
+
 void Proc_5 () /* without parameters */
 /*******/
 /* executed once */
@@ -713,8 +713,8 @@ void Proc_5 () /* without parameters */
   Ch_1_Glob = 'A';
   Bool_Glob = false;
 } /* Proc_5 */
- 
- 
+
+
 /* Procedure for the assignment of structures,          */
 /* if the C compiler doesn't support this feature       */
 #ifdef  NOSTRUCTASSIGN
@@ -727,13 +727,13 @@ register int    l;
 }
 #endif
 
- Boolean Func_3 (Enumeration Enum_Par_Val); 
- 
+ Boolean Func_3 (Enumeration Enum_Par_Val);
+
  void Proc_6 (Enumeration Enum_Val_Par, Enumeration *Enum_Ref_Par)
  /*********************************/
      /* executed once */
      /* Enum_Val_Par == Ident_3, Enum_Ref_Par becomes Ident_2 */
- 
+
  {
    *Enum_Ref_Par = Enum_Val_Par;
    if (! Func_3 (Enum_Val_Par))
@@ -741,10 +741,10 @@ register int    l;
      *Enum_Ref_Par = Ident_4;
    switch (Enum_Val_Par)
    {
-     case Ident_1: 
+     case Ident_1:
        *Enum_Ref_Par = Ident_1;
        break;
-     case Ident_2: 
+     case Ident_2:
        if (Int_Glob > 100)
          /* then */
        *Enum_Ref_Par = Ident_1;
@@ -754,13 +754,13 @@ register int    l;
        *Enum_Ref_Par = Ident_2;
        break;
      case Ident_4: break;
-     case Ident_5: 
+     case Ident_5:
        *Enum_Ref_Par = Ident_3;
        break;
    } /* switch */
  } /* Proc_6 */
- 
- 
+
+
  void Proc_7 (One_Fifty Int_1_Par_Val, One_Fifty Int_2_Par_Val,
                                               One_Fifty *Int_Par_Ref)
  /**********************************************/
@@ -774,12 +774,12 @@ register int    l;
 
  {
    One_Fifty Int_Loc;
- 
+
    Int_Loc = Int_1_Par_Val + 2;
    *Int_Par_Ref = Int_2_Par_Val + Int_Loc;
  } /* Proc_7 */
- 
- 
+
+
  void Proc_8 (Arr_1_Dim Arr_1_Par_Ref, Arr_2_Dim Arr_2_Par_Ref,
                                   int Int_1_Par_Val, int Int_2_Par_Val)
  /*********************************************************************/
@@ -790,7 +790,7 @@ register int    l;
  {
    REG One_Fifty Int_Index;
    REG One_Fifty Int_Loc;
- 
+
    Int_Loc = Int_1_Par_Val + 5;
    Arr_1_Par_Ref [Int_Loc] = Int_2_Par_Val;
    Arr_1_Par_Ref [Int_Loc+1] = Arr_1_Par_Ref [Int_Loc];
@@ -801,8 +801,8 @@ register int    l;
    Arr_2_Par_Ref [Int_Loc+20] [Int_Loc] = Arr_1_Par_Ref [Int_Loc];
    Int_Glob = 5;
  } /* Proc_8 */
- 
- 
+
+
  Enumeration Func_1 (Capital_Letter Ch_1_Par_Val,
                                            Capital_Letter Ch_2_Par_Val)
  /*************************************************/
@@ -810,11 +810,11 @@ register int    l;
      /* first call:      Ch_1_Par_Val == 'H', Ch_2_Par_Val == 'R'    */
      /* second call:     Ch_1_Par_Val == 'A', Ch_2_Par_Val == 'C'    */
      /* third call:      Ch_1_Par_Val == 'B', Ch_2_Par_Val == 'C'    */
- 
+
  {
    Capital_Letter        Ch_1_Loc;
    Capital_Letter        Ch_2_Loc;
- 
+
    Ch_1_Loc = Ch_1_Par_Val;
    Ch_2_Loc = Ch_1_Loc;
    if (Ch_2_Loc != Ch_2_Par_Val)
@@ -826,18 +826,18 @@ register int    l;
      return (Ident_2);
     }
  } /* Func_1 */
- 
- 
+
+
  Boolean Func_2 (Str_30 Str_1_Par_Ref, Str_30 Str_2_Par_Ref)
  /*************************************************/
      /* executed once */
      /* Str_1_Par_Ref == "DHRYSTONE PROGRAM, 1'ST STRING" */
      /* Str_2_Par_Ref == "DHRYSTONE PROGRAM, 2'ND STRING" */
- 
+
  {
    REG One_Thirty        Int_Loc;
        Capital_Letter    Ch_Loc;
- 
+
    Int_Loc = 2;
    while (Int_Loc <= 2) /* loop body executed once */
      if (Func_1 (Str_1_Par_Ref[Int_Loc],
@@ -866,16 +866,16 @@ register int    l;
        return (false);
    } /* if Ch_Loc */
  } /* Func_2 */
- 
- 
+
+
  Boolean Func_3 (Enumeration Enum_Par_Val)
  /***************************/
      /* executed once        */
      /* Enum_Par_Val == Ident_3 */
-     
+
  {
    Enumeration Enum_Loc;
- 
+
    Enum_Loc = Enum_Par_Val;
    if (Enum_Loc == Ident_3)
      /* then, executed */
@@ -885,10 +885,11 @@ register int    l;
  } /* Func_3 */
 
 
+
 #define do_test(TEST_NUMBER) do{                \
     int result = test_##TEST_NUMBER();          \
     if(result){                                 \
-      asm volatile ("ori  x28, %0, 0\n"         \
+      asm volatile ("ori  x3, %0, 0\n"         \
                     "fence.i\n"                 \
                     "ecall\n"                   \
                     : : "r"(result));           \
@@ -897,14 +898,14 @@ register int    l;
   } while(0)
 
 #define pass_test() do{                         \
-    asm volatile ("addi x28, x0, 1\n"           \
+    asm volatile ("addi x3, x0, 1\n"           \
                   "fence.i\n"                   \
                   "ecall\n");                   \
     return 0;                                   \
   } while(0)
 
 
- 
+
 int main()
 {
 	do_test(2);

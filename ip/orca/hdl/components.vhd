@@ -806,16 +806,16 @@ package rv_components is
       clk   : in std_logic;
       reset : in std_logic;
 
-      --writeback signals
       to_rf_select : in std_logic_vector(REGISTER_NAME_SIZE-1 downto 0);
       to_rf_data   : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       to_rf_valid  : in std_logic;
 
-      to_decode_instruction     : in  std_logic_vector(31 downto 0);
-      to_decode_program_counter : in  unsigned(REGISTER_SIZE-1 downto 0);
-      to_decode_predicted_pc    : in  unsigned(REGISTER_SIZE-1 downto 0);
-      to_decode_valid           : in  std_logic;
-      from_decode_ready         : out std_logic;
+      to_decode_instruction              : in     std_logic_vector(INSTRUCTION_SIZE(vcp_type'(DISABLED))-1 downto 0);
+      to_decode_program_counter          : in     unsigned(REGISTER_SIZE-1 downto 0);
+      to_decode_predicted_pc             : in     unsigned(REGISTER_SIZE-1 downto 0);
+      to_decode_valid                    : in     std_logic;
+      from_decode_ready                  : buffer std_logic;
+      from_decode_incomplete_instruction : out    std_logic;
 
       quash_decode : in  std_logic;
       decode_idle  : out std_logic;
@@ -827,10 +827,9 @@ package rv_components is
       from_decode_program_counter  : out unsigned(REGISTER_SIZE-1 downto 0);
       from_decode_predicted_pc     : out unsigned(REGISTER_SIZE-1 downto 0);
       from_decode_instruction      : out std_logic_vector(INSTRUCTION_SIZE(VCP_ENABLE)-1 downto 0);
-      from_decode_next_instruction : out std_logic_vector(31 downto 0);
+      from_decode_next_instruction : out std_logic_vector(INSTRUCTION_SIZE(vcp_type'(DISABLED))-1 downto 0);
       from_decode_next_valid       : out std_logic;
       from_decode_valid            : out std_logic;
-      from_decode_wait_for_instr   : out std_logic;
       to_decode_ready              : in  std_logic
       );
   end component decode;
@@ -1114,6 +1113,7 @@ package rv_components is
       NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
       VCP_ENABLE : vcp_type;
+      MUL_ENABLE : boolean;
 
       AUX_MEMORY_REGIONS : natural range 0 to 4;
       AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
@@ -1369,8 +1369,7 @@ package rv_components is
       INTERNAL_WIDTH        : positive;
       EXTERNAL_WIDTH        : positive;
       LOG2_BURSTLENGTH      : positive;
-      READ_ONLY             : boolean;
-      WRITEBACK             : boolean;
+      POLICY                : cache_policy;
       WRITE_FIRST_SUPPORTED : boolean
       );
     port (
@@ -1432,6 +1431,7 @@ package rv_components is
       read_readabort     : out    std_logic;
       read_miss          : buffer std_logic;
       read_lastaddress   : buffer std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+      read_tag           : buffer std_logic_vector((ADDRESS_WIDTH-log2(NUM_LINES*LINE_SIZE))-1 downto 0);
       read_dirty_valid   : out    std_logic_vector(DIRTY_BITS downto 0);
 
       --Write-only data ORCA-internal memory-mapped slave
@@ -1598,9 +1598,9 @@ package rv_components is
       );
     port (
       clk           : in  std_logic;
-      read_address  : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+      read_address  : in  unsigned(log2(DEPTH)-1 downto 0);
       read_data     : out std_logic_vector(WIDTH-1 downto 0);
-      write_address : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+      write_address : in  unsigned(log2(DEPTH)-1 downto 0);
       write_enable  : in  std_logic;
       write_data    : in  std_logic_vector(WIDTH-1 downto 0)
       );

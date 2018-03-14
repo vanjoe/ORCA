@@ -743,9 +743,13 @@ begin
               Q                := (others => '1');
               R                := rs1_data;
               div_result_valid <= '1';
+              div_neg_remainder <= '0';
+              div_neg_quotient <= '0';
             elsif div_overflow then
               Q                := min_signed;
               div_result_valid <= '1';
+              div_neg_remainder <= '0';
+              div_neg_quotient <= '0';
             else
               state <= DIVIDING;
               count <= Q'length - 1;

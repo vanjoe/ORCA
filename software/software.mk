@@ -5,12 +5,8 @@
 all:
 
 ifdef ORCA_TEST
-vpath %.c $(ORCA_ROOT)/software/orca-tests/$(ORCA_TEST)
-vpath %.S $(ORCA_ROOT)/software/orca-tests/$(ORCA_TEST)
-RISCV_OLEVEL ?= -O3
-TARGET       ?= $(ORCA_TEST)
-C_SRCS       += $(wildcard $(ORCA_ROOT)/software/orca-tests/$(ORCA_TEST)/*.c)
-AS_SRCS      += $(wildcard $(ORCA_ROOT)/software/orca-tests/$(ORCA_TEST)/*.S)
+vpath %.c $(ORCA_ROOT)/software/orca-tests/
+C_SRCS += orca-test.c
 endif #ifdef ORCA_TEST
 
 TARGET     ?= $(shell pwd | xargs basename)
@@ -47,13 +43,14 @@ RISCV_TESTS_DIR ?= $(ORCA_ROOT)/software/riscv-tests
 RISCV_ENV_DIR   ?= $(RISCV_TESTS_DIR)/env/p
 ENCODING_H      ?= $(RISCV_TESTS_DIR)/env/encoding.h
 
-INCLUDE_DIRS += $(RISCV_ENV_DIR) $(RISCV_ENV_DIR)/.. $(RISCV_TESTS_DIR)/isa/macros/scalar $(abspath $(shell pwd)) $(OUTPUT_PREFIX).. $(ORCA_ROOT)/software $(ORCA_ROOT)/software/orca_lib
-INCLUDE_STRING := $(addprefix -I,$(abspath $(INCLUDE_DIRS)))
+INCLUDE_DIRS += $(RISCV_ENV_DIR) $(RISCV_ENV_DIR)/.. $(RISCV_TESTS_DIR)/isa/macros/scalar . $(OUTPUT_PREFIX).. $(ORCA_ROOT)/software $(ORCA_ROOT)/software/orca_lib
+INCLUDE_STRING := $(addprefix -I,$(INCLUDE_DIRS))
 
 CFLAGS   ?= -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 -Wmisleading-indentation $(EXTRA_CFLAGS) $(INCLUDE_STRING)
 LD_FLAGS ?= -march=$(ARCH) -static -nostartfiles
 
 C_OBJ_FILES := $(addprefix $(OBJDIR)/,$(addsuffix .o, $(notdir $(C_SRCS))))
+
 S_OBJ_FILES := $(addprefix $(OBJDIR)/,$(addsuffix .o, $(notdir $(AS_SRCS))))
 
 START_ADDRESS ?= 0x100

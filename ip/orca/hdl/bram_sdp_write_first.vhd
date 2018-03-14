@@ -13,9 +13,9 @@ entity bram_sdp_write_first is
     );
   port (
     clk           : in  std_logic;
-    read_address  : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+    read_address  : in  unsigned(log2(DEPTH)-1 downto 0);
     read_data     : out std_logic_vector(WIDTH-1 downto 0);
-    write_address : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+    write_address : in  unsigned(log2(DEPTH)-1 downto 0);
     write_enable  : in  std_logic;
     write_data    : in  std_logic_vector(WIDTH-1 downto 0)
     );
