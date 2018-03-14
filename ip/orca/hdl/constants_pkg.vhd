@@ -90,6 +90,7 @@ package constants_pkg is
   constant CSR_MSTATUS  : std_logic_vector(11 downto 0)  := x"300";
   constant CSR_MISA     : std_logic_vector(11 downto 0)  := x"301";
   constant CSR_MIE      : std_logic_vector(11 downto 0)  := x"304";
+  constant CSR_MSCRATCH : std_logic_vector(11 downto 0)  := x"340";
   constant CSR_MEPC     : std_logic_vector(11 downto 0)  := x"341";
   constant CSR_MCAUSE   : std_logic_vector(11 downto 0)  := x"342";
   constant CSR_MBADADDR : std_logic_vector(11 downto 0)  := x"304";

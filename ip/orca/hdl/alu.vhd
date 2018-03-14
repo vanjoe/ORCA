@@ -147,11 +147,11 @@ begin
 
     --Top bit and bottom two bits are identical for all cases we care about
     case opcode(5 downto 2) is
-      when "1101" => --LUI_OP(5 downto 2)
+      when "1101" =>                    --LUI_OP(5 downto 2)
         lui_select <= '1';
-      when "0101" => --AUIPC_OP(5 downto 2)
+      when "0101" =>                    --AUIPC_OP(5 downto 2)
         auipc_select <= '1';
-      when "0100" => --ALUI_OP(5 downto 2)
+      when "0100" =>                    --ALUI_OP(5 downto 2)
         case func3 is
           when SLL_FUNC3 =>
             if ENABLE_EXCEPTIONS then
@@ -754,12 +754,16 @@ begin
             N                 := numerator;
             R                 := (others => '0');
             if div_by_zero then
-              Q              := (others => '1');
-              R              := unsigned(rs1_data);
-              from_div_valid <= '1';
+              Q                 := (others => '1');
+              R                 := unsigned(rs1_data);
+              from_div_valid    <= '1';
+              div_neg_remainder <= '0';
+              div_neg_quotient  <= '0';
             elsif div_overflow then
-              Q              := unsigned(min_signed);
-              from_div_valid <= '1';
+              Q                 := unsigned(min_signed);
+              from_div_valid    <= '1';
+              div_neg_remainder <= '0';
+              div_neg_quotient  <= '0';
             else
               state <= DIVIDING;
               count <= Q'length - 1;

@@ -433,7 +433,7 @@
   <parameter name="IC_RETURN_REGISTER" value="0" />
   <parameter name="INSTRUCTION_REQUEST_REGISTER" value="0" />
   <parameter name="INSTRUCTION_RETURN_REGISTER" value="0" />
-  <parameter name="INTERRUPT_VECTOR" value="512" />
+  <parameter name="INTERRUPT_VECTOR" value="4" />
   <parameter name="IUC_REQUEST_REGISTER" value="0" />
   <parameter name="IUC_RETURN_REGISTER" value="0" />
   <parameter name="LOG2_BURSTLENGTH" value="4" />

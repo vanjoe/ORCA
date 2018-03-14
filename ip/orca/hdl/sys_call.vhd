@@ -17,7 +17,8 @@ entity sys_call is
     ENABLE_EXT_INTERRUPTS : boolean;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
 
-    VCP_ENABLE : vcp_type;
+    VCP_ENABLE      : vcp_type;
+    MULTIPLY_ENABLE : boolean;
 
     AUX_MEMORY_REGIONS : natural range 0 to 4;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
@@ -85,6 +86,7 @@ architecture rtl of sys_call is
   -- CSR signals. These are initialized to zero so that if any bits are never
   -- assigned, they act like constants.
   signal mstatus      : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mscratch     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mepc         : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mcause       : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mbadaddr     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
@@ -205,9 +207,13 @@ begin
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
   misa(misa'left downto misa'left-1) <= "01";
   misa(23)                           <= '0' when VCP_ENABLE = DISABLED else '1';
+  misa(8)                            <= '1';  --I
+  misa(12)                           <= '1' when MULTIPLY_ENABLE       else '0';
+
   with csr_number select
     csr_readdata <=
     misa            when CSR_MISA,
+    mscratch        when CSR_MSCRATCH,
     mstatus         when CSR_MSTATUS,
     mepc            when CSR_MEPC,
     mcause          when CSR_MCAUSE,
@@ -241,7 +247,7 @@ begin
     csr_writedata <=
     csr_readdata(31 downto 5) & (csr_readdata(CSR_ZIMM'length-1 downto 0) and (not imm)) when CSRRCI_FUNC3,
     csr_readdata(31 downto 5) & (csr_readdata(CSR_ZIMM'length-1 downto 0) or imm)        when CSRRSI_FUNC3,
-    csr_readdata(31 downto 5) & imm                                                      when CSRRWI_FUNC3,
+    std_logic_vector(resize(unsigned(imm), csr_writedata'length))                        when CSRRWI_FUNC3,
     csr_readdata and (not rs1_data)                                                      when CSRRC_FUNC3,
     csr_readdata or rs1_data                                                             when CSRRS_FUNC3,
     rs1_data                                                                             when others;  --CSRRW_FUNC3,
@@ -297,6 +303,8 @@ begin
                 mbadaddr <= csr_writedata;
               when CSR_MEIMASK =>
                 meimask_full <= csr_writedata;
+              when CSR_MSCRATCH =>
+                mscratch <= csr_writedata;
               when others => null;
             end case;
           end if;
