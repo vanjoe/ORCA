@@ -546,20 +546,14 @@ begin
         if fence_select = '1' then
           --FENCE
 
-          --Flush the pipeline; not always necessary but this is the
-          --simple/conservative implementation
-          fence_pc_correction_valid <= '1';
-          fence_pending             <= '1';
-
-          if instruction(FENCE_SR_BIT) = '1' then
-            --If successor read flush the cache so subsequent reads get new data
-            to_dcache_control_command <= FLUSH;
-            to_dcache_control_valid   <= '1';
-          elsif instruction(FENCE_PW_BIT) = '1' then
-            --If predecessor writes writeback the cache so that writes show up
-            --before subsequent read/write/i/o
-            to_dcache_control_command <= WRITEBACK;
-            to_dcache_control_valid   <= '1';
+          --Flush the pipeline if we have multiple data interfaces.  Data
+          --accesses on each interface are strictly ordered, so flushes are
+          --only necessary to ensure accesses on different interfaces are
+          --ordered.
+          if ((HAS_DCACHE and (UC_MEMORY_REGIONS > 0 or AUX_MEMORY_REGIONS > 0)) or
+              (UC_MEMORY_REGIONS > 0 and AUX_MEMORY_REGIONS > 0)) then
+            fence_pc_correction_valid <= '1';
+            fence_pending             <= '1';
           end if;
         end if;
       end if;
