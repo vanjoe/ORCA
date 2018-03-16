@@ -54,10 +54,8 @@ $(ORCA_TESTS:.elf=.ihex):%.ihex : %.elf
 $(ORCA_TESTS:.elf=.dump): %.dump : %.elf
 	$(CROSS_COMPILE)objdump  --disassemble-all -Mnumeric,no-aliases $^ > $@
 
-$(ORCA_ROOT)/tools/hex_to_coe : % :%.cpp
-	gcc $^ -o $@
 
-$(ORCA_TESTS:.elf=.coe): %.coe : %.ihex %.bin $(ORCA_ROOT)/tools/hex_to_coe
+$(ORCA_TESTS:.elf=.coe): %.coe : %.ihex  $(ORCA_ROOT)/tools/hex_to_coe
 	$(ORCA_ROOT)/tools/hex_to_coe $< $@ 0x$(shell nm --numeric-sort $*.elf | awk '{print $$1}' | head -n1) 	0x$(shell nm --numeric-sort $*.elf | awk '{print $$1}' | tail -n1)
 
 all: $(ORCA_TESTS:.elf=.qex)  $(ORCA_TESTS:.elf=.ihex) $(ORCA_TESTS:.elf=.dump)

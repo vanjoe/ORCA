@@ -31,7 +31,7 @@ OUT_BIT=out.bit
 PGM_TCL=pgm.tcl
 
 .PHONY: all
-all: $(OUT_BIT) resource_utilization.rpt link.ld
+all: $(OUT_BIT) resource_utilization.rpt link.ld orca_defines.h
 
 VIVADO_SOURCE=vivado -notrace -nojournal -nolog -mode batch -source
 
@@ -234,9 +234,16 @@ link.ld::
 
 
 .PHONY: sim
-sim: $(BD_FILE) $(COE_FILE)
-	vivado -nolog -nojournal $(PROJ_FILE) -source simulate.tcl &
 
+ifneq ($(RUN_FILE),)
+sim: $(BD_FILE) software/$(RUN_FILE).coe
+	make -C  software $(RUN_FILE).coe $(RUN_FILE).dump
+	ln -sf software/$(RUN_FILE).coe test.coe
+	vivado -nolog -nojournal $(PROJ_FILE) -source simulate.tcl &
+else
+sim :
+	@printf "RUN_FILE not defined\n" && false
+endif
 .PHONY: gui
 gui: $(BD_FILE)
 	vivado -nolog -nojournal $(PROJ_FILE) &
@@ -256,7 +263,7 @@ pgm:
 
 
 .PHONY: run
-run:
+run: orca_defines.h
 ifeq ($(RUN_FILE), NONE)
 	python ../../tools/orca_pgm.py test.ihex  --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS)
 else #ifeq ($(RUN_FILE), NONE)

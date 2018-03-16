@@ -40,10 +40,10 @@ endif #else #ifdef USE_LVE
 RISCV_OLEVEL ?= -O2
 
 RISCV_TESTS_DIR ?= $(ORCA_ROOT)/software/riscv-tests
-RISCV_ENV_DIR   ?= $(RISCV_TESTS_DIR)/env/p
+RISCV_ENV_DIR   ?= $(RISCV_TESTS_DIR)/env
 ENCODING_H      ?= $(RISCV_TESTS_DIR)/env/encoding.h
 
-INCLUDE_DIRS += $(RISCV_ENV_DIR) $(RISCV_ENV_DIR)/.. $(RISCV_TESTS_DIR)/isa/macros/scalar . $(OUTPUT_PREFIX).. $(ORCA_ROOT)/software $(ORCA_ROOT)/software/orca_lib
+INCLUDE_DIRS += $(RISCV_ENV_DIR)  $(RISCV_TESTS_DIR)/isa/macros/scalar . $(OUTPUT_PREFIX).. $(ORCA_ROOT)/software $(ORCA_ROOT)/software/orca_lib
 INCLUDE_STRING := $(addprefix -I,$(INCLUDE_DIRS))
 
 CFLAGS   ?= -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 -Wmisleading-indentation $(EXTRA_CFLAGS) $(INCLUDE_STRING)
@@ -122,10 +122,9 @@ RISCV_TESTS=$(basename $(foreach arch,$(RISCV_ARCHS),\
 	$(addprefix $(arch)-p-,$(notdir $(wildcard $(RISCV_TEST_DIR)/isa/$(arch)/*.S) ))))
 RISCV_PHONY=$(addsuffix .phony,$(RISCV_TESTS))
 
-$(RISCV_TESTS) :
+$(RISCV_TESTS) : $(ORCA_ROOT)/software/orca_lib/orca_printf.c
 	$(CC) -o $@ $(RISCV_TEST_DIR)/isa/$(firstword $(subst -p-, , $@))/$(lastword $(subst -p-, , $@)).S \
-	-I$(RISCV_TEST_DIR)isa/macros/scalar -I$(ORCA_ROOT)/software -nostdlib -I$(RISCV_TEST_DIR)/env/ \
-	-T $(LD_SCRIPT)
+	$< $(INCLUDE_STRING) -nostdlib -T $(LD_SCRIPT)
 
 $(addsuffix .qex,$(RISCV_TESTS)):%.qex : %.bin
 	python $(ORCA_ROOT)/tools/bin2hex.py $< -a 0x0 > $@
@@ -135,7 +134,12 @@ $(addsuffix .ihex,$(RISCV_TESTS)):%.ihex : %
 	$(CROSS_COMPILE)objcopy -O ihex $< $@
 $(addsuffix .dump,$(RISCV_TESTS)): %.dump : %
 	$(CROSS_COMPILE)objdump  --disassemble-all -Mnumeric,no-aliases $^ > $@
+$(addsuffix .coe,$(RISCV_TESTS)): %.coe : %.ihex $(ORCA_ROOT)/tools/hex_to_coe
+	$(ORCA_ROOT)/tools/hex_to_coe $< $@ 0x$(shell nm --numeric-sort $* | awk '{print $$1}' | head -n1) 	0x$(shell nm --numeric-sort $* | awk '{print $$1}' | tail -n1)
+
 $(RISCV_PHONY): %.phony : %.dump %.qex %.ihex
+$(ORCA_ROOT)/tools/hex_to_coe : % :%.cpp
+	gcc $^ -o $@
 
 
 .PHONY: $(RISCV_PHONY) riscv_tests
