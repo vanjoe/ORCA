@@ -515,10 +515,10 @@ begin
     signal vcp_instruction      : std_logic_vector(40 downto 0);
     signal vcp_valid_instr      : std_logic;
     signal vcp_ready            : std_logic;
+    signal vcp_illegal          : std_logic;
     signal vcp_writeback_data   : std_logic_vector(LVE_WIDTH-1 downto 0);
     signal vcp_writeback_en     : std_logic;
     signal vcp_alu_data1        : std_logic_vector(LVE_WIDTH-1 downto 0);
-    signal vcp_alu_used         : std_logic;
     signal vcp_alu_data2        : std_logic_vector(LVE_WIDTH-1 downto 0);
     signal vcp_alu_op_size      : std_logic_vector(1 downto 0);
     signal vcp_alu_source_valid : std_logic;
@@ -570,9 +570,9 @@ begin
         vcp_instruction      => vcp_instruction,
         vcp_valid_instr      => vcp_valid_instr,
         vcp_ready            => vcp_ready,
+        vcp_illegal          => vcp_illegal,
         vcp_writeback_data   => vcp_writeback_data,
         vcp_writeback_en     => vcp_writeback_en,
-        vcp_alu_used         => vcp_alu_used,
         vcp_alu_data1        => vcp_alu_data1,
         vcp_alu_data2        => vcp_alu_data2,
         vcp_alu_source_valid => vcp_alu_source_valid,
@@ -609,9 +609,9 @@ begin
         vcp_instruction      => vcp_instruction,
         vcp_valid_instr      => vcp_valid_instr,
         vcp_ready            => vcp_ready,
+        vcp_illegal          => vcp_illegal,
         vcp_writeback_data   => vcp_writeback_data,
         vcp_writeback_en     => vcp_writeback_en,
-        vcp_alu_used         => vcp_alu_used,
         vcp_alu_data1        => vcp_alu_data1,
         vcp_alu_data2        => vcp_alu_data2,
         vcp_alu_source_valid => vcp_alu_source_valid,
