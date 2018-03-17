@@ -78,6 +78,7 @@ end entity sys_call;
 architecture rtl of sys_call is
   signal fence_select  : std_logic;
   signal fencei_select : std_logic;
+  signal cache_select  : std_logic;
   signal csr_select    : std_logic;
   signal ebreak_select : std_logic;
   signal ecall_select  : std_logic;
@@ -101,6 +102,7 @@ architecture rtl of sys_call is
   alias csr_number : std_logic_vector(CSR_ADDRESS'length-1 downto 0) is instruction(CSR_ADDRESS'range);
   alias opcode     : std_logic_vector(INSTR_OPCODE'length-1 downto 0) is instruction(INSTR_OPCODE'range);
   alias func3      : std_logic_vector(INSTR_FUNC3'length-1 downto 0) is instruction(INSTR_FUNC3'range);
+  alias func7      : std_logic_vector(INSTR_FUNC7'length-1 downto 0) is instruction(INSTR_FUNC7'range);
   alias imm        : std_logic_vector(CSR_ZIMM'length-1 downto 0) is instruction(CSR_ZIMM'range);
   alias rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is instruction(REGISTER_RS1'range);
   alias rd_select  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is instruction(REGISTER_RD'range);
@@ -138,10 +140,11 @@ begin
   --Decode instruction to select submodule.  All paths must decode to exactly
   --one submodule.
   --ASSUMES only SYSTEM_OP | MISC_MEM_OP for opcode.
-  process (opcode, func3) is
+  process (opcode, func3, func7) is
   begin
     fence_select         <= '0';
     fencei_select        <= '0';
+    cache_select         <= '0';
     csr_select           <= '0';
     ebreak_select        <= '0';
     ecall_select         <= '0';
@@ -178,13 +181,30 @@ begin
       case func3 is
         when FENCE_FUNC3 =>
           fence_select <= '1';
-        when FENCEI_FUNC3 =>
-          fencei_select <= '1';
+        when REGION_FUNC3 =>
+          case func7 is
+            when FENCE_I_FUNC7 | FENCE_RI_FUNC7 =>
+              fencei_select <= '1';
+            when FENCE_RD_FUNC7 =>
+              fence_select <= '1';
+            when CACHE_WRITEBACK_FUNC7 | CACHE_FLUSH_FUNC7 | CACHE_DISCARD_FUNC7 =>
+              if HAS_DCACHE then
+                cache_select <= '1';
+              else
+                fence_select <= '1';
+              end if;
+            when others =>
+              if ENABLE_EXCEPTIONS then
+                from_syscall_illegal <= '1';
+              else
+                fence_select <= '1';
+              end if;
+          end case;
         when others =>
           if ENABLE_EXCEPTIONS then
             from_syscall_illegal <= '1';
           else
-            fencei_select <= '1';
+            fence_select <= '1';
           end if;
       end case;
     end if;
@@ -543,18 +563,34 @@ begin
           to_dcache_control_valid   <= '1';
         end if;
 
+        if cache_select = '1' then
+          --CACHE control instructions
+
+          --A FENCE is implied by all cache control instructions.
+          fence_pc_correction_valid <= '1';
+          fence_pending             <= '1';
+
+          to_dcache_control_valid <= '1';
+          case func7(1 downto 0) is
+            when "00" =>                --CACHE_WRITEBACK_FUNC7(1 downto 0)
+              to_dcache_control_command <= WRITEBACK;
+            when "01" =>                --CACHE_FLUSH_FUNC7(1 downto 0)
+              to_dcache_control_command <= FLUSH;
+            when others =>  --CACHE_DISCARD_FUNC7(1 downto 0) + don't care
+              --Currently INVALIDATE invalidates the entire cache which is not
+              --safe.  Until region support is added just flush the cache which
+              --is always safe.
+              to_dcache_control_command <= FLUSH;
+          end case;
+        end if;
+
         if fence_select = '1' then
           --FENCE
 
-          --Flush the pipeline if we have multiple data interfaces.  Data
-          --accesses on each interface are strictly ordered, so flushes are
-          --only necessary to ensure accesses on different interfaces are
-          --ordered.
-          if ((HAS_DCACHE and (UC_MEMORY_REGIONS > 0 or AUX_MEMORY_REGIONS > 0)) or
-              (UC_MEMORY_REGIONS > 0 and AUX_MEMORY_REGIONS > 0)) then
-            fence_pc_correction_valid <= '1';
-            fence_pending             <= '1';
-          end if;
+          --All interfaces are strictly ordered and when switching between
+          --interfaces (via AMR/UMR writes) a FENCE is performed, so FENCEs
+          --don't need to do anything.
+          null;
         end if;
       end if;
 

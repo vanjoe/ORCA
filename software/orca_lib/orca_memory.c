@@ -22,6 +22,101 @@ bool orca_has_dcache(){
   return false;
 }
 
+//Writeback data in D$ to memory.
+//
+//Note that if the stack is in the address range any updates to it
+//during this call may not be written out to memory (the contents of
+//the stack from before the call are guranteed to be written out
+//though).
+void orca_writeback_dcache_range(void *base_address, void *last_address){
+  uintptr_t current_base = (uintptr_t)base_address;
+
+  //WRITEBACK instruction is allowed to do partial completion,
+  //returning a new starting point in rd.  Loop until 
+  do {
+    uintptr_t new_base = current_base;
+    //Until WRITEBACK is supported by the assembler just run manually
+    asm volatile("mv t0, %1\n"
+                 "mv t1, %2\n"
+                 ".word 0x0862928F\n"
+                 "mv %0, t0\n"
+                 : "=r"(new_base) : "r"(current_base), "r"(last_address) : "t0", "t1", "memory");
+    if(new_base == current_base){
+      //No forward progress signals failure or that all of memory was
+      //written back.  ORCA never reports failure, so this is a
+      //success and we can return.
+      return;
+    }
+    current_base = new_base;
+
+    //Check current_base-1 vs last_address to avoid overflow if
+    //high_address goes to 0.
+  } while(((uintptr_t)(current_base-1)) < ((uintptr_t)last_address));
+}
+
+//Flush (writeback to memory then invalidate) data in D$.  
+//
+//It is not recommended to use this for data on the stack.  Not only
+//do the caveats from orca_writeback_data_cache_range() apply but also
+//data from the stack may be read back in to cache during the function
+//call but after the actual flush command.
+void orca_flush_dcache_range(void *base_address, void *last_address){
+  uintptr_t current_base = (uintptr_t)base_address;
+
+  //FLUSH instruction is allowed to do partial completion,
+  //returning a new starting point in rd.  Loop until 
+  do {
+    uintptr_t new_base = current_base;
+    //Until FLUSH is supported by the assembler just run manually
+    asm volatile("mv t0, %1\n"
+                 "mv t1, %2\n"
+                 ".word 0x0A62928F\n"
+                 "mv %0, t0\n"
+                 : "=r"(new_base) : "r"(current_base), "r"(last_address) : "t0", "t1", "memory");
+    if(new_base == current_base){
+      //No forward progress signals failure or that all of memory was
+      //written back.  ORCA never reports failure, so this is a
+      //success and we can return.
+      return;
+    }
+    current_base = new_base;
+
+    //Check current_base-1 vs last_address to avoid overflow if
+    //high_address goes to 0.
+  } while(((uintptr_t)(current_base-1)) < ((uintptr_t)last_address));
+}
+
+//Invalidate data in D$.
+//
+//Data in the region may or may not be written back but will be not be
+//valid in cache after this call.  The same caveats as for
+//orca_flush_dcache_range() apply if using this for data on the stack.
+void orca_invalidate_dcache_range(void *base_address, void *last_address){
+  uintptr_t current_base = (uintptr_t)base_address;
+
+  //INVALIDATE instruction is allowed to do partial completion,
+  //returning a new starting point in rd.  Loop until 
+  do {
+    uintptr_t new_base = current_base;
+    //Until INVALIDATE is supported by the assembler just run manually
+    asm volatile("mv t0, %1\n"
+                 "mv t1, %2\n"
+                 ".word 0x0C62928F\n"
+                 "mv %0, t0\n"
+                 : "=r"(new_base) : "r"(current_base), "r"(last_address) : "t0", "t1", "memory");
+    if(new_base == current_base){
+      //No forward progress signals failure or that all of memory was
+      //written back.  ORCA never reports failure, so this is a
+      //success and we can return.
+      return;
+    }
+    current_base = new_base;
+
+    //Check current_base-1 vs last_address to avoid overflow if
+    //high_address goes to 0.
+  } while(((uintptr_t)(current_base-1)) < ((uintptr_t)last_address));
+}
+
 //Return an AMR or UMR bounds in in base/last_ptr
 void get_xmr(bool umr_not_amr,
              uint8_t xmr_number,

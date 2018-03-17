@@ -27,22 +27,27 @@
 
 #define HEAP_ADDRESS 0x00100000
 
-#define RUN_ASM_TEST             1
-#define RUN_RW_TEST              1
-#define RUN_LINE_FLUSH_TEST      1
-#define RUN_RANDOM_TEST          1
-#define RUN_RANDOM_IFENCE_TEST   1
-#define RUN_3_INSTRUCTION_LOOP   1
-#define RUN_6_INSTRUCTION_LOOP   1
-#define RUN_BTB_MISSES           1
-#define RUN_CACHE_MISSES         1
-#define RUN_CACHE_AND_BTB_MISSES 1
+#define RUN_ASM_TEST              1
+#define RUN_FENCE_I_TEST          1
+#define RUN_FENCE_RI_TEST         1
+#define RUN_RW_TEST               1
+#define RUN_LINE_FLUSH_TEST       1
+#define RUN_RANDOM_TEST           1
+#define RUN_RANDOM_WRITEBACK_TEST 1
+#define RUN_RANDOM_FLUSH_TEST     1
+#define RUN_3_INSTRUCTION_LOOP    1
+#define RUN_6_INSTRUCTION_LOOP    1
+#define RUN_BTB_MISSES            1
+#define RUN_CACHE_MISSES          1
+#define RUN_CACHE_AND_BTB_MISSES  1
 
 #define LOOP_RUNS 1000
 
 #define CACHE_SIZE      8192
 #define CACHE_LINE_SIZE 32
 #define BTB_SIZE        64
+
+typedef enum {INVALIDATE = 3, FLUSH = 2, WRITEBACK = 1, NOTHING = 0} cache_control_enum;
 
 //Heap in PS memory.  Don't start at 0 to avoid NULL pointer checks.
 #define HEAP_ADDRESS 0x00100000
@@ -91,11 +96,57 @@ uint32_t rand(){
   return rand_seed;
 }
 
+//Make sure FENCE.I works (FENCE.RI if fence_ri argument is true)
+uint32_t fence_i_test(void *mem_base, uint32_t mem_size, bool fence_ri){
+  uint32_t errors = 0;
+
+  for(int n = 0; n < 3; n++){
+    uint32_t add_n_to_t0 = add_1_to_t0 + (0x00100000 * (n - 1));
+    int t0 = 2 * n;
+    int t0_plus_n = 123456789;
+    if(fence_ri){
+      uintptr_t fence_ri_base = (uintptr_t)&add_n_to_t0;
+      uintptr_t fence_ri_last = fence_ri_base + 3;
+      asm volatile (
+                    "mv t0, %1\n"
+                    "mv t2, %3\n"
+                    "mv t3, %4\n"
+                    "auipc t1, 0\n"
+                    "sw %2, 12(t1)\n"
+                    ".word 0x07C3900F\n"
+                    "li t0, 0xAB\n"
+                    "mv %0, t0\n"
+                    : "=r"(t0_plus_n)
+                    : "r"(t0), "r"(add_n_to_t0), "r"(fence_ri_base), "r"(fence_ri_last)
+                    : "t0", "t1", "t2", "t3", "memory"
+                    );
+    } else {
+      asm volatile (
+                    "mv t0, %1\n"
+                    "auipc t1, 0\n"
+                    "sw %2, 12(t1)\n"
+                    "fence.i\n"
+                    "li t0, 0xAB\n"
+                    "mv %0, t0\n"
+                    : "=r"(t0_plus_n)
+                    : "r"(t0), "r"(add_n_to_t0)
+                    : "t0", "t1", "memory"
+                    );
+    }
+    if(t0_plus_n != (3 * n)){
+      printf("Error in fence.%s test (run %d), expected %d got %d\r\n", fence_ri ? "ri" : "i", n, 3*n, t0);
+      errors++;
+    }
+  }
+
+  return errors;
+}
+
 uint32_t line_flush_test(void *mem_base, uint32_t mem_size){
   uint8_t *mem_base8 = (uint8_t *)mem_base;
   mem_base8[0] = 0xAB;
   mem_base8[CACHE_SIZE] = 0xCD;
-  asm volatile("fence.i" : : : "memory");
+  orca_flush_dcache_range(mem_base, mem_base+CACHE_SIZE);
   uint32_t errors = 0;
   if(mem_base8[0] != 0xAB){
     errors++;
@@ -108,7 +159,7 @@ uint32_t line_flush_test(void *mem_base, uint32_t mem_size){
   return errors;
 }
 
-uint32_t random_test(void *mem_base, uint32_t mem_size, bool ifence){
+uint32_t random_test(void *mem_base, uint32_t mem_size, cache_control_enum control){
   srand(1);
   uint32_t *mem_base32 = (uint32_t *)mem_base;
   uint8_t *mem_base8   = (uint8_t *)mem_base;
@@ -120,11 +171,21 @@ uint32_t random_test(void *mem_base, uint32_t mem_size, bool ifence){
   for(int run = 0; run < RANDOM_TEST_RUNS; run++){
     mem_base8[rand() % mem_size] += mem_base8[rand() % mem_size];
   }
-  if(ifence){
-    asm volatile("fence.i" : : : "memory");
+  switch(control){
+  case WRITEBACK:
+    orca_writeback_dcache_range(mem_base, mem_base+mem_size);
+    break;
+  case FLUSH:
+    orca_flush_dcache_range(mem_base, mem_base+mem_size);
+    break;
+  case NOTHING:
+    break;
+  default:
+    printf("Unsupported cache control function in line_flush_test\n");
+    return 0xFFFFFFFF;
   }
   uint32_t end_cycle = get_time();
-  printf("Random test %sfinished after %d cycles\r\n", ifence ? "with ifence " : "", (int)(end_cycle-start_cycle));
+  printf("Random test %sfinished after %d cycles\r\n", (control == WRITEBACK) ? "with writeback " : ((control == FLUSH) ? "with flush " : ""), (int)(end_cycle-start_cycle));
   return checksum(mem_base, mem_size);
 }
 
@@ -420,6 +481,34 @@ int main(void){
     }
 #endif //#if RUN_ASM_TEST
   
+#if RUN_FENCE_I_TEST
+    {
+      printf("FENCE_I test: ");
+
+      int result = fence_i_test((void *)test_space_aligned, 2*CACHE_SIZE, false);
+      if(result){
+        printf("FENCE_I test failed with error code 0x%08X\r\n", result);
+        errors++;
+      } else {
+        printf("FENCE_I test passed\r\n");
+      }
+    }
+#endif //#if RUN_FENCE_I_TEST
+  
+#if RUN_FENCE_RI_TEST
+    {
+      printf("FENCE_RI test: ");
+
+      int result = fence_i_test((void *)test_space_aligned, 2*CACHE_SIZE, true);
+      if(result){
+        printf("FENCE_RI test failed with error code 0x%08X\r\n", result);
+        errors++;
+      } else {
+        printf("FENCE_RI test passed\r\n");
+      }
+    }
+#endif //#if RUN_FENCE_I_TEST
+  
 #if RUN_RW_TEST
     {
       printf("RW test: ");
@@ -452,7 +541,7 @@ int main(void){
     {
       printf("RANDOM test: ");
 
-      int result = random_test((void *)test_space_aligned, 2*CACHE_SIZE, false);
+      int result = random_test((void *)test_space_aligned, 2*CACHE_SIZE, NOTHING);
       if(result != GOLDEN_RANDOM){
         printf("RANDOM test failed; returned checksum 0x%08X expected 0x%08X\r\n", result, GOLDEN_RANDOM);
         errors++;
@@ -462,11 +551,11 @@ int main(void){
     }
 #endif //#if RUN_RANDOM_TEST
   
-#if RUN_RANDOM_IFENCE_TEST
+#if RUN_RANDOM_WRITEBACK_TEST
     {
-      printf("RANDOM test with IFENCE: ");
+      printf("RANDOM test with WRITEBACK: ");
 
-      int result = random_test((void *)test_space_aligned, 2*CACHE_SIZE, true);
+      int result = random_test((void *)test_space_aligned, 2*CACHE_SIZE, WRITEBACK);
       if(result != GOLDEN_RANDOM){
         printf("RANDOM test failed; returned checksum 0x%08X expected 0x%08X\r\n", result, GOLDEN_RANDOM);
         errors++;
@@ -474,7 +563,21 @@ int main(void){
         printf("RANDOM test passed\r\n");
       }
     }
-#endif //#if RUN_RANDOM_IFENCE_TEST
+#endif //#if RUN_RANDOM_WRITEBACK_TEST
+  
+#if RUN_RANDOM_FLUSH_TEST
+    {
+      printf("RANDOM test with FLUSH: ");
+
+      int result = random_test((void *)test_space_aligned, 2*CACHE_SIZE, FLUSH);
+      if(result != GOLDEN_RANDOM){
+        printf("RANDOM test failed; returned checksum 0x%08X expected 0x%08X\r\n", result, GOLDEN_RANDOM);
+        errors++;
+      } else {
+        printf("RANDOM test passed\r\n");
+      }
+    }
+#endif //#if RUN_RANDOM_FLUSH_TEST
   
 #if RUN_3_INSTRUCTION_LOOP
     {
@@ -533,5 +636,11 @@ int main(void){
 
   }
 
+  if(errors){
+    printf("\r\nCache test failed with %d errors\r\n\r\n\r\n", errors);
+  } else {
+    printf("\r\nCache test passed!\r\n\r\n\r\n");
+  }
+  
   return errors+1;
 }

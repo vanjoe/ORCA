@@ -73,8 +73,7 @@ package constants_pkg is
   constant CSR_ZIMM              : std_logic_vector(19 downto 15) := (others => '-');
 
 --MISC-MEM functions  
-  constant FENCE_FUNC3  : std_logic_vector(2 downto 0) := "000";
-  constant FENCEI_FUNC3 : std_logic_vector(2 downto 0) := "001";
+  constant FENCE_FUNC3 : std_logic_vector(2 downto 0) := "000";
 
   constant FENCE_SW_BIT : natural := 20;
   constant FENCE_SR_BIT : natural := 21;
@@ -84,6 +83,15 @@ package constants_pkg is
   constant FENCE_PR_BIT : natural := 25;
   constant FENCE_PO_BIT : natural := 26;
   constant FENCE_PI_BIT : natural := 27;
+
+  constant REGION_FUNC3          : std_logic_vector(2 downto 0) := "001";
+  constant FENCE_I_FUNC7         : std_logic_vector(6 downto 0) := "0000000";
+  constant FENCE_RD_FUNC7        : std_logic_vector(6 downto 0) := "0000010";
+  constant FENCE_RI_FUNC7        : std_logic_vector(6 downto 0) := "0000011";
+  constant CACHE_WRITEBACK_FUNC7 : std_logic_vector(6 downto 0) := "0000100";
+  constant CACHE_FLUSH_FUNC7     : std_logic_vector(6 downto 0) := "0000101";
+  constant CACHE_DISCARD_FUNC7   : std_logic_vector(6 downto 0) := "0000110";
+
 
 --CSR Addresses
   constant CSR_ADDRESS  : std_logic_vector(31 downto 20) := (others => '-');

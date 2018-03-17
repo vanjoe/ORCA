@@ -17,8 +17,22 @@ cache_test:
   sw   s10, 4(sp)
   sw   s11, 0(sp)
 
-//ASM cache tests should go here
-  addi a0, x0, 0      
+
+//ASM cache tests go here
+
+  //Initially report succoss
+  li a0, 0
+        
+  //Do a FENCE.  ORCA memory accesses are strictly in-order so
+  //assuming that's not broken the FENCE should have no effect and so
+  //can't be tested aside from making sure it doesn't decode to an
+  //illegal instruction.
+  fence iorw, iorw
+
+  //Do a FENCE.R; same deal as FENCE
+  //fence.r s0, x0, sp
+  .word 0x0420140F
+        
         
 cache_test_done:
   lw   s0, 44(sp)
@@ -51,3 +65,8 @@ idram_timing_loop_ret:
 .type idram_timing_loop_end, @object
 idram_timing_loop_end:
 .word 0
+
+.globl add_1_to_t0
+.type add_1_to_t0, @object
+add_1_to_t0:
+  add t0, t0, 1
