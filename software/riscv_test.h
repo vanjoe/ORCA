@@ -127,8 +127,11 @@ trap_vector:                                                            \
         csrr t5, mcause;                                                \
         li t6, CAUSE_MACHINE_ECALL;                                     \
         beq t6,t5,1f;	\
-        /*not an ecall*/ \
-        li x3,1337; \
+        /*not an ecall,if mtvec_handler is defined, jump to it*/ \
+        la t5, mtvec_handler;                                           \
+        beqz t5, 1f;                                                    \
+        jr t5; \
+        /*li x3,1337;	 */ \
 1:      mv a1,x3;	  \
         li t6,1;\
         la a0,testpass_string;	\

@@ -76,7 +76,7 @@ sw: $(ORCA_TEST_QEXES) $(RISCV_TEST_QEXES)
 
 
 test_%.log: system_%/simulation/mentor/msim_setup.tcl testall.tcl $(ORCA_HDL) $(RISCV_TEST_QEXES) $(ORCA_TEST_QEXES)
-	cd system_$*/simulation/mentor && vsim -c -do "source ../../../testall.tcl; run_tests $* {$(RISCV_TESTS) $(ORCA_TESTS)}" | egrep '(^[^#]|Error:|Error \(suppressible\):)' | tee ../../../test_$*.log
+	cd system_$*/simulation/mentor && vsim -c -do "source ../../../testall.tcl; run_tests $* {$(notdir $(RISCV_TESTS)) $(ORCA_TESTS)}" | egrep '(^[^#]|Error:|Error \(suppressible\):)' | tee ../../../test_$*.log
 
 .PHONY: testone
 testone: $(TEST_LOG)
