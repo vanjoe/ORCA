@@ -17,7 +17,7 @@ use IEEE.numeric_std.all;
 library work;
 use work.timer_constants_pkg.all;
 
-entity riscv_timer is
+entity orca_timer is
   generic (
     TIMER_WIDTH : integer := 64);
   port (
@@ -74,7 +74,7 @@ entity riscv_timer is
     slave_BREADY : in  std_logic);
 end entity;
 
-architecture rtl of riscv_timer is
+architecture rtl of orca_timer is
   signal reading     : std_logic;
   signal write_valid : std_logic;
   signal ID_register : std_logic_vector(slave_rid'range);

@@ -59,7 +59,7 @@
          type = "boolean";
       }
    }
-   element riscv_timer_0
+   element orca_timer_0
    {
       datum _sortIndex
       {
@@ -307,7 +307,7 @@
   <parameter name="ASSERT_HIGH_RESET" value="1" />
   <parameter name="INITIAL_RESET_CYCLES" value="6" />
  </module>
- <module name="riscv_timer_0" kind="riscv_timer" version="1.0" enabled="1">
+ <module name="orca_timer_0" kind="orca_timer" version="1.0" enabled="1">
   <parameter name="TIMER_WIDTH" value="64" />
  </module>
  <module
@@ -377,7 +377,7 @@
    kind="avalon"
    version="17.0"
    start="vectorblox_orca_0.data"
-   end="riscv_timer_0.slave">
+   end="orca_timer_0.slave">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
   <parameter name="defaultConnection" value="false" />
@@ -410,11 +410,11 @@
    kind="clock"
    version="17.0"
    start="clock_gen_0.clock"
-   end="riscv_timer_0.clock" />
+   end="orca_timer_0.clock" />
  <connection
    kind="conduit"
    version="17.0"
-   start="riscv_timer_0.Timer_Interface"
+   start="orca_timer_0.Timer_Interface"
    end="vectorblox_orca_0.Timer_Interface">
   <parameter name="endPort" value="" />
   <parameter name="endPortLSB" value="0" />
@@ -431,7 +431,7 @@
    kind="reset"
    version="17.0"
    start="reset_source_0.reset"
-   end="riscv_timer_0.reset" />
+   end="orca_timer_0.reset" />
  <connection
    kind="reset"
    version="17.0"

@@ -4,7 +4,7 @@
 
 
 #
-# riscv_timer "RISC-V Timer" v1.0
+# orca_timer "ORCATimer" v1.0
 # VectorBlox Computing Inc. 2018.03.08.14:46:09
 #
 #
@@ -16,16 +16,16 @@ package require -exact qsys 16.1
 
 
 #
-# module riscv_timer
+# module orca_timer
 #
 set_module_property DESCRIPTION ""
-set_module_property NAME riscv_timer
+set_module_property NAME orca_timer
 set_module_property VERSION 1.0
 set_module_property INTERNAL false
 set_module_property OPAQUE_ADDRESS_MAP true
 set_module_property GROUP "VectorBlox Computing Inc."
 set_module_property AUTHOR "VectorBlox Computing Inc."
-set_module_property DISPLAY_NAME "RISC-V Timer"
+set_module_property DISPLAY_NAME "ORCA Timer"
 set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
 set_module_property EDITABLE true
 set_module_property REPORT_TO_TALKBACK false
@@ -37,16 +37,16 @@ set_module_property REPORT_HIERARCHY false
 # file sets
 #
 add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
-set_fileset_property QUARTUS_SYNTH TOP_LEVEL riscv_timer
+set_fileset_property QUARTUS_SYNTH TOP_LEVEL orca_timer
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file riscv-timer.vhd VHDL PATH hdl/riscv-timer.vhd TOP_LEVEL_FILE
+add_fileset_file orca-timer.vhd VHDL PATH hdl/orca-timer.vhd TOP_LEVEL_FILE
 
 add_fileset SIM_VHDL SIM_VHDL "" ""
-set_fileset_property SIM_VHDL TOP_LEVEL riscv_timer
+set_fileset_property SIM_VHDL TOP_LEVEL orca_timer
 set_fileset_property SIM_VHDL ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property SIM_VHDL ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file riscv-timer.vhd VHDL PATH hdl/riscv-timer.vhd
+add_fileset_file orca-timer.vhd VHDL PATH hdl/orca-timer.vhd
 
 
 #
