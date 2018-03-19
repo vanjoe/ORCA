@@ -83,8 +83,6 @@ $(OUTPUT_PREFIX)$(TARGET).bin: $(OUTPUT_PREFIX)$(TARGET).elf
 	$(OBJCOPY) -O binary $< $@
 $(OUTPUT_PREFIX)$(TARGET).ihex: $(OUTPUT_PREFIX)$(TARGET).elf
 	$(OBJCOPY) -O ihex $< $@
-$(OUTPUT_PREFIX)$(TARGET).hex: $(OUTPUT_PREFIX)$(TARGET).bin
-	python ../../../tools/bin2hex.py -o $@ $<
 $(OUTPUT_PREFIX)$(TARGET).qex: $(OUTPUT_PREFIX)$(TARGET).bin
 	python ../../../tools/bin2hex.py -o $@ $<
 $(OUTPUT_PREFIX)$(TARGET).mem: $(OUTPUT_PREFIX)$(TARGET).bin
@@ -118,12 +116,13 @@ common_pristine:
 #####
 RISCV_ARCHS=rv32ui rv32mi rv32um
 RISCV_TEST_DIR=$(ORCA_ROOT)/software/riscv-tests/
-RISCV_TESTS=$(basename $(foreach arch,$(RISCV_ARCHS),\
-	$(addprefix $(arch)-p-,$(notdir $(wildcard $(RISCV_TEST_DIR)/isa/$(arch)/*.S) ))))
+RISCV_TESTS=$(addprefix $(OUTPUT_PREFIX),$(basename $(foreach arch,$(RISCV_ARCHS),\
+	$(addprefix $(arch)-p-,$(notdir $(wildcard $(RISCV_TEST_DIR)/isa/$(arch)/*.S) )))))
 RISCV_PHONY=$(addsuffix .phony,$(RISCV_TESTS))
 
-$(RISCV_TESTS) : $(ORCA_ROOT)/software/orca_lib/orca_printf.c
-	$(CC) -o $@ $(RISCV_TEST_DIR)/isa/$(firstword $(subst -p-, , $@))/$(lastword $(subst -p-, , $@)).S \
+
+$(RISCV_TESTS) : $(ORCA_ROOT)/software/orca_lib/orca_printf.c | $(OUTPUT_DIR)
+	$(CC) -o $@ $(RISCV_TEST_DIR)/isa/$(firstword $(subst -p-, , $(notdir $@)))/$(lastword $(subst -p-, , $(notdir $@))).S \
 	$< $(INCLUDE_STRING) -nostdlib -T $(LD_SCRIPT)
 
 $(addsuffix .qex,$(RISCV_TESTS)):%.qex : %.bin
@@ -138,8 +137,7 @@ $(addsuffix .coe,$(RISCV_TESTS)): %.coe : %.ihex $(ORCA_ROOT)/tools/hex_to_coe
 	$(ORCA_ROOT)/tools/hex_to_coe $< $@ 0x$(shell nm --numeric-sort $* | awk '{print $$1}' | head -n1) 	0x$(shell nm --numeric-sort $* | awk '{print $$1}' | tail -n1)
 
 $(RISCV_PHONY): %.phony : %.dump %.qex %.ihex
-$(ORCA_ROOT)/tools/hex_to_coe : % :%.cpp
-	gcc $^ -o $@
+
 
 
 .PHONY: $(RISCV_PHONY) riscv_tests
