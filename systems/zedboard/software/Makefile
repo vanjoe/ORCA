@@ -2,7 +2,6 @@
 
 -include config.mk
 -include ../config.mk
-
 TARGET ?= test
 
 ifndef ORCA_TEST
@@ -39,3 +38,28 @@ include $(ORCA_ROOT)/software/software.mk
 
 .PHONY: all
 all: $(TARGET).elf $(TARGET).coe $(TARGET).dump $(TARGET).ihex
+
+ORCA_TESTS =$(addsuffix .elf,$(notdir $(abspath $(dir $(wildcard $(ORCA_ROOT)/software/orca-tests/*/Makefile )))))
+
+PWD=$(shell pwd)
+$(ORCA_TESTS)::
+	make -C $(ORCA_ROOT)/software/orca-tests/$(basename $@) $(PWD)/$@ OUTPUT_DIR=$(PWD) LD_SCRIPT=$(PWD)/$(LD_SCRIPT)  RISCV_OLEVEL=-O3
+
+$(ORCA_TESTS:.elf=.qex):%.qex : %.bin
+	python $(ORCA_ROOT)/tools/bin2hex.py $< -a 0x0 > $@
+$(ORCA_TESTS:.elf=.bin):%.bin : %.elf
+	$(CROSS_COMPILE)objcopy -O binary $< $@
+$(ORCA_TESTS:.elf=.ihex):%.ihex : %.elf
+	$(CROSS_COMPILE)objcopy -O ihex $< $@
+$(ORCA_TESTS:.elf=.dump): %.dump : %.elf
+	$(CROSS_COMPILE)objdump  --disassemble-all -Mnumeric,no-aliases $^ > $@
+
+
+$(ORCA_TESTS:.elf=.coe): %.coe : %.ihex  $(ORCA_ROOT)/tools/hex_to_coe
+	$(ORCA_ROOT)/tools/hex_to_coe $< $@ 0x$(shell nm --numeric-sort $*.elf | awk '{print $$1}' | head -n1) 	0x$(shell nm --numeric-sort $*.elf | awk '{print $$1}' | tail -n1)
+
+all: $(ORCA_TESTS:.elf=.qex)  $(ORCA_TESTS:.elf=.ihex) $(ORCA_TESTS:.elf=.dump)
+
+clean:clean-orca-test
+clean-orca-test:
+	rm -f $(addsuffix *,$(basename $(ORCA_TESTS)))

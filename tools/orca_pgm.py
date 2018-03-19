@@ -26,7 +26,7 @@ def parse_hex_file(hex_file_name):
     current_dataset=(0,[])
     data_sets=[]
     max_size=256*4
-    high_address=0
+    address_high="0000"
     for line in open(program_file):
         line=line.strip()
         start_code=line[1]
@@ -159,11 +159,11 @@ if __name__ == '__main__':
         tcl_script.write('proc orca_pgm {} {\n')
         tcl_script.write('\tset_msg_config -id "Labtoolstcl 44-481" -suppress\n')
         tcl_script.write('\topen_hw\n')
-        tcl_script.write('\tconnect_hw_server\n')
-        tcl_script.write('\topen_hw_target\n')
+        tcl_script.write('\tconnect_hw_server -quiet\n')
+        tcl_script.write('\topen_hw_target -quiet \n')
         #tcl_script.write('\tset_property PROBES.FILE {{{}}} [get_hw_devices {}]\n'.format(debug_nets, device))
         tcl_script.write('\tcurrent_hw_device [get_hw_devices {}]\n'.format(device))
-        tcl_script.write('\trefresh_hw_device [get_hw_devices {}]\n'.format(device))
+        tcl_script.write('\trefresh_hw_device -quiet [get_hw_devices {}]\n'.format(device))
         tcl_script.write('\treset_hw_axi [get_hw_axis]\n')
         tcl_script.write('\tcreate_hw_axi_txn init_{} [get_hw_axis hw_axi_1] -type write '.format(init_write_count))
         tcl_script.write('-address {:08x} -len 1 -data 0x00000000\n'.format(reset_address+8))

@@ -114,6 +114,7 @@ int handle_exception(int cause, int epc, int regs[32]){
 	case 0xB://ECALL
 		if(ecall_handler){
 			ecall_handler(ecall_context);
+			epc+=4;
 			break;
 		}else{ while(1); }
 

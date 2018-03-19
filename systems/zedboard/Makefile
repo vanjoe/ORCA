@@ -16,14 +16,10 @@ PROJ_DIR  ?= orca_project
 PROJ_NAME ?= orca_project
 
 SW_DIR   ?= software
-COE_FILE ?= $(SW_DIR)/test.coe
-ELF_FILE ?= $(SW_DIR)/test.elf
-MEM_FILE ?= $(SW_DIR)/test.mem
+COE_FILE = test.coe
 
 PROJ_FILE=$(PROJ_DIR)/$(PROJ_NAME).xpr
 BD_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/$(BD_NAME).bd
-HWH_FILE_SRC=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/hw_handoff/$(BD_NAME).hwh
-HWH_FILE=$(BD_NAME).hwh
 HWDEF_FILE=$(PROJ_DIR)/$(PROJ_NAME).srcs/sources_1/bd/$(BD_NAME)/synth/$(BD_NAME).hwdef
 SYNTH_DCP=$(PROJ_DIR)/$(PROJ_NAME).runs/synth_1/$(BD_NAME)_wrapper.dcp
 IMPL_BIT=$(PROJ_DIR)/$(PROJ_NAME).runs/impl_1/$(BD_NAME)_wrapper.bit
@@ -35,7 +31,7 @@ OUT_BIT=out.bit
 PGM_TCL=pgm.tcl
 
 .PHONY: all
-all: $(OUT_BIT) resource_utilization.rpt link.ld
+all: $(OUT_BIT) resource_utilization.rpt link.ld orca_defines.h
 
 VIVADO_SOURCE=vivado -notrace -nojournal -nolog -mode batch -source
 
@@ -197,31 +193,19 @@ BD_CHANGES += }
 
 $(BD_FILE): $(PROJECT_TCL) $(BD_TCL) $(wildcard config.mk)
 	if [ ! -e $(COE_FILE) ]; then echo "memory_initialization_radix=16;" > $(COE_FILE); echo "memory_initialization_vector=0;" >> $(COE_FILE); fi
+
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs init_project $(PROJ_DIR) $(PROJ_NAME)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs create_bd $(PROJ_DIR) $(PROJ_NAME) $(BD_TCL) $(BD_CHANGES)
 
 .PHONY: archiveBD
 archiveBD: $(HWH_FILE)
 
-#we generate the bd design twice, because the hwh is needed to compile the software,
-#and the compiled software is needed to generate the sources.
-$(HWH_FILE): $(BD_FILE) $(ORCA_SRCS)
-	if [ ! -e $(COE_FILE) ]; then echo "memory_initialization_radix=16;" > $(COE_FILE); echo "memory_initialization_vector=0;" >> $(COE_FILE); fi
-	rm -f tmp.$(BD_TCL)
-	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs generate_bd_design $(PROJ_DIR) $(PROJ_NAME) tmp.$(BD_TCL)
-	[ -e tmp.$(BD_TCL) ]
-	[ -e $(HWH_FILE_SRC) ]
-	mv tmp.$(BD_TCL) $(BD_TCL)
-	touch $<
-	cp $(HWH_FILE_SRC) $@
-
-$(HWDEF_FILE): $(COE_FILE)
+$(HWDEF_FILE): $(BD_FILE)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs generate_bd_design $(PROJ_DIR) $(PROJ_NAME)
 	rm -f tmp.$(BD_TCL)
 
-
-orca_defines.h: $(HWH_FILE)
-	hsi -notrace -mode batch -source ../../tools/hsi_orca_addressmap.tcl -tclargs $(HWH_FILE) orca $@
+orca_defines.h: $(HWDEF_FILE)
+	hsi -notrace -mode batch -source ../../tools/hsi_orca_addressmap.tcl -tclargs $^ orca $@
 $(SYNTH_DCP): $(HWDEF_FILE)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs project_synth $(PROJ_DIR) $(PROJ_NAME)
 
@@ -248,16 +232,18 @@ link.ld::
 
 .PHONY: FORCE
 
-$(ELF_FILE): orca_defines.h FORCE
-	$(MAKE) -C $(SW_DIR)
-
-$(COE_FILE): orca_defines.h FORCE
-	$(MAKE) -C $(SW_DIR)
 
 .PHONY: sim
-sim: $(BD_FILE) $(COE_FILE)
-	vivado -nolog -nojournal $(PROJ_FILE) -source simulate.tcl &
 
+ifneq ($(RUN_FILE),)
+sim: $(BD_FILE) software/$(RUN_FILE).coe
+	make -C  software $(RUN_FILE).coe $(RUN_FILE).dump
+	ln -sf software/$(RUN_FILE).coe test.coe
+	vivado -nolog -nojournal $(PROJ_FILE) -source simulate.tcl &
+else
+sim :
+	@printf "RUN_FILE not defined\n" && false
+endif
 .PHONY: gui
 gui: $(BD_FILE)
 	vivado -nolog -nojournal $(PROJ_FILE) &
@@ -272,28 +258,18 @@ resource_utilization.rpt: $(IMPL_BIT) $(RESOURCE_TCL)
 	$(VIVADO_SOURCE) $(RESOURCE_TCL) -tclargs report_resources $(PROJ_DIR) $(PROJ_NAME) $@
 
 .PHONY: pgm
-ifneq ($(ELF_FILE), NONE)
-pgm: $(OUT_BIT)
-endif #ifneq ($(ELF_FILE), NONE)
 pgm:
 	xsdb $(PGM_TCL) $(OUT_BIT) ps7_init.tcl
 
-no_elf:
-	echo "no elf"
-	false
-
-yes_elf:
-	echo "yes elf"
-	false
 
 .PHONY: run
-run:
-ifeq ($(ELF_FILE), NONE)
+run: orca_defines.h
+ifeq ($(RUN_FILE), NONE)
 	python ../../tools/orca_pgm.py test.ihex  --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS)
-else #ifeq ($(ELF_FILE), NONE)
-	$(MAKE) -C software test.ihex test.dump
-	python ../../tools/orca_pgm.py software/test.ihex  --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS)
-endif #else #ifeq ($(ELF_FILE), NONE)
+else #ifeq ($(RUN_FILE), NONE)
+	$(MAKE) -C software $(RUN_FILE).ihex $(RUN_FILE).dump
+	python ../../tools/orca_pgm.py software/$(RUN_FILE).ihex  --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS)
+endif
 
 .PHONY: clean
 clean:

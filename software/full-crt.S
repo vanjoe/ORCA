@@ -5,6 +5,7 @@
 //Currently we rely on
 //reset vector being .text.init
 //and interrupt vector being .text.init+4
+_reset:
 	j _start
 	j _isr
 
