@@ -261,94 +261,18 @@ begin
           was_illegal <= '0';
         end if;
 
-<<<<<<< HEAD
         if illegal_instruction = '1' or (to_syscall_valid = '1' and (ebreak_select = '1' or ecall_select = '1')) then
           --Handle Illegal Instructions
           mstatus(CSR_MSTATUS_MIE)  <= '0';
           mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
           mcause(mcause'left)       <= '0';
           if illegal_instruction = '1' then
-            mcause(CSR_MCAUSE_CODE'range) <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, CSR_MCAUSE_CODE'length));
+            mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_ILLEGAL;
           else
             if ebreak_select = '1' then
-              mcause(CSR_MCAUSE_CODE'range) <=
-                std_logic_vector(to_unsigned(CSR_MCAUSE_EBREAK, CSR_MCAUSE_CODE'length));
+              mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_EBREAK;
             else
-              mcause(CSR_MCAUSE_CODE'range) <=
-                std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, CSR_MCAUSE_CODE'length));
-=======
-        if to_syscall_valid = '1' then
-          if legal_instr /= '1' then
-            -----------------------------------------------------------------------------
-            -- Handle Illegal Instructions
-            -----------------------------------------------------------------------------
-            mstatus(CSR_MSTATUS_MIE)  <= '0';
-            mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
-            mcause(mcause'left)       <= '0';
-            mcause_exc_code           <= CSR_MCAUSE_ILLEGAL;
-            mepc                      <= std_logic_vector(current_pc);
-            was_illegal               <= '1';
-          elsif instruction(MAJOR_OP'range) = SYSTEM_OP then
-            if func3 /= "000" then
-              -----------------------------------------------------------------------------
-              -- CSR Read/Write
-              -----------------------------------------------------------------------------
-              case csr_select is
-                when CSR_MSTATUS =>
-                  -- Only 2 bits are writeable.
-                  mstatus(CSR_MSTATUS_MIE)  <= csr_writedata(CSR_MSTATUS_MIE);
-                  mstatus(CSR_MSTATUS_MPIE) <= csr_writedata(CSR_MSTATUS_MPIE);
-                when CSR_MEPC =>
-                  mepc <= csr_writedata;
-                when CSR_MCAUSE =>
-                  --MCAUSE is WLRL so only legal values need to be supported
-                  mcause(mcause'left) <= csr_writedata(mcause'left);
-                  mcause_exc_code     <= csr_writedata(CSR_MCAUSE_CODE'range);
-                when CSR_MBADADDR =>
-                  mbadaddr <= csr_writedata;
-                when CSR_MEIMASK =>
-                  meimask_full <= csr_writedata;
-                --Note that meipend is read-only
-                when CSR_MSCRATCH =>
-                  mscratch <= csr_writedata;
-                when others => null;
-              end case;
-            elsif instruction(SYSTEM_NOT_CSR'range) = SYSTEM_NOT_CSR then
-              -----------------------------------------------------------------------------
-              -- Other System Instructions
-              -----------------------------------------------------------------------------
-              if instruction(31 downto 30) = "00" and instruction(27 downto 20) = "00000010" then
-                -- MRET
-                -- We only have one privilege level (M), so treat all [USHM]RET instructions
-                -- as the same.
-                mstatus(CSR_MSTATUS_MIE)  <= mstatus(CSR_MSTATUS_MPIE);
-                mstatus(CSR_MSTATUS_MPIE) <= '0';
-                was_mret                  <= '1';
-              else
-                -- Illegal or ECALL/EBREAK
-                mstatus(CSR_MSTATUS_MIE)  <= '0';
-                mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
-                mcause(mcause'left)       <= '0';
-                case csr_select is
-                  when SYSTEM_ECALL =>
-                    mcause_exc_code <= CSR_MCAUSE_MECALL;
-                  when SYSTEM_EBREAK =>
-                    mcause_exc_code <= CSR_MCAUSE_EBREAK;
-                  when others =>
-                    mcause_exc_code <= CSR_MCAUSE_ILLEGAL;
-                end case;
-                mepc        <= std_logic_vector(current_pc);
-                was_illegal <= '1';
-              end if;
-            else
-              -- Illegal
-              mstatus(CSR_MSTATUS_MIE)  <= '0';
-              mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
-              mcause(mcause'left)       <= '0';
-              mcause_exc_code           <= CSR_MCAUSE_ILLEGAL;
-              mepc                      <= std_logic_vector(current_pc);
-              was_illegal               <= '1';
->>>>>>> add mtime component for altera
+              mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_MECALL;
             end if;
           end if;
           mepc        <= std_logic_vector(current_pc);
@@ -396,15 +320,6 @@ begin
 
           -- Latch in mepc the cycle before interrupt_pc_correction_valid goes high.
           -- When interrupt_pc_correction_valid goes high, the next_pc of the instruction fetch will
-<<<<<<< HEAD
-          -- be corrected to the exception vector.
-          mepc                          <= std_logic_vector(program_counter);
-          mstatus(CSR_MSTATUS_MIE)      <= '0';
-          mstatus(CSR_MSTATUS_MPIE)     <= '1';
-          mcause(mcause'left)           <= '1';
-          mcause(CSR_MCAUSE_CODE'range) <= std_logic_vector(to_unsigned(CSR_MCAUSE_MEXT, CSR_MCAUSE_CODE'length));
-          mcause(mcause'left)           <= '1';
-=======
           -- be corrected to the interrupt reset vector.
           mepc                      <= std_logic_vector(program_counter);
           mstatus(CSR_MSTATUS_MIE)  <= '0';
@@ -414,8 +329,6 @@ begin
           if timer_interrupt = '1' then
             mcause_exc_code <= CSR_MCAUSE_MTIMER;
           end if;
-
->>>>>>> add mtime component for altera
         end if;
 
         if reset = '1' then
