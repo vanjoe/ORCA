@@ -201,8 +201,14 @@ $(BD_FILE): $(PROJECT_TCL) $(BD_TCL) $(wildcard config.mk)
 archiveBD: $(HWH_FILE)
 
 $(HWDEF_FILE): $(BD_FILE)
-	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs generate_bd_design $(PROJ_DIR) $(PROJ_NAME)
 	rm -f tmp.$(BD_TCL)
+	rm -f $(HWDEF_FILE)
+	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs generate_bd_design $(PROJ_DIR) $(PROJ_NAME) tmp.$(BD_TCL)
+	[ -e $(HWDEF_FILE) ]
+	[ -e tmp.$(BD_TCL) ]
+	mv tmp.$(BD_TCL) $(BD_TCL)
+	touch $(BD_FILE)
+	touch $(HWDEF_FILE)
 
 orca_defines.h: $(HWDEF_FILE)
 	hsi -notrace -mode batch -source ../../tools/hsi_orca_addressmap.tcl -tclargs $^ orca $@
@@ -230,20 +236,19 @@ link.ld::
 	diff -q $@ tmp.$@; if [ $$? != 0 ]; then mv tmp.$@ $@; fi
 	rm -f tmp.$@
 
-.PHONY: FORCE
-
+software/$(RUN_FILE).coe::
+	make -C software $(RUN_FILE).coe $(RUN_FILE).dump
 
 .PHONY: sim
-
 ifneq ($(RUN_FILE),)
 sim: $(BD_FILE) software/$(RUN_FILE).coe
-	make -C  software $(RUN_FILE).coe $(RUN_FILE).dump
 	ln -sf software/$(RUN_FILE).coe test.coe
 	vivado -nolog -nojournal $(PROJ_FILE) -source simulate.tcl &
 else
 sim :
 	@printf "RUN_FILE not defined\n" && false
 endif
+
 .PHONY: gui
 gui: $(BD_FILE)
 	vivado -nolog -nojournal $(PROJ_FILE) &
@@ -273,7 +278,7 @@ endif
 
 .PHONY: clean
 clean:
-	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) *.jou *.log tmp.* vivado_pid* export_sim/ test.bin jtag_init.tcl resource_utilization.rpt nohup.out *~  \#* .Xil $(HWH_FILE) orca_defines.h
+	rm -rf $(PROJ_DIR) $(PROJ_NAME).bit $(OUT_BIT) *.jou *.log tmp.* vivado_pid* export_sim/ test.bin jtag_init.tcl resource_utilization.rpt nohup.out *~  \#* .Xil orca_defines.h
 	$(MAKE) clean -C $(SW_DIR)
 
 .DELETE_ON_ERROR:

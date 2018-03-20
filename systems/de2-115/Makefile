@@ -187,6 +187,9 @@ ifdef DC_RETURN_REGISTER
 BD_CHANGES += updateORCA DC_RETURN_REGISTER $(DC_RETURN_REGISTER);
 endif #ifdef DC_RETURN_REGISTER
 
+#Should get generated as part of BSP from system
+orca_defines.h:
+	touch $@
 
 $(QSYS_FILE): $(CREATE_QSYS_TCL) updateORCA.tcl $(wildcard config.mk)
 	qsys-script --search-path="./,$(IP_DIR)/,$$" --cmd="package require qsys; set_project_property DEVICE_FAMILY {$(DEVICE_FAMILY)};set_project_property DEVICE $(DEVICE); source $(CREATE_QSYS_TCL); create_system $@; compose; source updateORCA.tcl; $(BD_CHANGES) save_system $@"

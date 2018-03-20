@@ -5,7 +5,7 @@ ld
 
 proc run_tests { system_name tests } {
     set files {}
-    foreach test $tests {lappend files "../../../test/$test.qex"}
+    foreach test $tests {lappend files "../../../software/$test.qex"}
 
     set max_length  0
     foreach f $files {

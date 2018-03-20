@@ -43,7 +43,7 @@ RISCV_TESTS_DIR ?= $(ORCA_ROOT)/software/riscv-tests
 RISCV_ENV_DIR   ?= $(RISCV_TESTS_DIR)/env
 ENCODING_H      ?= $(RISCV_TESTS_DIR)/env/encoding.h
 
-INCLUDE_DIRS += $(RISCV_ENV_DIR)  $(RISCV_TESTS_DIR)/isa/macros/scalar . $(OUTPUT_PREFIX).. $(ORCA_ROOT)/software $(ORCA_ROOT)/software/orca_lib
+INCLUDE_DIRS += $(RISCV_ENV_DIR) $(RISCV_TESTS_DIR)/isa/macros/scalar . $(OUTPUT_PREFIX).. $(ORCA_ROOT)/software $(ORCA_ROOT)/software/orca_lib
 INCLUDE_STRING := $(addprefix -I,$(INCLUDE_DIRS))
 
 CFLAGS   ?= -march=$(ARCH) $(RISCV_OLEVEL) -MD -Wall -std=gnu99 -Wmisleading-indentation $(EXTRA_CFLAGS) $(INCLUDE_STRING)
@@ -69,80 +69,53 @@ $(C_OBJ_FILES) $(S_OBJ_FILES): | $(OBJDIR)/
 $(OBJDIR)/:
 	mkdir -p $(OBJDIR)/
 
-$(C_OBJ_FILES): $(OBJDIR)/%.c.o: %.c $(C_DEPS)
+$(OUTPUT_PREFIX)../orca_defines.h:
+	$(MAKE) -C $(OUTPUT_PREFIX).. orca_defines.h
+
+$(C_OBJ_FILES): $(OBJDIR)/%.c.o: %.c $(C_DEPS) $(OUTPUT_PREFIX)../orca_defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(S_OBJ_FILES): $(OBJDIR)/%.S.o : %.S
+$(S_OBJ_FILES): $(OBJDIR)/%.S.o : %.S $(OUTPUT_PREFIX)../orca_defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OUTPUT_PREFIX)$(TARGET).elf: $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
 	$(CC) -T$(LD_SCRIPT) $(S_OBJ_FILES) $(C_OBJ_FILES) -o $@ $(LD_FLAGS)
-$(OUTPUT_PREFIX)$(TARGET).dump: $(OUTPUT_PREFIX)$(TARGET).elf
-	$(OBJDUMP) -D $(OUTPUT_PREFIX)$(TARGET).elf > $(OUTPUT_PREFIX)$(TARGET).dump
-$(OUTPUT_PREFIX)$(TARGET).bin: $(OUTPUT_PREFIX)$(TARGET).elf
+%.dump: %.elf
+	$(OBJDUMP) -D $< > $@
+%.bin: %.elf
 	$(OBJCOPY) -O binary $< $@
-$(OUTPUT_PREFIX)$(TARGET).ihex: $(OUTPUT_PREFIX)$(TARGET).elf
+%.ihex: %.elf
 	$(OBJCOPY) -O ihex $< $@
-$(OUTPUT_PREFIX)$(TARGET).qex: $(OUTPUT_PREFIX)$(TARGET).bin
+%.qex: %.bin
 	python ../../../tools/bin2hex.py -o $@ $<
-$(OUTPUT_PREFIX)$(TARGET).mem: $(OUTPUT_PREFIX)$(TARGET).bin
+%.mem: %.bin
 	 head -c $$(( $(START_ADDRESS))) /dev/zero | cat - $< | xxd -g1 -c4 | awk '{print $$5$$4$$3$$2}' > $@
 $(ORCA_ROOT)/tools/hex_to_coe: $(ORCA_ROOT)/tools/hex_to_coe.cpp
 	g++ $< -o $@
-$(OUTPUT_PREFIX)$(TARGET).coe: $(OUTPUT_PREFIX)$(TARGET).ihex $(ORCA_ROOT)/tools/hex_to_coe
-	@if [[ -z "$(IDRAM_BASE_ADDRESS)" || -z "$(IDRAM_LENGTH)" ]]; then echo "ERROR: Please define IDRAM_BASE_ADDRESS $(IDRAM_BASE_ADDRESS) and IDRAM_LENGTH $(IDRAM_LENGTH) to make $(OUTPUT_PREFIX)$(TARGET).coe"; exit 1; fi
+
+IDRAM_BASE_ADDRESS ?= 0x0
+IDRAM_LENGTH       ?= 0x10000
+%.coe: %.ihex $(ORCA_ROOT)/tools/hex_to_coe
+	@if [[ -z "$(IDRAM_BASE_ADDRESS)" || -z "$(IDRAM_LENGTH)" ]]; then echo "ERROR: Please define IDRAM_BASE_ADDRESS $(IDRAM_BASE_ADDRESS) and IDRAM_LENGTH $(IDRAM_LENGTH) to make $@"; exit 1; fi
 	$(ORCA_ROOT)/tools/hex_to_coe $< $@ $(IDRAM_BASE_ADDRESS) $(shell printf "0x%08X" $$(($(IDRAM_BASE_ADDRESS) + $(IDRAM_LENGTH) - 1)))
 
-
 -include $(wildcard $(OBJDIR)/*.d)
+
+TARGET_OUTPUTS = $(OUTPUT_PREFIX)$(TARGET).elf $(OUTPUT_PREFIX)$(TARGET).dump $(OUTPUT_PREFIX)$(TARGET).bin $(OUTPUT_PREFIX)$(TARGET).qex $(OUTPUT_PREFIX)$(TARGET).ihex $(OUTPUT_PREFIX)$(TARGET).coe $(OUTPUT_PREFIX)$(TARGET).mem
+
+.PHONY: target
+target: $(TARGET_OUTPUTS)
 
 .PHONY: clean
 clean: common_clean
 .PHONY: common_clean
 common_clean:
-	rm -rf $(OBJDIR) $(OUTPUT_PREFIX)$(TARGET).elf $(OUTPUT_PREFIX)$(TARGET).dump $(OUTPUT_PREFIX)$(TARGET).bin $(OUTPUT_PREFIX)$(TARGET).hex $(OUTPUT_PREFIX)$(TARGET).qex $(OUTPUT_PREFIX)$(TARGET).ihex $(OUTPUT_PREFIX)$(TARGET).coe $(OUTPUT_PREFIX)$(TARGET).mif $(OUTPUT_PREFIX)$(TARGET).mem *~ \#*
+	rm -rf $(OBJDIR) $(TARGET_OUTPUTS) *~ \#*
 
 .PHONY: pristine
 pristine: common_pristine clean
 .PHONY: common_pristine
 common_pristine:
-	rm -rf *.elf *.dump *.bin *.hex *.ihex *.coe *.mif *.mem
+	rm -rf *.elf *.dump *.bin *.hex *.ihex *.coe *.mem orca_defines.h
 
 .DELETE_ON_ERROR:
-
-
-####
-# riscv-tests
-#####
-RISCV_ARCHS=rv32ui rv32mi rv32um
-RISCV_TEST_DIR=$(ORCA_ROOT)/software/riscv-tests/
-RISCV_TESTS=$(addprefix $(OUTPUT_PREFIX),$(basename $(foreach arch,$(RISCV_ARCHS),\
-	$(addprefix $(arch)-p-,$(notdir $(wildcard $(RISCV_TEST_DIR)/isa/$(arch)/*.S) )))))
-RISCV_PHONY=$(addsuffix .phony,$(RISCV_TESTS))
-
-
-$(RISCV_TESTS) : $(ORCA_ROOT)/software/orca_lib/orca_printf.c | $(OUTPUT_DIR)
-	$(CC) -o $@ $(RISCV_TEST_DIR)/isa/$(firstword $(subst -p-, , $(notdir $@)))/$(lastword $(subst -p-, , $(notdir $@))).S \
-	$< $(INCLUDE_STRING) -nostdlib -T $(LD_SCRIPT)
-
-$(addsuffix .qex,$(RISCV_TESTS)):%.qex : %.bin
-	python $(ORCA_ROOT)/tools/bin2hex.py $< -a 0x0 > $@
-$(addsuffix .bin,$(RISCV_TESTS)):%.bin : %
-	$(CROSS_COMPILE)objcopy -O binary $< $@
-$(addsuffix .ihex,$(RISCV_TESTS)):%.ihex : %
-	$(CROSS_COMPILE)objcopy -O ihex $< $@
-$(addsuffix .dump,$(RISCV_TESTS)): %.dump : %
-	$(CROSS_COMPILE)objdump  --disassemble-all -Mnumeric,no-aliases $^ > $@
-$(addsuffix .coe,$(RISCV_TESTS)): %.coe : %.ihex $(ORCA_ROOT)/tools/hex_to_coe
-	$(ORCA_ROOT)/tools/hex_to_coe $< $@ 0x$(shell nm --numeric-sort $* | awk '{print $$1}' | head -n1) 	0x$(shell nm --numeric-sort $* | awk '{print $$1}' | tail -n1)
-
-$(RISCV_PHONY): %.phony : %.dump %.qex %.ihex
-
-
-
-.PHONY: $(RISCV_PHONY) riscv_tests
-riscv-tests: $(RISCV_PHONY)
-all: $(RISCV_PHONY)
-clean : clean-riscv-test
-clean-riscv-test:
-	rm -f $(addsuffix *,$(RISCV_TESTS))
