@@ -90,7 +90,7 @@ architecture rtl of sys_call is
   signal mscratch     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mepc         : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mcause       : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
-  signal mbadaddr     : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mtval        : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mtime        : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mtimeh       : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal meimask      : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
@@ -98,6 +98,7 @@ architecture rtl of sys_call is
   signal meipend      : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal mcache       : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
   signal misa         : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
+  signal mtvec        : std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
 
   alias csr_number : std_logic_vector(CSR_ADDRESS'length-1 downto 0) is instruction(CSR_ADDRESS'range);
   alias opcode     : std_logic_vector(INSTR_OPCODE'length-1 downto 0) is instruction(INSTR_OPCODE'range);
@@ -237,7 +238,7 @@ begin
     mstatus         when CSR_MSTATUS,
     mepc            when CSR_MEPC,
     mcause          when CSR_MCAUSE,
-    mbadaddr        when CSR_MBADADDR,
+    mtval           when CSR_MTVAL,
     meimask         when CSR_MEIMASK,
     meipend         when CSR_MEIPEND,
     mtime           when CSR_MTIME,
@@ -245,6 +246,7 @@ begin
     mtime           when CSR_UTIME,
     mtimeh          when CSR_UTIMEH,
     mcache          when CSR_MCACHE,
+    mtvec           when CSR_MTVEC,
     mamr_base(0)    when CSR_MAMR0_BASE,
     mamr_base(1)    when CSR_MAMR1_BASE,
     mamr_base(2)    when CSR_MAMR2_BASE,
@@ -309,6 +311,9 @@ begin
           if csr_select = '1' then
             --CSR Read/Write
             case csr_number is
+              when CSR_MTVEC =>
+                -- Only direct exceptions are available; zero lower two bits
+                mtvec(REGISTER_SIZE-1 downto 2) <= csr_writedata(REGISTER_SIZE-1 downto 2);
               when CSR_MSTATUS =>
                 -- Only 2 bits are writeable.
                 mstatus(CSR_MSTATUS_MIE)  <= csr_writedata(CSR_MSTATUS_MIE);
@@ -319,8 +324,8 @@ begin
                 --MCAUSE is WLRL so only legal values need to be supported
                 mcause(mcause'left)           <= csr_writedata(mcause'left);
                 mcause(CSR_MCAUSE_CODE'range) <= csr_writedata(CSR_MCAUSE_CODE'range);
-              when CSR_MBADADDR =>
-                mbadaddr <= csr_writedata;
+              when CSR_MTVAL =>
+                mtval <= csr_writedata;
               when CSR_MEIMASK =>
                 meimask_full <= csr_writedata;
               when CSR_MSCRATCH =>
@@ -356,24 +361,27 @@ begin
         end if;
 
         if reset = '1' then
-          was_mret                      <= '0';
-          was_illegal                   <= '0';
-          interrupt_pc_correction_valid <= '0';
-          mstatus(CSR_MSTATUS_MIE)      <= '0';
-          mstatus(CSR_MSTATUS_MPIE)     <= '0';
-          mepc                          <= (others => '0');
-          mcause(mcause'left)           <= '0';
-          mcause(CSR_MCAUSE_CODE'range) <= (others => '0');
-          meimask_full                  <= (others => '0');
+          was_mret                        <= '0';
+          was_illegal                     <= '0';
+          interrupt_pc_correction_valid   <= '0';
+          mtvec(REGISTER_SIZE-1 downto 2) <= INTERRUPT_VECTOR(REGISTER_SIZE-1 downto 2);
+          mstatus(CSR_MSTATUS_MIE)        <= '0';
+          mstatus(CSR_MSTATUS_MPIE)       <= '0';
+          mepc                            <= (others => '0');
+          mcause(mcause'left)             <= '0';
+          mcause(CSR_MCAUSE_CODE'range)   <= (others => '0');
+          meimask_full                    <= (others => '0');
         end if;
       end if;
     end process;
+    mtvec(1 downto 0)                                    <= (others => '0');
     mstatus(REGISTER_SIZE-1 downto CSR_MSTATUS_MPIE+1)   <= (others => '0');
     mstatus(CSR_MSTATUS_MPIE-1 downto CSR_MSTATUS_MIE+1) <= (others => '0');
     mstatus(CSR_MSTATUS_MIE-1 downto 0)                  <= (others => '0');
     mcause(mcause'left-1 downto CSR_MCAUSE_CODE'left+1)  <= (others => '0');
   end generate exceptions_gen;
   no_exceptions_gen : if not ENABLE_EXCEPTIONS generate
+    mtvec                         <= (others => '0');
     was_mret                      <= '0';
     was_illegal                   <= '0';
     interrupt_pc_correction_valid <= '0';
@@ -416,7 +424,7 @@ begin
               mamr_base(gregister) <= AMR0_ADDR_BASE;
               mamr_last(gregister) <= AMR0_ADDR_LAST;
             else
-              mamr_base(gregister) <= (others => '0');
+              mamr_base(gregister) <= (others => '1');
               mamr_last(gregister) <= (others => '0');
             end if;
           end if;
@@ -463,7 +471,7 @@ begin
               mumr_base(gregister) <= UMR0_ADDR_BASE;
               mumr_last(gregister) <= UMR0_ADDR_LAST;
             else
-              mumr_base(gregister) <= (others => '0');
+              mumr_base(gregister) <= (others => '1');
               mumr_last(gregister) <= (others => '0');
             end if;
           end if;
@@ -654,10 +662,9 @@ begin
   -- fence.i  (flush pipeline, and start over)
   to_pc_correction_valid <= fence_pc_correction_valid or was_mret or was_illegal or interrupt_pc_correction_valid;
   to_pc_correction_data <=
-    next_fence_pc when fence_pc_correction_valid = '1' else
-    unsigned(INTERRUPT_VECTOR(REGISTER_SIZE-1 downto 0)) when (was_illegal = '1' or
-                                                               interrupt_pc_correction_valid = '1') else
-    unsigned(mepc) when was_mret = '1' else
+    next_fence_pc   when fence_pc_correction_valid = '1' else
+    unsigned(mtvec) when (was_illegal = '1' or interrupt_pc_correction_valid = '1') else
+    unsigned(mepc)  when was_mret = '1' else
     (others => '-');
 
 end architecture rtl;

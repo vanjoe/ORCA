@@ -30,10 +30,9 @@ clean-riscv-test:
 #####
 ORCA_TESTS ?= $(addsuffix .elf, $(notdir $(abspath $(dir $(wildcard $(ORCA_ROOT)/software/orca-tests/*/Makefile )))))
 
-.PHONY: FORCE
 OUTPUT_DIR ?= $(shell pwd)
 $(ORCA_TESTS)::
-	make -C $(ORCA_ROOT)/software/orca-tests/$(basename $@) $(OUTPUT_DIR)/$@ OUTPUT_DIR=$(OUTPUT_DIR) LD_SCRIPT=$(LD_SCRIPT)  RISCV_OLEVEL=-O3
+	make -C $(ORCA_ROOT)/software/orca-tests/$(basename $@) $(OUTPUT_DIR)/$@ OUTPUT_DIR=$(OUTPUT_DIR) RISCV_OLEVEL=-O3
 
 ORCA_TEST_OUTPUTS = $(ORCA_TESTS) $(addsuffix .bin, $(basename $(ORCA_TESTS))) $(addsuffix .dump, $(basename $(ORCA_TESTS))) $(addsuffix .ihex, $(basename $(ORCA_TESTS))) $(addsuffix .qex, $(basename $(ORCA_TESTS)))
 

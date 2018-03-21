@@ -10,6 +10,7 @@ quartus_db/
 incremental_db/
 *.hex
 *.ihex
+*.coe
 output_files/
 *.sof
 tmp.*

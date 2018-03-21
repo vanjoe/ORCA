@@ -193,7 +193,6 @@ BD_CHANGES += }
 
 $(BD_FILE): $(PROJECT_TCL) $(BD_TCL) $(wildcard config.mk)
 	if [ ! -e $(COE_FILE) ]; then echo "memory_initialization_radix=16;" > $(COE_FILE); echo "memory_initialization_vector=0;" >> $(COE_FILE); fi
-
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs init_project $(PROJ_DIR) $(PROJ_NAME)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs create_bd $(PROJ_DIR) $(PROJ_NAME) $(BD_TCL) $(BD_CHANGES)
 

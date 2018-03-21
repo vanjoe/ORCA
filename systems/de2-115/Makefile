@@ -19,7 +19,7 @@ STA_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).sta.rpt
 
 SW_DIR   ?= software
 BIN_FILE ?= test.bin
-HEX_FILE ?= test.hex
+HEX_FILE ?= test.qex
 
 #Define DEVICE_FAMILY and DEVICE here
 include board_cfg.mk
@@ -288,12 +288,15 @@ endif #ifneq ($(BIN_FILE), NONE)
 pgm:
 	quartus_pgm -m JTAG -o P\;$^
 
+$(BIN_FILE)::
+	$(MAKE) -C $(SW_DIR) $(BIN_FILE) $(addsuffix .dump, $(basename $(BIN_FILE)))
+
 .PHONY: run
-run:
 ifeq ($(BIN_FILE), NONE)
+run:
 	python orca_pgm.py test.bin --family=altera --reset_address=0x10000000 --end_address=0x00010000
 else #ifeq ($(BIN_FILE), NONE)
-	$(MAKE) -C $(SW_DIR) $(BIN_FILE)
+run: $(BIN_FILE)
 	python orca_pgm.py $(SW_DIR)/$(BIN_FILE) --family=altera --reset_address=0x10000000 --end_address=0x00010000
 endif #else #ifeq ($(BIN_FILE), NONE)
 
