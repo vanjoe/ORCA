@@ -16,6 +16,8 @@
 
 #define WAIT_SECONDS_BEFORE_START 0
 
+#define MAX_PRINT_ERRORS 5
+
 #ifdef ORCA_DUC_READY_DELAYER_DC_BASE_ADDR
 #define USE_DELAYER_DC      0
 #define DELAYER_DC_RANDOM   1
@@ -35,6 +37,10 @@
 #define RUN_RANDOM_TEST           1
 #define RUN_RANDOM_WRITEBACK_TEST 1
 #define RUN_RANDOM_FLUSH_TEST     1
+#define RUN_WRITEBACK_TEST        1
+#define RUN_FLUSH_WRITE_TEST      1
+#define RUN_FLUSH_READ_TEST       1
+#define RUN_INVALIDATE_TEST       1
 #define RUN_3_INSTRUCTION_LOOP    1
 #define RUN_6_INSTRUCTION_LOOP    1
 #define RUN_BTB_MISSES            1
@@ -142,6 +148,133 @@ uint32_t fence_i_test(void *mem_base, uint32_t mem_size, bool fence_ri){
   return errors;
 }
 
+//Write to a cached region, writeback/flush (based on flush
+//parameter), then change to uncached and read it back.
+uint32_t cached_write_uncached_read_test(void *mem_base, uint32_t mem_size, uint32_t cache_size, uint32_t cache_line_size, bool flush){
+  uint32_t errors = 0;
+  uint32_t *mem_base32 = (uint32_t *)mem_base;
+
+  uint32_t umr1_addr_base = (uint32_t)mem_base;
+  uint32_t umr1_addr_last = ((uint32_t)mem_base)+mem_size;
+
+  uint32_t base_to_writeback = ((uint32_t)mem_base) + 8;
+  uint32_t last_to_writeback = ((uint32_t)mem_base) + cache_size - 8;
+
+  //Zero out all of test memory then flush it to start
+  for(int word = 0; word < (mem_size/sizeof(uint32_t)); word++){
+    mem_base32[word] = 0;
+  }
+  orca_flush_dcache_range((void *)0x0, (void *)0xFFFFFFFF);
+
+  //Put in test pattern
+  for(int word = 0; word < (cache_size/sizeof(uint32_t)); word++){
+    mem_base32[word] = word;
+  }
+
+  //Change the UC interface to be everything then flush/writeback.
+  //Don't use the set_xmr function call as it does its own cache
+  //management.
+  if(flush){
+    asm volatile("csrw " CSR_STRING(CSR_MUMR1_BASE)", %0\n"
+                 "csrw " CSR_STRING(CSR_MUMR1_LAST)", %1\n"
+                 "mv a0, %2\n"
+                 "mv a1, %3\n"
+                 "call orca_flush_dcache_range\n"
+                 :: "r"(umr1_addr_base), "r"(umr1_addr_last), "r"(base_to_writeback), "r"(last_to_writeback) : "a0", "a1");
+  } else {
+    asm volatile("csrw " CSR_STRING(CSR_MUMR1_BASE)", %0\n"
+                 "csrw " CSR_STRING(CSR_MUMR1_LAST)", %1\n"
+                 "mv a0, %2\n"
+                 "mv a1, %3\n"
+                 "call orca_writeback_dcache_range\n"
+                 :: "r"(umr1_addr_base), "r"(umr1_addr_last), "r"(base_to_writeback), "r"(last_to_writeback) : "a0", "a1");
+  }
+
+  //Check test pattern
+  for(int word = 0; word < (cache_size/sizeof(uint32_t)); word++){
+    if(mem_base32[word] != word){
+      if(errors < MAX_PRINT_ERRORS){
+        printf("Error at word %d expected 0x%08X got 0x%08X\r\n", word, word, (unsigned int)(mem_base32[word]));
+      }
+      errors++;
+      if(errors == MAX_PRINT_ERRORS){
+        printf("Errors reached MAX_PRINT_ERRORS; going silent\r\n");
+      }
+    }
+  }
+
+  //Disable UMR1
+  disable_xmr(true, 1);
+  
+  return errors;
+}
+
+//Pull a region into cached, flush/invalidate it (based on invalidate
+//parameter), switch to uncached, write to the region, then switch to
+//cached and read it back.
+uint32_t uncached_write_cached_read_test(void *mem_base, uint32_t mem_size, uint32_t cache_size, uint32_t cache_line_size, bool invalidate){
+  uint32_t errors = 0;
+  uint32_t *mem_base32 = (uint32_t *)mem_base;
+
+  uint32_t umr1_addr_base = (uint32_t)mem_base;
+  uint32_t umr1_addr_last = ((uint32_t)mem_base)+mem_size;
+
+  const uint32_t START_WORD = 2;
+  const uint32_t END_WORD   = (cache_size/sizeof(uint32_t))-2;
+  
+  uint32_t base_to_flush = ((uint32_t)mem_base) + (START_WORD*sizeof(uint32_t));
+  uint32_t last_to_flush = ((uint32_t)mem_base) + (END_WORD*sizeof(uint32_t));
+
+  //Zero out all of test memory then flush it to start
+  for(int word = 0; word < (mem_size/sizeof(uint32_t)); word++){
+    mem_base32[word] = 0;
+  }
+  orca_flush_dcache_range((void *)base_to_flush, (void *)last_to_flush);
+
+  //Write initial test pattern
+  for(int word = 0; word < (cache_size/sizeof(uint32_t)); word++){
+    mem_base32[word] = 0-word;
+  }
+
+  //Flush/invalidate and overwrite the range to test
+  if(invalidate){
+    orca_invalidate_dcache_range((void *)base_to_flush, (void *)last_to_flush);
+  } else {
+    orca_flush_dcache_range((void *)base_to_flush, (void *)last_to_flush);
+  }
+
+  //Change to uncached.  Don't use set_xmr as it has its own cache flushing instructions
+  asm volatile("csrw " CSR_STRING(CSR_MUMR1_BASE)", %0\n"
+               "csrw " CSR_STRING(CSR_MUMR1_LAST)", %1\n"
+               :: "r"(umr1_addr_base), "r"(umr1_addr_last));
+  
+  //Put in new test pattern where flushed/invalidated
+  for(int word = START_WORD; word < END_WORD; word++){
+    mem_base32[word] = word;
+  }
+  
+  //Disable UMR1
+  disable_xmr(true, 1);
+
+  //Check test pattern
+  for(int word = 0; word < (cache_size/sizeof(uint32_t)); word++){
+    const uint32_t expected_word = (word >= START_WORD && word < END_WORD) ? word : 0-word;
+    if(mem_base32[word] != expected_word){
+      if(errors < MAX_PRINT_ERRORS){
+        printf("Error at word %d expected 0x%08X got 0x%08X\r\n", word, (unsigned int)expected_word, (unsigned int)(mem_base32[word]));
+      }
+      errors++;
+      if(errors == MAX_PRINT_ERRORS){
+        printf("Errors reached MAX_PRINT_ERRORS; going silent\r\n");
+      }
+    }
+  }
+
+  return errors;
+}
+
+
+//Simple test writing aliased lines and then flushing them
 uint32_t line_flush_test(void *mem_base, uint32_t mem_size){
   uint8_t *mem_base8 = (uint8_t *)mem_base;
   mem_base8[0] = 0xAB;
@@ -403,17 +536,27 @@ int main(void){
   uint32_t previous_umr0_addr_last = 0;
 
   int errors = 0;
+  bool test_cached_and_uncached = false;
 
   int type = 0;
   for(type = 0; type < 6; type++){
+    test_cached_and_uncached = false;
     switch(type){
     case 0:
       if(!TEST_C_STACK){
         continue;
       }
+      if(TEST_UC_STACK){
+        test_cached_and_uncached = true;
+      }
     case 1:
-      if((type == 1) && (!TEST_C_HEAP)){
-        continue;
+      if(type == 1){
+        if(!TEST_C_HEAP){
+          continue;
+        }
+        if(TEST_UC_HEAP){
+          test_cached_and_uncached = true;
+        }
       }
       printf("\r\n----------------------------------------\r\n-- CACHED\r\n");
       //Disable the AUX interface
@@ -579,6 +722,62 @@ int main(void){
     }
 #endif //#if RUN_RANDOM_FLUSH_TEST
   
+#if RUN_WRITEBACK_TEST
+    if(test_cached_and_uncached){
+      printf("WRITEBACK test: ");
+
+      int result = cached_write_uncached_read_test((void *)test_space_aligned, 2*CACHE_SIZE, CACHE_SIZE, CACHE_LINE_SIZE, false);
+      if(result){
+        printf("WRITEBACK cached_write_uncached_read_test failed with error code 0x%08X\r\n", result);
+        errors++;
+      } else {
+        printf("WRITEBACK cached_write_uncached_read_test passed\r\n");
+      }
+    }
+#endif //#if RUN_WRITEBACK_TEST
+
+#if RUN_FLUSH_WRITE_TEST
+    if(test_cached_and_uncached){
+      printf("FLUSH_WRITE test: ");
+
+      int result = cached_write_uncached_read_test((void *)test_space_aligned, 2*CACHE_SIZE, CACHE_SIZE, CACHE_LINE_SIZE, true);
+      if(result){
+        printf("FLUSH_WRITE cached_write_uncached_read_test failed with error code 0x%08X\r\n", result);
+        errors++;
+      } else {
+        printf("FLUSH_WRITE cached_write_uncached_read_test passed\r\n");
+      }
+    }
+#endif //#if RUN_FLUSH_WRITE_TEST
+
+#if RUN_FLUSH_READ_TEST
+    if(test_cached_and_uncached){
+      printf("FLUSH_READ test: ");
+
+      int result = uncached_write_cached_read_test((void *)test_space_aligned, 2*CACHE_SIZE, CACHE_SIZE, CACHE_LINE_SIZE, false);
+      if(result){
+        printf("FLUSH_READ uncached_write_cached_read_test failed with error code 0x%08X\r\n", result);
+        errors++;
+      } else {
+        printf("FLUSH_READ uncached_write_cached_read_test passed\r\n");
+      }
+    }
+#endif //#if RUN_FLUSH_READ_TEST
+
+#if RUN_INVALIDATE_TEST
+    if(test_cached_and_uncached){
+      printf("INVALIDATE test: ");
+
+      int result = uncached_write_cached_read_test((void *)test_space_aligned, 2*CACHE_SIZE, CACHE_SIZE, CACHE_LINE_SIZE, true);
+      if(result){
+        printf("INVALIDATE uncached_write_cached_read_test failed with error code 0x%08X\r\n", result);
+        errors++;
+      } else {
+        printf("INVALIDATE uncached_write_cached_read_test passed\r\n");
+      }
+    }
+#endif //#if RUN_INVALIDATE_TEST
+
 #if RUN_3_INSTRUCTION_LOOP
     {
       printf("3 instruction loop:\r\n");
