@@ -203,9 +203,9 @@ $(HWDEF_FILE): $(BD_FILE)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs generate_bd_design $(PROJ_DIR) $(PROJ_NAME) tmp.$(BD_TCL)
 	[ -e $(HWDEF_FILE) ]
 	[ -e tmp.$(BD_TCL) ]
-	mv tmp.$(BD_TCL) $(BD_TCL)
-	touch $(BD_FILE)
-	touch $(HWDEF_FILE)
+	touch -r $(BD_TCL) tmp.$(BD_TCL)
+	cp -p tmp.$(BD_TCL) $(BD_TCL)
+	rm tmp.$(BD_TCL)
 
 orca_defines.h: $(HWDEF_FILE)
 	hsi -notrace -mode batch -source ../../tools/hsi_orca_addressmap.tcl -tclargs $^ orca $@
@@ -260,7 +260,7 @@ resource_utilization.rpt: $(IMPL_BIT) $(RESOURCE_TCL)
 	$(VIVADO_SOURCE) $(RESOURCE_TCL) -tclargs report_resources $(PROJ_DIR) $(PROJ_NAME) $@
 
 .PHONY: pgm
-pgm:
+pgm: $(OUT_BIT)
 	xsdb $(PGM_TCL) $(OUT_BIT) ps7_init.tcl
 
 .PHONY: FORCE
