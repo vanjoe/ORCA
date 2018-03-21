@@ -111,6 +111,10 @@ begin  -- architecture rtl
       counter <= counter + 1;
 
       --reading
+      if reading = '1' and slave_rready = '1'then
+        reading <= '0';
+      end if;
+
       if slave_arvalid = '1' then
         reading <= '1';
         address := unsigned(slave_araddr(3 downto 2));
@@ -125,11 +129,11 @@ begin  -- architecture rtl
         end if;
         slave_rid <= slave_arid;
       end if;
-      if reading = '1' and slave_rready = '1'then
-        reading <= '0';
-      end if;
 
       --writing
+      if writing = '1' and slave_bready = '1' then
+        writing <= '0';
+      end if;
       if write_valid = '1' then
         writing <= '1';
         address := unsigned(slave_awaddr(3 downto 2));
@@ -144,9 +148,6 @@ begin  -- architecture rtl
         end if;
         writing   <= '1';
         slave_bid <= slave_awid;
-      end if;
-      if writing = '1' and slave_bready = '1' then
-        writing <= '0';
       end if;
 
       if reset = '1' then
