@@ -6,14 +6,17 @@
 //reset vector being .text.init
 //and interrupt vector being .text.init+4
 _reset:
-	j _start
-	j _isr
+  j _start
+  j _isr
 
 
 .globl _start
 _start:
   la gp, _gp
   la sp, _end_of_memory
+
+  la t0, _isr
+  csrw mtvec, t0
 
   jal main
 
