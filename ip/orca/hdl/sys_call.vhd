@@ -70,6 +70,10 @@ entity sys_call is
     umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     pause_ifetch   : out std_logic;
 
+    --timer signals
+    timer_value     : in std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
+    timer_interrupt : in std_logic                                   := '0';
+
     vcp_writeback_en   : in std_logic;
     vcp_writeback_data : in std_logic_vector(REGISTER_SIZE-1 downto 0)
     );
@@ -108,6 +112,9 @@ architecture rtl of sys_call is
   alias rs1_select : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is instruction(REGISTER_RS1'range);
   alias rd_select  : std_logic_vector(REGISTER_NAME_SIZE-1 downto 0) is instruction(REGISTER_RD'range);
 
+  alias mcause_exc_code : std_logic_vector is mcause(CSR_MCAUSE_CODE'range);
+  alias bit_sel         : std_logic_vector(REGISTER_SIZE-1 downto 0) is rs1_data;
+
   signal csr_readdata       : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal csr_writedata      : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal last_csr_writedata : std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -121,7 +128,6 @@ architecture rtl of sys_call is
   signal interrupt_pending             : std_logic;
   signal interrupt_pc_correction_valid : std_logic;
 
-  signal time_counter : unsigned(63 downto 0);
 
   --Uncached/Auxiliary memory region CSR signals.  Will be assigned 0's if unused.
   type csr_vector is array (natural range <>) of std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -212,19 +218,9 @@ begin
   end process;
 
 
-  -- Process for the timer counter.
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      time_counter <= time_counter + 1;
-      if reset = '1' then
-        time_counter <= (others => '0');
-      end if;
-    end if;
-  end process;
 
-  mtime  <= std_logic_vector(time_counter(REGISTER_SIZE-1 downto 0)) when COUNTER_LENGTH /= 0 else (others => '0');
-  mtimeh <= std_logic_vector(time_counter(time_counter'left downto time_counter'left-REGISTER_SIZE+1))
+  mtime  <= std_logic_vector(timer_value(REGISTER_SIZE-1 downto 0)) when COUNTER_LENGTH /= 0 else (others => '0');
+  mtimeh <= std_logic_vector(timer_value(timer_value'left downto timer_value'left-REGISTER_SIZE+1))
             when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
   misa(misa'left downto misa'left-1) <= "01";
   misa(23)                           <= '0' when VCP_ENABLE = DISABLED else '1';
@@ -293,14 +289,12 @@ begin
           mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
           mcause(mcause'left)       <= '0';
           if illegal_instruction = '1' then
-            mcause(CSR_MCAUSE_CODE'range) <= std_logic_vector(to_unsigned(CSR_MCAUSE_ILLEGAL, CSR_MCAUSE_CODE'length));
+            mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_ILLEGAL;
           else
             if ebreak_select = '1' then
-              mcause(CSR_MCAUSE_CODE'range) <=
-                std_logic_vector(to_unsigned(CSR_MCAUSE_EBREAK, CSR_MCAUSE_CODE'length));
+              mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_EBREAK;
             else
-              mcause(CSR_MCAUSE_CODE'range) <=
-                std_logic_vector(to_unsigned(CSR_MCAUSE_MECALL, CSR_MCAUSE_CODE'length));
+              mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_MECALL;
             end if;
           end if;
           mepc        <= std_logic_vector(current_pc);
@@ -351,13 +345,15 @@ begin
 
           -- Latch in mepc the cycle before interrupt_pc_correction_valid goes high.
           -- When interrupt_pc_correction_valid goes high, the next_pc of the instruction fetch will
-          -- be corrected to the exception vector.
-          mepc                          <= std_logic_vector(program_counter);
-          mstatus(CSR_MSTATUS_MIE)      <= '0';
-          mstatus(CSR_MSTATUS_MPIE)     <= '1';
-          mcause(mcause'left)           <= '1';
-          mcause(CSR_MCAUSE_CODE'range) <= std_logic_vector(to_unsigned(CSR_MCAUSE_MEXT, CSR_MCAUSE_CODE'length));
-          mcause(mcause'left)           <= '1';
+          -- be corrected to the interrupt reset vector.
+          mepc                      <= std_logic_vector(program_counter);
+          mstatus(CSR_MSTATUS_MIE)  <= '0';
+          mstatus(CSR_MSTATUS_MPIE) <= '1';
+          mcause(mcause'left)       <= '1';
+          mcause_exc_code           <= CSR_MCAUSE_MEXT;
+          if timer_interrupt = '1' then
+            mcause_exc_code <= CSR_MCAUSE_MTIMER;
+          end if;
         end if;
 
         if reset = '1' then
@@ -369,7 +365,7 @@ begin
           mstatus(CSR_MSTATUS_MPIE)       <= '0';
           mepc                            <= (others => '0');
           mcause(mcause'left)             <= '0';
-          mcause(CSR_MCAUSE_CODE'range)   <= (others => '0');
+          mcause_exc_code                 <= (others => '0');
           meimask_full                    <= (others => '0');
         end if;
       end if;
@@ -651,7 +647,7 @@ begin
     meipend <= (others => '0');
     meimask <= (others => '0');
   end generate no_interrupts_gen;
-  interrupt_pending <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 else '0';
+  interrupt_pending <= mstatus(CSR_MSTATUS_MIE) when unsigned(meimask and meipend) /= 0 or timer_interrupt = '1' else '0';
 
   pause_ifetch <= fence_pending or interrupt_pending;
 

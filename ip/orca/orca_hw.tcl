@@ -1021,6 +1021,21 @@ add_interface_port vcp vcp_alu_source_valid alu_source_valid  Input  1
 add_interface_port vcp vcp_alu_result       alu_result        Output register_size
 add_interface_port vcp vcp_alu_result_valid alu_result_valid  Output 1
 
+#
+# connection point Timer_Interface
+#
+add_interface Timer_Interface conduit end
+set_interface_property Timer_Interface associatedClock clock
+set_interface_property Timer_Interface associatedReset ""
+set_interface_property Timer_Interface ENABLED true
+set_interface_property Timer_Interface EXPORT_OF ""
+set_interface_property Timer_Interface PORT_NAME_MAP ""
+set_interface_property Timer_Interface CMSIS_SVD_VARIABLES ""
+set_interface_property Timer_Interface SVD_ADDRESS_GROUP ""
+
+add_interface_port Timer_Interface timer_value value Input COUNTER_LENGTH
+add_interface_port Timer_Interface timer_interrupt interrupt Input 1
+
 
 #
 # connection point global_interrupts
@@ -1142,7 +1157,7 @@ proc elaboration_callback {} {
     if { [expr [get_parameter_value RESET_VECTOR] % 4] != 0 } {
         send_message Error "Reset vector must be aligned to 4 bytes."
     }
-    
+
     if { [get_parameter_value ENABLE_EXCEPTIONS] } {
         set_parameter_property INTERRUPT_VECTOR enabled true
         if { [expr [get_parameter_value INTERRUPT_VECTOR] % 4] != 0 } {
@@ -1184,7 +1199,7 @@ proc elaboration_callback {} {
         set_display_item_property DAUX_REQUEST_REGISTER enabled false
         set_display_item_property DAUX_RETURN_REGISTER enabled false
     }
-    
+
     if { [get_parameter_value UC_MEMORY_REGIONS] } {
         set_display_item_property UMR0_ADDR_BASE enabled true
         set_display_item_property UMR0_ADDR_LAST enabled true
@@ -1200,7 +1215,7 @@ proc elaboration_callback {} {
         set_display_item_property DUC_REQUEST_REGISTER enabled false
         set_display_item_property DUC_RETURN_REGISTER enabled false
     }
-    
+
     if { [get_parameter_value ICACHE_SIZE] } {
         set_display_item_property ICACHE_LINE_SIZE enabled true
         set_display_item_property ICACHE_EXTERNAL_WIDTH enabled true
@@ -1226,6 +1241,8 @@ proc elaboration_callback {} {
         set_display_item_property DC_REQUEST_REGISTER enabled false
         set_display_item_property DC_RETURN_REGISTER enabled false
     }
+
+	 set_interface_property Timer_Interface ENABLED [expr [get_parameter_value COUNTER_LENGTH] > 0 ]
 
     set_interface_property axi_iuc     readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
     set_interface_property axi_iuc     combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]

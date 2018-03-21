@@ -142,10 +142,11 @@ package constants_pkg is
 
   constant CSR_MCAUSE_CODE : std_logic_vector(3 downto 0) := (others => '-');
 
-  constant CSR_MCAUSE_MEXT    : integer := 11;
-  constant CSR_MCAUSE_ILLEGAL : integer := 2;
-  constant CSR_MCAUSE_EBREAK  : integer := 3;
-  constant CSR_MCAUSE_MECALL  : integer := 11;
+  constant CSR_MCAUSE_MTIMER  : std_logic_vector(CSR_MCAUSE_CODE'range) := x"7";
+  constant CSR_MCAUSE_MEXT    : std_logic_vector(CSR_MCAUSE_CODE'range) := x"B";
+  constant CSR_MCAUSE_ILLEGAL : std_logic_vector(CSR_MCAUSE_CODE'range) := x"2";
+  constant CSR_MCAUSE_EBREAK  : std_logic_vector(CSR_MCAUSE_CODE'range) := x"3";
+  constant CSR_MCAUSE_MECALL  : std_logic_vector(CSR_MCAUSE_CODE'range) := x"B";
 
 --Priveleged FUNC3
   constant PRIV_FUNC3 : std_logic_vector(2 downto 0) := "000";

@@ -341,6 +341,11 @@ entity orca is
     DLMB_UE           : in  std_logic                              := '0';
 
     ---------------------------------------------------------------------------
+    -- Timer signals
+    ---------------------------------------------------------------------------
+    timer_value          : in  std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
+    timer_interrupt      : in  std_logic                                   := '0';
+    ---------------------------------------------------------------------------
     -- Vector Coprocessor Port
     ---------------------------------------------------------------------------
     vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -348,6 +353,7 @@ entity orca is
     vcp_data2            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_instruction      : out std_logic_vector(40 downto 0);
     vcp_valid_instr      : out std_logic;
+
     vcp_ready            : in  std_logic                                  := '1';
     vcp_illegal          : in  std_logic                                  := '0';
     vcp_writeback_data   : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
@@ -355,6 +361,7 @@ entity orca is
     vcp_alu_data1        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
     vcp_alu_data2        : in  std_logic_vector(REGISTER_SIZE-1 downto 0) := (others => '0');
     vcp_alu_source_valid : in  std_logic                                  := '0';
+
     vcp_alu_result       : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_alu_result_valid : out std_logic
     );
@@ -494,6 +501,10 @@ begin
       lsu_oimm_readdata      => lsu_oimm_readdata,
       lsu_oimm_readdatavalid => lsu_oimm_readdatavalid,
       lsu_oimm_waitrequest   => lsu_oimm_waitrequest,
+
+      --timer signals
+      timer_value     => timer_value,
+      timer_interrupt => timer_interrupt,
 
       --Vector coprocessor port
       vcp_data0            => vcp_data0,

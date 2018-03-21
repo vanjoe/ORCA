@@ -103,6 +103,10 @@ entity execute is
 
     pause_ifetch : out std_logic;
 
+    --timer signals
+    timer_value     : in std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
+    timer_interrupt : in std_logic                                   := '0';
+
     --Vector coprocessor port
     vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     vcp_data1            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -504,6 +508,9 @@ begin
       umr_last_addrs => umr_last_addrs,
 
       pause_ifetch => pause_ifetch,
+
+      timer_value     => timer_value,
+      timer_interrupt => timer_interrupt,
 
       vcp_writeback_data => vcp_writeback_data,
       vcp_writeback_en   => vcp_writeback_en
