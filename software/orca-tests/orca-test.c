@@ -7,9 +7,9 @@
 //Pass or fail a test for the orca-tests suite.
 int orca_test_passfail(int t3){
   if(t3 == 1){
-    printf("\r\nTest passed!\r\n--\r\n%c", 0x4);
+    printf("\r\nTest passed!\r\n--\r\n\x4");
   } else {
-    printf("\r\nTest failed with %d error%s.\r\n--\r\n%c", t3 ? t3 : 1, t3 ? "s" : "", 0x4);
+    printf("\r\nTest failed on test # %d.\r\n--\r\n\x4", t3);
   }
 
   //Hang here; never return

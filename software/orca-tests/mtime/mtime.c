@@ -3,11 +3,12 @@
 #include "bsp.h"
 #include "orca_exceptions.h"
 #include "orca_csrs.h"
+
 #ifndef MTIME_ADDR
 #define MTIME_ADDR 0x81000000
-#define MTIMECMP_ADDR (MTIME_ADDR + 8)
 #endif
 
+#define MTIMECMP_ADDR (MTIME_ADDR + 8)
 
 int test_2()
 {

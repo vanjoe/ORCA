@@ -21,8 +21,8 @@ entity orca_timer is
   generic (
     TIMER_WIDTH : integer := 64);
   port (
-    clk             : in std_logic;
-    reset           : in std_logic;
+    clk             : in  std_logic;
+    reset           : in  std_logic;
     timer_interrupt : out std_logic;
     timer_value     : out std_logic_vector(TIMER_WIDTH-1 downto 0);
 
@@ -76,6 +76,7 @@ end entity;
 
 architecture rtl of orca_timer is
   signal reading     : std_logic;
+  signal writing     : std_logic;
   signal write_valid : std_logic;
   signal ID_register : std_logic_vector(slave_rid'range);
 
@@ -83,6 +84,8 @@ architecture rtl of orca_timer is
   signal countercmp : unsigned(TIMER_WIDTH-1 downto 0);
 begin  -- architecture rtl
 
+  --in order to syncronize write address and write data channels
+  --we only assert ready when both are valid
   write_valid   <= slave_awvalid and slave_wvalid;
   slave_awready <= write_valid;
   slave_wready  <= write_valid;
@@ -95,20 +98,23 @@ begin  -- architecture rtl
 
   timer_interrupt <= '1' when counter > countercmp else '0';
   timer_value     <= std_logic_vector(counter);
+  slave_bvalid    <= writing;
+  slave_rvalid    <= reading;
   process (clk) is
     variable address : unsigned(MTIME_ADDR'range);
   begin  -- process
     if rising_edge(clk) then            -- rising clock edge
-      slave_rdata  <= (others => '-');
-      slave_rvalid <= '0';
+      slave_rdata <= (others => '-');
+
 
       --counter
       counter <= counter + 1;
 
       --reading
       if slave_arvalid = '1' then
+        reading <= '1';
         address := unsigned(slave_araddr(3 downto 2));
-        if MTIME_ADDR =  address then
+        if MTIME_ADDR = address then
           slave_rdata <= std_logic_vector(counter(31 downto 0));
         elsif MTIMEH_ADDR = address then
           slave_rdata <= std_logic_vector(counter(counter'left downto counter'left-31));
@@ -117,13 +123,15 @@ begin  -- architecture rtl
         elsif MTIMECMPH_ADDR = address then
           slave_rdata <= std_logic_vector(countercmp(counter'left downto counter'left-31));
         end if;
-        slave_rvalid <= '1';
-        slave_rid    <= slave_arid;
+        slave_rid <= slave_arid;
+      end if;
+      if reading = '1' and slave_rready = '1'then
+        reading <= '0';
       end if;
 
       --writing
-      slave_bvalid <= '0';
       if write_valid = '1' then
+        writing <= '1';
         address := unsigned(slave_awaddr(3 downto 2));
         if MTIME_ADDR = address then
           counter(31 downto 0) <= unsigned(slave_wdata);
@@ -134,17 +142,21 @@ begin  -- architecture rtl
         elsif MTIMECMPH_ADDR = address then
           countercmp(counter'left downto counter'left-31) <= unsigned(slave_wdata);
         end if;
-        slave_bvalid <= '1';
-        slave_bid    <= slave_awid;
+        writing   <= '1';
+        slave_bid <= slave_awid;
       end if;
+      if writing = '1' and slave_bready = '1' then
+        writing <= '0';
+      end if;
+
       if reset = '1' then
         countercmp <= (others => '1');
         counter    <= (others => '0');
+        reading    <= '0';
+        writing    <= '0';
       end if;
     end if;
   end process;
-
-
 
 
 end architecture rtl;
