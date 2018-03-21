@@ -235,18 +235,18 @@ link.ld::
 	diff -q $@ tmp.$@; if [ $$? != 0 ]; then mv tmp.$@ $@; fi
 	rm -f tmp.$@
 
-software/$(RUN_FILE).coe::
-	make -C software $(RUN_FILE).coe $(RUN_FILE).dump
+$(SW_DIR)/$(TEST).coe::
+	$(MAKE) -C $(SW_DIR) $(TEST).coe $(TEST).dump
 
 .PHONY: sim
-ifneq ($(RUN_FILE),)
-sim: $(BD_FILE) software/$(RUN_FILE).coe
-	ln -sf software/$(RUN_FILE).coe test.coe
+ifndef TEST
+sim:
+	$(error Define TEST variable before running make sim ($(SW_DIR)/$$(TEST).coe will be used))
+else #ifndef TEST
+sim: $(BD_FILE) $(SW_DIR)/$(TEST).coe
+	ln -sf $(SW_DIR)/$(TEST).coe $(COE_FILE)
 	vivado -nolog -nojournal $(PROJ_FILE) -source simulate.tcl &
-else
-sim :
-	@printf "RUN_FILE not defined\n" && false
-endif
+endif #else #ifndef TEST
 
 .PHONY: gui
 gui: $(BD_FILE)
@@ -265,15 +265,19 @@ resource_utilization.rpt: $(IMPL_BIT) $(RESOURCE_TCL)
 pgm:
 	xsdb $(PGM_TCL) $(OUT_BIT) ps7_init.tcl
 
+.PHONY: FORCE
+$(SW_DIR)/$(TEST).ihex: FORCE
+	$(MAKE) -C $(SW_DIR) $(TEST).ihex $(TEST).dump
 
 .PHONY: run
 run: orca_defines.h
-ifeq ($(RUN_FILE), NONE)
-	python ../../tools/orca_pgm.py test.ihex  --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS)
-else #ifeq ($(RUN_FILE), NONE)
-	$(MAKE) -C software $(RUN_FILE).ihex $(RUN_FILE).dump
-	python ../../tools/orca_pgm.py software/$(RUN_FILE).ihex  --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS)
-endif
+ifndef TEST
+run:
+	$(error Define TEST variable before running make run ($(SW_DIR)/$$(TEST).ihex will be used))
+else #ifndef TEST
+run: $(SW_DIR)/$(TEST).ihex FORCE
+	python ../../tools/orca_pgm.py $(SW_DIR)/$(TEST).ihex  --family=xilinx --reset_address=$(JTAG_RESET_BASE_ADDRESS)
+endif #else #ifndef TEST
 
 .PHONY: clean
 clean:

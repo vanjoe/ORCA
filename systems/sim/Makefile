@@ -65,6 +65,9 @@ testone: $(TEST_LOG)
 .PHONY: testall
 testall: $(TEST_LOGS)
 
+orca_defines.h:
+	touch $@
+
 .PHONY: sim
 ifndef TEST
 sim:

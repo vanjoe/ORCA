@@ -18,8 +18,8 @@ ASM_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).asm.rpt
 STA_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).sta.rpt
 
 SW_DIR   ?= software
-BIN_FILE ?= test.bin
-HEX_FILE ?= test.qex
+BIN_FILE := $(TEST).bin
+HEX_FILE := $(TEST).qex
 
 #Define DEVICE_FAMILY and DEVICE here
 include board_cfg.mk
@@ -251,9 +251,6 @@ asm: $(ASM_RPT_FILE)
 .PHONY: sta
 sta: $(STA_RPT_FILE)
 
-.PHONY: testbench
-testbench: $(BD_NAME)/simulation/mentor/software/$(HEX_FILE)
-
 $(BD_NAME)/simulation/mentor/msim_setup.tcl: $(QSYS_FILE) $(SUBMODULE_FILES)
 	qsys-generate $(QSYS_FILE) --search-path="./,$(IP_DIR)/,$$" --simulation=VHDL 2>&1 | tee ./sim.$(QSYS_FILE).log
 	[ -e $@ ]
@@ -269,8 +266,13 @@ $(BD_NAME)/simulation/mentor/software/$(HEX_FILE): $(BD_NAME)/simulation/mentor/
 	cd $(BD_NAME)/simulation/mentor/software &&	ln -sf ../../../../software/$(HEX_FILE)
 
 .PHONY: sim
+ifndef TEST
+sim:
+	$(error Define TEST variable before running make sim (software/$$(TEST).qex will be used))
+else #ifndef TEST
 sim: $(BD_NAME)/simulation/mentor/software/$(HEX_FILE)
 	vsim -do simulate.tcl
+endif #else #ifndef TEST
 
 .PHONY: clean
 clean:
@@ -282,23 +284,20 @@ clean:
 	$(MAKE) -C $(SW_DIR)/ clean || true
 
 .PHONY: pgm
-ifneq ($(BIN_FILE), NONE)
 pgm: $(PROJECT_NAME).sof
-endif #ifneq ($(BIN_FILE), NONE)
-pgm:
 	quartus_pgm -m JTAG -o P\;$^
 
-$(BIN_FILE)::
+$(SW_DIR)/$(BIN_FILE): FORCE
 	$(MAKE) -C $(SW_DIR) $(BIN_FILE) $(addsuffix .dump, $(basename $(BIN_FILE)))
 
 .PHONY: run
-ifeq ($(BIN_FILE), NONE)
+ifndef TEST
 run:
-	python orca_pgm.py test.bin --family=altera --reset_address=0x10000000 --end_address=0x00010000
-else #ifeq ($(BIN_FILE), NONE)
-run: $(BIN_FILE)
+	$(error Define TEST variable before running make run (software/$$(TEST).bin will be used))
+else #ifndef TEST
+run: $(SW_DIR)/$(BIN_FILE) FORCE
 	python orca_pgm.py $(SW_DIR)/$(BIN_FILE) --family=altera --reset_address=0x10000000 --end_address=0x00010000
-endif #else #ifeq ($(BIN_FILE), NONE)
+endif #else #ifndef TEST
 
 .PHONY: terminal-run
 terminal-run:
@@ -336,9 +335,6 @@ help:
 	@echo
 	@echo "   clean:"
 	@echo "     Clean all outputs"
-	@echo
-	@echo "   testbench:"
-	@echo "     Generate testbench from QSYS file"
 	@echo
 	@echo "   sim:"
 	@echo "     Run Modelsim simulator"
