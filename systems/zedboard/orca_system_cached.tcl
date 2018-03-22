@@ -89,7 +89,7 @@ if { ${design_name} eq "" } {
    set errMsg "Design <$design_name> already exists in your project, please set the variable <design_name> to another value."
    set nRet 1
 } elseif { [get_files -quiet ${design_name}.bd] ne "" } {
-   # USE CASES:
+   # USE CASES: 
    #    6) Current opened design, has components, but diff names, design_name exists in project.
    #    7) No opened design, design_name exists in project.
 
@@ -123,7 +123,7 @@ set bCheckIPsPassed 1
 ##################################################################
 set bCheckIPs 1
 if { $bCheckIPs == 1 } {
-   set list_check_ips "\
+   set list_check_ips "\ 
 xilinx.com:ip:axi_bram_ctrl:4.0\
 xilinx.com:ip:axi_gpio:2.0\
 xilinx.com:ip:axi_timer:2.0\
@@ -476,7 +476,6 @@ proc create_root_design { parentCell } {
    CONFIG.use_bram_block {Stand_Alone} \
  ] $blk_mem_gen_onchip
 
-
   # Create instance: clock
   create_hier_cell_clock [current_bd_instance .] clock
 
@@ -540,7 +539,7 @@ proc create_root_design { parentCell } {
  ] [get_bd_intf_pins /orca/IC]
 
   set_property -dict [ list \
-   CONFIG.NUM_READ_OUTSTANDING {1} \
+   CONFIG.HAS_BRESP {0} \
    CONFIG.SUPPORTS_NARROW_BURST {0} \
    CONFIG.NUM_WRITE_OUTSTANDING {1} \
    CONFIG.MAX_BURST_LENGTH {1} \
@@ -551,13 +550,6 @@ proc create_root_design { parentCell } {
   set_property -dict [ list \
    CONFIG.TIMER_WIDTH {64} \
  ] $orca_timer_0
-
-  set_property -dict [ list \
-   CONFIG.SUPPORTS_NARROW_BURST {1} \
-   CONFIG.NUM_READ_OUTSTANDING {2} \
-   CONFIG.NUM_WRITE_OUTSTANDING {2} \
-   CONFIG.MAX_BURST_LENGTH {16} \
- ] [get_bd_intf_pins /orca_timer_0/slave]
 
   # Create instance: processing_system7, and set properties
   set processing_system7 [ create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7 ]
@@ -1417,7 +1409,6 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IUC] [get_bd_intf_pins orca
   connect_bd_net -net blk_mem_gen_onchip_douta [get_bd_pins blk_mem_gen_onchip/douta] [get_bd_pins lmb_bram_if_cntlr/BRAM_Din_A]
   connect_bd_net -net blk_mem_gen_onchip_doutb [get_bd_pins axi_bram_ctrl_onchip_A4/bram_rddata_a] [get_bd_pins blk_mem_gen_onchip/doutb]
   connect_bd_net -net clock_clk_2x_out -boundary_type upper [get_bd_pins clock/clk_2x_out]
-
   connect_bd_net -net clock_clk_out [get_bd_pins axi_bram_ctrl_onchip_A4/s_axi_aclk] [get_bd_pins axi_gpio_jtag_reset/s_axi_aclk] [get_bd_pins axi_gpio_leds/s_axi_aclk] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/ACLK] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/M00_ACLK] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/S00_ACLK] [get_bd_pins axi_interconnect_data_uncacheable/ACLK] [get_bd_pins axi_interconnect_data_uncacheable/M00_ACLK] [get_bd_pins axi_interconnect_data_uncacheable/M01_ACLK] [get_bd_pins axi_interconnect_data_uncacheable/M02_ACLK] [get_bd_pins axi_interconnect_data_uncacheable/M03_ACLK] [get_bd_pins axi_interconnect_data_uncacheable/M04_ACLK] [get_bd_pins axi_interconnect_data_uncacheable/M05_ACLK] [get_bd_pins axi_interconnect_data_uncacheable/S00_ACLK] [get_bd_pins axi_interconnect_data_uncacheable/S01_ACLK] [get_bd_pins axi_interconnect_jtag/ACLK] [get_bd_pins axi_interconnect_jtag/M00_ACLK] [get_bd_pins axi_interconnect_jtag/M01_ACLK] [get_bd_pins axi_interconnect_jtag/S00_ACLK] [get_bd_pins axi_interconnect_memory/ACLK] [get_bd_pins axi_interconnect_memory/M00_ACLK] [get_bd_pins axi_interconnect_memory/M01_ACLK] [get_bd_pins axi_interconnect_memory/S00_ACLK] [get_bd_pins axi_interconnect_memory/S01_ACLK] [get_bd_pins axi_interconnect_memory/S02_ACLK] [get_bd_pins axi_interconnect_memory/S03_ACLK] [get_bd_pins axi_timer/s_axi_aclk] [get_bd_pins clock/clk_out] [get_bd_pins dummy/clk_in] [get_bd_pins jtag_axi/aclk] [get_bd_pins lmb_bram_if_cntlr/LMB_Clk] [get_bd_pins orca/clk] [get_bd_pins orca_timer_0/clk] [get_bd_pins processing_system7/S_AXI_HP0_ACLK] [get_bd_pins ps7_uart_monitor/axi_aclk] [get_bd_pins ready_delayer_dc/S_AXI_ACLK] [get_bd_pins system_ila_orca_masters/clk]
   connect_bd_net -net clock_interconnect_aresetn [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/ARESETN] [get_bd_pins axi_interconnect_data_uncacheable/ARESETN] [get_bd_pins axi_interconnect_memory/ARESETN] [get_bd_pins clock/interconnect_aresetn]
   connect_bd_net -net clock_peripheral_aresetn [get_bd_pins axi_bram_ctrl_onchip_A4/s_axi_aresetn] [get_bd_pins axi_gpio_leds/s_axi_aresetn] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/M00_ARESETN] [get_bd_pins axi_interconnect_A4L_to_A4_PS7_GP0/S00_ARESETN] [get_bd_pins axi_interconnect_data_uncacheable/M00_ARESETN] [get_bd_pins axi_interconnect_data_uncacheable/M01_ARESETN] [get_bd_pins axi_interconnect_data_uncacheable/M02_ARESETN] [get_bd_pins axi_interconnect_data_uncacheable/M03_ARESETN] [get_bd_pins axi_interconnect_data_uncacheable/M04_ARESETN] [get_bd_pins axi_interconnect_data_uncacheable/M05_ARESETN] [get_bd_pins axi_interconnect_data_uncacheable/S00_ARESETN] [get_bd_pins axi_interconnect_data_uncacheable/S01_ARESETN] [get_bd_pins axi_interconnect_jtag/M01_ARESETN] [get_bd_pins axi_interconnect_memory/M00_ARESETN] [get_bd_pins axi_interconnect_memory/M01_ARESETN] [get_bd_pins axi_interconnect_memory/S00_ARESETN] [get_bd_pins axi_interconnect_memory/S01_ARESETN] [get_bd_pins axi_interconnect_memory/S02_ARESETN] [get_bd_pins axi_interconnect_memory/S03_ARESETN] [get_bd_pins axi_timer/s_axi_aresetn] [get_bd_pins clock/peripheral_aresetn] [get_bd_pins ps7_uart_monitor/axi_aresetn] [get_bd_pins ready_delayer_dc/S_AXI_ARESETN] [get_bd_pins system_ila_orca_masters/resetn]
@@ -1456,7 +1447,7 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IUC] [get_bd_intf_pins orca
   create_bd_addr_seg -range 0x00010000 -offset 0x40000000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs axi_gpio_jtag_reset/S_AXI/Reg] SEG_axi_gpio_jtag_reset_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0xFFFF0000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs axi_gpio_leds/S_AXI/Reg] SEG_axi_gpio_leds_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0xFFFE0000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs axi_timer/S_AXI/Reg] SEG_axi_timer_Reg
-  create_bd_addr_seg -range 0x00010000 -offset 0x44A00000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs orca_timer_0/slave/reg0] SEG_orca_timer_0_reg0
+  create_bd_addr_seg -range 0x00010000 -offset 0xC0000000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs orca_timer_0/slave/reg0] SEG_orca_timer_0_reg0
   create_bd_addr_seg -range 0x20000000 -offset 0x80000000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_DDR_LOWOCM] SEG_processing_system7_0_GP0_DDR_LOWOCM
   create_bd_addr_seg -range 0x00400000 -offset 0xE0000000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_IOP] SEG_processing_system7_0_GP0_IOP
   create_bd_addr_seg -range 0x01000000 -offset 0xFC000000 [get_bd_addr_spaces jtag_axi/Data] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_QSPI_LINEAR] SEG_processing_system7_0_GP0_QSPI_LINEAR
@@ -1470,7 +1461,7 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IUC] [get_bd_intf_pins orca
   create_bd_addr_seg -range 0x00010000 -offset 0xFFFE0000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs axi_timer/S_AXI/Reg] SEG_axi_timer_Reg
   create_bd_addr_seg -range 0x00020000 -offset 0xA0000000 [get_bd_addr_spaces orca/DLMB] [get_bd_addr_segs lmb_bram_if_cntlr/SLMB1/Mem] SEG_lmb_bram_if_cntlr_Mem
   create_bd_addr_seg -range 0x00020000 -offset 0xA0000000 [get_bd_addr_spaces orca/ILMB] [get_bd_addr_segs lmb_bram_if_cntlr/SLMB/Mem] SEG_lmb_bram_if_cntlr_Mem
-  create_bd_addr_seg -range 0x00001000 -offset 0x44A00000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs orca_timer_0/slave/reg0] SEG_orca_timer_0_reg0
+  create_bd_addr_seg -range 0x00001000 -offset 0xC0000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs orca_timer_0/slave/reg0] SEG_orca_timer_0_reg0
   create_bd_addr_seg -range 0x20000000 -offset 0x80000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_DDR_LOWOCM] SEG_processing_system7_0_GP0_DDR_LOWOCM
   create_bd_addr_seg -range 0x00400000 -offset 0xE0000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_IOP] SEG_processing_system7_0_GP0_IOP
   create_bd_addr_seg -range 0x01000000 -offset 0xFC000000 [get_bd_addr_spaces orca/DUC] [get_bd_addr_segs processing_system7/S_AXI_GP0/GP0_QSPI_LINEAR] SEG_processing_system7_0_GP0_QSPI_LINEAR
@@ -1494,3 +1485,5 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets orca_IUC] [get_bd_intf_pins orca
 ##################################################################
 
 create_root_design ""
+
+
