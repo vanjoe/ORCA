@@ -99,9 +99,10 @@ architecture rtl of cache_controller is
   constant BEATS_PER_LINE  : positive                                  := LINE_SIZE/BYTES_PER_BEAT;
   constant BURSTS_PER_LINE : positive                                  := LINE_SIZE/BYTES_PER_BURST;
 
-  signal read_miss        : std_logic;
-  signal read_lastaddress : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
-  signal read_lastline    : unsigned(log2(NUM_LINES)-1 downto 0);
+  signal read_miss            : std_logic;
+  signal read_requestinflight : std_logic;
+  signal read_lastaddress     : std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+  signal read_lastline        : unsigned(log2(NUM_LINES)-1 downto 0);
 
   type control_state_type is (WALK_CACHE, IDLE, CACHE_MISSED, WAIT_FOR_HIT);
   signal control_state      : control_state_type;
@@ -115,7 +116,6 @@ architecture rtl of cache_controller is
   signal write_dirty_valid  : std_logic_vector(DIRTY_BITS downto 0);
   alias write_tag_valid     : std_logic is write_dirty_valid(0);
 
-  signal cache_mgt_ready       : std_logic;
   signal cache_mgt_tag_update  : std_logic;
   signal cache_mgt_dirty_valid : std_logic_vector(DIRTY_BITS downto 0);
   alias cache_mgt_tag_valid    : std_logic is cache_mgt_dirty_valid(0);
@@ -162,13 +162,13 @@ architecture rtl of cache_controller is
   signal read_dirty_valid   : std_logic_vector(DIRTY_BITS downto 0);
 begin
   --Idle when no reads in flight (either hit or miss), not waiting on a
-  --writeback/writethrough, and not clearing/invalidating the cache.
+  --writeback/writethrough, and not walking the cache.
   --Idle is state-only; do not check for incoming requests
-  cache_idle <= (not read_readdatavalid) and (not read_miss) and write_idle and cache_mgt_ready;
+  cache_idle <= (not read_requestinflight) and write_idle and (not cache_walking);
 
   cacheint_oimm_waitrequest <= read_miss or
                                (not write_ready) or
-                               (not cache_mgt_ready);
+                               cache_walking;
 
   c_oimm_address(log2(BYTES_PER_BEAT)-1 downto 0) <= (others => '0');
 
@@ -196,7 +196,6 @@ begin
   process(control_state, cache_walker_tag_update, cache_walker_dirty_valid, done_from_cache_walker, read_miss, ready_from_filler, precache_idle, cacheint_oimm_requestvalid, write_idle, to_cache_control_valid, ready_from_cache_walker, to_cache_control_command, done_from_filler)
   begin
     next_control_state       <= control_state;
-    cache_mgt_ready          <= '1';
     cache_mgt_tag_update     <= '0';
     cache_mgt_dirty_valid    <= (others => '0');
     start_to_filler          <= '0';
@@ -205,7 +204,6 @@ begin
 
     case control_state is
       when WALK_CACHE =>
-        cache_mgt_ready       <= '0';
         cache_mgt_tag_update  <= cache_walker_tag_update;
         cache_mgt_dirty_valid <= cache_walker_dirty_valid;
         if done_from_cache_walker = '1' then
@@ -224,10 +222,9 @@ begin
           end if;
         else
           if precache_idle = '1' and cacheint_oimm_requestvalid = '0' and write_idle = '1' then
-            if to_cache_control_valid = '1' then
-              cache_mgt_ready <= '0';
-              if ready_from_cache_walker = '1' then
-                from_cache_control_ready <= '1';
+            if ready_from_cache_walker = '1' then
+              from_cache_control_ready <= '1';
+              if to_cache_control_valid = '1' then
                 case to_cache_control_command is
                   when WRITEBACK =>
                     --Skip writeback commands for read_only and writethrough caches
@@ -389,16 +386,17 @@ begin
       clk   => clk,
       reset => reset,
 
-      read_address       => read_address,
-      read_requestvalid  => read_requestvalid,
-      read_speculative   => read_speculative,
-      read_readdata      => read_readdata,
-      read_readdatavalid => read_readdatavalid,
-      read_readabort     => read_readabort,
-      read_miss          => read_miss,
-      read_lastaddress   => read_lastaddress,
-      read_tag           => read_tag,
-      read_dirty_valid   => read_dirty_valid,
+      read_address         => read_address,
+      read_requestvalid    => read_requestvalid,
+      read_speculative     => read_speculative,
+      read_readdata        => read_readdata,
+      read_readdatavalid   => read_readdatavalid,
+      read_readabort       => read_readabort,
+      read_miss            => read_miss,
+      read_requestinflight => read_requestinflight,
+      read_lastaddress     => read_lastaddress,
+      read_tag             => read_tag,
+      read_dirty_valid     => read_dirty_valid,
 
       write_address      => write_address,
       write_byteenable   => write_byteenable,
