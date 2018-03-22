@@ -44,12 +44,12 @@ end entity;
 architecture rtl of cache is
   constant WORDS_PER_LINE  : positive := LINE_SIZE/(WIDTH/8);
   constant TAG_BITS        : positive := ADDRESS_WIDTH-log2(NUM_LINES*LINE_SIZE);
-  constant TAG_LEFT        : natural  := ADDRESS_WIDTH;
+  constant TAG_LEFT        : natural  := ADDRESS_WIDTH-1;
   constant TAG_RIGHT       : natural  := log2(NUM_LINES)+log2(LINE_SIZE);
   constant CACHELINE_BITS  : positive := log2(NUM_LINES);
   constant CACHELINE_RIGHT : natural  := log2(LINE_SIZE);
   constant CACHEWORD_BITS  : positive := log2(NUM_LINES)+log2(WORDS_PER_LINE);
-  constant CACHEWORD_LEFT  : natural  := log2(NUM_LINES)+log2(LINE_SIZE);
+  constant CACHEWORD_LEFT  : natural  := log2(NUM_LINES)+log2(LINE_SIZE)-1;
   constant CACHEWORD_RIGHT : natural  := log2(WIDTH/8);
 
   signal read_requestinflight     : std_logic;
@@ -69,9 +69,9 @@ architecture rtl of cache is
   signal write_cacheword : unsigned(CACHEWORD_BITS-1 downto 0);
 
   alias write_tag : std_logic_vector(TAG_BITS-1 downto 0)
-    is write_address(TAG_LEFT-1 downto TAG_RIGHT);
+    is write_address(TAG_LEFT downto TAG_RIGHT);
   alias read_request_tag : std_logic_vector(TAG_BITS-1 downto 0)
-    is read_lastaddress(TAG_LEFT-1 downto TAG_RIGHT);
+    is read_lastaddress(TAG_LEFT downto TAG_RIGHT);
 begin
   read_miss <= read_requestinflight and (not read_hit);
 
@@ -130,8 +130,8 @@ begin
       );
 
   --For each byte generate a separate data cache RAM
-  read_cacheword  <= unsigned(read_address(CACHEWORD_LEFT-1 downto CACHEWORD_RIGHT));
-  write_cacheword <= unsigned(write_address(CACHEWORD_LEFT-1 downto CACHEWORD_RIGHT));
+  read_cacheword  <= unsigned(read_address(CACHEWORD_LEFT downto CACHEWORD_RIGHT));
+  write_cacheword <= unsigned(write_address(CACHEWORD_LEFT downto CACHEWORD_RIGHT));
   byte_gen : for gbyte in (WIDTH/8)-1 downto 0 generate
     signal write_enable : std_logic;
   begin

@@ -538,7 +538,7 @@ begin
         EXTERNAL_WIDTH        => ICACHE_EXTERNAL_WIDTH,
         LOG2_BURSTLENGTH      => LOG2_BURSTLENGTH,
         POLICY                => READ_ONLY,
-        REGION_OPTIMIZATIONS  => false,
+        REGION_OPTIMIZATIONS  => true,
         WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED
         )
       port map (
@@ -791,7 +791,7 @@ begin
         EXTERNAL_WIDTH        => DCACHE_EXTERNAL_WIDTH,
         LOG2_BURSTLENGTH      => LOG2_BURSTLENGTH,
         POLICY                => boolean_to_cache_policy(DCACHE_WRITEBACK),
-        REGION_OPTIMIZATIONS  => false,
+        REGION_OPTIMIZATIONS  => true,
         WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED
         )
       port map (

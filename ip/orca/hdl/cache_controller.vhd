@@ -62,14 +62,20 @@ architecture rtl of cache_controller is
   constant DIRTY_BITS                       : natural  := conditional(POLICY = WRITE_BACK, 1, 0);
   constant NUM_LINES                        : positive := CACHE_SIZE/LINE_SIZE;
   constant TAG_BITS                         : positive := ADDRESS_WIDTH-log2(CACHE_SIZE);
+  constant TAG_LEFT                         : natural  := ADDRESS_WIDTH-1;
+  constant TAG_RIGHT                        : natural  := log2(NUM_LINES)+log2(LINE_SIZE);
+  constant CACHELINE_BITS                   : positive := log2(NUM_LINES);
+  constant CACHELINE_RIGHT                  : natural  := log2(LINE_SIZE);
   constant INTERNAL_WORDS_PER_EXTERNAL_WORD : positive := EXTERNAL_WIDTH/INTERNAL_WIDTH;
 
-  alias to_cache_control_base_tag : std_logic_vector(TAG_BITS-1 downto 0) is
-    to_cache_control_base(ADDRESS_WIDTH-1 downto ADDRESS_WIDTH-TAG_BITS);
-  alias to_cache_control_last_tag : std_logic_vector(TAG_BITS-1 downto 0) is
-    to_cache_control_last(ADDRESS_WIDTH-1 downto ADDRESS_WIDTH-TAG_BITS);
+  alias to_cache_control_base_tag_line : std_logic_vector(TAG_BITS+CACHELINE_BITS-1 downto 0) is
+    to_cache_control_base(TAG_LEFT downto CACHELINE_RIGHT);
+  alias to_cache_control_last_tag_line : std_logic_vector(TAG_BITS+CACHELINE_BITS-1 downto 0) is
+    to_cache_control_last(TAG_LEFT downto CACHELINE_RIGHT);
   signal to_cache_control_base_partial : std_logic;
   signal to_cache_control_last_partial : std_logic;
+
+  signal cache_walker_read_tag_line : std_logic_vector(TAG_BITS+CACHELINE_BITS-1 downto 0);
 
   signal read_region_base_hit    : std_logic;
   signal read_region_inner_hit   : std_logic;
@@ -403,14 +409,15 @@ begin
       );
   read_lastline <= unsigned(read_lastaddress(log2(CACHE_SIZE)-1 downto log2(LINE_SIZE)));
 
+  cache_walker_read_tag_line <= read_tag & std_logic_vector(cache_walker_line);
   to_cache_control_base_partial <=
-    '1' when to_cache_control_base(TAG_BITS-1 downto 0) /= replicate_slv("0", TAG_BITS) else '0';
-  read_region_base_hit <= '1' when read_tag = to_cache_control_base_tag else '0';
-  read_region_inner_hit <= '1' when (unsigned(read_tag) > unsigned(to_cache_control_base_tag) and
-                                     unsigned(read_tag) < unsigned(to_cache_control_last)) else '0';
+    '1' when to_cache_control_base(log2(LINE_SIZE)-1 downto 0) /= replicate_slv("0", log2(LINE_SIZE)) else '0';
+  read_region_base_hit <= '1' when cache_walker_read_tag_line = to_cache_control_base_tag_line else '0';
+  read_region_inner_hit <= '1' when (unsigned(cache_walker_read_tag_line) > unsigned(to_cache_control_base_tag_line) and
+                                     unsigned(cache_walker_read_tag_line) < unsigned(to_cache_control_last_tag_line)) else '0';
   to_cache_control_last_partial <=
-    '1' when to_cache_control_last(TAG_BITS-1 downto 0) /= replicate_slv("1", TAG_BITS) else '0';
-  read_region_last_hit <= '1' when read_tag = to_cache_control_last_tag else '0';
+    '1' when to_cache_control_last(log2(LINE_SIZE)-1 downto 0) /= replicate_slv("1", log2(LINE_SIZE)) else '0';
+  read_region_last_hit <= '1' when cache_walker_read_tag_line = to_cache_control_last_tag_line else '0';
 
   --If REGION_OPTIMIZATIONS are off then everything hits and we treat all hits
   --as partial hits (i.e. requiring a writeback before invalidating).
@@ -825,9 +832,9 @@ begin
             --Note that INITIALIZE command does not call the spiller so we
             --don't have to check for it here.
             if (read_dirty_valid(0) = '1' and
-                read_region_hit = '1' and
                 read_dirty_valid(read_dirty_valid'left) = '1' and
-                (cache_walker_command /= INVALIDATE or read_region_hit_partial = '1')) then
+                (cache_walking = '0' or (read_region_hit = '1' and
+                                         (cache_walker_command /= INVALIDATE or read_region_hit_partial = '1')))) then
               spill_reading_into_buffer <= '1';
             else
               spill_skipping <= '1';
