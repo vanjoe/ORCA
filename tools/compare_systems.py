@@ -48,14 +48,12 @@ class system:
                  branch_prediction,
                  btb_size,
                  divide_enable,
-                 counter_length,
                  multiply_enable,
                  pipeline_stages,
                  shifter_max_cycles):
         self.branch_prediction=branch_prediction
         self.btb_size=btb_size
         self.divide_enable=divide_enable
-        self.counter_length=counter_length
         self.multiply_enable=multiply_enable
         self.pipeline_stages=pipeline_stages
         self.shifter_max_cycles=shifter_max_cycles
@@ -65,13 +63,11 @@ class system:
                         "btbsz%s_"+
                         "div%s_"+
                         "mul%s_"+
-                        "count%s_"+
                         "pipe%s_"+
                         "smc%s") %(self.branch_prediction,
                                    self.btb_size if self.branch_prediction == "true" else "0" ,
                                    self.divide_enable,
                                    self.multiply_enable,
-                                   self.counter_length,
                                    self.pipeline_stages,
                                    self.shifter_max_cycles)
 
@@ -99,7 +95,6 @@ class system:
             f.write('BTB_SIZE="%s"\n'            %self.btb_size)
             f.write('MULTIPLY_ENABLE="%s"\n'     %self.multiply_enable)
             f.write('DIVIDE_ENABLE="%s"\n'       %self.divide_enable)
-            f.write('COUNTER_LENGTH="%s"\n'    %self.counter_length)
             f.write('PIPELINE_STAGES="%s"\n'     %self.pipeline_stages)
             f.write('SHIFTER_MAX_CYCLES="%s"\n'%self.shifter_max_cycles)
     def build(self,use_qsub=False,build_target="all",name="de2_115"):
@@ -144,7 +139,6 @@ class system:
             replace('BRANCH_PREDICTORS',self.btb_size if self.branch_prediction == "true" else '0')
             replace('MULTIPLY_ENABLE',self.multiply_enable)
             replace('DIVIDE_ENABLE',self.divide_enable)
-            replace('COUNTER_LENGTH',"64" if self.counter_length == "0" else self.counter_length)
             replace('PIPELINE_STAGES',self.pipeline_stages)
             replace('SHIFTER_MAX_CYCLES',self.shifter_max_cycles)
             vsim_tcl=("do ../tools/runsim.tcl",
@@ -205,9 +199,8 @@ class system:
             f.write('BRANCH_PREDICTION="%s"\n'   %self.branch_prediction)
             f.write('BTB_SIZE="%s"\n'            %self.btb_size)
             f.write('DIVIDE_ENABLE="%s"\n'       %self.divide_enable)
-            f.write('COUNTER_LENGTH="%s"\n'    %self.multiply_enable)
-            f.write('MULTIPLY_ENABLE="%s"\n'     %self.counter_length)
-            f.write('SHIFTER_MAX_CYCLES="%s"\n'%self.shifter_max_cycles)
+            f.write('MULTIPLY_ENABLE="%s"\n'     %self.multiply_enable)
+            f.write('SHIFTER_MAX_CYCLES="%s"\n'  %self.shifter_max_cycles)
             f.write( "fmax=%f\n"                 %self.fmax)
             f.write( "cpu_prefit_size=%d\n"      %self.cpu_prefit_size)
             f.write( "cpu_postfit_size=%d\n"     %self.cpu_postfit_size)
@@ -402,7 +395,6 @@ def summarize_stats(systems):
             html.write("<td>%s</td>"%str(sys.btb_size if sys.branch_prediction == "true" else "N/A"))
             html.write("<td>%s</td>"%str(sys.multiply_enable))
             html.write("<td>%s</td>"%str(sys.divide_enable))
-            html.write("<td>%s</td>"%str(sys.counter_length))
             html.write("<td>%s</td>"%str(sys.pipeline_stages))
             html.write("<td>%s</td>"%str(sys.shifter_max_cycles if sys.multiply_enable == "0" else "N/A"))
             html.write("<td>%s</td>"%str(sys.cpu_prefit_size))
@@ -432,70 +424,60 @@ if 0:
                      btb_size="1",
                      divide_enable="0",
                      multiply_enable="0",
-                     counter_length="32",
                      shifter_max_cycles="32",
                      pipeline_stages="4"),
               system(branch_prediction="false",
                      btb_size="1",
                      divide_enable="0",
                      multiply_enable="0",
-                     counter_length="0",
                      shifter_max_cycles="0",
                      pipeline_stages="4"),
               system(branch_prediction="true",
                      btb_size="4096",
                      divide_enable="0",
                      multiply_enable="0",
-                     counter_length="0",
                      shifter_max_cycles="0",
                      pipeline_stages="4"),
               system(branch_prediction="true",
                      btb_size="256",
                      divide_enable="0",
                      multiply_enable="0",
-                     counter_length="0",
                      shifter_max_cycles="0",
                      pipeline_stages="4"),
               system(branch_prediction="false",
                      btb_size="1",
                      divide_enable="0",
                      multiply_enable="0",
-                     counter_length="0",
                      shifter_max_cycles="1",
                      pipeline_stages="4"),
               system(branch_prediction="true",
                      btb_size="256",
                      divide_enable="0",
                      multiply_enable="0",
-                     counter_length="0",
                      shifter_max_cycles="0",
                      pipeline_stages="5"),
               system(branch_prediction="false",
                      btb_size="256",
                      divide_enable="1",
                      multiply_enable="1",
-                     counter_length="0",
                      shifter_max_cycles="0",
                      pipeline_stages="5"),
               system(branch_prediction="true",
                      btb_size="4096",
                      divide_enable="1",
                      multiply_enable="1",
-                     counter_length="1",
                      shifter_max_cycles="0",
                      pipeline_stages="5"),
               system(branch_prediction="false",
                      btb_size="256",
                      divide_enable="1",
                      multiply_enable="1",
-                     counter_length="0",
                      shifter_max_cycles="0",
                      pipeline_stages="4"),
               system(branch_prediction="true",
                      btb_size="4096",
                      divide_enable="1",
                      multiply_enable="1",
-                     counter_length="1",
                      shifter_max_cycles="0",
                      pipeline_stages="4"),
 
@@ -510,18 +492,16 @@ else:
                 for div in ["0","1"]:
                     if div == "1" and mul == '0':
                         continue;
-                    for ic in ["0","32","64"]:
-                        for smc in ["1","8","32"]:
-                            if mul == '1' and smc != '1':
-                                continue;
-                            for ps in ["4","5"]:
-                                SYSTEMS.append(system(branch_prediction=bp,
-                                                      btb_size=btb_size,
-                                                      divide_enable=div,
-                                                      multiply_enable=mul,
-                                                      counter_length=ic,
-                                                      shifter_max_cycles=smc,
-                                                      pipeline_stages=ps))
+                    for smc in ["1","8","32"]:
+                        if mul == '1' and smc != '1':
+                            continue;
+                        for ps in ["4","5"]:
+                            SYSTEMS.append(system(branch_prediction=bp,
+                                                  btb_size=btb_size,
+                                                  divide_enable=div,
+                                                  multiply_enable=mul,
+                                                  shifter_max_cycles=smc,
+                                                  pipeline_stages=ps))
 
 
 

@@ -33,8 +33,7 @@ architecture rtl of orca_project is
       ledr_export                 : out std_logic_vector(31 downto 0);  -- export
       reset_reset_n               : in  std_logic := 'X';  -- reset_n
       the_altpll_areset_export    : in  std_logic := 'X';  -- export
-      the_altpll_locked_export    : out std_logic;         -- export
-      the_altpll_phasedone_export : out std_logic          -- export
+      the_altpll_locked_export    : out std_logic          -- export
       );
   end component orca_system;
 
@@ -91,8 +90,7 @@ begin
       hex1_export                 => hex1_export,
       hex0_export                 => hex0_export,
       the_altpll_areset_export    => reset,
-      the_altpll_locked_export    => LEDG(5),
-      the_altpll_phasedone_export => LEDG(6)
+      the_altpll_locked_export    => LEDG(5)
       );
 
   hex_input <=

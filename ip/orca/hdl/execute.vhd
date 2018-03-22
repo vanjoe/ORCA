@@ -21,7 +21,6 @@ entity execute is
     MULTIPLY_ENABLE       : boolean;
     DIVIDE_ENABLE         : boolean;
     SHIFTER_MAX_CYCLES    : positive range 1 to 32;
-    COUNTER_LENGTH        : natural;
     ENABLE_EXCEPTIONS     : boolean;
     ENABLE_EXT_INTERRUPTS : boolean;
     NUM_EXT_INTERRUPTS    : positive range 1 to 32;
@@ -95,6 +94,10 @@ entity execute is
     to_dcache_control_valid   : buffer std_logic;
     to_dcache_control_command : out    cache_control_command;
 
+    --Cache control common signals
+    to_cache_control_base : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_cache_control_last : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
     --Auxiliary/Uncached memory regions
     amr_base_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     amr_last_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
@@ -103,9 +106,9 @@ entity execute is
 
     pause_ifetch : out std_logic;
 
-    --timer signals
-    timer_value     : in std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
-    timer_interrupt : in std_logic                                   := '0';
+    --Timer signals
+    timer_value     : in std_logic_vector(63 downto 0);
+    timer_interrupt : in std_logic;
 
     --Vector coprocessor port
     vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -447,7 +450,6 @@ begin
   syscall : sys_call
     generic map (
       REGISTER_SIZE    => REGISTER_SIZE,
-      COUNTER_LENGTH   => COUNTER_LENGTH,
       POWER_OPTIMIZED  => POWER_OPTIMIZED,
       INTERRUPT_VECTOR => INTERRUPT_VECTOR,
 
@@ -481,6 +483,7 @@ begin
       to_syscall_valid     => to_syscall_valid,
       from_syscall_illegal => from_syscall_illegal,
       rs1_data             => rs1_data,
+      rs2_data             => rs2_data,
       instruction          => to_execute_instruction(INSTRUCTION32'range),
       current_pc           => to_execute_program_counter,
       from_syscall_ready   => from_syscall_ready,
@@ -501,6 +504,9 @@ begin
       from_dcache_control_ready => from_dcache_control_ready,
       to_dcache_control_valid   => to_dcache_control_valid,
       to_dcache_control_command => to_dcache_control_command,
+
+      to_cache_control_base => to_cache_control_base,
+      to_cache_control_last => to_cache_control_last,
 
       amr_base_addrs => amr_base_addrs,
       amr_last_addrs => amr_last_addrs,

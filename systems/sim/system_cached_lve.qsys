@@ -448,7 +448,6 @@
   <parameter name="AUX_MEMORY_REGIONS" value="1" />
   <parameter name="AXI_ID_WIDTH" value="2" />
   <parameter name="BTB_ENTRIES" value="16" />
-  <parameter name="COUNTER_LENGTH" value="64" />
   <parameter name="DATA_REQUEST_REGISTER" value="0" />
   <parameter name="DATA_RETURN_REGISTER" value="0" />
   <parameter name="DAUX_REQUEST_REGISTER" value="2" />

@@ -50,7 +50,6 @@ DEFAULT_BTB_ENTRIES=16
 DEFAULT_MULTIPLY_ENABLE=1
 DEFAULT_DIVIDE_ENABLE=1
 DEFAULT_SHIFTER_MAX_CYCLES=1
-DEFAULT_COUNTER_LENGTH=32
 DEFAULT_ENABLE_EXCEPTIONS=1
 DEFAULT_PIPELINE_STAGES=5
 DEFAULT_VCP_ENABLE=0
@@ -111,7 +110,6 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
                  multiply_enable=DEFAULT_MULTIPLY_ENABLE,
                  divide_enable=DEFAULT_DIVIDE_ENABLE,
                  shifter_max_cycles=DEFAULT_SHIFTER_MAX_CYCLES,
-                 counter_length=DEFAULT_COUNTER_LENGTH,
                  enable_exceptions=DEFAULT_ENABLE_EXCEPTIONS,
                  pipeline_stages=DEFAULT_PIPELINE_STAGES,
                  vcp_enable=DEFAULT_VCP_ENABLE,
@@ -172,8 +170,6 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
             build_id += '_de%d' % divide_enable
         if shifter_max_cycles != DEFAULT_SHIFTER_MAX_CYCLES:
             build_id += '_smc%d' % shifter_max_cycles
-        if counter_length != DEFAULT_COUNTER_LENGTH:
-            build_id += '_cl%d' % counter_length
         if enable_exceptions != DEFAULT_ENABLE_EXCEPTIONS:
             build_id += '_ex%d' % enable_exceptions
         if pipeline_stages != DEFAULT_PIPELINE_STAGES:
@@ -259,7 +255,6 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
               multiply_enable=multiply_enable,
               divide_enable=divide_enable,
               shifter_max_cycles=shifter_max_cycles,
-              counter_length=counter_length,
               enable_exceptions=enable_exceptions,
               pipeline_stages=pipeline_stages,
               vcp_enable=vcp_enable,
@@ -359,7 +354,6 @@ class Xil_ORCA_BuildCfg(ORCA_BuildCfgBase):
         f.write('MULTIPLY_ENABLE=%s\n' % self.multiply_enable)
         f.write('DIVIDE_ENABLE=%s\n' % self.divide_enable)
         f.write('SHIFTER_MAX_CYCLES=%s\n' % self.shifter_max_cycles)
-        f.write('COUNTER_LENGTH=%s\n' % self.counter_length)
         f.write('ENABLE_EXCEPTIONS=%s\n' % self.enable_exceptions)
         f.write('PIPELINE_STAGES=%s\n' % self.pipeline_stages)
         f.write('VCP_ENABLE=%s\n' % self.vcp_enable)

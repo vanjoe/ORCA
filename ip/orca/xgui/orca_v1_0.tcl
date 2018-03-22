@@ -105,13 +105,13 @@ proc init_gui { IPINST } {
              "Divide and remainder ops take one cycle per bit when enabled." ] \
         $DIVIDE_ENABLE
 
-    set COUNTER_LENGTH [ ipgui::add_param $IPINST -name "COUNTER_LENGTH" -parent $performanceOptionsGroup -widget comboBox ]
+    set MTIME_ENABLE [ ipgui::add_param $IPINST -name "MTIME_ENABLE" -parent $performanceOptionsGroup -widget checkBox ]
     set_property tooltip \
         [concat \
-             "Number of bits in the MTIME/MTIMEH CSR counter.  " \
-             "When disabled MTIME and MTIMEH read back as 0." \
-             "When set to 32, MTIMEH reads back as 0." ] \
-        $COUNTER_LENGTH
+             "Enable the MTIME/MTIMEH CSR.  " \
+             "When enabled the external Timer_Interface port must " \
+             "be connected to an external ORCA Timer component." ] \
+        $MTIME_ENABLE
 
     set PIPELINE_STAGES [ ipgui::add_param $IPINST -name "PIPELINE_STAGES" -parent $performanceOptionsGroup -widget comboBox ]
     set_property tooltip \
@@ -484,12 +484,12 @@ proc validate_PARAM_VALUE.SHIFTER_MAX_CYCLES { PARAM_VALUE.SHIFTER_MAX_CYCLES } 
     return true
 }
 
-proc update_PARAM_VALUE.COUNTER_LENGTH { PARAM_VALUE.COUNTER_LENGTH } {
-    # Procedure called to update COUNTER_LENGTH when any of the dependent parameters in the arguments change
+proc update_PARAM_VALUE.MTIME_ENABLE { PARAM_VALUE.MTIME_ENABLE } {
+    # Procedure called to update MTIME_ENABLE when any of the dependent parameters in the arguments change
 }
 
-proc validate_PARAM_VALUE.COUNTER_LENGTH { PARAM_VALUE.COUNTER_LENGTH } {
-    # Procedure called to validate COUNTER_LENGTH
+proc validate_PARAM_VALUE.MTIME_ENABLE { PARAM_VALUE.MTIME_ENABLE } {
+    # Procedure called to validate MTIME_ENABLE
     return true
 }
 
@@ -1015,11 +1015,6 @@ proc update_MODELPARAM_VALUE.DIVIDE_ENABLE { MODELPARAM_VALUE.DIVIDE_ENABLE PARA
 proc update_MODELPARAM_VALUE.SHIFTER_MAX_CYCLES { MODELPARAM_VALUE.SHIFTER_MAX_CYCLES PARAM_VALUE.SHIFTER_MAX_CYCLES } {
     # Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
     set_property value [get_property value ${PARAM_VALUE.SHIFTER_MAX_CYCLES}] ${MODELPARAM_VALUE.SHIFTER_MAX_CYCLES}
-}
-
-proc update_MODELPARAM_VALUE.COUNTER_LENGTH { MODELPARAM_VALUE.COUNTER_LENGTH PARAM_VALUE.COUNTER_LENGTH } {
-    # Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
-    set_property value [get_property value ${PARAM_VALUE.COUNTER_LENGTH}] ${MODELPARAM_VALUE.COUNTER_LENGTH}
 }
 
 proc update_MODELPARAM_VALUE.ENABLE_EXCEPTIONS { MODELPARAM_VALUE.ENABLE_EXCEPTIONS PARAM_VALUE.ENABLE_EXCEPTIONS } {

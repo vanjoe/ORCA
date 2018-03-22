@@ -17,7 +17,6 @@ entity orca_core is
     DIVIDE_ENABLE          : boolean;
     SHIFTER_MAX_CYCLES     : positive range 1 to 32;
     POWER_OPTIMIZED        : boolean;
-    COUNTER_LENGTH         : natural;
     ENABLE_EXCEPTIONS      : boolean;
     PIPELINE_STAGES        : natural range 4 to 5;
     ENABLE_EXT_INTERRUPTS  : boolean;
@@ -43,6 +42,8 @@ entity orca_core is
 
     global_interrupts : in std_logic_vector(NUM_EXT_INTERRUPTS-1 downto 0);
 
+    memory_interface_idle : in std_logic;
+
     --ICache control (Invalidate/flush/writeback)
     from_icache_control_ready : in     std_logic;
     to_icache_control_valid   : buffer std_logic;
@@ -53,7 +54,9 @@ entity orca_core is
     to_dcache_control_valid   : buffer std_logic;
     to_dcache_control_command : out    cache_control_command;
 
-    memory_interface_idle : in std_logic;
+    --Cache control common signals
+    to_cache_control_base : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_cache_control_last : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     --Instruction ORCA-internal memory-mapped master
     ifetch_oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -78,9 +81,9 @@ entity orca_core is
     umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
 
-    --timer signals
-    timer_value     : in std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
-    timer_interrupt : in std_logic                                   := '0';
+    --Timer signals
+    timer_value     : in std_logic_vector(63 downto 0);
+    timer_interrupt : in std_logic;
 
     --Vector coprocessor port
     vcp_data0            : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -235,7 +238,6 @@ begin
       DIVIDE_ENABLE         => DIVIDE_ENABLE,
       POWER_OPTIMIZED       => POWER_OPTIMIZED,
       SHIFTER_MAX_CYCLES    => SHIFTER_MAX_CYCLES,
-      COUNTER_LENGTH        => COUNTER_LENGTH,
       ENABLE_EXCEPTIONS     => ENABLE_EXCEPTIONS,
       ENABLE_EXT_INTERRUPTS => ENABLE_EXT_INTERRUPTS,
       NUM_EXT_INTERRUPTS    => NUM_EXT_INTERRUPTS,
@@ -303,6 +305,9 @@ begin
       from_dcache_control_ready => from_dcache_control_ready,
       to_dcache_control_valid   => to_dcache_control_valid,
       to_dcache_control_command => to_dcache_control_command,
+
+      to_cache_control_base => to_cache_control_base,
+      to_cache_control_last => to_cache_control_last,
 
       amr_base_addrs => amr_base_addrs,
       amr_last_addrs => amr_last_addrs,

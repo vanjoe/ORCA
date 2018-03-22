@@ -41,7 +41,7 @@ void orca_writeback_dcache_range(void *base_address, void *last_address){
                  ".word 0x0862928F\n"
                  "mv %0, t0\n"
                  : "=r"(new_base) : "r"(current_base), "r"(last_address) : "t0", "t1", "memory");
-    if(new_base == current_base){
+    if(new_base <= current_base){
       //No forward progress signals failure or that all of memory was
       //written back.  ORCA never reports failure, so this is a
       //success and we can return.
@@ -73,7 +73,7 @@ void orca_flush_dcache_range(void *base_address, void *last_address){
                  ".word 0x0A62928F\n"
                  "mv %0, t0\n"
                  : "=r"(new_base) : "r"(current_base), "r"(last_address) : "t0", "t1", "memory");
-    if(new_base == current_base){
+    if(new_base <= current_base){
       //No forward progress signals failure or that all of memory was
       //written back.  ORCA never reports failure, so this is a
       //success and we can return.
@@ -104,7 +104,7 @@ void orca_invalidate_dcache_range(void *base_address, void *last_address){
                  ".word 0x0C62928F\n"
                  "mv %0, t0\n"
                  : "=r"(new_base) : "r"(current_base), "r"(last_address) : "t0", "t1", "memory");
-    if(new_base == current_base){
+    if(new_base <= current_base){
       //No forward progress signals failure or that all of memory was
       //written back.  ORCA never reports failure, so this is a
       //success and we can return.

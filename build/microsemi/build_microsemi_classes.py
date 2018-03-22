@@ -49,7 +49,6 @@ DEFAULT_BTB_ENTRIES=16
 DEFAULT_MULTIPLY_ENABLE=1
 DEFAULT_DIVIDE_ENABLE=1
 DEFAULT_SHIFTER_MAX_CYCLES=1
-DEFAULT_COUNTER_LENGTH=32
 DEFAULT_ENABLE_EXCEPTIONS=1
 DEFAULT_PIPELINE_STAGES=5
 DEFAULT_VCP_ENABLE=0
@@ -108,7 +107,6 @@ class Mcsm_ORCA_BuildCfg(ORCA_BuildCfgBase):
                  multiply_enable=DEFAULT_MULTIPLY_ENABLE,
                  divide_enable=DEFAULT_DIVIDE_ENABLE,
                  shifter_max_cycles=DEFAULT_SHIFTER_MAX_CYCLES,
-                 counter_length=DEFAULT_COUNTER_LENGTH,
                  enable_exceptions=DEFAULT_ENABLE_EXCEPTIONS,
                  pipeline_stages=DEFAULT_PIPELINE_STAGES,
                  vcp_enable=DEFAULT_VCP_ENABLE,
@@ -169,8 +167,6 @@ class Mcsm_ORCA_BuildCfg(ORCA_BuildCfgBase):
             build_id += '_de%d' % divide_enable
         if shifter_max_cycles != DEFAULT_SHIFTER_MAX_CYCLES:
             build_id += '_smc%d' % shifter_max_cycles
-        if counter_length != DEFAULT_COUNTER_LENGTH:
-            build_id += '_cl%d' % counter_length
         if enable_exceptions != DEFAULT_ENABLE_EXCEPTIONS:
             build_id += '_ex%d' % enable_exceptions
         if pipeline_stages != DEFAULT_PIPELINE_STAGES:
@@ -256,7 +252,6 @@ class Mcsm_ORCA_BuildCfg(ORCA_BuildCfgBase):
               multiply_enable=multiply_enable,
               divide_enable=divide_enable,
               shifter_max_cycles=shifter_max_cycles,
-              counter_length=counter_length,
               enable_exceptions=enable_exceptions,
               pipeline_stages=pipeline_stages,
               vcp_enable=vcp_enable,
@@ -354,8 +349,6 @@ class Mcsm_ORCA_BuildCfg(ORCA_BuildCfgBase):
               '\\1( %s )' % self.divide_enable),
              (r'(.SHIFTER_MAX_CYCLES\s+)\( \d+ \)',
               '\\1( %s )' % self.shifter_max_cycles),
-             (r'(.COUNTER_LENGTH\s+)\( \d+ \)',
-              '\\1( %s )' % self.counter_length),
              (r'(.ENABLE_EXCEPTIONS\s+)\( \d+ \)',
               '\\1( %s )' % self.enable_exceptions),
              (r'(.PIPELINE_STAGES\s+)\( \d+ \)',

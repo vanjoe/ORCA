@@ -17,6 +17,7 @@ FIT_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).fit.rpt
 ASM_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).asm.rpt
 STA_RPT_FILE := $(OUTPUT_DIR)/$(PROJECT_NAME).sta.rpt
 
+TEST     ?= test
 SW_DIR   ?= software
 BIN_FILE := $(TEST).bin
 HEX_FILE := $(TEST).qex
@@ -60,9 +61,6 @@ endif #ifdef DIVIDE_ENABLE
 ifdef SHIFTER_MAX_CYCLES
 BD_CHANGES += updateORCA SHIFTER_MAX_CYCLES $(SHIFTER_MAX_CYCLES);
 endif #ifdef SHIFTER_MAX_CYCLES
-ifdef COUNTER_LENGTH
-BD_CHANGES += updateORCA COUNTER_LENGTH $(COUNTER_LENGTH);
-endif #ifdef COUNTER_LENGTH
 ifdef ENABLE_EXCEPTIONS
 BD_CHANGES += updateORCA ENABLE_EXCEPTIONS $(ENABLE_EXCEPTIONS);
 endif #ifdef ENABLE_EXCEPTIONS
@@ -191,9 +189,6 @@ endif #ifdef DC_RETURN_REGISTER
 orca_defines.h:
 	touch $@
 
-$(QSYS_FILE): $(CREATE_QSYS_TCL) updateORCA.tcl $(wildcard config.mk)
-	qsys-script --search-path="./,$(IP_DIR)/,$$" --cmd="package require qsys; set_project_property DEVICE_FAMILY {$(DEVICE_FAMILY)};set_project_property DEVICE $(DEVICE); source $(CREATE_QSYS_TCL); create_system $@; compose; source updateORCA.tcl; $(BD_CHANGES) save_system $@"
-
 .PHONY: gui-qsys
 gui-qsys: $(QSYS_FILE)
 	qsys-edit $(QSYS_FILE) --search-path="./,$(IP_DIR)/,$$" &
@@ -203,16 +198,15 @@ archiveBD: $(QIP_FILE)
 
 $(QIP_FILE): $(QSYS_FILE) $(IP_DIR)/orca/orca_hw.tcl
 	if [ -e $(SW_DIR)/Makefile ]; then $(MAKE) -C $(SW_DIR) $(HEX_FILE); fi
-	rm -f $(QSYS_HW_TCL)
 	rm -f $@
+ifdef BD_CHANGES
+	rm -f tmp.$(QSYS_FILE)
+	qsys-script --search-path="./,$(IP_DIR)/,$$" --cmd="package require qsys; set_project_property DEVICE_FAMILY {$(DEVICE_FAMILY)}; set_project_property DEVICE $(DEVICE); load_system $(QSYS_FILE); source updateORCA.tcl; $(BD_CHANGES) save_system tmp.$(QSYS_FILE)"
+	[ -e tmp.$(QSYS_FILE) ]
+	mv tmp.$(QSYS_FILE) $(QSYS_FILE)
+endif #ifdef BD_CHANGES
 	qsys-generate $(QSYS_FILE) --search-path="./,$(IP_DIR)/,$$" --synthesis=VHDL 2>&1 | tee ./synth.$(QSYS_FILE).log
-	qsys-script --search-path="./,$(IP_DIR)/,$$" --system-file=$(QSYS_FILE) --cmd="package require qsys; export_hw_tcl"
 	[ -e $@ ]
-	[ -e $(QSYS_HW_TCL) ]
-	sed 's/set_module_property.*//g' $(QSYS_HW_TCL) | sed 's/package require -exact qsys.*//g' > $(CREATE_QSYS_TCL)
-	rm -f $(QSYS_HW_TCL)
-	touch $(QSYS_FILE)
-	touch $@
 
 $(ORCA_SUBMODULE_FILES): $(BD_NAME)/synthesis/submodules/vblox_orca/% : $(IP_DIR)/orca/hdl/% | $(QIP_FILE)
 	 cp $^ $@
@@ -263,7 +257,7 @@ $(SW_DIR)/$(HEX_FILE): FORCE
 
 $(BD_NAME)/simulation/mentor/software/$(HEX_FILE): $(BD_NAME)/simulation/mentor/msim_setup.tcl $(SW_DIR)/$(HEX_FILE)
 	mkdir -p $(BD_NAME)/simulation/mentor/software
-	cd $(BD_NAME)/simulation/mentor/software &&	ln -sf ../../../../software/$(HEX_FILE)
+	cd $(BD_NAME)/simulation/mentor/software && ln -sf ../../../../software/$(HEX_FILE) 
 
 .PHONY: sim
 ifndef TEST

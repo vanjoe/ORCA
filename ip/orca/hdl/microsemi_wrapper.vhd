@@ -13,7 +13,6 @@ entity microsemi_wrapper is
       MULTIPLY_ENABLE       : natural range 0 to 1        := 1;
       DIVIDE_ENABLE         : natural range 0 to 1        := 1;
       SHIFTER_MAX_CYCLES    : natural                     := 1;
-      COUNTER_LENGTH        : natural                     := 32;
       ENABLE_EXCEPTIONS     : natural                     := 1;
       BRANCH_PREDICTORS     : natural                     := 0;
       PIPELINE_STAGES       : natural range 4 to 5        := 5;
@@ -229,7 +228,6 @@ begin
       MULTIPLY_ENABLE       => MULTIPLY_ENABLE,
       DIVIDE_ENABLE         => DIVIDE_ENABLE,
       SHIFTER_MAX_CYCLES    => SHIFTER_MAX_CYCLES,
-      COUNTER_LENGTH        => COUNTER_LENGTH,
       ENABLE_EXCEPTIONS     => ENABLE_EXCEPTIONS,
       BRANCH_PREDICTORS     => BRANCH_PREDICTORS,
       PIPELINE_STAGES       => PIPELINE_STAGES,

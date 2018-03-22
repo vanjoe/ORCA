@@ -78,6 +78,10 @@ entity memory_interface is
     to_dcache_control_valid   : in  std_logic;
     to_dcache_control_command : in  cache_control_command;
 
+    --Cache control common signals
+    to_cache_control_base : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_cache_control_last : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+
     memory_interface_idle : out std_logic;
 
     --Instruction ORCA-internal memory-mapped master
@@ -534,6 +538,7 @@ begin
         EXTERNAL_WIDTH        => ICACHE_EXTERNAL_WIDTH,
         LOG2_BURSTLENGTH      => LOG2_BURSTLENGTH,
         POLICY                => READ_ONLY,
+        REGION_OPTIMIZATIONS  => false,
         WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED
         )
       port map (
@@ -543,6 +548,8 @@ begin
         from_cache_control_ready => from_icache_control_ready,
         to_cache_control_valid   => to_icache_control_valid,
         to_cache_control_command => to_icache_control_command,
+        to_cache_control_base    => to_cache_control_base,
+        to_cache_control_last    => to_cache_control_last,
 
         precache_idle => iinternal_register_idle,
         cache_idle    => icache_idle,
@@ -784,6 +791,7 @@ begin
         EXTERNAL_WIDTH        => DCACHE_EXTERNAL_WIDTH,
         LOG2_BURSTLENGTH      => LOG2_BURSTLENGTH,
         POLICY                => boolean_to_cache_policy(DCACHE_WRITEBACK),
+        REGION_OPTIMIZATIONS  => false,
         WRITE_FIRST_SUPPORTED => WRITE_FIRST_SUPPORTED
         )
       port map (
@@ -793,6 +801,8 @@ begin
         from_cache_control_ready => from_dcache_control_ready,
         to_cache_control_valid   => to_dcache_control_valid,
         to_cache_control_command => to_dcache_control_command,
+        to_cache_control_base    => to_cache_control_base,
+        to_cache_control_last    => to_cache_control_last,
 
         precache_idle => dinternal_register_idle,
         cache_idle    => dcache_idle,

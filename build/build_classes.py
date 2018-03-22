@@ -41,7 +41,6 @@ DEFAULT_BTB_ENTRIES=16
 DEFAULT_MULTIPLY_ENABLE=1
 DEFAULT_DIVIDE_ENABLE=1
 DEFAULT_SHIFTER_MAX_CYCLES=1
-DEFAULT_COUNTER_LENGTH=32
 DEFAULT_ENABLE_EXCEPTIONS=1
 DEFAULT_PIPELINE_STAGES=5
 DEFAULT_VCP_ENABLE=0
@@ -101,7 +100,6 @@ class ORCA_BuildCfgBase(object):
                  multiply_enable=DEFAULT_MULTIPLY_ENABLE,
                  divide_enable=DEFAULT_DIVIDE_ENABLE,
                  shifter_max_cycles=DEFAULT_SHIFTER_MAX_CYCLES,
-                 counter_length=DEFAULT_COUNTER_LENGTH,
                  enable_exceptions=DEFAULT_ENABLE_EXCEPTIONS,
                  pipeline_stages=DEFAULT_PIPELINE_STAGES,
                  vcp_enable=DEFAULT_VCP_ENABLE,
@@ -154,7 +152,6 @@ class ORCA_BuildCfgBase(object):
         self.multiply_enable = multiply_enable
         self.divide_enable = divide_enable
         self.shifter_max_cycles = shifter_max_cycles
-        self.counter_length = counter_length
         self.enable_exceptions = enable_exceptions
         self.pipeline_stages = pipeline_stages
         self.vcp_enable = vcp_enable

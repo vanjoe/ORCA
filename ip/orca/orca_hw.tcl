@@ -247,19 +247,19 @@ set_parameter_property DIVIDE_ENABLE DESCRIPTION \
          "Divide and remainder ops take one cycle per bit when enabled." ]
 add_display_item "Performance/Area Optimizations" DIVIDE_ENABLE PARAMETER
 
-add_parameter COUNTER_LENGTH natural 32
-set_parameter_property COUNTER_LENGTH DISPLAY_NAME "Counter Length"
-set_parameter_property COUNTER_LENGTH TYPE NATURAL
-set_parameter_property COUNTER_LENGTH UNITS None
-set_parameter_property COUNTER_LENGTH ALLOWED_RANGES {0:Disabled 32 64}
-set_parameter_property COUNTER_LENGTH HDL_PARAMETER true
-set_display_item_property COUNTER_LENGTH DISPLAY_HINT boolean
-set_parameter_property COUNTER_LENGTH DESCRIPTION \
+add_parameter MTIME_ENABLE natural 1
+set_parameter_property MTIME_ENABLE DISPLAY_NAME "MTIME CSR Enable"
+set_parameter_property MTIME_ENABLE TYPE NATURAL
+set_parameter_property MTIME_ENABLE UNITS None
+set_parameter_property MTIME_ENABLE ALLOWED_RANGES 0:1
+set_parameter_property MTIME_ENABLE HDL_PARAMETER false
+set_display_item_property MTIME_ENABLE DISPLAY_HINT boolean
+set_parameter_property MTIME_ENABLE DESCRIPTION \
     [concat \
-         "Number of bits in the MTIME/MTIMEH CSR counter.  " \
-         "When disabled MTIME and MTIMEH read back as 0." \
-         "When set to 32, MTIMEH reads back as 0." ]
-add_display_item "Performance/Area Optimizations" COUNTER_LENGTH PARAMETER
+         "Enable the MTIME/MTIMEH CSR.  " \
+         "When enabled the external Timer_Interface port must " \
+         "be connected to an external ORCA Timer component." ]
+add_display_item "Performance/Area Optimizations" MTIME_ENABLE PARAMETER
 
 add_parameter          PIPELINE_STAGES natural 5
 set_parameter_property PIPELINE_STAGES HDL_PARAMETER true
@@ -1033,7 +1033,7 @@ set_interface_property Timer_Interface PORT_NAME_MAP ""
 set_interface_property Timer_Interface CMSIS_SVD_VARIABLES ""
 set_interface_property Timer_Interface SVD_ADDRESS_GROUP ""
 
-add_interface_port Timer_Interface timer_value value Input COUNTER_LENGTH
+add_interface_port Timer_Interface timer_value value Input 64
 add_interface_port Timer_Interface timer_interrupt interrupt Input 1
 
 
@@ -1242,7 +1242,7 @@ proc elaboration_callback {} {
         set_display_item_property DC_RETURN_REGISTER enabled false
     }
 
-	 set_interface_property Timer_Interface ENABLED [expr [get_parameter_value COUNTER_LENGTH] > 0 ]
+    set_interface_property Timer_Interface ENABLED [expr [get_parameter_value MTIME_ENABLE] > 0 ]
 
     set_interface_property axi_iuc     readIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]
     set_interface_property axi_iuc     combinedIssuingCapability [get_parameter_value MAX_IFETCHES_IN_FLIGHT]

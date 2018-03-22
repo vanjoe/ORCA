@@ -16,6 +16,7 @@ entity cache_controller is
     EXTERNAL_WIDTH        : positive;
     LOG2_BURSTLENGTH      : positive;
     POLICY                : cache_policy;
+    REGION_OPTIMIZATIONS  : boolean;
     WRITE_FIRST_SUPPORTED : boolean
     );
   port (
@@ -26,6 +27,8 @@ entity cache_controller is
     from_cache_control_ready : out std_logic;
     to_cache_control_valid   : in  std_logic;
     to_cache_control_command : in  cache_control_command;
+    to_cache_control_base    : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
+    to_cache_control_last    : in  std_logic_vector(ADDRESS_WIDTH-1 downto 0);
 
     precache_idle : in  std_logic;
     cache_idle    : out std_logic;
@@ -60,6 +63,19 @@ architecture rtl of cache_controller is
   constant NUM_LINES                        : positive := CACHE_SIZE/LINE_SIZE;
   constant TAG_BITS                         : positive := ADDRESS_WIDTH-log2(CACHE_SIZE);
   constant INTERNAL_WORDS_PER_EXTERNAL_WORD : positive := EXTERNAL_WIDTH/INTERNAL_WIDTH;
+
+  alias to_cache_control_base_tag : std_logic_vector(TAG_BITS-1 downto 0) is
+    to_cache_control_base(ADDRESS_WIDTH-1 downto ADDRESS_WIDTH-TAG_BITS);
+  alias to_cache_control_last_tag : std_logic_vector(TAG_BITS-1 downto 0) is
+    to_cache_control_last(ADDRESS_WIDTH-1 downto ADDRESS_WIDTH-TAG_BITS);
+  signal to_cache_control_base_partial : std_logic;
+  signal to_cache_control_last_partial : std_logic;
+
+  signal read_region_base_hit    : std_logic;
+  signal read_region_inner_hit   : std_logic;
+  signal read_region_last_hit    : std_logic;
+  signal read_region_hit         : std_logic;
+  signal read_region_hit_partial : std_logic;
 
   function compute_burst_length
     return positive is
@@ -207,14 +223,16 @@ begin
               if ready_from_cache_walker = '1' then
                 from_cache_control_ready <= '1';
                 case to_cache_control_command is
-                  when INVALIDATE =>
-                    start_to_cache_walker <= '1';
-                    next_control_state    <= WALK_CACHE;
-                  when others =>
+                  when WRITEBACK =>
+                    --Skip writeback commands for read_only and writethrough caches
                     if POLICY = WRITE_BACK then
                       start_to_cache_walker <= '1';
                       next_control_state    <= WALK_CACHE;
                     end if;
+                  when others =>
+                    --Initialize/Invalidate/Flush
+                    start_to_cache_walker <= '1';
+                    next_control_state    <= WALK_CACHE;
                 end case;
               end if;
             end if;
@@ -260,7 +278,7 @@ begin
 
       if reset = '1' then
         control_state        <= WALK_CACHE;
-        cache_walker_command <= INVALIDATE;
+        cache_walker_command <= INITIALIZE;
         cache_walking        <= '1';
         cache_walker_line    <= to_unsigned(0, cache_walker_line'length);
       end if;
@@ -384,6 +402,23 @@ begin
       write_dirty_valid  => write_dirty_valid
       );
   read_lastline <= unsigned(read_lastaddress(log2(CACHE_SIZE)-1 downto log2(LINE_SIZE)));
+
+  to_cache_control_base_partial <=
+    '1' when to_cache_control_base(TAG_BITS-1 downto 0) /= replicate_slv("0", TAG_BITS) else '0';
+  read_region_base_hit <= '1' when read_tag = to_cache_control_base_tag else '0';
+  read_region_inner_hit <= '1' when (unsigned(read_tag) > unsigned(to_cache_control_base_tag) and
+                                     unsigned(read_tag) < unsigned(to_cache_control_last)) else '0';
+  to_cache_control_last_partial <=
+    '1' when to_cache_control_last(TAG_BITS-1 downto 0) /= replicate_slv("1", TAG_BITS) else '0';
+  read_region_last_hit <= '1' when read_tag = to_cache_control_last_tag else '0';
+
+  --If REGION_OPTIMIZATIONS are off then everything hits and we treat all hits
+  --as partial hits (i.e. requiring a writeback before invalidating).
+  read_region_hit <=
+    read_region_base_hit or read_region_inner_hit or read_region_last_hit when REGION_OPTIMIZATIONS else '1';
+  read_region_hit_partial <= ((read_region_base_hit and to_cache_control_base_partial) or
+                              (read_region_last_hit and to_cache_control_last_partial)) when REGION_OPTIMIZATIONS else
+                             '1';
 
   ------------------------------------------------------------------------------
   -- Read-only
@@ -598,6 +633,7 @@ begin
       signal spill_buffer_write_data   : std_logic_vector(EXTERNAL_WIDTH-1 downto 0);
       signal spill_tag                 : std_logic_vector(TAG_BITS-1 downto 0);
       signal spill_dirty_valid         : std_logic_vector(DIRTY_BITS downto 0);
+      signal spill_region_hit          : std_logic;
       signal spill_line                : unsigned(log2(NUM_LINES)-1 downto 0);
 
       type cache_walker_state_type is (IDLE, START_SPILLER, WAIT_ON_SPILLER);
@@ -622,7 +658,7 @@ begin
           when IDLE =>
             if cache_walking = '1' then
               case cache_walker_command is
-                when INVALIDATE =>
+                when INITIALIZE =>
                   --Write every line until done
                   cache_walker_tag_update     <= '1';
                   cache_walker_tag_valid      <= '0';
@@ -630,7 +666,7 @@ begin
                   if cache_walker_line_last = '1' then
                     done_from_cache_walker <= '1';
                   end if;
-                when others =>          --WRITEBACK/FLUSH
+                when others =>          --INVALIDATE/WRITEBACK/FLUSH
                   --Loading in line address to spill
                   next_cache_walker_state <= START_SPILLER;
               end case;
@@ -646,7 +682,7 @@ begin
           when WAIT_ON_SPILLER =>
             --Spiller FSM in progress
             if done_from_spiller = '1' then
-              cache_walker_tag_update <= '1';
+              cache_walker_tag_update <= spill_region_hit;
               if cache_walker_command = WRITEBACK then
                 --Set to clean, valid if previously valid
                 cache_walker_tag_valid <= spill_dirty_valid(0);
@@ -780,7 +816,18 @@ begin
             spill_tag         <= read_tag;
             spill_line        <= unsigned(read_address(log2(CACHE_SIZE)-1 downto log2(LINE_SIZE)));
             spill_dirty_valid <= read_dirty_valid;
-            if read_dirty_valid(0) = '1' and read_dirty_valid(read_dirty_valid'left) = '1' then
+            spill_region_hit  <= read_region_hit;
+
+            --Spill for real only if valid, within the region, dirty, and not
+            --invalidating (except partial cachelines, which must be flushed on
+            --invalidate).
+            --
+            --Note that INITIALIZE command does not call the spiller so we
+            --don't have to check for it here.
+            if (read_dirty_valid(0) = '1' and
+                read_region_hit = '1' and
+                read_dirty_valid(read_dirty_valid'left) = '1' and
+                (cache_walker_command /= INVALIDATE or read_region_hit_partial = '1')) then
               spill_reading_into_buffer <= '1';
             else
               spill_skipping <= '1';

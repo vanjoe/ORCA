@@ -9,7 +9,6 @@ use work.constants_pkg.all;
 entity sys_call is
   generic (
     REGISTER_SIZE    : positive range 32 to 32;
-    COUNTER_LENGTH   : natural;
     POWER_OPTIMIZED  : boolean;
     INTERRUPT_VECTOR : std_logic_vector(31 downto 0);
 
@@ -45,6 +44,7 @@ entity sys_call is
     current_pc           : in  unsigned(REGISTER_SIZE-1 downto 0);
     instruction          : in  std_logic_vector(31 downto 0);
     rs1_data             : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
+    rs2_data             : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_syscall_ready   : out std_logic;
 
     illegal_instruction : in std_logic;
@@ -64,15 +64,18 @@ entity sys_call is
     to_dcache_control_valid   : buffer std_logic;
     to_dcache_control_command : out    cache_control_command;
 
+    to_cache_control_base : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+    to_cache_control_last : out std_logic_vector(REGISTER_SIZE-1 downto 0);
+
     amr_base_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     amr_last_addrs : out std_logic_vector((imax(AUX_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     umr_base_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
     umr_last_addrs : out std_logic_vector((imax(UC_MEMORY_REGIONS, 1)*REGISTER_SIZE)-1 downto 0);
-    pause_ifetch   : out std_logic;
 
-    --timer signals
-    timer_value     : in std_logic_vector(COUNTER_LENGTH-1 downto 0) := (others => '0');
-    timer_interrupt : in std_logic                                   := '0';
+    pause_ifetch : out std_logic;
+
+    timer_value     : in std_logic_vector(63 downto 0);
+    timer_interrupt : in std_logic;
 
     vcp_writeback_en   : in std_logic;
     vcp_writeback_data : in std_logic_vector(REGISTER_SIZE-1 downto 0)
@@ -219,9 +222,9 @@ begin
 
 
 
-  mtime  <= std_logic_vector(timer_value(REGISTER_SIZE-1 downto 0)) when COUNTER_LENGTH /= 0 else (others => '0');
-  mtimeh <= std_logic_vector(timer_value(timer_value'left downto timer_value'left-REGISTER_SIZE+1))
-            when REGISTER_SIZE = 32 and COUNTER_LENGTH = 64 else (others => '0');
+  mtime  <= std_logic_vector(timer_value(REGISTER_SIZE-1 downto 0));
+  mtimeh <= std_logic_vector(timer_value(timer_value'left downto timer_value'left-REGISTER_SIZE+1));
+
   misa(misa'left downto misa'left-1) <= "01";
   misa(23)                           <= '0' when VCP_ENABLE = DISABLED else '1';
   misa(8)                            <= '1';  --I
@@ -559,12 +562,25 @@ begin
         to_icache_control_command <= INVALIDATE;
         to_dcache_control_command <= WRITEBACK;
 
+        to_cache_control_base <= rs1_data;
+        to_cache_control_last <= rs2_data;
+
         if fencei_select = '1' then
-          --FENCE.I
+          --FENCE.I/FENCE.RI
           fence_pc_correction_valid <= '1';
           fence_pending             <= '1';
           to_icache_control_valid   <= '1';
           to_dcache_control_valid   <= '1';
+
+          if func7(1) = '0' then
+            --FENCE.I does not take base/last parameters; applies to all of cache
+            to_cache_control_base <= (others => '0');
+            to_cache_control_last <= (others => '1');
+          end if;
+
+        --Unclear from the REGION draft spec if FENCE.RI should return a
+        --value or not, since it can't partially complete.  Omitting for now
+        --as it doesn't seem useful.
         end if;
 
         if cache_select = '1' then
@@ -573,6 +589,13 @@ begin
           --A FENCE is implied by all cache control instructions.
           fence_pc_correction_valid <= '1';
           fence_pending             <= '1';
+
+          --Cache control instructions must return a value > rs2 on completion,
+          --corresponding to the start of memory not affected.  Since if all
+          --memory is affected it's valid to return 0, just return 0 for all
+          --these instructions.
+          from_syscall_valid <= '1';
+          from_syscall_data  <= (others => '0');
 
           to_dcache_control_valid <= '1';
           case func7(1 downto 0) is
@@ -594,6 +617,10 @@ begin
           --All interfaces are strictly ordered and when switching between
           --interfaces (via AMR/UMR writes) a FENCE is performed, so FENCEs
           --don't need to do anything.
+
+          --Unclear from the REGION draft spec if FENCE.RI should return a 
+          --value or not, since it can't partially complete.  Omitting for now
+          --as it doesn't seem useful.
           null;
         end if;
       end if;
