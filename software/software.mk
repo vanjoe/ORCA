@@ -27,6 +27,7 @@ vpath %.S $(ORCA_ROOT)/software
 
 #Include software from orca_lib
 vpath %.c $(ORCA_ROOT)/software/orca_lib
+vpath %.S $(ORCA_ROOT)/software/orca_lib
 
 ifdef USE_LVE
 ARCH ?= rv32imxlve
