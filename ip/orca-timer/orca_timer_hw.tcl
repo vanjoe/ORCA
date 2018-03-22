@@ -109,7 +109,7 @@ set_interface_property Timer_Interface PORT_NAME_MAP ""
 set_interface_property Timer_Interface CMSIS_SVD_VARIABLES ""
 set_interface_property Timer_Interface SVD_ADDRESS_GROUP ""
 
-add_interface_port Timer_Interface timer_value value Output timer_width
+add_interface_port Timer_Interface timer_value value Output 64
 add_interface_port Timer_Interface timer_interrupt interrupt Output 1
 
 

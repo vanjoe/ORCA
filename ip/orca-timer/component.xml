@@ -166,7 +166,7 @@
           </spirit:physicalPort>
         </spirit:portMap>
       </spirit:portMaps>
-		<spirit:parameters>
+      <spirit:parameters>
         <spirit:parameter>
           <spirit:name>POLARITY</spirit:name>
           <spirit:value spirit:id="BUSIFPARAM_VALUE.reset.POLARITY">ACTIVE_HIGH</spirit:value>
@@ -251,7 +251,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>29f1ea7c</spirit:value>
+            <spirit:value>3d50c9ed</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -267,7 +267,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>29f1ea7c</spirit:value>
+            <spirit:value>3d50c9ed</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -331,7 +331,7 @@
         <spirit:wire>
           <spirit:direction>out</spirit:direction>
           <spirit:vector>
-            <spirit:left spirit:format="long" spirit:resolve="dependent" spirit:dependency="(spirit:decode(id(&apos;MODELPARAM_VALUE.TIMER_WIDTH&apos;)) - 1)">31</spirit:left>
+            <spirit:left spirit:format="long">63</spirit:left>
             <spirit:right spirit:format="long">0</spirit:right>
           </spirit:vector>
           <spirit:wireTypeDefs>
@@ -341,6 +341,9 @@
               <spirit:viewNameRef>xilinx_anylanguagebehavioralsimulation</spirit:viewNameRef>
             </spirit:wireTypeDef>
           </spirit:wireTypeDefs>
+          <spirit:driver>
+            <spirit:defaultValue spirit:format="long">0</spirit:defaultValue>
+          </spirit:driver>
         </spirit:wire>
       </spirit:port>
       <spirit:port>
@@ -1129,7 +1132,7 @@
       <spirit:modelParameter xsi:type="spirit:nameValueTypeType" spirit:dataType="integer">
         <spirit:name>TIMER_WIDTH</spirit:name>
         <spirit:displayName>Timer Width</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.TIMER_WIDTH" spirit:minimum="0" spirit:maximum="64" spirit:rangeType="long">32</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.TIMER_WIDTH" spirit:minimum="0" spirit:maximum="64" spirit:rangeType="long">64</spirit:value>
       </spirit:modelParameter>
     </spirit:modelParameters>
   </spirit:model>
@@ -1146,7 +1149,7 @@
       <spirit:file>
         <spirit:name>hdl/orca-timer.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_29f1ea7c</spirit:userFileType>
+        <spirit:userFileType>CHECKSUM_3d50c9ed</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
@@ -1171,7 +1174,7 @@
     <spirit:parameter>
       <spirit:name>TIMER_WIDTH</spirit:name>
       <spirit:displayName>Timer Width</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.TIMER_WIDTH" spirit:choiceRef="choice_pairs_1159d11a">32</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.TIMER_WIDTH" spirit:choiceRef="choice_pairs_1159d11a">64</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>Component_Name</spirit:name>
@@ -1207,26 +1210,26 @@
       </xilinx:taxonomies>
       <xilinx:displayName>Orca Timer</xilinx:displayName>
       <xilinx:definitionSource>package_project</xilinx:definitionSource>
-      <xilinx:coreRevision>8</xilinx:coreRevision>
+      <xilinx:coreRevision>9</xilinx:coreRevision>
       <xilinx:upgrades>
         <xilinx:canUpgradeFrom>user.org:user:orca_timer:1.0</xilinx:canUpgradeFrom>
       </xilinx:upgrades>
-      <xilinx:coreCreationDateTime>2018-03-20T23:26:01Z</xilinx:coreCreationDateTime>
+      <xilinx:coreCreationDateTime>2018-03-22T19:42:16Z</xilinx:coreCreationDateTime>
       <xilinx:tags>
         <xilinx:tag xilinx:name="nopcore"/>
         <xilinx:tag xilinx:name="user.org:user:orca_timer:1.0_ARCHIVE_LOCATION">/nfs/home/joel/work/orca-timecmp/ip/orca-timer</xilinx:tag>
         <xilinx:tag xilinx:name="vectorblox.com:user:orca_timer:1.0_ARCHIVE_LOCATION">/nfs/home/joel/work/orca-timecmp/ip/orca-timer</xilinx:tag>
-        <xilinx:tag xilinx:name="vectorblox.com:orca:orca_timer:1.0_ARCHIVE_LOCATION">/home/joel/work/orca-mtest/ip/orca-timer</xilinx:tag>
+        <xilinx:tag xilinx:name="vectorblox.com:orca:orca_timer:1.0_ARCHIVE_LOCATION">/nfs/home/joel/work/orca-timecmp-clean/ip/orca-timer</xilinx:tag>
       </xilinx:tags>
     </xilinx:coreExtensions>
     <xilinx:packagingInfo>
-      <xilinx:xilinxVersion>2017.4</xilinx:xilinxVersion>
-      <xilinx:checksum xilinx:scope="busInterfaces" xilinx:value="25a6ad78"/>
+      <xilinx:xilinxVersion>2017.4.1</xilinx:xilinxVersion>
+      <xilinx:checksum xilinx:scope="busInterfaces" xilinx:value="3946845f"/>
       <xilinx:checksum xilinx:scope="memoryMaps" xilinx:value="94bb57ac"/>
-      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="5c15b2d1"/>
-      <xilinx:checksum xilinx:scope="ports" xilinx:value="55593843"/>
-      <xilinx:checksum xilinx:scope="hdlParameters" xilinx:value="07d52222"/>
-      <xilinx:checksum xilinx:scope="parameters" xilinx:value="4dc3afcd"/>
+      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="e11612aa"/>
+      <xilinx:checksum xilinx:scope="ports" xilinx:value="7852af0e"/>
+      <xilinx:checksum xilinx:scope="hdlParameters" xilinx:value="cc44cb93"/>
+      <xilinx:checksum xilinx:scope="parameters" xilinx:value="2a442692"/>
     </xilinx:packagingInfo>
   </spirit:vendorExtensions>
 </spirit:component>

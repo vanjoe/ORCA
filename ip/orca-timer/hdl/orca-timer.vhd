@@ -75,8 +75,11 @@ entity orca_timer is
 end entity;
 
 architecture rtl of orca_timer is
-  signal reading     : std_logic;
-  signal writing     : std_logic;
+  signal reading             : std_logic;
+  signal wait_for_last_read  : std_logic;
+  signal writing             : std_logic;
+  signal wait_for_last_write : std_logic;
+
   signal write_valid : std_logic;
   signal ID_register : std_logic_vector(slave_rid'range);
 
@@ -86,10 +89,12 @@ begin  -- architecture rtl
 
   --in order to syncronize write address and write data channels
   --we only assert ready when both are valid
+  wait_for_last_write <= writing and not slave_bready;
   write_valid   <= slave_awvalid and slave_wvalid;
-  slave_awready <= write_valid;
-  slave_wready  <= write_valid;
-  slave_arready <= '1';
+  slave_awready <= write_valid and not wait_for_last_write;
+  slave_wready  <= write_valid and not wait_for_last_write;
+  wait_for_last_read <= reading and not slave_rready;
+  slave_arready <= not wait_for_last_read;
 
 
   slave_rresp <= (others => '0');
@@ -101,11 +106,14 @@ begin  -- architecture rtl
   slave_bvalid    <= writing;
   slave_rvalid    <= reading;
   process (clk) is
-    variable address : unsigned(MTIME_ADDR'range);
+    variable address      : unsigned(MTIME_ADDR'range);
+    variable counter64    : unsigned(63 downto 0);
+    variable countercmp64 : unsigned(63 downto 0);
   begin  -- process
     if rising_edge(clk) then            -- rising clock edge
-      slave_rdata <= (others => '-');
-
+      slave_rdata  <= (others => '-');
+      counter64    := resize(counter, 64);
+      countercmp64 := resize(countercmp, 64);
 
       --counter
       counter <= counter + 1;
@@ -115,17 +123,17 @@ begin  -- architecture rtl
         reading <= '0';
       end if;
 
-      if slave_arvalid = '1' then
+      if slave_arvalid = '1' and not wait_for_last_read = '1' then
         reading <= '1';
         address := unsigned(slave_araddr(3 downto 2));
         if MTIME_ADDR = address then
-          slave_rdata <= std_logic_vector(counter(31 downto 0));
+          slave_rdata <= std_logic_vector(counter64(31 downto 0));
         elsif MTIMEH_ADDR = address then
-          slave_rdata <= std_logic_vector(counter(counter'left downto counter'left-31));
+          slave_rdata <= std_logic_vector(counter64(63 downto 32));
         elsif MTIMECMP_ADDR = address then
-          slave_rdata <= std_logic_vector(countercmp(31 downto 0));
+          slave_rdata <= std_logic_vector(countercmp64(31 downto 0));
         elsif MTIMECMPH_ADDR = address then
-          slave_rdata <= std_logic_vector(countercmp(counter'left downto counter'left-31));
+          slave_rdata <= std_logic_vector(countercmp64(63 downto 32));
         end if;
         slave_rid <= slave_arid;
       end if;
@@ -134,20 +142,22 @@ begin  -- architecture rtl
       if writing = '1' and slave_bready = '1' then
         writing <= '0';
       end if;
-      if write_valid = '1' then
+      if write_valid = '1'  and not wait_for_last_read = '1' then
         writing <= '1';
         address := unsigned(slave_awaddr(3 downto 2));
         if MTIME_ADDR = address then
-          counter(31 downto 0) <= unsigned(slave_wdata);
+          counter64(31 downto 0) := unsigned(slave_wdata);
         elsif MTIMEH_ADDR = address then
-          counter(counter'left downto counter'left-31) <= unsigned(slave_wdata);
+          counter64(63 downto 32) := unsigned(slave_wdata);
         elsif MTIMECMP_ADDR = address then
-          countercmp(31 downto 0) <= unsigned(slave_wdata);
+          countercmp64(31 downto 0) := unsigned(slave_wdata);
         elsif MTIMECMPH_ADDR = address then
-          countercmp(counter'left downto counter'left-31) <= unsigned(slave_wdata);
+          countercmp64(63 downto 32) := unsigned(slave_wdata);
         end if;
-        writing   <= '1';
-        slave_bid <= slave_awid;
+        counter    <= resize(counter64, counter'length);
+        countercmp <= resize(countercmp64, counter'length);
+        writing    <= '1';
+        slave_bid  <= slave_awid;
       end if;
 
       if reset = '1' then
