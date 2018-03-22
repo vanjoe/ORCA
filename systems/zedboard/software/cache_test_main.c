@@ -1,6 +1,7 @@
 #include "orca_printf.h"
 #include "orca_csrs.h"
 #include "orca_memory.h"
+#include "orca_cache.h"
 #include "orca_malloc.h"
 #include "orca_time.h"
 #include "cache_test.h"
