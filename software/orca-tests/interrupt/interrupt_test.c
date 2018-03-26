@@ -155,9 +155,30 @@ int test_6()
 		return 1;
 	}
 	return 0;
-
 }
 
+#include <stdio.h>
+#include <stdint.h>
+char chars[]={0,1,2,3,4,5,6,0x87,0x88,0x89,0x8A};
+uint32_t  __attribute__((noinline)) get_word(uint32_t* ptr){
+	return *ptr;
+}
+int16_t  __attribute__((noinline)) get_half(int16_t* ptr){
+	return *ptr;
+}
+
+int test_7(){
+	//test unaligned access exception
+	uint32_t wval = get_word((uint32_t*) (chars+2));
+	if(wval != 0x05040302){
+		return 1;
+	}
+	int32_t hval = get_half((int16_t*) (chars+9));
+	if(hval != 0xFFFF8A89){
+		return 1;
+	}
+	return 0;
+}
 int test_init()
 {
 	return orca_register_interrupt_handler(1,handle_interrupt,NULL);
@@ -171,5 +192,6 @@ test_func test_functions[] ={
 	test_4,
 	test_5,
 	test_6,
+	test_7,
 	(void*)0
 };

@@ -360,6 +360,7 @@ architecture rtl of memory_interface is
   constant A4L_LOCK_VAL   : std_logic_vector(1 downto 0) := "00";
   constant A4L_CACHE_VAL  : std_logic_vector(3 downto 0) := "0000";
 
+  signal lsu_oimm_address_aligned : std_logic_vector(lsu_oimm_address'range);
   signal iinternal_register_idle  : std_logic;
   signal iexternal_registers_idle : std_logic;
   signal dinternal_register_idle  : std_logic;
@@ -681,6 +682,7 @@ begin
   -----------------------------------------------------------------------------
   -- Data cache and mux
   -----------------------------------------------------------------------------
+  lsu_oimm_address_aligned <= lsu_oimm_address(lsu_oimm_address'left downto 2) & "00";
   data_cache_mux : cache_mux
     generic map (
       ADDRESS_WIDTH => REGISTER_SIZE,
@@ -718,7 +720,7 @@ begin
       internal_register_idle  => dinternal_register_idle,
       external_registers_idle => dexternal_registers_idle,
 
-      oimm_address       => lsu_oimm_address,
+      oimm_address       => lsu_oimm_address_aligned,
       oimm_byteenable    => lsu_oimm_byteenable,
       oimm_requestvalid  => lsu_oimm_requestvalid,
       oimm_readnotwrite  => lsu_oimm_readnotwrite,

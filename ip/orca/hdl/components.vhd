@@ -1083,8 +1083,9 @@ package rv_components is
 
       lsu_idle : out std_logic;
 
-      to_lsu_valid     : in  std_logic;
-      from_lsu_illegal : out std_logic;
+      to_lsu_valid      : in  std_logic;
+      from_lsu_illegal  : out std_logic;
+      from_lsu_misalign : out std_logic;
 
       rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
       rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -1174,6 +1175,9 @@ package rv_components is
       from_syscall_ready   : out std_logic;
 
       illegal_instruction : in std_logic;
+
+      from_lsu_addr_misalign : in std_logic;
+      from_lsu_address       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
       from_syscall_valid : out std_logic;
       from_syscall_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);

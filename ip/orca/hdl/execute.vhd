@@ -75,7 +75,7 @@ entity execute is
     to_rf_valid  : buffer std_logic;
 
     --Data ORCA-internal memory-mapped master
-    lsu_oimm_address       : out    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lsu_oimm_address       : buffer    std_logic_vector(REGISTER_SIZE-1 downto 0);
     lsu_oimm_byteenable    : out    std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     lsu_oimm_requestvalid  : buffer std_logic;
     lsu_oimm_readnotwrite  : buffer std_logic;
@@ -177,6 +177,7 @@ architecture behavioural of execute is
   signal to_lsu_valid         : std_logic;
   signal from_lsu_ready       : std_logic;
   signal from_lsu_illegal     : std_logic;
+  signal from_lsu_misalign   : std_logic;
   signal from_lsu_valid       : std_logic;
   signal from_lsu_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal syscall_select       : std_logic;
@@ -421,8 +422,9 @@ begin
 
       lsu_idle => lsu_idle,
 
-      to_lsu_valid     => to_lsu_valid,
-      from_lsu_illegal => from_lsu_illegal,
+      to_lsu_valid       => to_lsu_valid,
+      from_lsu_illegal   => from_lsu_illegal,
+      from_lsu_misalign => from_lsu_misalign,
 
       rs1_data       => rs1_data,
       rs2_data       => rs2_data,
@@ -488,10 +490,11 @@ begin
       current_pc           => to_execute_program_counter,
       from_syscall_ready   => from_syscall_ready,
 
-      illegal_instruction => illegal_instruction,
-
-      from_syscall_valid => from_syscall_valid,
-      from_syscall_data  => from_syscall_data,
+      illegal_instruction     => illegal_instruction,
+      from_lsu_addr_misalign => from_lsu_misalign,
+      from_lsu_address        => lsu_oimm_address,
+      from_syscall_valid      => from_syscall_valid,
+      from_syscall_data       => from_syscall_data,
 
       to_pc_correction_data    => syscall_to_pc_correction_data,
       to_pc_correction_valid   => syscall_to_pc_correction_valid,

@@ -17,8 +17,9 @@ entity load_store_unit is
 
     lsu_idle : out std_logic;
 
-    to_lsu_valid     : in  std_logic;
-    from_lsu_illegal : out std_logic;
+    to_lsu_valid       : in  std_logic;
+    from_lsu_illegal   : out std_logic;
+    from_lsu_misalign : out std_logic;
 
     rs1_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
     rs2_data       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -110,11 +111,11 @@ begin
   end process;
 
   --Check for unaligned accesses.  Disabled until properly merged exported to sys_call
-  from_alignment_illegal <= '0' when (ENABLE_EXCEPTIONS and
+  from_alignment_illegal <= to_lsu_valid  when (ENABLE_EXCEPTIONS and
                                       ((func3(1) = '1' and address_unaligned(1 downto 0) /= "00") or
                                        (func3(0) = '1' and address_unaligned(0) /= '0')))
                             else '0';
-  
+  from_lsu_misalign <= from_alignment_illegal;
   from_lsu_illegal <= from_instruction_illegal;
 
   store_valid <= store_select and (not from_alignment_illegal);
@@ -151,8 +152,8 @@ begin
 
   oimm_writedata <= store_byte3 & store_byte2 & store_byte1 & store_byte0;
 
-  --Addresses are always aligned
-  oimm_address <= address_unaligned(REGISTER_SIZE-1 downto 2) & "00";
+  --Addresses are aligned to word boundary by memory_interface module
+  oimm_address <= address_unaligned(REGISTER_SIZE-1 downto 0);
 
   --Stall if sending a request and slave is not ready or if awaiting readdata
   --and it hasn't arrived yet

@@ -49,6 +49,9 @@ entity sys_call is
 
     illegal_instruction : in std_logic;
 
+    from_lsu_addr_misalign : in std_logic;
+    from_lsu_address : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+
     from_syscall_valid : out std_logic;
     from_syscall_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
 
@@ -286,13 +289,23 @@ begin
           was_illegal <= '0';
         end if;
 
-        if illegal_instruction = '1' or (to_syscall_valid = '1' and (ebreak_select = '1' or ecall_select = '1')) then
+        if( illegal_instruction = '1' or
+            from_lsu_addr_misalign = '1' or
+          (to_syscall_valid = '1' and (ebreak_select = '1' or ecall_select = '1'))) then
           --Handle Illegal Instructions
           mstatus(CSR_MSTATUS_MIE)  <= '0';
           mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
           mcause(mcause'left)       <= '0';
           if illegal_instruction = '1' then
             mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_ILLEGAL;
+            mtval <= instruction(mtval'range);
+          elsif from_lsu_addr_misalign = '1'  then
+            mtval <= from_lsu_address;
+            mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_LOAD_MISALIGN;
+            if instruction(5) = '1' then
+              mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_STORE_MISALIGN;
+            end if;
+
           else
             if ebreak_select = '1' then
               mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_EBREAK;
@@ -618,7 +631,7 @@ begin
           --interfaces (via AMR/UMR writes) a FENCE is performed, so FENCEs
           --don't need to do anything.
 
-          --Unclear from the REGION draft spec if FENCE.RI should return a 
+          --Unclear from the REGION draft spec if FENCE.RI should return a
           --value or not, since it can't partially complete.  Omitting for now
           --as it doesn't seem useful.
           null;

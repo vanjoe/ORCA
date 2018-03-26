@@ -72,7 +72,7 @@ package constants_pkg is
   constant OP_IMM_IMMEDIATE_SIZE : integer                        := 12;
   constant CSR_ZIMM              : std_logic_vector(19 downto 15) := (others => '-');
 
---MISC-MEM functions  
+--MISC-MEM functions
   constant FENCE_FUNC3 : std_logic_vector(2 downto 0) := "000";
 
   constant FENCE_SW_BIT : natural := 20;
@@ -147,7 +147,8 @@ package constants_pkg is
   constant CSR_MCAUSE_ILLEGAL : std_logic_vector(CSR_MCAUSE_CODE'range) := x"2";
   constant CSR_MCAUSE_EBREAK  : std_logic_vector(CSR_MCAUSE_CODE'range) := x"3";
   constant CSR_MCAUSE_MECALL  : std_logic_vector(CSR_MCAUSE_CODE'range) := x"B";
-
+  constant CSR_MCAUSE_LOAD_MISALIGN : std_logic_vector(CSR_MCAUSE_CODE'range) := x"4";
+  constant CSR_MCAUSE_STORE_MISALIGN : std_logic_vector(CSR_MCAUSE_CODE'range) := x"6";
 --Priveleged FUNC3
   constant PRIV_FUNC3 : std_logic_vector(2 downto 0) := "000";
 

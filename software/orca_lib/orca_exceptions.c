@@ -91,11 +91,50 @@ static void call_interrupt_handler(){
 	}
 }
 
+static void handle_misaligned_load(size_t instr,size_t reg[32])
+{
+	uint8_t* address;
+	csrr(mtval,address);
+	int32_t intval;
+	switch((instr >>12) &3){
+	case 1: //half
+		intval=(address[1]<<8) | address[0];
+		if(!(instr & (1<<14))){//signed
+			intval = (int16_t)intval;
+		}
+
+		break;
+	default: //word
+		intval=(address[3]<<24) | (address[2] << 16) | (address[1] <<8) | address[0];
+		break;
+	}
+	reg[(instr>>7) & 0x1F] = intval;
+}
+static void handle_misaligned_store(size_t instr,size_t reg[32])
+{
+	uint8_t* address;
+	csrr(mtval,address);
+	size_t regval =reg[(instr>>15) & 0x1F] ;
+	switch((instr >>12) &3){
+	case 1: //half
+		address[0] = regval&0xFF;
+		address[1] = ((regval>>8)&0xFF);
+		break;
+	default: //word
+		address[0] = regval&0xFF;
+		address[1] = ((regval>>8)&0xFF);
+		address[2] = ((regval>>16)&0xFF);
+		address[3] = ((regval>>24)&0xFF);
+		break;
+	}
+
+}
+
 //Handle an exception.  Illegal instructions and interrupts can be
 //passed to handlers set using the
 //register_orca_illegal_instruction_handler() and
 //register_orca_interrupt_handler() calls respectively.
-int handle_exception(int cause, int epc, int regs[32]){
+int handle_exception(size_t cause, size_t epc, size_t regs[32]){
 	switch(cause){
 	case 0x8000000B://external interrupt
 		call_interrupt_handler();
@@ -105,13 +144,20 @@ int handle_exception(int cause, int epc, int regs[32]){
 			timer_handler(timer_context);
 			break;
 		}else{ while(1); }
-
-	case 0x2 ://illegal instruction
+	case CAUSE_MISALIGNED_STORE:
+		handle_misaligned_store(*((size_t*)epc), regs);
+		epc+=4;
+		break;
+	case CAUSE_MISALIGNED_LOAD :
+		handle_misaligned_load(*((size_t*)epc), regs);
+		epc+=4;
+		break;
+	case CAUSE_ILLEGAL_INSTRUCTION ://illegal instruction
 		if(illegal_instruction_handler){
 			epc=illegal_instruction_handler(cause,epc,regs,illegal_instruction_context);
 			break;
 		}else{while(1);}
-	case 0xB://ECALL
+	case CAUSE_MACHINE_ECALL://ECALL
 		if(ecall_handler){
 			ecall_handler(ecall_context);
 			epc+=4;

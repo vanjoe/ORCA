@@ -4,11 +4,7 @@ use IEEE.numeric_std.all;
 library work;
 
 package timer_constants_pkg is
-  constant ADDRESS_BITS   : positive                          := 4;
-  constant MTIME_ADDR     : unsigned(ADDRESS_BITS-3 downto 0) := to_unsigned(0, ADDRESS_BITS-2);
-  constant MTIMEH_ADDR    : unsigned(ADDRESS_BITS-3 downto 0) := to_unsigned(1, ADDRESS_BITS-2);
-  constant MTIMECMP_ADDR  : unsigned(ADDRESS_BITS-3 downto 0) := to_unsigned(2, ADDRESS_BITS-2);
-  constant MTIMECMPH_ADDR : unsigned(ADDRESS_BITS-3 downto 0) := to_unsigned(3, ADDRESS_BITS-2);
+
 end package timer_constants_pkg;
 
 library IEEE;
@@ -33,7 +29,7 @@ entity orca_timer is
     --A full AXI3 interface is exposed for systems that require it, but
     --only the A4L signals are needed
     slave_ARID    : in  std_logic_vector(3 downto 0);
-    slave_ARADDR  : in  std_logic_vector(ADDRESS_BITS-1 downto 0);
+    slave_ARADDR  : in  std_logic_vector(3 downto 0);
     slave_ARLEN   : in  std_logic_vector(3 downto 0);
     slave_ARSIZE  : in  std_logic_vector(2 downto 0);
     slave_ARBURST : in  std_logic_vector(1 downto 0);
@@ -51,7 +47,7 @@ entity orca_timer is
     slave_RREADY : in  std_logic;
 
     slave_AWID    : in  std_logic_vector(3 downto 0);
-    slave_AWADDR  : in  std_logic_vector(ADDRESS_BITS-1 downto 0);
+    slave_AWADDR  : in  std_logic_vector(3 downto 0);
     slave_AWLEN   : in  std_logic_vector(3 downto 0);
     slave_AWSIZE  : in  std_logic_vector(2 downto 0);
     slave_AWBURST : in  std_logic_vector(1 downto 0);
@@ -75,6 +71,12 @@ entity orca_timer is
 end entity;
 
 architecture rtl of orca_timer is
+  constant ADDRESS_BITS   : positive                          := slave_awaddr'length;
+  constant MTIME_ADDR     : unsigned(ADDRESS_BITS-3 downto 0) := to_unsigned(0, ADDRESS_BITS-2);
+  constant MTIMEH_ADDR    : unsigned(ADDRESS_BITS-3 downto 0) := to_unsigned(1, ADDRESS_BITS-2);
+  constant MTIMECMP_ADDR  : unsigned(ADDRESS_BITS-3 downto 0) := to_unsigned(2, ADDRESS_BITS-2);
+  constant MTIMECMPH_ADDR : unsigned(ADDRESS_BITS-3 downto 0) := to_unsigned(3, ADDRESS_BITS-2);
+
   signal reading             : std_logic;
   signal wait_for_last_read  : std_logic;
   signal writing             : std_logic;

@@ -18,9 +18,10 @@
 
 #define ORCA_INTERRUPT_HANDLERS ((ORCA_ENABLE_EXCEPTIONS && ORCA_ENABLE_EXT_INTERRUPTS) ? ORCA_NUM_EXT_INTERRUPTS : 0)
 #include <stdint.h>
+#include <stdlib.h>
 typedef void (*orca_exception_handler)(void *);
 typedef void (*orca_interrupt_handler)(int, void *);
-typedef int (*orca_illegal_instruction_handler)(int, int, int[], void *);
+typedef int (*orca_illegal_instruction_handler)(size_t, size_t, size_t[], void *);
 /**
  * @brief Register a timer interrupt handler.
  * @param handler The function to be called when timer interrupt goes off
