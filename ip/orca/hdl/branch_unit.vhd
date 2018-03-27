@@ -29,7 +29,7 @@ entity branch_unit is
     from_branch_valid : out std_logic;
     from_branch_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
     to_branch_ready   : in  std_logic;
-
+    target_misaligned : out std_logic;
     to_pc_correction_data      : out unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_source_pc : out unsigned(REGISTER_SIZE-1 downto 0);
     to_pc_correction_valid     : out std_logic;
@@ -229,7 +229,9 @@ begin
 
       if to_branch_ready = '1' then
         from_branch_data  <= std_logic_vector(nbranch_target);
-        from_branch_valid <= to_branch_valid and (jal_select or jalr_select);
+        if target_pc(1 downto 0) = "00" then
+          from_branch_valid <= to_branch_valid and (jal_select or jalr_select) ;
+        end if;
       end if;
 
       if reset = '1' then
@@ -237,4 +239,5 @@ begin
       end if;
     end if;
   end process;
+  target_misaligned <= to_branch_valid when target_pc(1 downto 0) /= "00" else '0';
 end architecture;

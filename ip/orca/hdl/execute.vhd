@@ -210,6 +210,8 @@ architecture behavioural of execute is
   signal from_writeback_ready : std_logic;
   signal to_rf_mux            : std_logic_vector(1 downto 0);
   signal vcp_writeback_select : std_logic;
+
+  signal from_branch_misaligned : std_logic;
 begin
   --Decode instruction; could get pushed back to decode stage
   process (opcode) is
@@ -263,7 +265,6 @@ begin
         end if;
     end case;
   end process;
-
   --Currently only set valid/ready for execute when writeback is ready.  This
   --means that any instruction that completes in the execute cycle will be able to
   --writeback without a stall; i.e. alu/branch/syscall instructions merely
@@ -403,7 +404,7 @@ begin
       from_branch_valid => from_branch_valid,
       from_branch_data  => from_branch_data,
       to_branch_ready   => from_writeback_ready,
-
+      target_misaligned => from_branch_misaligned,
       to_pc_correction_data      => branch_to_pc_correction_data,
       to_pc_correction_source_pc => to_pc_correction_source_pc,
       to_pc_correction_valid     => branch_to_pc_correction_valid,
@@ -490,6 +491,7 @@ begin
       current_pc           => to_execute_program_counter,
       from_syscall_ready   => from_syscall_ready,
 
+      from_branch_misaligned => from_branch_misaligned,
       illegal_instruction     => illegal_instruction,
       from_lsu_addr_misalign => from_lsu_misalign,
       from_lsu_address        => lsu_oimm_address,

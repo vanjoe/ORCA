@@ -142,15 +142,16 @@ package constants_pkg is
 
   constant CSR_MCAUSE_CODE : std_logic_vector(3 downto 0) := (others => '-');
 
-  constant CSR_MCAUSE_MTIMER  : std_logic_vector(CSR_MCAUSE_CODE'range) := x"7";
-  constant CSR_MCAUSE_MEXT    : std_logic_vector(CSR_MCAUSE_CODE'range) := x"B";
-  constant CSR_MCAUSE_ILLEGAL : std_logic_vector(CSR_MCAUSE_CODE'range) := x"2";
-  constant CSR_MCAUSE_EBREAK  : std_logic_vector(CSR_MCAUSE_CODE'range) := x"3";
-  constant CSR_MCAUSE_MECALL  : std_logic_vector(CSR_MCAUSE_CODE'range) := x"B";
-  constant CSR_MCAUSE_LOAD_MISALIGN : std_logic_vector(CSR_MCAUSE_CODE'range) := x"4";
+  constant CSR_MCAUSE_MTIMER         : std_logic_vector(CSR_MCAUSE_CODE'range) := x"7";
+  constant CSR_MCAUSE_MEXT           : std_logic_vector(CSR_MCAUSE_CODE'range) := x"B";
+  constant CSR_MCAUSE_ILLEGAL        : std_logic_vector(CSR_MCAUSE_CODE'range) := x"2";
+  constant CSR_MCAUSE_EBREAK         : std_logic_vector(CSR_MCAUSE_CODE'range) := x"3";
+  constant CSR_MCAUSE_MECALL         : std_logic_vector(CSR_MCAUSE_CODE'range) := x"B";
+  constant CSR_MCAUSE_FETCH_MISALIGN : std_logic_vector(CSR_MCAUSE_CODE'range) := x"0";
+  constant CSR_MCAUSE_LOAD_MISALIGN  : std_logic_vector(CSR_MCAUSE_CODE'range) := x"4";
   constant CSR_MCAUSE_STORE_MISALIGN : std_logic_vector(CSR_MCAUSE_CODE'range) := x"6";
 --Priveleged FUNC3
-  constant PRIV_FUNC3 : std_logic_vector(2 downto 0) := "000";
+  constant PRIV_FUNC3                : std_logic_vector(2 downto 0)            := "000";
 
   constant SYSTEM_ECALL  : std_logic_vector(11 downto 0) := x"000";
   constant SYSTEM_EBREAK : std_logic_vector(11 downto 0) := x"001";

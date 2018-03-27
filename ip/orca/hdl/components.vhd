@@ -1060,6 +1060,8 @@ package rv_components is
       instruction    : in std_logic_vector(31 downto 0);
       sign_extension : in std_logic_vector(SIGN_EXTENSION_SIZE-1 downto 0);
 
+      target_misaligned : out std_logic;
+
       from_branch_valid : out std_logic;
       from_branch_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
       to_branch_ready   : in  std_logic;
@@ -1175,7 +1177,7 @@ package rv_components is
       from_syscall_ready   : out std_logic;
 
       illegal_instruction : in std_logic;
-
+      from_branch_misaligned : in std_logic;
       from_lsu_addr_misalign : in std_logic;
       from_lsu_address       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 

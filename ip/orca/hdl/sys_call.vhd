@@ -47,6 +47,8 @@ entity sys_call is
     rs2_data             : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_syscall_ready   : out std_logic;
 
+    from_branch_misaligned   : in std_logic;
+
     illegal_instruction : in std_logic;
 
     from_lsu_addr_misalign : in std_logic;
@@ -291,12 +293,17 @@ begin
 
         if( illegal_instruction = '1' or
             from_lsu_addr_misalign = '1' or
+            from_branch_misaligned = '1' or
           (to_syscall_valid = '1' and (ebreak_select = '1' or ecall_select = '1'))) then
           --Handle Illegal Instructions
           mstatus(CSR_MSTATUS_MIE)  <= '0';
           mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
           mcause(mcause'left)       <= '0';
-          if illegal_instruction = '1' then
+          if from_branch_misaligned = '1' then
+            mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_FETCH_MISALIGN;
+            --according to the tests its legal to put zero in this register
+            mtval <= std_logic_vector(to_unsigned(0,mtval'length));
+          elsif  illegal_instruction = '1' then
             mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_ILLEGAL;
             mtval <= instruction(mtval'range);
           elsif from_lsu_addr_misalign = '1'  then
@@ -384,6 +391,7 @@ begin
           mcause_exc_code                 <= (others => '0');
           meimask_full                    <= (others => '0');
         end if;
+        mepc(1 downto 0) <= "00";
       end if;
     end process;
     mtvec(1 downto 0)                                    <= (others => '0');
