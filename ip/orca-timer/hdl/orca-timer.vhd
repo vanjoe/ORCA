@@ -3,16 +3,6 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.numeric_std.all;
 library work;
 
-package timer_constants_pkg is
-
-end package timer_constants_pkg;
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.all;
-use IEEE.numeric_std.all;
-library work;
-use work.timer_constants_pkg.all;
-
 entity orca_timer is
   generic (
     TIMER_WIDTH : integer := 64);
