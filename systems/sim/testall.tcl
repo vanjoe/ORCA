@@ -39,7 +39,7 @@ proc run_tests { system_name tests } {
 		  }
         if { [string match "*dhrystone*" $f ] } {
             #Dhrystone does multiple runs to at least 100us
-            run 500 us
+            run 700 us
         } elseif { [string match "rv32*.elf*" $f ] } {
             run 30 us
         } else {

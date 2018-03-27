@@ -100,20 +100,3 @@ _isr:
   addi sp, sp, 272
 
   mret
-
-
-.global memcpy
-memcpy:
-  addi  a4,a2,-1
-  beqz  a2,2f
-  add   a5,a1,a4
-  add   a0,a0,a4
-  addi  a1,a1,-1
-1:
-  lbu   a4,0(a5)
-  addi  a0,a0,-1
-  addi  a5,a5,-1
-  sb    a4,1(a0)
-  bne   a5,a1,1b
-2:
-  ret
