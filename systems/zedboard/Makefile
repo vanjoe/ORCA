@@ -206,9 +206,9 @@ $(HWDEF_FILE): $(BD_FILE)
 	touch -r $(BD_TCL) tmp.$(BD_TCL)
 	cp -p tmp.$(BD_TCL) $(BD_TCL)
 	rm tmp.$(BD_TCL)
-
+HSI=hsi -nolog -nojournal -notrace -mode batch -source ../../tools/hsi_orca_addressmap.tcl -tclargs
 orca_defines.h: $(HWDEF_FILE)
-	hsi -notrace -mode batch -source ../../tools/hsi_orca_addressmap.tcl -tclargs $^ orca $@
+	$(HSI) -h $@  orca $^
 $(SYNTH_DCP): $(HWDEF_FILE)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs project_synth $(PROJ_DIR) $(PROJ_NAME)
 
@@ -228,10 +228,8 @@ endif #else #ifdef RESET_VECTOR
 IDRAM_LENGTH            ?= 0x00020000
 
 
-link.ld::
-	sed "s/0x[0-9A-F]\([0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]\)/0x$$(printf "%01X" $$(expr $$(echo $$(printf "%d" $(IDRAM_BASE_ADDRESS))) / $$(echo $$(printf "%d" 0x10000000))))\1/g" $@ > tmp.$@
-	diff -q $@ tmp.$@; if [ $$? != 0 ]; then mv tmp.$@ $@; fi
-	rm -f tmp.$@
+link.ld:$(HWDEF_FILE)
+	$(HSI) -l $@  orca $^
 
 $(SW_DIR)/$(TEST).coe::
 	$(MAKE) -C $(SW_DIR) $(TEST).coe $(TEST).dump
