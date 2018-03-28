@@ -91,14 +91,11 @@ $(OUTPUT_PREFIX)$(TARGET).elf: $(C_OBJ_FILES) $(S_OBJ_FILES) $(LD_SCRIPT)
 	python ../../../tools/bin2hex.py -o $@ $<
 %.mem: %.bin
 	 head -c $$(( $(START_ADDRESS))) /dev/zero | cat - $< | xxd -g1 -c4 | awk '{print $$5$$4$$3$$2}' > $@
-$(ORCA_ROOT)/tools/hex_to_coe: $(ORCA_ROOT)/tools/hex_to_coe.cpp
-	g++ $< -o $@
 
 IDRAM_BASE_ADDRESS ?= 0x0
 IDRAM_LENGTH       ?= 0x10000
-%.coe: %.ihex $(ORCA_ROOT)/tools/hex_to_coe
-	@if [[ -z "$(IDRAM_BASE_ADDRESS)" || -z "$(IDRAM_LENGTH)" ]]; then echo "ERROR: Please define IDRAM_BASE_ADDRESS $(IDRAM_BASE_ADDRESS) and IDRAM_LENGTH $(IDRAM_LENGTH) to make $@"; exit 1; fi
-	$(ORCA_ROOT)/tools/hex_to_coe $< $@ $(IDRAM_BASE_ADDRESS) $(shell printf "0x%08X" $$(($(IDRAM_BASE_ADDRESS) + $(IDRAM_LENGTH) - 1)))
+%.coe: %.bin
+	python $(ORCA_ROOT)/tools/bin2coe.py $< -o $@
 
 -include $(wildcard $(OBJDIR)/*.d)
 

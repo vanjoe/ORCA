@@ -13,7 +13,7 @@ RISCV_TESTS ?= $(addsuffix .elf, $(addprefix $(OUTPUT_PREFIX), $(basename $(fore
 			$(addprefix $(arch)-p-, $(notdir $(wildcard $(RISCV_TEST_DIR)/isa/$(arch)/*.S) ))))))
 
 
-RISCV_OUTPUTS = $(RISCV_TESTS) $(addsuffix .bin, $(basename $(RISCV_TESTS))) $(addsuffix .dump, $(basename $(RISCV_TESTS))) $(addsuffix .ihex, $(basename $(RISCV_TESTS))) $(addsuffix .qex, $(basename $(RISCV_TESTS)))
+RISCV_OUTPUTS = $(RISCV_TESTS) $(addsuffix .bin, $(basename $(RISCV_TESTS))) $(addsuffix .dump, $(basename $(RISCV_TESTS))) $(addsuffix .ihex, $(basename $(RISCV_TESTS))) $(addsuffix .qex, $(basename $(RISCV_TESTS))) $(addsuffix .coe, $(basename $(RISCV_TESTS)))
 
 $(RISCV_TESTS): $(ORCA_ROOT)/software/orca_lib/orca_printf.c | $(OUTPUT_DIR)
 	$(CC) -o $@ $(RISCV_TEST_DIR)/isa/$(firstword $(subst -p-, , $(basename $@)))/$(lastword $(subst -p-, , $(basename $@))).S \
@@ -34,7 +34,7 @@ OUTPUT_DIR ?= $(shell pwd)
 $(ORCA_TESTS)::
 	make -C $(ORCA_ROOT)/software/orca-tests/$(basename $@) $(OUTPUT_DIR)/$@ OUTPUT_DIR=$(OUTPUT_DIR) RISCV_OLEVEL=-O3
 
-ORCA_TEST_OUTPUTS = $(ORCA_TESTS) $(addsuffix .bin, $(basename $(ORCA_TESTS))) $(addsuffix .dump, $(basename $(ORCA_TESTS))) $(addsuffix .ihex, $(basename $(ORCA_TESTS))) $(addsuffix .qex, $(basename $(ORCA_TESTS)))
+ORCA_TEST_OUTPUTS = $(ORCA_TESTS) $(addsuffix .bin, $(basename $(ORCA_TESTS))) $(addsuffix .dump, $(basename $(ORCA_TESTS))) $(addsuffix .ihex, $(basename $(ORCA_TESTS))) $(addsuffix .qex, $(basename $(ORCA_TESTS))) $(addsuffix .coe, $(basename $(ORCA_TESTS)))
 
 .PHONY: orca-tests
 orca-tests: $(ORCA_TEST_OUTPUTS)
