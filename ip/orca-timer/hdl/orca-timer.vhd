@@ -5,12 +5,13 @@ library work;
 
 entity orca_timer is
   generic (
-    TIMER_WIDTH : integer := 64);
+    TIMER_WIDTH : integer := 64
+    );
   port (
     clk             : in  std_logic;
     reset           : in  std_logic;
     timer_interrupt : out std_logic;
-    timer_value     : out std_logic_vector(TIMER_WIDTH-1 downto 0);
+    timer_value     : out std_logic_vector(63 downto 0);
 
     -------------------------------------------------------------------------------
     --AXI
@@ -57,7 +58,8 @@ entity orca_timer is
     slave_BID    : out std_logic_vector(3 downto 0);
     slave_BRESP  : out std_logic_vector(1 downto 0);
     slave_BVALID : out std_logic;
-    slave_BREADY : in  std_logic);
+    slave_BREADY : in  std_logic
+    );
 end entity;
 
 architecture rtl of orca_timer is
@@ -82,11 +84,11 @@ begin  -- architecture rtl
   --in order to syncronize write address and write data channels
   --we only assert ready when both are valid
   wait_for_last_write <= writing and not slave_bready;
-  write_valid   <= slave_awvalid and slave_wvalid;
-  slave_awready <= write_valid and not wait_for_last_write;
-  slave_wready  <= write_valid and not wait_for_last_write;
-  wait_for_last_read <= reading and not slave_rready;
-  slave_arready <= not wait_for_last_read;
+  write_valid         <= slave_awvalid and slave_wvalid;
+  slave_awready       <= write_valid and not wait_for_last_write;
+  slave_wready        <= write_valid and not wait_for_last_write;
+  wait_for_last_read  <= reading and not slave_rready;
+  slave_arready       <= not wait_for_last_read;
 
 
   slave_rresp <= (others => '0');
@@ -94,7 +96,7 @@ begin  -- architecture rtl
   slave_bresp <= (others => '0');
 
   timer_interrupt <= '1' when counter > countercmp else '0';
-  timer_value     <= std_logic_vector(counter);
+  timer_value     <= std_logic_vector(resize(counter, 64));
   slave_bvalid    <= writing;
   slave_rvalid    <= reading;
   process (clk) is
@@ -134,7 +136,7 @@ begin  -- architecture rtl
       if writing = '1' and slave_bready = '1' then
         writing <= '0';
       end if;
-      if write_valid = '1'  and not wait_for_last_read = '1' then
+      if write_valid = '1' and not wait_for_last_read = '1' then
         writing <= '1';
         address := unsigned(slave_awaddr(3 downto 2));
         if MTIME_ADDR = address then
