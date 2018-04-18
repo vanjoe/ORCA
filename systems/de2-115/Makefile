@@ -270,7 +270,7 @@ endif #else #ifndef TEST
 
 .PHONY: clean
 clean:
-	rm -rf $(BD_NAME)/ $(OUTPUT_DIR) $(QSYS_HW_TCL) $(QSYS_FILE)
+	rm -rf $(BD_NAME)/ $(OUTPUT_DIR) $(QSYS_HW_TCL)
 	rm -rf db/ incremental_db/ *.rpt* *.summary *.smsg
 	rm -rf *.log *.sopcinfo
 	rm -rf *.sof .qsys_edit/
