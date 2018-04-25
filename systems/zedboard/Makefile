@@ -1,16 +1,19 @@
 -include config.mk
-export ORCA_TEST
 
 #Select cached system by default if it exists
-ifeq ($(wildcard orca_system_cached.tcl), )
+ifndef BD_NAME
+ifneq ($(wildcard orca_system_cached.tcl), )
 BD_NAME ?= orca_system
+BD_EXTENSION ?= _cached
 else #ifeq ($(wildcard orca_system_cached.tcl), )
-BD_NAME ?= orca_system_cached
+BD_NAME ?= orca_system
+BD_EXTENSION ?= _tcm
 endif #else #ifeq ($(wildcard orca_system_cached.tcl), )
+endif #ifndef BD_NAME
 
 
 PROJECT_TCL ?= project.tcl
-BD_TCL      ?= $(BD_NAME).tcl
+BD_TCL      ?= $(BD_NAME)$(BD_EXTENSION).tcl
 
 PROJ_DIR  ?= orca_project
 PROJ_NAME ?= orca_project
@@ -195,7 +198,7 @@ $(BD_FILE): $(PROJECT_TCL) $(BD_TCL) $(wildcard config.mk)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs create_bd $(PROJ_DIR) $(PROJ_NAME) $(BD_TCL) $(BD_CHANGES)
 
 .PHONY: archiveBD
-archiveBD: $(HWH_FILE)
+archiveBD: $(HWDEF_FILE)
 
 $(HWDEF_FILE): $(BD_FILE)
 	rm -f tmp.$(BD_TCL)
@@ -206,9 +209,11 @@ $(HWDEF_FILE): $(BD_FILE)
 	touch -r $(BD_TCL) tmp.$(BD_TCL)
 	cp -p tmp.$(BD_TCL) $(BD_TCL)
 	rm tmp.$(BD_TCL)
+
 HSI=hsi -nolog -nojournal -notrace -mode batch -source ../../tools/hsi_orca_addressmap.tcl -tclargs
 orca_defines.h: $(HWDEF_FILE)
 	$(HSI) -h $@  orca $^
+
 $(SYNTH_DCP): $(HWDEF_FILE)
 	$(VIVADO_SOURCE) $(PROJECT_TCL) -tclargs project_synth $(PROJ_DIR) $(PROJ_NAME)
 

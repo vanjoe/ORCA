@@ -30,10 +30,12 @@ entity execute is
     AUX_MEMORY_REGIONS : natural range 0 to 4;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
     AMR0_ADDR_LAST     : std_logic_vector(31 downto 0);
+    AMR0_READ_ONLY     : boolean;
 
     UC_MEMORY_REGIONS : natural range 0 to 4;
     UMR0_ADDR_BASE    : std_logic_vector(31 downto 0);
     UMR0_ADDR_LAST    : std_logic_vector(31 downto 0);
+    UMR0_READ_ONLY    : boolean;
 
     HAS_ICACHE : boolean;
     HAS_DCACHE : boolean
@@ -75,7 +77,7 @@ entity execute is
     to_rf_valid  : buffer std_logic;
 
     --Data ORCA-internal memory-mapped master
-    lsu_oimm_address       : buffer    std_logic_vector(REGISTER_SIZE-1 downto 0);
+    lsu_oimm_address       : buffer std_logic_vector(REGISTER_SIZE-1 downto 0);
     lsu_oimm_byteenable    : out    std_logic_vector((REGISTER_SIZE/8)-1 downto 0);
     lsu_oimm_requestvalid  : buffer std_logic;
     lsu_oimm_readnotwrite  : buffer std_logic;
@@ -177,7 +179,7 @@ architecture behavioural of execute is
   signal to_lsu_valid         : std_logic;
   signal from_lsu_ready       : std_logic;
   signal from_lsu_illegal     : std_logic;
-  signal from_lsu_misalign   : std_logic;
+  signal from_lsu_misalign    : std_logic;
   signal from_lsu_valid       : std_logic;
   signal from_lsu_data        : std_logic_vector(REGISTER_SIZE-1 downto 0);
   signal syscall_select       : std_logic;
@@ -401,10 +403,10 @@ begin
       instruction    => to_execute_instruction(INSTRUCTION32'range),
       sign_extension => to_execute_sign_extension,
 
-      from_branch_valid => from_branch_valid,
-      from_branch_data  => from_branch_data,
-      to_branch_ready   => from_writeback_ready,
-      target_misaligned => from_branch_misaligned,
+      from_branch_valid          => from_branch_valid,
+      from_branch_data           => from_branch_data,
+      to_branch_ready            => from_writeback_ready,
+      target_misaligned          => from_branch_misaligned,
       to_pc_correction_data      => branch_to_pc_correction_data,
       to_pc_correction_source_pc => to_pc_correction_source_pc,
       to_pc_correction_valid     => branch_to_pc_correction_valid,
@@ -423,8 +425,8 @@ begin
 
       lsu_idle => lsu_idle,
 
-      to_lsu_valid       => to_lsu_valid,
-      from_lsu_illegal   => from_lsu_illegal,
+      to_lsu_valid      => to_lsu_valid,
+      from_lsu_illegal  => from_lsu_illegal,
       from_lsu_misalign => from_lsu_misalign,
 
       rs1_data       => rs1_data,
@@ -466,10 +468,12 @@ begin
       AUX_MEMORY_REGIONS => AUX_MEMORY_REGIONS,
       AMR0_ADDR_BASE     => AMR0_ADDR_BASE,
       AMR0_ADDR_LAST     => AMR0_ADDR_LAST,
+      AMR0_READ_ONLY     => AMR0_READ_ONLY,
 
       UC_MEMORY_REGIONS => UC_MEMORY_REGIONS,
       UMR0_ADDR_BASE    => UMR0_ADDR_BASE,
       UMR0_ADDR_LAST    => UMR0_ADDR_LAST,
+      UMR0_READ_ONLY    => UMR0_READ_ONLY,
 
       HAS_ICACHE => HAS_ICACHE,
       HAS_DCACHE => HAS_DCACHE
@@ -492,11 +496,11 @@ begin
       from_syscall_ready   => from_syscall_ready,
 
       from_branch_misaligned => from_branch_misaligned,
-      illegal_instruction     => illegal_instruction,
+      illegal_instruction    => illegal_instruction,
       from_lsu_addr_misalign => from_lsu_misalign,
-      from_lsu_address        => lsu_oimm_address,
-      from_syscall_valid      => from_syscall_valid,
-      from_syscall_data       => from_syscall_data,
+      from_lsu_address       => lsu_oimm_address,
+      from_syscall_valid     => from_syscall_valid,
+      from_syscall_data      => from_syscall_data,
 
       to_pc_correction_data    => syscall_to_pc_correction_data,
       to_pc_correction_valid   => syscall_to_pc_correction_valid,

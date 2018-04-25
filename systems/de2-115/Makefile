@@ -1,10 +1,19 @@
 -include config.mk
-export ORCA_TEST
+
+BD_NAME := orca_system
+
+#Select cached system by default if it exists
+ifneq ($(wildcard orca_system_cached.qsys), )
+BD_EXTENSION ?= _cached
+else #ifeq ($(wildcard orca_system_cached.qsys), )
+BD_EXTENSION ?= _tcm
+endif #else #ifeq ($(wildcard orca_system_cached.qsys), )
+
 
 BD_NAME         ?= orca_system
 PROJECT_NAME    ?= orca_project
-CREATE_QSYS_TCL ?= create_$(BD_NAME).tcl
 QSYS_HW_TCL     ?= $(BD_NAME)_hw.tcl
+QSYS_SOURCE     ?= $(BD_NAME)$(BD_EXTENSION).qsys
 QSYS_FILE       ?= $(BD_NAME).qsys
 QPF_FILE        ?= $(PROJECT_NAME).qpf
 IP_DIR          ?= ../../ip
@@ -189,12 +198,16 @@ endif #ifdef DC_RETURN_REGISTER
 orca_defines.h:
 	touch $@
 
+$(QSYS_FILE): $(QSYS_SOURCE) $(wilcard config.mk)
+	cp $^ $@
+
 .PHONY: gui-qsys
 gui-qsys: $(QSYS_FILE)
 	qsys-edit $(QSYS_FILE) --search-path="./,$(IP_DIR)/,$$" &
 
 .PHONY: archiveBD
-archiveBD: $(QIP_FILE)
+archiveBD:
+	cp $(QSYS_FILE) $(QSYS_SOURCE)
 
 $(QIP_FILE): $(QSYS_FILE) $(IP_DIR)/orca/orca_hw.tcl
 	if [ -e $(SW_DIR)/Makefile ]; then $(MAKE) -C $(SW_DIR) $(HEX_FILE); fi
@@ -205,6 +218,8 @@ ifdef BD_CHANGES
 	[ -e tmp.$(QSYS_FILE) ]
 	mv tmp.$(QSYS_FILE) $(QSYS_FILE)
 endif #ifdef BD_CHANGES
+	cp $(QSYS_FILE) $(QSYS_SOURCE)
+	touch $(QSYS_FILE)
 	qsys-generate $(QSYS_FILE) --search-path="./,$(IP_DIR)/,$$" --synthesis=VHDL 2>&1 | tee ./synth.$(QSYS_FILE).log
 	[ -e $@ ]
 
@@ -270,7 +285,7 @@ endif #else #ifndef TEST
 
 .PHONY: clean
 clean:
-	rm -rf $(BD_NAME)/ $(OUTPUT_DIR) $(QSYS_HW_TCL)
+	rm -rf $(BD_NAME)/ $(OUTPUT_DIR) $(QSYS_HW_TCL) $(QSYS_FILE)
 	rm -rf db/ incremental_db/ *.rpt* *.summary *.smsg
 	rm -rf *.log *.sopcinfo
 	rm -rf *.sof .qsys_edit/
@@ -290,7 +305,7 @@ run:
 	$(error Define TEST variable before running make run (software/$$(TEST).bin will be used))
 else #ifndef TEST
 run: $(SW_DIR)/$(BIN_FILE) FORCE
-	python orca_pgm.py $(SW_DIR)/$(BIN_FILE) --family=altera --reset_address=0x10000000 --end_address=0x00010000
+	python orca_pgm.py $(SW_DIR)/$(BIN_FILE) --family=altera --base_address=0x80000000 --reset_address=0xFFFF0000 --end_address=0x80010000
 endif #else #ifndef TEST
 
 .PHONY: terminal-run

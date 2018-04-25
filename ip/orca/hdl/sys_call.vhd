@@ -22,10 +22,12 @@ entity sys_call is
     AUX_MEMORY_REGIONS : natural range 0 to 4;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
     AMR0_ADDR_LAST     : std_logic_vector(31 downto 0);
+    AMR0_READ_ONLY     : boolean;
 
     UC_MEMORY_REGIONS : natural range 0 to 4;
     UMR0_ADDR_BASE    : std_logic_vector(31 downto 0);
     UMR0_ADDR_LAST    : std_logic_vector(31 downto 0);
+    UMR0_READ_ONLY    : boolean;
 
     HAS_ICACHE : boolean;
     HAS_DCACHE : boolean
@@ -47,12 +49,12 @@ entity sys_call is
     rs2_data             : in  std_logic_vector(REGISTER_SIZE-1 downto 0);
     from_syscall_ready   : out std_logic;
 
-    from_branch_misaligned   : in std_logic;
+    from_branch_misaligned : in std_logic;
 
     illegal_instruction : in std_logic;
 
     from_lsu_addr_misalign : in std_logic;
-    from_lsu_address : in std_logic_vector(REGISTER_SIZE-1 downto 0);
+    from_lsu_address       : in std_logic_vector(REGISTER_SIZE-1 downto 0);
 
     from_syscall_valid : out std_logic;
     from_syscall_data  : out std_logic_vector(REGISTER_SIZE-1 downto 0);
@@ -291,10 +293,10 @@ begin
           was_illegal <= '0';
         end if;
 
-        if( illegal_instruction = '1' or
-            from_lsu_addr_misalign = '1' or
-            from_branch_misaligned = '1' or
-          (to_syscall_valid = '1' and (ebreak_select = '1' or ecall_select = '1'))) then
+        if(illegal_instruction = '1' or
+           from_lsu_addr_misalign = '1' or
+           from_branch_misaligned = '1' or
+           (to_syscall_valid = '1' and (ebreak_select = '1' or ecall_select = '1'))) then
           --Handle Illegal Instructions
           mstatus(CSR_MSTATUS_MIE)  <= '0';
           mstatus(CSR_MSTATUS_MPIE) <= mstatus(CSR_MSTATUS_MIE);
@@ -302,12 +304,12 @@ begin
           if from_branch_misaligned = '1' then
             mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_FETCH_MISALIGN;
             --according to the tests its legal to put zero in this register
-            mtval <= std_logic_vector(to_unsigned(0,mtval'length));
-          elsif  illegal_instruction = '1' then
+            mtval                         <= std_logic_vector(to_unsigned(0, mtval'length));
+          elsif illegal_instruction = '1' then
             mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_ILLEGAL;
-            mtval <= instruction(mtval'range);
-          elsif from_lsu_addr_misalign = '1'  then
-            mtval <= from_lsu_address;
+            mtval                         <= instruction(mtval'range);
+          elsif from_lsu_addr_misalign = '1' then
+            mtval                         <= from_lsu_address;
             mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_LOAD_MISALIGN;
             if instruction(5) = '1' then
               mcause(CSR_MCAUSE_CODE'range) <= CSR_MCAUSE_STORE_MISALIGN;
@@ -412,44 +414,52 @@ begin
 
   memory_region_registers_gen : for gregister in 3 downto 0 generate
     amr_gen : if (AUX_MEMORY_REGIONS > gregister) and ((UC_MEMORY_REGIONS /= 0) or HAS_ICACHE or HAS_DCACHE) generate
-      amr_base_select(gregister) <=
-        '1' when (csr_number(csr_number'left downto 3) = CSR_MAMR0_BASE(CSR_MAMR0_BASE'left downto 3) and
-                  unsigned(csr_number(2 downto 0)) = to_unsigned(gregister, 3)) else
-        '0';
-      amr_last_select(gregister) <=
-        '1' when (csr_number(csr_number'left downto 3) = CSR_MAMR0_LAST(CSR_MAMR0_LAST'left downto 3) and
-                  unsigned(csr_number(2 downto 0)) = to_unsigned(gregister, 3)) else
-        '0';
+      read_only_amr_gen : if gregister = 0 and AMR0_READ_ONLY generate
+        amr_base_select(gregister) <= '0';
+        amr_last_select(gregister) <= '0';
+        mamr_base(gregister)       <= AMR0_ADDR_BASE;
+        mamr_last(gregister)       <= AMR0_ADDR_LAST;
+      end generate read_only_amr_gen;
+      writeable_amr_gen : if gregister /= 0 or (not AMR0_READ_ONLY) generate
+        amr_base_select(gregister) <=
+          '1' when (csr_number(csr_number'left downto 3) = CSR_MAMR0_BASE(CSR_MAMR0_BASE'left downto 3) and
+                    unsigned(csr_number(2 downto 0)) = to_unsigned(gregister, 3)) else
+          '0';
+        amr_last_select(gregister) <=
+          '1' when (csr_number(csr_number'left downto 3) = CSR_MAMR0_LAST(CSR_MAMR0_LAST'left downto 3) and
+                    unsigned(csr_number(2 downto 0)) = to_unsigned(gregister, 3)) else
+          '0';
 
-      process(clk)
-      begin
-        if rising_edge(clk) then
-          --Don't write the new AMR until the pipeline and memory interface are
-          --flushed
-          if from_pc_correction_ready = '1' then
-            if (memory_idle = '1' and
-                (from_icache_control_ready = '1' or to_icache_control_valid = '0') and
-                (from_dcache_control_ready = '1' or to_dcache_control_valid = '0')) then
-              if amr_base_write(gregister) = '1' then
-                mamr_base(gregister) <= last_csr_writedata;
+        process(clk)
+        begin
+          if rising_edge(clk) then
+            --Don't write the new AMR until the pipeline and memory interface are
+            --flushed
+            if from_pc_correction_ready = '1' then
+              if (memory_idle = '1' and
+                  (from_icache_control_ready = '1' or to_icache_control_valid = '0') and
+                  (from_dcache_control_ready = '1' or to_dcache_control_valid = '0')) then
+                if amr_base_write(gregister) = '1' then
+                  mamr_base(gregister) <= last_csr_writedata;
+                end if;
+                if amr_last_write(gregister) = '1' then
+                  mamr_last(gregister) <= last_csr_writedata;
+                end if;
               end if;
-              if amr_last_write(gregister) = '1' then
-                mamr_last(gregister) <= last_csr_writedata;
+            end if;
+
+            if reset = '1' then
+              if gregister = 0 then
+                mamr_base(gregister) <= AMR0_ADDR_BASE;
+                mamr_last(gregister) <= AMR0_ADDR_LAST;
+              else
+                mamr_base(gregister) <= (others => '1');
+                mamr_last(gregister) <= (others => '0');
               end if;
             end if;
           end if;
-
-          if reset = '1' then
-            if gregister = 0 then
-              mamr_base(gregister) <= AMR0_ADDR_BASE;
-              mamr_last(gregister) <= AMR0_ADDR_LAST;
-            else
-              mamr_base(gregister) <= (others => '1');
-              mamr_last(gregister) <= (others => '0');
-            end if;
-          end if;
-        end if;
-      end process;
+        end process;
+      end generate writeable_amr_gen;
     end generate amr_gen;
     no_amr_gen : if ((AUX_MEMORY_REGIONS <= gregister) or
                      ((UC_MEMORY_REGIONS = 0) and (not HAS_ICACHE) and (not HAS_DCACHE))) generate
@@ -459,44 +469,52 @@ begin
       mamr_last(gregister)       <= (others => '0');
     end generate no_amr_gen;
     umr_gen : if (UC_MEMORY_REGIONS > gregister) and ((AUX_MEMORY_REGIONS /= 0) or HAS_ICACHE or HAS_DCACHE) generate
-      umr_base_select(gregister) <=
-        '1' when (csr_number(csr_number'left downto 3) = CSR_MUMR0_BASE(CSR_MUMR0_BASE'left downto 3) and
-                  unsigned(csr_number(2 downto 0)) = to_unsigned(gregister, 3)) else
-        '0';
-      umr_last_select(gregister) <=
-        '1' when (csr_number(csr_number'left downto 3) = CSR_MUMR0_LAST(CSR_MUMR0_LAST'left downto 3) and
-                  unsigned(csr_number(2 downto 0)) = to_unsigned(gregister, 3)) else
-        '0';
+      read_only_umr_gen : if gregister = 0 and UMR0_READ_ONLY generate
+        umr_base_select(gregister) <= '0';
+        umr_last_select(gregister) <= '0';
+        mumr_base(gregister)       <= UMR0_ADDR_BASE;
+        mumr_last(gregister)       <= UMR0_ADDR_LAST;
+      end generate read_only_umr_gen;
+      writeable_umr_gen : if gregister /= 0 or (not UMR0_READ_ONLY) generate
+        umr_base_select(gregister) <=
+          '1' when (csr_number(csr_number'left downto 3) = CSR_MUMR0_BASE(CSR_MUMR0_BASE'left downto 3) and
+                    unsigned(csr_number(2 downto 0)) = to_unsigned(gregister, 3)) else
+          '0';
+        umr_last_select(gregister) <=
+          '1' when (csr_number(csr_number'left downto 3) = CSR_MUMR0_LAST(CSR_MUMR0_LAST'left downto 3) and
+                    unsigned(csr_number(2 downto 0)) = to_unsigned(gregister, 3)) else
+          '0';
 
-      process(clk)
-      begin
-        if rising_edge(clk) then
-          --Don't write the new UMR until the pipeline and memory interface are
-          --flushed
-          if from_pc_correction_ready = '1' then
-            if (memory_idle = '1' and
-                (from_icache_control_ready = '1' or to_icache_control_valid = '0') and
-                (from_dcache_control_ready = '1' or to_dcache_control_valid = '0')) then
-              if umr_base_write(gregister) = '1' then
-                mumr_base(gregister) <= last_csr_writedata;
+        process(clk)
+        begin
+          if rising_edge(clk) then
+            --Don't write the new UMR until the pipeline and memory interface are
+            --flushed
+            if from_pc_correction_ready = '1' then
+              if (memory_idle = '1' and
+                  (from_icache_control_ready = '1' or to_icache_control_valid = '0') and
+                  (from_dcache_control_ready = '1' or to_dcache_control_valid = '0')) then
+                if umr_base_write(gregister) = '1' then
+                  mumr_base(gregister) <= last_csr_writedata;
+                end if;
+                if umr_last_write(gregister) = '1' then
+                  mumr_last(gregister) <= last_csr_writedata;
+                end if;
               end if;
-              if umr_last_write(gregister) = '1' then
-                mumr_last(gregister) <= last_csr_writedata;
+            end if;
+
+            if reset = '1' then
+              if gregister = 0 then
+                mumr_base(gregister) <= UMR0_ADDR_BASE;
+                mumr_last(gregister) <= UMR0_ADDR_LAST;
+              else
+                mumr_base(gregister) <= (others => '1');
+                mumr_last(gregister) <= (others => '0');
               end if;
             end if;
           end if;
-
-          if reset = '1' then
-            if gregister = 0 then
-              mumr_base(gregister) <= UMR0_ADDR_BASE;
-              mumr_last(gregister) <= UMR0_ADDR_LAST;
-            else
-              mumr_base(gregister) <= (others => '1');
-              mumr_last(gregister) <= (others => '0');
-            end if;
-          end if;
-        end if;
-      end process;
+        end process;
+      end generate writeable_umr_gen;
     end generate umr_gen;
     no_umr_gen : if ((UC_MEMORY_REGIONS <= gregister) or
                      ((AUX_MEMORY_REGIONS = 0) and (not HAS_ICACHE) and (not HAS_DCACHE))) generate

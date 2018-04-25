@@ -41,11 +41,13 @@ entity orca is
     AUX_MEMORY_REGIONS : natural range 0 to 4          := 1;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0) := X"00000000";
     AMR0_ADDR_LAST     : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+    AMR0_READ_ONLY     : natural range 0 to 1          := 1;
 
     --Uncached memory regions (0 to disable)
     UC_MEMORY_REGIONS : natural range 0 to 4          := 0;
     UMR0_ADDR_BASE    : std_logic_vector(31 downto 0) := X"00000000";
     UMR0_ADDR_LAST    : std_logic_vector(31 downto 0) := X"FFFFFFFF";
+    UMR0_READ_ONLY    : natural range 0 to 1          := 1;
 
     --Instruction cache (ICACHE_SIZE 0 to disable)
     ICACHE_SIZE           : natural                  := 0;
@@ -459,10 +461,12 @@ begin
       AUX_MEMORY_REGIONS => AUX_MEMORY_REGIONS,
       AMR0_ADDR_BASE     => AMR0_ADDR_BASE,
       AMR0_ADDR_LAST     => AMR0_ADDR_LAST,
+      AMR0_READ_ONLY     => AMR0_READ_ONLY /= 0,
 
       UC_MEMORY_REGIONS => UC_MEMORY_REGIONS,
       UMR0_ADDR_BASE    => UMR0_ADDR_BASE,
       UMR0_ADDR_LAST    => UMR0_ADDR_LAST,
+      UMR0_READ_ONLY    => UMR0_READ_ONLY /= 0,
 
       HAS_ICACHE => ICACHE_SIZE /= 0,
       HAS_DCACHE => DCACHE_SIZE /= 0

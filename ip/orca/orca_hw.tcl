@@ -179,8 +179,8 @@ add_display_item "Exceptions" NUM_EXT_INTERRUPTS PARAMETER
 
 add_display_item "General Parameters" "Performance/Area Optimizations" GROUP
 
-add_parameter MAX_IFETCHES_IN_FLIGHT positive 4
-set_parameter_property MAX_IFETCHES_IN_FLIGHT DEFAULT_VALUE 4
+add_parameter MAX_IFETCHES_IN_FLIGHT positive 1
+set_parameter_property MAX_IFETCHES_IN_FLIGHT DEFAULT_VALUE 1
 set_parameter_property MAX_IFETCHES_IN_FLIGHT DISPLAY_NAME "Maximum Instruction Fetches in Flight"
 set_parameter_property MAX_IFETCHES_IN_FLIGHT TYPE NATURAL
 set_parameter_property MAX_IFETCHES_IN_FLIGHT UNITS None
@@ -261,7 +261,7 @@ set_parameter_property MTIME_ENABLE DESCRIPTION \
          "be connected to an external ORCA Timer component." ]
 add_display_item "Performance/Area Optimizations" MTIME_ENABLE PARAMETER
 
-add_parameter          PIPELINE_STAGES natural 5
+add_parameter          PIPELINE_STAGES natural 4
 set_parameter_property PIPELINE_STAGES HDL_PARAMETER true
 set_parameter_property PIPELINE_STAGES DISPLAY_NAME "Pipeline Stages"
 set_parameter_property PIPELINE_STAGES ALLOWED_RANGES {4 5}
@@ -555,6 +555,19 @@ set_parameter_property UMR0_ADDR_LAST DESCRIPTION \
          "e.g. if UMR0 starts at 0x00000000 and has a span of 0x80000000 URM0_ADDR_LAST is 0x7FFFFFFF." ]
 add_display_item "Uncached AXI4-Lite Masters" UMR0_ADDR_LAST PARAMETER
 
+add_parameter UMR0_READ_ONLY natural 1
+set_parameter_property UMR0_READ_ONLY DISPLAY_NAME "UMR0 Read Only"
+set_parameter_property UMR0_READ_ONLY TYPE NATURAL
+set_parameter_property UMR0_READ_ONLY UNITS None
+set_parameter_property UMR0_READ_ONLY ALLOWED_RANGES 0:1
+set_parameter_property UMR0_READ_ONLY HDL_PARAMETER false
+set_display_item_property UMR0_READ_ONLY DISPLAY_HINT boolean
+set_parameter_property UMR0_READ_ONLY DESCRIPTION \
+    [concat \
+         "Makes UMR0 read-only.  " \
+         "Should be set when cached/uncached regions will not change to save logic and increase fmax." ]
+add_display_item "Uncached AXI4-Lite Masters" UMR0_READ_ONLY PARAMETER
+
 add_parameter          IUC_REQUEST_REGISTER natural 0
 set_parameter_property IUC_REQUEST_REGISTER DEFAULT_VALUE 0
 set_parameter_property IUC_REQUEST_REGISTER HDL_PARAMETER true
@@ -629,6 +642,19 @@ set_parameter_property AMR0_ADDR_BASE DESCRIPTION \
          "Initial base address for auxiliary memory region 0.  " \
          "Should be set to the base address of the default ILMB/DLMB address range." ]
 add_display_item "Avalon Masters" AMR0_ADDR_BASE PARAMETER
+
+add_parameter AMR0_READ_ONLY natural 1
+set_parameter_property AMR0_READ_ONLY DISPLAY_NAME "AMR0 Read Only"
+set_parameter_property AMR0_READ_ONLY TYPE NATURAL
+set_parameter_property AMR0_READ_ONLY UNITS None
+set_parameter_property AMR0_READ_ONLY ALLOWED_RANGES 0:1
+set_parameter_property AMR0_READ_ONLY HDL_PARAMETER false
+set_display_item_property AMR0_READ_ONLY DISPLAY_HINT boolean
+set_parameter_property AMR0_READ_ONLY DESCRIPTION \
+    [concat \
+         "Makes AMR0 read-only.  " \
+         "Should be set when Avalon region will not change to save logic and increase fmax." ]
+add_display_item "Avalon Masters" AMR0_READ_ONLY PARAMETER
 
 add_parameter AMR0_ADDR_LAST Std_Logic_Vector 32'hFFFFFFFF
 set_parameter_property AMR0_ADDR_LAST DEFAULT_VALUE 32'hFFFFFFFF
@@ -1187,6 +1213,7 @@ proc elaboration_callback {} {
     if { [get_parameter_value AUX_MEMORY_REGIONS] } {
         set_display_item_property AMR0_ADDR_BASE enabled true
         set_display_item_property AMR0_ADDR_LAST enabled true
+        set_display_item_property AMR0_READ_ONLY enabled true
         set_display_item_property IAUX_REQUEST_REGISTER enabled true
         set_display_item_property IAUX_RETURN_REGISTER enabled true
         set_display_item_property DAUX_REQUEST_REGISTER enabled true
@@ -1194,6 +1221,7 @@ proc elaboration_callback {} {
     } else {
         set_display_item_property AMR0_ADDR_BASE enabled false
         set_display_item_property AMR0_ADDR_LAST enabled false
+        set_display_item_property AMR0_READ_ONLY enabled false
         set_display_item_property IAUX_REQUEST_REGISTER enabled false
         set_display_item_property IAUX_RETURN_REGISTER enabled false
         set_display_item_property DAUX_REQUEST_REGISTER enabled false
@@ -1203,6 +1231,7 @@ proc elaboration_callback {} {
     if { [get_parameter_value UC_MEMORY_REGIONS] } {
         set_display_item_property UMR0_ADDR_BASE enabled true
         set_display_item_property UMR0_ADDR_LAST enabled true
+        set_display_item_property UMR0_READ_ONLY enabled true
         set_display_item_property IUC_REQUEST_REGISTER enabled true
         set_display_item_property IUC_RETURN_REGISTER enabled true
         set_display_item_property DUC_REQUEST_REGISTER enabled true
@@ -1210,6 +1239,7 @@ proc elaboration_callback {} {
     } else {
         set_display_item_property UMR0_ADDR_BASE enabled false
         set_display_item_property UMR0_ADDR_LAST enabled false
+        set_display_item_property UMR0_READ_ONLY enabled false
         set_display_item_property IUC_REQUEST_REGISTER enabled false
         set_display_item_property IUC_RETURN_REGISTER enabled false
         set_display_item_property DUC_REQUEST_REGISTER enabled false

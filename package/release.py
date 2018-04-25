@@ -51,7 +51,16 @@ files_to_copy = ['LICENSE.txt', 'README.md', '.gitignore', 'systems/.gitignore']
         
 directories_to_copy = ['ip',  'tools', 'software']
 directories_to_remove = ['software/csmith', 'software/apps/beamforming']
-files_to_remove = ['systems/sim/*csmith*', 'tools/compare_systems.py']
+files_to_remove = [
+    'systems/sim/*csmith*',
+    'tools/compare_systems.py',
+    'systems/zedboard/*_system*_min.tcl',
+    'systems/zedboard/*_system*_mid.tcl',
+    'systems/zedboard/*_system*_max.tcl',
+    'systems/de2-115/*_system*_min.qsys',
+    'systems/de2-115/*_system*_mid.qsys',
+    'systems/de2-115/*_system*_max.qsys',
+]
 
 hdl_to_stub = []
 hdl_to_remove = []

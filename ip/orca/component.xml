@@ -1241,6 +1241,13 @@
           <spirit:value spirit:id="BUSIFPARAM_VALUE.INTERRUPTS.SENSITIVITY">LEVEL_HIGH</spirit:value>
         </spirit:parameter>
       </spirit:parameters>
+      <spirit:vendorExtensions>
+        <xilinx:busInterfaceInfo>
+          <xilinx:enablement>
+            <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="BUSIF_ENABLEMENT.INTERRUPT" xilinx:dependency="$ENABLE_EXT_INTERRUPTS > 0">false</xilinx:isEnabled>
+          </xilinx:enablement>
+        </xilinx:busInterfaceInfo>
+      </spirit:vendorExtensions>
     </spirit:busInterface>
     <spirit:busInterface>
       <spirit:name>vcp</spirit:name>
@@ -5769,7 +5776,7 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>MAX_IFETCHES_IN_FLIGHT</spirit:name>
         <spirit:displayName>Maximum Instruction Fetches in Flight</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.MAX_IFETCHES_IN_FLIGHT" spirit:minimum="1" spirit:rangeType="long">4</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.MAX_IFETCHES_IN_FLIGHT" spirit:minimum="1" spirit:rangeType="long">1</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>BTB_ENTRIES</spirit:name>
@@ -5799,7 +5806,7 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>PIPELINE_STAGES</spirit:name>
         <spirit:displayName>Pipeline Stages</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.PIPELINE_STAGES" spirit:minimum="4" spirit:maximum="5" spirit:rangeType="long">5</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.PIPELINE_STAGES" spirit:minimum="4" spirit:maximum="5" spirit:rangeType="long">4</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>VCP_ENABLE</spirit:name>
@@ -5867,6 +5874,11 @@
         <spirit:value spirit:format="bitString" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.AMR0_ADDR_LAST" spirit:bitStringLength="32">0xFFFFFFFF</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>AMR0_READ_ONLY</spirit:name>
+        <spirit:displayName>Uncached LMB Address (AMR0) is Read Only</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.AMR0_READ_ONLY" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>UC_MEMORY_REGIONS</spirit:name>
         <spirit:displayName>Uncached (AXI4-Lite) Memory Regions</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.UC_MEMORY_REGIONS" spirit:minimum="0" spirit:maximum="4" spirit:rangeType="long">1</spirit:value>
@@ -5880,6 +5892,11 @@
         <spirit:name>UMR0_ADDR_LAST</spirit:name>
         <spirit:displayName>Last Uncached AXI4-Lite Address (UMR0) Reset Value</spirit:displayName>
         <spirit:value spirit:format="bitString" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.UMR0_ADDR_LAST" spirit:bitStringLength="32">0xFFFFFFFF</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>UMR0_READ_ONLY</spirit:name>
+        <spirit:displayName>Uncached AXI4-Lite Address (UMR0) is Read Only</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.UMR0_READ_ONLY" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>ICACHE_SIZE</spirit:name>
@@ -6032,7 +6049,7 @@
       <spirit:enumeration spirit:text="Full">2</spirit:enumeration>
     </spirit:choice>
     <spirit:choice>
-      <spirit:name>choice_list_vcp</spirit:name>
+      <spirit:name>choice_pairs_325b4c22</spirit:name>
       <spirit:enumeration spirit:text="Disabled">0</spirit:enumeration>
       <spirit:enumeration spirit:text="32 Bit">1</spirit:enumeration>
       <spirit:enumeration spirit:text="64 Bit">2</spirit:enumeration>
@@ -6295,7 +6312,7 @@
     <spirit:parameter>
       <spirit:name>MAX_IFETCHES_IN_FLIGHT</spirit:name>
       <spirit:displayName>Maximum Instruction Fetches in Flight</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.MAX_IFETCHES_IN_FLIGHT" spirit:choiceRef="choice_list_dd2843c6">4</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.MAX_IFETCHES_IN_FLIGHT" spirit:choiceRef="choice_list_dd2843c6">1</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>BTB_ENTRIES</spirit:name>
@@ -6330,12 +6347,12 @@
     <spirit:parameter>
       <spirit:name>PIPELINE_STAGES</spirit:name>
       <spirit:displayName>Pipeline Stages</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.PIPELINE_STAGES" spirit:choiceRef="choice_list_8b5e4915">5</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.PIPELINE_STAGES" spirit:minimum="4" spirit:maximum="5" spirit:choiceRef="choice_list_8b5e4915">4</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>VCP_ENABLE</spirit:name>
       <spirit:displayName>Vector Coprocessor Port</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.VCP_ENABLE" spirit:choiceRef="choice_pairs_325b4c22">0</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.VCP_ENABLE" spirit:minimum="0" spirit:maximum="2" spirit:choiceRef="choice_pairs_325b4c22">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>ENABLE_EXT_INTERRUPTS</spirit:name>
@@ -6398,6 +6415,11 @@
       <spirit:value spirit:format="bitString" spirit:resolve="user" spirit:id="PARAM_VALUE.AMR0_ADDR_LAST" spirit:bitStringLength="32">0xFFFFFFFF</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
+      <spirit:name>AMR0_READ_ONLY</spirit:name>
+      <spirit:displayName>Uncached LMB Address (AMR0) is Read Only</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.AMR0_READ_ONLY" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
       <spirit:name>UC_MEMORY_REGIONS</spirit:name>
       <spirit:displayName>Uncached (AXI4-Lite) Memory Regions</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.UC_MEMORY_REGIONS" spirit:minimum="0" spirit:maximum="4" spirit:rangeType="long">1</spirit:value>
@@ -6411,6 +6433,11 @@
       <spirit:name>UMR0_ADDR_LAST</spirit:name>
       <spirit:displayName>Last Uncached AXI4-Lite Address (UMR0) Reset Value</spirit:displayName>
       <spirit:value spirit:format="bitString" spirit:resolve="user" spirit:id="PARAM_VALUE.UMR0_ADDR_LAST" spirit:bitStringLength="32">0xFFFFFFFF</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>UMR0_READ_ONLY</spirit:name>
+      <spirit:displayName>Uncached AXI4-Lite Address (UMR0) is Read Only</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.UMR0_READ_ONLY" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>ICACHE_SIZE</spirit:name>

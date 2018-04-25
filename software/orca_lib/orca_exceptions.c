@@ -58,6 +58,7 @@ int register_orca_illegal_instruction_handler(orca_illegal_instruction_handler t
 //interrupt(s) will use this handler.  See orca_exceptions.h for
 //return codes.
 int orca_register_interrupt_handler(uint32_t interrupt_mask, orca_interrupt_handler the_handler, void *the_context){
+#if ORCA_INTERRUPT_HANDLERS
 	int return_code = 0;
 	if((1<<(ORCA_INTERRUPT_HANDLERS-1)) < interrupt_mask){
 		//if interrupt mask tries to register a interrupt that doesn't exist return an error
@@ -76,9 +77,13 @@ int orca_register_interrupt_handler(uint32_t interrupt_mask, orca_interrupt_hand
 	}
 
 	return return_code;
+#else //#if ORCA_INTERRUPT_HANDLERS
+		return ORCA_UNSUPPORTED_EXCEPTION_REGISTRATION;
+#endif //#else //#if ORCA_INTERRUPT_HANDLERS
 }
 
 static void call_interrupt_handler(){
+#if ORCA_INTERRUPT_HANDLERS
 	uint32_t pending_interrupts= get_pending_interrupts();
 	while(pending_interrupts){
 		for(int int_num = 0; int_num<31; int_num++){
@@ -89,6 +94,7 @@ static void call_interrupt_handler(){
 			pending_interrupts = get_pending_interrupts();
 		}
 	}
+#endif //#if ORCA_INTERRUPT_HANDLERS
 }
 
 static void handle_misaligned_load(size_t instr,size_t reg[32])
@@ -171,4 +177,8 @@ int handle_exception(size_t cause, size_t epc, size_t regs[32]){
 	return epc;
 }
 
-#endif //ORCA_ENABLE_EXCEPTIONS
+#else //#if ORCA_ENABLE_EXCEPTIONS
+int handle_exception(size_t cause, size_t epc, size_t regs[32]){
+  return 0;
+}
+#endif //#else //#if ORCA_ENABLE_EXCEPTIONS

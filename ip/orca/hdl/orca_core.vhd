@@ -28,10 +28,12 @@ entity orca_core is
     AUX_MEMORY_REGIONS : natural range 0 to 4;
     AMR0_ADDR_BASE     : std_logic_vector(31 downto 0);
     AMR0_ADDR_LAST     : std_logic_vector(31 downto 0);
+    AMR0_READ_ONLY     : boolean;
 
     UC_MEMORY_REGIONS : natural range 0 to 4;
     UMR0_ADDR_BASE    : std_logic_vector(31 downto 0);
     UMR0_ADDR_LAST    : std_logic_vector(31 downto 0);
+    UMR0_READ_ONLY    : boolean;
 
     HAS_ICACHE : boolean;
     HAS_DCACHE : boolean
@@ -247,10 +249,12 @@ begin
       AUX_MEMORY_REGIONS => AUX_MEMORY_REGIONS,
       AMR0_ADDR_BASE     => AMR0_ADDR_BASE,
       AMR0_ADDR_LAST     => AMR0_ADDR_LAST,
+      AMR0_READ_ONLY     => AMR0_READ_ONLY,
 
       UC_MEMORY_REGIONS => UC_MEMORY_REGIONS,
       UMR0_ADDR_BASE    => UMR0_ADDR_BASE,
       UMR0_ADDR_LAST    => UMR0_ADDR_LAST,
+      UMR0_READ_ONLY    => UMR0_READ_ONLY,
 
       HAS_ICACHE => HAS_ICACHE,
       HAS_DCACHE => HAS_DCACHE
