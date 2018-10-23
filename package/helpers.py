@@ -154,19 +154,7 @@ def fix_de2(de2_dir, include_caches):
     return #stub
 
 def fix_zedboard(zedboard_dir, include_caches):
-    if not include_caches:
-        # Fix the orca_system.tcl file to disable caches.
-        file_to_edit = os.path.expanduser(zedboard_dir + '/orca_system.tcl')
-        file_to_read = open(file_to_edit, 'r')
-        file_to_read_text = file_to_read.read()
-        file_to_read.close()
-        file_to_read_text = re.sub(r'CONFIG.ICACHE_SIZE {.*}', 'CONFIG.ICACHE_SIZE {0}', \
-                                   file_to_read_text)
-        file_to_read_text = re.sub(r'CONFIG.DCACHE_SIZE {.*}', 'CONFIG.DCACHE_SIZE {0}', \
-                                   file_to_read_text)
-        file_to_write = open(file_to_edit, 'w')
-        file_to_write.write(file_to_read_text)
-        file_to_write.close()
+    return #stub
 
 def setup_git_repo(destination_repo, upstream_repo, submodules):
     git_commit = git_latest_commit_id()
