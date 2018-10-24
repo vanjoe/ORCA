@@ -59,10 +59,15 @@ def copy_to_dir(destination_repo, source_repo, directories_to_copy, systems_to_c
     for thing in stuff_to_remove:
         subprocess.Popen('rm -rf {}/{}'.format(destination_repo, thing), shell=True).wait()
 
-    for directory, url, commit in submodules:
+    for directory, url in submodules:
         subprocess.Popen('rm -rf {}/{}'.format(destination_repo, directory), shell=True).wait()
-        print 'Adding submodule {} from {}'.format(directory, url)
         saved_working_dir = os.getcwd()
+        os.chdir('../{}'.format(directory))
+        git_log_proc = subprocess.Popen('git log -1 --format=%h', stdout=subprocess.PIPE, shell=True)
+        commit = git_log_proc.stdout.readline()
+        git_log_proc.wait()
+        os.chdir(saved_working_dir)
+        print 'Adding submodule {} commit {} from {}'.format(directory, commit, url)
         os.chdir(os.path.expanduser(destination_repo))
         subprocess.Popen('git submodule update --init {}'.format(directory), shell=True).wait()
         os.chdir(directory)
@@ -163,7 +168,7 @@ def setup_git_repo(destination_repo, upstream_repo, submodules):
     os.chdir(os.path.expanduser(destination_repo))
     saved_destination_repo = os.getcwd()
 
-    for directory, url, commit in submodules:
+    for directory, url in submodules:
         os.chdir(directory)
         subprocess.Popen('git checkout .', shell=True).wait()
         os.chdir(saved_destination_repo)

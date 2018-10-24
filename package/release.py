@@ -39,7 +39,7 @@ include_lve       = False
 include_caches    = False
 destination_repo  = 'github_orca'
 upstream_repo     = 'https://github.com/VectorBlox/orca'
-submodules        = [('software/riscv-tests', 'https://github.com/riscv/riscv-tests software/riscv-tests/', '6a1a38d')]
+submodules        = [('software/riscv-tests', 'https://github.com/riscv/riscv-tests software/riscv-tests/')]
 
 source_repo = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 config_file = source_repo + '/package/config.py'
