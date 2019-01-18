@@ -36,7 +36,7 @@ systems_to_copy = [
     sim_system,
 ]
 include_lve       = False
-include_caches    = False
+include_caches    = True
 destination_repo  = 'github_orca'
 upstream_repo     = 'https://github.com/VectorBlox/orca'
 submodules        = [('software/riscv-tests', 'https://github.com/riscv/riscv-tests software/riscv-tests/')]
